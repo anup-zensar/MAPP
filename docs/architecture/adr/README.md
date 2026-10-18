@@ -12,3 +12,4 @@ Consequences. Add a new ADR (next number) instead of editing an accepted one; ma
 | [0004](0004-json-file-store-now-postgresql-later.md) | JSON file store now, PostgreSQL later | Accepted |
 | [0005](0005-demo-sign-in-rbac-later.md) | Demo sign-in now, Entra ID and roles later | Accepted |
 | [0006](0006-zenreach-design-language.md) | ZenReach design language | Accepted |
+| [0007](0007-activity-log-and-recycle-bin-core.md) | Activity log and recycle bin core | Accepted |

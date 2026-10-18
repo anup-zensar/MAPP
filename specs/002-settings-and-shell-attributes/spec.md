@@ -184,8 +184,9 @@ Shell has long lists (1,217 cost centres). The administrator downloads a templat
 
 - A setting used only by records in the recycle bin counts as used, so a restore never meets a missing setting.
 - A choice with 1,217 options is searched by any part of a label ("0220" finds "CN04000220").
-- Two people edit the same setting: the second save is refused with "Alex Morgan changed this model at 10:42.
-  Reload to see the latest version." Nothing is overwritten silently.
+- Two people edit the same setting: the second save is refused with "Not saved — Alex Morgan changed this
+  model at 10:42" and the typed values stay on screen (shared behaviour of feature 001, FR-029). Nothing
+  is overwritten silently.
 - Moving a dependent attribute above its parent is refused: "Region must stay below Cluster."
 - A rate change that makes line items exceed an activity's planned cost shows the red balance of domain model
   §4.3; approved activities stay approved.

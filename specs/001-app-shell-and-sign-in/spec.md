@@ -152,6 +152,9 @@ Undo after the delete brings the record back unchanged.
 ### Edge Cases
 
 - The same demo person signs in in two browsers: both sessions work independently.
+- Another demo person signs in in another tab of the same browser (tabs share one sign-in): the first
+  tab notices at its next check, says "You're now signed in as <name> — this was changed in another
+  tab." and returns to Home, so nothing is done in the wrong person's name.
 - The seed data has not been loaded: the sign-in page says "No demo users found — load the demo data
   first" instead of failing.
 - NorthStar's server is not reachable: pages show "NorthStar can't reach its server right now. Check that it is
@@ -159,6 +162,9 @@ Undo after the delete brings the record back unchanged.
 - A very long name or job title is shortened with an ellipsis in the sidebar and shown in full in a
   tooltip.
 - Two activity-log writes for the same record at the same moment are both kept, in order.
+- Undo is chosen after someone else has meanwhile created a record with the same name in the same place:
+  the Undo is refused with a message saying the name is taken, nothing changes, and the deleted item
+  stays in the recycle bin, from where it can be restored (it then gets the suffix " (restored)").
 
 ## Requirements *(mandatory)*
 
@@ -239,8 +245,10 @@ Undo after the delete brings the record back unchanged.
   exists; otherwise the restore MUST be refused naming the parent to restore first (the recycle bin page
   of feature 011 additionally offers to restore both together). Status resets on later restores follow
   domain model R14.
-- **FR-026**: After any delete, the confirmation message MUST offer **Undo** for at least 10 seconds;
-  Undo MUST restore exactly what was deleted, statuses included (domain model R14).
+- **FR-026**: After any delete, the confirmation message MUST offer **Undo** for at least 10 seconds, or
+  until the next delete replaces the message (only one Undo is offered at a time; an earlier delete stays
+  restorable from the recycle bin); Undo MUST restore exactly what was deleted, statuses included
+  (domain model R14).
 - **FR-027**: NorthStar MUST give every planning record (plan, campaign, initiative, activity, line item)
   a permanent readable ID with a prefix per level (P-, C-, I-, A-, L-, decision D-019); IDs MUST never be
   reused, even after deletion. Settings records are identified by their type and name.
@@ -279,7 +287,9 @@ Undo after the delete brings the record back unchanged.
 - **SC-003**: 100 % of navigation items open a page (real or "Coming soon") without an error.
 - **SC-004**: 100 % of business changes made through any feature produce exactly one activity-log entry
   naming the correct person.
-- **SC-005**: 100 % of deletes can be undone within 10 seconds with nothing lost.
+- **SC-005**: 100 % of deletes can be undone from their confirmation message within 10 seconds, unless
+  another delete replaced the message, with nothing lost; every delete can be restored from the recycle
+  bin.
 - **SC-006**: Every screen of this feature passes an automated WCAG 2.1 AA check with no failures and can
   be used with the keyboard alone.
 - **SC-007**: The layout is usable without horizontal scrolling at 1280 × 720 and on a 390 px-wide phone.
@@ -290,7 +300,14 @@ Undo after the delete brings the record back unchanged.
   actor is identified.
 - The demo password is shown openly because all data is fictitious; NorthStar is not exposed outside the
   developer's computer in this phase.
-- The 12-hour inactivity expiry is a reasonable default for a demo environment.
+- The 12-hour inactivity expiry is a reasonable default for a demo environment. It is measured to the
+  minute: a session ends between 12 hours and 12 hours 1 minute after its last request.
 - The Approvals, All work, Settings, Recycle bin and Activity log pages are delivered by features 008,
   010, 002/003, 011 and 011; until then they show "Coming soon".
+- In local and development environments only, NorthStar provides two developer pages that are not in
+  the navigation (decision D-036): **Sample records** — the "simple demonstration record type provided
+  for testing" of User Story 5 (sample folders and the notes inside them), where the shared create, edit,
+  delete, Undo, restore and activity-log behaviour can be tried and tested — and **Shared building
+  blocks**, which shows every shared component of FR-019 in all its variants for design review and
+  accessibility checks.
 - English is the only language in this phase.

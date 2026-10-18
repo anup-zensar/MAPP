@@ -8,7 +8,7 @@ In progress · Done.
 
 | # | Folder | Feature | Priority | Depends on | Status |
 |---|---|---|---|---|---|
-| 001 | [001-app-shell-and-sign-in](../../specs/001-app-shell-and-sign-in/spec.md) | Demo sign-in, application shell, navigation, user menu, getting-started home, shared building blocks (activity-log and recycle-bin core) | P1 | — | Draft |
+| 001 | [001-app-shell-and-sign-in](../../specs/001-app-shell-and-sign-in/spec.md) | Demo sign-in, application shell, navigation, user menu, getting-started home, shared building blocks (activity-log and recycle-bin core) | P1 | — | In progress |
 | 002 | [002-settings-and-shell-attributes](../../specs/002-settings-and-shell-attributes/spec.md) | Settings: models, activity types, Shell attributes and options, currencies and rates, finance budget items | P1 | 001 | Draft |
 | 003 | [003-people-and-teams](../../specs/003-people-and-teams/spec.md) | People directory, teams and memberships, person picker, My profile | P1 | 001 | Draft |
 | 004 | [004-plans](../../specs/004-plans/spec.md) | Plans list and plan page; create, view, edit, copy, publish/unpublish, delete plans; budget, goals, Shell attributes | P1 | 002, 003 | Draft |

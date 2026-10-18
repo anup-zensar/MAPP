@@ -73,8 +73,11 @@ Primary navigation for this phase: **Home · Plans · Approvals · All work** an
 | `--muted` | `#86868b` | `#8a8a8e` | Hints, placeholders |
 | `--hairline` | `#d2d2d7` | `#38383a` | Dividers, input borders |
 | `--card-border` | `rgba(0,0,0,.07)` | `rgba(255,255,255,.1)` | Card borders |
-| `--blue` | `#0071e3` | `#2a91ff` | Primary buttons, links, selection, focus ring |
-| `--brand-gradient` | `linear-gradient(135deg,#2a78d6,#9f4bd6)` | same | Logo, avatars, progress bars, sign-in header |
+| `--blue` | `#0071e3` | `#2a91ff` | Selection, focus ring, eyebrows, active icons |
+| `--link` | `#0066cc` | `#59a8ff` | Link text (readable on white and on `--gray-bg`) |
+| `--button-primary-bg` | `#0071e3` | `#0071e3` | Primary button fill (white text stays readable in dark mode) |
+| `--brand-gradient` | `linear-gradient(135deg,#2a78d6,#9f4bd6)` | same | Logo, progress bars |
+| `--brand-gradient-strong` | the brand gradient darkened by 12 % | same | Surfaces with white text: sign-in header, avatars |
 | `--chip` | `rgba(0,0,0,.05)` | `rgba(255,255,255,.09)` | Neutral chips |
 
 - **Font:** system font stack (`-apple-system, "Segoe UI", Inter, sans-serif`); numbers use tabular
@@ -82,7 +85,8 @@ Primary navigation for this phase: **Home · Plans · Approvals · All work** an
 - **Radius:** cards 16 px, inputs and buttons 10 px, chips 8 px, pills 999 px.
 - **Spacing:** 4 px grid; cards 20–24 px padding.
 - **Motion:** short fades (≤ 0.3 s); none when the user prefers reduced motion.
-- **Dark mode:** supported via the tokens; light is the default.
+- **Dark mode:** supported via the tokens. On first use NorthStar follows the computer's setting, then
+  remembers each person's choice (decision D-038).
 
 ---
 
@@ -99,7 +103,9 @@ Status is always **word + colour (+ icon where space allows)**; colour is never 
 | Done | slate `#5b6b7a` | Complete (activity finished), Finished |
 | Problem | red `#d03b3b` | Declined, Incomplete (n missing), over-allocated budget, negative balance |
 
-Chips are 11–12 px semibold text on a 12 % tint of the colour (ZenReach `color + 1c` alpha).
+Chips are 11–12 px semibold text on a 12 % tint of the colour (ZenReach `color + 1c` alpha). The chip
+**text** uses a darker shade of the colour (lighter in dark mode) so it meets WCAG AA; the shades are the
+`--status-<tone>-text` tokens (feature 001, research R17).
 
 **Level colours** (a 4 px bar beside the name in trees and a small level tag): Plan blue `#2a78d6`,
 Campaign violet `#4a3aa7`, Initiative aqua `#1baf7a`, Activity magenta `#e87ba4`, Line item grey `#86868b`.
@@ -248,7 +254,11 @@ Buttons use verbs; messages are short, friendly and specific; dates follow the u
 
 - Everything works with the keyboard; focus is visible (2 px blue ring with 2 px offset).
 - Every control has a visible label or accessible name; icon-only buttons have a tooltip and a name.
-- Text contrast ≥ 4.5:1; status never relies on colour alone.
+  Exception: the close button inside a dialog, side panel or drawer has the name "Close" (or "Close
+  menu") but no tooltip, because a tooltip there would swallow the first Escape (feature 001, research
+  R14); inside the mobile drawer, footer controls show text labels instead of tooltips.
+- Text contrast ≥ 4.5:1; status never relies on colour alone. Small text uses `--ink`, `--ink-2` or
+  `--link`; `--muted` is only for icons, placeholders and decoration.
 - Errors are announced and linked from the summary; focus moves to the summary on a failed save.
 - Respect reduced motion; usable at 200 % zoom; usable down to 1280 × 720 and on tablets.
 

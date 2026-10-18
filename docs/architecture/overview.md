@@ -38,8 +38,11 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 | **Service** | All business rules: validation, calculations, status changes, activity log. Receives the actor. | `plans.Service.Create(ctx, actor, input)` |
 | **Repository** | Read and write records. An interface plus one implementation per storage. | `plans.Repository` → JSON store now, PostgreSQL later |
 
-- Shared platform code (small and boring): JSON helpers and the error format, ID generation, money
-  (exact decimals), clock (so tests can fix "today"), the JSON file store, demo sign-in middleware.
+- Shared platform code (small and boring, `internal/platform/`): JSON helpers and the error format, the
+  actor, readable IDs, record bookkeeping (version, created/updated), clock (so tests can fix "today"),
+  the JSON file store; money (exact decimals) arrives with the first feature that stores money (002).
+- The activity log and recycle bin core (`internal/history`) is created by feature 001 and used by every
+  feature; feature 011 adds its screens.
 - **Server is authoritative:** totals, remaining budgets, unassigned balance, spreads, currency
   conversion, goals, statuses and completeness are always computed in services and returned to the web
   app.
@@ -59,7 +62,8 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 
 - **Now:** a local JSON file store (one file per record type in `backend/data/`, git-ignored), written
   safely (write to a temporary file, then rename) and guarded by a lock so concurrent requests cannot
-  corrupt it.
+  corrupt it. Work runs in transactions (`store.Transactor`): all changes of one request — for example
+  a delete, its recycle-bin entry and its activity-log entry — are saved together or not at all.
 - **Later:** PostgreSQL. Each repository gets a PostgreSQL implementation; services and the web app do not
   change. To make that easy, records are relational in shape: each level is its own record type with a
   parent id, no deep nesting, ids that never change.
@@ -69,8 +73,9 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 ## 4. Sign-in and the actor
 
 - **Now (decision D-004):** a demo sign-in page. The user picks a seeded demo user (or types the e-mail
-  and the shared demo password). The API issues a session token; every request carries it; middleware
-  turns it into the **actor** (id, name) that services use for owners, approvals and the activity log.
+  and the shared demo password). The API issues a session in an HttpOnly cookie (only a hash of the
+  token is stored; sessions end after 12 hours without activity); middleware turns it into the **actor**
+  (id, name) that services use for owners, approvals and the activity log.
 - There are **no roles or permissions**: every signed-in user can do everything. Services still receive
   the actor, so adding a permission check later is a change in one place.
 - **Later:** Microsoft Entra ID single sign-on and role-based access (Shell's target architecture, see

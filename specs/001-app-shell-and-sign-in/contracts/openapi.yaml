@@ -1,0 +1,939 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    The contract between the NorthStar web app and the NorthStar API (constitution IV).
+    This file is the source of truth: the Go contract tests check every request and response against
+    it, and the web app's TypeScript types are generated from it.
+
+    Feature 001 adds health, demo sign-in, the current user and preferences, the activity-log and
+    recycle-bin core, and the developer sample records. Later features add their own paths here.
+
+    Conventions (feature 001 research R9 and R10):
+    - JSON with camelCase field names. Timestamps are UTC (RFC 3339). Calendar dates are YYYY-MM-DD.
+    - Lists answer an object with items and total.
+    - Every failure answers the Error object. Messages are written for users.
+    - Every update sends the version it started from; an out-of-date version answers 409 version_conflict.
+    - Deleting a business record answers the recycle-bin entry so the web app can offer Undo.
+    - Every response has the header Cache-Control no-store.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local API (development)
+security:
+  - sessionCookie: []
+tags:
+  - name: System
+    description: Health of the API
+  - name: Sign-in
+    description: Demo sign-in, only in local and development environments (decision D-004)
+  - name: Me
+    description: The signed-in person and their preferences
+  - name: History
+    description: Activity log and recycle bin (the mechanism every feature uses)
+  - name: Samples
+    description: Developer sample records, only in local and development environments
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Check that the API is running
+      security: []
+      responses:
+        "200":
+          description: The API is running.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/auth/demo-people:
+    get:
+      tags: [Sign-in]
+      operationId: getDemoPeople
+      summary: List the demo people and the shared demo password for the sign-in page
+      description: Only available when demo sign-in is enabled (local and development environments).
+      security: []
+      responses:
+        "200":
+          description: The active demo people, sorted by name, and the demo password. The list is empty when no demo data was loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoPeople"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/auth/sign-in:
+    post:
+      tags: [Sign-in]
+      operationId: signIn
+      summary: Sign in with a demo e-mail and the demo password
+      description: |
+        The e-mail is compared ignoring letter case and surrounding spaces; the password exactly.
+        On success the session cookie is set. Only available when demo sign-in is enabled.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInRequest"
+      responses:
+        "200":
+          description: Signed in. The session cookie is set.
+          headers:
+            Set-Cookie:
+              description: The HttpOnly session cookie northstar_session.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/auth/sign-out:
+    post:
+      tags: [Sign-in]
+      operationId: signOut
+      summary: Sign out (ends the session and clears the cookie)
+      description: Always succeeds, also when nobody is signed in.
+      security: []
+      responses:
+        "204":
+          description: Signed out.
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/me:
+    get:
+      tags: [Me]
+      operationId: getCurrentUser
+      summary: Who is signed in, with their preferences
+      responses:
+        "200":
+          description: The signed-in person.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/me/preferences:
+    patch:
+      tags: [Me]
+      operationId: updatePreferences
+      summary: Change the signed-in person's preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreferencesUpdate"
+      responses:
+        "200":
+          description: The preferences after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Preferences"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activity-log:
+    get:
+      tags: [History]
+      operationId: listActivityLog
+      summary: Activity-log entries, newest first
+      parameters:
+        - name: recordType
+          in: query
+          description: Only entries about this kind of record, for example sampleFolder.
+          schema:
+            type: string
+        - name: recordId
+          in: query
+          description: Only entries about this record, for example SF-1001.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: How many entries to return (1 to 200, default 50).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: The newest matching entries; total counts all matching entries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLogPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin:
+    get:
+      tags: [History]
+      operationId: listRecycleBin
+      summary: Everything in the recycle bin, newest first
+      responses:
+        "200":
+          description: The recycle-bin entries (without their stored records).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecycleBinPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin/{entryId}/undo:
+    post:
+      tags: [History]
+      operationId: undoDelete
+      summary: Undo a delete (within 2 minutes of the delete)
+      description: Puts back the record and everything that was under it exactly, with the same IDs, versions and statuses. Refused with name_taken when someone has meanwhile taken the name; the item then stays in the recycle bin.
+      parameters:
+        - $ref: "#/components/parameters/EntryId"
+      responses:
+        "200":
+          description: Restored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestoreResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin/{entryId}/restore:
+    post:
+      tags: [History]
+      operationId: restoreFromRecycleBin
+      summary: Restore a recycle-bin entry (its parent must exist)
+      description: Puts back the record and everything under it with the same IDs; status rules of domain model R14 apply, and a name that is taken gets the suffix (restored).
+      parameters:
+        - $ref: "#/components/parameters/EntryId"
+      responses:
+        "200":
+          description: Restored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestoreResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/sample-folders:
+    get:
+      tags: [Samples]
+      operationId: listSampleFolders
+      summary: All sample folders with their notes, sorted by name
+      responses:
+        "200":
+          description: The sample folders.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleFolderPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Samples]
+      operationId: createSampleFolder
+      summary: Create a sample folder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SampleFolderCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleFolder"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/sample-folders/{folderId}:
+    patch:
+      tags: [Samples]
+      operationId: updateSampleFolder
+      summary: Rename a sample folder
+      parameters:
+        - $ref: "#/components/parameters/FolderId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SampleFolderUpdate"
+      responses:
+        "200":
+          description: The folder after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleFolder"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Samples]
+      operationId: deleteSampleFolder
+      summary: Delete a sample folder and its notes (they go to the recycle bin)
+      parameters:
+        - $ref: "#/components/parameters/FolderId"
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/sample-folders/{folderId}/notes:
+    post:
+      tags: [Samples]
+      operationId: createSampleNote
+      summary: Add a note to a sample folder
+      parameters:
+        - $ref: "#/components/parameters/FolderId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SampleNoteCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleNote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/sample-notes/{noteId}:
+    delete:
+      tags: [Samples]
+      operationId: deleteSampleNote
+      summary: Delete a sample note (it goes to the recycle bin)
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: SN-1001
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: northstar_session
+      description: HttpOnly session cookie set by sign-in.
+
+  parameters:
+    EntryId:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: BIN-1001
+    FolderId:
+      name: folderId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: SF-1001
+
+  responses:
+    BadRequest:
+      description: The request is not valid (validation_failed lists every field problem; bad_request when the body cannot be read).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Not signed in (sign_in_required), session expired (session_expired) or sign-in failed (incorrect_credentials).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: The record or path does not exist (also the demo sign-in paths when demo sign-in is disabled).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: The request conflicts with the current state (version_conflict, restore_parent_first, undo_expired, already_resolved or name_taken).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Error:
+      description: Any other failure (for example internal_error).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message, fields]
+      properties:
+        code:
+          type: string
+          enum:
+            - validation_failed
+            - bad_request
+            - sign_in_required
+            - session_expired
+            - incorrect_credentials
+            - not_found
+            - version_conflict
+            - restore_parent_first
+            - undo_expired
+            - already_resolved
+            - name_taken
+            - internal_error
+        message:
+          type: string
+          description: Plain-language message for the user (never technical details).
+        fields:
+          type: array
+          description: Every field problem (validation_failed); always present, empty otherwise.
+          items:
+            $ref: "#/components/schemas/FieldError"
+        conflict:
+          $ref: "#/components/schemas/Conflict"
+        parent:
+          $ref: "#/components/schemas/RecordRef"
+        resolution:
+          $ref: "#/components/schemas/Resolution"
+
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: Name of the field in the request body, for example email.
+        message:
+          type: string
+          description: What is wrong and how to fix it, for example Enter your e-mail.
+
+    Resolution:
+      type: object
+      additionalProperties: false
+      description: How a recycle-bin entry left the bin, by whom and when (already_resolved).
+      required: [how, by, at]
+      properties:
+        how:
+          type: string
+          enum: [undone, restored]
+        by:
+          $ref: "#/components/schemas/ActorRef"
+        at:
+          type: string
+          format: date-time
+
+    Conflict:
+      type: object
+      additionalProperties: false
+      description: Who changed the record after the user opened it (version_conflict). The web app shows the time in the user's local time.
+      required: [changedBy, changedAt]
+      properties:
+        changedBy:
+          type: string
+          example: Daniel Okoro
+        changedAt:
+          type: string
+          format: date-time
+
+    RecordRef:
+      type: object
+      additionalProperties: false
+      required: [type, id, name]
+      properties:
+        type:
+          type: string
+          example: sampleFolder
+        id:
+          type: string
+          example: SF-1001
+        name:
+          type: string
+
+    ActorRef:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          example: U-1002
+        name:
+          type: string
+          example: Priya Raman
+
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, environment, demoSignIn]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        environment:
+          type: string
+          enum: [local, development, production]
+        demoSignIn:
+          type: boolean
+
+    DemoPerson:
+      type: object
+      additionalProperties: false
+      required: [id, name, email, jobTitle, initials]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        jobTitle:
+          type: string
+        initials:
+          type: string
+          example: PR
+
+    DemoPeople:
+      type: object
+      additionalProperties: false
+      required: [password, people]
+      properties:
+        password:
+          type: string
+          description: The shared demo password, shown on the sign-in page.
+          example: northstar
+        people:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoPerson"
+
+    SignInRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    Preferences:
+      type: object
+      additionalProperties: false
+      required: [theme, sidebarCollapsed]
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: system follows the computer's setting.
+        sidebarCollapsed:
+          type: boolean
+
+    PreferencesUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the preferences to change.
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: The server also checks the value and answers validation_failed for anything else.
+        sidebarCollapsed:
+          type: boolean
+
+    CurrentUser:
+      type: object
+      additionalProperties: false
+      required: [id, name, firstName, email, jobTitle, initials, preferences]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        firstName:
+          type: string
+        email:
+          type: string
+        jobTitle:
+          type: string
+        initials:
+          type: string
+        preferences:
+          $ref: "#/components/schemas/Preferences"
+
+    Change:
+      type: object
+      additionalProperties: false
+      required: [field, label, old, new, oldText, newText]
+      properties:
+        field:
+          type: string
+          example: name
+        label:
+          type: string
+          description: The field's name for people, fixed at the time.
+          example: Name
+        old:
+          description: The stored value before the change (any JSON value).
+        new:
+          description: The stored value after the change (any JSON value).
+        oldText:
+          type: string
+          description: The value before the change as people read it (Not filled in when empty).
+        newText:
+          type: string
+          description: The value after the change as people read it (Not filled in when empty).
+
+    ActivityLogEntry:
+      type: object
+      additionalProperties: false
+      required: [id, seq, at, actor, action, verb, recordType, recordTypeLabel, recordId, recordName, path, changes, comment, details]
+      properties:
+        id:
+          type: string
+          example: LOG-1001
+        seq:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        actor:
+          $ref: "#/components/schemas/ActorRef"
+        action:
+          type: string
+          enum: [created, changed, statusChanged, moved, copied, deleted, restored]
+          description: Category used for filters and the action chip (feature 011 adds more).
+        verb:
+          type: string
+          description: The plain verb of the sentence, for example created or published.
+          example: created
+        recordType:
+          type: string
+          example: sampleFolder
+        recordTypeLabel:
+          type: string
+          description: Mid-sentence name of the record type at the time.
+          example: sample folder
+        recordId:
+          type: string
+        recordName:
+          type: string
+        path:
+          type: array
+          description: The record's ancestors at the time, top level first (empty for top-level records).
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Change"
+        comment:
+          type: string
+          description: A reason the person gave; empty when none.
+        details:
+          type: string
+          description: Plain-text extra information, for example with 2 sample notes; empty when none.
+
+    ActivityLogPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityLogEntry"
+        total:
+          type: integer
+
+    ContentCount:
+      type: object
+      additionalProperties: false
+      required: [recordType, label, count]
+      properties:
+        recordType:
+          type: string
+          example: sampleNote
+        label:
+          type: string
+          description: Singular when count is 1, plural otherwise.
+          example: sample notes
+        count:
+          type: integer
+          minimum: 1
+
+    RecycleBinEntry:
+      type: object
+      additionalProperties: false
+      required: [id, recordType, recordTypeLabel, recordId, recordName, path, parent, deletedAt, deletedBy, contents]
+      properties:
+        id:
+          type: string
+          example: BIN-1001
+        recordType:
+          type: string
+        recordTypeLabel:
+          type: string
+          description: Mid-sentence name of the record type, for example sample folder.
+        recordId:
+          type: string
+        recordName:
+          type: string
+        path:
+          type: array
+          description: Where the record was when it was deleted, top level first.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        parent:
+          description: The record it belonged to when it was deleted (null for top-level records).
+          oneOf:
+            - $ref: "#/components/schemas/RecordRef"
+            - type: "null"
+        deletedAt:
+          type: string
+          format: date-time
+        deletedBy:
+          $ref: "#/components/schemas/ActorRef"
+        contents:
+          type: array
+          description: What was under it, counted by kind.
+          items:
+            $ref: "#/components/schemas/ContentCount"
+
+    RecycleBinPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecycleBinEntry"
+        total:
+          type: integer
+
+    DeleteResult:
+      type: object
+      additionalProperties: false
+      required: [recycleBinEntry]
+      properties:
+        recycleBinEntry:
+          $ref: "#/components/schemas/RecycleBinEntry"
+
+    RestoreResult:
+      type: object
+      additionalProperties: false
+      required: [recordType, recordTypeLabel, recordId, recordName, details]
+      properties:
+        recordType:
+          type: string
+        recordTypeLabel:
+          type: string
+        recordId:
+          type: string
+        recordName:
+          type: string
+          description: The name after the restore (it may have received the suffix (restored)).
+        details:
+          type: string
+          description: What the restore changed, for example a new name because the old one was taken; empty when nothing.
+
+    SampleNote:
+      type: object
+      additionalProperties: false
+      required: [id, folderId, title, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: SN-1001
+        folderId:
+          type: string
+        title:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    SampleFolder:
+      type: object
+      additionalProperties: false
+      required: [id, name, notes, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: SF-1001
+        name:
+          type: string
+        notes:
+          type: array
+          description: The folder's notes, oldest first.
+          items:
+            $ref: "#/components/schemas/SampleNote"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    SampleFolderPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SampleFolder"
+        total:
+          type: integer
+
+    SampleFolderCreate:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    SampleFolderUpdate:
+      type: object
+      additionalProperties: false
+      required: [name, version]
+      properties:
+        name:
+          type: string
+        version:
+          type: integer
+          description: The version the user started editing from.
+
+    SampleNoteCreate:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title:
+          type: string

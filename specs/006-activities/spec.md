@@ -189,8 +189,9 @@ undo the delete; check totals, statuses and the activity log at each step.
   the Ready to submit panel lists "Dates are outside the initiative's dates (…)".
 - A negative planned cost is refused ("Planned cost can't be negative."); 0.00 is a real value. Dates
   crossing the plan's year end are fine inside the initiative; multi-year linking is out of scope (D-017).
-- Two people save the same activity at once: the second save is refused with "Priya Raman changed this
-  activity at 10:42 — reload to see the changes", keeping the typed values on screen.
+- Two people save the same activity at once: the second save is refused with "Not saved — Priya Raman
+  changed this activity at 10:42", keeping the typed values on screen (shared behaviour of feature 001,
+  FR-029).
 
 ## Requirements *(mandatory)*
 
