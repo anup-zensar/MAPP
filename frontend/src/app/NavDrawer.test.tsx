@@ -3,16 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/test/render';
 import { NavDrawer } from './NavDrawer';
 import type { CurrentUser } from './useSession';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: true },
-};
+const PRIYA: CurrentUser = testUser({
+  preferences: { ...testUser().preferences, sidebarCollapsed: true },
+});
 
 /** Pretends the window is narrower than 768 px; widen() makes it 768 px or wider. */
 function fakeWindowWidth() {

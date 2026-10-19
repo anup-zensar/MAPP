@@ -6,26 +6,18 @@ import { routes } from './router';
 import { SessionProvider } from './SessionProvider';
 import { useSession } from './useSession';
 import type { CurrentUser } from './useSession';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
-const DANIEL: CurrentUser = {
+const DANIEL: CurrentUser = testUser({
   id: 'U-1003',
   name: 'Daniel Okoro',
   firstName: 'Daniel',
   email: 'daniel.okoro@northstar.demo',
   jobTitle: 'Marketing team leader',
   initials: 'DO',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+});
 
 const DEMO_PEOPLE = {
   password: 'northstar',

@@ -1,0 +1,87 @@
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.heading {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.attribute {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* The attribute a Settings preview is about. */
+.highlighted {
+  margin: -8px;
+  padding: 8px;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--blue) 8%, transparent);
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.note:empty {
+  display: none;
+}
+
+.readOnly {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.readOnlyLabel {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.readOnlyValue {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+/* ShellAttributeValues: one definition list per section. */
+.values {
+  display: grid;
+  grid-template-columns: minmax(120px, 220px) 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.pair {
+  display: contents;
+}
+
+.values dt {
+  color: var(--ink-2);
+}
+
+.values dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.dialogList {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}

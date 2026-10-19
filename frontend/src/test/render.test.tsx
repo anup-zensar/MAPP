@@ -8,16 +8,9 @@ import type { CurrentUser } from '@/app/useSession';
 import { Button, Tooltip, useToast } from '@/components';
 import { mockApi } from './mockApi';
 import { findMessages, renderRoutes, renderWithProviders } from './render';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 /** Uses every provider: the router, tooltips and messages. */
 function Page() {

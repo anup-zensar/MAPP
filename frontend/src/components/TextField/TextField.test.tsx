@@ -67,4 +67,23 @@ describe('TextField', () => {
 
     expect(screen.getByRole('textbox', { name: 'Name' })).not.toHaveAttribute('aria-invalid');
   });
+
+  it('explains the field in an ⓘ next to the label (feature 002)', () => {
+    render(<Field label="Region" name="region" tip="The region the money is spent in." />);
+
+    expect(screen.getByRole('button', { name: 'About Region' })).toBeInTheDocument();
+  });
+
+  it('offers suggestions that can still be ignored (feature 002, budget names)', () => {
+    render(<Field label="Budget name" name="budgetName" suggestions={['Europe', 'Asia']} />);
+
+    // An input with suggestions is a combobox for screen readers.
+    const input = screen.getByRole('combobox', { name: 'Budget name' });
+    const list = document.getElementById(input.getAttribute('list') ?? '');
+    expect(list?.tagName).toBe('DATALIST');
+    expect([...(list?.querySelectorAll('option') ?? [])].map((option) => option.value)).toEqual([
+      'Europe',
+      'Asia',
+    ]);
+  });
 });

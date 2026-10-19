@@ -1,6 +1,6 @@
 import { Ellipsis } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
-import { Fragment, useRef } from 'react';
+import { Fragment, useId, useRef } from 'react';
 import { cx } from '@/lib/cx';
 import { Button } from '../Button/Button';
 import { Tooltip } from '../Tooltip/Tooltip';
@@ -14,6 +14,11 @@ export interface ActionsMenuItem {
   tone?: 'danger';
   /** Draws a line above the item; Delete comes last, after a line (design system §6.1). */
   separatorBefore?: boolean;
+  /**
+   * A second, smaller line under the label, read with it (feature 003): "People are never
+   * deleted, so the history keeps their name."
+   */
+  hint?: string;
 }
 
 export interface ActionsMenuProps {
@@ -31,6 +36,7 @@ export interface ActionsMenuProps {
  */
 export function ActionsMenu({ label, items }: ActionsMenuProps) {
   const chosenAction = useRef<(() => void) | null>(null);
+  const hintId = useId();
 
   return (
     // Not modal, like every NorthStar menu: the rest of the page stays usable while it is open.
@@ -57,16 +63,23 @@ export function ActionsMenu({ label, items }: ActionsMenuProps) {
             action?.();
           }}
         >
-          {items.map((item) => (
+          {items.map((item, index) => (
             <Fragment key={item.label}>
               {item.separatorBefore && <DropdownMenu.Separator className={styles.separator} />}
               <DropdownMenu.Item
                 className={cx(styles.item, item.tone === 'danger' && styles.danger)}
+                aria-describedby={item.hint ? `${hintId}-${index}` : undefined}
                 onSelect={() => {
                   chosenAction.current = item.onSelect;
                 }}
               >
                 {item.label}
+                {item.hint && (
+                  // Out of the item's name; aria-describedby reads it as its description.
+                  <span id={`${hintId}-${index}`} className={styles.hint} aria-hidden="true">
+                    {item.hint}
+                  </span>
+                )}
               </DropdownMenu.Item>
             </Fragment>
           ))}

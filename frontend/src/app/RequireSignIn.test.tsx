@@ -4,16 +4,9 @@ import { mockApi } from '@/test/mockApi';
 import { renderRoutes } from '@/test/render';
 import { routes } from './router';
 import type { CurrentUser } from './useSession';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 const DEMO_PEOPLE = { password: 'northstar', people: [] };
 

@@ -1,21 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { CircleAlert } from 'lucide-react';
-import { useId, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { Button, FormErrorSummary, SidePanel, TextField, useToast } from '@/components';
-import type { FieldProblem } from '@/components';
-import { useUnsavedChanges } from '@/lib/useUnsavedChanges';
+import { FormPanel, problemOf, TextField, useToast } from '@/components';
+import type { FieldProblem, SaveFailure } from '@/components';
+import { useFormatters } from '@/lib/useFormatters';
 import { fetchLatestFolder, useAddNote, useCreateFolder, useRenameFolder } from './sampleApi';
 import type { SampleFolder } from './sampleApi';
-import styles from './SamplePanels.module.css';
-
-/** A failed save that is not about one field, shown above the form (FR-020). */
-interface SaveFailure {
-  message: string;
-  /** What the person can do now, after a conflict. */
-  nextStep?: string;
-}
 
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
@@ -33,6 +23,7 @@ export interface FolderPanelProps {
 export function FolderPanel({ folder, onClose }: FolderPanelProps) {
   const queryClient = useQueryClient();
   const { show } = useToast();
+  const { dateFormat } = useFormatters();
   const createFolder = useCreateFolder();
   const renameFolder = useRenameFolder();
   // The edit-form rule (plan "Shared hooks"): the folder, its version included, is copied into the
@@ -79,7 +70,7 @@ export function FolderPanel({ folder, onClose }: FolderPanelProps) {
         setVersion(latest.version);
       }
       setFailure({
-        message: conflictMessage(apiError, 'sample folder'),
+        message: conflictMessage(apiError, 'sample folder', dateFormat),
         nextStep: CONFLICT_NEXT_STEP,
       });
       return;
@@ -160,95 +151,4 @@ export function NotePanel({ folder, onClose }: NotePanelProps) {
       />
     </FormPanel>
   );
-}
-
-interface FormPanelProps {
-  title: string;
-  /** Something was typed that is not saved yet. */
-  isDirty: boolean;
-  /** A save is on its way; another Save is ignored meanwhile. */
-  saving: boolean;
-  /** The field problems of the last save, all at once. */
-  problems: FieldProblem[];
-  failure: SaveFailure | null;
-  onSave: () => void;
-  onClose: () => void;
-  /** The form's fields. */
-  children: ReactNode;
-}
-
-/**
- * The frame both panels share (design system §6.2): a side panel with the form, Save and Cancel
- * at the bottom, a failure and the error summary above the fields, and the "Discard changes?"
- * question before typed changes are lost — on Cancel, Close, Escape, a click beside the panel,
- * or when leaving the page.
- */
-function FormPanel({
-  title,
-  isDirty,
-  saving,
-  problems,
-  failure,
-  onSave,
-  onClose,
-  children,
-}: FormPanelProps) {
-  const { dialog, confirmDiscard } = useUnsavedChanges(isDirty);
-  // Save sits in the panel's footer, outside the form; the form attribute connects them.
-  const formId = useId();
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    // A second Save while saving is ignored; nothing is greyed out.
-    if (!saving) {
-      onSave();
-    }
-  }
-
-  return (
-    <>
-      <SidePanel
-        open
-        onOpenChange={(open) => {
-          if (!open) {
-            confirmDiscard(onClose);
-          }
-        }}
-        title={title}
-        footer={
-          <>
-            <Button type="submit" form={formId} variant="primary">
-              Save
-            </Button>
-            <Button onClick={() => confirmDiscard(onClose)}>Cancel</Button>
-          </>
-        }
-      >
-        <form id={formId} noValidate aria-busy={saving} className={styles.form} onSubmit={submit}>
-          {failure && <FailureMessage failure={failure} />}
-          <FormErrorSummary errors={problems} />
-          {children}
-        </form>
-      </SidePanel>
-      {dialog}
-    </>
-  );
-}
-
-/** A failure that is not about one field, such as a conflict; screen readers hear it at once. */
-function FailureMessage({ failure }: { failure: SaveFailure }) {
-  return (
-    <div role="alert" className={styles.failure}>
-      <CircleAlert />
-      <div>
-        <p className={styles.failureMessage}>{failure.message}</p>
-        {failure.nextStep && <p>{failure.nextStep}</p>}
-      </div>
-    </div>
-  );
-}
-
-/** The problem with one field, shown under it. */
-function problemOf(problems: FieldProblem[], field: string): string | undefined {
-  return problems.find((problem) => problem.field === field)?.message;
 }

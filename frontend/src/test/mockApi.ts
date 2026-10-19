@@ -47,6 +47,18 @@ export interface MockedApi {
   bodiesOf(key: string): unknown[];
 }
 
+/**
+ * The app frame's background requests (feature 008: the sidebar's Approvals count and the bell's
+ * notifications, asked on every signed-in page). mockApi answers them with "nothing waiting"
+ * unless the test gives its own answer, so page tests of any feature need not mock them.
+ */
+export const FRAME_ANSWERS: Record<string, MockAnswer> = {
+  'GET /api/approvals/summary': {
+    body: { waitingForMe: 0, allOpen: 0, approvedThisMonth: 0, declinedThisMonth: 0 },
+  },
+  'GET /api/notifications': { body: { items: [], total: 0, unread: 0 } },
+};
+
 /** Requests that had no canned answer, as "METHOD /path"; read by the test setup. */
 const unmockedRequests: string[] = [];
 
@@ -65,7 +77,7 @@ export function mockApi(handlers: Record<string, MockHandler>): MockedApi {
       body: parseBody(await request.clone().text()),
     });
 
-    const handler = handlers[key];
+    const handler = handlers[key] ?? FRAME_ANSWERS[key];
     if (!handler) {
       unmockedRequests.push(key);
       return jsonResponse({ status: 501, body: { message: `mockApi has no answer for ${key}` } });

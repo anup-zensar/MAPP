@@ -3,19 +3,11 @@ import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/test/mockApi';
 import { renderRoutes } from '@/test/render';
-import { MAIN_ITEMS, MORE_ITEMS } from './navigation';
+import { testUser } from '@/test/users';
+import { COMING_SOON_SECTIONS, MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import { routes } from './router';
-import type { CurrentUser } from './useSession';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA = testUser();
 
 const HEALTH_LOCAL = { status: 'ok', environment: 'local', demoSignIn: true };
 
@@ -62,7 +54,16 @@ describe('routes', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
-  it.each([...MAIN_ITEMS, ...MORE_ITEMS].map((item) => [item.label, item.path]))(
+  // Home and the sections still to come; each section of features 002–008 is checked in the
+  // routes.test.tsx of its feature folder, which its feature keeps up to date.
+  it.each(
+    [...MAIN_ITEMS, ...MORE_ITEMS]
+      .filter(
+        (item) =>
+          item.path === '/' || COMING_SOON_SECTIONS.some((section) => section.path === item.path),
+      )
+      .map((item) => [item.label, item.path]),
+  )(
     'opens %s from the sidebar address %s, highlighted, with its tab title (US2 scenario 1, SC-003)',
     async (label, path) => {
       mockApi({ 'GET /api/me': { body: PRIYA } });
@@ -79,16 +80,6 @@ describe('routes', () => {
     },
   );
 
-  it('opens My profile, which is not in the sidebar (FR-012)', async () => {
-    mockApi({ 'GET /api/me': { body: PRIYA } });
-    renderRoutes(routes, { route: '/profile' });
-
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'My profile' }),
-    ).toBeInTheDocument();
-    expect(document.title).toBe('My profile · NorthStar');
-  });
-
   it.each([
     ['/', 'Home'],
     ['/plans', 'Plans'],
@@ -98,6 +89,8 @@ describe('routes', () => {
     ['/recycle-bin', 'Recycle bin'],
     ['/activity-log', 'Activity log'],
     ['/profile', 'My profile'],
+    ['/plans/P-1001/campaigns/C-1001', 'Plans'],
+    ['/activities/A-1001/line-items/new', 'New line item'],
     ['/dev/sample-records', 'Sample records'],
     ['/dev/components', 'Shared building blocks'],
   ])(

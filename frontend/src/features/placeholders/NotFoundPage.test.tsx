@@ -5,16 +5,9 @@ import type { CurrentUser } from '@/app/useSession';
 import { mockApi } from '@/test/mockApi';
 import { renderRoutes, renderWithProviders } from '@/test/render';
 import { NotFoundPage } from './NotFoundPage';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 const BANNER = 'Demo environment — sign-in and data are for demonstration only';
 

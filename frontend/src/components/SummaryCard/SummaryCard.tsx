@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cx } from '@/lib/cx';
 import { InfoTip } from '../InfoTip/InfoTip';
 import type { StatusTone } from '../StatusChip/StatusChip';
@@ -14,10 +15,15 @@ export interface SummaryCardProps {
   tone?: StatusTone;
   /** The complete value when `value` is shortened ("$1,250,000.00" for "$1.25M"). */
   fullValue?: string;
+  /**
+   * A line under the value (feature 004): "Over-allocated by $12,500.00", "No plan budget set",
+   * or a budget-used ProgressBar.
+   */
+  detail?: ReactNode;
 }
 
 /** One of the row of summary cards under a page header (design system §2). */
-export function SummaryCard({ label, value, tip, tone, fullValue }: SummaryCardProps) {
+export function SummaryCard({ label, value, tip, tone, fullValue, detail }: SummaryCardProps) {
   const isShortened = fullValue !== undefined && fullValue !== String(value);
 
   return (
@@ -38,6 +44,7 @@ export function SummaryCard({ label, value, tip, tone, fullValue }: SummaryCardP
           value
         )}
       </p>
+      {detail && <div className={styles.detail}>{detail}</div>}
     </div>
   );
 }

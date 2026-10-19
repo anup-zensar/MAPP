@@ -1,0 +1,33 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The full name wraps; it is never cut short (feature 003, FR-017). */
+.name {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.sm .name {
+  font-size: 13.5px;
+}
+
+.md .name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.detail {
+  color: var(--ink-2);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

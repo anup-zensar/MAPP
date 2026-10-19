@@ -1,0 +1,59 @@
+/*
+ * The look of text-like inputs (TextField's), shared by MoneyField, DecimalField, TextAreaField,
+ * ChoiceField's select, Combobox and DateRangeField.
+ */
+.input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: var(--blue);
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.input:disabled,
+.input[aria-disabled='true'] {
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  cursor: not-allowed;
+}
+
+.invalid {
+  border-color: var(--status-problem);
+}
+
+/* An input with a unit inside on the right: "USD", "%", "per USD". */
+.withUnit {
+  position: relative;
+}
+
+.withUnit .input {
+  padding-right: 64px;
+}
+
+.unit {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  color: var(--ink-2);
+  font-size: 13px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+/* Amounts and numbers line up on the right with tabular figures (design system §4). */
+.numeric {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

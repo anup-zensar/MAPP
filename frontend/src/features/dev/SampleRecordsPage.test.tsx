@@ -7,21 +7,14 @@ import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { SampleRecordsPage } from './SampleRecordsPage';
+import { testUser } from '@/test/users';
 
 type SampleFolder = components['schemas']['SampleFolder'];
 type SampleNote = components['schemas']['SampleNote'];
 type RecycleBinEntry = components['schemas']['RecycleBinEntry'];
 type ActivityLogEntry = components['schemas']['ActivityLogEntry'];
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 const PRIYA_REF = { id: 'U-1002', name: 'Priya Raman' };
 const DANIEL_REF = { id: 'U-1003', name: 'Daniel Okoro' };

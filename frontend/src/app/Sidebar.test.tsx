@@ -5,20 +5,13 @@ import { renderWithProviders } from '@/test/render';
 import { Sidebar } from './Sidebar';
 import styles from './Sidebar.module.css';
 import type { CurrentUser } from './useSession';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 const COLLAPSED: CurrentUser = {
   ...PRIYA,
-  preferences: { theme: 'system', sidebarCollapsed: true },
+  preferences: { ...PRIYA.preferences, sidebarCollapsed: true },
 };
 
 function mainNavigation() {
@@ -35,7 +28,8 @@ describe('Sidebar', () => {
     renderWithProviders(<Sidebar />, { user: PRIYA });
 
     const links = within(mainNavigation()).getAllByRole('link');
-    expect(links.map((link) => link.textContent)).toEqual([
+    // Trimmed: a link with a badge (Approvals, feature 008) has a space before it.
+    expect(links.map((link) => link.textContent?.trim())).toEqual([
       'Home',
       'Plans',
       'Approvals',
@@ -48,7 +42,7 @@ describe('Sidebar', () => {
     expect(
       within(more)
         .getAllByRole('link')
-        .map((link) => link.textContent),
+        .map((link) => link.textContent?.trim()),
     ).toEqual(['Settings', 'Recycle bin', 'Activity log']);
     expect(within(mainNavigation()).getByRole('link', { name: 'Plans' })).toHaveAttribute(
       'href',

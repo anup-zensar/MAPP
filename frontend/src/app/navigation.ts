@@ -2,6 +2,9 @@
  * The sections of NorthStar: their names, addresses and sidebar icons (design system §2), and —
  * until a later feature builds a section — the sentence its "Coming soon" page shows (FR-015).
  * A feature that builds a section removes its sentence and gives it a real page in router.tsx.
+ *
+ * Plans (004), Approvals (008), Settings (002) and My profile (003) have their pages (stubs until
+ * those features replace them); All work (010), Recycle bin and Activity log (011) come later.
  */
 import {
   CircleCheckBig,
@@ -14,12 +17,19 @@ import {
   UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { ComponentType } from 'react';
+import { ApprovalsNavBadge } from '@/features/approvals/ApprovalsNavBadge';
 
 /** A page people reach from the sidebar or the account menu. */
 export interface NavItem {
   label: string;
   path: string;
   icon: LucideIcon;
+  /**
+   * A count shown inside the sidebar link, after its label (feature 008: Approvals "3 waiting for
+   * you"); `collapsed` is the icon rail.
+   */
+  Badge?: ComponentType<{ collapsed: boolean }>;
 }
 
 /** A section a later feature builds; until then its page says in one sentence what it will do. */
@@ -29,19 +39,13 @@ export interface ComingSoonSection extends NavItem {
 
 const HOME: NavItem = { label: 'Home', path: '/', icon: House };
 
-const PLANS: ComingSoonSection = {
-  label: 'Plans',
-  path: '/plans',
-  icon: ClipboardList,
-  comingSoon:
-    "Create yearly marketing plans, give them budgets and publish them when they're ready.",
-};
+const PLANS: NavItem = { label: 'Plans', path: '/plans', icon: ClipboardList };
 
-const APPROVALS: ComingSoonSection = {
+const APPROVALS: NavItem = {
   label: 'Approvals',
   path: '/approvals',
   icon: CircleCheckBig,
-  comingSoon: 'Approve or decline the activities waiting for you, and follow the ones you sent.',
+  Badge: ApprovalsNavBadge,
 };
 
 const ALL_WORK: ComingSoonSection = {
@@ -52,13 +56,7 @@ const ALL_WORK: ComingSoonSection = {
     'See every campaign, initiative, activity and line item across plans as a grid, a calendar or a budget view.',
 };
 
-const SETTINGS: ComingSoonSection = {
-  label: 'Settings',
-  path: '/settings',
-  icon: Settings,
-  comingSoon:
-    'Set up people and teams, models, activity types, Shell attributes, approval workflows, currencies and finance budget items.',
-};
+const SETTINGS: NavItem = { label: 'Settings', path: '/settings', icon: Settings };
 
 const RECYCLE_BIN: ComingSoonSection = {
   label: 'Recycle bin',
@@ -75,12 +73,7 @@ const ACTIVITY_LOG: ComingSoonSection = {
 };
 
 /** My profile: reached from the account menu, not from the sidebar. */
-export const MY_PROFILE: ComingSoonSection = {
-  label: 'My profile',
-  path: '/profile',
-  icon: UserRound,
-  comingSoon: 'See your details and teams, and choose how dates and money are shown to you.',
-};
+export const MY_PROFILE: NavItem = { label: 'My profile', path: '/profile', icon: UserRound };
 
 /** The sidebar's main group, in order. */
 export const MAIN_ITEMS: NavItem[] = [HOME, PLANS, APPROVALS, ALL_WORK];
@@ -89,12 +82,4 @@ export const MAIN_ITEMS: NavItem[] = [HOME, PLANS, APPROVALS, ALL_WORK];
 export const MORE_ITEMS: NavItem[] = [SETTINGS, RECYCLE_BIN, ACTIVITY_LOG];
 
 /** Every section that shows a "Coming soon" page for now. */
-export const COMING_SOON_SECTIONS: ComingSoonSection[] = [
-  PLANS,
-  APPROVALS,
-  ALL_WORK,
-  SETTINGS,
-  RECYCLE_BIN,
-  ACTIVITY_LOG,
-  MY_PROFILE,
-];
+export const COMING_SOON_SECTIONS: ComingSoonSection[] = [ALL_WORK, RECYCLE_BIN, ACTIVITY_LOG];

@@ -1,0 +1,67 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.table th {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.shareColumn {
+  width: 160px;
+}
+
+.table th.shareColumn {
+  text-align: right;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.complete,
+.incomplete {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.complete {
+  color: var(--status-positive-text);
+}
+
+.incomplete {
+  color: var(--status-problem-text);
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.note:empty {
+  display: none;
+}

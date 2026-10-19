@@ -36,14 +36,20 @@ src/
                 layouts, sidebar, account menu, session (SessionProvider, useSession) and theme
   components/   shared building blocks (Button, PageHeader, Card, SidePanel, ConfirmDialog, Toast, …):
                 one folder per component, all exported from components/index.ts
-  features/     the pages of each area: sign-in/, home/, placeholders/ (Coming soon, Page not found),
-                dev/ (the developer pages)
-  api/          client.ts (api and call()), errors.ts (ApiError and its messages) and schema.d.ts —
-                generated from the contract: never edit it by hand
-  lib/          small helpers: format.ts (dates and money), safeNext.ts, usePageTitle, useUndoableDelete,
+  features/     the pages of each area: sign-in/, home/, placeholders/ (Coming soon, Page not found,
+                and BuildingPage — the stub of a page still being built), dev/ (the developer pages),
+                and the Plan module's settings/, people/, plans/, campaigns/, activities/, line-items/,
+                approvals/, approval-workflows/, notifications/ (002–008)
+  api/          client.ts (api and call()), errors.ts (ApiError and its messages), settingsQueries.ts
+                (Settings read hooks) and schema.d.ts — generated from the contract: never edit it by hand
+  lib/          small helpers: format.ts (dates, date ranges, relative times and money), decimal.ts
+                (typed amounts, percentages, rates — exact, with BigInt), text.ts, waterfall.ts,
+                recordLinks.ts (the address of every planning record), useFormatters (dates and money
+                for the signed-in person), safeNext.ts, usePageTitle, useUndoableDelete,
                 useUnsavedChanges, cx
   styles/       tokens.css (every colour and size, light and dark) and global.css
-  test/         test helpers: setup.ts, mockApi.ts, render.tsx
+  test/         test helpers: setup.ts, mockApi.ts, render.tsx, users.ts (testUser()) and
+                attributeForms.ts (Shell attribute forms)
 e2e/            Playwright end-to-end tests (*.spec.ts) and their helpers (fixtures.ts)
 ```
 
@@ -71,8 +77,12 @@ Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
 
 - **Fake API.** `mockApi({ 'GET /api/me': { body: priya }, 'POST /api/auth/sign-out': { status: 204 } })`
   answers each `"METHOD /path"`; a function as the answer covers special cases (a slow answer, a network
-  failure). A request without an answer **fails the test**. To see what the code sent, keep what
-  `mockApi` returns: `api.requests`, or `api.bodiesOf('POST /api/auth/sign-in')` for one endpoint.
+  failure). A request without an answer **fails the test** — except the app frame's background
+  requests (`FRAME_ANSWERS`: the Approvals count and the notifications, answered "nothing waiting"
+  unless the test answers them). To see what the code sent, keep what `mockApi` returns:
+  `api.requests`, or `api.bodiesOf('POST /api/auth/sign-in')` for one endpoint.
+- **People.** `testUser(overrides)` (`src/test/users.ts`) is a complete signed-in person (Priya Raman);
+  `src/test/attributeForms.ts` has Shell attribute forms for form tests.
 - **Rendering** (`src/test/render.tsx`). Both helpers return `{ router, queryClient, user }`:
   `router.state.location` is the current address, `user` clicks and types.
   - `renderWithProviders(ui, { route, user, path })` shows one page with the app's providers. `user` is the
@@ -80,6 +90,10 @@ Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
     other addresses show the stand-ins "Sign-in page" and "Another page".
   - `renderRoutes(routes, { route, user })` renders the app's real routes. Without `user`, the app asks
     `GET /api/me` as on a real page load, so mock it.
+  - `renderApp(path, answers)` (`src/test/app.tsx`) opens the whole app at an address as `testUser()`,
+    with `answers` for the page's requests; `expectCurrentSection('Plans')` checks the sidebar. Each
+    feature folder's `routes.test.tsx` uses them; it stands in for other features' parts with
+    `vi.mock`, so their changes never break it.
 - **Toast buttons.** `await findMessages()` before clicking a button in a message (Try again, Undo): the
   messages area takes clicks only a moment after the text appears.
 - **After a navigation, wait in two steps**: first for the address,

@@ -4,6 +4,7 @@ import { api, call } from '@/api/client';
 import { ApiError, resolvedMessage } from '@/api/errors';
 import type { components } from '@/api/schema';
 import { useToast } from '@/components';
+import { useFormatters } from './useFormatters';
 
 type DeleteResult = components['schemas']['DeleteResult'];
 type RecycleBinEntry = components['schemas']['RecycleBinEntry'];
@@ -42,6 +43,7 @@ export function useUndoableDelete({
 }: UndoableDeleteOptions): (result: DeleteResult) => void {
   const queryClient = useQueryClient();
   const { show } = useToast();
+  const { dateFormat } = useFormatters();
 
   async function undo(entry: RecycleBinEntry) {
     try {
@@ -66,12 +68,12 @@ export function useUndoableDelete({
       return;
     }
     if (failure.kind === 'alreadyResolved') {
-      // Who brought it back, and when, in the person's own time.
-      show({ message: resolvedMessage(failure, entry.recordName) });
+      // Who brought it back, and when, in the person's own time and date format (feature 003).
+      show({ message: resolvedMessage(failure, entry.recordName, dateFormat) });
       return;
     }
-    // "Restore 'Ideas' first" and the other refusals are final; a server that cannot be reached,
-    // or failed, may work the next time.
+    // "Restore 'Ideas' first", cannot_restore (feature 002) and the other refusals are final, with
+    // the API's message; a server that cannot be reached, or failed, may work the next time.
     const mayWorkLater = failure.kind === 'unreachable' || failure.kind === 'other';
     show({
       message: failure.message,

@@ -118,4 +118,27 @@ describe('ActionsMenu', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     await waitFor(() => expect(menuButton()).toHaveFocus());
   });
+
+  it('shows an item’s hint under its label and reads it with the item (feature 003)', async () => {
+    const user = userEvent.setup();
+    render(
+      <ActionsMenu
+        label="Priya Raman"
+        items={[
+          {
+            label: 'Deactivate',
+            hint: 'People are never deleted, so the history keeps their name.',
+            onSelect: vi.fn(),
+          },
+        ]}
+      />,
+      { wrapper: TooltipProvider },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Priya Raman' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Deactivate' })).toHaveAccessibleDescription(
+      'People are never deleted, so the history keeps their name.',
+    );
+  });
 });

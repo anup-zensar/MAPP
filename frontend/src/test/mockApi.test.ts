@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mockApi, takeUnmockedRequests } from './mockApi';
+import { FRAME_ANSWERS, mockApi, takeUnmockedRequests } from './mockApi';
 
 const ORIGIN = window.location.origin;
 
@@ -70,6 +70,17 @@ describe('mockApi', () => {
     expect(response.status).toBe(501);
     // Taking them here keeps this test green; normally the setup's afterEach reports them.
     expect(takeUnmockedRequests()).toEqual(['GET /api/sample-folders']);
+    expect(takeUnmockedRequests()).toEqual([]);
+  });
+
+  it('answers the app frame’s background requests unless the test answers them itself', async () => {
+    mockApi({ 'GET /api/notifications': { body: { items: [], total: 3, unread: 3 } } });
+
+    const summary = await fetch(`${ORIGIN}/api/approvals/summary`);
+    const notifications = await fetch(`${ORIGIN}/api/notifications`);
+
+    expect(await summary.json()).toEqual(FRAME_ANSWERS['GET /api/approvals/summary'].body);
+    expect(await notifications.json()).toEqual({ items: [], total: 3, unread: 3 });
     expect(takeUnmockedRequests()).toEqual([]);
   });
 });

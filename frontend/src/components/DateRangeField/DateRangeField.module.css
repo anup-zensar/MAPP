@@ -1,0 +1,47 @@
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.date {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--status-problem-text);
+  font-size: 12.5px;
+}
+
+.error svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+/* A warning that does not block saving: amber icon, the text in ink. */
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--ink);
+}
+
+.warning svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--status-review);
+}

@@ -1,6 +1,7 @@
 import { CircleAlert, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { cx } from '@/lib/cx';
+import { InfoTip } from '../InfoTip/InfoTip';
 import { Tooltip } from '../Tooltip/Tooltip';
 import styles from './TextField.module.css';
 
@@ -20,6 +21,13 @@ export interface TextFieldProps {
   type?: 'text' | 'email' | 'password';
   /** The browser's autofill hint, for example "username" or "current-password". */
   autoComplete?: string;
+  /** A plain explanation in an ⓘ tip next to the label (Shell attributes' help text). */
+  tip?: string;
+  /**
+   * Values the browser offers while typing, which can still be ignored (a <datalist>): the budget
+   * names of a year on the finance budget item form (feature 002).
+   */
+  suggestions?: string[];
 }
 
 /**
@@ -38,12 +46,15 @@ export function TextField({
   maxLength,
   type = 'text',
   autoComplete,
+  tip,
+  suggestions,
 }: TextFieldProps) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
   const markingId = `${name}-marking`;
   const hintId = `${name}-hint`;
   const errorId = `${name}-error`;
+  const suggestionsId = `${name}-suggestions`;
   const describedBy = [marking && markingId, hint && hintId, error && errorId]
     .filter(Boolean)
     .join(' ');
@@ -54,6 +65,7 @@ export function TextField({
         <label htmlFor={name} className={styles.label}>
           {label}
         </label>
+        {tip && <InfoTip label={label} text={tip} />}
         {marking && (
           <span id={markingId} className={styles.marking}>
             {marking}
@@ -74,6 +86,7 @@ export function TextField({
           onChange={(event) => onChange(event.target.value)}
           maxLength={maxLength}
           autoComplete={autoComplete}
+          list={suggestions ? suggestionsId : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
           className={cx(styles.input, isPassword && styles.withEye, error && styles.invalid)}
@@ -83,6 +96,13 @@ export function TextField({
             pressed={showPassword}
             onToggle={() => setShowPassword((shown) => !shown)}
           />
+        )}
+        {suggestions && (
+          <datalist id={suggestionsId}>
+            {suggestions.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
         )}
       </div>
       {error && (

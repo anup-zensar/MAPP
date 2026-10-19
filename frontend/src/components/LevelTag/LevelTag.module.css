@@ -1,0 +1,31 @@
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.plan {
+  background: color-mix(in srgb, var(--level-plan) 12%, transparent);
+}
+
+.campaign {
+  background: color-mix(in srgb, var(--level-campaign) 12%, transparent);
+}
+
+.initiative {
+  background: color-mix(in srgb, var(--level-initiative) 12%, transparent);
+}
+
+.activity {
+  background: color-mix(in srgb, var(--level-activity) 12%, transparent);
+}
+
+.lineItem {
+  background: color-mix(in srgb, var(--level-line-item) 12%, transparent);
+}

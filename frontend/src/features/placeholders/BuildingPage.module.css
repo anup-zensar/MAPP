@@ -1,0 +1,9 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.text {
+  color: var(--ink-2);
+}

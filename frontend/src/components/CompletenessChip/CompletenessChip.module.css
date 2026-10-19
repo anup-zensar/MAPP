@@ -12,6 +12,18 @@
   white-space: nowrap;
 }
 
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* A counted "items below" chip that is not a control. */
+.attention {
+  background: color-mix(in srgb, var(--status-problem) 12%, transparent);
+  color: var(--status-problem-text);
+}
+
 .complete {
   background: color-mix(in srgb, var(--status-positive) 12%, transparent);
   color: var(--status-positive-text);
@@ -60,11 +72,13 @@
   text-align: left;
 }
 
-button.field {
+button.field,
+a.field {
   color: var(--link);
   cursor: pointer;
 }
 
-button.field:hover {
+button.field:hover,
+a.field:hover {
   background: var(--hover);
 }

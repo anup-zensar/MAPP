@@ -131,6 +131,11 @@ describe('call()', () => {
     ['undo_expired', 409, 'undoExpired'],
     ['already_resolved', 409, 'alreadyResolved'],
     ['name_taken', 409, 'nameTaken'],
+    ['in_use', 409, 'inUse'],
+    ['cannot_restore', 409, 'cannotRestore'],
+    ['not_allowed', 409, 'notAllowed'],
+    ['not_ready', 409, 'notReady'],
+    ['parent_deleted_permanently', 409, 'parentDeletedPermanently'],
     ['internal_error', 500, 'other'],
   ] as const)('turns the code %s (%i) into the kind %s', async (code, status, kind) => {
     mockApi({
@@ -142,6 +147,24 @@ describe('call()', () => {
         api.POST('/api/recycle-bin/{entryId}/undo', { params: { path: { entryId: 'BIN-1001' } } }),
       ),
     ).rejects.toMatchObject({ kind, message: 'A message.', status });
+  });
+});
+
+describe('ApiError.missing (feature 004, not_ready)', () => {
+  it('carries the needed fields grouped by record, and is empty for other errors', () => {
+    const missing = [
+      {
+        record: { type: 'plan', id: 'P-1001', name: 'FY2026 Lubricants Europe' },
+        fields: [{ field: 'ownerId', label: 'Owner' }],
+      },
+    ];
+    const notReady = ApiError.fromBody(
+      409,
+      errorBody('not_ready', 'Publish needs 1 field', { missing }),
+    );
+
+    expect(notReady).toMatchObject({ kind: 'notReady', missing });
+    expect(new ApiError('other').missing).toEqual([]);
   });
 });
 
@@ -267,6 +290,17 @@ describe('messages with a time', () => {
     );
     expect(resolvedMessage(resolvedError('undone', '2026-03-10T16:45:00Z'), 'Ideas')).toBe(
       "'Ideas' is no longer in the recycle bin — Priya Raman undid the delete on 10 Mar 2026 at 16:45",
+    );
+  });
+
+  it('writes the date in the person’s date format (feature 003, FR-024)', () => {
+    expect(conflictMessage(conflictError('2026-03-11T14:32:00Z'), 'person', 'DD/MM/YYYY')).toBe(
+      'Not saved — Daniel Okoro changed this person on 11/03/2026 at 14:32',
+    );
+    expect(
+      resolvedMessage(resolvedError('restored', '2026-03-10T16:45:00Z'), 'Ideas', 'YYYY-MM-DD'),
+    ).toBe(
+      "'Ideas' is no longer in the recycle bin — Priya Raman restored it on 2026-03-10 at 16:45",
     );
   });
 

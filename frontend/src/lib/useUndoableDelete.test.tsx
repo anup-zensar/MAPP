@@ -6,18 +6,11 @@ import type { CurrentUser } from '@/app/useSession';
 import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { useUndoableDelete } from './useUndoableDelete';
+import { testUser } from '@/test/users';
 
 type DeleteResult = components['schemas']['DeleteResult'];
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 /** The API's answer to deleting the sample folder "Ideas", which held two notes. */
 const IDEAS_DELETED: DeleteResult = {

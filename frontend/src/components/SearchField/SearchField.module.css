@@ -1,0 +1,68 @@
+.search {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-2);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.input {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 40px 7px 36px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: var(--blue);
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+/* The browser's own clear button would sit next to ours. */
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.clear {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.clear:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.clear svg {
+  width: 16px;
+  height: 16px;
+}

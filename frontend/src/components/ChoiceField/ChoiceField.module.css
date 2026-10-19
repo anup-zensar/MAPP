@@ -1,0 +1,30 @@
+.select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.box input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.box label {
+  cursor: pointer;
+}

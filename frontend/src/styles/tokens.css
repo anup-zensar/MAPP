@@ -65,6 +65,17 @@
   --level-activity: #e87ba4;
   --level-line-item: #86868b;
 
+  /* Team colours (feature 003, D-025): the decorative dot of a team pill, the same in both themes.
+     The team's name is always written next to it. */
+  --team-blue: #2a78d6;
+  --team-violet: #6e56cf;
+  --team-teal: #12a594;
+  --team-magenta: #d6409f;
+  --team-orange: #e5701a;
+  --team-green: #2f9e44;
+  --team-slate: #5b6b7a;
+  --team-gold: #c79400;
+
   /* Layers above the page */
   --overlay: rgba(0, 0, 0, 0.3); /* behind dialogs, side panels and the menu drawer */
   --tooltip-bg: #1d1d1f;

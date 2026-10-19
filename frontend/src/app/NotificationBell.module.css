@@ -7,19 +7,29 @@
   box-shadow: var(--shadow-md);
 }
 
-.title {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--hairline);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
+.bell {
+  position: relative;
+  display: inline-flex;
 }
 
-.empty {
-  padding: 28px 16px;
-  color: var(--ink-2);
-  font-size: 13px;
-  text-align: center;
+.labelledBell {
+  display: flex;
+  width: 100%;
+}
+
+/* The unread count sits on the bell's corner (in the drawer: at the end of the row). */
+.count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: flex;
+  pointer-events: none;
+}
+
+.labelledBell .count {
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
 }
 
 /* In the menu drawer: a full-width row with the icon and the word. "button.labelled" is more

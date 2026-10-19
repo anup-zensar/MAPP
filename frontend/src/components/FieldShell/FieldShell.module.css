@@ -1,0 +1,77 @@
+/* The same layout as TextField: label row, hint, control, note, problem. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* A fieldset lays out like .field; its floated legend and the ⓘ share the first line. */
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group:focus {
+  outline: none;
+}
+
+.legend {
+  float: left;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+}
+
+.full {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.label {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.marking {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.hint {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--status-problem-text);
+  font-size: 12.5px;
+}
+
+.error svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}

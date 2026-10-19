@@ -7,26 +7,18 @@ import type { CurrentUser } from '@/app/useSession';
 import { mockApi } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
 import { useUnsavedChanges } from './useUnsavedChanges';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
-const DANIEL: CurrentUser = {
+const DANIEL: CurrentUser = testUser({
   id: 'U-1003',
   name: 'Daniel Okoro',
   firstName: 'Daniel',
   email: 'daniel.okoro@northstar.demo',
   jobTitle: 'Marketing team leader',
   initials: 'DO',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+});
 
 /**
  * A form with one field, as a page has it: a link to leave the page, Cancel to close the form,

@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { renderWithProviders } from '@/test/render';
 import { CompletenessChip } from './CompletenessChip';
 
 const THREE_MISSING = [
@@ -63,5 +64,58 @@ describe('CompletenessChip', () => {
 
     expect(screen.getByRole('dialog', { name: '3 fields needed' })).toHaveTextContent('Owner');
     expect(screen.queryByRole('button', { name: 'Owner' })).not.toBeInTheDocument();
+  });
+
+  it('adds a chip that counts the records below needing attention (feature 004, D-199)', () => {
+    render(<CompletenessChip missing={[]} itemsBelow={1} />);
+
+    expect(screen.getByText('All filled in')).toBeInTheDocument();
+    expect(screen.getByText('1 item below needs attention')).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('makes the counted chip a button when it can open the list', async () => {
+    const user = userEvent.setup();
+    const onItemsBelowSelect = vi.fn();
+    render(
+      <CompletenessChip missing={[]} itemsBelow={3} onItemsBelowSelect={onItemsBelowSelect} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '3 items below need attention' }));
+
+    expect(onItemsBelowSelect).toHaveBeenCalledOnce();
+  });
+
+  it('lists the records below with links to them', async () => {
+    const { user } = renderWithProviders(
+      <CompletenessChip
+        missing={THREE_MISSING}
+        itemsBelow={[
+          {
+            id: 'C-1002',
+            label: "Campaign 'Retail growth'",
+            href: '/plans/P-1001/campaigns/C-1002',
+          },
+          {
+            id: 'A-1003',
+            label: "Activity 'Launch film'",
+            href: '/plans/P-1001/activities/A-1003',
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '2 items below need attention' }));
+
+    expect(screen.getByRole('link', { name: "Activity 'Launch film'" })).toHaveAttribute(
+      'href',
+      '/plans/P-1001/activities/A-1003',
+    );
+  });
+
+  it('shows no second chip when nothing below needs attention', () => {
+    render(<CompletenessChip missing={[]} itemsBelow={[]} />);
+
+    expect(screen.queryByText(/below/)).not.toBeInTheDocument();
   });
 });

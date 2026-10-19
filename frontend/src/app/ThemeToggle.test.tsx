@@ -4,20 +4,13 @@ import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { ThemeToggle } from './ThemeToggle';
 import type { CurrentUser } from './useSession';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 const PRIYA_IN_DARK: CurrentUser = {
   ...PRIYA,
-  preferences: { theme: 'dark', sidebarCollapsed: false },
+  preferences: { ...PRIYA.preferences, theme: 'dark' },
 };
 
 function shownTheme() {

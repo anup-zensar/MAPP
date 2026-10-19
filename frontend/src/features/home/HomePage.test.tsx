@@ -3,16 +3,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { CurrentUser } from '@/app/useSession';
 import { renderWithProviders } from '@/test/render';
 import { HomePage } from './HomePage';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 function gettingStarted() {
   return screen.getByRole('region', { name: 'Getting started' });

@@ -23,6 +23,14 @@
   background: color-mix(in srgb, var(--blue) 12%, transparent);
 }
 
+.hint {
+  display: block;
+  max-width: 260px;
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
 .danger {
   color: var(--status-problem-text);
 }

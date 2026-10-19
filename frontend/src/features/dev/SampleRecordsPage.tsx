@@ -15,7 +15,7 @@ import {
   Tooltip,
   useToast,
 } from '@/components';
-import { formatDateTime } from '@/lib/format';
+import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
 import {
@@ -225,6 +225,7 @@ function FoldersCard({ folders, actions }: FoldersCardProps) {
 
 /** One folder: its name and ID, its notes, its last change and its "⋯" menu. */
 function FolderRow({ folder, actions }: { folder: SampleFolder; actions: FolderActions }) {
+  const { dateTime } = useFormatters();
   return (
     <tr>
       <th scope="row">
@@ -239,7 +240,7 @@ function FolderRow({ folder, actions }: { folder: SampleFolder; actions: FolderA
           '—'
         )}
       </td>
-      <td>{`${folder.updatedBy.name}, ${formatDateTime(folder.updatedAt)}`}</td>
+      <td>{`${folder.updatedBy.name}, ${dateTime(folder.updatedAt)}`}</td>
       <td className={styles.actionsCell}>
         <ActionsMenu
           label={folder.name}
@@ -352,6 +353,7 @@ function whatGoesWith(folder: SampleFolder): string {
 
 /** What was deleted and is not restored yet, newest first, each with Restore (FR-025). */
 function RecentlyDeletedCard({ entries }: { entries: RecycleBinEntry[] }) {
+  const format = useFormatters();
   const { show } = useToast();
   const showFailure = useFailureMessage();
   const restoreFromBin = useRestoreFromBin();
@@ -368,7 +370,7 @@ function RecentlyDeletedCard({ entries }: { entries: RecycleBinEntry[] }) {
       show({ message: details ? `${restored}. ${details}` : restored });
     } catch (error) {
       if (error instanceof ApiError && error.kind === 'alreadyResolved') {
-        show({ message: resolvedMessage(error, entry.recordName) });
+        show({ message: resolvedMessage(error, entry.recordName, format.dateFormat) });
       } else {
         showFailure(error, () => restore(entry));
       }
@@ -380,7 +382,7 @@ function RecentlyDeletedCard({ entries }: { entries: RecycleBinEntry[] }) {
       <ul role="list" className={styles.list}>
         {entries.map((entry) => (
           <li key={entry.id} className={styles.binEntry}>
-            <p>{deletedText(entry)}</p>
+            <p>{deletedText(entry, format.dateTime)}</p>
             <Button
               size="sm"
               icon={<RotateCcw />}
@@ -400,12 +402,12 @@ function RecentlyDeletedCard({ entries }: { entries: RecycleBinEntry[] }) {
  * "Sample folder 'Ideas' (SF-1001), with 2 sample notes — deleted by Priya Raman, 12 Mar 2026,
  * 14:32".
  */
-function deletedText(entry: RecycleBinEntry): string {
+function deletedText(entry: RecycleBinEntry, dateTime: (timestamp: string) => string): string {
   const contents = entry.contents.map((content) => `${content.count} ${content.label}`);
   const withContents = contents.length > 0 ? `, with ${AND_LIST.format(contents)}` : '';
   return (
     `${recordTitle(entry)} (${entry.recordId})${withContents}` +
-    ` — deleted by ${entry.deletedBy.name}, ${formatDateTime(entry.deletedAt)}`
+    ` — deleted by ${entry.deletedBy.name}, ${dateTime(entry.deletedAt)}`
   );
 }
 
@@ -427,6 +429,7 @@ function ActivityLogCard({ entries }: { entries: ActivityLogEntry[] }) {
  * and when, then each changed field: "Name: Ideas → Ideas 2".
  */
 function LogEntry({ entry }: { entry: ActivityLogEntry }) {
+  const { dateTime } = useFormatters();
   const place = entry.path.map((record) => record.name).join(' › ');
 
   return (
@@ -434,7 +437,7 @@ function LogEntry({ entry }: { entry: ActivityLogEntry }) {
       <p>{`${entry.actor.name} ${entry.verb} ${entry.recordTypeLabel} '${entry.recordName}' (${entry.recordId})`}</p>
       <p className={styles.meta}>
         {place && `in ${place} · `}
-        <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
+        <time dateTime={entry.at}>{dateTime(entry.at)}</time>
       </p>
       {entry.changes.length > 0 && (
         <ul className={styles.changes}>

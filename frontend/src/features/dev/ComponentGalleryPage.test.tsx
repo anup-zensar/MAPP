@@ -3,16 +3,9 @@ import { describe, expect, it } from 'vitest';
 import type { CurrentUser } from '@/app/useSession';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { ComponentGalleryPage } from './ComponentGalleryPage';
+import { testUser } from '@/test/users';
 
-const PRIYA: CurrentUser = {
-  id: 'U-1002',
-  name: 'Priya Raman',
-  firstName: 'Priya',
-  email: 'priya.raman@northstar.demo',
-  jobTitle: 'Marketer',
-  initials: 'PR',
-  preferences: { theme: 'system', sidebarCollapsed: false },
-};
+const PRIYA: CurrentUser = testUser();
 
 /** One card per shared building block of the plan's table (FR-019, design system §5). */
 const COMPONENT_CARDS = [
@@ -36,6 +29,23 @@ const COMPONENT_CARDS = [
   'FormErrorSummary',
   'ErrorState',
   'DemoBanner',
+  // The Plan module's building blocks (build guide §4).
+  'Breadcrumb',
+  'SearchField, SegmentedFilter and FilterChips',
+  'PillTabs and CountBadge',
+  'LevelTag and ProgressBar',
+  'Items below and summary detail',
+  'LockedNote',
+  'MoneyField and DecimalField',
+  'TextAreaField, CheckboxField and suggestions',
+  'ChoiceField',
+  'SplitEditor',
+  'DateRangeField',
+  'PersonLabel and TeamPills',
+  'PersonPicker and TeamPicker',
+  'ShellAttributeFields and ShellAttributeValues',
+  'TreeTable',
+  'FormSection, FormFooter, FormDialog and FormPanel',
 ];
 
 function renderGallery() {

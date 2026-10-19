@@ -1,0 +1,161 @@
+/* Looks like a text input that holds the chips and the search input. */
+.control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 38px;
+  padding: 5px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  cursor: text;
+  transition: border-color 0.15s ease;
+}
+
+.control:focus-within {
+  border-color: var(--blue);
+}
+
+/* The input carries the focus ring for the whole control. */
+.control:has(:focus-visible) {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.disabled {
+  background: var(--gray-bg);
+  cursor: not-allowed;
+}
+
+.input {
+  flex: 1 1 120px;
+  min-width: 80px;
+  min-height: 26px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.input:focus,
+.input:focus-visible {
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.disabled .input {
+  cursor: not-allowed;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 2px 4px 2px 8px;
+  border-radius: var(--radius-chip);
+  background: var(--chip);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.chipContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.remove {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.remove:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+.popover {
+  z-index: 60;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.count {
+  padding: 4px 10px 6px;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.list {
+  max-height: 320px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--hover);
+}
+
+/* The option the arrow keys are on: the blue tint is its focus indicator. */
+.active,
+.active:hover {
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
+}
+
+.optionContent {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.check {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--blue);
+}
+
+.message {
+  padding: 8px 10px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}

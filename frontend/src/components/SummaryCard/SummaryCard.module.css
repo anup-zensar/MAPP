@@ -24,6 +24,16 @@
   line-height: 1.05;
 }
 
+/* A line under the value: a reason, an over-allocation, a progress bar. */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
 /* The shortened value looks like the plain value; only its focus ring shows it is a control. */
 .fullValue {
   padding: 0;

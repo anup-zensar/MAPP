@@ -19,4 +19,12 @@ describe('usePageTitle', () => {
 
     expect(document.title).toBe('My profile · NorthStar');
   });
+
+  it('leaves the tab alone with null, for a page under a side panel that names it', () => {
+    document.title = 'New campaign · NorthStar';
+
+    renderHook(() => usePageTitle(null));
+
+    expect(document.title).toBe('New campaign · NorthStar');
+  });
 });

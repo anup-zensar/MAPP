@@ -100,6 +100,13 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
       <item.icon className={styles.icon} />
       {/* Hidden on screen in the icon rail, never removed: the link keeps its name. */}
       <span className={collapsed ? 'visually-hidden' : undefined}>{item.label}</span>
+      {/* A count after the label, inside the link, so it is part of the link's name (feature 008). */}
+      {item.Badge && (
+        <>
+          {' '}
+          <item.Badge collapsed={collapsed} />
+        </>
+      )}
     </NavLink>
   );
 

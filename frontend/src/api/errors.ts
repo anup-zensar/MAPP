@@ -4,6 +4,7 @@
  * code to choose what to show) and a plain-language message (research R9, R15).
  */
 import { formatDate, formatTime, localDate } from '@/lib/format';
+import type { DateFormat } from '@/lib/format';
 import type { components } from './schema';
 
 type ErrorBody = components['schemas']['Error'];
@@ -11,6 +12,7 @@ type FieldError = components['schemas']['FieldError'];
 type Conflict = components['schemas']['Conflict'];
 type RecordRef = components['schemas']['RecordRef'];
 type Resolution = components['schemas']['Resolution'];
+type ReadinessGroup = components['schemas']['ReadinessGroup'];
 
 /** What went wrong, as the web app needs to know it. */
 export type ApiErrorKind =
@@ -67,6 +69,7 @@ interface ApiErrorDetails {
   conflict?: Conflict;
   parent?: RecordRef;
   resolution?: Resolution;
+  missing?: ReadinessGroup[];
 }
 
 /** A failed API call, ready to be shown to people. */
@@ -83,6 +86,11 @@ export class ApiError extends Error {
   readonly parent?: RecordRef;
   /** How, by whom and when it left the recycle bin (alreadyResolved); see resolvedMessage(). */
   readonly resolution?: Resolution;
+  /**
+   * Every needed field that stops publishing or submitting, grouped by record (notReady, feature
+   * 004); empty otherwise.
+   */
+  readonly missing: ReadinessGroup[];
 
   constructor(kind: ApiErrorKind, details: ApiErrorDetails = {}) {
     super(details.message || (kind === 'unreachable' ? UNREACHABLE : SOMETHING_WENT_WRONG));
@@ -93,6 +101,7 @@ export class ApiError extends Error {
     this.conflict = details.conflict;
     this.parent = details.parent;
     this.resolution = details.resolution;
+    this.missing = details.missing ?? [];
   }
 
   /** The error for an error answer of the API: the code gives the kind, the message is kept. */
@@ -105,39 +114,41 @@ export class ApiError extends Error {
       conflict: body.conflict,
       parent: body.parent,
       resolution: body.resolution,
+      missing: body.missing,
     });
   }
 }
 
 /**
  * "Not saved — Daniel Okoro changed this sample folder at 14:32" (FR-029), in the user's own time,
- * with "on 12 Mar 2026" when the change was not today. The API's message has no time in it,
- * because only the browser knows the user's time zone (research R5).
+ * with "on 12 Mar 2026" (in the person's date format, feature 003) when the change was not today.
+ * The API's message has no time in it, because only the browser knows the user's time zone
+ * (research R5).
  */
-export function conflictMessage(error: ApiError, noun: string): string {
+export function conflictMessage(error: ApiError, noun: string, dateFormat?: DateFormat): string {
   if (!error.conflict) {
     return error.message;
   }
   const { changedBy, changedAt } = error.conflict;
-  return `Not saved — ${changedBy} changed this ${noun} ${when(changedAt)}`;
+  return `Not saved — ${changedBy} changed this ${noun} ${when(changedAt, dateFormat)}`;
 }
 
 /**
  * "'Ideas' is no longer in the recycle bin — Priya Raman restored it at 14:05", or "… undid the
  * delete at 14:05" (research R8), in the user's own time, with the date when it was not today.
  */
-export function resolvedMessage(error: ApiError, name: string): string {
+export function resolvedMessage(error: ApiError, name: string, dateFormat?: DateFormat): string {
   if (!error.resolution) {
     return error.message;
   }
   const { how, by, at } = error.resolution;
   const what = how === 'undone' ? 'undid the delete' : 'restored it';
-  return `'${name}' is no longer in the recycle bin — ${by.name} ${what} ${when(at)}`;
+  return `'${name}' is no longer in the recycle bin — ${by.name} ${what} ${when(at, dateFormat)}`;
 }
 
 /** "at 14:32" today, otherwise "on 12 Mar 2026 at 14:32", in the user's own time zone. */
-function when(timestamp: string): string {
+function when(timestamp: string, dateFormat?: DateFormat): string {
   const time = `at ${formatTime(timestamp)}`;
   const day = localDate(timestamp);
-  return day === localDate(new Date()) ? time : `on ${formatDate(day)} ${time}`;
+  return day === localDate(new Date()) ? time : `on ${formatDate(day, dateFormat)} ${time}`;
 }

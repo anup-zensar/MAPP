@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { cx } from '@/lib/cx';
 import styles from './CompletenessChip.module.css';
 
@@ -11,17 +12,54 @@ export interface MissingField {
   label: string;
 }
 
+/** A record below this one that needs attention, with the address of its page or panel. */
+export interface ItemBelow {
+  id: string;
+  label: string;
+  href: string;
+}
+
 export interface CompletenessChipProps {
   missing: MissingField[];
   /** Takes the person to the chosen field, for example by focusing its input. */
   onSelectField?: (id: string) => void;
+  /**
+   * Records below that need attention (feature 004, D-199): a list (a plan's, with links) or a
+   * count (campaigns, initiatives, activities). Adds a second chip "1 item below needs attention" /
+   * "<n> items below need attention"; nothing for 0.
+   */
+  itemsBelow?: number | ItemBelow[];
+  /** Makes a counted second chip a button: opens the place that lists them. */
+  onItemsBelowSelect?: () => void;
 }
 
 /**
  * Says whether a record has everything it needs: "All filled in", or "3 fields needed" with a
  * list of those fields that leads to each of them (design system §5, constitution III).
  */
-export function CompletenessChip({ missing, onSelectField }: CompletenessChipProps) {
+export function CompletenessChip({
+  missing,
+  onSelectField,
+  itemsBelow,
+  onItemsBelowSelect,
+}: CompletenessChipProps) {
+  const below = typeof itemsBelow === 'number' ? itemsBelow : (itemsBelow?.length ?? 0);
+  if (below === 0) {
+    return <FieldsChip missing={missing} onSelectField={onSelectField} />;
+  }
+  return (
+    <span className={styles.chips}>
+      <FieldsChip missing={missing} onSelectField={onSelectField} />
+      <ItemsBelowChip itemsBelow={itemsBelow ?? 0} onSelect={onItemsBelowSelect} />
+    </span>
+  );
+}
+
+/** The chip of the record's own fields. */
+function FieldsChip({
+  missing,
+  onSelectField,
+}: Pick<CompletenessChipProps, 'missing' | 'onSelectField'>) {
   const [open, setOpen] = useState(false);
   // The field chosen in the list; the chip moves to it once the list has closed.
   const chosenField = useRef<string | null>(null);
@@ -69,6 +107,51 @@ export function CompletenessChip({ missing, onSelectField }: CompletenessChipPro
                 ) : (
                   <span className={styles.field}>{field.label}</span>
                 )}
+              </li>
+            ))}
+          </ul>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+/** "<n> items below need attention": a list with links, a button, or a plain chip. */
+function ItemsBelowChip({
+  itemsBelow,
+  onSelect,
+}: {
+  itemsBelow: number | ItemBelow[];
+  onSelect?: () => void;
+}) {
+  const count = typeof itemsBelow === 'number' ? itemsBelow : itemsBelow.length;
+  const summary =
+    count === 1 ? '1 item below needs attention' : `${count} items below need attention`;
+
+  if (typeof itemsBelow === 'number') {
+    return onSelect ? (
+      <button type="button" className={cx(styles.chip, styles.incomplete)} onClick={onSelect}>
+        {summary}
+      </button>
+    ) : (
+      <span className={cx(styles.chip, styles.attention)}>{summary}</span>
+    );
+  }
+
+  return (
+    <Popover.Root>
+      <Popover.Trigger className={cx(styles.chip, styles.incomplete)}>
+        {summary}
+        <ChevronDown />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content className={styles.list} align="start" sideOffset={6} aria-label={summary}>
+          <ul>
+            {itemsBelow.map((item) => (
+              <li key={item.id}>
+                <Link to={item.href} className={styles.field}>
+                  {item.label}
+                </Link>
               </li>
             ))}
           </ul>

@@ -29,6 +29,7 @@ import type { FieldProblem, MissingField, StatusTone } from '@/components';
 import { formatMoney, formatMoneyCompact } from '@/lib/format';
 import { usePageTitle } from '@/lib/usePageTitle';
 import styles from './ComponentGalleryPage.module.css';
+import { PlanModuleGallery } from './PlanModuleGallery';
 
 /** The six status families with a status of each, as a word (design system §4). */
 const STATUSES: { tone: StatusTone; word: string }[] = [
@@ -297,6 +298,8 @@ export function ComponentGalleryPage() {
         <Card title="DemoBanner">
           <DemoBanner />
         </Card>
+
+        <PlanModuleGallery />
       </div>
 
       <SidePanel

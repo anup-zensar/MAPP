@@ -1,0 +1,179 @@
+/* The table scrolls sideways inside its card on narrow screens. */
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.table th {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.end {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.table th.end {
+  text-align: right;
+}
+
+.row:hover {
+  background: var(--hover);
+}
+
+/* The row with the keyboard focus: the ring sits inside the row. */
+.row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.highlighted,
+.highlighted:hover {
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+}
+
+/* The 4 px level bar beside the name (design system §4). */
+.nameCell {
+  min-width: 260px;
+  border-left: 4px solid transparent;
+}
+
+.plan {
+  border-left-color: var(--level-plan);
+}
+
+.campaign {
+  border-left-color: var(--level-campaign);
+}
+
+.initiative {
+  border-left-color: var(--level-initiative);
+}
+
+.activity {
+  border-left-color: var(--level-activity);
+}
+
+.lineItem {
+  border-left-color: var(--level-line-item);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chevron,
+.chevronSpace {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.chevron:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.link,
+.linkButton,
+.text {
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--link);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.extra {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.actionsColumn,
+.actionsCell {
+  width: 48px;
+  text-align: right;
+}
+
+/* The ⋯ button stays in the page and focusable, faded until the row is hovered or focused
+   (feature 005: never hidden on touch screens). */
+.actionsCell > * {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.row:hover .actionsCell > *,
+.row:focus-within .actionsCell > * {
+  opacity: 1;
+}
+
+.empty {
+  padding: 24px 12px;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.footer td {
+  border-top: 2px solid var(--hairline);
+  border-bottom: 0;
+  font-weight: 600;
+}
