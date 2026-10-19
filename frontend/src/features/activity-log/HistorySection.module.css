@@ -1,0 +1,10 @@
+/* Room above the section when View history scrolls it to the top of the screen. */
+.history {
+  scroll-margin-top: 16px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

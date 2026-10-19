@@ -9,6 +9,7 @@ import {
   formatRelativeTime,
   formatTime,
   formatWaitingTime,
+  formatWeekdayDate,
   localDate,
   parseDate,
 } from './format';
@@ -64,6 +65,19 @@ describe('dates and times of a timestamp', () => {
     inTimeZone('Asia/Kolkata', () => {
       expect(localDate('2026-03-12T23:30:00Z')).toBe('2026-03-13');
       expect(formatDateTime('2026-03-12T23:30:00Z')).toBe('13 Mar 2026, 05:00');
+    });
+  });
+});
+
+describe('formatWeekdayDate (feature 011)', () => {
+  it('names the weekday before the date, for the activity log’s day headings (FR-004)', () => {
+    expect(formatWeekdayDate('2026-10-12')).toBe('Monday 12 Oct 2026');
+    expect(formatWeekdayDate('2026-10-18')).toBe('Sunday 18 Oct 2026');
+  });
+
+  it('keeps the weekday of the calendar date in any time zone (FR-004)', () => {
+    inTimeZone('America/New_York', () => {
+      expect(formatWeekdayDate('2026-10-12')).toBe('Monday 12 Oct 2026');
     });
   });
 });

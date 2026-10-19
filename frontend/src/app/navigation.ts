@@ -4,7 +4,7 @@
  * A feature that builds a section removes its sentence and gives it a real page in router.tsx.
  *
  * Plans (004), Approvals (008), Settings (002) and My profile (003) have their pages (stubs until
- * those features replace them); All work (010), Recycle bin and Activity log (011) come later.
+ * those features replace them); so do Recycle bin and Activity log (011). All work (010) comes later.
  */
 import {
   CircleCheckBig,
@@ -58,18 +58,12 @@ const ALL_WORK: ComingSoonSection = {
 
 const SETTINGS: NavItem = { label: 'Settings', path: '/settings', icon: Settings };
 
-const RECYCLE_BIN: ComingSoonSection = {
-  label: 'Recycle bin',
-  path: '/recycle-bin',
-  icon: Trash,
-  comingSoon: 'Bring back anything that was deleted, together with everything that was under it.',
-};
+const RECYCLE_BIN: NavItem = { label: 'Recycle bin', path: '/recycle-bin', icon: Trash };
 
-const ACTIVITY_LOG: ComingSoonSection = {
+const ACTIVITY_LOG: NavItem = {
   label: 'Activity log',
   path: '/activity-log',
   icon: RotateCcwClock,
-  comingSoon: 'See who changed what, and when, in every plan and setting.',
 };
 
 /** My profile: reached from the account menu, not from the sidebar. */
@@ -82,4 +76,4 @@ export const MAIN_ITEMS: NavItem[] = [HOME, PLANS, APPROVALS, ALL_WORK];
 export const MORE_ITEMS: NavItem[] = [SETTINGS, RECYCLE_BIN, ACTIVITY_LOG];
 
 /** Every section that shows a "Coming soon" page for now. */
-export const COMING_SOON_SECTIONS: ComingSoonSection[] = [ALL_WORK, RECYCLE_BIN, ACTIVITY_LOG];
+export const COMING_SOON_SECTIONS: ComingSoonSection[] = [ALL_WORK];

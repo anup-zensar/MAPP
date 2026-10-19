@@ -14,17 +14,13 @@ function section(label: string) {
 
 describe('ComingSoonPage', () => {
   // The sentences of the plan's "Coming soon" table (FR-015), word for word, for the sections
-  // that later features build (009–012); Plans, Approvals, Settings and My profile have pages.
+  // that later features build (009–012); Plans, Approvals, Settings, My profile, Recycle bin and
+  // Activity log (011) have pages.
   it.each([
     [
       'All work',
       'See every campaign, initiative, activity and line item across plans as a grid, a calendar or a budget view.',
     ],
-    [
-      'Recycle bin',
-      'Bring back anything that was deleted, together with everything that was under it.',
-    ],
-    ['Activity log', 'See who changed what, and when, in every plan and setting.'],
   ])('says in one sentence what %s will do (FR-015, US2 scenario 2)', (label, sentence) => {
     renderWithProviders(<ComingSoonPage section={section(label)} />);
 
@@ -34,17 +30,13 @@ describe('ComingSoonPage', () => {
   });
 
   it('is only for the sections still to come (Plan-module foundation)', () => {
-    expect(COMING_SOON_SECTIONS.map((item) => item.label)).toEqual([
-      'All work',
-      'Recycle bin',
-      'Activity log',
-    ]);
+    expect(COMING_SOON_SECTIONS.map((item) => item.label)).toEqual(['All work']);
   });
 
   it('says that the section is coming soon, with the section name as the eyebrow (FR-015)', () => {
-    renderWithProviders(<ComingSoonPage section={section('Recycle bin')} />);
+    renderWithProviders(<ComingSoonPage section={section('All work')} />);
 
-    expect(screen.getAllByText('Recycle bin')).toHaveLength(2);
+    expect(screen.getAllByText('All work')).toHaveLength(2);
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
     expect(screen.getByText("This part of NorthStar isn't built yet.")).toBeInTheDocument();
   });
