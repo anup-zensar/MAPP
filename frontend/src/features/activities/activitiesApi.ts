@@ -18,12 +18,14 @@ export type ActivitySubmitProblem = components['schemas']['ActivitySubmitProblem
 export type ActivityTypeOption = components['schemas']['ActivityTypeOption'];
 export type ActivityWorkflowOption = components['schemas']['ActivityWorkflowOption'];
 export type Money = components['schemas']['Money'];
+export type ActivityDestination = components['schemas']['ActivityDestination'];
 
 export const activityKey = (id: string) => ['activity', id] as const;
 export const newActivityFormKey = (initiativeId: string) =>
   ['activity-form', 'new', initiativeId] as const;
 export const editActivityFormKey = (id: string) => ['activity-form', 'edit', id] as const;
 export const planActivitiesKey = (planId: string) => ['plan-activities', planId] as const;
+export const activityDestinationsKey = (id: string) => ['activity-destinations', id] as const;
 
 /**
  * The lists an activity change can show in: the activity itself and its forms, the plan's
@@ -161,6 +163,61 @@ export function useDeleteActivity() {
   return useMutation({
     mutationFn: (id: string) =>
       call(api.DELETE('/api/activities/{activityId}', { params: { path: { activityId: id } } })),
+    onSettled: refresh,
+  });
+}
+
+/**
+ * The initiatives of the activity's plan, grouped by campaign, each with why the activity can't be
+ * moved or copied there (FR-029, FR-030). Never from an earlier opening: a move changes them.
+ */
+export function useActivityDestinations(id: string) {
+  return useQuery({
+    queryKey: activityDestinationsKey(id),
+    queryFn: () =>
+      call(
+        api.GET('/api/activities/{activityId}/destinations', {
+          params: { path: { activityId: id } },
+        }),
+      ),
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+/** Where an activity goes: another initiative of its plan, and the version the person saw. */
+export interface ActivityMove {
+  id: string;
+  initiativeId: string;
+  version: number;
+}
+
+/** Moves an activity, with its line items and status, to another initiative (FR-029). */
+export function useMoveActivity() {
+  const refresh = useRefreshPlanning();
+  return useMutation({
+    mutationFn: ({ id, initiativeId, version }: ActivityMove) =>
+      call(
+        api.POST('/api/activities/{activityId}/move', {
+          params: { path: { activityId: id } },
+          body: { initiativeId, version },
+        }),
+      ),
+    onSettled: refresh,
+  });
+}
+
+/** Copies an activity and its line items into an initiative of its plan, as Created (FR-030). */
+export function useCopyActivity() {
+  const refresh = useRefreshPlanning();
+  return useMutation({
+    mutationFn: ({ id, initiativeId }: { id: string; initiativeId: string }) =>
+      call(
+        api.POST('/api/activities/{activityId}/copy', {
+          params: { path: { activityId: id } },
+          body: { initiativeId },
+        }),
+      ),
     onSettled: refresh,
   });
 }

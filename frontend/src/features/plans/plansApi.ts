@@ -17,6 +17,8 @@ export type PlanCreate = components['schemas']['PlanCreate'];
 export type PlanUpdate = components['schemas']['PlanUpdate'];
 export type PlanChangeEffects = components['schemas']['PlanChangeEffects'];
 export type PlanChangeEffectsRequest = components['schemas']['PlanChangeEffectsRequest'];
+export type PlanCopyOptions = components['schemas']['PlanCopyOptions'];
+export type PlanCopyRequest = components['schemas']['PlanCopyRequest'];
 
 /** The filters the API takes (the layout is the page's own business). */
 export type PlanQuery = Omit<PlanListFilters, 'layout'>;
@@ -122,6 +124,36 @@ export function useUnpublishPlan() {
         }),
       ),
     onSettled: (_plan, _error, { planId }) => refresh(planId),
+  });
+}
+
+/**
+ * What the copy dialog offers (FR-026): the suggested name, the years and the counts. Asked each
+ * time the dialog opens, because the free "(copy n)" name and the counts change with every copy.
+ */
+export function useCopyOptions(planId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: PLAN_KEYS.copyOptions(planId),
+    queryFn: () =>
+      call(api.GET('/api/plans/{planId}/copy-options', { params: { path: { planId } } })),
+    enabled,
+    staleTime: 0,
+  });
+}
+
+/** Copies a plan, with or without everything in it; answers the new plan and notes (FR-027). */
+export function useCopyPlan() {
+  const queryClient = useQueryClient();
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ planId, body }: { planId: string; body: PlanCopyRequest }) =>
+      call(api.POST('/api/plans/{planId}/copy', { params: { path: { planId } }, body })),
+    onSettled: (_result, _error, { planId }) =>
+      Promise.all([
+        refresh(planId),
+        // The next copy suggests the next free name.
+        queryClient.invalidateQueries({ queryKey: PLAN_KEYS.copyOptions(planId) }),
+      ]),
   });
 }
 

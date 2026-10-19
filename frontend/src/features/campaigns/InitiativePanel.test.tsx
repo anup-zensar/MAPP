@@ -117,6 +117,8 @@ describe('InitiativePanel (feature 005, US3)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Actions for Digital & social' }));
     const items = await screen.findAllByRole('menuitem');
     expect(items.map((item) => item.textContent)).toEqual([
+      'Copy',
+      'Move to…',
       'View history',
       'Add activity',
       'Delete',

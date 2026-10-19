@@ -258,9 +258,11 @@ func (d *fakeDirectory) DisplayRateOf(_ context.Context, personID string) (peopl
 // fakeLevel is a level below the plan whose facts the test sets, and which counts its calls.
 type fakeLevel struct {
 	name       string
-	facts      map[string]Facts // plan id → its facts
-	disallowed []errs.RecordRef // what ActivitiesWithTypeNotAllowed answers
-	factCalls  int              // calls of AddFacts
+	facts      map[string]Facts                              // plan id → its facts
+	disallowed []errs.RecordRef                              // what ActivitiesWithTypeNotAllowed answers
+	factCalls  int                                           // calls of AddFacts
+	copy       func(ctx context.Context, job *CopyJob) error // what Copy does; nil copies nothing
+	copyJobs   []CopyJob                                     // each Copy call's job, as it was then
 }
 
 // level returns the fake as the Level it registers.
@@ -276,7 +278,15 @@ func (l *fakeLevel) level() Level {
 			}
 			return nil
 		},
-		Copy: func(context.Context, *CopyJob) error { return nil },
+		Copy: func(ctx context.Context, job *CopyJob) error {
+			seen := *job
+			seen.NewIDs, seen.Counts = maps.Clone(job.NewIDs), maps.Clone(job.Counts)
+			l.copyJobs = append(l.copyJobs, seen)
+			if l.copy == nil {
+				return nil
+			}
+			return l.copy(ctx, job)
+		},
 		ActivitiesWithTypeNotAllowed: func(context.Context, string, []string) ([]errs.RecordRef, error) {
 			return l.disallowed, nil
 		},

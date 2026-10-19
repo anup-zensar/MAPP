@@ -297,20 +297,6 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 // TestNotYetServedIsAccurate fails when a listed operation is served or is not in the contract, so the list
 // cannot go stale. The list must be empty when the Plan module is done; then remove it and its uses.
 var notYetServed = []string{
-	// 004 Plans
-	"GET /api/plans/{planId}/copy-options",
-	"POST /api/plans/{planId}/copy",
-	// 005 Campaigns and initiatives
-	"GET /api/campaigns/{campaignId}/destinations",
-	"POST /api/campaigns/{campaignId}/move",
-	"POST /api/campaigns/{campaignId}/copy",
-	"GET /api/initiatives/{initiativeId}/destinations",
-	"POST /api/initiatives/{initiativeId}/move",
-	"POST /api/initiatives/{initiativeId}/copy",
-	// 006 Activities (moving and copying come later)
-	"GET /api/activities/{activityId}/destinations",
-	"POST /api/activities/{activityId}/move",
-	"POST /api/activities/{activityId}/copy",
 	// 008 Activity approvals
 	"POST /api/activities/{activityId}/approval/recall",
 	"GET /api/notifications",

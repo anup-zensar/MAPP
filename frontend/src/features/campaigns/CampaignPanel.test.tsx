@@ -8,7 +8,15 @@ import type { MockHandler } from '@/test/mockApi';
 import { findMessages, renderRoutes } from '@/test/render';
 import { testUser } from '@/test/users';
 import { CampaignPanel } from './CampaignPanel';
-import { budgetAndCost, campaign, PEOPLE, planAnswer, usd } from './fixtures';
+import {
+  budgetAndCost,
+  campaign,
+  destinationList,
+  PEOPLE,
+  planAnswer,
+  planDestination,
+  usd,
+} from './fixtures';
 
 const DETAILS = '/plans/P-1001/campaigns/C-1001';
 
@@ -208,6 +216,8 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     const items = await screen.findAllByRole('menuitem');
     expect(items.map((item) => item.textContent)).toEqual([
       'Add initiative',
+      'Copy',
+      'Move to…',
       'View history',
       'Delete',
     ]);
@@ -251,6 +261,62 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     expect(await findMessages()).toHaveTextContent(
       "Campaign 'Helix launch' moved to the recycle bin",
     );
+  });
+
+  it('moves from More and opens the plan it moved to, with the campaign highlighted (US6, FR-025)', async () => {
+    const { user, router, api } = renderPanel(DETAILS, {
+      'GET /api/campaigns/C-1001/destinations': {
+        body: destinationList(
+          [planDestination()],
+          'Campaigns move only between plans of the same year',
+        ),
+      },
+      'POST /api/campaigns/C-1001/move': { body: campaign({ planId: 'P-1002', version: 4 }) },
+    });
+    const panel = await findDetails();
+
+    await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Move to…' }));
+    const dialog = await screen.findByRole('dialog', { name: "Move campaign 'Helix launch'" });
+    await user.click(await within(dialog).findByRole('radio', { name: 'FY2026 Mobility China' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Move campaign' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1002'));
+    expect(router.state.location.state).toEqual({ highlight: 'C-1001' });
+    expect(api.bodiesOf('POST /api/campaigns/C-1001/move')).toEqual([
+      { planId: 'P-1002', version: 3 },
+    ]);
+    expect(await findMessages()).toHaveTextContent(
+      "Campaign 'Helix launch' moved to 'FY2026 Mobility China'",
+    );
+  });
+
+  it('copies from More (US6, FR-026)', async () => {
+    const { user } = renderPanel(DETAILS, {
+      'GET /api/campaigns/C-1001/destinations': {
+        body: destinationList(
+          [
+            planDestination({
+              id: 'P-1001',
+              name: 'FY2026 Lubricants Europe',
+              current: true,
+              suggestedName: 'Helix launch (copy)',
+            }),
+          ],
+          'A copy can go into this plan or another plan of the same year',
+        ),
+      },
+    });
+    const panel = await findDetails();
+
+    await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Copy' }));
+
+    const dialog = await screen.findByRole('dialog', { name: "Copy campaign 'Helix launch'" });
+    expect(await within(dialog).findByRole('textbox', { name: /Name of the copy/ })).toHaveValue(
+      'Helix launch (copy)',
+    );
+    expect(dialog).toHaveTextContent('It copies 1 initiative.');
   });
 
   it('opens under the right plan when the campaign has moved (FR-017)', async () => {

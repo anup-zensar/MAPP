@@ -9,7 +9,17 @@ import type { MockHandler } from '@/test/mockApi';
 import { findMessages, renderRoutes } from '@/test/render';
 import { testUser } from '@/test/users';
 import { CELL_KEYS } from './campaignRows';
-import { campaign, initiative, PEOPLE, planAnswer, planCampaigns, usd } from './fixtures';
+import {
+  campaign,
+  destination,
+  destinationList,
+  initiative,
+  PEOPLE,
+  planAnswer,
+  planCampaigns,
+  planDestination,
+  usd,
+} from './fixtures';
 import { NewCampaignPanel } from './NewCampaignPanel';
 import { useCampaignTreeContent } from './useCampaignTreeContent';
 
@@ -209,6 +219,106 @@ describe('useCampaignTreeContent (feature 005)', () => {
     expect(await findMessages()).toHaveTextContent(
       "Initiative 'Digital & social' moved to the recycle bin",
     );
+  });
+
+  it('copies a campaign from its row; the copy appears highlighted (US6#4–5, FR-026, FR-027)', async () => {
+    const copy = campaign({
+      id: 'C-1009',
+      name: 'Helix launch (copy)',
+      initiatives: [initiative({ id: 'I-1009', campaignId: 'C-1009' })],
+    });
+    let copied = false;
+    const { user, api } = renderTree({
+      'GET /api/plans/P-1001/campaigns': () => ({
+        body: copied ? planCampaigns([campaign(), copy]) : planCampaigns(),
+      }),
+      'GET /api/campaigns/C-1001/destinations': {
+        body: destinationList(
+          [
+            planDestination({
+              id: 'P-1001',
+              name: 'FY2026 Lubricants Europe',
+              current: true,
+              suggestedName: 'Helix launch (copy)',
+            }),
+          ],
+          'A copy can go into this plan or another plan of the same year',
+        ),
+      },
+      'POST /api/campaigns/C-1001/copy': () => {
+        copied = true;
+        return { status: 201, body: copy };
+      },
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Helix launch' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Copy' }));
+    const dialog = await screen.findByRole('dialog', { name: "Copy campaign 'Helix launch'" });
+    await within(dialog).findByRole('textbox', { name: /Name of the copy/ });
+    await user.click(within(dialog).getByRole('button', { name: 'Copy campaign' }));
+
+    const tree = await screen.findByRole('treegrid', { name: 'Plan tree' });
+    const link = await within(tree).findByRole('link', { name: 'Helix launch (copy)' });
+    await waitFor(() => expect(link.closest('tr')?.className).toContain('highlighted'));
+    expect(api.bodiesOf('POST /api/campaigns/C-1001/copy')).toEqual([
+      { planId: 'P-1001', name: 'Helix launch (copy)' },
+    ]);
+    expect(await findMessages()).toHaveTextContent("Campaign 'Helix launch (copy)' created");
+  });
+
+  it('moves an initiative from its row to another campaign (US6#1, FR-023, FR-025)', async () => {
+    const rimula = campaign({
+      id: 'C-1002',
+      name: 'Rimula fleet',
+      initiatives: [],
+      counts: { initiatives: 0, activities: 0, approvedActivities: 0, lineItems: 0 },
+    });
+    const moved = initiative({ campaignId: 'C-1002', version: 4 });
+    let done = false;
+    const { user, api } = renderTree({
+      'GET /api/plans/P-1001/campaigns': () => ({
+        body: done
+          ? planCampaigns([campaign({ initiatives: [] }), { ...rimula, initiatives: [moved] }])
+          : planCampaigns([campaign(), rimula]),
+      }),
+      'GET /api/initiatives/I-1001/destinations': {
+        body: destinationList(
+          [destination()],
+          'Initiatives move only between campaigns of the same plan',
+        ),
+      },
+      'POST /api/initiatives/I-1001/move': () => {
+        done = true;
+        return { body: moved };
+      },
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Digital & social' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Move to…' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: "Move initiative 'Digital & social'",
+    });
+    await user.click(await within(dialog).findByRole('radio', { name: 'Rimula fleet' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Move initiative' }));
+
+    expect(await findMessages()).toHaveTextContent(
+      "Initiative 'Digital & social' moved to 'Rimula fleet'",
+    );
+    expect(api.bodiesOf('POST /api/initiatives/I-1001/move')).toEqual([
+      { campaignId: 'C-1002', version: 3 },
+    ]);
+    const tree = screen.getByRole('treegrid', { name: 'Plan tree' });
+    await waitFor(() => {
+      // The header row, the campaigns with the initiative now under Rimula fleet, the totals row.
+      const rows = within(tree).getAllByRole('row');
+      expect(rows.map((row) => row.querySelector('a')?.textContent ?? '')).toEqual([
+        '',
+        'Helix launch',
+        'Rimula fleet',
+        'Digital & social',
+        '',
+      ]);
+    });
   });
 
   it('reports a failure to read the rows with Try again', async () => {

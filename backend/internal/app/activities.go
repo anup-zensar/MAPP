@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
 	"maps"
 	"slices"
 	"strings"
@@ -17,33 +16,40 @@ import (
 // The adapters below hand the activities service (feature 006) to the features above it (D-196): to
 // campaigns (005) as its campaigns.Activities, and to plans (004) as the "activity" level of its registry.
 
-// errCopyNotBuilt is the answer of the copy seams: copying plans, campaigns and initiatives (004 US6, 005
-// US6, 006 copy) is not built yet, and no served operation calls them until it is.
-var errCopyNotBuilt = errors.New("app: copying activities is not built yet")
-
 // activitiesForCampaigns is campaigns.Activities over the activities service.
 type activitiesForCampaigns struct {
 	svc *activities.Service
 }
 
 // Summaries returns the roll-up summary of every activity under the initiatives.
-func (a activitiesForCampaigns) Summaries(ctx context.Context, initiativeIDs []string) ([]campaigns.ActivitySummary, error) {
-	return a.svc.Summaries(ctx, initiativeIDs)
+func (x activitiesForCampaigns) Summaries(ctx context.Context, initiativeIDs []string) ([]campaigns.ActivitySummary, error) {
+	return x.svc.Summaries(ctx, initiativeIDs)
 }
 
-// CopyAll is not built yet (see errCopyNotBuilt).
-func (activitiesForCampaigns) CopyAll(context.Context, actor.Actor, string, string, int) (campaigns.ActivityCopyCounts, error) {
-	return campaigns.ActivityCopyCounts{}, errCopyNotBuilt
+// CopyAll copies every activity of an initiative, with its line items, into another initiative: the
+// copies of a campaign or an initiative (005 FR-027).
+func (x activitiesForCampaigns) CopyAll(ctx context.Context, a actor.Actor, fromInitiativeID, toInitiativeID string, yearShift int) (campaigns.ActivityCopyCounts, error) {
+	counts, err := x.svc.CopyAll(ctx, a, fromInitiativeID, toInitiativeID, yearShift)
+	return campaigns.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
 }
 
 // activityLevel is the activity level of feature 004's registry: the activities' figures and the
-// activities that need attention (AddPlanFacts), and the activities a new model would not allow (004
-// FR-019). Plan copies are not built yet.
+// activities that need attention (AddPlanFacts), their copies in a plan copy (the activities of every
+// copied initiative; their line items are the next level's), and the activities a new model would not
+// allow (004 FR-019).
 func activityLevel(svc *activities.Service, activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) plans.Level {
 	return plans.Level{
 		Name:     "activity",
 		AddFacts: svc.AddPlanFacts,
-		Copy:     func(context.Context, *plans.CopyJob) error { return errCopyNotBuilt },
+		Copy: func(ctx context.Context, job *plans.CopyJob) error {
+			newIDs, err := svc.CopyForInitiatives(ctx, job.Actor, job.NewIDs, job.Years)
+			if err != nil {
+				return err
+			}
+			maps.Copy(job.NewIDs, newIDs)
+			job.Counts["activity"] += len(newIDs)
+			return nil
+		},
 		ActivitiesWithTypeNotAllowed: func(ctx context.Context, planID string, allowedTypeIDs []string) ([]errs.RecordRef, error) {
 			return activitiesWithTypeNotAllowed(ctx, planID, allowedTypeIDs, activitiesRepo, campaignsRepo)
 		},

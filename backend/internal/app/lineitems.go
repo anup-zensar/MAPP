@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 
 	"northstar/internal/activities"
@@ -238,9 +239,10 @@ func lineItemProblem(item lineitems.Incomplete, m settings.MissingField) activit
 	return p
 }
 
-// CopyAll is not built yet (see errCopyNotBuilt).
-func (lineItemsForActivities) CopyAll(context.Context, actor.Actor, string, string, int) (int, error) {
-	return 0, errCopyNotBuilt
+// CopyAll copies every line item of an activity into another activity: the copies of an activity, and of
+// the campaigns and initiatives above it (006 FR-030, 005 FR-027).
+func (x lineItemsForActivities) CopyAll(ctx context.Context, a actor.Actor, fromActivityID, toActivityID string, yearShift int) (int, error) {
+	return x.svc.CopyLineItems(ctx, a, fromActivityID, toActivityID, yearShift)
 }
 
 // DatesChanged needs nothing stored: a line item spread Evenly, First or Last month follows its activity's
@@ -250,7 +252,8 @@ func (lineItemsForActivities) DatesChanged(context.Context, actor.Actor, activit
 }
 
 // lineItemLevel is the line-item level of feature 004's registry: how many line items each plan has and
-// those still incomplete, below the plan's activities.
+// those still incomplete, below the plan's activities, and their copies in a plan copy (the line items of
+// every activity the activity level copied, each copied once).
 func lineItemLevel(svc *lineitems.Service, activitiesRepo activities.Repository, campaignsRepo campaigns.Repository) plans.Level {
 	return plans.Level{
 		Name: "lineItem",
@@ -282,7 +285,15 @@ func lineItemLevel(svc *lineitems.Service, activitiesRepo activities.Repository,
 			}
 			return nil
 		},
-		Copy: func(context.Context, *plans.CopyJob) error { return errCopyNotBuilt },
+		Copy: func(ctx context.Context, job *plans.CopyJob) error {
+			newIDs, err := svc.CopyForActivities(ctx, job.Actor, job.NewIDs, job.Years)
+			if err != nil {
+				return err
+			}
+			maps.Copy(job.NewIDs, newIDs)
+			job.Counts["lineItem"] += len(newIDs)
+			return nil
+		},
 	}
 }
 

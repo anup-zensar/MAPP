@@ -5,10 +5,19 @@ import { ApiError } from '@/api/errors';
 import { useToast } from '@/components';
 import type { ActionsMenuItem } from '@/components';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { CopyPlanDialog } from './dialogs/CopyPlanDialog';
+import type { CopyRefusal } from './dialogs/CopyPlanDialog';
 import { DeletePlanDialog } from './dialogs/DeletePlanDialog';
 import { PublishBlockedDialog } from './dialogs/PublishBlockedDialog';
 import { UnpublishDialog } from './dialogs/UnpublishDialog';
-import { PLAN_KEYS, useDeletePlan, usePublishPlan, useUnpublishPlan } from './plansApi';
+import {
+  PLAN_KEYS,
+  useCopyPlan,
+  useDeletePlan,
+  usePublishPlan,
+  useUnpublishPlan,
+} from './plansApi';
+import type { PlanCopyRequest } from './plansApi';
 import type { PlanStatus } from './planText';
 
 type ReadinessGroup = components['schemas']['ReadinessGroup'];
@@ -27,13 +36,15 @@ export interface PlanActionsOptions {
 
 /**
  * The actions on a plan, shared by the Plans list and the plan page (plan "Dialogs"): View, Edit,
- * Publish or Unpublish, and Delete with Undo, with their dialogs. Render `dialogs` once on the page.
+ * Copy, Publish or Unpublish, and Delete with Undo, with their dialogs. Render `dialogs` once on
+ * the page.
  */
 export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
   const navigate = useNavigate();
   const { show } = useToast();
   const publishPlan = usePublishPlan();
   const unpublishPlan = useUnpublishPlan();
+  const copyPlan = useCopyPlan();
   const deletePlan = useDeletePlan();
   const afterDelete = useUndoableDelete({ invalidate: [PLAN_KEYS.all] });
   const [deleting, setDeleting] = useState<{ plan: ActionPlan; open: boolean } | null>(null);
@@ -47,6 +58,9 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
   );
   // A new key each time the unpublish dialog opens, so it starts empty.
   const [unpublishKey, setUnpublishKey] = useState(0);
+  const [copying, setCopying] = useState<{ plan: ActionPlan; open: boolean } | null>(null);
+  // A new key each time the copy dialog opens, so it starts from the API's suggestion.
+  const [copyKey, setCopyKey] = useState(0);
 
   /** Publishes a Draft plan, or lists every field it still needs (FR-024). */
   async function publish(plan: ActionPlan) {
@@ -90,6 +104,45 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     }
   }
 
+  /** Asks for the name, the year and the contents, then copies the plan (FR-026). */
+  function copy(plan: ActionPlan) {
+    setCopyKey((key) => key + 1);
+    setCopying({ plan, open: true });
+  }
+
+  /**
+   * Makes the copy; on success its plan page opens with the message and one message per note, such
+   * as a cleared default finance budget (FR-027, FR-028).
+   */
+  async function confirmCopy(
+    plan: ActionPlan,
+    request: PlanCopyRequest,
+  ): Promise<CopyRefusal | null> {
+    try {
+      const { plan: copied, notes } = await copyPlan.mutateAsync({
+        planId: plan.id,
+        body: request,
+      });
+      setCopying({ plan, open: false });
+      void navigate(`/plans/${encodeURIComponent(copied.id)}`);
+      show({ message: `Plan '${copied.name}' created as a copy of '${plan.name}'` });
+      notes.forEach((note) => show({ message: note }));
+      return null;
+    } catch (error) {
+      const apiError = error instanceof ApiError ? error : new ApiError('other');
+      if (apiError.fields.length > 0) {
+        return { problems: apiError.fields };
+      }
+      if (apiError.kind === 'notFound') {
+        // The plan was deleted meanwhile: the message, and the refreshed list without it.
+        setCopying({ plan, open: false });
+        show({ message: apiError.message });
+        return null;
+      }
+      return { problems: [], message: apiError.message };
+    }
+  }
+
   /** Asks first, then moves the plan and everything in it to the recycle bin (FR-029). */
   function remove(plan: ActionPlan) {
     setDeleting({ plan, open: true });
@@ -113,12 +166,18 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     return { label: 'Delete', tone: 'danger', separatorBefore: true, onSelect: () => remove(plan) };
   }
 
-  /** The list's ⋯ Actions menu: View, Edit, Publish or Unpublish, Delete (FR-001). */
+  /** The ⋯ Copy item, on the list and the plan page (FR-026). */
+  function copyItem(plan: ActionPlan): ActionsMenuItem {
+    return { label: 'Copy', onSelect: () => copy(plan) };
+  }
+
+  /** The list's ⋯ Actions menu: View, Edit, Copy, Publish or Unpublish, Delete (FR-001). */
   function menuItems(plan: ActionPlan): ActionsMenuItem[] {
     const path = `/plans/${encodeURIComponent(plan.id)}`;
     return [
       { label: 'View', onSelect: () => void navigate(path) },
       { label: 'Edit', onSelect: () => void navigate(`${path}/edit`) },
+      copyItem(plan),
       plan.status === 'draft'
         ? { label: 'Publish', onSelect: () => void publish(plan) }
         : { label: 'Unpublish', onSelect: () => unpublish(plan) },
@@ -143,6 +202,16 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
           onClose={() => setUnpublishing({ ...unpublishing, open: false })}
         />
       )}
+      {copying && (
+        <CopyPlanDialog
+          key={copyKey}
+          open={copying.open}
+          planId={copying.plan.id}
+          planName={copying.plan.name}
+          onCopy={(request) => confirmCopy(copying.plan, request)}
+          onClose={() => setCopying({ ...copying, open: false })}
+        />
+      )}
       {deleting && (
         <DeletePlanDialog
           open={deleting.open}
@@ -156,5 +225,5 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     </>
   );
 
-  return { menuItems, deleteItem, publish, unpublish, remove, dialogs };
+  return { menuItems, copyItem, deleteItem, publish, unpublish, copy, remove, dialogs };
 }

@@ -62,6 +62,8 @@ export function useCampaignTreeContent(planId: string): CampaignTreeContent {
           highlightId: highlightOf(location.state),
           rowsBelow,
           onDelete: actions.askDelete,
+          onCopy: actions.askCopy,
+          onMove: actions.askMove,
         })
       : [],
     toolbarActions: addCampaign,

@@ -64,7 +64,6 @@ type checked struct {
 // compared with what remains, D-015). nameTaken returns the "already has" message for a valid name, or "".
 func checkForm(problems *errs.Problems, f form, nameTaken func(name string) string) checked {
 	c := checked{
-		Name:        strings.TrimSpace(f.Name),
 		Description: strings.TrimSpace(f.Description),
 		OwnerID:     f.OwnerID,
 		StartDate:   f.StartDate,
@@ -74,16 +73,7 @@ func checkForm(problems *errs.Problems, f form, nameTaken func(name string) stri
 		c.OwnerID = nil // "" clears the owner, as null does
 	}
 
-	switch {
-	case c.Name == "":
-		problems.Add("name", enterNameMessage)
-	case utf8.RuneCountInString(c.Name) > maxNameLength:
-		problems.Add("name", nameTooLongMessage)
-	default:
-		if message := nameTaken(c.Name); message != "" {
-			problems.Add("name", message)
-		}
-	}
+	c.Name = checkName(problems, f.Name, nameTaken)
 	if utf8.RuneCountInString(c.Description) > maxDescriptionLength {
 		problems.Add("description", descriptionTooLongMessage)
 	}
@@ -99,6 +89,24 @@ func checkForm(problems *errs.Problems, f form, nameTaken func(name string) stri
 
 	c.Budget = checkBudget(problems, f.Budget)
 	return c
+}
+
+// checkName checks a name of a form or a copy (FR-005, FR-026), adding its problem to problems: required, at
+// most 120 characters, and — through nameTaken, which returns the "already has" message for a valid name, or
+// "" — unique under the parent. It returns the name trimmed.
+func checkName(problems *errs.Problems, name string, nameTaken func(name string) string) string {
+	name = strings.TrimSpace(name)
+	switch {
+	case name == "":
+		problems.Add("name", enterNameMessage)
+	case utf8.RuneCountInString(name) > maxNameLength:
+		problems.Add("name", nameTooLongMessage)
+	default:
+		if message := nameTaken(name); message != "" {
+			problems.Add("name", message)
+		}
+	}
+	return name
 }
 
 // checkBudget reads a budget: nil for none, otherwise USD with at most two decimals and not negative.

@@ -3,6 +3,7 @@ package activities
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 // sameName reports whether two activity names are the same name: letter case and surrounding spaces are
@@ -31,5 +32,24 @@ func restoredName(siblings []Activity, name, id string) string {
 			return candidate
 		}
 		candidate = fmt.Sprintf("%s (restored %d)", name, n)
+	}
+}
+
+// copyName returns the first of "<name> (copy)", "<name> (copy 2)", … that no activity among siblings has
+// (FR-030, R13). When the name and the suffix together pass 120 characters, the name is shortened, without
+// trailing spaces, so the suffix fits (edge case).
+func copyName(siblings []Activity, name string) string {
+	for n := 1; ; n++ {
+		suffix := " (copy)"
+		if n > 1 {
+			suffix = fmt.Sprintf(" (copy %d)", n)
+		}
+		base := name
+		if room := maxNameLength - utf8.RuneCountInString(suffix); utf8.RuneCountInString(base) > room {
+			base = strings.TrimRight(string([]rune(base)[:room]), " ")
+		}
+		if _, taken := namedLike(siblings, base+suffix, ""); !taken {
+			return base + suffix
+		}
 	}
 }

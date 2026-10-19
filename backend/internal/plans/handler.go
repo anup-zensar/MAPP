@@ -31,6 +31,8 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/plans/{planId}/change-effects", signedIn(h.changeEffects))
 	r.Handle("POST /api/plans/{planId}/publish", signedIn(h.publish))
 	r.Handle("POST /api/plans/{planId}/unpublish", signedIn(h.unpublish))
+	r.Handle("GET /api/plans/{planId}/copy-options", signedIn(h.copyOptions))
+	r.Handle("POST /api/plans/{planId}/copy", signedIn(h.copy))
 }
 
 // defaults answers GET /api/plan-defaults: what a new plan starts with for the signed-in person.
@@ -168,4 +170,31 @@ func (h *Handler) unpublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, plan)
+}
+
+// copyOptions answers GET /api/plans/{planId}/copy-options: what the copy dialog offers.
+func (h *Handler) copyOptions(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context())
+	options, err := h.service.CopyOptions(r.Context(), a, r.PathValue("planId"))
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, options)
+}
+
+// copy answers POST /api/plans/{planId}/copy with 201, the new plan and what the copy changed on purpose.
+func (h *Handler) copy(w http.ResponseWriter, r *http.Request) {
+	var request CopyRequest
+	if err := web.ReadJSON(w, r, &request); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	result, err := h.service.Copy(r.Context(), a, r.PathValue("planId"), request)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusCreated, result)
 }

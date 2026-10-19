@@ -94,6 +94,8 @@ func TestPlansOperations_WithoutSession_FR005(t *testing.T) {
 		{http.MethodPost, "/api/plans/P-1001/change-effects", map[string]any{"modelId": "MOD-1002", "attributes": map[string]any{}}},
 		{http.MethodPost, "/api/plans/P-1002/publish", nil},
 		{http.MethodPost, "/api/plans/P-1001/unpublish", map[string]any{"reason": "Budget under review"}},
+		{http.MethodGet, "/api/plans/P-1001/copy-options", nil},
+		{http.MethodPost, "/api/plans/P-1001/copy", map[string]any{"name": "Copy", "year": 2026, "includeContents": false}},
 	}
 	for _, call := range calls {
 		response := server.Do(t, call.method, call.path, call.body)
@@ -450,4 +452,88 @@ func TestDeletePlan_AndUndo_FR029_FR030(t *testing.T) {
 	})
 	assertFields(t, back, http.StatusOK, map[string]any{"id": "P-1001", "status": "published", "version": 1})
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
+}
+
+// The copy dialog of FY2026 Lubricants Europe offers "(copy)", 2026 or 2027, and the counts of what comes
+// with it: 2 campaigns, 4 initiatives, 7 activities (4 approved) and 6 line items (FR-026, FR-028).
+func TestCopyOptions_FR026(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	options := priya.Do(t, http.MethodGet, "/api/plans/P-1001/copy-options", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/plans/P-9999/copy-options", nil)
+
+	assertAnswer(t, options, http.StatusOK, `{"name":"FY2026 Lubricants Europe (copy)","sameYear":2026,`+
+		`"nextYear":{"year":2027,"available":true,"reason":""},`+
+		`"contents":{"campaigns":2,"initiatives":4,"activities":7,"approvedActivities":4,"lineItems":6}}`)
+	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
+}
+
+// Copying FY2026 Lubricants Europe into 2027 with everything in it answers 201 with a Draft 2027 plan
+// without a default finance budget and a note saying so; everything below comes along with new IDs, every
+// date one year later and every activity Created; one log entry counts it all (FR-027, FR-028, R13). A
+// wrong name and year answer 400 with both problems.
+func TestCopy_201_FR027_FR028(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	copied := priya.Do(t, http.MethodPost, "/api/plans/P-1001/copy",
+		map[string]any{"name": "FY2027 Lubricants Europe", "year": 2027, "includeContents": true})
+	refused := priya.Do(t, http.MethodPost, "/api/plans/P-1001/copy",
+		map[string]any{"name": "fy2026 mobility china", "year": 2025, "includeContents": false})
+	gone := priya.Do(t, http.MethodPost, "/api/plans/P-9999/copy",
+		map[string]any{"name": "Copy", "year": 2026, "includeContents": false})
+
+	var result plans.CopyResult
+	copied.Decode(t, &result)
+	p := result.Plan
+	if copied.Status != http.StatusCreated || p.ID != "P-1004" || p.Year != 2027 || p.Status != plans.StatusDraft ||
+		p.DefaultFinanceBudget != nil || p.Contents != (plans.Contents{Campaigns: 2, Initiatives: 4, Activities: 7, LineItems: 6}) ||
+		p.CreatedBy.Name != "Priya Raman" {
+		t.Errorf("copy = %d %s", copied.Status, copied.Body)
+	}
+	if want := []string{"Default finance budget cleared — it belonged to 2026."}; !slices.Equal(result.Notes, want) {
+		t.Errorf("notes = %q, want %q", result.Notes, want)
+	}
+	assertAnswer(t, refused, http.StatusBadRequest, validationBody(
+		`{"field":"name","message":"There is already a plan called 'FY2026 Mobility China'. Choose another name."},`+
+			`{"field":"year","message":"Copy into 2026 or 2027."}`))
+	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
+
+	var campaigns struct {
+		Items []struct {
+			ID, Name, StartDate, EndDate string
+		} `json:"items"`
+	}
+	priya.Do(t, http.MethodGet, "/api/plans/P-1004/campaigns", nil).Decode(t, &campaigns)
+	var helix []string
+	for _, c := range campaigns.Items {
+		if c.Name == "Helix launch" {
+			helix = append(helix, c.ID, c.StartDate, c.EndDate)
+		}
+	}
+	if len(helix) != 3 || helix[0] == "C-1001" || helix[1] != "2027-01-01" || helix[2] != "2027-12-31" {
+		t.Errorf("Helix launch in the copy = %v, want a new ID, 2027-01-01 – 2027-12-31", helix)
+	}
+	var activities struct {
+		Items []struct {
+			Name, Status, StartDate string
+		} `json:"items"`
+	}
+	priya.Do(t, http.MethodGet, "/api/plans/P-1004/activities", nil).Decode(t, &activities)
+	for _, a := range activities.Items {
+		if a.Status != "created" || (a.Name == "Partner co-marketing fund" && a.StartDate != "2027-03-01") {
+			t.Errorf("copied activity %q: %s from %s, want Created, a year later", a.Name, a.Status, a.StartDate)
+		}
+	}
+	var log struct {
+		Items []struct {
+			Action, Details string
+		} `json:"items"`
+	}
+	priya.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1004", nil).Decode(t, &log)
+	if len(log.Items) != 1 || log.Items[0].Action != "copied" || log.Items[0].Details !=
+		"from 'FY2026 Lubricants Europe' (P-1001), with 2 campaigns, 4 initiatives, 7 activities and 6 line items" {
+		t.Errorf("log of the copy = %+v, want one copied entry with the counts", log.Items)
+	}
 }

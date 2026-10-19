@@ -72,3 +72,33 @@ export function goalsFormula(model: ModelFacts): string {
     `(model '${model.name}').`
   );
 }
+
+// Move and copy (US5, FR-029, FR-030; plan "Actions")
+export function moveTitle(name: string): string {
+  return `Move activity '${name}'`;
+}
+export function moveIntro(plan: string): string {
+  return `Choose another initiative in '${plan}'. The activity keeps its status, line items and values.`;
+}
+export const SEARCH_INITIATIVES = 'Search initiatives';
+export const THIS_INITIATIVE = '(this initiative)';
+export const NO_OTHER_INITIATIVE = "There's no other initiative in this plan to move it to.";
+/** Move without a chosen initiative: the API's own words for it. */
+export const CHOOSE_ANOTHER_INITIATIVE = 'Choose another initiative of this plan.';
+/** The search finds no initiative (the wording of 002's searchable lists). */
+export function noInitiativeMatches(query: string): string {
+  return `No initiative matches '${query}'.`;
+}
+export function movedToast(name: string, initiative: string): string {
+  return `Activity '${name}' moved to '${initiative}'`;
+}
+export function copyTitle(name: string): string {
+  return `Copy activity '${name}'`;
+}
+export const COPY_TO = 'Copy to';
+export function copyIntro(lineItems: number): string {
+  return `The copy starts as Created, with copies of its ${lineItemsText(lineItems)}. Approvals, comments and history are not copied.`;
+}
+export function createdToast(name: string): string {
+  return `Activity '${name}' created`;
+}
