@@ -47,6 +47,8 @@ export interface RecordDetailsProps {
   level: RecordLevel;
   record: Campaign | Initiative;
   planId: string;
+  /** Copy and Move to… (US6): after Add initiative, before View history. */
+  recordItems?: ActionsMenuItem[];
   /** More items added by the caller (Delete, US5); they come after the panel's own. */
   moreItems?: ActionsMenuItem[];
   /** Dialogs the More items open. */
@@ -62,6 +64,7 @@ export function RecordDetails({
   level,
   record,
   planId,
+  recordItems = [],
   moreItems = [],
   dialogs,
 }: RecordDetailsProps) {
@@ -82,6 +85,7 @@ export function RecordDetails({
           },
         ]
       : []),
+    ...recordItems,
     {
       label: VIEW_HISTORY,
       onSelect: () =>
@@ -200,7 +204,11 @@ export function RecordDetails({
 }
 
 /** The record's Shell attributes, as Settings groups them ("—" when empty, "(inactive)"). */
-function AttributeValues({ level, record, planId }: Omit<RecordDetailsProps, 'moreItems'>) {
+function AttributeValues({
+  level,
+  record,
+  planId,
+}: Pick<RecordDetailsProps, 'level' | 'record' | 'planId'>) {
   const form = useAttributeForm(level);
   const plan = usePlan(planId);
   if (form.isError || plan.isError) {

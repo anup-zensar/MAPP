@@ -19,6 +19,8 @@ export const ADD_INITIATIVE = 'Add initiative';
 export const VIEW = 'View';
 export const EDIT = 'Edit';
 export const DELETE = 'Delete';
+export const COPY = 'Copy';
+export const MOVE_TO = 'Move to…';
 export const VIEW_HISTORY = 'View history';
 export const BACK_TO_PLAN = 'Back to the plan';
 export const SAVE = 'Save';
@@ -219,4 +221,66 @@ export function approvedSentence(approved: number): string {
 export const MOVES_TO_RECYCLE_BIN = 'It moves to the recycle bin; you can restore it.';
 export function deleteLabel(level: RecordLevel): string {
   return `Delete ${level}`;
+}
+
+// Move and copy (US6)
+export function moveTitle(level: RecordLevel, name: string): string {
+  return `Move ${level} '${name}'`;
+}
+export const MOVE_INTRO: Record<RecordLevel, string> = {
+  campaign:
+    'Choose the plan to move it to. Its initiatives, activities and line items move with it and keep their IDs, dates and statuses.',
+  initiative:
+    'Choose the campaign to move it to. Its activities and line items move with it and keep their IDs, dates and statuses.',
+};
+/** The move dialog without any destination (edge case "No possible destination exists"). */
+export function nothingToMoveTo(level: RecordLevel, year: number): string {
+  return level === 'campaign'
+    ? `There's no other plan in ${year} to move this campaign to.`
+    : "There's no other campaign in this plan to move this initiative to.";
+}
+export const CHOOSE_WHERE_TO_MOVE = 'Choose where to move it.';
+export function moveLabel(level: RecordLevel): string {
+  return `Move ${level}`;
+}
+export function movedToast(level: RecordLevel, name: string, destination: string): string {
+  return `${LEVEL_WORD[level]} '${name}' moved to '${destination}'`;
+}
+/** Under the chosen destination when the record's budget would over-allocate it (FR-026). */
+export function overAllocateWarning(destination: string, amount: string): string {
+  return `This will over-allocate '${destination}' by ${amount}.`;
+}
+/** FR-024: what changes when a campaign lands in a plan with another model or business unit. */
+export function otherModelOrUnit(plan: string): string {
+  return `'${plan}' uses another model or business unit:`;
+}
+export function typesNotAllowedText(model: string, activities: string): string {
+  return `These activities have a type the model '${model}' doesn't allow. They keep their type but need an allowed type before they can be submitted: ${activities}`;
+}
+export function goalsRecalculated(model: string): string {
+  return `Goals will be recalculated with the model '${model}'.`;
+}
+export function hiddenThere(groups: string): string {
+  return `Hidden there, values kept: ${groups}`;
+}
+export function shownThere(groups: string): string {
+  return `Shown there: ${groups}`;
+}
+export function copyTitle(level: RecordLevel, name: string): string {
+  return `Copy ${level} '${name}'`;
+}
+export const NAME_OF_THE_COPY = 'Name of the copy';
+export const COPY_INTO = 'Copy into';
+export const CURRENT = 'Current';
+/** "It copies 2 initiatives, 7 activities and 15 line items." or the record alone. */
+export function copiesText(level: RecordLevel, contents: string): string {
+  return contents
+    ? `It copies ${contents}.`
+    : `It copies the ${level} only — there's nothing below it.`;
+}
+/** R13: what a copy leaves behind. */
+export const COPY_RULE =
+  'Copies get new IDs. Activities start as Created, without approvals, comments or history.';
+export function copyLabel(level: RecordLevel): string {
+  return `Copy ${level}`;
 }

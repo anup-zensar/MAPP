@@ -14,9 +14,11 @@ import {
   ADD_INITIATIVE,
   addInitiativeTo,
   ALLOCATED_TO_CAMPAIGNS,
+  COPY,
   DELETE,
   EDIT,
   initiativesCount,
+  MOVE_TO,
   totalsText,
   VIEW,
 } from './texts';
@@ -43,7 +45,11 @@ export interface RecordTarget {
   id: string;
   name: string;
   planId: string;
-  /** What goes with it (the delete dialog). */
+  /** The plan's year: a campaign moves only between plans of that year (FR-023). */
+  year: number;
+  /** The version the row or panel showed; a move sends it (FR-025). */
+  version: number;
+  /** What goes with it (the delete, move and copy dialogs). */
   counts: {
     initiatives?: number;
     activities: number;
@@ -62,25 +68,24 @@ export interface RowOptions {
   rowsBelow?: Map<string, TreeNode[]>;
   /** **Delete** (US5): opens the delete dialog; the item is listed only with it. */
   onDelete?: (target: RecordTarget) => void;
+  /** **Copy** (US6): opens the copy dialog; the item is listed only with it. */
+  onCopy?: (target: RecordTarget) => void;
+  /** **Move to…** (US6): opens the move dialog; the item is listed only with it. */
+  onMove?: (target: RecordTarget) => void;
 }
 
 /** The record a row stands for, for its actions. */
 export function targetOf(record: Campaign | Initiative): RecordTarget {
+  const common = {
+    id: record.id,
+    name: record.name,
+    planId: record.planId,
+    year: record.plan.year,
+    version: record.version,
+  };
   return 'initiatives' in record
-    ? {
-        level: 'campaign',
-        id: record.id,
-        name: record.name,
-        planId: record.planId,
-        counts: record.counts,
-      }
-    : {
-        level: 'initiative',
-        id: record.id,
-        name: record.name,
-        planId: record.planId,
-        counts: record.counts,
-      };
+    ? { ...common, level: 'campaign', counts: record.counts }
+    : { ...common, level: 'initiative', counts: record.counts };
 }
 
 /**
@@ -129,6 +134,7 @@ export function campaignRows(data: PlanCampaigns, options: RowOptions): TreeNode
         onSelect: () => void options.navigate(addInitiativeHref(options.planId, item.id)),
       },
       ...viewAndEdit('campaign', item.id, options),
+      ...copyAndMove(item, options),
       ...deleteItem(item, options),
     ],
   }));
@@ -150,6 +156,7 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
     children: options.rowsBelow?.get(initiative.id) ?? [],
     actions: [
       ...viewAndEdit('initiative', initiative.id, options),
+      ...copyAndMove(initiative, options),
       ...initiativeExtraActions(
         { id: initiative.id, name: initiative.name, planId: options.planId },
         options.navigate,
@@ -196,6 +203,15 @@ function viewAndEdit(level: RecordLevel, id: string, options: RowOptions): Actio
   return [
     { label: VIEW, onSelect: () => void options.navigate(href) },
     { label: EDIT, onSelect: () => void options.navigate(`${href}/edit`) },
+  ];
+}
+
+/** Copy and Move to… (US6), each listed only when the caller handles it. */
+function copyAndMove(record: Campaign | Initiative, options: RowOptions): ActionsMenuItem[] {
+  const { onCopy, onMove } = options;
+  return [
+    ...(onCopy ? [{ label: COPY, onSelect: () => onCopy(targetOf(record)) }] : []),
+    ...(onMove ? [{ label: MOVE_TO, onSelect: () => onMove(targetOf(record)) }] : []),
   ];
 }
 

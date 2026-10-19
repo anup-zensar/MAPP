@@ -58,7 +58,10 @@ export function RecordPanel({ level, mode, planId, query }: RecordPanelProps) {
   return <EditWhenReady level={level} record={record} planId={planId} title={title} />;
 }
 
-/** The details with **Delete** under More; after a delete the panel closes (FR-029). */
+/**
+ * The details with **Copy**, **Move to…** and **Delete** under More; after a delete the panel
+ * closes (FR-029), after a move or copy the plan page opens with the record highlighted.
+ */
 function DetailsPanel({
   level,
   record,
@@ -70,12 +73,14 @@ function DetailsPanel({
 }) {
   const navigate = useNavigate();
   const actions = useRecordActions({ onDeleted: () => void navigate(`/plans/${planId}`) });
+  const target = targetOf(record);
   return (
     <RecordDetails
       level={level}
       record={record}
       planId={planId}
-      moreItems={[actions.deleteItem(targetOf(record))]}
+      recordItems={actions.copyAndMoveItems(target)}
+      moreItems={[actions.deleteItem(target)]}
       dialogs={actions.dialogs}
     />
   );

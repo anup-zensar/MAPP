@@ -6,7 +6,7 @@ import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { activityActionsForInitiative, useActivityRows } from './activityTreeRows';
-import { launchFilm, launchFilmRow } from './testData';
+import { destinations, launchFilm, launchFilmRow } from './testData';
 
 const DELETED = {
   recycleBinEntry: {
@@ -99,7 +99,7 @@ describe('activityTreeRows (feature 006)', () => {
     expect(screen.queryByText('Print ads')).not.toBeInTheDocument();
   });
 
-  it('opens the activity page from the row and offers View, Edit and Delete in its menu', async () => {
+  it('opens the activity page from the row and offers View, Edit, Copy, Move and Delete in its menu', async () => {
     const { user, router } = openRows();
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
@@ -108,7 +108,7 @@ describe('activityTreeRows (feature 006)', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['View', 'Edit', 'Delete']);
+    ).toEqual(['View', 'Edit', 'Copy', 'Move', 'Delete']);
     await user.click(within(menu).getByRole('menuitem', { name: 'Edit' }));
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042/edit'),
@@ -147,6 +147,59 @@ describe('activityTreeRows (feature 006)', () => {
     const messages = await findMessages();
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
     expect(await screen.findByText("Activity 'Launch film' restored")).toBeVisible();
+  });
+
+  it('copies an activity from its row with the activity as stored now (FR-030)', async () => {
+    const { user, router, api } = openRows({
+      'GET /api/activities/A-1042': {
+        body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
+      },
+      'GET /api/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/activities/A-1042/copy': {
+        status: 201,
+        body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
+      },
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Copy' }));
+    const dialog = await screen.findByRole('dialog', { name: "Copy activity 'Launch film'" });
+    expect(dialog).toHaveTextContent('with copies of its 2 line items');
+    await within(dialog).findByRole('group', { name: 'Copy to' });
+    await user.click(within(dialog).getByRole('button', { name: 'Copy activity' }));
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1043'),
+    );
+    expect(api.bodiesOf('POST /api/activities/A-1042/copy')).toEqual([{ initiativeId: 'I-1001' }]);
+    expect(await findMessages()).toHaveTextContent("Activity 'Launch film (copy)' created");
+  });
+
+  it('moves an activity from its row with the version stored now (FR-029)', async () => {
+    const { user, api } = openRows({
+      'GET /api/activities/A-1042': { body: launchFilm({ version: 7 }) },
+      'GET /api/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/activities/A-1042/move': {
+        body: launchFilm({
+          initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
+          version: 8,
+        }),
+      },
+    });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Move' }));
+    const dialog = await screen.findByRole('dialog', { name: "Move activity 'Launch film'" });
+    await user.click(await within(dialog).findByRole('radio', { name: 'Print & outdoor' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Move activity' }));
+
+    expect(await findMessages()).toHaveTextContent(
+      "Activity 'Launch film' moved to 'Print & outdoor'",
+    );
+    expect(api.bodiesOf('POST /api/activities/A-1042/move')).toEqual([
+      { initiativeId: 'I-1002', version: 7 },
+    ]);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('closes the question of a row on Cancel, deleting nothing', async () => {

@@ -176,13 +176,13 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     expect(listQueries(api)[0]).toBe('?scope=all&status=published');
   });
 
-  it('offers View, Edit, Publish and Delete in a Draft plan’s actions menu', async () => {
+  it('offers View, Edit, Copy, Publish and Delete in a Draft plan’s actions menu', async () => {
     const { user, router } = renderPage();
 
     await screen.findAllByRole('article');
     await user.click(screen.getByRole('button', { name: 'Actions for FY2026 Mobility China' }));
     const items = (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
-    expect(items).toEqual(['View', 'Edit', 'Publish', 'Delete']);
+    expect(items).toEqual(['View', 'Edit', 'Copy', 'Publish', 'Delete']);
     await user.click(screen.getByRole('menuitem', { name: 'Edit' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1002/edit'));

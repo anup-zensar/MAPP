@@ -41,6 +41,7 @@ export function PlanPage() {
     }
     const data = plan.data;
     const moreItems: ActionsMenuItem[] = [
+      actions.copyItem(data),
       {
         label: 'View history',
         onSelect: () =>

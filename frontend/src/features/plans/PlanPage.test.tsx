@@ -304,6 +304,53 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     ).toBeInTheDocument();
   });
 
+  it('copies the plan from More and opens the copy (US6#1–2, FR-026, FR-027)', async () => {
+    const copy = plan({ id: 'P-1004', name: 'FY2026 Lubricants Europe (copy)', version: 1 });
+    const { user, router } = renderPage(
+      { body: plan() },
+      {
+        'GET /api/plans/P-1001/copy-options': {
+          body: {
+            name: 'FY2026 Lubricants Europe (copy)',
+            sameYear: 2026,
+            nextYear: { year: 2027, available: true, reason: '' },
+            contents: {
+              campaigns: 0,
+              initiatives: 0,
+              activities: 0,
+              approvedActivities: 0,
+              lineItems: 0,
+            },
+          },
+        },
+        'POST /api/plans/P-1001/copy': { status: 201, body: { plan: copy, notes: [] } },
+        'GET /api/plans/P-1004': { body: copy },
+      },
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Actions for FY2026 Lubricants Europe' }),
+    );
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
+      'Copy',
+      'View history',
+      'Delete',
+    ]);
+    await user.click(screen.getByRole('menuitem', { name: 'Copy' }));
+    await screen.findByRole('textbox', { name: /Name of the copy/ });
+    await user.click(screen.getByRole('button', { name: 'Copy plan' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1004'));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'FY2026 Lubricants Europe (copy)' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Plan 'FY2026 Lubricants Europe (copy)' created as a copy of 'FY2026 Lubricants Europe'",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('opens the plan’s history from More (FR-031)', async () => {
     const { user, router } = renderPage();
 

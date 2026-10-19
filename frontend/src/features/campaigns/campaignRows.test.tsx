@@ -180,21 +180,27 @@ describe('campaignRows (feature 005, US4)', () => {
 
   it('gives each level its ⋯ items, Delete last after a line (FR-021)', () => {
     const onDelete = vi.fn();
+    const onCopy = vi.fn();
+    const onMove = vi.fn();
     const navigate = vi.fn();
-    const nodes = campaignRows(DATA, options({ onDelete, navigate }));
+    const nodes = campaignRows(DATA, options({ onDelete, onCopy, onMove, navigate }));
 
     const campaignItems = nodes[0].actions ?? [];
     expect(campaignItems.map((item) => item.label)).toEqual([
       'Add initiative',
       'View',
       'Edit',
+      'Copy',
+      'Move to…',
       'Delete',
     ]);
-    expect(campaignItems[3]).toMatchObject({ tone: 'danger', separatorBefore: true });
+    expect(campaignItems[5]).toMatchObject({ tone: 'danger', separatorBefore: true });
     const initiativeItems = nodes[0].children[0].actions ?? [];
     expect(initiativeItems.map((item) => item.label)).toEqual([
       'View',
       'Edit',
+      'Copy',
+      'Move to…',
       'Add activity',
       'Delete',
     ]);
@@ -203,10 +209,35 @@ describe('campaignRows (feature 005, US4)', () => {
     expect(navigate).toHaveBeenLastCalledWith('/plans/P-1001/campaigns/C-1001/initiatives/new');
     initiativeItems[1].onSelect();
     expect(navigate).toHaveBeenLastCalledWith('/plans/P-1001/initiatives/I-1001/edit');
-    initiativeItems[3].onSelect();
+    initiativeItems[5].onSelect();
     expect(onDelete).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'initiative', id: 'I-1001', name: 'Digital & social' }),
     );
+  });
+
+  it('opens Copy and Move to… with the record and the version the row showed (US6)', () => {
+    const onCopy = vi.fn();
+    const onMove = vi.fn();
+    const nodes = campaignRows(DATA, options({ onCopy, onMove }));
+
+    (nodes[0].actions ?? []).find((item) => item.label === 'Copy')?.onSelect();
+    expect(onCopy).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 'campaign', id: 'C-1001', year: 2026, version: 3 }),
+    );
+    (nodes[0].children[0].actions ?? []).find((item) => item.label === 'Move to…')?.onSelect();
+    expect(onMove).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 'initiative', id: 'I-1001', version: 3 }),
+    );
+  });
+
+  it('lists Copy and Move to… only when they can be opened', () => {
+    const nodes = campaignRows(DATA, options());
+
+    expect((nodes[0].actions ?? []).map((item) => item.label)).toEqual([
+      'Add initiative',
+      'View',
+      'Edit',
+    ]);
   });
 
   it('sums the plan in the totals row, with singular forms (FR-022)', () => {

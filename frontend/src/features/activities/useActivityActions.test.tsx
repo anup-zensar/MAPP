@@ -5,7 +5,7 @@ import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import type { Activity } from './activitiesApi';
-import { launchFilm } from './testData';
+import { destinations, launchFilm } from './testData';
 import { useActivityActions } from './useActivityActions';
 
 const DELETED = {
@@ -46,7 +46,66 @@ function openMenu(answers: Parameters<typeof mockApi>[0] = {}) {
   return { ...rendered, api };
 }
 
-describe('useActivityActions (feature 006, FR-031, FR-032)', () => {
+describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
+  it('offers Copy, Move, View history and Delete, last after a line', async () => {
+    const { user } = openMenu();
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
+      'Copy',
+      'Move',
+      'View history',
+      'Delete',
+    ]);
+  });
+
+  it('copies from More and opens the copy (US5#2, FR-030)', async () => {
+    const { user, router } = openMenu({
+      'GET /api/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/activities/A-1042/copy': {
+        status: 201,
+        body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
+      },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Copy' }));
+    const dialog = await screen.findByRole('dialog', { name: "Copy activity 'Launch film'" });
+    await within(dialog).findByRole('group', { name: 'Copy to' });
+    await user.click(within(dialog).getByRole('button', { name: 'Copy activity' }));
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1043'),
+    );
+    expect(await findMessages()).toHaveTextContent("Activity 'Launch film (copy)' created");
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('moves from More (US5#1, FR-029)', async () => {
+    const { user, api } = openMenu({
+      'GET /api/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/activities/A-1042/move': {
+        body: launchFilm({
+          initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
+        }),
+      },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Move' }));
+    const dialog = await screen.findByRole('dialog', { name: "Move activity 'Launch film'" });
+    await user.click(await within(dialog).findByRole('radio', { name: 'Print & outdoor' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Move activity' }));
+
+    expect(await findMessages()).toHaveTextContent(
+      "Activity 'Launch film' moved to 'Print & outdoor'",
+    );
+    expect(api.bodiesOf('POST /api/activities/A-1042/move')).toEqual([
+      { initiativeId: 'I-1002', version: 3 },
+    ]);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
   it('deletes after asking, opens the plan page and offers Undo, which brings it back', async () => {
     const { user, api, router } = openMenu();
 

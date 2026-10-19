@@ -19,11 +19,24 @@ export type InitiativeUpdate = components['schemas']['InitiativeUpdate'];
 export type DeleteResult = components['schemas']['DeleteResult'];
 export type Money = components['schemas']['Money'];
 export type PersonRef = components['schemas']['PersonRef'];
+export type Destination = components['schemas']['Destination'];
+export type DestinationList = components['schemas']['DestinationList'];
+export type MoveConsequences = components['schemas']['MoveConsequences'];
+
+/** What a destination list is for (FR-023, FR-026). */
+export type Purpose = 'move' | 'copy';
 
 export const campaignKeys = {
   planCampaigns: (planId: string): QueryKey => ['plans', planId, 'campaigns'],
   campaign: (id: string): QueryKey => ['campaigns', id],
   initiative: (id: string): QueryKey => ['initiatives', id],
+  /** Under the record's own key, so refreshPlanning asks for them again after a change. */
+  destinations: (level: 'campaign' | 'initiative', id: string, purpose: Purpose): QueryKey => [
+    level === 'campaign' ? 'campaigns' : 'initiatives',
+    id,
+    'destinations',
+    purpose,
+  ],
   /** Feature 004's key of the plan page (GET /api/plans/{planId}). */
   plan: (planId: string): QueryKey => ['plan', planId],
 };
@@ -175,6 +188,94 @@ export function useDeleteRecord() {
               params: { path: { initiativeId: id } },
             }),
           ),
+  });
+}
+
+/**
+ * Where a campaign or initiative can be moved or copied to (FR-023, FR-026), current first for
+ * copies. Never from an earlier opening of the dialog: what is available changes with every move.
+ */
+export function useDestinations(level: 'campaign' | 'initiative', id: string, purpose: Purpose) {
+  return useQuery({
+    queryKey: campaignKeys.destinations(level, id, purpose),
+    queryFn: () =>
+      level === 'campaign'
+        ? call(
+            api.GET('/api/campaigns/{campaignId}/destinations', {
+              params: { path: { campaignId: id }, query: { purpose } },
+            }),
+          )
+        : call(
+            api.GET('/api/initiatives/{initiativeId}/destinations', {
+              params: { path: { initiativeId: id }, query: { purpose } },
+            }),
+          ),
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+/** What a move or copy names: the record, and the plan (campaign) or campaign (initiative) to go to. */
+export interface DestinationTarget {
+  level: 'campaign' | 'initiative';
+  id: string;
+  destinationId: string;
+}
+
+/**
+ * Moves a campaign to another plan of its year, or an initiative to another campaign of its plan,
+ * with everything below it (FR-025). Sends the version the row or panel showed.
+ */
+export function useMoveRecord() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({
+      level,
+      id,
+      destinationId,
+      version,
+    }: DestinationTarget & { version: number }): Promise<Campaign | Initiative> =>
+      level === 'campaign'
+        ? call(
+            api.POST('/api/campaigns/{campaignId}/move', {
+              params: { path: { campaignId: id } },
+              body: { planId: destinationId, version },
+            }),
+          )
+        : call(
+            api.POST('/api/initiatives/{initiativeId}/move', {
+              params: { path: { initiativeId: id } },
+              body: { campaignId: destinationId, version },
+            }),
+          ),
+    onSettled: refresh,
+  });
+}
+
+/** Copies a campaign or initiative with everything below it, under a new name (FR-027). */
+export function useCopyRecord() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({
+      level,
+      id,
+      destinationId,
+      name,
+    }: DestinationTarget & { name: string }): Promise<Campaign | Initiative> =>
+      level === 'campaign'
+        ? call(
+            api.POST('/api/campaigns/{campaignId}/copy', {
+              params: { path: { campaignId: id } },
+              body: { planId: destinationId, name },
+            }),
+          )
+        : call(
+            api.POST('/api/initiatives/{initiativeId}/copy', {
+              params: { path: { initiativeId: id } },
+              body: { campaignId: destinationId, name },
+            }),
+          ),
+    onSettled: refresh,
   });
 }
 

@@ -3,7 +3,15 @@
  * change shows here first). Only test files import this file.
  */
 import type { components } from '@/api/schema';
-import type { Campaign, Initiative, Money, PersonRef, PlanCampaigns } from './campaignApi';
+import type {
+  Campaign,
+  Destination,
+  DestinationList,
+  Initiative,
+  Money,
+  PersonRef,
+  PlanCampaigns,
+} from './campaignApi';
 
 type BudgetAndCost = components['schemas']['BudgetAndCost'];
 
@@ -159,3 +167,38 @@ export const PEOPLE = {
     ...PERSON_META,
   })),
 };
+
+/** A campaign to move or copy an initiative to (GET …/destinations); available, no warnings. */
+export function destination(overrides: Partial<Destination> = {}): Destination {
+  return {
+    id: 'C-1002',
+    name: 'Rimula fleet',
+    current: false,
+    available: true,
+    unavailableReason: null,
+    planStatus: null,
+    startDate: '2026-03-01',
+    endDate: '2026-12-31',
+    suggestedName: null,
+    remainingAfter: null,
+    overAllocatedBy: null,
+    consequences: null,
+    ...overrides,
+  };
+}
+
+/** A plan to move or copy a campaign to. */
+export function planDestination(overrides: Partial<Destination> = {}): Destination {
+  return destination({
+    id: 'P-1002',
+    name: 'FY2026 Mobility China',
+    planStatus: 'draft',
+    startDate: null,
+    endDate: null,
+    ...overrides,
+  });
+}
+
+export function destinationList(items: Destination[], rule: string): DestinationList {
+  return { items, total: items.length, rule };
+}

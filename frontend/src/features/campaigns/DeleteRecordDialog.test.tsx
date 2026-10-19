@@ -17,6 +17,8 @@ const HELIX: RecordTarget = {
   id: 'C-1001',
   name: 'Helix launch',
   planId: 'P-1001',
+  year: 2026,
+  version: 3,
   counts: { initiatives: 3, activities: 12, approvedActivities: 2, lineItems: 20 },
 };
 

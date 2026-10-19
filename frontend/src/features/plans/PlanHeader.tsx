@@ -12,7 +12,7 @@ export interface PlanHeaderProps {
   plan: Plan;
   /** Publish on a Draft plan, Unpublish on a Published one (feature 004, US5). */
   statusAction?: ReactNode;
-  /** The ⋯ More menu: View history, Delete. */
+  /** The ⋯ More menu: Copy, View history, Delete. */
   moreItems: ActionsMenuItem[];
 }
 
