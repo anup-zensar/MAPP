@@ -1,0 +1,342 @@
+import { act, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mockApi } from '@/test/mockApi';
+import { renderRoutes } from '@/test/render';
+import { routes } from './router';
+import { SessionProvider } from './SessionProvider';
+import { useSession } from './useSession';
+import type { CurrentUser } from './useSession';
+
+const PRIYA: CurrentUser = {
+  id: 'U-1002',
+  name: 'Priya Raman',
+  firstName: 'Priya',
+  email: 'priya.raman@northstar.demo',
+  jobTitle: 'Marketer',
+  initials: 'PR',
+  preferences: { theme: 'system', sidebarCollapsed: false },
+};
+
+const DANIEL: CurrentUser = {
+  id: 'U-1003',
+  name: 'Daniel Okoro',
+  firstName: 'Daniel',
+  email: 'daniel.okoro@northstar.demo',
+  jobTitle: 'Marketing team leader',
+  initials: 'DO',
+  preferences: { theme: 'system', sidebarCollapsed: false },
+};
+
+const DEMO_PEOPLE = {
+  password: 'northstar',
+  people: [
+    {
+      id: 'U-1002',
+      name: 'Priya Raman',
+      email: 'priya.raman@northstar.demo',
+      jobTitle: 'Marketer',
+      initials: 'PR',
+    },
+  ],
+};
+
+const SIGN_IN_REQUIRED = {
+  code: 'sign_in_required',
+  message: 'Please sign in to continue.',
+  fields: [],
+};
+const SESSION_EXPIRED = { code: 'session_expired', message: 'Please sign in again', fields: [] };
+
+/** Shows what useSession() says, with a button that checks the session again. */
+function SessionProbe() {
+  const session = useSession();
+  return (
+    <>
+      <p>Status: {session.status}</p>
+      <p>Person: {session.user?.name ?? 'nobody'}</p>
+      <button type="button" onClick={session.refetch}>
+        Check again
+      </button>
+    </>
+  );
+}
+
+/** The probe under the session, on a fresh page load: nothing is known until GET /api/me answers. */
+function renderProbe() {
+  return renderRoutes([
+    {
+      path: '*',
+      element: (
+        <SessionProvider>
+          <SessionProbe />
+        </SessionProvider>
+      ),
+    },
+  ]);
+}
+
+/** A promise the test resolves when it wants, to keep several requests waiting at once. */
+function gate() {
+  let open = () => {};
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { opened, open };
+}
+
+afterEach(() => {
+  localStorage.clear();
+  delete document.documentElement.dataset.theme;
+});
+
+describe('SessionProvider: who is signed in (research R15)', () => {
+  it('is loading until GET /api/me answers, then knows the signed-in person (FR-006)', async () => {
+    mockApi({ 'GET /api/me': { body: PRIYA } });
+    renderProbe();
+
+    expect(screen.getByText('Status: loading')).toBeInTheDocument();
+    expect(await screen.findByText('Status: signedIn')).toBeInTheDocument();
+    expect(screen.getByText('Person: Priya Raman')).toBeInTheDocument();
+  });
+
+  it('treats a 401 answer as signed out (FR-005)', async () => {
+    mockApi({ 'GET /api/me': { status: 401, body: SIGN_IN_REQUIRED } });
+    renderProbe();
+
+    expect(await screen.findByText('Status: signedOut')).toBeInTheDocument();
+    expect(screen.getByText('Person: nobody')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['no answer at all', () => Promise.reject(new TypeError('Failed to fetch'))],
+    ['an empty text/plain 502', () => new Response('', { status: 502 })],
+  ])(
+    'is unreachable when nobody is known and the API cannot be asked: %s (edge case)',
+    async (_case, answer) => {
+      mockApi({ 'GET /api/me': answer });
+      renderProbe();
+
+      expect(await screen.findByText('Status: unreachable')).toBeInTheDocument();
+    },
+  );
+
+  it('keeps the person signed in when a later check cannot reach the API (FR-006)', async () => {
+    let calls = 0;
+    mockApi({
+      'GET /api/me': () =>
+        ++calls === 1 ? { body: PRIYA } : Promise.reject(new TypeError('Failed to fetch')),
+    });
+    const { user, queryClient } = renderProbe();
+    await screen.findByText('Status: signedIn');
+
+    await user.click(screen.getByRole('button', { name: 'Check again' }));
+
+    await waitFor(() => expect(queryClient.getQueryState(['session'])?.status).toBe('error'));
+    expect(screen.getByText('Status: signedIn')).toBeInTheDocument();
+    expect(screen.getByText('Person: Priya Raman')).toBeInTheDocument();
+  });
+
+  it('shows the signed-in person’s light or dark mode, whatever this browser chose (FR-014)', async () => {
+    localStorage.setItem('northstar.theme', 'light');
+    mockApi({
+      'GET /api/me': {
+        body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
+      },
+    });
+    renderProbe();
+
+    await screen.findByText('Status: signedIn');
+
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
+    expect(localStorage.getItem('northstar.theme')).toBe('dark');
+  });
+});
+
+describe('SessionProvider: ending a session (US4)', () => {
+  it('signs out to the sign-in page with "You have been signed out." only (US4 scenario 1)', async () => {
+    mockApi({
+      'GET /api/me': { body: PRIYA },
+      'POST /api/auth/sign-out': { status: 204 },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+    });
+    const { user, router } = renderRoutes(routes, { route: '/' });
+
+    await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    expect(router.state.location.search).toBe('');
+    expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
+    expect(screen.queryByText('Please sign in again')).not.toBeInTheDocument();
+  });
+
+  it('forgets the person and their data when the session ends (US4 scenario 1)', async () => {
+    mockApi({
+      'GET /api/me': { body: PRIYA },
+      'POST /api/auth/sign-out': { status: 204 },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+    });
+    const { user, router, queryClient } = renderRoutes(routes, { route: '/' });
+    await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
+    queryClient.setQueryData(['sample-folders'], { items: [], total: 0 });
+
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    expect(queryClient.getQueryData(['session'])).toBeNull();
+    expect(queryClient.getQueryData(['sample-folders'])).toBeUndefined();
+  });
+
+  it('says "Please sign in again" after a reload once the session has expired (FR-006)', async () => {
+    mockApi({
+      'GET /api/me': { status: 401, body: SESSION_EXPIRED },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+    });
+    const { router } = renderRoutes(routes, { route: '/plans' });
+
+    expect(await screen.findByText('Please sign in again')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/sign-in');
+    expect(router.state.location.search).toBe('?next=%2Fplans');
+  });
+
+  it('keeps the sign-in page’s own way back when the expired session is found there (FR-005, FR-006)', async () => {
+    mockApi({
+      'GET /api/me': { status: 401, body: SESSION_EXPIRED },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+    });
+    const { router } = renderRoutes(routes, { route: '/sign-in?next=%2Fplans' });
+
+    expect(await screen.findByText('Please sign in again')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/sign-in');
+    expect(router.state.location.search).toBe('?next=%2Fplans');
+  });
+
+  it('keeps the person’s light or dark mode on the sign-in page after signing out (FR-014, research R16)', async () => {
+    // This browser was light when the page opened; the person chose dark.
+    localStorage.setItem('northstar.theme', 'light');
+    mockApi({
+      'GET /api/me': {
+        body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
+      },
+      'POST /api/auth/sign-out': { status: 204 },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+    });
+    const { user, router } = renderRoutes(routes, { route: '/' });
+
+    await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+    // The sign-in page shows what a reload would show: this browser's last theme.
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('northstar.theme')).toBe('dark');
+  });
+
+  it('lets the person’s saved theme take over from a visitor’s choice at sign-in (FR-014, research R16)', async () => {
+    const priyaInLight = { ...PRIYA, preferences: { theme: 'light', sidebarCollapsed: false } };
+    let signedIn = false;
+    const api = mockApi({
+      'GET /api/me': () =>
+        signedIn ? { body: priyaInLight } : { status: 401, body: SIGN_IN_REQUIRED },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'POST /api/auth/sign-in': () => {
+        signedIn = true;
+        return { body: priyaInLight };
+      },
+      'POST /api/auth/sign-out': { status: 204 },
+    });
+    const { user, router } = renderRoutes(routes, { route: '/sign-in' });
+
+    // A visitor switches the sign-in page to dark, then signs in as Priya, who chose light.
+    const priya = await screen.findByRole('button', { name: 'Sign in as Priya Raman, Marketer' });
+    await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
+    await user.click(priya);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'));
+
+    // After signing out, the sign-in page keeps Priya's light mode, the last one shown.
+    await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([]);
+  });
+
+  it('brings the person back to where they were after signing in again (US4 scenario 2)', async () => {
+    let checks = 0;
+    const api = mockApi({
+      'GET /api/me': () =>
+        ++checks === 1 ? { status: 401, body: SESSION_EXPIRED } : { body: PRIYA },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'POST /api/auth/sign-in': { body: PRIYA },
+    });
+    const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
+    await screen.findByText('Please sign in again');
+
+    await user.click(screen.getByRole('button', { name: 'Sign in as Priya Raman, Marketer' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
+    expect(router.state.location.search).toBe('?year=2026');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Plans' })).toBeInTheDocument();
+    expect(api.bodiesOf('POST /api/auth/sign-in')).toEqual([
+      { email: 'priya.raman@northstar.demo', password: 'northstar' },
+    ]);
+  });
+
+  it('ends a lost session once, however many answers say so at the same time (US4 scenario 2)', async () => {
+    const answers = gate();
+    const api = mockApi({
+      'GET /api/me': { body: PRIYA },
+      'PATCH /api/me/preferences': async () => {
+        await answers.opened;
+        return { status: 401, body: SESSION_EXPIRED };
+      },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+    });
+    const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
+    await screen.findByRole('heading', { level: 1, name: 'Plans' });
+    const signInPages = new Set<string>();
+    router.subscribe((state) => {
+      if (state.location.pathname === '/sign-in') {
+        signInPages.add(state.location.key);
+      }
+    });
+
+    // Two choices whose saves are both on their way when the API says the session is gone.
+    await user.click(screen.getByRole('button', { name: 'Collapse' }));
+    await user.click(await screen.findByRole('button', { name: 'Expand sidebar' }));
+    await waitFor(() => expect(api.bodiesOf('PATCH /api/me/preferences')).toHaveLength(2));
+    act(() => answers.open());
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    expect(await screen.findByText('Please sign in again')).toBeInTheDocument();
+    expect(signInPages.size).toBe(1);
+    expect(router.state.location.search).toBe('?next=%2Fplans%3Fyear%3D2026');
+    // A lost session is not a failed save: no "couldn't be saved" message.
+    expect(screen.queryByText("Your choice couldn't be saved.")).not.toBeInTheDocument();
+  });
+
+  it('notices another person signing in in another tab, and starts again on Home (edge case)', async () => {
+    let checks = 0;
+    mockApi({ 'GET /api/me': () => ({ body: ++checks === 1 ? PRIYA : DANIEL }) });
+    const { user, router, queryClient } = renderRoutes(routes, { route: '/plans' });
+    await screen.findByRole('heading', { level: 1, name: 'Plans' });
+    queryClient.setQueryData(['sample-folders'], { items: [], total: 0 });
+
+    // Daniel signed in in another tab; this tab notices at its next check (a navigation).
+    await user.click(screen.getByRole('link', { name: 'Approvals' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Welcome back, Daniel.' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Messages (F8)' })).toHaveTextContent(
+      "You're now signed in as Daniel Okoro — this was changed in another tab.",
+    );
+    expect(queryClient.getQueryData(['sample-folders'])).toBeUndefined();
+  });
+});

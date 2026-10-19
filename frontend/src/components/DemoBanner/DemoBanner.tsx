@@ -1,0 +1,8 @@
+import styles from './DemoBanner.module.css';
+
+/** The thin yellow banner on every page of this phase (FR-016, design system §2). */
+export function DemoBanner() {
+  return (
+    <p className={styles.banner}>Demo environment — sign-in and data are for demonstration only</p>
+  );
+}

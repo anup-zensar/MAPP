@@ -1,0 +1,25 @@
+/* A red-tinted box with a red bar on the left (design system §6.4). */
+.summary {
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--status-problem) 40%, transparent);
+  border-left: 4px solid var(--status-problem);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
+}
+
+.title {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.list a {
+  color: var(--status-problem-text);
+  font-size: 13px;
+  text-decoration: underline;
+}

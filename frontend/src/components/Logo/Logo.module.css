@@ -1,0 +1,44 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  background: var(--brand-gradient);
+}
+
+.tile svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--on-accent);
+}
+
+.wordmark {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.md .tile {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.md .wordmark {
+  font-size: 16px;
+}
+
+.lg .tile {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.lg .wordmark {
+  font-size: 17px;
+}

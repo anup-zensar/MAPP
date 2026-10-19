@@ -1,0 +1,42 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+/* The icon sits in a soft blue circle. */
+.icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  color: var(--blue);
+}
+
+.icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.title {
+  max-width: 32rem;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.text {
+  max-width: 32rem;
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+
+.action {
+  margin-top: 16px;
+}

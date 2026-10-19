@@ -1,0 +1,84 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--overlay);
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+/* 480–560 px wide on large screens; the whole width below 640 px. */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: clamp(480px, 40vw, 560px);
+  max-width: 100%;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: slide-in var(--dur) var(--ease-out);
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px 24px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.title {
+  padding-top: 6px;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.description {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+/* Only the body scrolls, so the title and the Save button stay in view. */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--hairline);
+  background: var(--surface);
+}
+
+@media (max-width: 639px) {
+  .panel {
+    width: 100%;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}

@@ -1,0 +1,43 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--overlay);
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+/* The drawer slides in from the left and holds the expanded sidebar. */
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  width: min(280px, 85vw);
+  border-right: 1px solid var(--hairline);
+  box-shadow: var(--shadow-lg);
+  animation: slide-in var(--dur) var(--ease-out);
+}
+
+.drawer:focus {
+  outline: none;
+}
+
+/* Close menu sits in the top right corner, next to the logo. */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}

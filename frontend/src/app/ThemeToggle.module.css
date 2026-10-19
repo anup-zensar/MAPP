@@ -1,0 +1,15 @@
+/* In the menu drawer: a full-width row with the icon and the words. "button.labelled" is more
+   specific than the Button's own classes, so these rules win whatever order the styles load in. */
+button.labelled {
+  justify-content: flex-start;
+  width: 100%;
+  gap: 12px;
+  padding-inline: 12px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 400;
+}
+
+button.labelled:hover {
+  color: var(--ink);
+}

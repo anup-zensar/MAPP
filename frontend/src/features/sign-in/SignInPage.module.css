@@ -1,0 +1,214 @@
+/* A centred card on the grey page, as ZenReach's sign-in: 440 px wide, 20 px corners. */
+.card {
+  overflow: hidden;
+  max-width: 440px;
+  margin: 24px auto 0;
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+/* The header on the strong brand gradient carries white text (5.4:1 or more, research R17). */
+.brand {
+  padding: 28px 24px 24px;
+  background: var(--brand-gradient-strong);
+  color: var(--on-accent);
+}
+
+.brandName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.brandTile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--on-accent) 15%, transparent);
+}
+
+.brandTile svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--on-accent);
+}
+
+.title {
+  margin-top: 16px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+/* "You have been signed out." / "Please sign in again". */
+.notice {
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  background: var(--chip);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+/* The notice region before it has a text (or without one): it stays in the page, so screen
+   readers announce the text when it comes, but gives back the 16 px gap below it. */
+.emptyNotice {
+  margin-bottom: -16px;
+}
+
+/* The demo notice: a blue-tinted box with the shared password. */
+.demoNotice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--blue) 25%, transparent);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--blue) 8%, var(--surface));
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.body code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--chip);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12.5px;
+}
+
+/* "Incorrect e-mail or password." and other failures, above the form. */
+.failure {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--status-problem) 40%, transparent);
+  border-left: 4px solid var(--status-problem);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.failure svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--status-problem-text);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Sign in fills the width as a pill. ".form .submit" is more specific than the Button's own
+   classes, so these rules win whatever order the styles load in. */
+.form .submit {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 4px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+}
+
+/* Demo sign-in off, or no demo people yet. */
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.demoPeople {
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+
+.sectionTitle {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 2px 0 10px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.people {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One demo person: avatar, name and job title; the whole row is the button. */
+.person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.person:hover {
+  background: var(--hover);
+}
+
+.personText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.personName {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.personTitle {
+  color: var(--ink-2);
+  font-size: 12px;
+}

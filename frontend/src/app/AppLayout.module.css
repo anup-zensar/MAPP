@@ -1,0 +1,74 @@
+.layout {
+  min-height: 100vh;
+  background: var(--page-bg);
+}
+
+/* The sidebar is fixed on the left from top to bottom: 244 px, or the 72 px icon rail. */
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  width: var(--sidebar);
+  border-right: 1px solid var(--hairline);
+  transition: width var(--dur) var(--ease-out);
+}
+
+.collapsed .sidebar {
+  width: var(--sidebar-collapsed);
+}
+
+/* The content column starts where the sidebar ends. */
+.column {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-left: var(--sidebar);
+  transition: padding-left var(--dur) var(--ease-out);
+}
+
+.collapsed .column {
+  padding-left: var(--sidebar-collapsed);
+}
+
+.main {
+  flex: 1;
+}
+
+/* The focus lands here only through the skip link; the main area needs no ring. */
+.main:focus {
+  outline: none;
+}
+
+/* The page: at most 1120 px wide, with 20 px on each side. */
+.content {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 20px 48px;
+}
+
+.footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--hairline);
+  background: var(--gray-bg);
+}
+
+.footerText {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+/* Below 768 px there is no sidebar: the top bar's Open menu shows it as a drawer instead. */
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+
+  .column,
+  .collapsed .column {
+    padding-left: 0;
+  }
+}

@@ -1,0 +1,56 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 32px 0 20px;
+}
+
+.text {
+  min-width: 0;
+}
+
+/* --blue text is only used on white backgrounds (research R17). */
+.eyebrow {
+  margin-bottom: 4px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.highlight {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.description {
+  max-width: 48rem;
+  margin-top: 6px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .title {
+    font-size: 26px;
+  }
+}

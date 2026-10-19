@@ -1,0 +1,49 @@
+/* A small, muted ⓘ that turns blue on hover, as in ZenReach. */
+.button {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  vertical-align: middle;
+  cursor: help;
+  transition: color 0.15s ease;
+}
+
+.button:hover,
+.button[data-state='open'] {
+  color: var(--blue);
+}
+
+.button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.bubble {
+  z-index: 60;
+  max-width: 260px;
+  padding: 7px 10px;
+  border-radius: var(--radius-chip);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  line-height: 1.45;
+  animation: fade-in 0.15s var(--ease-out);
+}
+
+.arrow {
+  fill: var(--tooltip-bg);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}

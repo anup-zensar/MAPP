@@ -1,0 +1,121 @@
+/* The account button: a pill with the avatar and the name, as in ZenReach. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.button:hover {
+  background: var(--hover);
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* In the sidebar a long first name is cut short with an ellipsis (the tooltip has it in full). */
+.full {
+  padding-right: 12px;
+}
+
+.full .name {
+  overflow: hidden;
+  max-width: 120px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* In the menu drawer the full name is written out and wraps. */
+.drawer {
+  width: 100%;
+  padding-right: 12px;
+  border-radius: 12px;
+}
+
+.drawer .name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.menu {
+  z-index: 50;
+  min-width: 240px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+/* Name, e-mail and job title wrap instead of being cut (there is no tooltip inside a menu). */
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fullName {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.detail {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.separator {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--hairline);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 13.5px;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.item:hover {
+  text-decoration: none;
+}
+
+/* Radix marks the item under the pointer or the arrow keys with data-highlighted; the blue tint
+   is also the keyboard focus indicator. */
+.item[data-highlighted] {
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
+}
+
+.item svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-2);
+}

@@ -1,0 +1,70 @@
+/* Shaped like StatusChip: green when everything is filled in, red while fields are missing. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.complete {
+  background: color-mix(in srgb, var(--status-positive) 12%, transparent);
+  color: var(--status-positive-text);
+}
+
+.incomplete {
+  background: color-mix(in srgb, var(--status-problem) 12%, transparent);
+  color: var(--status-problem-text);
+  cursor: pointer;
+}
+
+.incomplete:hover {
+  background: color-mix(in srgb, var(--status-problem) 20%, transparent);
+}
+
+.incomplete svg {
+  width: 14px;
+  height: 14px;
+}
+
+.list {
+  z-index: 50;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: left;
+}
+
+button.field {
+  color: var(--link);
+  cursor: pointer;
+}
+
+button.field:hover {
+  background: var(--hover);
+}

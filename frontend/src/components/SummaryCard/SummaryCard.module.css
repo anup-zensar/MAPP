@@ -1,0 +1,61 @@
+.card {
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.value {
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: 27px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+/* The shortened value looks like the plain value; only its focus ring shows it is a control. */
+.fullValue {
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: default;
+}
+
+.neutral {
+  color: var(--status-neutral-text);
+}
+
+.review {
+  color: var(--status-review-text);
+}
+
+.positive {
+  color: var(--status-positive-text);
+}
+
+.active {
+  color: var(--status-active-text);
+}
+
+.done {
+  color: var(--status-done-text);
+}
+
+.problem {
+  color: var(--status-problem-text);
+}

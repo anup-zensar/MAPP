@@ -1,0 +1,30 @@
+/* White initials on the strong gradient read at 5.4:1 or more (research R17). */
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand-gradient-strong);
+  color: var(--on-accent);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.sm {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+
+.md {
+  width: 32px;
+  height: 32px;
+  font-size: 12.5px;
+}
+
+.lg {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}

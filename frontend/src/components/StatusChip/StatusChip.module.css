@@ -1,0 +1,41 @@
+/* The word uses the darker -text shade: 4.5:1 or more on the 12 % tint (research R17). */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-chip);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.neutral {
+  background: color-mix(in srgb, var(--status-neutral) 12%, transparent);
+  color: var(--status-neutral-text);
+}
+
+.review {
+  background: color-mix(in srgb, var(--status-review) 12%, transparent);
+  color: var(--status-review-text);
+}
+
+.positive {
+  background: color-mix(in srgb, var(--status-positive) 12%, transparent);
+  color: var(--status-positive-text);
+}
+
+.active {
+  background: color-mix(in srgb, var(--status-active) 12%, transparent);
+  color: var(--status-active-text);
+}
+
+.done {
+  background: color-mix(in srgb, var(--status-done) 12%, transparent);
+  color: var(--status-done-text);
+}
+
+.problem {
+  background: color-mix(in srgb, var(--status-problem) 12%, transparent);
+  color: var(--status-problem-text);
+}

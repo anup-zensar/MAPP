@@ -1,0 +1,22 @@
+.bubble {
+  z-index: 60;
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: var(--radius-chip);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  line-height: 1.4;
+  animation: fade-in 0.15s var(--ease-out);
+}
+
+.arrow {
+  fill: var(--tooltip-bg);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}

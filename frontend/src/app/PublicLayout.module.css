@@ -1,0 +1,27 @@
+/* ZenReach's sign-in sits on the grey page background. */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--gray-bg);
+}
+
+/* The logo on the left; the theme switch, the header's second item, goes to the right. */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 20px;
+}
+
+.main {
+  flex: 1;
+  padding: 16px 16px 48px;
+}
+
+/* The focus lands here only through the skip link; the main area needs no ring. */
+.main:focus {
+  outline: none;
+}

@@ -1,0 +1,99 @@
+/* ZenReach's compact button (.btn-pill): 10 px corners, 8 × 16 px padding, 13.5 px medium text. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s var(--ease-out);
+}
+
+.button:hover {
+  text-decoration: none;
+}
+
+/* A small press, so a click is felt. */
+.button:active {
+  transform: scale(0.97);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.md {
+  min-height: 36px;
+  padding: 8px 16px;
+  font-size: 13.5px;
+}
+
+.sm {
+  min-height: 30px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+}
+
+/* An icon without a label is a square. */
+.iconOnly.md {
+  width: 36px;
+  padding: 0;
+}
+
+.iconOnly.sm {
+  width: 30px;
+  padding: 0;
+}
+
+.primary {
+  background: var(--button-primary-bg);
+  color: var(--on-accent);
+}
+
+.primary:hover {
+  background: var(--button-primary-bg-hover);
+}
+
+.secondary {
+  border-color: var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.secondary:hover {
+  background: var(--gray-bg);
+}
+
+.danger {
+  border-color: color-mix(in srgb, var(--status-problem) 45%, transparent);
+  background: var(--surface);
+  color: var(--status-problem-text);
+}
+
+.danger:hover {
+  background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
+}
+
+.ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.ghost:hover {
+  background: var(--hover);
+}

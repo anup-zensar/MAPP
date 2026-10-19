@@ -1,0 +1,36 @@
+.skeleton {
+  max-width: 100%;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A grey bar with a lighter band sweeping across it. */
+.line {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--chip);
+}
+
+.line:last-child:not(:first-child) {
+  width: 60%;
+}
+
+.line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--chip), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}

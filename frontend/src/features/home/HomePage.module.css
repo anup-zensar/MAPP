@@ -1,0 +1,42 @@
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.step + .step {
+  border-top: 1px solid var(--hairline);
+}
+
+/* The step number in a small circle on the strong brand gradient (white text, research R17). */
+.number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brand-gradient-strong);
+  color: var(--on-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* A standalone link: underlined on hover (global.css). */
+.link {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.text {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
