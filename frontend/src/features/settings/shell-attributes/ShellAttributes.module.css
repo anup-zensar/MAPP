@@ -175,6 +175,14 @@
   font-size: 12.5px;
 }
 
+/* The options card's buttons wrap on narrow screens instead of widening the page. */
+.cardButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* The options card's toolbar and the line under the table. */
 .optionsToolbar {
   display: flex;
@@ -230,26 +238,53 @@
   list-style: none;
 }
 
+/* The buttons line up with the option's field, whatever shows under it (a problem, Linked to). */
 .optionRow {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 4px;
 }
 
-.optionRow > :first-child {
+.optionFields {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 12px;
   min-width: 0;
 }
 
 .optionButtons {
   display: flex;
   gap: 2px;
-  padding-bottom: 4px;
+  padding-top: 26px;
 }
 
-.impactList {
-  margin: 8px 0 0;
-  padding-left: 18px;
+/* An option of an attribute that starts depending on another: its label, then Linked to. */
+.linkRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.linkRow:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.linkLabel {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* The fields of the option side panel. */
+.panelFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* A problem that belongs to a group rather than one field ("Add at least one option."). */

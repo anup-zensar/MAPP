@@ -23,6 +23,7 @@ import {
   MARKING_WORDS,
   TYPE_WORDS,
 } from './attributeWords';
+import { AttributePreview } from './AttributePreview';
 import { OptionsCard } from './OptionsCard';
 import { useShellAttribute } from './shellAttributesApi';
 import type { ShellAttribute } from './shellAttributesApi';
@@ -32,8 +33,9 @@ import { useAttributeActions } from './useAttributeActions';
 const NOT_FOUND = 'This Shell attribute no longer exists — someone may have deleted it.';
 
 /**
- * One Shell attribute (feature 002, US2, FR-020): its settings with where it is used, its locks
- * and its options, each with its own "Used by". Tab title "<label> · Shell attributes".
+ * One Shell attribute (feature 002, US2, US3, FR-020): its settings with where it is used, its
+ * locks, its options, each with its own "Used by", and the preview of its level's form. Tab title
+ * "<label> · Shell attributes".
  */
 export function ShellAttributePage() {
   const { attributeId = '' } = useParams();
@@ -152,6 +154,7 @@ function AttributeView({ attribute }: { attribute: ShellAttribute }) {
             <p>{`${TYPE_WORDS[attribute.type]} attributes have no options.`}</p>
           </Card>
         )}
+        <AttributePreview attribute={attribute} />
       </div>
       {actions.dialog}
     </>

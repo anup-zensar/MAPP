@@ -1,0 +1,49 @@
+/* The attribute page's Preview card (feature 002, FR-020): one column, like the real forms. */
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.completeness {
+  display: flex;
+}
+
+/* Try saving with its explanation beside it; under it on narrow screens. */
+.trySaving {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.works {
+  color: var(--status-positive-text);
+  font-weight: 600;
+}
+
+.cleared {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.failure {
+  color: var(--status-problem-text);
+  font-size: 13px;
+}

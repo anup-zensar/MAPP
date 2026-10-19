@@ -2,9 +2,13 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useToast } from '@/components';
 import { plural } from '@/lib/text';
+import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import { lockReason } from './attributeWords';
-import { DeleteDialog } from './DeleteDialog';
-import { useDeleteAttribute, useSetAttributeStatus } from './shellAttributesApi';
+import {
+  CHANGED_BY_ANY_CHANGE,
+  useDeleteAttribute,
+  useSetAttributeStatus,
+} from './shellAttributesApi';
 import type { ShellAttribute } from './shellAttributesApi';
 import { useStatusChange } from './useStatusChange';
 
@@ -21,7 +25,7 @@ export interface AttributeActions {
 /**
  * Set inactive, Reactivate and Delete of a Shell attribute (FR-004, FR-023). A locked action
  * stays offered and says why when chosen (design system §6.6): "Business unit can't be deleted,
- * set inactive, …".
+ * set inactive, …". The delete question is the Settings one (shared/SettingDeleteDialog).
  */
 export function useAttributeActions(
   onDeleted?: (attribute: ShellAttribute) => void,
@@ -55,18 +59,19 @@ export function useAttributeActions(
   }
 
   const dialog = deleting && (
-    <DeleteDialog
-      recordType="Shell attribute"
+    <SettingDeleteDialog
+      kind="shellAttribute"
       name={deleting.label}
       usage={deleting.usage}
       active={deleting.active}
-      unusedText={
+      deleteText={
         deleting.optionCount > 0
           ? `It moves to the recycle bin together with its ${plural(deleting.optionCount, 'option')}; you can restore it.`
-          : 'It moves to the recycle bin; you can restore it.'
+          : undefined
       }
       remove={() => deleteAttribute.mutateAsync(deleting.id)}
       setInactive={() => setActive(deleting, false)}
+      invalidate={CHANGED_BY_ANY_CHANGE}
       onDeleted={() => onDeleted?.(deleting)}
       onClose={() => setDeleting(null)}
     />

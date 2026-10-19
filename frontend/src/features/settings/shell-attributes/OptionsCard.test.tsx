@@ -1,11 +1,20 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { OptionsCard } from './OptionsCard';
-import { MEDIA_CHANNEL, page, shellAttribute, shellOption, usedBy } from './testData';
+import {
+  emptyForm,
+  formAttribute,
+  formOption,
+  MEDIA_CHANNEL,
+  page,
+  shellAttribute,
+  shellOption,
+  usedBy,
+} from './testData';
 
 const OPTIONS_PATH = 'GET /api/shell-attributes/SA-1010/options';
 
@@ -260,12 +269,13 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     await user.click(await screen.findByRole('button', { name: 'Actions for TV' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
 
-    const dialog = await screen.findByRole('dialog', { name: "'TV' is in use" });
+    const dialog = await screen.findByRole('alertdialog', { name: "'TV' is in use" });
     expect(dialog).toHaveTextContent(
       "Used by 7 activities, so it can't be deleted. It's already inactive.",
     );
+    expect(within(dialog).queryByRole('button', { name: 'Set inactive' })).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Close' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   });
 
   it('deletes an unused option and offers Undo', async () => {
@@ -325,5 +335,145 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
 
     expect(await screen.findByRole('columnheader', { name: 'Linked to' })).toBeInTheDocument();
     expect(screen.getByText('Asia, Pacific (inactive)')).toBeInTheDocument();
+  });
+});
+
+describe('OptionsCard: options from a spreadsheet (FR-031)', () => {
+  it('opens the import of the attribute', async () => {
+    const { user } = renderCard({ [OPTIONS_PATH]: { body: page([TV]) } });
+
+    await user.click(await screen.findByRole('button', { name: 'Import from a spreadsheet' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Import options into Media channel' }),
+    ).toBeInTheDocument();
+  });
+
+  it('downloads the template of the attribute', async () => {
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: () => 'blob:template',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: () => {} });
+    const names: string[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      names.push(this.download);
+    });
+    const { user } = renderCard({ [OPTIONS_PATH]: { body: page([TV]) } });
+
+    await user.click(await screen.findByRole('button', { name: 'Download template' }));
+
+    expect(names).toEqual(['Media channel – options template.csv']);
+    click.mockRestore();
+    Reflect.deleteProperty(URL, 'createObjectURL');
+    Reflect.deleteProperty(URL, 'revokeObjectURL');
+  });
+});
+
+describe('OptionsCard: options of a dependent attribute (FR-022)', () => {
+  const REGION = shellAttribute({
+    id: 'SA-1010',
+    label: 'Region',
+    parentAttribute: { id: 'SA-1009', name: 'Cluster', active: true },
+  });
+  const CHINA = shellOption({
+    id: 'SO-1101',
+    label: 'Retail – China',
+    attributeId: 'SA-1010',
+    parentOptions: [
+      { id: 'SO-1', name: 'Asia', active: true },
+      { id: 'SO-2', name: 'Pacific', active: false },
+    ],
+  });
+  /** The activity form: Cluster (Asia, Pacific inactive, Europe), then Region depending on it. */
+  const FORM = {
+    ...emptyForm('activity'),
+    sections: [
+      {
+        name: 'Shell attributes',
+        conditional: false,
+        attributes: [
+          formAttribute({
+            id: 'SA-1009',
+            label: 'Cluster',
+            options: [
+              formOption('SO-1', 'Asia'),
+              formOption('SO-2', 'Pacific', [], false),
+              formOption('SO-3', 'Europe'),
+            ],
+          }),
+          formAttribute({
+            id: 'SA-1010',
+            label: 'Region',
+            parentAttributeId: 'SA-1009',
+            options: [formOption('SO-1101', 'Retail – China', ['SO-1', 'SO-2'])],
+          }),
+        ],
+      },
+    ],
+  };
+
+  it("adds an option linked to the parent's active options", async () => {
+    const { user, api } = renderCard(
+      {
+        [OPTIONS_PATH]: { body: page([CHINA]) },
+        'GET /api/shell-attribute-forms/activity': { body: FORM },
+        'POST /api/shell-attributes/SA-1010/options': {
+          status: 201,
+          body: { ...CHINA, id: 'SO-1102', label: 'Retail – Japan' },
+        },
+      },
+      REGION,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Add option' }));
+    const panel = await screen.findByRole('dialog', { name: 'Add option' });
+    await user.type(within(panel).getByRole('textbox', { name: /Label/ }), 'Retail – Japan');
+    const linkedTo = await within(panel).findByRole('group', { name: /^Linked to/ });
+    expect(linkedTo).toHaveTextContent('Shown when one of these cluster options is chosen.');
+    expect(within(linkedTo).queryByRole('checkbox', { name: /Pacific/ })).not.toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Save' }));
+
+    expect(
+      await within(panel).findAllByText("Link 'Retail – Japan' to at least one cluster option."),
+    ).toHaveLength(2);
+    expect(api.bodiesOf('POST /api/shell-attributes/SA-1010/options')).toEqual([]);
+    await user.click(within(linkedTo).getByRole('checkbox', { name: 'Asia' }));
+    await user.click(within(panel).getByRole('button', { name: 'Save' }));
+
+    expect(await findMessages()).toHaveTextContent("Option 'Retail – Japan' added");
+    expect(api.bodiesOf('POST /api/shell-attributes/SA-1010/options')).toEqual([
+      { label: 'Retail – Japan', parentOptionIds: ['SO-1'] },
+    ]);
+  });
+
+  it('changes only the links of an option, keeping an inactive link until it is unticked', async () => {
+    const { user, api } = renderCard(
+      {
+        [OPTIONS_PATH]: { body: page([CHINA]) },
+        'GET /api/shell-attribute-forms/activity': { body: FORM },
+        'PATCH /api/shell-attribute-options/SO-1101': {
+          body: { ...CHINA, parentOptions: [{ id: 'SO-1', name: 'Asia', active: true }] },
+        },
+      },
+      REGION,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Retail – China' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit' }));
+    const panel = await screen.findByRole('dialog', { name: "Edit option 'Retail – China'" });
+    const linkedTo = await within(panel).findByRole('group', { name: /^Linked to/ });
+    expect(within(linkedTo).getByRole('checkbox', { name: 'Asia' })).toBeChecked();
+    const pacific = within(linkedTo).getByRole('checkbox', { name: 'Pacific (inactive)' });
+    expect(pacific).toBeChecked();
+    await user.click(pacific);
+    await user.click(within(panel).getByRole('button', { name: 'Save' }));
+
+    expect(await findMessages()).toHaveTextContent("Option 'Retail – China' saved");
+    expect(api.bodiesOf('PATCH /api/shell-attribute-options/SO-1101')).toEqual([
+      { parentOptionIds: ['SO-1'], version: 1 },
+    ]);
   });
 });

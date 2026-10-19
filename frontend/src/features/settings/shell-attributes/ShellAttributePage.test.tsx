@@ -8,6 +8,7 @@ import { ShellAttributePage } from './ShellAttributePage';
 import {
   BUSINESS_UNIT,
   BUSINESS_UNIT_LOCK,
+  FORM_ANSWERS,
   MEDIA_CHANNEL,
   OLD_NOTES,
   page,
@@ -17,8 +18,9 @@ import {
 
 const TV = shellOption({ id: 'SO-1101', label: 'TV', attributeId: 'SA-1010' });
 
+/** The attribute page; the preview asks for the level's form (FORM_ANSWERS). */
 function renderPage(id: string, answers: Record<string, MockHandler>) {
-  const api = mockApi(answers);
+  const api = mockApi({ ...FORM_ANSWERS, ...answers });
   const rendered = renderWithProviders(<ShellAttributePage />, {
     route: `/settings/shell-attributes/${id}`,
     user: testUser(),
@@ -72,6 +74,33 @@ describe('ShellAttributePage (FR-020)', () => {
     const options = screen.getByRole('region', { name: 'Options' });
     expect(await within(options).findByRole('rowheader', { name: 'TV' })).toBeInTheDocument();
     expect(within(options).getByText('Not used yet')).toBeInTheDocument();
+
+    // The preview of the Activity form, with this attribute on it (FR-020).
+    const preview = screen.getByRole('region', { name: 'Preview — Activity form' });
+    expect(
+      await within(preview).findByRole('combobox', { name: /Media channel/ }),
+    ).toBeInTheDocument();
+    expect(preview).toHaveTextContent('Needed to submit');
+  });
+
+  it('shows what the attribute depends on and when it is shown (US3)', async () => {
+    renderPage('SA-1011', {
+      'GET /api/shell-attributes/SA-1011': {
+        body: {
+          ...PIR,
+          parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true },
+          condition: [{ id: 'SO-BU-LUB', name: 'Lubricants', active: true }],
+        },
+      },
+      'GET /api/shell-attributes/SA-1011/options': { body: page([]) },
+    });
+
+    const settings = await screen.findByRole('region', { name: 'Settings' });
+    const facts = within(settings)
+      .getAllByRole('definition')
+      .map((value) => value.textContent);
+    expect(facts).toContain('Media channel');
+    expect(facts).toContain('Lubricants');
   });
 
   it('says that types without options have none', async () => {

@@ -1,0 +1,177 @@
+/* The option import dialog (feature 002, US6): the shared dialog look, wide enough for the review. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--overlay);
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+/* The review can be long: the dialog keeps its buttons in view and scrolls its body. */
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: min(600px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, -50%);
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+.title {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.text {
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  margin-top: 20px;
+  overflow-y: auto;
+}
+
+.fileField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.file {
+  max-width: 100%;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.problem {
+  color: var(--status-problem-text);
+  font-size: 12.5px;
+}
+
+.checking {
+  display: flex;
+  color: var(--ink-2);
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.nothing {
+  font-weight: 600;
+}
+
+.empty {
+  color: var(--ink-2);
+}
+
+.list {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+}
+
+.summary {
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 12px 8px;
+  list-style: none;
+}
+
+/* Row number, option (with its parent) and what happens, wrapping on narrow screens. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.rowNumber {
+  min-width: 72px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowLabel {
+  overflow-wrap: anywhere;
+}
+
+.parent {
+  color: var(--ink-2);
+}
+
+.rowMessage {
+  color: var(--ink-2);
+}
+
+.rowProblem {
+  color: var(--status-problem-text);
+}
+
+.more {
+  padding: 0 12px 8px;
+  color: var(--ink-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

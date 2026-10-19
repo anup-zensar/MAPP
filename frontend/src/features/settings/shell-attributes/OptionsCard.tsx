@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Download, Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
 import {
   ActionsMenu,
@@ -13,9 +13,12 @@ import {
 } from '@/components';
 import type { ActionsMenuItem } from '@/components';
 import { formatWhole } from '@/lib/decimal';
-import { DeleteDialog } from './DeleteDialog';
+import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
+import { ImportOptionsDialog } from './ImportOptionsDialog';
+import { downloadOptionsTemplate } from './importTemplate';
 import { OptionPanel } from './OptionPanel';
 import {
+  CHANGED_BY_ANY_CHANGE,
   useDeleteOption,
   useMoveOption,
   useSetOptionStatus,
@@ -35,15 +38,17 @@ const STATUS_OPTIONS: { value: OptionStatus; label: string }[] = [
 type OpenPanel = { option?: ShellAttributeOption };
 
 /**
- * The Options card of a choice attribute (feature 002, FR-018, FR-020, SC-007): its options in
- * display order with their own "Used by", searched by the API (any part of the label), 100 at a
- * time with **Show more**, and Add, Edit, Move, Set inactive, Reactivate and Delete.
+ * The Options card of a choice attribute (feature 002, FR-018, FR-020, FR-031, SC-007): its
+ * options in display order with their own "Used by", searched by the API (any part of the label),
+ * 100 at a time with **Show more**; Add, Edit, Move, Set inactive, Reactivate and Delete; and long
+ * lists imported from a spreadsheet made from the downloadable template.
  */
 export function OptionsCard({ attribute }: { attribute: ShellAttribute }) {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<OptionStatus>('all');
   const [panel, setPanel] = useState<OpenPanel | null>(null);
   const [deleting, setDeleting] = useState<ShellAttributeOption | null>(null);
+  const [importing, setImporting] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const options = useShellAttributeOptions(attribute.id, { q, status });
   const setOptionStatus = useSetOptionStatus();
@@ -104,9 +109,17 @@ export function OptionsCard({ attribute }: { attribute: ShellAttribute }) {
     <Card
       title="Options"
       actions={
-        <Button icon={<Plus />} onClick={() => setPanel({})}>
-          Add option
-        </Button>
+        <div className={styles.cardButtons}>
+          <Button icon={<Plus />} onClick={() => setPanel({})}>
+            Add option
+          </Button>
+          <Button icon={<Upload />} onClick={() => setImporting(true)}>
+            Import from a spreadsheet
+          </Button>
+          <Button icon={<Download />} onClick={() => downloadOptionsTemplate(attribute)}>
+            Download template
+          </Button>
+        </div>
       }
     >
       <div className={styles.optionsToolbar}>
@@ -207,16 +220,19 @@ export function OptionsCard({ attribute }: { attribute: ShellAttribute }) {
         <OptionPanel attribute={attribute} option={panel.option} onClose={() => setPanel(null)} />
       )}
       {deleting && (
-        <DeleteDialog
-          recordType="option"
+        <SettingDeleteDialog
+          kind="option"
           name={deleting.label}
           usage={deleting.usage}
           active={deleting.active}
-          unusedText="It moves to the recycle bin; you can restore it."
           remove={() => deleteOption.mutateAsync(deleting.id)}
           setInactive={() => setActive(deleting, false)}
+          invalidate={CHANGED_BY_ANY_CHANGE}
           onClose={() => setDeleting(null)}
         />
+      )}
+      {importing && (
+        <ImportOptionsDialog attribute={attribute} onClose={() => setImporting(false)} />
       )}
     </Card>
   );
