@@ -58,6 +58,11 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		samples.NewHandler(samplesService).Routes(router, signedIn)
 	}
 
+	// Line items (feature 007); its adapters over the other features are in lineitems.go.
+	if err := addLineItems(router, signedIn, db, generator, historyService, now); err != nil {
+		return nil, err
+	}
+
 	// Routes lists the operations only: the catch-all registered next is not an operation of the contract.
 	routes := router.Patterns()
 	// Every other path or method under /api/ answers JSON 404 (http.ServeMux would answer plain text).

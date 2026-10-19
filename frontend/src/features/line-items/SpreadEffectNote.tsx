@@ -1,3 +1,6 @@
+import styles from './SpreadEditor.module.css';
+import { useSpreadEffectText } from './useSpreadEffectText';
+
 export interface SpreadEffectNoteProps {
   activityId: string;
   /** The dates typed in the activity form ("YYYY-MM-DD" or ""). */
@@ -8,9 +11,8 @@ export interface SpreadEffectNoteProps {
 
 /**
  * What new activity dates do to its line items' spreads, under the dates of feature 006's activity
- * edit form (007 plan, 007-P11): "When you save, 3 line items are re-spread over the new dates." —
- * STUB of the shared foundation: nothing yet. Feature 007 replaces this file; 006's
- * ActivityFormPage already places it.
+ * edit form (FR-022, D-150): "When you save, 3 line items are re-spread over the new dates." Nothing
+ * when the dates are the saved ones or the activity has no line items.
  */
 export function SpreadEffectNote({
   activityId,
@@ -18,9 +20,13 @@ export function SpreadEffectNote({
   endDate,
   ongoing,
 }: SpreadEffectNoteProps) {
-  void activityId;
-  void startDate;
-  void endDate;
-  void ongoing;
-  return null;
+  const text = useSpreadEffectText(activityId, { startDate, endDate, ongoing });
+  if (!text) {
+    return null;
+  }
+  return (
+    <p role="status" className={styles.note}>
+      {text}
+    </p>
+  );
 }

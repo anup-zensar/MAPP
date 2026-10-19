@@ -1,18 +1,28 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderApp } from '@/test/app';
+import type { MockHandler } from '@/test/mockApi';
+import { details, formAnswers, formOptions } from './testData';
 
-// Feature 007's addresses (build guide §5). Feature 007 keeps this file up to date as it replaces
-// the stub pages (their own requests go into renderApp's answers).
+const FORM_OPTIONS: Record<string, MockHandler> = {
+  ...formAnswers(),
+  'GET /api/activities/A-1001/line-items/form-options': { body: formOptions() },
+};
+const DETAILS: Record<string, MockHandler> = {
+  ...FORM_OPTIONS,
+  'GET /api/line-items/L-1001': { body: details() },
+};
+
+// Feature 007's addresses (build guide §5), with the requests each page makes.
 describe('Line item routes (feature 007)', () => {
-  it.each([
-    ['/activities/A-1001/line-items/new', 'New line item'],
-    ['/line-items/L-1001', 'Line item'],
-    ['/line-items/L-1001/edit', 'Edit line item'],
-  ])('opens %s: "%s"', async (path, title) => {
-    renderApp(path);
+  it.each<[string, string, string, Record<string, MockHandler>]>([
+    ['/activities/A-1001/line-items/new', 'New line item', 'New line item', FORM_OPTIONS],
+    ['/line-items/L-1001', 'Agency fee', 'Agency fee', DETAILS],
+    ['/line-items/L-1001/edit', "Edit 'Agency fee'", 'Edit Agency fee', DETAILS],
+  ])('opens %s: "%s"', async (path, heading, tab, answers) => {
+    renderApp(path, answers);
 
-    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · NorthStar`);
+    expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
+    expect(document.title).toBe(`${tab} · NorthStar`);
   });
 });

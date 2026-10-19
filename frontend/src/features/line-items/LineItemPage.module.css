@@ -1,0 +1,81 @@
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ID · Owner · Planned cost · Spread, side by side; they wrap on narrow screens. */
+.factsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+}
+
+.bookkeeping {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fact {
+  margin: 0;
+  font-size: 14px;
+}
+
+.fact dt {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.fact dd {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.problem {
+  color: var(--status-problem-text);
+  font-size: 13px;
+}
+
+.months {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  list-style: none;
+}
+
+.outside {
+  color: var(--ink-2);
+}
