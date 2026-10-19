@@ -1,0 +1,35 @@
+/* The initiative's campaign: shown, never typed (it changes only with Move). */
+.readOnly {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.readOnlyLabel {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.readOnlyInput {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.readOnlyInput:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}

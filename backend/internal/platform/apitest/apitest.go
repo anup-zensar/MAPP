@@ -20,10 +20,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -117,21 +119,37 @@ func New(t testing.TB, opts ...Option) *Server {
 	return server
 }
 
-// newContractValidator returns a validator for backend/api/openapi.yaml. Format assertions are on, so
+// The contract validator is built once per test binary and shared by every test server: building it
+// from the whole contract takes seconds, and no test runs in parallel with another.
+var (
+	contractOnce    sync.Once
+	sharedContract  validator.Validator
+	contractFailure error
+)
+
+// newContractValidator returns the validator for backend/api/openapi.yaml. Format assertions are on, so
 // that a "date-time" really is one; security is not checked here, because the API's own sign-in
 // middleware enforces it and has its own tests.
 func newContractValidator(t testing.TB) validator.Validator {
 	t.Helper()
-	document, err := libopenapi.NewDocument(api.OpenAPI)
-	if err != nil {
-		t.Fatalf("apitest: reading the contract: %v", err)
+	contractOnce.Do(func() {
+		document, err := libopenapi.NewDocument(api.OpenAPI)
+		if err != nil {
+			contractFailure = fmt.Errorf("reading the contract: %w", err)
+			return
+		}
+		contract, problems := validator.NewValidator(document,
+			config.WithFormatAssertions(), config.WithoutSecurityValidation())
+		if len(problems) > 0 {
+			contractFailure = fmt.Errorf("building the contract validator: %w", errors.Join(problems...))
+			return
+		}
+		sharedContract = contract
+	})
+	if contractFailure != nil {
+		t.Fatalf("apitest: %v", contractFailure)
 	}
-	contract, problems := validator.NewValidator(document,
-		config.WithFormatAssertions(), config.WithoutSecurityValidation())
-	if len(problems) > 0 {
-		t.Fatalf("apitest: building the contract validator: %v", errors.Join(problems...))
-	}
-	return contract
+	return sharedContract
 }
 
 // clock is the API's clock: the fixed time the test has reached.

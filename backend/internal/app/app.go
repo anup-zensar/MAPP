@@ -6,13 +6,16 @@ import (
 	"net/http"
 
 	"northstar/internal/auth"
+	"northstar/internal/campaigns"
 	"northstar/internal/history"
 	"northstar/internal/people"
+	"northstar/internal/plans"
 	"northstar/internal/platform/clock"
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/store"
 	"northstar/internal/platform/web"
 	"northstar/internal/samples"
+	"northstar/internal/settings"
 )
 
 // App is the NorthStar API, ready to serve.
@@ -44,6 +47,26 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
 	history.NewHandler(historyService).Routes(router, signedIn)
+
+	// Feature 005: campaigns and initiatives, with their history kinds under the plan kind (parents first).
+	// The plan kind and the Settings rules are interim stand-ins until features 004 and 002 are merged
+	// (campaign_adapters.go); feature 006 replaces NoActivities.
+	plansRepo := plans.NewJSONRepository()
+	if err := historyService.Register(interimPlanKind(plansRepo)); err != nil {
+		return nil, err
+	}
+	campaignsService := campaigns.NewService(db, campaigns.NewJSONRepository(), generator, historyService, now, campaigns.Deps{
+		Plans:      campaignPlans{repo: plansRepo},
+		People:     peopleRepo,
+		Settings:   interimSettings{repo: settings.NewJSONRepository()},
+		Activities: campaigns.NoActivities{},
+	})
+	for _, kind := range campaignsService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	campaigns.NewHandler(campaignsService).Routes(router, signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API

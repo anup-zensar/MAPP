@@ -1,9 +1,22 @@
+import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { LinkButton } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
+import { useFormatters } from '@/lib/useFormatters';
+import { usePlanCampaigns } from './campaignApi';
+import { campaignRows, totalsFooter } from './campaignRows';
+import { useRowsBelowInitiatives } from './extensions';
+import { ADD_CAMPAIGN } from './texts';
+import { useRecordActions } from './useRecordActions';
 
 /** What feature 005 puts into feature 004's plan tree (005 plan, "Plan tree integration"). */
 export interface CampaignTreeContent {
-  /** One node per campaign with its initiatives as children: the plan node's children. */
+  /**
+   * One node per campaign with its initiatives as children: the plan node's children. Cells by
+   * column key: name, owner, dates, status, budget, plannedCost, budgetUsed (campaignRows.tsx).
+   * Plan and campaign rows start expanded (FR-020); the highlighted row's ancestors open too.
+   */
   nodes: TreeNode[];
   /** **Add campaign**, for the tree's toolbar (PlanTree `toolbarActions`). */
   toolbarActions: ReactNode;
@@ -21,22 +34,52 @@ export interface CampaignTreeContent {
 }
 
 /**
- * The campaigns and initiatives of a plan for feature 004's plan page — STUB of the shared
- * foundation: no rows and no actions yet. Feature 005 replaces this file (it reads
- * GET /api/plans/{planId}/campaigns and adds the activity rows of `extensions.ts`); feature 004's
- * PlanPage already calls it, so neither feature changes the other's files.
+ * The campaigns and initiatives of a plan for feature 004's plan page (FR-001, FR-012, FR-019 –
+ * FR-022): GET /api/plans/{planId}/campaigns as tree rows with feature 006's activity rows under
+ * the initiatives, **Add campaign** for the toolbar, the plan row and the empty tree, and the
+ * totals row. Every change refreshes the list (refreshPlanning), so the rows follow at once.
  */
 export function useCampaignTreeContent(planId: string): CampaignTreeContent {
-  void planId;
+  const query = usePlanCampaigns(planId);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const formatters = useFormatters();
+  const rowsBelow = useRowsBelowInitiatives(planId);
+  const actions = useRecordActions();
+  const newHref = `/plans/${planId}/campaigns/new`;
+  const addCampaign = (
+    <LinkButton to={newHref} icon={<Plus />}>
+      {ADD_CAMPAIGN}
+    </LinkButton>
+  );
+
   return {
-    nodes: [],
-    toolbarActions: null,
-    planRowActions: [],
-    emptyAction: null,
-    footer: undefined,
-    dialogs: null,
-    isLoading: false,
-    error: null,
-    refetch: () => {},
+    nodes: query.data
+      ? campaignRows(query.data, {
+          planId,
+          formatters,
+          navigate,
+          highlightId: highlightOf(location.state),
+          rowsBelow,
+          onDelete: actions.askDelete,
+        })
+      : [],
+    toolbarActions: addCampaign,
+    planRowActions: [{ label: ADD_CAMPAIGN, onSelect: () => void navigate(newHref) }],
+    emptyAction: addCampaign,
+    footer: query.data ? totalsFooter(query.data, formatters) : undefined,
+    dialogs: actions.dialogs,
+    isLoading: query.isPending,
+    error: query.error,
+    refetch: () => void query.refetch(),
   };
+}
+
+/** The record to highlight, from the location state a create, move or copy leaves (FR-004). */
+function highlightOf(state: unknown): string | undefined {
+  if (state && typeof state === 'object' && 'highlight' in state) {
+    const { highlight } = state;
+    return typeof highlight === 'string' ? highlight : undefined;
+  }
+  return undefined;
 }

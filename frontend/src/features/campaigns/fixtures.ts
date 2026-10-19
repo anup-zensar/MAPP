@@ -1,0 +1,161 @@
+/**
+ * Contract-shaped answers for this feature's tests (typed with the API schema, so a contract
+ * change shows here first). Only test files import this file.
+ */
+import type { components } from '@/api/schema';
+import type { Campaign, Initiative, Money, PersonRef, PlanCampaigns } from './campaignApi';
+
+type BudgetAndCost = components['schemas']['BudgetAndCost'];
+
+export const PLAN_ID = 'P-1001';
+export const PLAN_NAME = 'FY2026 Lubricants Europe';
+
+export function usd(amount: string): Money {
+  return { amount, currency: 'USD' };
+}
+
+export const PRIYA: PersonRef = {
+  id: 'U-1002',
+  name: 'Priya Raman',
+  initials: 'PR',
+  jobTitle: 'Marketer',
+  active: true,
+};
+export const ALEX: PersonRef = {
+  id: 'U-1001',
+  name: 'Alex Morgan',
+  initials: 'AM',
+  jobTitle: 'Head of marketing',
+  active: true,
+};
+
+const META = {
+  version: 3,
+  createdAt: '2026-02-10T09:00:00Z',
+  createdBy: { id: 'U-1001', name: 'Alex Morgan' },
+  updatedAt: '2026-03-05T14:00:00Z',
+  updatedBy: { id: 'U-1002', name: 'Priya Raman' },
+};
+
+export function budgetAndCost(overrides: Partial<BudgetAndCost> = {}): BudgetAndCost {
+  return {
+    allocatedToChildren: usd('0.00'),
+    remainingForChildren: null,
+    overAllocatedBy: null,
+    plannedCost: null,
+    budgetUsedPercent: null,
+    overBudget: false,
+    leftToPlan: null,
+    ...overrides,
+  };
+}
+
+export function initiative(overrides: Partial<Initiative> = {}): Initiative {
+  return {
+    id: 'I-1001',
+    planId: PLAN_ID,
+    campaignId: 'C-1001',
+    name: 'Digital & social',
+    description: '',
+    ownerId: PRIYA.id,
+    owner: PRIYA,
+    startDate: '2026-02-01',
+    endDate: '2026-11-30',
+    budget: usd('300000.00'),
+    attributes: {},
+    plan: { id: PLAN_ID, name: PLAN_NAME, year: 2026 },
+    campaign: {
+      id: 'C-1001',
+      name: 'Helix launch',
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+    },
+    parentRemainingBudget: usd('100000.00'),
+    budgetAndCost: budgetAndCost({ leftToPlan: usd('300000.00') }),
+    approvalProgress: { state: 'noActivities', approved: 0, total: 0 },
+    timing: 'running',
+    completeness: { missing: [], itemsBelowNeedingAttention: 0 },
+    goals: { inq: null, mql: null, revenue: null },
+    counts: { activities: 0, approvedActivities: 0, lineItems: 0 },
+    ...META,
+    ...overrides,
+  };
+}
+
+export function campaign(overrides: Partial<Campaign> = {}): Campaign {
+  return {
+    id: 'C-1001',
+    planId: PLAN_ID,
+    name: 'Helix launch',
+    description: 'Launch of the new Helix range.',
+    ownerId: ALEX.id,
+    owner: ALEX,
+    startDate: '2026-01-01',
+    endDate: '2026-12-31',
+    budget: usd('400000.00'),
+    attributes: {},
+    plan: { id: PLAN_ID, name: PLAN_NAME, year: 2026 },
+    outsidePlanYear: false,
+    parentRemainingBudget: usd('200000.00'),
+    budgetAndCost: budgetAndCost({
+      allocatedToChildren: usd('300000.00'),
+      remainingForChildren: usd('100000.00'),
+      leftToPlan: usd('400000.00'),
+    }),
+    approvalProgress: { state: 'noActivities', approved: 0, total: 0 },
+    timing: 'running',
+    completeness: { missing: [], itemsBelowNeedingAttention: 0 },
+    goals: { inq: null, mql: null, revenue: null },
+    counts: { initiatives: 1, activities: 0, approvedActivities: 0, lineItems: 0 },
+    initiatives: [initiative()],
+    ...META,
+    ...overrides,
+  };
+}
+
+export function planCampaigns(
+  items: Campaign[] = [campaign()],
+  totals: Partial<PlanCampaigns['totals']> = {},
+): PlanCampaigns {
+  return {
+    plan: { id: PLAN_ID, name: PLAN_NAME, year: 2026 },
+    planOwner: PRIYA,
+    items,
+    total: items.length,
+    totals: {
+      campaigns: items.length,
+      initiatives: items.reduce((sum, item) => sum + item.initiatives.length, 0),
+      activities: 0,
+      allocatedToCampaigns: usd('400000.00'),
+      planBudget: usd('600000.00'),
+      remainingPlanBudget: usd('200000.00'),
+      overAllocatedBy: null,
+      plannedCost: null,
+      ...totals,
+    },
+  };
+}
+
+/** The part of feature 004's GET /api/plans/{planId} answer the forms read: the business unit. */
+export function planAnswer(businessUnit: { id: string; label: string }[] = []) {
+  return { id: PLAN_ID, name: PLAN_NAME, year: 2026, businessUnit };
+}
+
+const PERSON_META = {
+  version: 1,
+  createdAt: '2026-01-01T09:00:00Z',
+  createdBy: { id: 'U-1001', name: 'Alex Morgan' },
+  updatedAt: '2026-01-01T09:00:00Z',
+  updatedBy: { id: 'U-1001', name: 'Alex Morgan' },
+};
+
+/** GET /api/people: Alex Morgan and Priya Raman. */
+export const PEOPLE = {
+  total: 2,
+  items: [ALEX, PRIYA].map((person) => ({
+    ...person,
+    email: `${person.name.toLowerCase().replace(' ', '.')}@northstar.demo`,
+    teams: [],
+    ...PERSON_META,
+  })),
+};
