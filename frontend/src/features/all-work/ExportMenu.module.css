@@ -1,0 +1,46 @@
+.menu {
+  z-index: 50;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--hover);
+}
+
+.item[data-disabled] {
+  color: var(--ink-2);
+  cursor: default;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

@@ -1,0 +1,103 @@
+.name {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.toggle,
+.toggleSpace {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.toggle {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+/* The name: one line, cut with an ellipsis (the full name is in the tip). */
+.link {
+  max-width: 320px;
+  overflow: hidden;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.aop {
+  padding: 1px 6px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-chip);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.context {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.excerpt {
+  max-width: 420px;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

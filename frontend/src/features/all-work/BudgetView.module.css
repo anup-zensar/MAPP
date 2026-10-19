@@ -1,0 +1,27 @@
+/* "To change how a cost is spread, open its line item" (FR-024): the view is read-only. */
+.note {
+  margin: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.empty {
+  color: var(--ink-2);
+}
+
+.problem,
+.exceeded {
+  color: var(--status-problem-text);
+}
+
+.exceeded {
+  font-size: 12px;
+  white-space: normal;
+}

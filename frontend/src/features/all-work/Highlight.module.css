@@ -1,0 +1,6 @@
+/* The searched text, on a light tint of the selection blue (readable in both themes). */
+.mark {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--blue) 22%, transparent);
+  color: inherit;
+}

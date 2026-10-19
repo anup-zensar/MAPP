@@ -1,0 +1,54 @@
+.empty {
+  color: var(--ink-2);
+}
+
+.number {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Negative money and per cent above 100 (design system §4). */
+.problem {
+  color: var(--status-problem-text);
+}
+
+.text {
+  display: inline-block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.cut:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.withMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* The Filtered mark of a roll-up (FR-013): a small outlined word that explains itself in a tip. */
+.filtered {
+  padding: 1px 6px;
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: help;
+}
+
+.filtered:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}

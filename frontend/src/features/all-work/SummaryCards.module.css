@@ -1,0 +1,21 @@
+/* Six cards side by side on wide screens; on narrow screens they wrap onto more rows. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.problem {
+  color: var(--status-problem-text);
+  font-size: 12px;
+}
