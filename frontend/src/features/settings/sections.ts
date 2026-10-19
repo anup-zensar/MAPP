@@ -24,6 +24,11 @@ export interface SettingsSection {
    * until the feature builds it.
    */
   ActiveCount?: ComponentType;
+  /**
+   * A section that has no page yet: its card shows "Coming soon" and is not a link (FR-001). Left
+   * out for every section with a page — a page still being built is a link to its stub.
+   */
+  comingSoon?: boolean;
 }
 
 /** Feature 002's own sections. */
