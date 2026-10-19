@@ -24,6 +24,12 @@ const (
 	reloadMessage             = "Reload the page and try again."
 )
 
+// Preference problems (003 data model §4, FR-023, FR-024).
+const (
+	chooseCurrencyMessage   = "Choose one of the active currencies."
+	chooseDateFormatMessage = "Choose one of the date formats."
+)
+
 // Refusals (not_found, not_allowed, in_use, name_taken) and the note of a renaming restore.
 const (
 	personGoneMessage         = "This person doesn't exist."

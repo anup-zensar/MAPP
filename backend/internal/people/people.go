@@ -313,16 +313,9 @@ type personForm struct {
 // characters; every team exists, and a team the person is not in yet must be active (D-070). personID is
 // the person being edited, "" on create: they keep their own e-mail and their inactive teams.
 func checkPersonForm(problems *errs.Problems, d directory, personID string, form personForm) personForm {
-	form.Name = strings.TrimSpace(form.Name)
+	form.Name = checkPersonName(problems, form.Name)
 	form.Email = strings.ToLower(strings.TrimSpace(form.Email))
-	form.JobTitle = strings.TrimSpace(form.JobTitle)
 	form.TeamIDs = uniqueIDs(form.TeamIDs)
-
-	if form.Name == "" {
-		problems.Add("name", enterNameMessage)
-	} else {
-		checkLength(problems, "name", form.Name, maxPersonNameLength, use120Message)
-	}
 
 	holder, taken := personWithEmail(d, form.Email, personID)
 	switch {
@@ -338,7 +331,7 @@ func checkPersonForm(problems *errs.Problems, d directory, personID string, form
 		problems.Add("email", fmt.Sprintf(emailTakenInactiveMessage, form.Email, holder.Name))
 	}
 
-	checkLength(problems, "jobTitle", form.JobTitle, maxJobTitleLength, use120Message)
+	form.JobTitle = checkJobTitle(problems, form.JobTitle)
 
 	teams := d.teamIDsOf(personID)
 	if slices.ContainsFunc(form.TeamIDs, func(id string) bool { _, known := d.teams[id]; return !known }) {
@@ -350,6 +343,26 @@ func checkPersonForm(problems *errs.Problems, d directory, personID string, form
 		}
 	}
 	return form
+}
+
+// checkPersonName returns name trimmed and adds its problem to problems: a person's name is required, with
+// at most 120 characters (FR-002). People and My profile share it (FR-022).
+func checkPersonName(problems *errs.Problems, name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		problems.Add("name", enterNameMessage)
+	} else {
+		checkLength(problems, "name", name, maxPersonNameLength, use120Message)
+	}
+	return name
+}
+
+// checkJobTitle returns jobTitle trimmed and adds its problem to problems: a job title may be empty and has
+// at most 120 characters (FR-002). People and My profile share it (FR-022).
+func checkJobTitle(problems *errs.Problems, jobTitle string) string {
+	jobTitle = strings.TrimSpace(jobTitle)
+	checkLength(problems, "jobTitle", jobTitle, maxJobTitleLength, use120Message)
+	return jobTitle
 }
 
 // personWithEmail returns the person, other than exceptID, whose e-mail is email ignoring letter case, and

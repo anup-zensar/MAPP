@@ -7,6 +7,7 @@
 package people
 
 import (
+	"cmp"
 	"strings"
 
 	"northstar/internal/platform/actor"
@@ -115,15 +116,27 @@ var Palette = []Colour{
 }
 
 // defaultPreferences are the preferences of a person who has changed none: follow the computer's light or
-// dark setting, with the sidebar expanded (FR-011, FR-014).
+// dark setting, with the sidebar expanded (FR-011, FR-014), amounts in US dollars and dates as "12 Mar
+// 2026" (003 FR-023, FR-024).
 func defaultPreferences(personID string) Preferences {
-	return Preferences{PersonID: personID, Theme: themeSystem, SidebarCollapsed: false}
+	return Preferences{PersonID: personID, Theme: themeSystem, SidebarCollapsed: false,
+		DisplayCurrency: DefaultDisplayCurrency, DateFormat: DefaultDateFormat}
+}
+
+// withDefaults returns p with the default display currency and date format in place of empty ones: records
+// saved by feature 001 have neither, and need no migration (003 data model §4).
+func (p Preferences) withDefaults() Preferences {
+	p.DisplayCurrency = cmp.Or(p.DisplayCurrency, DefaultDisplayCurrency)
+	p.DateFormat = cmp.Or(p.DateFormat, DefaultDateFormat)
+	return p
 }
 
 // The API types below are what the API returns or receives. They are kept apart from the stored records
 // above, so the stored data can change without changing the API (research R10).
 
-// CurrentUser is the signed-in person with their preferences: the answer of GET /api/me and of a sign-in.
+// CurrentUser is the signed-in person with their preferences: the answer of GET /api/me, PATCH /api/me and
+// of a sign-in. Version is the person's, sent back by PATCH /api/me; Teams are their teams, active or not,
+// by name — "My teams" (003 FR-026).
 type CurrentUser struct {
 	ID          string          `json:"id"`
 	Name        string          `json:"name"`
@@ -132,6 +145,8 @@ type CurrentUser struct {
 	JobTitle    string          `json:"jobTitle"`
 	Initials    string          `json:"initials"`
 	Preferences PreferencesView `json:"preferences"`
+	Version     int             `json:"version"`
+	Teams       []TeamRef       `json:"teams"`
 }
 
 // DemoPerson is a person as the sign-in page lists them under "Explore as a demo person" (FR-001).
@@ -143,10 +158,12 @@ type DemoPerson struct {
 	Initials string `json:"initials"`
 }
 
-// PreferencesView is a person's preferences as the API returns them.
+// PreferencesView is a person's preferences as the API returns them, every one with a value.
 type PreferencesView struct {
 	Theme            string `json:"theme"`
 	SidebarCollapsed bool   `json:"sidebarCollapsed"`
+	DisplayCurrency  string `json:"displayCurrency"`
+	DateFormat       string `json:"dateFormat"`
 }
 
 // PreferencesUpdate is the body of PATCH /api/me/preferences: only the preferences to change. A field that
@@ -154,10 +171,12 @@ type PreferencesView struct {
 type PreferencesUpdate struct {
 	Theme            *string `json:"theme"`
 	SidebarCollapsed *bool   `json:"sidebarCollapsed"`
+	DisplayCurrency  *string `json:"displayCurrency"`
+	DateFormat       *string `json:"dateFormat"`
 }
 
-// currentUser returns p as the signed-in person, with prefs.
-func (p Person) currentUser(prefs Preferences) CurrentUser {
+// currentUser returns p as the signed-in person, with prefs and their teams.
+func (p Person) currentUser(prefs Preferences, teams []TeamRef) CurrentUser {
 	return CurrentUser{
 		ID:          p.ID,
 		Name:        p.Name,
@@ -166,6 +185,8 @@ func (p Person) currentUser(prefs Preferences) CurrentUser {
 		JobTitle:    p.JobTitle,
 		Initials:    p.Initials(),
 		Preferences: prefs.view(),
+		Version:     p.Version,
+		Teams:       teams,
 	}
 }
 
@@ -176,12 +197,13 @@ func (p Person) demoPerson() DemoPerson {
 
 // view returns the preferences as the API returns them.
 func (p Preferences) view() PreferencesView {
-	return PreferencesView{Theme: p.Theme, SidebarCollapsed: p.SidebarCollapsed}
+	return PreferencesView{Theme: p.Theme, SidebarCollapsed: p.SidebarCollapsed,
+		DisplayCurrency: p.DisplayCurrency, DateFormat: p.DateFormat}
 }
 
 // The API types of feature 003 (contract schemas in brackets; JSON names as the contract). 001's
-// CurrentUser, PreferencesView and PreferencesUpdate gain their 003 fields when feature 003 serves them
-// (D-191): CurrentUser.Version and Teams, the preferences' displayCurrency and dateFormat.
+// CurrentUser, PreferencesView and PreferencesUpdate above have their 003 fields (D-191): the API always
+// sends CurrentUser.Version and Teams and the preferences' displayCurrency and dateFormat.
 
 // PersonRef is a person as every other record shows them — owners, approvers, members (PersonRef). Names
 // are read when the answer is made, so a rename shows everywhere. Features 004–008 return it.

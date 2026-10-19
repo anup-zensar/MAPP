@@ -25,7 +25,9 @@ const (
 // The bodies of the API's answers, as the web app receives them.
 const (
 	priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email":"priya.raman@northstar.demo",` +
-		`"jobTitle":"Marketer","initials":"PR","preferences":{"theme":"system","sidebarCollapsed":false}}`
+		`"jobTitle":"Marketer","initials":"PR",` +
+		`"preferences":{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY"},` +
+		`"version":1,"teams":[{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}]}`
 	signInRequiredBody = `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`
 	incorrectBody      = `{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}`
 )

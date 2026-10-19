@@ -115,3 +115,12 @@ export const SELF_DEACTIVATION = "You can't deactivate yourself — ask someone 
 
 /** Said under Deactivate in the ⋯ menu and the details panel (FR-008). */
 export const DEACTIVATE_TIP = 'People are never deleted, so the history keeps their name.';
+
+/** Said on My profile about what the display currency changes (FR-023, D-061). */
+export const DISPLAY_CURRENCY_NOTE =
+  "Amounts are shown in your display currency with today's rate in Settings; amounts typed in other currencies stay as they are.";
+
+/** A display currency as My profile names it: "EUR — Euro". */
+export function currencyLabel(currency: { code: string; name: string }): string {
+  return `${currency.code} — ${currency.name}`;
+}
