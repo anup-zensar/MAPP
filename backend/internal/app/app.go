@@ -90,12 +90,13 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// line items (007) next to them: each reads the other (activities.LineItems, lineitems.Activities).
 	campaignsRepo := campaigns.NewJSONRepository()
 	activitiesRepo := activities.NewJSONRepository()
+	approvalsRepo := approvals.NewJSONRepository() // the approval workflows of 008 are the activities' workflows
 	activitiesService := activities.NewService(db, activitiesRepo, generator, historyService, now, activities.Deps{
 		Plans:     plansRepo,
 		Hierarchy: campaignsRepo,
 		Settings:  settingsService,
 		People:    peopleRepo,
-		Workflows: activities.NewSeededWorkflows(approvals.NewJSONRepository()),
+		Workflows: activityWorkflows{repo: approvalsRepo},
 	})
 	lineItemsService := lineitems.NewService(db, lineitems.NewJSONRepository(), generator, historyService,
 		lineItemDeps(settingsService, settingsRepo, activitiesService, activitiesRepo, campaignsRepo, plansRepo, peopleRepo), now)
@@ -139,15 +140,11 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		samples.NewHandler(samplesService).Routes(router, signedIn)
 	}
 
-	// Activity approvals (008). Approval actions are logged on the activity, so its history kind must be
-	// registered. INTEGRATION with 006: delete the stand-in kind and pass check: activitiesService.SubmitCheck.
-	activitiesRepo := activities.NewJSONRepository()
-	if err := historyService.Register(standInActivityKind(activitiesRepo)); err != nil {
-		return nil, err
-	}
-	approvalsService := approvals.NewService(db, approvals.NewJSONRepository(), peopleRepo, &approvalsActivities{
-		activities: activitiesRepo, lineItems: lineitems.NewJSONRepository(), campaigns: campaigns.NewJSONRepository(),
-		plans: plans.NewJSONRepository(), settings: settings.NewJSONRepository(), check: storedFieldsCheck(activitiesRepo), now: now,
+	// Activity approvals (008), built after activities and line items: approval actions are logged on the
+	// activity, and Submit runs 006's ready-to-submit check, line items included.
+	approvalsService := approvals.NewService(db, approvalsRepo, peopleRepo, &approvalsActivities{
+		activities: activitiesRepo, lineItems: lineitems.NewJSONRepository(), campaigns: campaignsRepo,
+		plans: plansRepo, settings: settingsRepo, check: activitiesService.SubmitCheck, now: now,
 	}, generator, historyService, now)
 	for _, kind := range approvalsService.Kinds() {
 		if err := historyService.Register(kind); err != nil {

@@ -8,6 +8,7 @@ import (
 
 	"northstar/internal/campaigns"
 	"northstar/internal/plans"
+	"northstar/internal/platform/actor"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
 )
@@ -152,4 +153,15 @@ func (s *Service) addFacts(ctx context.Context, inPlan planActivities, lineItems
 	})
 	f.NeedsAttention = append(f.NeedsAttention, attention...)
 	return nil
+}
+
+// SubmitCheck returns the ready-to-submit check of the activity id, line items included (FR-023, D-204):
+// what feature 008 checks before it accepts a Submit for approval. It joins the caller's transaction and
+// answers not found for an activity that is not stored.
+func (s *Service) SubmitCheck(ctx context.Context, a actor.Actor, id string) (SubmitCheck, error) {
+	view, err := s.Get(ctx, a, id)
+	if err != nil {
+		return SubmitCheck{}, err
+	}
+	return view.Readiness, nil
 }

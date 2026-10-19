@@ -10,7 +10,6 @@ import (
 	"northstar/internal/activities"
 	"northstar/internal/approvals"
 	"northstar/internal/campaigns"
-	"northstar/internal/history"
 	"northstar/internal/lineitems"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
@@ -321,74 +320,9 @@ func (c coding) of(values settings.AttributeValues, attributeLabel string) strin
 	return c.options[optionID]
 }
 
-// storedFieldsCheck stands in for 006's ready-to-submit check until feature 006 is merged: it lists the
-// empty needed-to-submit fields stored on the activity itself (Owner, Start date, End date unless ongoing,
-// Planned cost, Approval workflow). Shell attributes, % splits and line items are 006's and 007's rules.
-// INTEGRATION: replace it with activitiesService.SubmitCheck in New.
-func storedFieldsCheck(repo activities.Repository) submitCheck {
-	return func(ctx context.Context, _ actor.Actor, id string) (activities.SubmitCheck, error) {
-		act, _, err := repo.Get(ctx, id)
-		if err != nil {
-			return activities.SubmitCheck{}, err
-		}
-		missing := []struct {
-			empty        bool
-			field, label string
-		}{
-			{act.OwnerID == "", "ownerId", "Owner"},
-			{act.StartDate == nil, "startDate", "Start date"},
-			{act.EndDate == nil && !act.Ongoing, "endDate", "End date"},
-			{act.PlannedCost == nil, "plannedCost", "Planned cost"},
-			{act.ApprovalWorkflowID == "", "approvalWorkflowId", "Approval workflow"},
-		}
-		check := activities.SubmitCheck{
-			Activity: []activities.SubmitProblem{}, LineItems: []activities.SubmitProblem{}, Advice: []activities.SubmitProblem{},
-		}
-		for _, m := range missing {
-			if m.empty {
-				check.Activity = append(check.Activity, activities.SubmitProblem{
-					Code: activities.ProblemMissingField, Field: m.field, Message: m.label + neededToSubmit,
-				})
-			}
-		}
-		check.ProblemCount = len(check.Activity)
-		check.Ready = check.ProblemCount == 0
-		return check, nil
-	}
-}
-
-// standInActivityKind is the history kind "activity" until feature 006's own is registered: approval
-// actions are logged on the activity (008 FR-026). Without a parent or Describe, its entries have no path
-// and default texts. INTEGRATION: delete it and its registration in New once 006 registers its kinds.
-func standInActivityKind(repo activities.Repository) history.Kind {
-	return history.Kind{
-		Name: "activity", Singular: "activity", Plural: "activities",
-		Snapshot: func(ctx context.Context, id string) (history.Snapshot, bool, error) {
-			act, found, err := repo.Get(ctx, id)
-			if err != nil || !found {
-				return history.Snapshot{}, false, err
-			}
-			data, err := json.Marshal(act)
-			if err != nil {
-				return history.Snapshot{}, false, err
-			}
-			return history.Snapshot{ID: act.ID, Name: act.Name, Data: data}, true, nil
-		},
-		Remove: repo.Delete,
-		Put: func(ctx context.Context, s history.Snapshot) error {
-			var act activities.Activity
-			if err := json.Unmarshal(s.Data, &act); err != nil {
-				return err
-			}
-			return repo.Put(ctx, act)
-		},
-	}
-}
-
 // activityWorkflows implements activities.Workflows (feature 006) over the stored approval workflows, so
 // the activity form offers the active ones and labels the inactive ones (FR-007; 008 plan, Reconciliation).
-// Its reads join the caller's transaction. INTEGRATION with 006: pass activityWorkflows{repo:
-// approvals.NewJSONRepository()} in activities.Deps.Workflows instead of NewSeededWorkflows().
+// Its reads join the caller's transaction.
 type activityWorkflows struct {
 	repo approvals.Repository
 }
