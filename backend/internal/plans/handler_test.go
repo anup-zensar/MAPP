@@ -191,8 +191,9 @@ func TestListPlans_MyTeams_FR004(t *testing.T) {
 
 // The plan page of FY2026 Lubricants Europe shows every stored field, its model with rates, team, owner,
 // business unit, budget and goals 250,000 → 5,000 → 250 → 2,500,000.00, all filled in; FY2026 Mobility
-// China needs its business unit, and below it its campaign Retail growth, initiative Fleet cards and
-// activities Grand opening Shanghai and Lunar new year promo (005's and 006's demo data) are incomplete; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
+// China needs its business unit, and below it its campaign Retail growth, initiative Fleet cards,
+// activities Grand opening Shanghai and Lunar new year promo and line item L-1007 (005's, 006's and 007's
+// demo data) are incomplete; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
 // come from the levels below are proved with fakes in the service tests.
 func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	server := apitest.New(t)
@@ -238,7 +239,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	for _, item := range chinaPlan.Completeness.ItemsBelow {
 		below = append(below, item.Record.Type+" "+item.Record.ID)
 	}
-	if want := []string{"campaign C-1003", "initiative I-1006", "activity A-1008", "activity A-1010"}; !slices.Equal(below, want) {
+	if want := []string{"campaign C-1003", "initiative I-1006", "activity A-1008", "activity A-1010", "lineItem L-1007"}; !slices.Equal(below, want) {
 		t.Errorf("completeness items below = %q, want %q", below, want)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
