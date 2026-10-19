@@ -11,6 +11,7 @@ import (
 	"northstar/internal/auth"
 	"northstar/internal/campaigns"
 	"northstar/internal/history"
+	"northstar/internal/home"
 	"northstar/internal/lineitems"
 	"northstar/internal/people"
 	"northstar/internal/plans"
@@ -152,6 +153,11 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
+
+	// Home (009): a read-only dashboard over the services of 003–008 (home_sources.go).
+	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
+		approvalsService))
+	home.NewHandler(homeService).Routes(router, signedIn)
 
 	// Where the records of people (003) and Settings (002) are used, now that every feature is built
 	// (references.go): people's plans (004), owner and approver counts (005–008) and currencies (002);

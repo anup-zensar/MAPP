@@ -22,6 +22,7 @@ const (
 	unknownPersonMessage      = "Choose people from the list."
 	chooseStatusMessage       = "Choose active or inactive."
 	reloadMessage             = "Reload the page and try again."
+	chooseHomeScopeMessage    = "Choose My teams or Everything." // Home's switch (009 FR-003)
 )
 
 // Refusals (not_found, not_allowed, in_use, name_taken) and the note of a renaming restore.

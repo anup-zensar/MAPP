@@ -1,0 +1,57 @@
+/*
+ * Four cards in a row when Home is wide, 2 × 2 in the middle, one column on phones. Home's page
+ * is the container (HomePage.module.css), so the open or collapsed sidebar counts too.
+ */
+.cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+@container home (min-width: 520px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container home (min-width: 880px) {
+  .cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* A card's place while the summary loads. */
+.placeholder {
+  padding: 18px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The four cards failed together: one message in one card. */
+.failed {
+  padding: 18px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The budget-used bar with its percentage after it. */
+.usage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.percent {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.problem {
+  color: var(--status-problem-text);
+  font-weight: 600;
+}

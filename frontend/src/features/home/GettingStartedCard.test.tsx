@@ -1,0 +1,75 @@
+import { screen, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { renderWithProviders } from '@/test/render';
+import { testUser } from '@/test/users';
+import { GettingStartedCard } from './GettingStartedCard';
+
+const NO_TEAM_SENTENCE =
+  "You're not in a team yet. Plans belong to teams — add yourself to one on the Teams page.";
+
+function card() {
+  return screen.getByRole('region', { name: 'Getting started' });
+}
+
+describe('GettingStartedCard', () => {
+  it("shows 001's five steps in order, each with its link and explanation (FR-020, 001 FR-018)", () => {
+    renderWithProviders(<GettingStartedCard reason="noTeamPlans" />, { user: testUser() });
+
+    expect(within(card()).getByText('The Plan module in five steps')).toBeInTheDocument();
+    const steps = within(card()).getAllByRole('listitem');
+    expect(
+      steps.map((step) => {
+        const link = within(step).getByRole('link');
+        return [link.textContent, link.getAttribute('href'), step.textContent];
+      }),
+    ).toEqual([
+      [
+        'Set up Settings',
+        '/settings',
+        '1Set up SettingsAdd the models, activity types, Shell attributes and currencies your plans use.',
+      ],
+      ['Create a plan', '/plans', '2Create a planGive the plan its year, budget, owner and teams.'],
+      [
+        'Add campaigns and initiatives',
+        '/plans',
+        '3Add campaigns and initiativesSplit the plan into campaigns, and each campaign into initiatives with their own budgets.',
+      ],
+      [
+        'Add activities and line items',
+        '/plans',
+        '4Add activities and line itemsDescribe each piece of work and plan its costs as line items.',
+      ],
+      [
+        'Submit for approval',
+        '/approvals',
+        '5Submit for approvalSend activities to their approvers and follow their status.',
+      ],
+    ]);
+  });
+
+  it('hides the step numbers from screen readers, because the list numbers the steps', () => {
+    renderWithProviders(<GettingStartedCard reason="noTeamPlans" />, { user: testUser() });
+
+    const firstStep = within(card()).getAllByRole('listitem')[0];
+    expect(within(firstStep).getByText('1')).toHaveAttribute('aria-hidden', 'true');
+    expect(within(card()).getByRole('list').tagName).toBe('OL');
+  });
+
+  it('tells a person in no team how to join one, with a link to the Teams page (US5 scenario 1)', () => {
+    renderWithProviders(<GettingStartedCard reason="notInTeam" />, { user: testUser() });
+
+    expect(within(card()).getByText(/You're not in a team yet/)).toHaveTextContent(
+      NO_TEAM_SENTENCE,
+    );
+    expect(within(card()).getByRole('link', { name: 'Teams page' })).toHaveAttribute(
+      'href',
+      '/settings/teams',
+    );
+  });
+
+  it('leaves the no-team sentence out when the person is in a team without plans (FR-020)', () => {
+    renderWithProviders(<GettingStartedCard reason="noTeamPlans" />, { user: testUser() });
+
+    expect(within(card()).queryByText(/You're not in a team yet/)).not.toBeInTheDocument();
+  });
+});

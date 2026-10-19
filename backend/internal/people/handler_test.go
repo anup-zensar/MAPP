@@ -26,7 +26,7 @@ func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Raman","firstName":"Priya",`+
 		`"email":"priya.raman@northstar.demo","jobTitle":"Marketer","initials":"PR",`+
-		`"preferences":{"theme":"system","sidebarCollapsed":false}}`)
+		`"preferences":{"theme":"system","sidebarCollapsed":false,"homeScope":"myTeams"}}`)
 }
 
 // Without a session cookie, the API asks the person to sign in (FR-005).
@@ -57,7 +57,7 @@ func TestPatchPreferences_NothingSent_FR011(t *testing.T) {
 
 	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{})
 
-	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false}`)
+	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"homeScope":"myTeams"}`)
 }
 
 // Only the preferences sent change, and the person keeps them (FR-011, FR-014).
@@ -65,14 +65,14 @@ func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	collapse := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"sidebarCollapsed": true})
-	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true}`)
+	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true,"homeScope":"myTeams"}`)
 
 	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "dark"})
 
-	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true}`)
+	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true,"homeScope":"myTeams"}`)
 	var me people.CurrentUser
 	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
-	if want := (people.PreferencesView{Theme: "dark", SidebarCollapsed: true}); me.Preferences != want {
+	if want := (people.PreferencesView{Theme: "dark", SidebarCollapsed: true, HomeScope: "myTeams"}); me.Preferences != want {
 		t.Errorf("GET /api/me preferences = %+v, want %+v", me.Preferences, want)
 	}
 }
@@ -87,6 +87,26 @@ func TestPatchPreferences_InvalidTheme_FR014(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusBadRequest, `{"code":"validation_failed",`+
 		`"message":"Some fields need your attention.","fields":[{"field":"theme","message":"Choose system, light or dark."}]}`)
+}
+
+// Home's My teams / Everything switch is saved per person and comes back with GET /api/me; a value other
+// than myTeams or everything is refused next to the field (009 FR-003).
+func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"homeScope": "everything"})
+	refused := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"homeScope": "all"},
+		apitest.SkipRequestValidation()) // the contract itself allows only the two scopes
+
+	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"homeScope":"everything"}`)
+	var me people.CurrentUser
+	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	if me.Preferences.HomeScope != "everything" {
+		t.Errorf("GET /api/me home scope = %q, want everything", me.Preferences.HomeScope)
+	}
+	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed",`+
+		`"message":"Some fields need your attention.","fields":[{"field":"homeScope","message":"Choose My teams or Everything."}]}`)
 }
 
 // Changing preferences needs a signed-in person (FR-005).

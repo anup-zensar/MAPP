@@ -333,11 +333,6 @@ var notYetServed = []string{
 	"POST /api/notifications/{notificationId}/read",
 	"POST /api/notifications/read-all",
 	// 009 Home dashboard
-	"GET /api/home/summary",
-	"GET /api/home/plans",
-	"GET /api/home/attention",
-	"GET /api/home/waiting",
-	"GET /api/home/my-activities",
 	"GET /api/home/recent-changes",
 	// 010 All work views
 	"GET /api/all-work",

@@ -132,7 +132,14 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 		if update.SidebarCollapsed != nil {
 			changed.SidebarCollapsed = *update.SidebarCollapsed
 		}
-		if err := validatePreferences(changed); err != nil {
+		if update.HomeScope != nil {
+			// The default, My teams, is stored as no value, so choosing it again saves nothing (009 D-172).
+			changed.HomeScope = *update.HomeScope
+			if changed.HomeScope == HomeScopeMyTeams {
+				changed.HomeScope = ""
+			}
+		}
+		if err := validatePreferences(changed, update); err != nil {
 			return err
 		}
 
@@ -163,11 +170,15 @@ func (s *Service) preferences(ctx context.Context, personID string) (Preferences
 	return prefs, nil
 }
 
-// validatePreferences checks the rules of data model §2 and reports every problem at once.
-func validatePreferences(p Preferences) error {
+// validatePreferences checks the rules of data model §2 and reports every problem at once. The home scope is
+// checked as it was sent: My teams or Everything (009 FR-003).
+func validatePreferences(p Preferences, update PreferencesUpdate) error {
 	var problems errs.Problems
 	if !slices.Contains(themes, p.Theme) {
 		problems.Add("theme", "Choose system, light or dark.")
+	}
+	if update.HomeScope != nil && *update.HomeScope != HomeScopeMyTeams && *update.HomeScope != HomeScopeEverything {
+		problems.Add("homeScope", chooseHomeScopeMessage)
 	}
 	return problems.Err()
 }

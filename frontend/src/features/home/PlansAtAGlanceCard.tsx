@@ -1,0 +1,212 @@
+import { ClipboardList } from 'lucide-react';
+import type { MouseEvent } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { useCurrentUser } from '@/app/useSession';
+import {
+  Button,
+  Card,
+  EmptyState,
+  InfoTip,
+  LinkButton,
+  ProgressBar,
+  Skeleton,
+  StatusChip,
+  TeamPills,
+} from '@/components';
+import type { TeamRef } from '@/components';
+import { useTeams } from '@/features/people';
+import { STATUS } from '@/features/plans/planText';
+import { cx } from '@/lib/cx';
+import { formatWhole } from '@/lib/decimal';
+import { recordHref } from '@/lib/recordLinks';
+import { useFormatters } from '@/lib/useFormatters';
+import { useHomePlans } from './homeApi';
+import type { HomePlanRow, HomeScope, HomeTeam } from './homeApi';
+import { plansListHref } from './homeLinks';
+import { PLANS_AT_A_GLANCE, approvedPercent, approvedText, viewAllPlansText } from './homeText';
+import styles from './PlansAtAGlanceCard.module.css';
+import { SectionError } from './SectionError';
+
+export interface PlansAtAGlanceCardProps {
+  scope: HomeScope;
+  /** Widens Home to every plan (the Switch to Everything of the empty state, FR-021). */
+  onShowEverything: () => void;
+}
+
+/**
+ * Plans at a glance (FR-008 – FR-010), like ZenReach's "Which team is working on which campaign":
+ * each plan in scope with its status, teams, counts, approval progress, budget used and planned
+ * cost, newest year first; at most 10, with "View all <n> plans".
+ */
+export function PlansAtAGlanceCard({ scope, onShowEverything }: PlansAtAGlanceCardProps) {
+  const plans = useHomePlans(scope);
+  const teamOf = useTeamRefs();
+
+  return (
+    <Card
+      title="Plans at a glance"
+      subtitle={PLANS_AT_A_GLANCE.subtitle[scope]}
+      actions={<InfoTip label="Plans at a glance" text={PLANS_AT_A_GLANCE.tip} />}
+    >
+      {plans.isPending ? (
+        <Skeleton lines={4} height="18px" />
+      ) : plans.isError ? (
+        <SectionError onRetry={() => void plans.refetch()} />
+      ) : plans.data.items.length === 0 ? (
+        <EmptyState
+          icon={<ClipboardList />}
+          title={PLANS_AT_A_GLANCE.empty[scope]}
+          action={
+            scope === 'myTeams' ? (
+              <Button onClick={onShowEverything}>Switch to Everything</Button>
+            ) : (
+              <LinkButton to="/plans">Go to Plans</LinkButton>
+            )
+          }
+        />
+      ) : (
+        <>
+          <PlansTable rows={plans.data.items} teamOf={teamOf} />
+          {plans.data.total > plans.data.items.length && (
+            <p className={styles.more}>
+              <Link to={plansListHref(scope)}>{viewAllPlansText(plans.data.total)}</Link>
+            </p>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * A team of a row as a pill (feature 003's TeamPill): Home's rows name the teams; their colour
+ * and status come from the teams list, or the person's own teams while it loads (D-201).
+ */
+function useTeamRefs(): (team: HomeTeam) => TeamRef {
+  const person = useCurrentUser();
+  const teams = useTeams();
+  const known = new Map<string, TeamRef>();
+  for (const team of [...(person.teams ?? []), ...(teams.data?.items ?? [])]) {
+    known.set(team.id, { id: team.id, name: team.name, colour: team.colour, active: team.active });
+  }
+  return (team) => ({
+    colour: 'slate',
+    active: true,
+    ...known.get(team.id),
+    id: team.id,
+    name: team.name,
+  });
+}
+
+function PlansTable({
+  rows,
+  teamOf,
+}: {
+  rows: HomePlanRow[];
+  teamOf: (team: HomeTeam) => TeamRef;
+}) {
+  const navigate = useNavigate();
+  const { money } = useFormatters();
+
+  /** A click anywhere on a row opens the plan; its links keep working on their own. */
+  function openRow(event: MouseEvent<HTMLTableRowElement>, href: string) {
+    if (!(event.target as HTMLElement).closest('a, button')) {
+      navigate(href);
+    }
+  }
+
+  return (
+    <div className={styles.scroll}>
+      <table className={styles.table} aria-label="Plans at a glance">
+        <thead>
+          <tr>
+            <th scope="col">Plan</th>
+            <th scope="col">Status</th>
+            <th scope="col">Teams</th>
+            <th scope="col" className={styles.number}>
+              Campaigns
+            </th>
+            <th scope="col" className={styles.number}>
+              Activities
+            </th>
+            <th scope="col">Approval</th>
+            <th scope="col">Budget used</th>
+            <th scope="col" className={styles.number}>
+              Planned cost
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((plan) => {
+            const href = recordHref('plan', plan.id);
+            const status = STATUS[plan.status];
+            return (
+              <tr key={plan.id} className={styles.row} onClick={(event) => openRow(event, href)}>
+                <th scope="row">
+                  <Link to={href} className={styles.name}>
+                    {plan.name}
+                  </Link>
+                  <span className={styles.meta}>
+                    {plan.id} · {plan.year}
+                    {plan.strategicAop && (
+                      <>
+                        {' '}
+                        <StatusChip tone="active">AOP</StatusChip>
+                      </>
+                    )}
+                  </span>
+                </th>
+                <td>
+                  <StatusChip tone={status.tone}>{status.word}</StatusChip>
+                </td>
+                <td>
+                  <TeamPills teams={plan.teams.map(teamOf)} />
+                </td>
+                <td className={styles.number}>{formatWhole(plan.campaignCount)}</td>
+                <td className={styles.number}>{formatWhole(plan.activityCount)}</td>
+                <td>
+                  {plan.activityCount === 0 ? (
+                    <span className={styles.muted}>No activities</span>
+                  ) : (
+                    <span className={styles.bar}>
+                      <ProgressBar
+                        value={approvedPercent(plan.approvedActivityCount, plan.activityCount)}
+                        label="Approval progress"
+                      />
+                      <span>{approvedText(plan.approvedActivityCount, plan.activityCount)}</span>
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {plan.budgetUsedPercent === null ? (
+                    <span className={styles.muted}>
+                      —
+                      {plan.budget === null && (
+                        <>
+                          {' '}
+                          <span className={styles.note}>No budget</span>
+                        </>
+                      )}
+                    </span>
+                  ) : (
+                    <span className={styles.bar}>
+                      <ProgressBar
+                        value={plan.budgetUsedPercent}
+                        label="Budget used"
+                        tone={plan.overBudget ? 'problem' : undefined}
+                      />
+                      <span className={cx(plan.overBudget && styles.problem)}>
+                        {formatWhole(plan.budgetUsedPercent)} %
+                      </span>
+                    </span>
+                  )}
+                </td>
+                <td className={styles.number}>{money(plan.plannedCost)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
