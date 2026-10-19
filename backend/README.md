@@ -14,7 +14,7 @@ Run them in this folder (`backend/`).
 
 | Command | What it does |
 |---|---|
-| `go run ./cmd/seed` | Loads the demo data (six demo people) into an empty data folder — stop the API first |
+| `go run ./cmd/seed` | Loads the demo data (people, teams, Settings, plans with their campaigns, initiatives, activities and line items, approvals) into an empty data folder — stop the API first |
 | `go run ./cmd/seed -reset` | Deletes the data files (`*.json`, `*.jsonl`, `*.tmp`) and loads the demo data again |
 | `go run ./cmd/seed -data <folder>` | Uses another data folder |
 | `go run ./cmd/api` | Starts the API on <http://127.0.0.1:8080>; Ctrl+C stops it |
@@ -58,11 +58,24 @@ internal/
     ids/              readable IDs such as SF-1001, from counters that only ever go up
     record/           record.Meta — version, created and updated by and at — with Touch and CheckVersion
     apitest/          test helper: the real API on a temporary data folder, every call checked against the contract
+    money/            exact money: Amount, Money, Input, Rate, Rates, Percent; half-up rounding (owner: 002)
+    date/             calendar dates: date.Date ("2026-03-01" in JSON), AddYears, Today, Format (owner: 005)
   auth/               demo sign-in, sessions and the RequireSignIn middleware
-  people/             people, "me" (GET /api/me) and display preferences
+  people/             people, "me" (GET /api/me), display preferences; teams and memberships (003)
   history/            activity log and recycle bin core: Log, MoveToBin, Undo, Restore and the Kind registry
   samples/            developer sample folders and notes (local and development only)
+  settings/           models, activity types, Shell attributes and options, currencies, finance budgets (002)
+  plans/              plans and the registry of the levels below them (004)
+  campaigns/          campaigns and initiatives (005)
+  activities/         activities (006)
+  lineitems/          line items (007)
+  approvals/          approval workflows, rounds, history entries and notifications (008)
 ```
+
+The Plan module's packages (002–008) started from a shared foundation: each has its stored types and API
+types (`model.go`), the hook types other features implement (`hooks.go`, `usage.go`, `levels.go`), its
+`Repository` with the JSON implementation, and a round-trip test. Their features add the services,
+history kinds and handlers (docs/sdd/plan-module-build.md).
 
 ## How to add a business package
 
@@ -94,5 +107,6 @@ internal/
    `historyService.Register` (parents first), and call `NewHandler(…).Routes(router, signedIn)`.
    `TestRoutesMatchContract` fails until the routes and the contract agree.
 
-Demo records for the new package go in `seed/seed.go`. The reasons behind all of this are in
+Demo records for the new package go in `seed/`: `seed.go` holds `Load` and the shared helpers, and each
+feature has its own file (`settings.go`, `teams.go`, `plans.go`, …) with a test file beside it. The reasons behind all of this are in
 `specs/001-app-shell-and-sign-in/research.md`; the folder rules in `docs/architecture/repository-layout.md`.

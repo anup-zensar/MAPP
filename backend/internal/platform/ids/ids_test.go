@@ -3,6 +3,7 @@ package ids_test
 import (
 	"context"
 	"errors"
+	"regexp"
 	"testing"
 
 	"northstar/internal/platform/ids"
@@ -152,3 +153,34 @@ func nextID(t *testing.T, db *store.DB, generator *ids.Generator, prefix string)
 	}
 	return id
 }
+
+// Every record type has its own prefix: capital letters only, and no two record types share one, so every
+// counter belongs to one table (FR-027; the data models of features 002-008).
+func TestPrefixes_UniquePerRecordType_FR027(t *testing.T) {
+	seen := map[string]bool{}
+	for _, prefix := range ids.Prefixes {
+		if !prefixForm.MatchString(prefix) {
+			t.Errorf("prefix %q is not 1 to 3 capital letters", prefix)
+		}
+		if seen[prefix] {
+			t.Errorf("prefix %q is listed twice", prefix)
+		}
+		seen[prefix] = true
+	}
+	want := map[string]string{
+		ids.PrefixModel: "MOD", ids.PrefixActivityType: "AT", ids.PrefixShellAttribute: "SA", ids.PrefixShellOption: "SO",
+		ids.PrefixFinanceBudget: "FB", ids.PrefixFinanceBudgetItem: "FBI", ids.PrefixTeam: "T", ids.PrefixTeamMembership: "TM",
+		ids.PrefixPlan: "P", ids.PrefixCampaign: "C", ids.PrefixInitiative: "I", ids.PrefixActivity: "A", ids.PrefixLineItem: "L",
+		ids.PrefixApprovalWorkflow: "WF", ids.PrefixApprovalRound: "AR", ids.PrefixApprovalAction: "AH", ids.PrefixNotification: "NT",
+	}
+	for got, wantPrefix := range want {
+		if got != wantPrefix {
+			t.Errorf("prefix %q, want %q", got, wantPrefix)
+		}
+	}
+	if len(ids.Prefixes) != 22 {
+		t.Errorf("%d prefixes, want 22", len(ids.Prefixes))
+	}
+}
+
+var prefixForm = regexp.MustCompile(`^[A-Z]{1,3}$`)

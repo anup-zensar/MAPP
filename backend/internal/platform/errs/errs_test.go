@@ -106,6 +106,10 @@ func TestCodes_MatchTheContract(t *testing.T) {
 		errs.CodeAlreadyResolved:      "already_resolved",
 		errs.CodeNameTaken:            "name_taken",
 		errs.CodeInternalError:        "internal_error",
+		errs.CodeInUse:                "in_use",
+		errs.CodeCannotRestore:        "cannot_restore",
+		errs.CodeNotAllowed:           "not_allowed",
+		errs.CodeNotReady:             "not_ready",
 	}
 	for got, want := range codes {
 		if got != want {
@@ -226,4 +230,41 @@ func encode(t *testing.T, err *errs.Error) string {
 		t.Fatalf("json.Marshal: %v", marshalErr)
 	}
 	return string(body)
+}
+
+// The Plan module's refusals are 409 conflicts with the message the caller gives; not_ready lists every
+// missing field grouped by record, and the other errors leave "missing" out (D-043, D-193).
+func TestPlanModuleErrors_409_D043(t *testing.T) {
+	tests := []struct {
+		err  *errs.Error
+		code string
+	}{
+		{errs.InUse("'Lubricants 1.0' is in use (used by 2 plans) — set it inactive instead."), errs.CodeInUse},
+		{errs.CannotRestore("Can't restore — there is now another currency with the code 'JPY'."), errs.CodeCannotRestore},
+		{errs.NotAllowed("You can't deactivate yourself — ask someone else to do it."), errs.CodeNotAllowed},
+	}
+	for _, tt := range tests {
+		if tt.err.Status != http.StatusConflict || tt.err.Code != tt.code || tt.err.Missing != nil {
+			t.Errorf("%s: status %d, code %q, missing %v", tt.code, tt.err.Status, tt.err.Code, tt.err.Missing)
+		}
+		want := fmt.Sprintf(`{"code":%q,"message":%q,"fields":[]}`, tt.code, tt.err.Message)
+		if got := encode(t, tt.err); got != want {
+			t.Errorf("JSON =\n%s\nwant\n%s", got, want)
+		}
+	}
+
+	notReady := errs.NotReady("Publish needs 2 fields", []errs.ReadinessGroup{{
+		Record: errs.RecordRef{Type: "plan", ID: "P-1002", Name: "FY2026 Mobility China"},
+		Fields: []errs.MissingField{
+			{Field: "attributes.SA-1001", Label: "Business unit"},
+			{Field: "attributes.SA-1011", Label: "Country / OU", Reason: "Shares add up to 90.00 %"},
+		},
+	}})
+	want := `{"code":"not_ready","message":"Publish needs 2 fields","fields":[],"missing":[{"record":{"type":"plan","id":"P-1002","name":"FY2026 Mobility China"},"fields":[{"field":"attributes.SA-1001","label":"Business unit"},{"field":"attributes.SA-1011","label":"Country / OU","reason":"Shares add up to 90.00 %"}]}]}`
+	if notReady.Status != http.StatusConflict {
+		t.Errorf("NotReady status = %d, want 409", notReady.Status)
+	}
+	if got := encode(t, notReady); got != want {
+		t.Errorf("NotReady JSON =\n%s\nwant\n%s", got, want)
+	}
 }

@@ -28,6 +28,12 @@ const (
 	CodeAlreadyResolved      = "already_resolved"      // the recycle-bin entry was already undone or restored
 	CodeNameTaken            = "name_taken"            // Undo refused because the name is now taken
 	CodeInternalError        = "internal_error"        // anything unexpected
+
+	// Codes of the Plan module (features 002–008), added once by the shared foundation.
+	CodeInUse         = "in_use"         // a record in use cannot be deleted; set it inactive instead (002, D-043)
+	CodeCannotRestore = "cannot_restore" // a record cannot come back from the recycle bin, with the reason (002)
+	CodeNotAllowed    = "not_allowed"    // the person may not do this, such as deactivate themselves (003)
+	CodeNotReady      = "not_ready"      // needed fields are missing for publish or submit; Missing lists them (004)
 )
 
 // Error is an API failure. Status is the HTTP status and is not part of the JSON.
@@ -39,6 +45,8 @@ type Error struct {
 	Conflict   *Conflict    `json:"conflict,omitempty"`
 	Parent     *RecordRef   `json:"parent,omitempty"`
 	Resolution *Resolution  `json:"resolution,omitempty"`
+	// Missing lists every needed field that stops the action, grouped by record; only with not_ready.
+	Missing []ReadinessGroup `json:"missing,omitempty"`
 }
 
 // Error returns the code and the message, for logs and test failures.
@@ -64,6 +72,21 @@ type RecordRef struct {
 	Type string `json:"type"`
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// MissingField is a field that is still needed to publish or submit: the one MissingField of the Plan
+// module (contract schema MissingField, decision D-193). settings.MissingField is this type.
+type MissingField struct {
+	Field  string `json:"field"`            // the form field, such as "ownerId" or "attributes.SA-1003"
+	Label  string `json:"label"`            // the field's label, such as "Cluster"
+	Reason string `json:"reason,omitempty"` // why a filled-in field still counts, such as a split below 100 %
+}
+
+// ReadinessGroup is the fields one record still needs before an action (contract schema ReadinessGroup):
+// publishing a plan, submitting an activity.
+type ReadinessGroup struct {
+	Record RecordRef      `json:"record"`
+	Fields []MissingField `json:"fields"`
 }
 
 // Resolution says how a recycle-bin entry left the bin ("undone" or "restored"), by whom and when.
@@ -147,6 +170,31 @@ func AlreadyResolved(name string, r Resolution) *Error {
 // the user.
 func NameTaken(message string) *Error {
 	return newError(http.StatusConflict, CodeNameTaken, message)
+}
+
+// InUse refuses to delete a record that something uses, with a message for the user that names what uses
+// it (409 in_use, D-043).
+func InUse(message string) *Error {
+	return newError(http.StatusConflict, CodeInUse, message)
+}
+
+// CannotRestore refuses to bring a record back from the recycle bin, with a message for the user that says
+// why (409 cannot_restore).
+func CannotRestore(message string) *Error {
+	return newError(http.StatusConflict, CodeCannotRestore, message)
+}
+
+// NotAllowed refuses an action the person may not take, with a message for the user (409 not_allowed).
+func NotAllowed(message string) *Error {
+	return newError(http.StatusConflict, CodeNotAllowed, message)
+}
+
+// NotReady refuses to publish or submit while needed fields are missing, listing every one of them grouped
+// by record (409 not_ready).
+func NotReady(message string, missing []ReadinessGroup) *Error {
+	e := newError(http.StatusConflict, CodeNotReady, message)
+	e.Missing = missing
+	return e
 }
 
 // Internal reports an unexpected failure without technical details (FR-020).

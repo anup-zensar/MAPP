@@ -76,7 +76,7 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "Loaded the demo data into %s: 6 people.\n", *dataDir)
+	fmt.Fprintf(out, "Loaded the demo data into %s: %s.\n", *dataDir, seed.Loaded)
 	return nil
 }
 

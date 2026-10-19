@@ -18,11 +18,12 @@ import (
 
 	"northstar/internal/people"
 	"northstar/internal/platform/store"
+	"northstar/seed"
 )
 
-// The seed loads the six demo people into an empty data folder, creating the folder when it is missing,
-// and says so (FR-028).
-func TestRun_LoadsTheDemoPeople_FR028(t *testing.T) {
+// The seed loads the demo data into an empty data folder, creating the folder when it is missing, and says
+// what it loaded (FR-028).
+func TestRun_LoadsTheDemoData_FR028(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "data") // does not exist yet
 	var out bytes.Buffer
 
@@ -31,7 +32,7 @@ func TestRun_LoadsTheDemoPeople_FR028(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if want := "Loaded the demo data into " + dir + ": 6 people.\n"; out.String() != want {
+	if want := "Loaded the demo data into " + dir + ": " + seed.Loaded + ".\n"; out.String() != want {
 		t.Errorf("printed %q, want %q", out.String(), want)
 	}
 	if got := len(storedPeople(t, dir)); got != 6 {
@@ -85,7 +86,13 @@ func TestRun_ResetDeletesOnlyDataFiles_FR028(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	want := []string{"backup.json", "counters.json", "notes.txt", "people.json"}
+	want := []string{
+		"activities.json", "activity_types.json", "approval_actions.json", "approval_rounds.json", "approval_workflows.json",
+		"backup.json", "campaigns.json", "counters.json", "currencies.json", "finance_budget_items.json",
+		"finance_budgets.json", "initiatives.json", "line_items.json", "models.json", "notes.txt", "notifications.json",
+		"people.json", "plans.json", "shell_attribute_options.json", "shell_attributes.json", "team_memberships.json",
+		"teams.json",
+	}
 	if got := fileNames(t, dir); !slices.Equal(got, want) {
 		t.Errorf("files = %q, want %q", got, want)
 	}

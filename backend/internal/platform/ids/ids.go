@@ -5,14 +5,58 @@
 // its new record are saved together. Every record with a readable ID, seed records included, gets it
 // from a Generator.
 //
-// Prefixes: P, C, I, A, L for planning records; U people; LOG activity-log entries; BIN recycle-bin
-// entries; SF and SN the developer sample records.
+// The prefixes are the constants below: one per record type, never shared, so that every counter belongs to
+// one table.
 package ids
 
 import (
 	"context"
 	"fmt"
 )
+
+// The readable-ID prefixes (001 data model §4 and the data models of features 002–008). Pass them to Next.
+const (
+	// Feature 001.
+	PrefixPerson       = "U"   // people: U-1001
+	PrefixLogEntry     = "LOG" // activity-log entries (their number orders the log)
+	PrefixBinEntry     = "BIN" // recycle-bin entries
+	PrefixSampleFolder = "SF"  // developer sample folders
+	PrefixSampleNote   = "SN"  // developer sample notes
+
+	// Feature 002, Settings (internal ids, never shown on screens; a currency's id is its ISO code).
+	PrefixModel             = "MOD" // models
+	PrefixActivityType      = "AT"  // activity types
+	PrefixShellAttribute    = "SA"  // Shell attributes
+	PrefixShellOption       = "SO"  // Shell attribute options
+	PrefixFinanceBudget     = "FB"  // finance budgets
+	PrefixFinanceBudgetItem = "FBI" // finance budget items
+
+	// Feature 003, people and teams.
+	PrefixTeam           = "T"  // teams
+	PrefixTeamMembership = "TM" // team memberships
+
+	// Features 004–007, the planning records (D-019).
+	PrefixPlan       = "P" // plans (004)
+	PrefixCampaign   = "C" // campaigns (005)
+	PrefixInitiative = "I" // initiatives (005)
+	PrefixActivity   = "A" // activities (006)
+	PrefixLineItem   = "L" // line items (007)
+
+	// Feature 008, approvals (D-201: workflows keep 006's WF).
+	PrefixApprovalWorkflow = "WF" // approval workflows
+	PrefixApprovalRound    = "AR" // approval rounds
+	PrefixApprovalAction   = "AH" // approval history entries
+	PrefixNotification     = "NT" // notifications
+)
+
+// Prefixes lists every prefix above, in that order.
+var Prefixes = []string{
+	PrefixPerson, PrefixLogEntry, PrefixBinEntry, PrefixSampleFolder, PrefixSampleNote,
+	PrefixModel, PrefixActivityType, PrefixShellAttribute, PrefixShellOption, PrefixFinanceBudget, PrefixFinanceBudgetItem,
+	PrefixTeam, PrefixTeamMembership,
+	PrefixPlan, PrefixCampaign, PrefixInitiative, PrefixActivity, PrefixLineItem,
+	PrefixApprovalWorkflow, PrefixApprovalRound, PrefixApprovalAction, PrefixNotification,
+}
 
 // firstNumber is the number of the first ID of every prefix: "P-1001".
 const firstNumber = 1001
