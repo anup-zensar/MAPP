@@ -1,0 +1,88 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Five summary cards side by side; on narrow screens they wrap onto more rows. */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.skeletonCard,
+.skeletonPlan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+/* The toolbar wraps on narrow screens (plan "Plans list"). */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.search {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 360px;
+}
+
+.year select {
+  height: 34px;
+  padding: 0 28px 0 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.year select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.results {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.count {
+  margin: 0 0 0 auto;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cards: one column on phones, up to three on wide screens. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 1280px) {
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,29 @@
+.muted {
+  color: var(--ink-2);
+}
+
+.owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.budget {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.budget p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Over budget: the words turn red too, so colour is never the only signal of the bar. */
+.budget .problem {
+  color: var(--status-problem-text);
+}

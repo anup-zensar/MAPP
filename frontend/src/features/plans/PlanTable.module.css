@@ -1,0 +1,83 @@
+/* Wide content scrolls sideways inside its card, never the whole page (design system §2). */
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table thead th {
+  padding-block: 8px;
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.name {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.name:hover,
+.name:focus-visible {
+  color: var(--link);
+}
+
+.id {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.number {
+  font-variant-numeric: tabular-nums;
+}
+
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.used {
+  display: grid;
+  grid-template-columns: 80px auto;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.problem {
+  color: var(--status-problem-text);
+}
+
+.muted {
+  color: var(--ink-2);
+}

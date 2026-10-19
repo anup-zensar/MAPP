@@ -1,0 +1,70 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.name a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.name a:hover,
+.name a:focus-visible {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.id {
+  margin: 2px 0 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.approved {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}

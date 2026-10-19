@@ -1,0 +1,240 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* The header (design system §6.3). */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.id {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The R1 problem: icon and words in the problem colour, never in a tooltip only. */
+.ownerProblem {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-left: 8px;
+  color: var(--status-problem-text);
+}
+
+.ownerProblem svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.changed {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* Five summary cards side by side; on narrow screens they wrap onto more rows. */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.problem {
+  color: var(--status-problem-text);
+}
+
+/* Details and Goals: two columns from 1024 px, stacked below. */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .columns {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.groupTitle {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+@media (min-width: 560px) {
+  .field {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+.field dt {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.field dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.subtle {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.number {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The small "Calculated" label of design system §6.6, with its formula in a tip. */
+.calculated {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px 0 6px;
+  border-radius: var(--radius-chip);
+  background: var(--chip);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.goalsTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.goalsTable th,
+.goalsTable td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: top;
+}
+
+.goalsTable thead th {
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.goalsTable tbody th {
+  font-weight: 600;
+}
+
+.goalCell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.goalShare {
+  margin: 12px 0 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.skeletonHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
