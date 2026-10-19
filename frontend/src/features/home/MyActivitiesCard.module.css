@@ -1,0 +1,140 @@
+/* The "Activities I own" card scrolls here: leave room above the card. */
+.anchor {
+  min-width: 0;
+  scroll-margin-top: 20px;
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.group + .group {
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+}
+
+.heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* The group's fold button: chevron, status chip and count. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 2px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: var(--hover);
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--ink-2);
+  transition: transform 0.15s ease;
+}
+
+.open {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+.count {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rows {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The activity on the left; its cost and completeness on the right (under it on phones). */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 10px 0 10px 26px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--hairline);
+}
+
+.main {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.name {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.name:hover,
+.name:focus-visible {
+  color: var(--link);
+}
+
+.id {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.money {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.more {
+  margin: 4px 0 0 20px;
+}

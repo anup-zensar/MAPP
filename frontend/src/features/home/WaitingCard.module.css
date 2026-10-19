@@ -1,0 +1,74 @@
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The activity on the left, Review on the right. */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.row:first-child {
+  padding-top: 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--hairline);
+}
+
+.main {
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.name {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.name:hover,
+.name:focus-visible {
+  color: var(--link);
+}
+
+.id {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.more {
+  margin-top: 12px;
+  font-size: 13.5px;
+}
+
+.more a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.more a:hover {
+  text-decoration: underline;
+}

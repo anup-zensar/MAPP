@@ -21,12 +21,12 @@ const (
 // The answers about Priya Raman as the seed has her: her preferences are the defaults, and she is in the
 // team Lubricants Europe.
 const (
-	defaultPreferencesBody = `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY"}`
+	defaultPreferencesBody = `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams"}`
 	priyasTeamsBody        = `[{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}]`
 )
 
 // GET /api/me answers who is signed in, with everything the sidebar and the account menu show (FR-012),
-// and what My profile shows: the version, the four preferences and the person's teams (003 FR-021, FR-026).
+// and what My profile shows: the version, the five preferences and the person's teams (003 FR-021, FR-026).
 func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
@@ -74,14 +74,14 @@ func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	collapse := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"sidebarCollapsed": true})
-	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY"}`)
+	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams"}`)
 
 	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "dark"})
 
-	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY"}`)
+	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams"}`)
 	var me people.CurrentUser
 	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
-	want := people.PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY"}
+	want := people.PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams"}
 	if me.Preferences != want {
 		t.Errorf("GET /api/me preferences = %+v, want %+v", me.Preferences, want)
 	}
@@ -97,6 +97,26 @@ func TestPatchPreferences_InvalidTheme_FR014(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusBadRequest, `{"code":"validation_failed",`+
 		`"message":"Some fields need your attention.","fields":[{"field":"theme","message":"Choose system, light or dark."}]}`)
+}
+
+// Home's My teams / Everything switch is saved per person and comes back with GET /api/me; a value other
+// than myTeams or everything is refused next to the field (009 FR-003).
+func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"homeScope": "everything"})
+	refused := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"homeScope": "all"},
+		apitest.SkipRequestValidation()) // the contract itself allows only the two scopes
+
+	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"everything"}`)
+	var me people.CurrentUser
+	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	if me.Preferences.HomeScope != "everything" {
+		t.Errorf("GET /api/me home scope = %q, want everything", me.Preferences.HomeScope)
+	}
+	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed",`+
+		`"message":"Some fields need your attention.","fields":[{"field":"homeScope","message":"Choose My teams or Everything."}]}`)
 }
 
 // Changing preferences needs a signed-in person (FR-005).
@@ -167,7 +187,7 @@ func TestPatchMe_AllProblemsAtOnce_FR022(t *testing.T) {
 		`{"field":"jobTitle","message":"Use 120 characters or fewer."}`))
 }
 
-// The display currency and the date format are preferences like the theme: the answer has all four, and
+// The display currency and the date format are preferences like the theme: the answer has all five, and
 // anything but an active currency or one of the four date formats is refused next to its field, both at once
 // (003 FR-023, FR-024).
 func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T) {
@@ -177,7 +197,7 @@ func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T)
 	chosen := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "DD/MM/YYYY"})
 	invalid := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "XYZ", "dateFormat": "DD.MM.YYYY"})
 
-	assertAnswer(t, chosen, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"EUR","dateFormat":"DD/MM/YYYY"}`)
+	assertAnswer(t, chosen, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"EUR","dateFormat":"DD/MM/YYYY","homeScope":"myTeams"}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"displayCurrency","message":"Choose one of the active currencies."},`+
 		`{"field":"dateFormat","message":"Choose one of the date formats."}`))
 }

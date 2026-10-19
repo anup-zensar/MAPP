@@ -72,7 +72,14 @@ type Preferences struct {
 	SidebarCollapsed bool   `json:"sidebarCollapsed"` // the sidebar shows icons only
 	DisplayCurrency  string `json:"displayCurrency"`  // ISO code; "" = DefaultDisplayCurrency (003)
 	DateFormat       string `json:"dateFormat"`       // one of DateFormats; "" = DefaultDateFormat (003)
+	HomeScope        string `json:"homeScope"`        // HomeScopeEverything, or "" for the default HomeScopeMyTeams (009)
 }
+
+// The values of Home's My teams / Everything switch (feature 009, D-172): My teams is the default.
+const (
+	HomeScopeMyTeams    = "myTeams"
+	HomeScopeEverything = "everything"
+)
 
 // The defaults of the preferences feature 003 adds.
 const (
@@ -164,6 +171,7 @@ type PreferencesView struct {
 	SidebarCollapsed bool   `json:"sidebarCollapsed"`
 	DisplayCurrency  string `json:"displayCurrency"`
 	DateFormat       string `json:"dateFormat"`
+	HomeScope        string `json:"homeScope"` // always sent (009, D-191)
 }
 
 // PreferencesUpdate is the body of PATCH /api/me/preferences: only the preferences to change. A field that
@@ -173,6 +181,7 @@ type PreferencesUpdate struct {
 	SidebarCollapsed *bool   `json:"sidebarCollapsed"`
 	DisplayCurrency  *string `json:"displayCurrency"`
 	DateFormat       *string `json:"dateFormat"`
+	HomeScope        *string `json:"homeScope"`
 }
 
 // currentUser returns p as the signed-in person, with prefs and their teams.
@@ -197,8 +206,12 @@ func (p Person) demoPerson() DemoPerson {
 
 // view returns the preferences as the API returns them.
 func (p Preferences) view() PreferencesView {
+	homeScope := p.HomeScope
+	if homeScope == "" {
+		homeScope = HomeScopeMyTeams
+	}
 	return PreferencesView{Theme: p.Theme, SidebarCollapsed: p.SidebarCollapsed,
-		DisplayCurrency: p.DisplayCurrency, DateFormat: p.DateFormat}
+		DisplayCurrency: p.DisplayCurrency, DateFormat: p.DateFormat, HomeScope: homeScope}
 }
 
 // The API types of feature 003 (contract schemas in brackets; JSON names as the contract). 001's

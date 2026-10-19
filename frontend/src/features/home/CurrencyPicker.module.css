@@ -1,0 +1,35 @@
+/* "Currency [USD — US dollar ▾]" on the right of the header, as on the ZenReach home. */
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.label {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.select {
+  max-width: 220px;
+  height: 36px;
+  padding: 0 32px 0 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  /* A chevron drawn with two gradients, in the text colour of both themes. */
+  background:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%) no-repeat calc(100% - 17px) 50% / 5px
+      5px,
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%) no-repeat calc(100% - 12px) 50% / 5px
+      5px,
+    var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: var(--ink-2);
+}

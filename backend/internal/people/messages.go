@@ -22,6 +22,7 @@ const (
 	unknownPersonMessage      = "Choose people from the list."
 	chooseStatusMessage       = "Choose active or inactive."
 	reloadMessage             = "Reload the page and try again."
+	chooseHomeScopeMessage    = "Choose My teams or Everything." // Home's switch (009 FR-003)
 )
 
 // Preference problems (003 data model §4, FR-023, FR-024).

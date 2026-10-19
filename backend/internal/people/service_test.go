@@ -71,15 +71,16 @@ func TestCurrentUser_PersonWithPreferences_FR012(t *testing.T) {
 	}
 
 	want := CurrentUser{
-		ID:          "U-1002",
-		Name:        "Priya Raman",
-		FirstName:   "Priya",
-		Email:       "priya.raman@northstar.demo",
-		JobTitle:    "Marketer",
-		Initials:    "PR",
-		Preferences: PreferencesView{Theme: "system", SidebarCollapsed: false, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY"},
-		Version:     1,
-		Teams:       []TeamRef{},
+		ID:        "U-1002",
+		Name:      "Priya Raman",
+		FirstName: "Priya",
+		Email:     "priya.raman@northstar.demo",
+		JobTitle:  "Marketer",
+		Initials:  "PR",
+		Preferences: PreferencesView{Theme: "system", SidebarCollapsed: false, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY",
+			HomeScope: "myTeams"},
+		Version: 1,
+		Teams:   []TeamRef{},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("CurrentUser = %+v, want %+v", got, want)
@@ -102,7 +103,7 @@ func TestPreferences_Defaults_FR011_FR014(t *testing.T) {
 	service, db := newTestService(t)
 	priya := newPerson("U-1002", "Priya Raman", true)
 	addPeople(t, db, priya)
-	defaults := PreferencesView{Theme: "system", SidebarCollapsed: false, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY"}
+	defaults := PreferencesView{Theme: "system", SidebarCollapsed: false, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams"}
 
 	user, err := service.CurrentUser(t.Context(), priya.Actor())
 	if err != nil {
@@ -140,10 +141,10 @@ func TestUpdatePreferences_ChangesOnlySentFields_FR011(t *testing.T) {
 		t.Fatalf("UpdatePreferences(theme): %v", err)
 	}
 
-	if want := (PreferencesView{Theme: "system", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY"}); afterCollapse != want {
+	if want := (PreferencesView{Theme: "system", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams"}); afterCollapse != want {
 		t.Errorf("after collapsing = %+v, want %+v", afterCollapse, want)
 	}
-	if want := (PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY"}); afterTheme != want {
+	if want := (PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams"}); afterTheme != want {
 		t.Errorf("after choosing dark = %+v, want %+v", afterTheme, want)
 	}
 	stored, _ := storedPreferences(t, db, priya.ID)
@@ -209,7 +210,7 @@ func TestPreferences_Old001RecordGetsDefaults_FR024(t *testing.T) {
 		t.Fatalf("UpdatePreferences: %v", err)
 	}
 
-	want := PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY"}
+	want := PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams"}
 	if user.Preferences != want || unchanged != want {
 		t.Errorf("preferences = %+v and %+v, want %+v", user.Preferences, unchanged, want)
 	}
@@ -442,6 +443,51 @@ func TestDisplayCurrencies_ActivePlusCurrent_FR023(t *testing.T) {
 	}
 	if danielErr != nil || !reflect.DeepEqual(daniels, active) {
 		t.Errorf("Daniel's choices = %+v, %v; want %+v", daniels, danielErr, active)
+	}
+}
+
+// Home's My teams / Everything switch is remembered per person: My teams by default, Everything once chosen,
+// back to My teams, which is stored as no value (so choosing it again saves nothing); any other value is
+// refused next to the field with the other problems, and nothing changes (009 FR-003, D-172).
+func TestUpdatePreferences_HomeScope_FR003(t *testing.T) {
+	service, db := newTestService(t)
+	priya := newPerson("U-1002", "Priya Raman", true)
+	addPeople(t, db, priya)
+	everything, myTeams := "everything", "myTeams"
+
+	unchanged, err := service.UpdatePreferences(t.Context(), priya.Actor(), PreferencesUpdate{HomeScope: &myTeams})
+	if err != nil || unchanged.HomeScope != "myTeams" {
+		t.Fatalf("choosing My teams = %+v, %v; want myTeams", unchanged, err)
+	}
+	if _, found := storedPreferences(t, db, priya.ID); found {
+		t.Error("a preferences record was saved although My teams is the default")
+	}
+
+	wide, err := service.UpdatePreferences(t.Context(), priya.Actor(), PreferencesUpdate{HomeScope: &everything})
+	if err != nil || wide.HomeScope != "everything" {
+		t.Fatalf("choosing Everything = %+v, %v; want everything", wide, err)
+	}
+	user, _ := service.CurrentUser(t.Context(), priya.Actor())
+	if user.Preferences.HomeScope != "everything" {
+		t.Errorf("GET /api/me home scope = %q, want everything (remembered)", user.Preferences.HomeScope)
+	}
+
+	back, err := service.UpdatePreferences(t.Context(), priya.Actor(), PreferencesUpdate{HomeScope: &myTeams})
+	stored, _ := storedPreferences(t, db, priya.ID)
+	if err != nil || back.HomeScope != "myTeams" || stored.HomeScope != "" {
+		t.Errorf("back to My teams = %+v (stored %q), %v; want myTeams stored as no value", back, stored.HomeScope, err)
+	}
+
+	for _, scope := range []string{"all", "", "Everything"} {
+		theme := "blue"
+		_, err := service.UpdatePreferences(t.Context(), priya.Actor(), PreferencesUpdate{Theme: &theme, HomeScope: &scope})
+
+		assertError(t, err, errs.Validation(
+			errs.FieldError{Field: "theme", Message: "Choose system, light or dark."},
+			errs.FieldError{Field: "homeScope", Message: "Choose My teams or Everything."}))
+	}
+	if after, _ := storedPreferences(t, db, priya.ID); after != stored {
+		t.Errorf("stored preferences = %+v after refused changes, want %+v", after, stored)
 	}
 }
 

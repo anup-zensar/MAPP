@@ -1,42 +1,34 @@
-.steps {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step {
+/* Home's cards, one under the other; the cards inside lay themselves out by Home's width. */
+.page {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 12px 0;
+  flex-direction: column;
+  gap: 20px;
+  container: home / inline-size;
 }
 
-.step + .step {
-  border-top: 1px solid var(--hairline);
+/* The My teams / Everything switch with its hint beside it (under it on phones). */
+.scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
 }
 
-/* The step number in a small circle on the strong brand gradient (white text, research R17). */
-.number {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--brand-gradient-strong);
-  color: var(--on-accent);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* A standalone link: underlined on hover (global.css). */
-.link {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.text {
-  margin-top: 2px;
+.hint {
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: 12.5px;
+}
+
+/* The cards of the person's own work: two columns when Home is wide, one under the other below. */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+@container home (min-width: 880px) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

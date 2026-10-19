@@ -70,6 +70,7 @@ internal/
   activities/         activities (006)
   lineitems/          line items (007)
   approvals/          approval workflows, rounds, history entries and notifications (008)
+  home/               the Home dashboard, read-only over 003–008 through Sources (009)
 ```
 
 The Plan module's packages (002–008) started from a shared foundation: each has its stored types and API

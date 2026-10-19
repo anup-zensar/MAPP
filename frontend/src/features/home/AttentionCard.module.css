@@ -1,0 +1,87 @@
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  padding: 12px 0;
+}
+
+.item:first-child {
+  padding-top: 0;
+}
+
+.item + .item {
+  border-top: 1px solid var(--hairline);
+}
+
+/* Level tag, name and ID on one line; they wrap on phones. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.name {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.name:hover,
+.name:focus-visible {
+  color: var(--link);
+}
+
+.id {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.where {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One reason: a red mark, the sentence and the link to fix it. */
+.reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--status-problem);
+}
+
+.fix {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.more {
+  margin-top: 8px;
+}

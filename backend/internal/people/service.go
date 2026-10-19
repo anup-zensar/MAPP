@@ -186,13 +186,20 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 		if update.DateFormat != nil {
 			changed.DateFormat = *update.DateFormat
 		}
+		if update.HomeScope != nil {
+			// The default, My teams, is stored as no value, so choosing it again saves nothing (009 D-172).
+			changed.HomeScope = *update.HomeScope
+			if changed.HomeScope == HomeScopeMyTeams {
+				changed.HomeScope = ""
+			}
+		}
 		var currencies []Currency // needed only to choose another display currency
 		if changed.DisplayCurrency != current.DisplayCurrency {
 			if currencies, err = s.currencies(ctx); err != nil {
 				return err
 			}
 		}
-		if err := validatePreferences(current, changed, currencies); err != nil {
+		if err := validatePreferences(current, changed, update, currencies); err != nil {
 			return err
 		}
 
@@ -280,12 +287,13 @@ func (s *Service) preferences(ctx context.Context, personID string) (Preferences
 	return prefs.withDefaults(), nil
 }
 
-// validatePreferences checks the preferences changed, which were current before the change, against the
-// rules of data model §2 and 003 data model §4, and reports every problem at once. A display currency other
-// than the current one must be one of the active currencies among currencies: a display currency set
-// inactive after the person chose it is kept (spec edge case), but cannot be chosen again (003 FR-023). The
-// date format is one of DateFormats (003 FR-024).
-func validatePreferences(current, changed Preferences, currencies []Currency) error {
+// validatePreferences checks the preferences changed, which were current before the change and were sent as
+// update, against the rules of data model §2 and 003 data model §4, and reports every problem at once. A
+// display currency other than the current one must be one of the active currencies among currencies: a
+// display currency set inactive after the person chose it is kept (spec edge case), but cannot be chosen
+// again (003 FR-023). The date format is one of DateFormats (003 FR-024). The home scope is checked as it was
+// sent: My teams or Everything (009 FR-003).
+func validatePreferences(current, changed Preferences, update PreferencesUpdate, currencies []Currency) error {
 	var problems errs.Problems
 	if !slices.Contains(themes, changed.Theme) {
 		problems.Add("theme", "Choose system, light or dark.")
@@ -296,6 +304,9 @@ func validatePreferences(current, changed Preferences, currencies []Currency) er
 	}
 	if !slices.Contains(DateFormats, changed.DateFormat) {
 		problems.Add("dateFormat", chooseDateFormatMessage)
+	}
+	if update.HomeScope != nil && *update.HomeScope != HomeScopeMyTeams && *update.HomeScope != HomeScopeEverything {
+		problems.Add("homeScope", chooseHomeScopeMessage)
 	}
 	return problems.Err()
 }

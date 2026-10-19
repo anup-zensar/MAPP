@@ -298,11 +298,6 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 // cannot go stale. The list must be empty when the Plan module is done; then remove it and its uses.
 var notYetServed = []string{
 	// 009 Home dashboard
-	"GET /api/home/summary",
-	"GET /api/home/plans",
-	"GET /api/home/attention",
-	"GET /api/home/waiting",
-	"GET /api/home/my-activities",
 	"GET /api/home/recent-changes",
 	// 010 All work views
 	"GET /api/all-work",

@@ -1,0 +1,22 @@
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.message svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--status-problem);
+}
