@@ -767,6 +767,7 @@ type testRecord struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	ParentID string `json:"parentId"`
+	Status   string `json:"status,omitempty"` // only the tests of restore rules (011) give one
 	record.Meta
 }
 

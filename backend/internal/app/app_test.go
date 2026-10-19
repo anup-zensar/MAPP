@@ -419,11 +419,6 @@ var notYetServed = []string{
 	"POST /api/saved-views",
 	"PATCH /api/saved-views/{viewId}",
 	"DELETE /api/saved-views/{viewId}",
-	// 011 Activity log and recycle bin
-	"GET /api/activity-log/summary",
-	"POST /api/recycle-bin/empty",
-	"DELETE /api/recycle-bin/{entryId}",
-	"GET /api/recycle-bin/{entryId}/restore-preview",
 	// 012 Bulk actions and import
 	"GET /api/bulk-actions/fields",
 	"POST /api/bulk-actions/targets",

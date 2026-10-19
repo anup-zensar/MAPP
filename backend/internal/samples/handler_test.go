@@ -2,6 +2,7 @@ package samples_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -130,11 +131,20 @@ func TestDeleteFolder_MovesItToTheRecycleBin_FR024(t *testing.T) {
 		`"recordId":"SF-1002","recordName":"Plans","path":[],"parent":null,` +
 		`"deletedAt":"2026-03-12T09:00:00Z","deletedBy":{"id":"U-1002","name":"Priya Raman"},` +
 		`"contents":[{"recordType":"sampleNote","label":"sample notes","count":2}]}`
+	// The recycle bin lists each entry with its restore state and the records it holds (011 FR-015 – FR-017).
+	ideasRow := strings.TrimSuffix(ideasEntry, "}") + `,"recordTypePlural":"sample folders","restoreState":"restorable",` +
+		`"missingParent":null,"parentEntryIds":[],"insideEntryIds":[],"records":[` +
+		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas","parentId":""}]}`
+	plansRow := strings.TrimSuffix(plansEntry, "}") + `,"recordTypePlural":"sample folders","restoreState":"restorable",` +
+		`"missingParent":null,"parentEntryIds":[],"insideEntryIds":[],"records":[` +
+		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1002","recordName":"Plans","parentId":""},` +
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"Budget","parentId":"SF-1002"},` +
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Dates","parentId":"SF-1002"}]}`
 	assertAnswer(t, empty, http.StatusOK, `{"recycleBinEntry":`+ideasEntry+`}`)
 	assertAnswer(t, withNotes, http.StatusOK, `{"recycleBinEntry":`+plansEntry+`}`)
 	assertAnswer(t, gone, http.StatusNotFound, folderGoneBody)
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin", nil), http.StatusOK,
-		`{"items":[`+plansEntry+`,`+ideasEntry+`],"total":2}`)
+		`{"items":[`+plansRow+`,`+ideasRow+`],"total":2}`)
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/sample-folders", nil), http.StatusOK, emptyPageBody)
 }
 

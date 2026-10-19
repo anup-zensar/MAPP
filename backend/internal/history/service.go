@@ -81,18 +81,7 @@ func (s *Service) Log(ctx context.Context, a actor.Actor, in LogInput) (Entry, e
 		if err != nil {
 			return err
 		}
-		// One number gives both the id and the sequence number, which orders entries saved in the same
-		// millisecond (spec edge case).
-		seq, err := s.ids.NextNumber(ctx, logPrefix)
-		if err != nil {
-			return err
-		}
-
-		entry = Entry{
-			ID:              fmt.Sprintf("%s-%d", logPrefix, seq), // the form of ids.Generator.Next: LOG-1001
-			Seq:             seq,
-			At:              s.now(),
-			Actor:           a,
+		entry, err = s.appendEntry(ctx, a, Entry{
 			Action:          in.Action,
 			Verb:            verb,
 			RecordType:      k.Name,
@@ -103,8 +92,8 @@ func (s *Service) Log(ctx context.Context, a actor.Actor, in LogInput) (Entry, e
 			Changes:         changes,
 			Comment:         in.Comment,
 			Details:         in.Details,
-		}
-		return s.repo.AppendEntry(ctx, entry)
+		})
+		return err
 	})
 	if err != nil {
 		return Entry{}, err
@@ -112,13 +101,60 @@ func (s *Service) Log(ctx context.Context, a actor.Actor, in LogInput) (Entry, e
 	return entry, nil
 }
 
+// appendEntry adds e at the end of the activity log, with its id and sequence number, the time and the
+// actor a, and returns it as stored. Call it inside a Write. Log uses it, and so do Purge and EmptyBin,
+// whose records are no longer stored. A dry run (withLogCollector) also gets a copy of the entry.
+func (s *Service) appendEntry(ctx context.Context, a actor.Actor, e Entry) (Entry, error) {
+	// One number gives both the id and the sequence number, which orders entries saved in the same
+	// millisecond (spec edge case).
+	seq, err := s.ids.NextNumber(ctx, logPrefix)
+	if err != nil {
+		return Entry{}, err
+	}
+	e.ID = fmt.Sprintf("%s-%d", logPrefix, seq) // the form of ids.Generator.Next: LOG-1001
+	e.Seq, e.At, e.Actor = seq, s.now(), a
+	if e.Path == nil {
+		e.Path = []RecordRef{}
+	}
+	if e.Changes == nil {
+		e.Changes = []Change{}
+	}
+	if err := s.repo.AppendEntry(ctx, e); err != nil {
+		return Entry{}, err
+	}
+	if c, ok := ctx.Value(collectorKey{}).(*logCollector); ok {
+		c.entries = append(c.entries, e)
+	}
+	return e, nil
+}
+
+// logCollector keeps a copy of every entry appended while it is in the context: the restore preview reads
+// what a dry run of a restore would log, including the entries the kinds' hooks write (D-177).
+type logCollector struct {
+	entries []Entry
+}
+
+// collectorKey is the context key of the log collector.
+type collectorKey struct{}
+
+// withLogCollector returns a copy of ctx with a new, empty log collector, and the collector.
+func withLogCollector(ctx context.Context) (context.Context, *logCollector) {
+	c := &logCollector{}
+	return context.WithValue(ctx, collectorKey{}, c), c
+}
+
 // verbOf returns the verb of an entry's sentence "<person> <verb> <record type> '<name>'". Each action has a
-// verb of the same name ("created", "deleted", …), used when the caller names no other. A status change has
-// none: it must name its own, such as "published".
+// verb of the same name ("created", "deleted", …), used when the caller names no other; the two actions of
+// feature 011 read "permanently deleted" and "emptied the recycle bin". A status change has none: it must
+// name its own, such as "published".
 func verbOf(action Action, verb string) (string, error) {
 	switch action {
 	case ActionCreated, ActionChanged, ActionMoved, ActionCopied, ActionDeleted, ActionRestored:
 		return cmp.Or(verb, string(action)), nil // cmp.Or returns the first value that is not empty
+	case ActionDeletedPermanently:
+		return cmp.Or(verb, verbDeletedPermanently), nil
+	case ActionEmptiedRecycleBin:
+		return cmp.Or(verb, verbEmptiedRecycleBin), nil
 	case ActionStatusChanged:
 		if verb == "" {
 			return "", errors.New(`history: a status change needs its verb, such as "published"`)
@@ -397,50 +433,9 @@ func (s *Service) putBack(ctx context.Context, a actor.Actor, entryID string, un
 		if err := s.checkCanComeBack(ctx, entry, undo, now); err != nil {
 			return err
 		}
-
-		before := entry.Snapshots[0] // an entry in the bin always holds its record first
-		after, notes, err := s.putSnapshots(ctx, RestoreContext{Actor: a, Now: now, Undo: undo}, entry.Snapshots)
-		if err != nil {
-			return err
-		}
-		changes, err := Diff(before.Data, after.Data) // what PrepareRestore changed, such as the name
-		if err != nil {
-			return err
-		}
-
-		how, details := "restored", "Restored from the recycle bin"
-		if undo {
-			how, details = "undone", "Undo"
-		}
-		entry.Resolution = &Resolution{How: how, By: a, At: now}
-		entry.Snapshots = []Snapshot{} // the records are stored again; the entry keeps only who and when
-		if err := s.repo.PutBinEntry(ctx, entry); err != nil {
-			return err
-		}
-		_, err = s.Log(ctx, a, LogInput{
-			Kind:       entry.RecordType,
-			RecordID:   entry.RecordID,
-			RecordName: after.Name,
-			Action:     ActionRestored,
-			Changes:    changes,
-			Details:    restoreDetails(details, entry.Contents, notes),
-		})
-		if err != nil {
-			return err
-		}
-
-		k, err := s.registeredKind(entry.RecordType)
-		if err != nil {
-			return err
-		}
-		result = RestoreResult{
-			RecordType:      k.Name,
-			RecordTypeLabel: k.Singular,
-			RecordID:        entry.RecordID,
-			RecordName:      after.Name,
-			Details:         strings.Join(notes, " "),
-		}
-		return nil
+		restored, err := s.restoreEntry(ctx, a, entry, undo, now)
+		result = restored.result
+		return err
 	})
 	if err != nil {
 		return RestoreResult{}, err
@@ -448,9 +443,79 @@ func (s *Service) putBack(ctx context.Context, a actor.Actor, entryID string, un
 	return result, nil
 }
 
+// restored is what restoreEntry brought back.
+type restored struct {
+	result RestoreResult  // the answer of the restore
+	pairs  []restoredPair // every record of the entry, parents before children
+	notes  []string       // the notes of the kinds' PrepareRestore, in order
+}
+
+// restoredPair is one record a restore put back: as the recycle bin kept it, and as it came back.
+type restoredPair struct {
+	kind          Kind
+	before, after Snapshot
+}
+
+// restoreEntry puts the records of the recycle-bin entry back, marks the entry as resolved (undone or
+// restored, by a at now) and writes one "restored" log entry with what PrepareRestore changed in the
+// record and its notes. The caller has checked that the entry can come back (checkCanComeBack) and runs it
+// inside a Write. Undo, Restore, RestoreWithParents and the restore preview use it.
+func (s *Service) restoreEntry(ctx context.Context, a actor.Actor, entry BinEntry, undo bool, now time.Time) (restored, error) {
+	afters, notes, err := s.putSnapshots(ctx, RestoreContext{Actor: a, Now: now, Undo: undo}, entry.Snapshots)
+	if err != nil {
+		return restored{}, err
+	}
+	pairs := make([]restoredPair, 0, len(afters))
+	for i, after := range afters {
+		k, err := s.registeredKind(after.Kind)
+		if err != nil {
+			return restored{}, err
+		}
+		pairs = append(pairs, restoredPair{kind: k, before: entry.Snapshots[i], after: after})
+	}
+	before, after := pairs[0].before, pairs[0].after // an entry in the bin always holds its record first
+	changes, err := Diff(before.Data, after.Data)    // what PrepareRestore changed, such as the name
+	if err != nil {
+		return restored{}, err
+	}
+
+	how, details := "restored", "Restored from the recycle bin"
+	if undo {
+		how, details = "undone", "Undo"
+	}
+	entry.Resolution = &Resolution{How: how, By: a, At: now}
+	entry.Snapshots = []Snapshot{} // the records are stored again; the entry keeps only who and when
+	if err := s.repo.PutBinEntry(ctx, entry); err != nil {
+		return restored{}, err
+	}
+	_, err = s.Log(ctx, a, LogInput{
+		Kind:       entry.RecordType,
+		RecordID:   entry.RecordID,
+		RecordName: after.Name,
+		Action:     ActionRestored,
+		Changes:    changes,
+		Details:    restoreDetails(details, entry.Contents, notes),
+	})
+	if err != nil {
+		return restored{}, err
+	}
+
+	k := pairs[0].kind
+	result := RestoreResult{
+		RecordType:      k.Name,
+		RecordTypeLabel: k.Singular,
+		RecordID:        entry.RecordID,
+		RecordName:      after.Name,
+		Details:         strings.Join(notes, " "),
+	}
+	return restored{result: result, pairs: pairs, notes: notes}, nil
+}
+
 // checkCanComeBack refuses an entry that cannot come back (FR-025, FR-026): one holding a kind that is not
 // registered here (the developer sample records outside demo mode), one that already left the bin, an
-// Undo asked for more than 2 minutes after the delete, and one whose parent is no longer stored.
+// Undo asked for more than 2 minutes after the delete, and one whose parent is no longer stored: while the
+// parent is in the recycle bin it must be restored first, and when it (or a record above it) was deleted
+// permanently, the entry can never come back (011 FR-023, FR-024).
 func (s *Service) checkCanComeBack(ctx context.Context, entry BinEntry, undo bool, now time.Time) error {
 	if !s.knowsKindsOf(entry) {
 		return errs.NotFound(kindUnknownMessage)
@@ -461,20 +526,25 @@ func (s *Service) checkCanComeBack(ctx context.Context, entry BinEntry, undo boo
 	if undo && now.Sub(entry.DeletedAt) > undoWindow {
 		return errs.UndoExpired()
 	}
-	if entry.Parent != nil {
-		parentKind, err := s.registeredKind(entry.Parent.Type)
-		if err != nil {
-			return err
-		}
-		_, parentStored, err := parentKind.Snapshot(ctx, entry.Parent.ID)
-		if err != nil {
-			return err
-		}
-		if !parentStored {
-			return errs.RestoreParentFirst(*entry.Parent)
-		}
+	if entry.Parent == nil {
+		return nil
 	}
-	return nil
+	parentStored, err := s.isStored(ctx, *entry.Parent)
+	if err != nil || parentStored {
+		return err
+	}
+	index, err := s.binIndex(ctx)
+	if err != nil {
+		return err
+	}
+	state, err := s.restoreStateOf(ctx, entry, index)
+	if err != nil {
+		return err
+	}
+	if state.state == ParentDeletedPermanently {
+		return s.parentDeletedPermanently(entry, *state.missingParent)
+	}
+	return errs.RestoreParentFirst(*entry.Parent)
 }
 
 // knowsKindsOf reports whether the kind of the entry and of every record it holds are registered here.
@@ -491,31 +561,29 @@ func (s *Service) knowsKindsOf(entry BinEntry) bool {
 }
 
 // putSnapshots puts the records of snapshots back in storage, parents before children, each after its
-// kind's PrepareRestore when it has one. It returns the first record as it was put back, and the notes of
-// the PrepareRestore hooks, in order.
-func (s *Service) putSnapshots(ctx context.Context, rc RestoreContext, snapshots []Snapshot) (Snapshot, []string, error) {
-	var first Snapshot
+// kind's PrepareRestore when it has one. It returns every record as it was put back, in the same order, and
+// the notes of the PrepareRestore hooks, in order.
+func (s *Service) putSnapshots(ctx context.Context, rc RestoreContext, snapshots []Snapshot) ([]Snapshot, []string, error) {
+	afters := make([]Snapshot, 0, len(snapshots))
 	var notes []string
-	for i, snapshot := range snapshots {
+	for _, snapshot := range snapshots {
 		k, err := s.registeredKind(snapshot.Kind)
 		if err != nil {
-			return Snapshot{}, nil, err
+			return nil, nil, err
 		}
 		if k.PrepareRestore != nil {
 			kindNotes, err := k.PrepareRestore(ctx, rc, &snapshot) // it may change this copy of the snapshot
 			if err != nil {
-				return Snapshot{}, nil, err
+				return nil, nil, err
 			}
 			notes = append(notes, kindNotes...)
 		}
 		if err := k.Put(ctx, snapshot); err != nil {
-			return Snapshot{}, nil, err
+			return nil, nil, err
 		}
-		if i == 0 {
-			first = snapshot
-		}
+		afters = append(afters, snapshot)
 	}
-	return first, notes, nil
+	return afters, notes, nil
 }
 
 // restoreDetails writes the details of a "restored" log entry: how it came back ("Undo" or "Restored from
@@ -533,32 +601,23 @@ func restoreDetails(how string, contents []ContentCount, notes []string) string 
 }
 
 // ListLog returns the newest activity-log entries that match filter, at most filter.Limit of them, and how
-// many entries match in all. The limit must be from 1 to 200. Every signed-in person may read the whole log
-// (FR-008), so a is not used yet; it is where a permission check will go when roles arrive.
+// many entries match in all. The limit must be from 1 to 200. It is QueryLog with fewer filters, kept for
+// the callers of feature 001. Every signed-in person may read the whole log (FR-008), so a is not used
+// yet; it is where a permission check will go when roles arrive.
 func (s *Service) ListLog(ctx context.Context, a actor.Actor, filter LogFilter) ([]Entry, int, error) {
-	if filter.Limit < 1 || filter.Limit > maxLimit {
-		return nil, 0, invalidLimit()
+	q := LogQuery{RecordID: filter.RecordID, Limit: filter.Limit}
+	if filter.RecordType != "" {
+		q.RecordTypes = []string{filter.RecordType}
 	}
-	var entries []Entry
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		var err error
-		entries, err = s.repo.Entries(ctx)
-		return err
-	})
+	page, err := s.QueryLog(ctx, a, q)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	matching := []Entry{}
-	for _, e := range entries {
-		if (filter.RecordType == "" || e.RecordType == filter.RecordType) &&
-			(filter.RecordID == "" || e.RecordID == filter.RecordID) {
-			matching = append(matching, e)
-		}
+	entries := make([]Entry, 0, len(page.Items))
+	for _, item := range page.Items {
+		entries = append(entries, item.Entry)
 	}
-	// Newest first. The sequence number orders entries, also those saved in the same millisecond.
-	slices.SortFunc(matching, func(x, y Entry) int { return cmp.Compare(y.Seq, x.Seq) })
-	return matching[:min(filter.Limit, len(matching))], len(matching), nil
+	return entries, page.Total, nil
 }
 
 // invalidLimit is the answer to a limit that is not a number from 1 to 200.
