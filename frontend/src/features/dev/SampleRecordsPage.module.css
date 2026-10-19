@@ -1,0 +1,138 @@
+/* The summary cards and the cards of the page, one under the other. */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* The summary cards side by side; on narrow screens they wrap onto more rows. */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+/* Wide content scrolls sideways inside its card, never the whole page (design system §2). */
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: top;
+}
+
+/* The header row on the subtle grey of table headers (design system §3). */
+.table thead th {
+  padding-block: 8px;
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.name {
+  display: block;
+  font-weight: 600;
+}
+
+.id {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The "⋯" menu sits at the right end of its row. */
+.actionsCell {
+  width: 1%;
+  text-align: right;
+}
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A note's title with its delete button right after it. */
+.note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One deleted record: the sentence on the left, Restore on the right. */
+.binEntry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 13.5px;
+}
+
+.binEntry > p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.binEntry + .binEntry,
+.logEntry + .logEntry {
+  border-top: 1px solid var(--hairline);
+}
+
+.binEntry:first-child,
+.logEntry:first-child {
+  padding-top: 0;
+}
+
+.binEntry:last-child,
+.logEntry:last-child {
+  padding-bottom: 0;
+}
+
+.logEntry {
+  padding: 10px 0;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+/* Where the record was and when: secondary text under the sentence. */
+.meta {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.changes {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}

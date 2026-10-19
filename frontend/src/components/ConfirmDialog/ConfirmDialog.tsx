@@ -14,6 +14,8 @@ export interface ConfirmDialogProps {
   children: ReactNode;
   /** Names the action, never "OK": "Delete sample folder". */
   confirmLabel: string;
+  /** Names the safe choice, which has the focus: "Cancel", or "Keep editing" for unsaved changes. */
+  cancelLabel?: string;
   /** Runs the action. The dialog stays open until you close it, so it can show `busy` meanwhile. */
   onConfirm: () => void;
   /** danger: the confirm button is filled red, for actions that remove something. */
@@ -23,8 +25,8 @@ export interface ConfirmDialogProps {
 }
 
 /**
- * Asks before an action that cannot simply be taken back (design system §6.5). Cancel has the
- * focus, so pressing Enter never deletes anything by accident.
+ * Asks before an action that cannot simply be taken back (design system §6.5). The safe choice,
+ * Cancel, has the focus, so pressing Enter never deletes anything by accident.
  */
 export function ConfirmDialog({
   open,
@@ -32,6 +34,7 @@ export function ConfirmDialog({
   title,
   children,
   confirmLabel,
+  cancelLabel = 'Cancel',
   onConfirm,
   tone,
   busy = false,
@@ -60,7 +63,7 @@ export function ConfirmDialog({
           </AlertDialog.Description>
           <div className={styles.actions}>
             <AlertDialog.Cancel asChild>
-              <Button>Cancel</Button>
+              <Button>{cancelLabel}</Button>
             </AlertDialog.Cancel>
             {/* A plain button, not AlertDialog.Action: that one would close the dialog at once. */}
             <Button

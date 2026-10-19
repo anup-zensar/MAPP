@@ -92,6 +92,24 @@ describe('ConfirmDialog', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Delete note' })).toHaveFocus());
   });
 
+  it('can name its cancel button after what it keeps, with the focus on it (plan "Shared hooks")', () => {
+    render(
+      <ConfirmDialog
+        open
+        onOpenChange={vi.fn()}
+        title="Discard changes?"
+        cancelLabel="Keep editing"
+        confirmLabel="Discard changes"
+        onConfirm={vi.fn()}
+      >
+        Your changes haven't been saved.
+      </ConfirmDialog>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Keep editing' })).toHaveFocus();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+  });
+
   it('ignores a second click while the action is running (FR-019)', async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();

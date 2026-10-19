@@ -1,0 +1,62 @@
+/* One card per building block, one under the other. */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Variants side by side; they wrap on narrow screens. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.row + .row {
+  margin-top: 12px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summaries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+/* Two examples next to each other on wide screens, one under the other on narrow ones. */
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* A label with its info tip, as next to a form field or a summary. */
+.label {
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* An avatar with the name it stands for. */
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 420px;
+}

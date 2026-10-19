@@ -1,0 +1,32 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* A failed save that is not about one field, such as a conflict: a red-tinted box above the
+   form, like the error summary (design system §6.4). */
+.failure {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--status-problem) 40%, transparent);
+  border-left: 4px solid var(--status-problem);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.failure svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--status-problem-text);
+}
+
+.failureMessage {
+  font-weight: 600;
+}

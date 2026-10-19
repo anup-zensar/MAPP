@@ -7,9 +7,12 @@
  *   makes a request without a canned answer fails (research R19).
  */
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
 import { mockApi, takeUnmockedRequests } from './mockApi';
+
+// findBy… and waitFor wait up to 3 seconds: on a busy laptop a page can need more than the default 1 s.
+configure({ asyncUtilTimeout: 3000 });
 
 // matchMedia answers "no" to every media query: light mode and no reduced motion. Tests that
 // need the computer's dark setting replace it with vi.stubGlobal('matchMedia', …).

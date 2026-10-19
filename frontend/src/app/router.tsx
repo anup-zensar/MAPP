@@ -1,8 +1,11 @@
 import { createBrowserRouter } from 'react-router';
 import type { RouteObject } from 'react-router';
+import { ComponentGalleryPage } from '@/features/dev/ComponentGalleryPage';
+import { SampleRecordsPage } from '@/features/dev/SampleRecordsPage';
 import { HomePage } from '@/features/home/HomePage';
 import { ComingSoonPage } from '@/features/placeholders/ComingSoonPage';
 import { SignInPage } from '@/features/sign-in/SignInPage';
+import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
 import { RequireSignIn } from './RequireSignIn';
@@ -33,6 +36,26 @@ export const routes: RouteObject[] = [
             element: <ComingSoonPage section={section} />,
             handle: { title: section.label } satisfies PageHandle,
           })),
+          // The developer pages: not in the navigation, and only where demo sign-in is on — the
+          // local and development environments (research R23, D-036).
+          {
+            path: '/dev/sample-records',
+            element: (
+              <DevOnly>
+                <SampleRecordsPage />
+              </DevOnly>
+            ),
+            handle: { title: 'Sample records' } satisfies PageHandle,
+          },
+          {
+            path: '/dev/components',
+            element: (
+              <DevOnly>
+                <ComponentGalleryPage />
+              </DevOnly>
+            ),
+            handle: { title: 'Shared building blocks' } satisfies PageHandle,
+          },
         ],
       },
       // Any other address: "Page not found", for signed-in people and visitors alike (FR-015).
