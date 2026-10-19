@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
+	"syscall"
 	"testing"
 
 	"northstar/internal/app"
@@ -58,5 +60,16 @@ func TestListen_BusyPortSaysWhatToDo(t *testing.T) {
 	want := fmt.Sprintf("Port %d is already in use — stop the other program or set APP_PORT.", port)
 	if err == nil || err.Error() != want {
 		t.Errorf("listen = %v, want %q", err, want)
+	}
+}
+
+// On Windows, a port that another program holds on all addresses, or that Windows has reserved, fails
+// with "access denied" (WSAEACCES, 10013) rather than "in use"; it gets the same message (research R21).
+// The error is built here: listening on all addresses in a test would open a Windows Firewall prompt.
+func TestIsPortInUse_WindowsAccessDenied(t *testing.T) {
+	err := &net.OpError{Op: "listen", Net: "tcp", Err: os.NewSyscallError("bind", syscall.Errno(10013))}
+
+	if !isPortInUse(err) {
+		t.Errorf("isPortInUse(%v) = false, want true", err)
 	}
 }

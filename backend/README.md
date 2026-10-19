@@ -38,7 +38,7 @@ Environment variables; an empty one counts as not set. Invalid values stop the A
 | `DATA_DIR` | Folder of the JSON store (`data` is git-ignored) | `data` |
 | `DEMO_PASSWORD` | The password every demo person shares; may not be blank | `northstar` |
 
-Example, PowerShell: `$env:APP_PORT = '8081'; go run ./cmd/api` · Git Bash: `APP_PORT=8081 go run ./cmd/api`
+Example, PowerShell: `$env:APP_PORT = '18081'; go run ./cmd/api` · Git Bash: `APP_PORT=18081 go run ./cmd/api`
 
 ## Packages
 

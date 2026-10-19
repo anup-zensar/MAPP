@@ -64,8 +64,8 @@ Open <http://127.0.0.1:5173> and click a demo person, or type a demo e-mail with
 program or set APP_PORT." Either stop the other program, or use another port in both terminals:
 
 ```powershell
-$env:APP_PORT = '8081'                                # API terminal, before go run ./cmd/seed and ./cmd/api
-$env:NORTHSTAR_API_URL = 'http://127.0.0.1:8081'      # web-app terminal, before npm run dev
+$env:APP_PORT = '18081'                               # API terminal, before go run ./cmd/seed and ./cmd/api
+$env:NORTHSTAR_API_URL = 'http://127.0.0.1:18081'     # web-app terminal, before npm run dev
 ```
 
 ## Test NorthStar

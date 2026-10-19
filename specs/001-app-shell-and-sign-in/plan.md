@@ -322,7 +322,7 @@ Details texts: deletes "with 2 sample notes"; restores "Undo" or "Restored from 
 - `GET /api/health` → `{"status": "ok", "environment": "...", "demoSignIn": true|false}` (public).
   Everything else under `/api/` that is not registered answers JSON `404 not_found` (wrong methods too).
 - `cmd/api`: reads the config, opens the store, listens on `127.0.0.1:APP_PORT`; a busy port (Windows
-  error 10048 or `syscall.EADDRINUSE`) prints the messages-table text and exits 1; Ctrl+C shuts down
+  error 10048 or 10013, or `syscall.EADDRINUSE`) prints the messages-table text and exits 1; Ctrl+C shuts down
   gracefully; prints the start-up line.
 - `cmd/seed`: `run(args []string, getenv func(string) string, out io.Writer) error` holds the logic (tested
   in `main_test.go`) and reads the settings through `app.LoadConfig`; `-data` (default `DATA_DIR` or

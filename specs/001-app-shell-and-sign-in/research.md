@@ -547,8 +547,9 @@ for dots, bars, borders and tints.
 
 - API: always `127.0.0.1` (no host setting in this phase — constitution, "Servers listen on `127.0.0.1`
   only"); port `APP_PORT` (default `8080`, a number from 1 to 65535); data folder `DATA_DIR` (default
-  `data`, git-ignored). On Windows a busy port is recognised by error number 10048 (`WSAEADDRINUSE`) as
-  well as `syscall.EADDRINUSE`, and the API prints "Port <APP_PORT> is already in use — stop the other
+  `data`, git-ignored). On Windows a busy port is recognised by error number 10048 (`WSAEADDRINUSE`) or
+  10013 (`WSAEACCES`: another program listens on the port on all addresses, or Windows has reserved it)
+  as well as `syscall.EADDRINUSE`, and the API prints "Port <APP_PORT> is already in use — stop the other
   program or set APP_PORT."
 - Web app: Vite on `127.0.0.1:5173` with `/api` proxied to the API; `vite preview` on `127.0.0.1:4173`.
   The proxy target can be changed with `NORTHSTAR_API_URL`. Ports are strict: if a port is busy the

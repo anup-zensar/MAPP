@@ -83,14 +83,19 @@ func listen(port int) (net.Listener, error) {
 	return listener, err
 }
 
-// windowsAddressInUse is Windows' error number for a port that is in use (WSAEADDRINUSE). On Windows,
-// Go's syscall.EADDRINUSE does not match it.
-const windowsAddressInUse = 10048
+// Windows' error numbers for a port that another program holds: WSAEADDRINUSE (in use), and WSAEACCES
+// (another program listens on the port on all addresses, or Windows has reserved the port). On Windows,
+// Go's syscall.EADDRINUSE matches neither.
+const (
+	windowsAddressInUse = 10048
+	windowsAccessDenied = 10013
+)
 
-// isPortInUse reports whether err says that another program already listens on the port.
+// isPortInUse reports whether err says that another program, or Windows, already holds the port.
 func isPortInUse(err error) bool {
 	var errno syscall.Errno
-	return errors.Is(err, syscall.EADDRINUSE) || (errors.As(err, &errno) && errno == windowsAddressInUse)
+	return errors.Is(err, syscall.EADDRINUSE) ||
+		(errors.As(err, &errno) && (errno == windowsAddressInUse || errno == windowsAccessDenied))
 }
 
 // startupLine is what the API prints once it is ready.
