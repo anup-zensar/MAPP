@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /** The password every demo person shares (shown on the sign-in page, decision D-004). */
 export const DEMO_PASSWORD = 'northstar';
@@ -33,4 +33,54 @@ export async function expectNoAxeViolations(page: Page): Promise<void> {
     (v) => `${v.id}: ${v.nodes.map((node) => node.target.join(' ')).join(', ')}`,
   );
   expect(summary).toEqual([]);
+}
+
+/** Expects a message on screen, such as a toast; a toast's text is also copied for screen readers. */
+export async function expectToast(page: Page, text: string | RegExp): Promise<void> {
+  await expect(page.getByText(text).first()).toBeVisible();
+}
+
+/**
+ * The action called exactly `name`, whether the page draws it as a link (LinkButton) or a button.
+ * When both exist, the first in the page wins (the page header's or toolbar's).
+ */
+export function action(scope: Page | Locator, name: string): Locator {
+  return scope
+    .getByRole('link', { name, exact: true })
+    .or(scope.getByRole('button', { name, exact: true }))
+    .first();
+}
+
+/**
+ * Chooses the option of a native select whose text starts with `text`, so "Event" matches
+ * "Event · default $25,000.00" and "EUR" matches "EUR – Euro".
+ */
+export async function chooseOption(select: Locator, text: string): Promise<void> {
+  const option = select
+    .locator('option')
+    .filter({ hasText: new RegExp(`^\\s*${escapeRegExp(text)}`) });
+  const label = (await option.first().textContent())?.trim() ?? text;
+  await select.selectOption({ label });
+}
+
+/** `text` as a regular expression that matches it literally. */
+export function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Calls the API as the signed-in person and answers its JSON; a refusal fails the test with the
+ * API's own message. For preparing records a test needs, never for what the test proves.
+ */
+export async function callApi<T>(
+  page: Page,
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  url: string,
+  data?: unknown,
+): Promise<T> {
+  const response = await page.request.fetch(url, { method, data });
+  if (!response.ok()) {
+    throw new Error(`${method} ${url} answered ${response.status()}: ${await response.text()}`);
+  }
+  return (await response.json()) as T;
 }
