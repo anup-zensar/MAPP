@@ -10,6 +10,7 @@ import { api, call } from '@/api/client';
 import type { components } from '@/api/schema';
 import { SESSION_KEY } from '@/app/useSession';
 import type { CurrentUser } from '@/app/useSession';
+import { DISPLAY_CURRENCIES_KEY } from '@/features/people';
 
 export type HomeScope = components['schemas']['HomeScope'];
 export type HomeSummary = components['schemas']['HomeSummary'];
@@ -116,6 +117,8 @@ export function useSaveDisplayCurrency() {
       queryClient.setQueryData<CurrentUser | null>(SESSION_KEY, (person) =>
         person ? { ...person, preferences: { ...person.preferences, ...preferences } } : person,
       );
+      // An inactive currency left behind drops off the choices (003 FR-023).
+      void queryClient.invalidateQueries({ queryKey: DISPLAY_CURRENCIES_KEY });
       return queryClient.invalidateQueries({ queryKey: HOME_KEY });
     },
   });

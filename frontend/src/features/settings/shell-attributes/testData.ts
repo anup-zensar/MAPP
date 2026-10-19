@@ -63,6 +63,7 @@ export function shellOption(
     parentOptions: [],
     active: true,
     usage: NOT_USED,
+    locks: [],
     version: 1,
     createdAt: '2026-03-12T09:00:00Z',
     createdBy: PRIYA_REF,

@@ -91,7 +91,8 @@ func (s *Service) Summary(ctx context.Context, a actor.Actor, monthStart, monthE
 }
 
 // Preview returns what the preview panel of the Approvals page shows of one activity (FR-032): its facts
-// and completeness, its line items, its unassigned planned cost and its Approval section.
+// and completeness, its line items, its unassigned planned cost and its Approval section. Its amounts in
+// USD are answered in a's display currency (D-213).
 func (s *Service) Preview(ctx context.Context, a actor.Actor, activityID string) (Preview, error) {
 	var preview Preview
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -119,16 +120,25 @@ func (s *Service) Preview(ctx context.Context, a actor.Actor, activityID string)
 		if missing == nil {
 			missing = []MissingFieldRef{}
 		}
+		shown, err := s.displayOf(ctx, a)
+		if err != nil {
+			return err
+		}
+		items = slices.Clone(items) // converted below: never change the list Activities gave
 		if items == nil {
 			items = []PreviewLineItem{}
+		}
+		for i := range items {
+			items[i].PlannedCostDisplay = shown.optional(items[i].PlannedCostDisplay)
 		}
 		preview = Preview{
 			Activity: PreviewActivity{
 				ID: facts.ID, Name: facts.Name, Status: facts.Status, DisplayStatus: facts.DisplayStatus, Missing: missing,
 				Path: nonNilPath(facts.Path), Owner: d.owner(facts.OwnerID), StartDate: facts.StartDate, EndDate: facts.EndDate,
-				Ongoing: facts.Ongoing, PlannedCost: facts.PlannedCost, TypeName: facts.TypeName, Description: facts.Description,
+				Ongoing: facts.Ongoing, PlannedCost: shown.optional(facts.PlannedCost), TypeName: facts.TypeName,
+				Description: facts.Description,
 			},
-			LineItems: items, UnassignedPlannedCost: facts.UnassignedPlannedCost, Approval: approval,
+			LineItems: items, UnassignedPlannedCost: shown.optional(facts.UnassignedPlannedCost), Approval: approval,
 		}
 		return nil
 	})

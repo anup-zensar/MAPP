@@ -256,7 +256,15 @@ export function TeamFormPanel({ team, onClose }: TeamFormPanelProps) {
     description !== start.description ||
     colour !== start.colour ||
     memberIds.join() !== start.memberIds.join();
-  const body: TeamUpdate = { name, description, colour, memberIds, version };
+  // Only the fields that changed, and the version (D-203, D-210): after a conflict, Save again
+  // replaces only what this person changed.
+  const body: TeamUpdate = {
+    ...(name !== start.name ? { name } : {}),
+    ...(description !== start.description ? { description } : {}),
+    ...(colour !== start.colour ? { colour } : {}),
+    ...(memberIds.join() !== start.memberIds.join() ? { memberIds } : {}),
+    version,
+  };
 
   function done(saved: Team, verb: 'created' | 'saved') {
     show({

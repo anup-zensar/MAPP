@@ -88,7 +88,7 @@ describe('activityTreeRows (feature 006)', () => {
     expect(within(row).getByText('ACTIVITY')).toBeVisible();
     expect(within(row).getByText('A-1042')).toBeVisible();
     expect(within(row).getByText('Priya Raman')).toBeVisible();
-    expect(within(row).getByText('01 Mar 2026 – 31 May 2026')).toBeVisible();
+    expect(within(row).getByText('01 Mar – 31 May 2026')).toBeVisible();
     expect(within(row).getByText('Created')).toBeVisible();
     expect(within(row).getByRole('link', { name: '3 fields needed' })).toHaveAttribute(
       'href',

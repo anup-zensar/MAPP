@@ -47,7 +47,7 @@ export function DeleteLineItemDialog({
       busy={busy}
       onConfirm={onConfirm}
     >
-      {lineItem && <p>{deleteEffect(moneyText(lineItem.plannedCostUsd))}</p>}
+      {lineItem && <p>{deleteEffect(moneyText(lineItem.plannedCostDisplay))}</p>}
       <p>{DELETE_TO_BIN}</p>
       {restartsApproval && <p>{DELETE_RESTART}</p>}
     </ConfirmDialog>

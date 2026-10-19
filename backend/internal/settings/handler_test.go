@@ -3,6 +3,7 @@ package settings_test
 import (
 	"encoding/base64"
 	"net/http"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -1044,6 +1045,38 @@ func TestOptionsAPI_Move_FR018(t *testing.T) {
 		t.Errorf("moved = %+v", moved)
 	}
 	assertAnswer(t, first, http.StatusBadRequest, validationBody(`{"field":"direction","message":"'Radio' is already first."}`))
+}
+
+// GET answers one option as stored now — with no locks while its attribute has other options, with the
+// delete lock once it is the last one — and 404 for an option that is gone (D-211). Both answers follow
+// the contract.
+func TestOptionsAPI_Get_D211(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	_, options := createMediaChannel(t, alex)
+	type lock struct{ Field, Reason string }
+	var first struct {
+		ID, Label string
+		Locks     []lock
+	}
+
+	alex.Do(t, http.MethodGet, "/api/shell-attribute-options/"+options[0].ID, nil).Decode(t, &first)
+	for _, o := range options[1:] {
+		alex.Do(t, http.MethodDelete, "/api/shell-attribute-options/"+o.ID, nil)
+	}
+	var last struct{ Locks []lock }
+	alex.Do(t, http.MethodGet, "/api/shell-attribute-options/"+options[0].ID, nil).Decode(t, &last)
+	gone := alex.Do(t, http.MethodGet, "/api/shell-attribute-options/SO-99999", nil)
+
+	if first.ID != options[0].ID || first.Label != "TV" || first.Locks == nil || len(first.Locks) != 0 {
+		t.Errorf("first = %+v; want TV without locks", first)
+	}
+	want := []lock{{Field: "delete", Reason: "'Media channel' needs at least one option, so 'TV' can't be deleted."}}
+	if !reflect.DeepEqual(last.Locks, want) {
+		t.Errorf("last option's locks = %+v, want %+v", last.Locks, want)
+	}
+	assertAnswer(t, gone, http.StatusNotFound,
+		`{"code":"not_found","message":"This option no longer exists — someone may have deleted it.","fields":[]}`)
 }
 
 // An unused option moves to the recycle bin and Undo brings it back; the last option of an attribute is

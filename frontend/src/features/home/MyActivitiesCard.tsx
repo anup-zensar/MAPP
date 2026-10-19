@@ -98,7 +98,8 @@ function ActivityGroup({ group }: { group: MyActivityGroup }) {
 
 function ActivityRow({ row }: { row: MyActivityRow }) {
   const navigate = useNavigate();
-  const { money, date } = useFormatters();
+  const format = useFormatters();
+  const { money } = format;
 
   return (
     <li className={styles.row}>
@@ -112,7 +113,7 @@ function ActivityRow({ row }: { row: MyActivityRow }) {
         <p className={styles.meta}>
           {row.plan.name} › {row.campaign.name}
         </p>
-        <p className={styles.meta}>{datesText(row, date)}</p>
+        <p className={styles.meta}>{datesText(row, format)}</p>
       </div>
       <div className={styles.side}>
         <span className={styles.money}>{money(row.plannedCost)}</span>

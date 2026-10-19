@@ -110,13 +110,13 @@ func (s *Service) CreateTeam(ctx context.Context, a actor.Actor, input TeamInput
 	return view, nil
 }
 
-// UpdateTeam changes the team id to the whole form update: name, description, colour and every member
-// after the change (FR-011, FR-012). Every problem of the form, a missing version included, is reported at
-// once; an out-of-date version is refused with version_conflict (001 FR-029). Removing a member who owns a
-// plan is allowed: the impact check warns first (FR-013). A form that changes nothing is not a change: no
-// new version, no log entry. Otherwise the team gets a new version and one "changed" entry, and every
-// person who joined or left gets one too (D-057). A rename shows on every plan at once, because plans store
-// the team's id (US2 scenario 4).
+// UpdateTeam changes the team id with the fields update sends — name, description, colour, every member
+// after the change — and keeps the others (FR-011, FR-012, D-210). Every problem of the form the change
+// leads to, a missing version included, is reported at once; an out-of-date version is refused with
+// version_conflict (001 FR-029). Removing a member who owns a plan is allowed: the impact check warns
+// first (FR-013). A form that changes nothing is not a change: no new version, no log entry. Otherwise the
+// team gets a new version and one "changed" entry, and every person who joined or left gets one too
+// (D-057). A rename shows on every plan at once, because plans store the team's id (US2 scenario 4).
 func (s *Service) UpdateTeam(ctx context.Context, a actor.Actor, id string, update TeamUpdate) (TeamView, error) {
 	var view TeamView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -129,7 +129,7 @@ func (s *Service) UpdateTeam(ctx context.Context, a actor.Actor, id string, upda
 			return err
 		}
 		var problems errs.Problems
-		form := checkTeamForm(&problems, d, team.ID, teamForm{update.Name, update.Description, update.Colour, update.MemberIDs}, true)
+		form := checkTeamForm(&problems, d, team.ID, update.applyTo(storedTeamForm(team, d)), true)
 		checkVersionSent(&problems, update.Version)
 		if err := problems.Err(); err != nil {
 			return err
@@ -172,7 +172,8 @@ func (s *Service) UpdateTeam(ctx context.Context, a actor.Actor, id string, upda
 
 // TeamImpact says what saving update would affect, before it is saved, and saves nothing (FR-013, D-058):
 // one ownerNeedsAttention warning for each removed member who owns plans that use this team and would then
-// belong to none of their teams. The form is checked exactly like UpdateTeam's, except for the version.
+// belong to none of their teams; members that are not sent are not removed. The form is checked exactly
+// like UpdateTeam's, except for the version.
 func (s *Service) TeamImpact(ctx context.Context, a actor.Actor, id string, update TeamUpdate) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -185,7 +186,7 @@ func (s *Service) TeamImpact(ctx context.Context, a actor.Actor, id string, upda
 			return err
 		}
 		var problems errs.Problems
-		form := checkTeamForm(&problems, d, team.ID, teamForm{update.Name, update.Description, update.Colour, update.MemberIDs}, true)
+		form := checkTeamForm(&problems, d, team.ID, update.applyTo(storedTeamForm(team, d)), true)
 		if err := problems.Err(); err != nil {
 			return err
 		}
@@ -315,6 +316,12 @@ func (s *Service) teamDetails(ctx context.Context, t Team) (TeamView, error) {
 type teamForm struct {
 	Name, Description, Colour string
 	MemberIDs                 []string
+}
+
+// storedTeamForm is the team t as its form starts: the stored name, description, colour and members.
+// TeamUpdate.applyTo puts the sent fields in place.
+func storedTeamForm(t Team, d directory) teamForm {
+	return teamForm{Name: t.Name, Description: t.Description, Colour: t.Colour, MemberIDs: d.memberIDsOf(t.ID)}
 }
 
 // checkTeamForm returns form with its texts trimmed and its member ids without repeats, and adds every

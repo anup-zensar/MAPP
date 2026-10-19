@@ -1,10 +1,12 @@
 package approvals
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
 
+	"northstar/internal/people"
 	"northstar/internal/platform/actor"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
@@ -283,6 +285,57 @@ func TestSummary_MonthBounds_FR028(t *testing.T) {
 	assertError(t, backwards, errs.Validation(errs.FieldError{Field: "monthEnd", Message: "Reload the page and try again."}))
 }
 
+// fakeRates are the display currencies of the people of a test: who shows amounts in what, at which rate.
+type fakeRates map[string]people.DisplayRate
+
+// DisplayRateOf returns the person's display currency; USD for anyone not listed.
+func (r fakeRates) DisplayRateOf(_ context.Context, personID string) (people.DisplayRate, error) {
+	if rate, found := r[personID]; found {
+		return rate, nil
+	}
+	return people.DisplayRate{Code: "USD", Rate: "1"}, nil
+}
+
+// For a reader who shows amounts in EUR, the Approvals page's rows, the preview's planned cost, line items
+// and unassigned planned cost, and the submit dialog's unassigned planned cost are answered in EUR at 0.92;
+// Inbox, which Home adds up, stays in USD (008 FR-030, D-213).
+func TestDisplayCurrency_RowsPreviewSubmission_FR030_D213(t *testing.T) {
+	f := newFixture(t)
+	f.service.UseDisplayRates(fakeRates{carlos.ID: {Code: "EUR", Rate: "0.92"}, mei.ID: {Code: "EUR", Rate: "0.92"}})
+	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
+	f.submit(t, mei, "A-1009", "")
+	usd := money.USD(mustAmount(t, "13800.00"))
+	f.activities.lineItems["A-1009"] = []PreviewLineItem{{
+		ID: "L-1007", Name: "Launch event", PlannedCost: money.Money{Amount: mustAmount(t, "100000.00"), Currency: "CNY"},
+		PlannedCostDisplay: &usd,
+	}}
+	f.addActivity(t, "A-1010", "Fleet card follow-up", mei.ID, chinaFlow)
+	positive := money.USD(mustAmount(t, "1000.00"))
+	f.activities.unassigned["A-1010"] = &positive
+
+	rows, err := f.service.Rows(t.Context(), carlos, TabWaiting)
+	if err != nil || len(rows) != 1 || rows[0].PlannedCost.Format() != "46,000.00 EUR" {
+		t.Fatalf("Rows = %+v, %v; want the planned cost 46,000.00 EUR", rows, err)
+	}
+	if inbox := f.inbox(t, carlos, TabWaiting); inbox[0].PlannedCost.Format() != "50,000.00 USD" {
+		t.Errorf("Inbox planned cost = %s, want 50,000.00 USD", inbox[0].PlannedCost.Format())
+	}
+	for range 2 { // the second read must not convert twice
+		preview, err := f.service.Preview(t.Context(), carlos, "A-1009")
+		if err != nil {
+			t.Fatalf("Preview: %v", err)
+		}
+		if preview.Activity.PlannedCost.Format() != "46,000.00 EUR" || preview.UnassignedPlannedCost.Format() != "46,000.00 EUR" ||
+			preview.LineItems[0].PlannedCostDisplay.Format() != "12,696.00 EUR" || preview.LineItems[0].PlannedCost.Format() != "100,000.00 CNY" {
+			t.Errorf("preview = %+v, %v; want EUR", preview.Activity.PlannedCost, preview.LineItems[0].PlannedCostDisplay)
+		}
+	}
+	submission, err := f.service.Submission(t.Context(), mei, "A-1010")
+	if err != nil || submission.UnassignedPlannedCost.Format() != "920.00 EUR" {
+		t.Errorf("Submission unassigned = %v, %v; want 920.00 EUR", submission.UnassignedPlannedCost, err)
+	}
+}
+
 // The preview shows the activity's facts and completeness, its line items, its unassigned planned cost and
 // its Approval section; an activity that is gone answers not_found (FR-032).
 func TestPreview_FR032(t *testing.T) {
@@ -292,7 +345,7 @@ func TestPreview_FR032(t *testing.T) {
 	usd := money.USD(mustAmount(t, "13800.00"))
 	items := []PreviewLineItem{{
 		ID: "L-1007", Name: "Launch event", PlannedCost: money.Money{Amount: mustAmount(t, "100000.00"), Currency: "CNY"},
-		PlannedCostUSD: &usd, SpendType: "Events", GLCode: "61000 Marketing", FinanceBudgetItem: "Mobility China events",
+		PlannedCostDisplay: &usd, SpendType: "Events", GLCode: "61000 Marketing", FinanceBudgetItem: "Mobility China events",
 	}}
 	f.activities.lineItems["A-1009"] = items
 	f.activities.missing["A-1009"] = []MissingFieldRef{{ID: "attributes.SA-1003", Label: "Cluster"}}

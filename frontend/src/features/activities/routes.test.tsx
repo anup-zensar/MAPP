@@ -16,6 +16,10 @@ vi.mock('@/features/line-items/SpreadEffectNote', () => ({
     <p>{`Spread effect for ${activityId}`}</p>
   ),
 }));
+// The re-approval question's spread sentence (007, D-150), which reads the activity's line items.
+vi.mock('@/features/line-items/useSpreadEffectText', () => ({
+  useSpreadEffectText: () => null,
+}));
 vi.mock('@/features/approvals/ApprovalSection', () => ({
   ApprovalSection: ({ activity }: { activity: { id: string } }) => (
     <section aria-label="Approval">{`Approval of ${activity.id}`}</section>

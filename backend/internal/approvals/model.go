@@ -339,6 +339,7 @@ type ActivityApproval struct {
 	Status          string       `json:"status"`
 	DisplayStatus   string       `json:"displayStatus"`
 	OwnerID         string       `json:"ownerId"`
+	Owner           *PersonView  `json:"owner"` // the owner with their name now; nil without one (D-214)
 	Workflow        *WorkflowRef `json:"workflow"`
 	UpcomingLevels  []LevelView  `json:"upcomingLevels"`
 	Rounds          []RoundView  `json:"rounds"` // newest first
@@ -461,13 +462,15 @@ type MissingFieldRef struct {
 
 // PreviewLineItem is a line item of the preview (PreviewLineItem).
 type PreviewLineItem struct {
-	ID                string       `json:"id"`
-	Name              string       `json:"name"`
-	PlannedCost       money.Money  `json:"plannedCost"` // in its own currency
-	PlannedCostUSD    *money.Money `json:"plannedCostUsd"`
-	SpendType         string       `json:"spendType"`
-	GLCode            string       `json:"glCode"`
-	FinanceBudgetItem string       `json:"financeBudgetItem"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	PlannedCost money.Money `json:"plannedCost"` // in its own currency
+	// PlannedCostDisplay is its USD planned cost as Activities.LineItems gives it; Preview answers it in the
+	// reader's display currency (D-213). Nil when its currency has no rate.
+	PlannedCostDisplay *money.Money `json:"plannedCostDisplay"`
+	SpendType          string       `json:"spendType"`
+	GLCode             string       `json:"glCode"`
+	FinanceBudgetItem  string       `json:"financeBudgetItem"`
 }
 
 // PreviewActivity is the activity of the preview (ApprovalPreview.activity).

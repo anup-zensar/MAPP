@@ -7,8 +7,6 @@ import { DecisionDialog } from './DecisionDialog';
 export interface DecisionButtonProps {
   mode: 'approve' | 'decline';
   approval: ActivityApproval;
-  /** The owner's name when known (see DecisionDialog). */
-  ownerName?: string | null;
   variant?: 'primary' | 'secondary';
   onDecided?: (approval: ActivityApproval) => void;
 }
@@ -17,7 +15,6 @@ export interface DecisionButtonProps {
 export function DecisionButton({
   mode,
   approval,
-  ownerName,
   variant = mode === 'approve' ? 'primary' : 'secondary',
   onDecided,
 }: DecisionButtonProps) {
@@ -36,7 +33,6 @@ export function DecisionButton({
         <DecisionDialog
           mode={mode}
           approval={approval}
-          ownerName={ownerName}
           onClose={() => setOpen(false)}
           onDecided={onDecided}
         />

@@ -1,7 +1,6 @@
 import { ClipboardList } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useCurrentUser } from '@/app/useSession';
 import {
   Button,
   Card,
@@ -13,15 +12,13 @@ import {
   StatusChip,
   TeamPills,
 } from '@/components';
-import type { TeamRef } from '@/components';
-import { useTeams } from '@/features/people';
 import { STATUS } from '@/features/plans/planText';
 import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { useHomePlans } from './homeApi';
-import type { HomePlanRow, HomeScope, HomeTeam } from './homeApi';
+import type { HomePlanRow, HomeScope } from './homeApi';
 import { plansListHref } from './homeLinks';
 import { PLANS_AT_A_GLANCE, approvedPercent, approvedText, viewAllPlansText } from './homeText';
 import styles from './PlansAtAGlanceCard.module.css';
@@ -40,7 +37,6 @@ export interface PlansAtAGlanceCardProps {
  */
 export function PlansAtAGlanceCard({ scope, onShowEverything }: PlansAtAGlanceCardProps) {
   const plans = useHomePlans(scope);
-  const teamOf = useTeamRefs();
 
   return (
     <Card
@@ -66,7 +62,7 @@ export function PlansAtAGlanceCard({ scope, onShowEverything }: PlansAtAGlanceCa
         />
       ) : (
         <>
-          <PlansTable rows={plans.data.items} teamOf={teamOf} />
+          <PlansTable rows={plans.data.items} />
           {plans.data.total > plans.data.items.length && (
             <p className={styles.more}>
               <Link to={plansListHref(scope)}>{viewAllPlansText(plans.data.total)}</Link>
@@ -78,33 +74,7 @@ export function PlansAtAGlanceCard({ scope, onShowEverything }: PlansAtAGlanceCa
   );
 }
 
-/**
- * A team of a row as a pill (feature 003's TeamPill): Home's rows name the teams; their colour
- * and status come from the teams list, or the person's own teams while it loads (D-201).
- */
-function useTeamRefs(): (team: HomeTeam) => TeamRef {
-  const person = useCurrentUser();
-  const teams = useTeams();
-  const known = new Map<string, TeamRef>();
-  for (const team of [...(person.teams ?? []), ...(teams.data?.items ?? [])]) {
-    known.set(team.id, { id: team.id, name: team.name, colour: team.colour, active: team.active });
-  }
-  return (team) => ({
-    colour: 'slate',
-    active: true,
-    ...known.get(team.id),
-    id: team.id,
-    name: team.name,
-  });
-}
-
-function PlansTable({
-  rows,
-  teamOf,
-}: {
-  rows: HomePlanRow[];
-  teamOf: (team: HomeTeam) => TeamRef;
-}) {
+function PlansTable({ rows }: { rows: HomePlanRow[] }) {
   const navigate = useNavigate();
   const { money } = useFormatters();
 
@@ -160,7 +130,8 @@ function PlansTable({
                   <StatusChip tone={status.tone}>{status.word}</StatusChip>
                 </td>
                 <td>
-                  <TeamPills teams={plan.teams.map(teamOf)} />
+                  {/* Each team in its own colour, as TeamRef shows it (D-201, D-217). */}
+                  <TeamPills teams={plan.teams} />
                 </td>
                 <td className={styles.number}>{formatWhole(plan.campaignCount)}</td>
                 <td className={styles.number}>{formatWhole(plan.activityCount)}</td>

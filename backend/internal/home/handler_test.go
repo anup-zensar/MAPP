@@ -85,8 +85,8 @@ func TestHomeSummary_Contract(t *testing.T) {
 	everything := get[home.SummaryView](t, priya, "/api/home/summary?scope=everything")
 	danielsCards := get[home.SummaryView](t, daniel, "/api/home/summary?scope=myTeams")
 
-	if got.Scope != home.ScopeMyTeams || got.DisplayCurrency != "USD" || got.UnavailableCurrency != nil {
-		t.Errorf("scope %q, currency %q (unavailable %v)", got.Scope, got.DisplayCurrency, got.UnavailableCurrency)
+	if got.Scope != home.ScopeMyTeams || got.DisplayCurrency != "USD" {
+		t.Errorf("scope %q, currency %q", got.Scope, got.DisplayCurrency)
 	}
 	if got.Plans != (home.PlanCounts{Count: 1, Published: 1}) || everything.Plans != (home.PlanCounts{Count: 3, Published: 1, Draft: 2}) {
 		t.Errorf("plans = %+v (everything %+v); want 1 published (3: 1 published, 2 draft)", got.Plans, everything.Plans)
@@ -194,7 +194,7 @@ func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
 				page := get[plans.PlanView](t, client, "/api/plans/"+row.ID)
 				fig := page.Figures
 				if row.ID != list.Items[i].ID || row.Status != string(page.Status) || row.Year != page.Year || row.StrategicAOP != page.AOP ||
-					!sameMoney(row.Budget, fig.Budget) || row.PlannedCost != orZero(fig.PlannedCost) ||
+					!sameMoney(row.Budget, fig.Budget) || !sameMoney(row.PlannedCost, fig.PlannedCost) ||
 					!samePercent(row.BudgetUsedPercent, fig.BudgetUsedPercent) || row.OverBudget != fig.OverBudget ||
 					row.ActivityCount != fig.Activities || row.ApprovedActivityCount != fig.ActivitiesApproved ||
 					row.CampaignCount != page.Contents.Campaigns || len(row.Teams) != len(page.Teams) {
@@ -235,9 +235,9 @@ func TestHomePlans_Contract(t *testing.T) {
 		t.Errorf("Everything = %q of %d", got, all.Total)
 	}
 	lubricants := mine.Items[0]
-	if lubricants.Status != "published" || len(lubricants.Teams) != 1 || lubricants.Teams[0] != (home.TeamView{ID: "T-1001", Name: "Lubricants Europe", Mine: true}) ||
+	if lubricants.Status != "published" || len(lubricants.Teams) != 1 || lubricants.Teams[0] != (home.TeamView{ID: "T-1001", Name: "Lubricants Europe", Colour: "blue", Active: true, Mine: true}) ||
 		lubricants.CampaignCount != 2 || lubricants.ActivityCount != 7 || lubricants.ApprovedActivityCount != 4 ||
-		lubricants.PlannedCost != usd(t, "460000.00") || *lubricants.BudgetUsedPercent != 38 || lubricants.OverBudget {
+		*lubricants.PlannedCost != usd(t, "460000.00") || *lubricants.BudgetUsedPercent != 38 || lubricants.OverBudget {
 		t.Errorf("FY2026 Lubricants Europe = %+v", lubricants)
 	}
 	if global := all.Items[0]; len(global.Teams) != 1 || global.Teams[0].Mine || !global.StrategicAOP {
@@ -452,7 +452,8 @@ func TestHome_DeletedRecordsNeverCount_FR019(t *testing.T) {
 			t.Errorf("Needs your attention still lists the deleted Launch film: %+v", item)
 		}
 	}
-	if len(rows.Items) != 1 || rows.Items[0].ActivityCount != 6 || rows.Items[0].PlannedCost != usd(t, "340000.00") {
+	if len(rows.Items) != 1 || rows.Items[0].ActivityCount != 6 || rows.Items[0].PlannedCost == nil ||
+		*rows.Items[0].PlannedCost != usd(t, "340000.00") {
 		t.Errorf("plan row = %+v, want 6 activities and 340,000.00 USD", rows.Items)
 	}
 }

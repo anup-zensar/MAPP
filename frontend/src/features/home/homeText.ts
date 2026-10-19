@@ -185,21 +185,25 @@ export function waitingText(since: string, now: Date = new Date()): string {
 export const NO_ACTIVITIES = "You don't own any activities yet.";
 
 /**
- * An activity's dates in My activities (FR-014): "01 Mar 2026 – 31 May 2026", "Ongoing from
- * 01 Mar 2026", or "No dates yet"; `date` writes one date in the person's format.
+ * An activity's dates in My activities (FR-014), as every date range reads (D-216): "01 Mar –
+ * 31 May 2026" (`dateRange` of useFormatters(), in the person's date format), "Ongoing from 01 Mar
+ * 2026", "No dates yet", or one date with "—" for the missing one.
  */
 export function datesText(
   row: Pick<MyActivityRow, 'startDate' | 'endDate' | 'ongoing'>,
-  date: (date: string) => string,
+  format: { date: (date: string) => string; dateRange: (start: string, end: string) => string },
 ): string {
   const { startDate, endDate, ongoing } = row;
   if (!startDate && !endDate) {
     return 'No dates yet';
   }
   if (ongoing && startDate) {
-    return `Ongoing from ${date(startDate)}`;
+    return `Ongoing from ${format.date(startDate)}`;
   }
-  return `${startDate ? date(startDate) : '—'} – ${endDate ? date(endDate) : '—'}`;
+  if (startDate && endDate) {
+    return format.dateRange(startDate, endDate);
+  }
+  return `${startDate ? format.date(startDate) : '—'} – ${endDate ? format.date(endDate) : '—'}`;
 }
 
 /** "1 line item needs attention" / "3 line items need attention" (FR-014). */

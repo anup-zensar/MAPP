@@ -277,6 +277,7 @@ type OptionView struct {
 	ParentOptions []SettingRef `json:"parentOptions"`
 	Active        bool         `json:"active"`
 	Usage         Usage        `json:"usage"`
+	Locks         []Lock       `json:"locks"` // the last option of its attribute can't be deleted (D-211); never nil
 	record.Meta
 }
 

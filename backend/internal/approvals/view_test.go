@@ -118,7 +118,8 @@ func TestChangeText_Sentences_FR022(t *testing.T) {
 }
 
 // Before the first submission the section shows the activity's workflow and its levels as they are now
-// ("Not submitted yet"); the viewer is told whether they own the activity (FR-024, edge case).
+// ("Not submitted yet"); the viewer is told whether they own the activity (FR-024, edge case), and the
+// owner is named, as the decline dialog needs (D-214); an activity without an owner has none.
 func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
@@ -135,7 +136,7 @@ func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 
 	want := ActivityApproval{
 		ActivityID: "A-1009", ActivityName: "Fleet card launch", ActivityVersion: 1, Status: StatusCreated,
-		DisplayStatus: StatusCreated, OwnerID: mei.ID,
+		DisplayStatus: StatusCreated, OwnerID: mei.ID, Owner: &PersonView{ID: mei.ID, Name: "Mei Lin", Initials: "ML", Active: true},
 		Workflow: &WorkflowRef{ID: chinaFlow, Name: "China BC approval workflow", Active: true},
 		UpcomingLevels: []LevelView{
 			{Number: 1, Label: "Level 1", Approvers: []PersonView{{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}},
@@ -152,4 +153,8 @@ func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 		t.Errorf("Alex sees isOwner true, want false")
 	}
 	assertError(t, gone, errs.NotFound("This activity no longer exists — someone may have deleted it."))
+	f.addActivity(t, "A-1010", "Nobody's activity", "", chinaFlow)
+	if ownerless, err := f.service.Approval(t.Context(), alex, "A-1010"); err != nil || ownerless.Owner != nil {
+		t.Errorf("owner of an activity without one = %+v, %v; want nil", ownerless.Owner, err)
+	}
 }

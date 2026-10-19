@@ -185,13 +185,11 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     });
   });
 
-  it('renames an option, and says who changed it first on a conflict', async () => {
+  it('renames an option, and says who changed it first on a conflict (the latest version from GET, D-211)', async () => {
     let attempts = 0;
     const { user, api } = renderCard({
-      [OPTIONS_PATH]: (request) =>
-        new URL(request.url).searchParams.get('q') === 'Radio'
-          ? { body: page([{ ...RADIO, version: 4 }]) }
-          : { body: page([TV, RADIO]) },
+      [OPTIONS_PATH]: { body: page([TV, RADIO]) },
+      'GET /api/shell-attribute-options/SO-1102': { body: { ...RADIO, version: 4 } },
       'PATCH /api/shell-attribute-options/SO-1102': () => {
         attempts += 1;
         return attempts === 1
@@ -276,6 +274,30 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     expect(within(dialog).queryByRole('button', { name: 'Set inactive' })).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  });
+
+  it("says why the last option can't be deleted, and sends nothing (D-211, design system 6.6)", async () => {
+    const only = {
+      ...RADIO,
+      locks: [
+        {
+          field: 'delete',
+          reason: "'Media channel' needs at least one option, so 'Radio' can't be deleted.",
+        },
+      ],
+    };
+    const { user, api } = renderCard({ [OPTIONS_PATH]: { body: page([only]) } });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Radio' }));
+    const remove = await screen.findByRole('menuitem', { name: /Delete/ });
+    expect(remove).toHaveTextContent("'Media channel' needs at least one option");
+    await user.click(remove);
+
+    expect(await findMessages()).toHaveTextContent(
+      "'Media channel' needs at least one option, so 'Radio' can't be deleted.",
+    );
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(api.requests.some((request) => request.method === 'DELETE')).toBe(false);
   });
 
   it('deletes an unused option and offers Undo', async () => {

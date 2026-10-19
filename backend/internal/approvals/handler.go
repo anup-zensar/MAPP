@@ -162,7 +162,7 @@ func (h *Handler) inbox(w http.ResponseWriter, r *http.Request) {
 		tab = TabWaiting
 	}
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	rows, err := h.service.Inbox(r.Context(), a, tab)
+	rows, err := h.service.Rows(r.Context(), a, tab)
 	if err != nil {
 		web.WriteError(w, r, err)
 		return

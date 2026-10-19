@@ -115,6 +115,7 @@ export function activity(overrides: Partial<LineItemActivity> = {}): LineItemAct
     planYear: 2026,
     defaultSpreadMethod: 'evenly',
     defaultFinanceBudget: '2026 Lubricants Budget',
+    businessUnitOptionIds: [],
     ...overrides,
   };
 }
@@ -125,6 +126,7 @@ export function approvedActivity(): LineItemActivity {
 }
 
 export function lineItem(overrides: Partial<LineItem> = {}): LineItem {
+  const plannedCostUsd = overrides.plannedCostUsd ?? usd('50000.00');
   return {
     id: 'L-1001',
     activityId: 'A-1001',
@@ -133,7 +135,9 @@ export function lineItem(overrides: Partial<LineItem> = {}): LineItem {
     description: '',
     currency: USD,
     plannedCost: usd('50000.00'),
-    plannedCostUsd: usd('50000.00'),
+    plannedCostUsd,
+    // The reader shows amounts in USD unless a test says otherwise (D-213).
+    plannedCostDisplay: plannedCostUsd,
     spread: {
       method: 'evenly',
       state: 'spread',
@@ -318,12 +322,14 @@ const PRIYA: Person = {
   updatedBy: ACTOR,
 };
 
-/** What every line-item form asks besides its own data: people, attributes, the plan. */
+/**
+ * What every line-item form asks besides its own data: people and attributes. The plan's Business
+ * unit options come with the activity (D-212), so no plan is asked for.
+ */
 export function formAnswers(): Record<string, MockHandler> {
   return {
     'GET /api/people': { body: { items: [PRIYA], total: 1 } },
     'GET /api/shell-attribute-forms/lineItem': { body: lineItemForm() },
-    'GET /api/plans/P-1001': { body: { id: 'P-1001', businessUnit: [] } },
   };
 }
 

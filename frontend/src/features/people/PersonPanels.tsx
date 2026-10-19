@@ -226,7 +226,15 @@ export function PersonFormPanel({ person, onClose }: PersonFormPanelProps) {
     email !== start.email ||
     jobTitle !== start.jobTitle ||
     teamIds.join() !== start.teamIds.join();
-  const body: PersonUpdate = { name, email, jobTitle, teamIds, version };
+  // Only the fields that changed, and the version (D-203, D-210): after a conflict, Save again
+  // replaces only what this person changed.
+  const body: PersonUpdate = {
+    ...(name !== start.name ? { name } : {}),
+    ...(email !== start.email ? { email } : {}),
+    ...(jobTitle !== start.jobTitle ? { jobTitle } : {}),
+    ...(teamIds.join() !== start.teamIds.join() ? { teamIds } : {}),
+    version,
+  };
 
   function done(saved: PersonDetails, verb: 'created' | 'saved') {
     show({

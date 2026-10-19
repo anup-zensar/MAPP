@@ -56,6 +56,7 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/shell-attributes/{attributeId}/options", signedIn(h.createOption))
 	r.Handle("POST /api/shell-attributes/{attributeId}/options/import-check", signedIn(h.checkImport))
 	r.Handle("POST /api/shell-attributes/{attributeId}/options/import", signedIn(h.importOptions))
+	r.Handle("GET /api/shell-attribute-options/{optionId}", signedIn(h.getOption))
 	r.Handle("PATCH /api/shell-attribute-options/{optionId}", signedIn(h.updateOption))
 	r.Handle("DELETE /api/shell-attribute-options/{optionId}", signedIn(h.deleteOption))
 	r.Handle("POST /api/shell-attribute-options/{optionId}/status", signedIn(h.setOptionStatus))
@@ -317,6 +318,12 @@ func (h *Handler) importOptions(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := h.service.Import(r.Context(), actorOf(r), r.PathValue("attributeId"), file)
 	respond(w, r, http.StatusOK, result, err)
+}
+
+// getOption answers GET /api/shell-attribute-options/{optionId} with the option as it is stored now.
+func (h *Handler) getOption(w http.ResponseWriter, r *http.Request) {
+	option, err := h.service.GetOption(r.Context(), actorOf(r), r.PathValue("optionId"))
+	respond(w, r, http.StatusOK, option, err)
 }
 
 // updateOption answers PATCH /api/shell-attribute-options/{optionId} with the option after the change.

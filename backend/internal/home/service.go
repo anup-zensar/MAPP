@@ -287,7 +287,7 @@ func (s *Service) PlansAtAGlance(ctx context.Context, a actor.Actor, scopeText s
 
 // row returns the plan p as a row of Plans at a glance, its amounts converted with c.
 func (ps planScope) row(p Plan, c converter) PlanRow {
-	var planned money.Amount // nothing planned yet is 0.00
+	var planned money.Amount // nothing planned yet counts as 0.00 for the budget used, as on the plan page
 	if p.PlannedCost != nil {
 		planned = *p.PlannedCost
 	}
@@ -295,7 +295,7 @@ func (ps planScope) row(p Plan, c converter) PlanRow {
 	return PlanRow{
 		ID: p.ID, Name: p.Name, Year: p.Year, StrategicAOP: p.StrategicAOP, Status: p.Status, Teams: ps.teamViews(p),
 		CampaignCount: p.CampaignCount, ActivityCount: p.ActivityCount, ApprovedActivityCount: p.ApprovedActivityCount,
-		Budget: c.optional(p.Budget), PlannedCost: c.of(planned), BudgetUsedPercent: percent, OverBudget: over,
+		Budget: c.optional(p.Budget), PlannedCost: c.optional(p.PlannedCost), BudgetUsedPercent: percent, OverBudget: over,
 	}
 }
 
@@ -303,7 +303,7 @@ func (ps planScope) row(p Plan, c converter) PlanRow {
 func (ps planScope) teamViews(p Plan) []TeamView {
 	teams := make([]TeamView, 0, len(p.Teams))
 	for _, t := range p.Teams {
-		teams = append(teams, TeamView{ID: t.ID, Name: t.Name, Mine: ps.myTeams[t.ID]})
+		teams = append(teams, TeamView{ID: t.ID, Name: t.Name, Colour: t.Colour, Active: t.Active, Mine: ps.myTeams[t.ID]})
 	}
 	slices.SortFunc(teams, func(x, y TeamView) int {
 		if x.Mine != y.Mine {

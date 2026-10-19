@@ -26,7 +26,8 @@ export interface ActivityHeaderProps {
  */
 export function ActivityHeader({ activity, actions, onOpenReady }: ActivityHeaderProps) {
   const navigate = useNavigate();
-  const { date, money } = useFormatters();
+  const format = useFormatters();
+  const { date, money } = format;
   const { plan, campaign, initiative } = activity;
   const banner = activityBannerText(activity.displayStatus);
   const unassigned = activity.unassignedPlannedCost;
@@ -75,7 +76,7 @@ export function ActivityHeader({ activity, actions, onOpenReady }: ActivityHeade
           </div>
           <div className={styles.fact}>
             <dt>Dates</dt>
-            <dd>{datesText(activity.startDate, activity.endDate, activity.ongoing, date)}</dd>
+            <dd>{datesText(activity.startDate, activity.endDate, activity.ongoing, format)}</dd>
           </div>
           <div className={styles.fact}>
             <dt>Planned cost</dt>

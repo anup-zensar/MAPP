@@ -6,7 +6,7 @@ import { useFormatters } from '@/lib/useFormatters';
 import { saveFailureOf } from '../shared/saveFailure';
 import { findFormAttribute, linkOptionText } from './attributeWords';
 import { LinkedToField } from './LinkedToField';
-import { fetchOptions, useCreateOption, useUpdateOption } from './shellAttributesApi';
+import { fetchOption, useCreateOption, useUpdateOption } from './shellAttributesApi';
 import type { OptionChange, ShellAttribute, ShellAttributeOption } from './shellAttributesApi';
 import styles from './ShellAttributes.module.css';
 
@@ -98,9 +98,7 @@ export function OptionPanel({ attribute, option, onClose }: OptionPanelProps) {
     if (view.conflict && option) {
       // What was typed stays; the form takes the version with the other person's change, so
       // Save again replaces it on purpose.
-      const latest = await fetchOptions(attribute.id, { q: option.label, status: 'all' })
-        .then((page) => page.items.find((each) => each.id === option.id))
-        .catch(() => undefined);
+      const latest = await fetchOption(option.id).catch(() => undefined);
       if (latest) {
         setVersion(latest.version);
       }

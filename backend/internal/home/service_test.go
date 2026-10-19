@@ -284,9 +284,9 @@ func TestPlansAtAGlance_RowFigures_FR008_FR009(t *testing.T) {
 	}
 	eur := func(text string) money.Money { return money.Money{Amount: usd(t, text), Currency: "EUR"} }
 	wantLubricants := PlanRow{ID: "P-1001", Name: "FY2026 Lubricants Europe", Year: 2026, Status: "published",
-		Teams:         []TeamView{{ID: lubricantsEurope.ID, Name: "Lubricants Europe", Mine: true}},
+		Teams:         []TeamView{{ID: lubricantsEurope.ID, Name: "Lubricants Europe", Colour: "blue", Active: true, Mine: true}},
 		CampaignCount: 2, ActivityCount: 7, ApprovedActivityCount: 4, Budget: ptr(eur("1104000.00")),
-		PlannedCost: eur("423200.00"), BudgetUsedPercent: ptr(38)}
+		PlannedCost: ptr(eur("423200.00")), BudgetUsedPercent: ptr(38)}
 	if !reflect.DeepEqual(page.Items[1], wantLubricants) {
 		t.Errorf("Lubricants row = %+v\nwant %+v", page.Items[1], wantLubricants)
 	}
@@ -294,7 +294,7 @@ func TestPlansAtAGlance_RowFigures_FR008_FR009(t *testing.T) {
 		t.Errorf("Mobility row = %+v, want 110 %% and over budget", row)
 	}
 	wantEmpty := PlanRow{ID: "P-1003", Name: "FY2027 Global Brand", Year: 2027, StrategicAOP: true, Status: "draft",
-		Teams: []TeamView{{ID: globalMarketingOps.ID, Name: "Global Marketing Ops"}}, PlannedCost: eur("0.00")}
+		Teams: []TeamView{{ID: globalMarketingOps.ID, Name: "Global Marketing Ops", Colour: "violet", Active: true}}}
 	if !reflect.DeepEqual(page.Items[0], wantEmpty) {
 		t.Errorf("Global Brand row = %+v\nwant no budget, no activities %+v", page.Items[0], wantEmpty)
 	}
@@ -308,8 +308,9 @@ func TestPlansAtAGlance_OwnTeamsFirst_FR008(t *testing.T) {
 
 	page, err := s.PlansAtAGlance(t.Context(), sara, "myTeams")
 
-	want := []TeamView{{ID: lubricantsEurope.ID, Name: "Lubricants Europe", Mine: true},
-		{ID: mobilityChina.ID, Name: "Mobility China", Mine: true}, {ID: globalMarketingOps.ID, Name: "Global Marketing Ops"}}
+	want := []TeamView{{ID: lubricantsEurope.ID, Name: "Lubricants Europe", Colour: "blue", Active: true, Mine: true},
+		{ID: mobilityChina.ID, Name: "Mobility China", Colour: "teal", Active: true, Mine: true},
+		{ID: globalMarketingOps.ID, Name: "Global Marketing Ops", Colour: "violet", Active: true}}
 	if err != nil || len(page.Items) != 1 || !reflect.DeepEqual(page.Items[0].Teams, want) {
 		t.Errorf("teams = %+v, %v\nwant %+v", page.Items, err, want)
 	}
@@ -343,8 +344,8 @@ func TestPlansAtAGlance_OrderAndLimit_FR010(t *testing.T) {
 	assertError(t, err, scopeRefused)
 }
 
-// A display currency set inactive in Settings stays in use with its rate, as on every other page, so
-// unavailableCurrency is always null (D-201, D-063).
+// A display currency set inactive in Settings stays in use with its rate, as on every other page (D-201,
+// D-063, D-217).
 func TestSummary_InactiveDisplayCurrencyStaysInUse(t *testing.T) {
 	f := newFakeSources()
 	p := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
@@ -355,9 +356,8 @@ func TestSummary_InactiveDisplayCurrencyStaysInUse(t *testing.T) {
 
 	got, err := s.Summary(t.Context(), priya, "myTeams")
 
-	if err != nil || got.DisplayCurrency != "GBP" || got.UnavailableCurrency != nil || got.PlannedCost.PlannedCost.Format() != "79.00 GBP" {
-		t.Errorf("display currency %s (unavailable %v), planned %v, %v; want GBP in use", got.DisplayCurrency,
-			got.UnavailableCurrency, got.PlannedCost.PlannedCost, err)
+	if err != nil || got.DisplayCurrency != "GBP" || got.PlannedCost.PlannedCost.Format() != "79.00 GBP" {
+		t.Errorf("display currency %s, planned %v, %v; want GBP in use", got.DisplayCurrency, got.PlannedCost.PlannedCost, err)
 	}
 }
 

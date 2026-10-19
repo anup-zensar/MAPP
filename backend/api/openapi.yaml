@@ -1268,6 +1268,27 @@ paths:
   /api/shell-attribute-options/{optionId}:
     parameters:
       - $ref: "#/components/parameters/OptionId"
+    get:
+      tags:
+        - Shell attributes
+      operationId: getShellAttributeOption
+      summary: One option as it is stored now, with its links, usage and locks (D-211)
+      description: >-
+        The web app reads it after a 409 version_conflict on an option, to take the latest version and show who changed
+        it.
+      responses:
+        "200":
+          description: The option.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributeOption"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
     patch:
       tags:
         - Shell attributes
@@ -1301,6 +1322,11 @@ paths:
         - Shell attributes
       operationId: deleteShellAttributeOption
       summary: Delete an unused option (it goes to the recycle bin)
+      description: >-
+        Answers 409 in_use, with the reason as the message, when the option is in use ("'<label>' is in use (…) — set it
+        inactive instead.") and when it is the last option of its choice attribute ("'<attribute>' needs at least one
+        option, so '<label>' can't be deleted."). The second is also the option's delete lock (locks, field delete), so
+        the web app shows the reason without sending the request (D-211).
       responses:
         "200":
           description: Moved to the recycle bin.
@@ -1861,7 +1887,8 @@ paths:
       operationId: updatePerson
       summary: Change a person's name, e-mail, job title and teams
       description: >-
-        teamIds is the complete list of the person's teams after the change. Removing teams is allowed even when a
+        Only the fields to change, plus the version (D-203, D-210); a field left out keeps its value. teamIds, when
+        sent, is the complete list of the person's teams after the change. Removing teams is allowed even when a
         plan's owner is affected; POST .../impact says so first.
       requestBody:
         required: true
@@ -2022,8 +2049,9 @@ paths:
       operationId: updateTeam
       summary: Change a team's name, description, colour and members
       description: >-
-        memberIds is the complete list of members after the change. Removing members is allowed even when a plan's owner
-        is affected; POST .../impact says so first.
+        Only the fields to change, plus the version (D-203, D-210); a field left out keeps its value. memberIds, when
+        sent, is the complete list of members after the change. Removing members is allowed even when a plan's owner is
+        affected; POST .../impact says so first.
       requestBody:
         required: true
         content:
@@ -3164,8 +3192,9 @@ paths:
       operationId: listActivityLineItems
       summary: The Line items section of an activity — its line items, unassigned planned cost and spread grid
       description: >-
-        Line items in creation order, each with its USD amount at the current rate, spread, completeness and SWBS
-        request status; the unassigned planned cost (Sys_Gen_Balance); and the month-by-month grid in USD.
+        Line items in creation order, each with its USD amount at the current rate (and that amount in the signed-in
+        person's display currency), spread, completeness and SWBS request status; the unassigned planned cost
+        (Sys_Gen_Balance) and the month-by-month grid, both in the display currency (007 FR-005, D-213).
       parameters:
         - $ref: "#/components/parameters/ActivityId"
       responses:
@@ -3992,7 +4021,9 @@ paths:
         Rows come in their final order (tree order, sorted within each parent). Each row is a match or a
         context row. Cells follow the requested columns, in order. The view budget adds period amounts;
         the view calendar leaves out line-item and unassigned rows. Unknown IDs and columns are ignored
-        and listed in leftOut.
+        and listed in leftOut. A refused parameter answers 400 validation_failed with FieldError.field set
+        to the query parameter's name (year, view, planStatus, search, column, sort, period, …), so the
+        web app can reset that filter (D-219).
       parameters:
         - $ref: "#/components/parameters/AllWorkYear"
         - $ref: "#/components/parameters/AllWorkView"
@@ -6402,6 +6433,7 @@ components:
         - parentOptions
         - active
         - usage
+        - locks
         - version
         - createdAt
         - createdBy
@@ -6428,6 +6460,12 @@ components:
           type: boolean
         usage:
           $ref: "#/components/schemas/Usage"
+        locks:
+          type: array
+          description: >-
+            What can't be done with the option, and why: field delete for the last option of its attribute (D-211).
+          items:
+            $ref: "#/components/schemas/Lock"
         version:
           type: integer
           minimum: 1
@@ -7292,11 +7330,10 @@ components:
     PersonUpdate:
       type: object
       additionalProperties: false
+      description: >-
+        Only the fields to change, and the version (D-203, D-210); a field left out keeps its value. Also the body of
+        the impact check, where teams that are not sent are not removed.
       required:
-        - name
-        - email
-        - jobTitle
-        - teamIds
         - version
       properties:
         name:
@@ -7419,11 +7456,10 @@ components:
     TeamUpdate:
       type: object
       additionalProperties: false
+      description: >-
+        Only the fields to change, and the version (D-203, D-210); a field left out keeps its value. Also the body of
+        the impact check, where members that are not sent are not removed.
       required:
-        - name
-        - description
-        - colour
-        - memberIds
         - version
       properties:
         name:
@@ -10141,6 +10177,7 @@ components:
         - currency
         - plannedCost
         - plannedCostUsd
+        - plannedCostDisplay
         - spread
         - attributes
         - contractedAmount
@@ -10178,7 +10215,14 @@ components:
         plannedCostUsd:
           description: >-
             Planned cost converted to USD at the currency's current rate, rounded half-up to the cent (domain model
-            §4.3).
+            §4.3). Always USD: the unassigned balance and the spread add it up, and the line-item form calculates with
+            it.
+          $ref: "#/components/schemas/Money"
+        plannedCostDisplay:
+          description: >-
+            plannedCostUsd in the signed-in person's display currency at its current rate, rounded half-up to the cent
+            (007 FR-005, D-061, D-213); the same as plannedCostUsd for a person who shows amounts in USD. The section's
+            "Planned cost (<code>)" column.
           $ref: "#/components/schemas/Money"
         spread:
           $ref: "#/components/schemas/Spread"
@@ -10237,6 +10281,7 @@ components:
         - planYear
         - defaultSpreadMethod
         - defaultFinanceBudget
+        - businessUnitOptionIds
       properties:
         id:
           type: string
@@ -10283,12 +10328,24 @@ components:
           oneOf:
             - type: string
             - type: "null"
+        businessUnitOptionIds:
+          type: array
+          description: >-
+            The Business unit options of the activity's plan. A line-item Shell attribute with a business-unit
+            condition is shown only when one of them is in its condition (002 FR-023, D-212).
+          items:
+            type: string
+          example:
+            - SO-1001
     UnassignedBalance:
       type: object
       additionalProperties: false
       description: >-
         Unassigned planned cost (Sys_Gen_Balance) = activity planned cost − sum of its line items' USD planned costs
-        (domain model §4.3).
+        (domain model §4.3). Worked out in USD; the amounts are answered in the signed-in person's display currency in
+        LineItemSection and LineItemDetails (each converted once from its USD figure, D-213) and in USD in
+        LineItemFormOptions, where the form calculates "After saving" from the typed amount in USD (D-061: the web app
+        never converts). Every amount says its currency.
       required:
         - plannedCost
         - assigned
@@ -10297,12 +10354,12 @@ components:
         - roundingHint
       properties:
         plannedCost:
-          description: The activity's planned cost (USD); null while it has none.
+          description: The activity's planned cost; null while it has none.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         assigned:
-          description: Sum of the line items' planned costs in USD.
+          description: Sum of the line items' USD planned costs.
           $ref: "#/components/schemas/Money"
         balance:
           description: Negative when line items exceed the planned cost; null while the activity has no planned cost.
@@ -10318,7 +10375,9 @@ components:
             - noPlannedCost
         roundingHint:
           type: boolean
-          description: True when a few cents (at most 0.05 USD) remain either way and a line item uses another currency than USD.
+          description: >-
+            True when a few cents (at most 0.05 USD, measured in USD) remain either way and a line item uses another
+            currency than USD.
     SpreadGridColumn:
       type: object
       additionalProperties: false
@@ -10353,7 +10412,7 @@ components:
           type: string
         cells:
           type: array
-          description: One per column, in USD; null where the line item has nothing.
+          description: One per column, in the grid's currency; null where the line item has nothing.
           items:
             oneOf:
               - $ref: "#/components/schemas/Money"
@@ -10363,7 +10422,10 @@ components:
     SpreadGrid:
       type: object
       additionalProperties: false
-      description: The activity's line items by month, in USD (FR-003, FR-020). Quarterly is calculated by the web app.
+      description: >-
+        The activity's line items by month (FR-003, FR-020), in the signed-in person's display currency (007 FR-005,
+        D-213): every cell and total is converted on its own from its USD amount, so a total can differ by a cent from
+        the sum of its converted cells; in USD they add up exactly. Quarterly is calculated by the web app.
       required:
         - columns
         - rows
@@ -10420,7 +10482,9 @@ components:
         activity:
           $ref: "#/components/schemas/LineItemActivity"
         balance:
-          description: The activity's unassigned planned cost now, with this line item included.
+          description: >-
+            The activity's unassigned planned cost now, with this line item included, in the signed-in person's display
+            currency (D-213).
           $ref: "#/components/schemas/UnassignedBalance"
     LineItemDefaults:
       type: object
@@ -10489,6 +10553,8 @@ components:
         activity:
           $ref: "#/components/schemas/LineItemActivity"
         balance:
+          description: >-
+            The unassigned planned cost in USD, the currency the form calculates "After saving" in (D-213).
           $ref: "#/components/schemas/UnassignedBalance"
         defaults:
           $ref: "#/components/schemas/LineItemDefaults"
@@ -10828,7 +10894,10 @@ components:
           type: string
         levels:
           type: array
-          description: In order; the first is level 1. The server reports an empty list as a field problem.
+          description: >-
+            In order; the first is level 1. The server reports an empty list as a field problem ("levels"), and a
+            level's problems on "levels.<n>.name" and "levels.<n>.approverIds", n counted from 1 as in the messages
+            (D-215).
           items:
             $ref: "#/components/schemas/ApprovalWorkflowLevelInput"
     ApprovalWorkflowUpdate:
@@ -10844,7 +10913,9 @@ components:
           type: string
         levels:
           type: array
-          description: The complete new list of levels, in order.
+          description: >-
+            The complete new list of levels, in order; problems as in ApprovalWorkflowCreate ("levels.<n>.…", n from 1,
+            D-215).
           items:
             $ref: "#/components/schemas/ApprovalWorkflowLevelInput"
         version:
@@ -11149,6 +11220,7 @@ components:
         - status
         - displayStatus
         - ownerId
+        - owner
         - workflow
         - upcomingLevels
         - rounds
@@ -11172,6 +11244,13 @@ components:
         ownerId:
           type: string
           description: Empty when the activity has no owner.
+        owner:
+          description: >-
+            The activity's owner with their name now, as the decline dialog names them ("The activity goes back to
+            <owner>, …"); null when the activity has no owner (D-214).
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
         workflow:
           description: The activity's Approval workflow field now; null when empty or the workflow no longer exists.
           oneOf:
@@ -11293,7 +11372,9 @@ components:
           items:
             $ref: "#/components/schemas/ApprovalWorkflowLevel"
         unassignedPlannedCost:
-          description: A positive unassigned planned cost, shown as a note; null otherwise.
+          description: >-
+            A positive unassigned planned cost, shown as a note, in the signed-in person's display currency (D-213); null
+            otherwise.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
@@ -11436,7 +11517,9 @@ components:
             - $ref: "#/components/schemas/ApprovalPerson"
             - type: "null"
         plannedCost:
-          description: USD; the web app shows it in the viewer's display currency.
+          description: >-
+            The activity's planned cost in the signed-in person's display currency, converted by the API from USD at
+            today's rate (008 FR-030, D-061, D-213); null when it has none.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
@@ -11518,7 +11601,7 @@ components:
         - id
         - name
         - plannedCost
-        - plannedCostUsd
+        - plannedCostDisplay
         - spendType
         - glCode
         - financeBudgetItem
@@ -11529,8 +11612,12 @@ components:
         name:
           type: string
         plannedCost:
+          description: In the line item's own currency.
           $ref: "#/components/schemas/Money"
-        plannedCostUsd:
+        plannedCostDisplay:
+          description: >-
+            Its USD planned cost in the signed-in person's display currency (D-213); null when the line item's currency
+            has no rate.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
@@ -11602,6 +11689,7 @@ components:
             ongoing:
               type: boolean
             plannedCost:
+              description: In the signed-in person's display currency (D-213); null when the activity has none.
               oneOf:
                 - $ref: "#/components/schemas/Money"
                 - type: "null"
@@ -11614,6 +11702,9 @@ components:
           items:
             $ref: "#/components/schemas/PreviewLineItem"
         unassignedPlannedCost:
+          description: >-
+            Planned cost minus the line items' USD planned costs, in the signed-in person's display currency (D-213);
+            null when there is neither.
           oneOf:
             - $ref: "#/components/schemas/Money"
             - type: "null"
@@ -11716,7 +11807,6 @@ components:
       required:
         - scope
         - displayCurrency
-        - unavailableCurrency
         - gettingStarted
         - plans
         - activitiesOwned
@@ -11727,13 +11817,10 @@ components:
           $ref: "#/components/schemas/HomeScope"
         displayCurrency:
           type: string
-          description: The currency every amount is shown in (the person's display currency, or USD when it is inactive).
+          description: >-
+            The person's display currency, which every amount is in; one set inactive in Settings stays in use with its
+            current rate (D-063, D-201, D-217).
           example: EUR
-        unavailableCurrency:
-          description: The person's display currency when it has been set inactive (amounts are then in USD); null otherwise.
-          oneOf:
-            - type: string
-            - type: "null"
         gettingStarted:
           description: Why the Getting started card is shown; null when it is not shown.
           oneOf:
@@ -11837,9 +11924,12 @@ components:
     HomeTeam:
       type: object
       additionalProperties: false
+      description: A team of a plan as TeamRef shows it, plus whether the signed-in person is in it (D-217).
       required:
         - id
         - name
+        - colour
+        - active
         - mine
       properties:
         id:
@@ -11847,6 +11937,10 @@ components:
         name:
           type: string
           example: Lubricants Europe
+        colour:
+          $ref: "#/components/schemas/TeamColour"
+        active:
+          type: boolean
         mine:
           type: boolean
           description: The signed-in person is a member.
@@ -11901,7 +11995,12 @@ components:
             - $ref: "#/components/schemas/Money"
             - type: "null"
         plannedCost:
-          $ref: "#/components/schemas/Money"
+          description: >-
+            Sum of the activities' planned cost; null when nothing in the plan has a planned cost, as on the plan page
+            (D-217).
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
         budgetUsedPercent:
           oneOf:
             - type: integer

@@ -16,8 +16,7 @@ import type {
   WaitingItem,
 } from './homeApi';
 
-type Currency = components['schemas']['Currency'];
-type Team = components['schemas']['Team'];
+type DisplayCurrencyOption = components['schemas']['DisplayCurrencyOption'];
 
 /** An amount in US dollars ("1200.00" → $1,200.00). */
 export function usd(amount: string): Money {
@@ -29,7 +28,6 @@ export function summaryOf(overrides: Partial<HomeSummary> = {}): HomeSummary {
   return {
     scope: 'myTeams',
     displayCurrency: 'USD',
-    unavailableCurrency: null,
     gettingStarted: null,
     plans: { count: 1, published: 1, draft: 0 },
     activitiesOwned: { count: 6, declined: 1, submitted: 2 },
@@ -46,34 +44,14 @@ export function summaryOf(overrides: Partial<HomeSummary> = {}): HomeSummary {
   };
 }
 
-/** A currency as GET /api/currencies answers it. */
-export function currencyOf(code: string, name: string, active = true): Currency {
-  const alex = { id: 'U-1001', name: 'Alex Morgan' };
-  return {
-    code,
-    name,
-    symbol: '',
-    rate: '1',
-    inverseRate: '1',
-    rateChangedAt: '2026-01-05T09:00:00Z',
-    rateChangedBy: alex,
-    active,
-    usage: { inUse: false, summary: 'Not used yet', parts: [], records: [] },
-    locks: [],
-    version: 1,
-    createdAt: '2026-01-05T09:00:00Z',
-    createdBy: alex,
-    updatedAt: '2026-01-05T09:00:00Z',
-    updatedBy: alex,
-  };
-}
-
-/** USD, EUR and GBP active; CNY inactive. */
-export const CURRENCIES: Currency[] = [
-  currencyOf('USD', 'US dollar'),
-  currencyOf('CNY', 'Chinese yuan', false),
-  currencyOf('EUR', 'Euro'),
-  currencyOf('GBP', 'Pound sterling'),
+/**
+ * GET /api/me/display-currencies for a person who shows USD: the active currencies, by code (003
+ * FR-023). A person whose display currency was set inactive also gets theirs, marked inactive.
+ */
+export const DISPLAY_CURRENCIES: DisplayCurrencyOption[] = [
+  { code: 'EUR', name: 'Euro', active: true },
+  { code: 'GBP', name: 'Pound sterling', active: true },
+  { code: 'USD', name: 'US dollar', active: true },
 ];
 
 /** A row of Plans at a glance: FY2026 Lubricants Europe with the seed's figures. */
@@ -84,7 +62,7 @@ export function planRowOf(overrides: Partial<HomePlanRow> = {}): HomePlanRow {
     year: 2026,
     strategicAop: false,
     status: 'published',
-    teams: [{ id: 'T-1001', name: 'Lubricants Europe', mine: true }],
+    teams: [{ id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true, mine: true }],
     campaignCount: 3,
     activityCount: 7,
     approvedActivityCount: 3,
@@ -95,32 +73,6 @@ export function planRowOf(overrides: Partial<HomePlanRow> = {}): HomePlanRow {
     ...overrides,
   };
 }
-
-/** A team as GET /api/teams answers it. */
-export function teamOf(id: string, name: string, colour: Team['colour']): Team {
-  const alex = { id: 'U-1001', name: 'Alex Morgan' };
-  return {
-    id,
-    name,
-    description: '',
-    colour,
-    active: true,
-    members: [],
-    plans: [],
-    version: 1,
-    createdAt: '2026-01-05T09:00:00Z',
-    createdBy: alex,
-    updatedAt: '2026-01-05T09:00:00Z',
-    updatedBy: alex,
-  };
-}
-
-/** The seed's teams (plan "Demo data"). */
-export const TEAMS: Team[] = [
-  teamOf('T-1003', 'Global Marketing Ops', 'violet'),
-  teamOf('T-1001', 'Lubricants Europe', 'blue'),
-  teamOf('T-1002', 'Mobility China', 'teal'),
-];
 
 /** The plan of the seed's Lubricants Europe activities. */
 export const LUBRICANTS_PLAN = { type: 'plan', id: 'P-1001', name: 'FY2026 Lubricants Europe' };
@@ -265,6 +217,7 @@ export const HOME_ANSWERS: Record<string, MockAnswer> = {
   'GET /api/home/waiting': { body: EMPTY_PAGE },
   'GET /api/home/my-activities': { body: { groups: [], total: 0 } },
   'GET /api/home/recent-changes': { body: EMPTY_PAGE },
-  'GET /api/currencies': { body: { items: CURRENCIES, total: CURRENCIES.length } },
-  'GET /api/teams': { body: EMPTY_PAGE },
+  'GET /api/me/display-currencies': {
+    body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length },
+  },
 };

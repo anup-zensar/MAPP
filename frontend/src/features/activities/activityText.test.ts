@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatDateRange } from '@/lib/format';
 import { activityBannerText } from './activityStatus';
 import {
   activityEditHref,
@@ -11,13 +11,19 @@ import {
 } from './activityText';
 
 describe('activityText (feature 006)', () => {
-  it('writes the dates in full, ongoing ones from their start, and "—" without both', () => {
-    expect(datesText('2026-03-01', '2026-05-31', false, formatDate)).toBe(
-      '01 Mar 2026 – 31 May 2026',
-    );
-    expect(datesText('2026-03-01', null, true, formatDate)).toBe('Ongoing from 01 Mar 2026');
-    expect(datesText('2026-03-01', null, false, formatDate)).toBe('—');
-    expect(datesText(null, null, false, formatDate)).toBe('—');
+  it('writes the dates as every date range reads, ongoing ones from their start, and "—" without both (D-216)', () => {
+    const format = { date: formatDate, dateRange: formatDateRange };
+    expect(datesText('2026-03-01', '2026-05-31', false, format)).toBe('01 Mar – 31 May 2026');
+    expect(datesText('2026-12-01', '2027-01-31', false, format)).toBe('01 Dec 2026 – 31 Jan 2027');
+    expect(datesText('2026-03-01', null, true, format)).toBe('Ongoing from 01 Mar 2026');
+    expect(datesText('2026-03-01', null, false, format)).toBe('—');
+    expect(datesText(null, null, false, format)).toBe('—');
+    const daysFirst = {
+      date: (date: string) => formatDate(date, 'DD/MM/YYYY'),
+      dateRange: (start: string | null | undefined, end: string | null | undefined) =>
+        formatDateRange(start, end, 'DD/MM/YYYY'),
+    };
+    expect(datesText('2026-03-01', '2026-05-31', false, daysFirst)).toBe('01/03/2026 – 31/05/2026');
   });
 
   it('counts things and line items', () => {

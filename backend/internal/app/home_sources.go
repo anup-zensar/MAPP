@@ -70,7 +70,7 @@ func myTeams(ctx context.Context, peopleService *people.Service, a actor.Actor) 
 	}
 	teams := make([]home.Team, 0, len(teamIDs))
 	for _, id := range teamIDs {
-		teams = append(teams, home.Team{ID: id, Name: refs[id].Name})
+		teams = append(teams, home.Team{ID: id, Name: refs[id].Name, Colour: refs[id].Colour, Active: refs[id].Active})
 	}
 	return teams, nil
 }
@@ -85,7 +85,7 @@ func homePlan(o plans.Overview) home.Plan {
 		Missing: o.Completeness.Missing, ItemsBelow: len(o.Completeness.ItemsBelow), UpdatedAt: o.Plan.UpdatedAt,
 	}
 	for _, t := range o.Teams {
-		p.Teams = append(p.Teams, home.Team{ID: t.ID, Name: t.Name})
+		p.Teams = append(p.Teams, home.Team{ID: t.ID, Name: t.Name, Colour: t.Colour, Active: t.Active})
 	}
 	return p
 }

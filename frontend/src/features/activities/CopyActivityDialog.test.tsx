@@ -49,7 +49,7 @@ describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
     expect(within(copyTo).getByRole('radio', { name: 'Retail events' })).toBeDisabled();
     expect(
       within(copyTo).getByRole('radio', { name: 'Retail events' }),
-    ).toHaveAccessibleDescription(`01 Jun 2026 – 31 Dec 2026 ${RETAIL_EVENTS.copyProblem ?? ''}`);
+    ).toHaveAccessibleDescription(`01 Jun – 31 Dec 2026 ${RETAIL_EVENTS.copyProblem ?? ''}`);
     expect(dialog).toHaveTextContent(
       'The copy starts as Created, with copies of its 3 line items. Approvals, comments and history are not copied.',
     );

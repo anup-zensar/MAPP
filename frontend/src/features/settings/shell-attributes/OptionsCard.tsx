@@ -10,6 +10,7 @@ import {
   SegmentedFilter,
   Skeleton,
   StatusChip,
+  useToast,
 } from '@/components';
 import type { ActionsMenuItem } from '@/components';
 import { formatWhole } from '@/lib/decimal';
@@ -56,6 +57,7 @@ export function OptionsCard({ attribute }: { attribute: ShellAttribute }) {
   const deleteOption = useDeleteOption();
   const changeStatus = useStatusChange('option');
   const showFailure = useFailureToast('option');
+  const { show } = useToast();
   const isDependent = attribute.parentAttribute !== null;
   const filtered = q.trim() !== '' || status !== 'all';
 
@@ -88,6 +90,7 @@ export function OptionsCard({ attribute }: { attribute: ShellAttribute }) {
     // Without a filter the list is the whole order, so its ends are known.
     const isFirst = !filtered && index === 0;
     const isLast = !filtered && index === total - 1;
+    const deleteLock = option.locks.find((lock) => lock.field === 'delete')?.reason;
     return [
       { label: 'Edit', onSelect: () => setPanel({ option }) },
       ...(isFirst ? [] : [{ label: 'Move up', onSelect: () => move(option, 'up') }]),
@@ -100,7 +103,9 @@ export function OptionsCard({ attribute }: { attribute: ShellAttribute }) {
         label: 'Delete',
         tone: 'danger',
         separatorBefore: true,
-        onSelect: () => setDeleting(option),
+        // The last option can't be deleted: the reason shows, and nothing is sent (D-211, §6.6).
+        hint: deleteLock,
+        onSelect: () => (deleteLock ? show({ message: deleteLock }) : setDeleting(option)),
       },
     ];
   }

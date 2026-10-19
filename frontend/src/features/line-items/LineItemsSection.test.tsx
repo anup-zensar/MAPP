@@ -176,8 +176,12 @@ describe('LineItemsSection (US1)', () => {
     expect(await screen.findByText(text)).toBeInTheDocument();
   });
 
-  it('labels the USD columns with the display currency (FR-005)', async () => {
+  it('labels the USD columns with the display currency and shows the amounts the API converted (FR-005, D-213)', async () => {
     const section = launchFilmSection();
+    section.items = section.items.map((item) => ({
+      ...item,
+      plannedCostDisplay: { amount: '46000.00', currency: 'EUR' },
+    }));
     section.balance = {
       ...section.balance,
       assigned: { amount: '92000.00', currency: 'EUR' },
@@ -194,6 +198,9 @@ describe('LineItemsSection (US1)', () => {
       screen.getByRole('table', { name: 'Line items spread over time, in EUR' }),
     ).toBeInTheDocument();
     expect(screen.getByText('92,000.00 of 110,400.00 EUR assigned')).toBeInTheDocument();
+    // Agency fee: 50,000.00 USD typed, shown as 46,000.00 EUR in the display-currency column.
+    const fee = screen.getByRole('link', { name: 'Agency fee' }).closest('tr') as HTMLElement;
+    expect(within(fee).getAllByRole('cell')[3]).toHaveTextContent('46,000.00 EUR');
   });
 
   it('highlights the row just created (FR-010)', async () => {

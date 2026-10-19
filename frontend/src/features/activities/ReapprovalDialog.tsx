@@ -1,7 +1,5 @@
 import { ConfirmDialog } from '@/components';
-import { plural } from '@/lib/text';
 import type { ReapprovalChange } from './activityFormState';
-import { lineItemsText } from './activityText';
 import styles from './ReapprovalDialog.module.css';
 
 export interface ReapprovalDialogProps {
@@ -11,8 +9,11 @@ export interface ReapprovalDialogProps {
   name: string;
   /** The changes that restart approval, old → new. */
   changes: ReapprovalChange[];
-  /** The activity's line items: re-spread (automatic spreads) and kept (custom spreads). */
-  lineItems: { count: number; autoSpread: number; customSpread: number };
+  /**
+   * What the typed dates do to the line items' spreads — feature 007's sentence, the one under the
+   * dates (useSpreadEffectText, D-150) — or null when the dates do not change them.
+   */
+  spreadEffect: string | null;
   /** Saves with restartApproval. */
   onConfirm: () => void;
   busy?: boolean;
@@ -28,13 +29,10 @@ export function ReapprovalDialog({
   onOpenChange,
   name,
   changes,
-  lineItems,
+  spreadEffect,
   onConfirm,
   busy,
 }: ReapprovalDialogProps) {
-  const datesChange = changes.some((change) => change.label !== 'Planned cost');
-  const { autoSpread, customSpread } = lineItems;
-
   return (
     <ConfirmDialog
       open={open}
@@ -53,12 +51,7 @@ export function ReapprovalDialog({
           </li>
         ))}
       </ul>
-      {datesChange && lineItems.count > 0 && (
-        <p>
-          {lineItemsText(autoSpread)} will be re-spread over the new dates;{' '}
-          {plural(customSpread, 'custom spread')} {customSpread === 1 ? 'is' : 'are'} kept as typed.
-        </p>
-      )}
+      {spreadEffect && <p>{spreadEffect}</p>}
     </ConfirmDialog>
   );
 }

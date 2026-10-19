@@ -324,7 +324,7 @@ func TestApprovalPreview_FR032(t *testing.T) {
 		activity.Owner.Name != "Priya Raman" || activity.PlannedCost == nil || activity.TypeName == "" {
 		t.Errorf("activity = %+v, want the Submitted Trade magazine ads of Priya Raman", activity)
 	}
-	if len(preview.LineItems) != 1 || preview.LineItems[0].Name != "Media booking" || preview.LineItems[0].PlannedCostUSD == nil ||
+	if len(preview.LineItems) != 1 || preview.LineItems[0].Name != "Media booking" || preview.LineItems[0].PlannedCostDisplay == nil ||
 		preview.LineItems[0].PlannedCost.Currency != "USD" {
 		t.Errorf("line items = %+v, want Media booking in USD", preview.LineItems)
 	}

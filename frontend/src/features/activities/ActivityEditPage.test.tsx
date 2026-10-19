@@ -156,6 +156,24 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
     ]);
   });
 
+  it('says in the re-approval question what new dates do to the line-item spreads (007 FR-022, D-150)', async () => {
+    const { user } = openEditForm(launchFilm({ status: 'approved', displayStatus: 'approved' }), {
+      'GET /api/activities/A-1042/line-items': { body: launchFilmSection() },
+    });
+
+    const end = await screen.findByLabelText('End date');
+    await user.clear(end);
+    await user.type(end, '2026-06-30');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    const question = await screen.findByRole('alertdialog', {
+      name: 'This activity will need approval again',
+    });
+    expect(question).toHaveTextContent(
+      'When you save, 2 line items are re-spread over the new dates.',
+    );
+  });
+
   it('saves other changes of an approved activity without asking (FR-028)', async () => {
     const { user, api } = openEditForm(
       launchFilm({ status: 'approved', displayStatus: 'approved' }),

@@ -8,5 +8,13 @@ export { PersonField } from './PersonField';
 export type { PersonFieldProps } from './PersonField';
 export { TeamField } from './TeamField';
 export type { TeamFieldProps } from './TeamField';
-export { PEOPLE_KEY, TEAMS_KEY, usePeople, useTeams } from './peopleApi';
-export type { Person, PersonRef, Team, TeamRef } from './peopleApi';
+export {
+  DISPLAY_CURRENCIES_KEY,
+  PEOPLE_KEY,
+  TEAMS_KEY,
+  useDisplayCurrencies,
+  usePeople,
+  useTeams,
+} from './peopleApi';
+export type { DisplayCurrencyOption, Person, PersonRef, Team, TeamRef } from './peopleApi';
+export { currencyLabel } from './texts';

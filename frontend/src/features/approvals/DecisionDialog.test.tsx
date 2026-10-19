@@ -7,7 +7,7 @@ import { testUser } from '@/test/users';
 import type { ActivityApproval } from './approvalsApi';
 import { DecisionDialog } from './DecisionDialog';
 import type { DecisionDialogProps } from './DecisionDialog';
-import { ALEX, approvalOf, CARLOS, roundOf } from './testData';
+import { ALEX, approvalOf, CARLOS, DANIEL, roundOf } from './testData';
 
 const APPROVE = 'POST /api/activities/A-1042/approval/approve';
 const DECLINE = 'POST /api/activities/A-1042/approval/decline';
@@ -123,7 +123,7 @@ describe('DecisionDialog (feature 008, US2)', () => {
 
   it('declines with the comment', async () => {
     const { user, api } = renderDialog(
-      { mode: 'decline', ownerName: 'Priya Raman' },
+      { mode: 'decline' },
       { [DECLINE]: { body: approvalOf({ status: 'declined' }) } },
     );
 
@@ -139,12 +139,28 @@ describe('DecisionDialog (feature 008, US2)', () => {
     ]);
   });
 
+  it('names the owner from the approval itself, for an approver who does not own it (D-214)', () => {
+    const { api } = renderDialog({
+      mode: 'decline',
+      approval: approvalOf({
+        ownerId: DANIEL.id,
+        owner: DANIEL,
+        viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] },
+      }),
+    });
+
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(
+      'The activity goes back to Daniel Okoro, who can fix it and re-submit.',
+    );
+    expect(api.requests.some((request) => request.path === '/api/people')).toBe(false);
+  });
+
   it('names the owner it goes back to, or says "its owner" without one', () => {
     renderDialog({
       mode: 'decline',
-      ownerName: null,
       approval: approvalOf({
         ownerId: '',
+        owner: null,
         viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] },
       }),
     });

@@ -76,7 +76,7 @@ describe('MyActivitiesCard', () => {
     const row = within(rowOf('Launch film'));
     expect(row.getByText('A-1042')).toBeInTheDocument();
     expect(row.getByText('FY2026 Lubricants Europe › Helix launch')).toBeInTheDocument();
-    expect(row.getByText('01 Mar 2026 – 31 May 2026')).toBeInTheDocument();
+    expect(row.getByText('01 Mar – 31 May 2026')).toBeInTheDocument();
     expect(row.getByText('$85,000.00')).toBeInTheDocument();
     expect(row.getByText('All filled in')).toBeInTheDocument();
 

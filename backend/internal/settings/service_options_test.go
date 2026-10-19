@@ -168,6 +168,30 @@ func TestDeleteOption_LastOptionRefused_FR018(t *testing.T) {
 	assertError(t, err, errs.InUse("'Solo' needs at least one option, so 'Only' can't be deleted."))
 }
 
+// The last option carries the delete lock with the same reason, so the web app can say why without
+// sending the request; a second option lifts it from both (D-211, design system 6.6). GetOption answers
+// the option as stored now, or not found.
+func TestOptionLocks_LastOptionCantBeDeleted_D211(t *testing.T) {
+	f := newTestService(t)
+	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Solo", typ: TypeSingleChoice, options: []string{"Only"}})
+	only := tf.option(LevelActivity, "Solo", "Only")
+	lock := []Lock{{Field: "delete", Reason: "'Solo' needs at least one option, so 'Only' can't be deleted."}}
+
+	alone, err := f.service.GetOption(t.Context(), alex, only)
+	if err != nil || !reflect.DeepEqual(alone.Locks, lock) {
+		t.Fatalf("GetOption = %+v, %v; want the delete lock", alone.Locks, err)
+	}
+	second, err := f.service.CreateOption(t.Context(), alex, tf.attribute(LevelActivity, "Solo").ID, OptionInput{Label: "Another"})
+	if err != nil || second.Locks == nil || len(second.Locks) != 0 {
+		t.Fatalf("CreateOption = %+v, %v; want no locks", second.Locks, err)
+	}
+	if now, err := f.service.GetOption(t.Context(), alex, only); err != nil || len(now.Locks) != 0 {
+		t.Errorf("GetOption after a second option = %+v, %v; want no locks", now.Locks, err)
+	}
+	_, gone := f.service.GetOption(t.Context(), alex, "SO-99999")
+	assertError(t, gone, errs.NotFound("This option no longer exists — someone may have deleted it."))
+}
+
 // An unused option moves to the recycle bin, under its attribute, and Undo brings it back (FR-018, FR-004).
 func TestDeleteOption_Unused_Undo_FR018(t *testing.T) {
 	f := newTestService(t)

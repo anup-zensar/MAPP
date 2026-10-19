@@ -305,12 +305,12 @@ time it is opened or returned to (FR-019).
 
 ### Currency picker (`CurrencyPicker`, FR-002)
 
-A labelled native `<select>` "Currency" listing the **active** currencies of 002 (`GET /api/currencies`,
-"EUR — Euro"), value = `summary.displayCurrency` (the effective one). Choosing saves `PATCH
-/api/me/preferences {displayCurrency}` (003's field), then invalidates `['session']` and `['home']` so
-every amount is redrawn in the new currency (SC-005). When `summary.unavailableCurrency` is set, the
-notice "<code> is no longer available — showing USD" appears under the picker. A failed save shows "Your
-choice couldn't be saved." with **Try again**.
+A labelled native `<select>` "Currency" listing the currencies My profile offers (003's `GET
+/api/me/display-currencies`: the active ones, plus the person's own when it was set inactive, "EUR — Euro";
+D-217), value = `summary.displayCurrency`. Choosing saves `PATCH /api/me/preferences {displayCurrency}`
+(003's field), then invalidates `['session']`, the display currencies and `['home']` so every amount is
+redrawn in the new currency (SC-005). An inactive display currency stays in use (D-201), so there is no
+fall-back notice. A failed save shows "Your choice couldn't be saved." with **Try again**.
 
 ### Summary cards (`SummaryCards`, FR-005–FR-007)
 
@@ -553,7 +553,7 @@ say otherwise (D-200).
 
 - **Withdrawn (D-201).** 009-C (colour from the team ID) and 009-D (USD fall-back) are withdrawn: `TeamPill` is 003's and reads
   `TeamRef.colour` (no `lib/teamColor.ts`, no `--team-1…8` tokens; T019 only checks 003's tokens; T040 documents 003's palette),
-  and an inactive display currency stays in use. `HomeSummary.unavailableCurrency` stays in the contract and is always `null`;
+  and an inactive display currency stays in use. `HomeSummary.unavailableCurrency` was always `null` and has since been removed from the contract (D-217);
   `TestSummary_InactiveCurrencyFallsBackToUSD` becomes `TestSummary_InactiveDisplayCurrencyStaysInUse`.
 - **Contract (D-193).** 009's attention schemas are `HomeAttentionItem`, `HomeAttentionReason`, `HomeAttentionPage` (004 owns
   `AttentionItem`). `Preferences.homeScope` is optional in the merged contract (D-191); 009 always sends it, the web app defaults to

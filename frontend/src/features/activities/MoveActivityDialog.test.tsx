@@ -50,14 +50,14 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
     const own = within(helix).getByRole('radio', { name: 'Digital & social (this initiative)' });
     expect(own).toBeDisabled();
     expect(own).toHaveAccessibleDescription(
-      "01 Jan 2026 – 30 Jun 2026 It's already in this initiative.",
+      "01 Jan – 30 Jun 2026 It's already in this initiative.",
     );
     const print = within(helix).getByRole('radio', { name: 'Print & outdoor' });
     expect(print).toBeEnabled();
-    expect(print).toHaveAccessibleDescription('01 Jan 2026 – 31 Dec 2026');
+    expect(print).toHaveAccessibleDescription('01 Jan – 31 Dec 2026');
     const retail = within(rimula).getByRole('radio', { name: 'Retail events' });
     expect(retail).toBeDisabled();
-    expect(retail).toHaveAccessibleDescription(`01 Jun 2026 – 31 Dec 2026 ${DATES_DONT_FIT}`);
+    expect(retail).toHaveAccessibleDescription(`01 Jun – 31 Dec 2026 ${DATES_DONT_FIT}`);
     expect(within(dialog).getByRole('searchbox', { name: 'Search initiatives' })).toHaveFocus();
   });
 

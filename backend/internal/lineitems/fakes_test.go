@@ -24,6 +24,7 @@ import (
 var (
 	priya  = actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	daniel = actor.Actor{ID: "U-1003", Name: "Daniel Okoro"}
+	lena   = actor.Actor{ID: "U-1008", Name: "Lena Vogel"} // shows amounts in EUR (003 FR-023)
 )
 
 // start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC.
@@ -394,4 +395,12 @@ func (fakePeople) Person(_ context.Context, id string) (people.PersonRef, bool, 
 	}
 	person, found := all[id]
 	return person, found, nil
+}
+
+// DisplayRateOf returns Lena's display currency, EUR at 0.92; everyone else shows USD.
+func (fakePeople) DisplayRateOf(_ context.Context, personID string) (people.DisplayRate, error) {
+	if personID == lena.ID {
+		return people.DisplayRate{Code: "EUR", Rate: "0.92"}, nil
+	}
+	return people.DisplayRate{Code: "USD", Rate: "1"}, nil
 }

@@ -16,6 +16,7 @@ import {
   valuesToClear,
 } from '@/components';
 import type { BreadcrumbItem, ClearedValue, FieldProblem, SaveFailure } from '@/components';
+import { useSpreadEffectText } from '@/features/line-items/useSpreadEffectText';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
@@ -156,6 +157,13 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
   const { dialog } = useUnsavedChanges(leaveTo === null && isDirty(value, initial));
   const { plan, initiative } = form.context;
   const focusField = searchParams.get('field');
+  // What the typed dates do to the line items' spreads, for the re-approval question (D-150): the
+  // same sentence SpreadEffectNote shows under the dates, from the same request.
+  const spreadEffect = useSpreadEffectText(activity?.id ?? '', {
+    startDate: value.startDate,
+    endDate: value.ongoing ? '' : value.endDate,
+    ongoing: value.ongoing,
+  });
 
   useEffect(() => {
     if (leaveTo !== null) {
@@ -336,7 +344,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
           onOpenChange={(open) => !open && setReapproval(null)}
           name={activity.name}
           changes={reapproval ?? []}
-          lineItems={activity.lineItems}
+          spreadEffect={spreadEffect}
           onConfirm={() => void send(false, true)}
           busy={saving}
         />

@@ -23,7 +23,7 @@ import styles from './LineItemPage.module.css';
 import { activityBreadcrumb, activityLineItemsHref, planIdOf } from './lineItemLinks';
 import { centsInput, formatMonth, moneyText } from './lineItemMath';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
-import { useLineItem, usePlanBusinessUnit } from './lineItemsApi';
+import { useLineItem } from './lineItemsApi';
 import type { LineItem, LineItemActivity } from './lineItemsApi';
 import {
   bookkeepingText,
@@ -163,7 +163,6 @@ function Summary({
 function Values({ lineItem, activity }: { lineItem: LineItem; activity: LineItemActivity }) {
   const attributeForm = useAttributeForm('lineItem');
   const planId = planIdOf(activity);
-  const businessUnit = usePlanBusinessUnit(planId);
   const item = lineItem.financeBudgetItem;
   const { spread } = lineItem;
 
@@ -212,7 +211,7 @@ function Values({ lineItem, activity }: { lineItem: LineItem; activity: LineItem
           <ShellAttributeValues
             form={attributeForm.data}
             values={lineItem.attributes}
-            businessUnit={businessUnit.data ?? []}
+            businessUnit={activity.businessUnitOptionIds}
             planLink={planId ? recordHref('plan', planId) : undefined}
           />
         ) : attributeForm.isError ? (

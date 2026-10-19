@@ -109,13 +109,14 @@ func (s *Service) CreatePerson(ctx context.Context, a actor.Actor, input PersonI
 	return details, nil
 }
 
-// UpdatePerson changes the person id to the whole form update: name, e-mail, job title and every team
-// after the change (FR-002, FR-012). Every problem of the form, a missing version included, is reported at
-// once; an out-of-date version is refused with version_conflict (001 FR-029). Teams the person is already in
-// may be inactive (FR-014). Removing a team whose plan they own is allowed: the impact check warns first
-// (FR-013). A form that changes nothing is not a change: no new version, no log entry. Otherwise the person
-// gets a new version and one "changed" entry with the old and new values, and every team they joined or
-// left gets one too (D-057). The next sign-in uses a new e-mail (US1 scenario 4).
+// UpdatePerson changes the person id with the fields update sends — name, e-mail, job title, every team
+// after the change — and keeps the others (FR-002, FR-012, D-210). Every problem of the form the change
+// leads to, a missing version included, is reported at once; an out-of-date version is refused with
+// version_conflict (001 FR-029). Teams the person is already in may be inactive (FR-014). Removing a team
+// whose plan they own is allowed: the impact check warns first (FR-013). A form that changes nothing is
+// not a change: no new version, no log entry. Otherwise the person gets a new version and one "changed"
+// entry with the old and new values, and every team they joined or left gets one too (D-057). The next
+// sign-in uses a new e-mail (US1 scenario 4).
 func (s *Service) UpdatePerson(ctx context.Context, a actor.Actor, id string, update PersonUpdate) (PersonDetails, error) {
 	var details PersonDetails
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -128,7 +129,7 @@ func (s *Service) UpdatePerson(ctx context.Context, a actor.Actor, id string, up
 			return err
 		}
 		var problems errs.Problems
-		form := checkPersonForm(&problems, d, p.ID, personForm{update.Name, update.Email, update.JobTitle, update.TeamIDs})
+		form := checkPersonForm(&problems, d, p.ID, update.applyTo(storedPersonForm(p, d)))
 		checkVersionSent(&problems, update.Version)
 		if err := problems.Err(); err != nil {
 			return err
@@ -171,8 +172,8 @@ func (s *Service) UpdatePerson(ctx context.Context, a actor.Actor, id string, up
 
 // PersonImpact says what saving update would affect, before it is saved, and saves nothing (FR-013,
 // D-058): one ownerNeedsAttention warning when the teams the person leaves are teams of plans they own and
-// they would then belong to none of those plans' teams. The form is checked exactly like UpdatePerson's,
-// except for the version.
+// they would then belong to none of those plans' teams; teams that are not sent are not left. The form is
+// checked exactly like UpdatePerson's, except for the version.
 func (s *Service) PersonImpact(ctx context.Context, a actor.Actor, id string, update PersonUpdate) (ChangeImpact, error) {
 	impact := ChangeImpact{Warnings: []ImpactWarning{}}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -185,7 +186,7 @@ func (s *Service) PersonImpact(ctx context.Context, a actor.Actor, id string, up
 			return err
 		}
 		var problems errs.Problems
-		form := checkPersonForm(&problems, d, p.ID, personForm{update.Name, update.Email, update.JobTitle, update.TeamIDs})
+		form := checkPersonForm(&problems, d, p.ID, update.applyTo(storedPersonForm(p, d)))
 		if err := problems.Err(); err != nil {
 			return err
 		}
@@ -304,6 +305,12 @@ func (s *Service) details(ctx context.Context, p Person) (PersonDetails, error) 
 type personForm struct {
 	Name, Email, JobTitle string
 	TeamIDs               []string
+}
+
+// storedPersonForm is the person p as their form starts: the stored name, e-mail, job title and teams.
+// PersonUpdate.applyTo puts the sent fields in place.
+func storedPersonForm(p Person, d directory) personForm {
+	return personForm{Name: p.Name, Email: p.Email, JobTitle: p.JobTitle, TeamIDs: d.teamIDsOf(p.ID)}
 }
 
 // checkPersonForm returns form with its texts trimmed, the e-mail in lower case and the team ids without

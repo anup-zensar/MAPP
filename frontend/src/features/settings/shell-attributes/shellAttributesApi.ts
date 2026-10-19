@@ -105,6 +105,13 @@ export function useShellAttributeOptions(id: string, filter: OptionFilter) {
   });
 }
 
+/** The option as it is stored now, never from the cache (after a conflict, D-211). */
+export function fetchOption(id: string) {
+  return call(
+    api.GET('/api/shell-attribute-options/{optionId}', { params: { path: { optionId: id } } }),
+  );
+}
+
 /** One page of matching options from `offset` on. */
 export function fetchOptions(id: string, filter: OptionFilter, offset = 0) {
   return call(

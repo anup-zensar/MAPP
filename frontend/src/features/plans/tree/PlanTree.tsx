@@ -83,7 +83,7 @@ export function PlanTree({
   error,
   onRetry,
 }: PlanTreeProps) {
-  const { money } = useFormatters();
+  const { money, dateRange } = useFormatters();
   const [query, setQuery] = useState('');
   // What someone opened or closed, by row id; the other rows follow openAtFirst, so rows that load
   // later (campaigns) start the way 005 FR-020 says.
@@ -99,7 +99,7 @@ export function PlanTree({
     cells: {
       name: <span className={styles.id}>{plan.id}</span>,
       owner: plan.owner ? plan.owner.name : <span className={styles.muted}>No owner yet</span>,
-      dates: yearDates(plan.year),
+      dates: yearDates(plan.year, dateRange),
       status: (
         <span className={styles.chips}>
           <PlanStatusChip status={plan.status} />

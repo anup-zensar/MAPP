@@ -320,21 +320,10 @@ describe('PeoplePage (feature 003, US1)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText("Person 'Alex Morgan' saved")).toBeInTheDocument();
+    // Only the changed field and the version (D-210).
     expect(api.bodiesOf('PATCH /api/people/U-1001')).toEqual([
-      {
-        name: 'Alex Morgan',
-        email: 'alex.morgan@northstar.demo',
-        jobTitle: 'Marketing director',
-        teamIds: ['T-1001'],
-        version: 1,
-      },
-      {
-        name: 'Alex Morgan',
-        email: 'alex.morgan@northstar.demo',
-        jobTitle: 'Marketing director',
-        teamIds: ['T-1001'],
-        version: 2,
-      },
+      { jobTitle: 'Marketing director', version: 1 },
+      { jobTitle: 'Marketing director', version: 2 },
     ]);
     expect(api.bodiesOf('POST /api/people/U-1001/impact')).toEqual([]);
   });
@@ -371,13 +360,7 @@ describe('PeoplePage (feature 003, US1)', () => {
     );
 
     expect(await screen.findByText("Person 'Alex Morgan' saved")).toBeInTheDocument();
-    const body = {
-      name: 'Alex Morgan',
-      email: 'alex.morgan@northstar.demo',
-      jobTitle: 'Head of marketing',
-      teamIds: [],
-      version: 1,
-    };
+    const body = { teamIds: [], version: 1 };
     expect(api.bodiesOf('POST /api/people/U-1001/impact')).toEqual([body, body]);
     expect(api.bodiesOf('PATCH /api/people/U-1001')).toEqual([body]);
   });

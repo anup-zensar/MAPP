@@ -625,10 +625,17 @@ export interface paths {
             };
             cookie?: never;
         };
-        get?: never;
+        /**
+         * One option as it is stored now, with its links, usage and locks (D-211)
+         * @description The web app reads it after a 409 version_conflict on an option, to take the latest version and show who changed it.
+         */
+        get: operations["getShellAttributeOption"];
         put?: never;
         post?: never;
-        /** Delete an unused option (it goes to the recycle bin) */
+        /**
+         * Delete an unused option (it goes to the recycle bin)
+         * @description Answers 409 in_use, with the reason as the message, when the option is in use ("'<label>' is in use (…) — set it inactive instead.") and when it is the last option of its choice attribute ("'<attribute>' needs at least one option, so '<label>' can't be deleted."). The second is also the option's delete lock (locks, field delete), so the web app shows the reason without sending the request (D-211).
+         */
         delete: operations["deleteShellAttributeOption"];
         options?: never;
         head?: never;
@@ -942,7 +949,7 @@ export interface paths {
         head?: never;
         /**
          * Change a person's name, e-mail, job title and teams
-         * @description teamIds is the complete list of the person's teams after the change. Removing teams is allowed even when a plan's owner is affected; POST .../impact says so first.
+         * @description Only the fields to change, plus the version (D-203, D-210); a field left out keeps its value. teamIds, when sent, is the complete list of the person's teams after the change. Removing teams is allowed even when a plan's owner is affected; POST .../impact says so first.
          */
         patch: operations["updatePerson"];
         trace?: never;
@@ -1036,7 +1043,7 @@ export interface paths {
         head?: never;
         /**
          * Change a team's name, description, colour and members
-         * @description memberIds is the complete list of members after the change. Removing members is allowed even when a plan's owner is affected; POST .../impact says so first.
+         * @description Only the fields to change, plus the version (D-203, D-210); a field left out keeps its value. memberIds, when sent, is the complete list of members after the change. Removing members is allowed even when a plan's owner is affected; POST .../impact says so first.
          */
         patch: operations["updateTeam"];
         trace?: never;
@@ -1709,7 +1716,7 @@ export interface paths {
         };
         /**
          * The Line items section of an activity — its line items, unassigned planned cost and spread grid
-         * @description Line items in creation order, each with its USD amount at the current rate, spread, completeness and SWBS request status; the unassigned planned cost (Sys_Gen_Balance); and the month-by-month grid in USD.
+         * @description Line items in creation order, each with its USD amount at the current rate (and that amount in the signed-in person's display currency), spread, completeness and SWBS request status; the unassigned planned cost (Sys_Gen_Balance) and the month-by-month grid, both in the display currency (007 FR-005, D-213).
          */
         get: operations["listActivityLineItems"];
         put?: never;
@@ -2223,7 +2230,9 @@ export interface paths {
          * @description Rows come in their final order (tree order, sorted within each parent). Each row is a match or a
          *     context row. Cells follow the requested columns, in order. The view budget adds period amounts;
          *     the view calendar leaves out line-item and unassigned rows. Unknown IDs and columns are ignored
-         *     and listed in leftOut.
+         *     and listed in leftOut. A refused parameter answers 400 validation_failed with FieldError.field set
+         *     to the query parameter's name (year, view, planStatus, search, column, sort, period, …), so the
+         *     web app can reset that filter (D-219).
          */
         get: operations["getAllWork"];
         put?: never;
@@ -3166,6 +3175,8 @@ export interface components {
             parentOptions: components["schemas"]["SettingRef"][];
             active: boolean;
             usage: components["schemas"]["Usage"];
+            /** @description What can't be done with the option, and why: field delete for the last option of its attribute (D-211). */
+            locks: components["schemas"]["Lock"][];
             version: number;
             /** Format: date-time */
             createdAt: string;
@@ -3516,12 +3527,13 @@ export interface components {
             /** @description The person's teams; empty when not sent. */
             teamIds?: string[];
         };
+        /** @description Only the fields to change, and the version (D-203, D-210); a field left out keeps its value. Also the body of the impact check, where teams that are not sent are not removed. */
         PersonUpdate: {
-            name: string;
-            email: string;
-            jobTitle: string;
+            name?: string;
+            email?: string;
+            jobTitle?: string;
             /** @description Every team of the person after the change. */
-            teamIds: string[];
+            teamIds?: string[];
             /** @description The version the user started editing from. */
             version: number;
         };
@@ -3566,13 +3578,14 @@ export interface components {
             /** @description The members; empty when not sent. */
             memberIds?: string[];
         };
+        /** @description Only the fields to change, and the version (D-203, D-210); a field left out keeps its value. Also the body of the impact check, where members that are not sent are not removed. */
         TeamUpdate: {
-            name: string;
-            description: string;
+            name?: string;
+            description?: string;
             /** @description One of TeamColour; any other value answers validation_failed. */
-            colour: string;
+            colour?: string;
             /** @description Every member after the change. */
-            memberIds: string[];
+            memberIds?: string[];
             /** @description The version the user started editing from. */
             version: number;
         };
@@ -4610,8 +4623,10 @@ export interface components {
             currency: components["schemas"]["LineItemCurrency"];
             /** @description Planned cost in the line item's currency. */
             plannedCost: components["schemas"]["Money"];
-            /** @description Planned cost converted to USD at the currency's current rate, rounded half-up to the cent (domain model §4.3). */
+            /** @description Planned cost converted to USD at the currency's current rate, rounded half-up to the cent (domain model §4.3). Always USD: the unassigned balance and the spread add it up, and the line-item form calculates with it. */
             plannedCostUsd: components["schemas"]["Money"];
+            /** @description plannedCostUsd in the signed-in person's display currency at its current rate, rounded half-up to the cent (007 FR-005, D-061, D-213); the same as plannedCostUsd for a person who shows amounts in USD. The section's "Planned cost (<code>)" column. */
+            plannedCostDisplay: components["schemas"]["Money"];
             spread: components["schemas"]["Spread"];
             attributes: components["schemas"]["AttributeValues"];
             contractedAmount: components["schemas"]["Money"] | null;
@@ -4650,18 +4665,25 @@ export interface components {
             defaultSpreadMethod: components["schemas"]["SpreadMethod"];
             /** @description The name of the plan's default finance budget (of the plan's year); null when none is set. */
             defaultFinanceBudget: string | null;
+            /**
+             * @description The Business unit options of the activity's plan. A line-item Shell attribute with a business-unit condition is shown only when one of them is in its condition (002 FR-023, D-212).
+             * @example [
+             *       "SO-1001"
+             *     ]
+             */
+            businessUnitOptionIds: string[];
         };
-        /** @description Unassigned planned cost (Sys_Gen_Balance) = activity planned cost − sum of its line items' USD planned costs (domain model §4.3). */
+        /** @description Unassigned planned cost (Sys_Gen_Balance) = activity planned cost − sum of its line items' USD planned costs (domain model §4.3). Worked out in USD; the amounts are answered in the signed-in person's display currency in LineItemSection and LineItemDetails (each converted once from its USD figure, D-213) and in USD in LineItemFormOptions, where the form calculates "After saving" from the typed amount in USD (D-061: the web app never converts). Every amount says its currency. */
         UnassignedBalance: {
-            /** @description The activity's planned cost (USD); null while it has none. */
+            /** @description The activity's planned cost; null while it has none. */
             plannedCost: components["schemas"]["Money"] | null;
-            /** @description Sum of the line items' planned costs in USD. */
+            /** @description Sum of the line items' USD planned costs. */
             assigned: components["schemas"]["Money"];
             /** @description Negative when line items exceed the planned cost; null while the activity has no planned cost. */
             balance: components["schemas"]["Money"] | null;
             /** @enum {string} */
             state: "left" | "allAssigned" | "exceeded" | "noPlannedCost";
-            /** @description True when a few cents (at most 0.05 USD) remain either way and a line item uses another currency than USD. */
+            /** @description True when a few cents (at most 0.05 USD, measured in USD) remain either way and a line item uses another currency than USD. */
             roundingHint: boolean;
         };
         SpreadGridColumn: {
@@ -4677,11 +4699,11 @@ export interface components {
         SpreadGridRow: {
             lineItemId: string;
             name: string;
-            /** @description One per column, in USD; null where the line item has nothing. */
+            /** @description One per column, in the grid's currency; null where the line item has nothing. */
             cells: (components["schemas"]["Money"] | null)[];
             total: components["schemas"]["Money"];
         };
-        /** @description The activity's line items by month, in USD (FR-003, FR-020). Quarterly is calculated by the web app. */
+        /** @description The activity's line items by month (FR-003, FR-020), in the signed-in person's display currency (007 FR-005, D-213): every cell and total is converted on its own from its USD amount, so a total can differ by a cent from the sum of its converted cells; in USD they add up exactly. Quarterly is calculated by the web app. */
         SpreadGrid: {
             columns: components["schemas"]["SpreadGridColumn"][];
             rows: components["schemas"]["SpreadGridRow"][];
@@ -4699,7 +4721,7 @@ export interface components {
         LineItemDetails: {
             lineItem: components["schemas"]["LineItem"];
             activity: components["schemas"]["LineItemActivity"];
-            /** @description The activity's unassigned planned cost now, with this line item included. */
+            /** @description The activity's unassigned planned cost now, with this line item included, in the signed-in person's display currency (D-213). */
             balance: components["schemas"]["UnassignedBalance"];
         };
         /** @description What a new line item starts with (FR-008). The web app labels each value with its source. */
@@ -4725,6 +4747,7 @@ export interface components {
         };
         LineItemFormOptions: {
             activity: components["schemas"]["LineItemActivity"];
+            /** @description The unassigned planned cost in USD, the currency the form calculates "After saving" in (D-213). */
             balance: components["schemas"]["UnassignedBalance"];
             defaults: components["schemas"]["LineItemDefaults"];
             /** @description The active currencies, USD first, then by code. */
@@ -4864,14 +4887,14 @@ export interface components {
         ApprovalWorkflowCreate: {
             name: string;
             description?: string;
-            /** @description In order; the first is level 1. The server reports an empty list as a field problem. */
+            /** @description In order; the first is level 1. The server reports an empty list as a field problem ("levels"), and a level's problems on "levels.<n>.name" and "levels.<n>.approverIds", n counted from 1 as in the messages (D-215). */
             levels: components["schemas"]["ApprovalWorkflowLevelInput"][];
         };
         /** @description Only the fields to change, plus the version the person started editing from. */
         ApprovalWorkflowUpdate: {
             name?: string;
             description?: string;
-            /** @description The complete new list of levels, in order. */
+            /** @description The complete new list of levels, in order; problems as in ApprovalWorkflowCreate ("levels.<n>.…", n from 1, D-215). */
             levels?: components["schemas"]["ApprovalWorkflowLevelInput"][];
             version: number;
         };
@@ -4995,6 +5018,8 @@ export interface components {
             displayStatus: components["schemas"]["ActivityDisplayStatus"];
             /** @description Empty when the activity has no owner. */
             ownerId: string;
+            /** @description The activity's owner with their name now, as the decline dialog names them ("The activity goes back to <owner>, …"); null when the activity has no owner (D-214). */
+            owner: components["schemas"]["ApprovalPerson"] | null;
             /** @description The activity's Approval workflow field now; null when empty or the workflow no longer exists. */
             workflow: components["schemas"]["WorkflowRef"] | null;
             /** @description The current workflow's levels while the activity has no round yet ("Not submitted yet"); empty otherwise. */
@@ -5044,7 +5069,7 @@ export interface components {
             workflow: components["schemas"]["WorkflowRef"] | null;
             /** @description The levels the round would copy (empty when there is no workflow). */
             levels: components["schemas"]["ApprovalWorkflowLevel"][];
-            /** @description A positive unassigned planned cost, shown as a note; null otherwise. */
+            /** @description A positive unassigned planned cost, shown as a note, in the signed-in person's display currency (D-213); null otherwise. */
             unassignedPlannedCost: components["schemas"]["Money"] | null;
         };
         SubmitRequest: {
@@ -5095,7 +5120,7 @@ export interface components {
             /** @description Plan, campaign, initiative. */
             path: components["schemas"]["RecordRef"][];
             owner: components["schemas"]["ApprovalPerson"] | null;
-            /** @description USD; the web app shows it in the viewer's display currency. */
+            /** @description The activity's planned cost in the signed-in person's display currency, converted by the API from USD at today's rate (008 FR-030, D-061, D-213); null when it has none. */
             plannedCost: components["schemas"]["Money"] | null;
             workflow: components["schemas"]["WorkflowRef"];
             round: components["schemas"]["ApprovalRowRound"];
@@ -5131,8 +5156,10 @@ export interface components {
             /** @example L-1003 */
             id: string;
             name: string;
+            /** @description In the line item's own currency. */
             plannedCost: components["schemas"]["Money"];
-            plannedCostUsd: components["schemas"]["Money"] | null;
+            /** @description Its USD planned cost in the signed-in person's display currency (D-213); null when the line item's currency has no rate. */
+            plannedCostDisplay: components["schemas"]["Money"] | null;
             /** @description Readable label; empty when not filled in. */
             spendType: string;
             glCode: string;
@@ -5153,11 +5180,13 @@ export interface components {
                 /** Format: date */
                 endDate: string | null;
                 ongoing: boolean;
+                /** @description In the signed-in person's display currency (D-213); null when the activity has none. */
                 plannedCost: components["schemas"]["Money"] | null;
                 typeName: string;
                 description: string;
             };
             lineItems: components["schemas"]["PreviewLineItem"][];
+            /** @description Planned cost minus the line items' USD planned costs, in the signed-in person's display currency (D-213); null when there is neither. */
             unassignedPlannedCost: components["schemas"]["Money"] | null;
             approval: components["schemas"]["ActivityApproval"];
         };
@@ -5200,12 +5229,10 @@ export interface components {
         HomeSummary: {
             scope: components["schemas"]["HomeScope"];
             /**
-             * @description The currency every amount is shown in (the person's display currency, or USD when it is inactive).
+             * @description The person's display currency, which every amount is in; one set inactive in Settings stays in use with its current rate (D-063, D-201, D-217).
              * @example EUR
              */
             displayCurrency: string;
-            /** @description The person's display currency when it has been set inactive (amounts are then in USD); null otherwise. */
-            unavailableCurrency: string | null;
             /** @description Why the Getting started card is shown; null when it is not shown. */
             gettingStarted: ("notInTeam" | "noTeamPlans") | null;
             plans: components["schemas"]["HomePlanCounts"];
@@ -5241,10 +5268,13 @@ export interface components {
             overBudget: boolean;
             plansWithoutBudget: number;
         };
+        /** @description A team of a plan as TeamRef shows it, plus whether the signed-in person is in it (D-217). */
         HomeTeam: {
             id: string;
             /** @example Lubricants Europe */
             name: string;
+            colour: components["schemas"]["TeamColour"];
+            active: boolean;
             /** @description The signed-in person is a member. */
             mine: boolean;
         };
@@ -5264,7 +5294,8 @@ export interface components {
             /** @description Activities Approved, In progress or Complete. */
             approvedActivityCount: number;
             budget: components["schemas"]["Money"] | null;
-            plannedCost: components["schemas"]["Money"];
+            /** @description Sum of the activities' planned cost; null when nothing in the plan has a planned cost, as on the plan page (D-217). */
+            plannedCost: components["schemas"]["Money"] | null;
             budgetUsedPercent: number | null;
             overBudget: boolean;
         };
@@ -7417,6 +7448,32 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getShellAttributeOption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The option. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributeOption"];
+                };
+            };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];

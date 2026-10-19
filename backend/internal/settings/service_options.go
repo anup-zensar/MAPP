@@ -214,10 +214,26 @@ func (s *Service) MoveOption(ctx context.Context, a actor.Actor, id string, in O
 	return view, err
 }
 
+// GetOption returns the option id as it is stored now, with its parent options, usage and locks (D-211):
+// the web app reads it after a version conflict. Every signed-in person may read it (FR-008), so a is not
+// used yet.
+func (s *Service) GetOption(ctx context.Context, a actor.Actor, id string) (OptionView, error) {
+	var view OptionView
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		f, stored, attribute, err := s.optionToChange(ctx, id)
+		if err != nil {
+			return err
+		}
+		view, err = s.optionViewOf(ctx, f, stored, attribute)
+		return err
+	})
+	return view, err
+}
+
 // DeleteOption moves the option id to the recycle bin, so that it can be undone (FR-004, FR-018). The last
-// option of a choice attribute is refused with in_use and the reason, and so is an option in use — values
-// on records (also in the recycle bin), options of dependent attributes linked to it, conditions: set it
-// inactive instead.
+// option of a choice attribute is refused with in_use and the reason — which the option's delete lock
+// also gives (D-211) — and so is an option in use — values on records (also in the recycle bin), options
+// of dependent attributes linked to it, conditions: set it inactive instead.
 func (s *Service) DeleteOption(ctx context.Context, a actor.Actor, id string) (history.BinEntry, error) {
 	var entry history.BinEntry
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -370,6 +386,20 @@ func (f formData) optionView(o Option, a Attribute, u *usageIndex) OptionView {
 	}
 	return OptionView{
 		ID: o.ID, AttributeID: o.AttributeID, Label: o.Label, Position: o.Position, ParentOptions: parents,
-		Active: o.Active, Usage: u.option(o, a), Meta: o.Meta,
+		Active: o.Active, Usage: u.option(o, a), Locks: f.optionLocks(o, a), Meta: o.Meta,
 	}
+}
+
+// optionLocks says what can't be done with the option o of the attribute a, and why (design system 6.6,
+// D-211): the last option of a choice attribute can't be deleted (FR-018), as DeleteOption answers. An
+// option that f does not hold yet (one just created) counts as one more option. Never nil.
+func (f formData) optionLocks(o Option, a Attribute) []Lock {
+	count := len(f.options[a.ID])
+	if _, held := f.optionByID[o.ID]; !held {
+		count++
+	}
+	if a.IsChoice() && count <= 1 {
+		return []Lock{{Field: "delete", Reason: fmt.Sprintf(lastOptionLockMessage, a.Label, o.Label)}}
+	}
+	return []Lock{}
 }

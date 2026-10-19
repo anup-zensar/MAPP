@@ -145,39 +145,41 @@ type SpreadInput struct {
 
 // View is a line item as the API returns it (LineItem).
 type View struct {
-	ID                string                   `json:"id"`
-	ActivityID        string                   `json:"activityId"`
-	Name              string                   `json:"name"`
-	Owner             *people.PersonRef        `json:"owner"`
-	Description       string                   `json:"description"`
-	Currency          CurrencyView             `json:"currency"`
-	PlannedCost       money.Money              `json:"plannedCost"`
-	PlannedCostUSD    money.Money              `json:"plannedCostUsd"`
-	Spread            SpreadView               `json:"spread"`
-	Attributes        settings.AttributeValues `json:"attributes"`
-	ContractedAmount  *money.Money             `json:"contractedAmount"`
-	RequestSwbs       bool                     `json:"requestSwbs"`
-	SwbsStatus        SwbsStatus               `json:"swbsStatus"`
-	FinanceBudgetYear *int                     `json:"financeBudgetYear"`
-	FinanceBudgetItem *FinanceBudgetItemRef    `json:"financeBudgetItem"`
-	Missing           []settings.MissingField  `json:"missing"` // what still blocks submitting, in order (data model §3.6)
+	ID                 string                   `json:"id"`
+	ActivityID         string                   `json:"activityId"`
+	Name               string                   `json:"name"`
+	Owner              *people.PersonRef        `json:"owner"`
+	Description        string                   `json:"description"`
+	Currency           CurrencyView             `json:"currency"`
+	PlannedCost        money.Money              `json:"plannedCost"`
+	PlannedCostUSD     money.Money              `json:"plannedCostUsd"`
+	PlannedCostDisplay money.Money              `json:"plannedCostDisplay"` // PlannedCostUSD in the reader's display currency (D-213)
+	Spread             SpreadView               `json:"spread"`
+	Attributes         settings.AttributeValues `json:"attributes"`
+	ContractedAmount   *money.Money             `json:"contractedAmount"`
+	RequestSwbs        bool                     `json:"requestSwbs"`
+	SwbsStatus         SwbsStatus               `json:"swbsStatus"`
+	FinanceBudgetYear  *int                     `json:"financeBudgetYear"`
+	FinanceBudgetItem  *FinanceBudgetItemRef    `json:"financeBudgetItem"`
+	Missing            []settings.MissingField  `json:"missing"` // what still blocks submitting, in order (data model §3.6)
 	record.Meta
 }
 
 // ActivityView is what the line-item screens need to know about the activity (LineItemActivity).
 type ActivityView struct {
-	ID                   string           `json:"id"`
-	Name                 string           `json:"name"`
-	Status               string           `json:"status"`           // the activity's stored status
-	RestartsApproval     bool             `json:"restartsApproval"` // Submitted or Approved
-	StartDate            *date.Date       `json:"startDate"`
-	EndDate              *date.Date       `json:"endDate"`
-	Ongoing              bool             `json:"ongoing"`
-	PlannedCost          *money.Money     `json:"plannedCost"` // USD
-	Path                 []errs.RecordRef `json:"path"`        // plan, campaign, initiative
-	PlanYear             int              `json:"planYear"`
-	DefaultSpreadMethod  SpreadMethod     `json:"defaultSpreadMethod"`
-	DefaultFinanceBudget *string          `json:"defaultFinanceBudget"` // the plan's default budget name
+	ID                    string           `json:"id"`
+	Name                  string           `json:"name"`
+	Status                string           `json:"status"`           // the activity's stored status
+	RestartsApproval      bool             `json:"restartsApproval"` // Submitted or Approved
+	StartDate             *date.Date       `json:"startDate"`
+	EndDate               *date.Date       `json:"endDate"`
+	Ongoing               bool             `json:"ongoing"`
+	PlannedCost           *money.Money     `json:"plannedCost"` // USD
+	Path                  []errs.RecordRef `json:"path"`        // plan, campaign, initiative
+	PlanYear              int              `json:"planYear"`
+	DefaultSpreadMethod   SpreadMethod     `json:"defaultSpreadMethod"`
+	DefaultFinanceBudget  *string          `json:"defaultFinanceBudget"`  // the plan's default budget name
+	BusinessUnitOptionIDs []string         `json:"businessUnitOptionIds"` // the plan's Business unit options (D-212)
 }
 
 // UnassignedBalance is the activity's planned cost minus its line items' USD planned costs
@@ -197,7 +199,8 @@ type SpreadGridColumn struct {
 	OutsideActivityDates bool    `json:"outsideActivityDates"`
 }
 
-// SpreadGridRow is one line item's row of the grid, in USD (SpreadGridRow).
+// SpreadGridRow is one line item's row of the grid, in USD or, in an answer, in the reader's display
+// currency (SpreadGridRow, D-213).
 type SpreadGridRow struct {
 	LineItemID string         `json:"lineItemId"`
 	Name       string         `json:"name"`
@@ -205,7 +208,8 @@ type SpreadGridRow struct {
 	Total      money.Money    `json:"total"`
 }
 
-// SpreadGrid is the activity's line items by month, in USD (SpreadGrid).
+// SpreadGrid is the activity's line items by month, in USD or, in an answer, in the reader's display
+// currency (SpreadGrid, D-213).
 type SpreadGrid struct {
 	Columns []SpreadGridColumn `json:"columns"`
 	Rows    []SpreadGridRow    `json:"rows"`

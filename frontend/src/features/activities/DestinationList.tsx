@@ -66,7 +66,7 @@ export function DestinationList({
   error,
 }: DestinationListProps) {
   const groupId = useId();
-  const { date } = useFormatters();
+  const format = useFormatters();
   const errorId = `${groupId}-error`;
 
   return (
@@ -104,7 +104,7 @@ export function DestinationList({
                       )}
                     </label>
                     <span id={datesId} className={styles.dates}>
-                      {datesText(item.startDate, item.endDate, false, date)}
+                      {datesText(item.startDate, item.endDate, false, format)}
                     </span>
                     {problem !== null && <LockedNote id={reasonId}>{problem}</LockedNote>}
                   </div>

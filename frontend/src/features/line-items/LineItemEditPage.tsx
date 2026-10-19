@@ -9,14 +9,8 @@ import { recordHref } from '@/lib/recordLinks';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { LineItemForm } from './LineItemForm';
 import { editFormState } from './lineItemFormState';
-import { planIdOf } from './lineItemLinks';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
-import {
-  useLineItem,
-  useLineItemFormOptions,
-  usePlanBusinessUnit,
-  useUpdateLineItem,
-} from './lineItemsApi';
+import { useLineItem, useLineItemFormOptions, useUpdateLineItem } from './lineItemsApi';
 import type { LineItemDetails, LineItemFormOptions } from './lineItemsApi';
 import { editTitle, savedToast } from './lineItemText';
 
@@ -34,8 +28,6 @@ export function LineItemEditPage() {
   const activityId = details.data?.activity.id ?? '';
   const options = useLineItemFormOptions(activityId, Boolean(activityId));
   const attributeForm = useAttributeForm('lineItem');
-  const planId = details.data ? planIdOf(details.data.activity) : undefined;
-  const businessUnit = usePlanBusinessUnit(planId);
   usePageTitle(details.data ? `Edit ${details.data.lineItem.name}` : LOADING_TITLE);
 
   const failed = [details, options, attributeForm].find((query) => query.isError);
@@ -48,7 +40,7 @@ export function LineItemEditPage() {
       />
     );
   }
-  if (!details.data || !options.data || !attributeForm.data || businessUnit.isLoading) {
+  if (!details.data || !options.data || !attributeForm.data) {
     return <LineItemLoading title={LOADING_TITLE} />;
   }
   return (
@@ -56,7 +48,6 @@ export function LineItemEditPage() {
       details={details.data}
       options={options.data}
       attributeForm={attributeForm.data}
-      businessUnit={businessUnit.data ?? []}
       focusField={search.get('field')}
     />
   );
@@ -66,12 +57,11 @@ interface EditFormProps {
   details: LineItemDetails;
   options: LineItemFormOptions;
   attributeForm: AttributeForm;
-  businessUnit: string[];
   focusField: string | null;
 }
 
 /** The form once everything is loaded: the line item and its version are copied once. */
-function EditForm({ details, options, attributeForm, businessUnit, focusField }: EditFormProps) {
+function EditForm({ details, options, attributeForm, focusField }: EditFormProps) {
   const { lineItem } = details;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -87,7 +77,8 @@ function EditForm({ details, options, attributeForm, businessUnit, focusField }:
       mode="edit"
       options={options}
       attributeForm={attributeForm}
-      businessUnit={businessUnit}
+      // The plan's Business unit options decide which conditional attributes show (D-212).
+      businessUnit={details.activity.businessUnitOptionIds}
       initial={initial}
       stored={lineItem}
       title={editTitle(lineItem.name)}

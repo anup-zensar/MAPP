@@ -151,7 +151,7 @@ func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, acti
 		}
 		if usd, err := rates.ToUSD(view.PlannedCost); err == nil {
 			converted := money.USD(usd)
-			view.PlannedCostUSD = &converted
+			view.PlannedCostDisplay = &converted // approvals converts it to the reader's display currency
 		}
 		if li.FinanceBudgetItemID != "" {
 			item, found, err := p.settings.GetFinanceBudgetItem(ctx, li.FinanceBudgetItemID)

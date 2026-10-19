@@ -99,4 +99,7 @@ type Attributes interface {
 type People interface {
 	// Person returns the person with id as records show them, active or not, and false when there is none.
 	Person(ctx context.Context, id string) (people.PersonRef, bool, error)
+	// DisplayRateOf returns the display currency the person personID shows amounts in, with its rate in
+	// units per 1 USD (USD and "1" when they have not chosen one; 003 FR-023, D-213).
+	DisplayRateOf(ctx context.Context, personID string) (people.DisplayRate, error)
 }

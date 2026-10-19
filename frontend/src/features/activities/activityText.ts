@@ -5,6 +5,7 @@ import type { components } from '@/api/schema';
 import { formatMoneyText, formatPercent } from '@/lib/decimal';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import { plural } from '@/lib/text';
+import type { Formatters } from '@/lib/useFormatters';
 
 /** The plan model's facts the goals are calculated with. */
 export type ModelFacts = components['schemas']['ActivityModelFacts'];
@@ -12,21 +13,25 @@ export type ModelFacts = components['schemas']['ActivityModelFacts'];
 /** Shown for an empty value (design system §6.3). */
 export const EMPTY = '—';
 
+/** The date writers of useFormatters() that dates and date ranges need. */
+export type DateWriters = Pick<Formatters, 'date' | 'dateRange'>;
+
 /**
- * An activity's dates with both written in full: "01 Mar 2026 – 31 May 2026", "Ongoing from
- * 01 Mar 2026", or "—" while they are not both set. `date` writes one date in the person's format.
+ * An activity's dates as every date range on screen reads them (D-216): "01 Mar – 31 May 2026"
+ * (useFormatters().dateRange, in the person's date format), "Ongoing from 01 Mar 2026", or "—"
+ * while they are not both set.
  */
 export function datesText(
   start: string | null | undefined,
   end: string | null | undefined,
   ongoing: boolean,
-  date: (date: string) => string,
+  format: DateWriters,
 ): string {
   if (ongoing && start) {
-    return `Ongoing from ${date(start)}`;
+    return `Ongoing from ${format.date(start)}`;
   }
   if (start && end) {
-    return `${date(start)} – ${date(end)}`;
+    return format.dateRange(start, end);
   }
   return EMPTY;
 }

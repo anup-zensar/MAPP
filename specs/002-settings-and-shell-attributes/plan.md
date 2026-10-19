@@ -458,10 +458,11 @@ only from the recycle bin (001's endpoints).
 | `POST /api/shell-attributes/{attributeId}/options` | `OptionCreate` → 201 `ShellAttributeOption` | 400, 404 | FR-018, FR-022 |
 | `POST /api/shell-attributes/{attributeId}/options/import-check` | `OptionImportRequest` → `OptionImportCheck` | 400, 404 | FR-031 |
 | `POST /api/shell-attributes/{attributeId}/options/import` | `OptionImportRequest` → `OptionImportResult` | 400, 404 | FR-031 |
+| `GET /api/shell-attribute-options/{optionId}` | → `ShellAttributeOption` (read after a 409 `version_conflict`, D-211) | 404 | FR-018 |
 | `PATCH /api/shell-attribute-options/{optionId}` | `OptionUpdate` → `ShellAttributeOption` | 400, 404, 409 | FR-018, FR-022 |
 | `POST /api/shell-attribute-options/{optionId}/status` | `StatusUpdate` → `ShellAttributeOption` | 400, 404, 409 | FR-018 |
 | `POST /api/shell-attribute-options/{optionId}/move` | `OptionMove` → `ShellAttributeOption` | 400, 404, 409 | FR-018 |
-| `DELETE /api/shell-attribute-options/{optionId}` | → `DeleteResult` | 404, 409 | FR-004, FR-018 |
+| `DELETE /api/shell-attribute-options/{optionId}` | → `DeleteResult` | 404, 409 `in_use` (in use, or the last option — also the option's `delete` lock, D-211) | FR-004, FR-018 |
 | `GET /api/shell-attribute-forms/{level}` | → `AttributeForm` | 400 | FR-024 |
 | `POST /api/shell-attribute-forms/{level}/check` | `AttributeCheckRequest` → `AttributeCheckResult` | 400 | FR-020, FR-025 – FR-027 |
 | `GET /api/currencies` | → `CurrencyPage` | — | FR-028 |

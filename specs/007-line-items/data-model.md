@@ -194,6 +194,13 @@ An inactive currency, an inactive owner and inactive attribute options are kept 
 A negative balance warns everywhere and never blocks saving; it blocks submitting the activity (D-016). A
 positive balance is only advice (Q-008 default).
 
+**Currency of the answers (FR-005, D-213).** The balance, the grid (§3.8) and each line item's
+`plannedCostDisplay` are worked out in USD as above, then the line-items section and the line-item page
+answer each amount converted once into the reader's display currency (half up to the cent); `state` and
+`roundingHint` stay as worked out in USD. The line-item form's options answer the balance in USD, because
+the form calculates "After saving" from the typed amount and the web app never converts (D-061).
+`plannedCostUsd` is always USD.
+
 ### 3.8 Spread grid of an activity — FR-003, FR-020
 
 - **Columns**, in this order: every activity month (for an ongoing activity: its start month) together with

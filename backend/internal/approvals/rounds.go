@@ -44,12 +44,16 @@ func (s *Service) Submission(ctx context.Context, a actor.Actor, activityID stri
 		if err != nil {
 			return err
 		}
+		shown, err := s.displayOf(ctx, a)
+		if err != nil {
+			return err
+		}
 
 		submission = Submission{
 			ActivityID: facts.ID, ActivityName: facts.Name, ActivityVersion: facts.Version,
 			Kind: kindSubmit, Available: submittable(facts.Status), RoundNumber: nextRoundNumber(rounds),
 			Ready: len(check.Problems) == 0, Problems: check.Problems, Levels: []LevelView{},
-			UnassignedPlannedCost: check.UnassignedPlannedCost,
+			UnassignedPlannedCost: shown.optional(check.UnassignedPlannedCost), // in a's display currency (D-213)
 		}
 		if facts.Status == StatusDeclined {
 			submission.Kind = kindResubmit

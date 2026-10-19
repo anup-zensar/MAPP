@@ -289,14 +289,32 @@ type PersonInput struct {
 	TeamIDs  []string `json:"teamIds"`
 }
 
-// PersonUpdate is the body of PATCH /api/people/{personId} and of its impact check (PersonUpdate): the
-// whole form, TeamIDs being every team after the change.
+// PersonUpdate is the body of PATCH /api/people/{personId} and of its impact check (PersonUpdate): only
+// the fields to change, plus the version (D-203, D-210). A field that is not sent (nil) keeps its value;
+// TeamIDs, when sent, is every team after the change.
 type PersonUpdate struct {
-	Name     string   `json:"name"`
-	Email    string   `json:"email"`
-	JobTitle string   `json:"jobTitle"`
-	TeamIDs  []string `json:"teamIds"`
-	Version  *int     `json:"version"`
+	Name     *string   `json:"name"`
+	Email    *string   `json:"email"`
+	JobTitle *string   `json:"jobTitle"`
+	TeamIDs  *[]string `json:"teamIds"`
+	Version  *int      `json:"version"`
+}
+
+// applyTo returns form with the fields u sends put in place of the stored values.
+func (u PersonUpdate) applyTo(form personForm) personForm {
+	if u.Name != nil {
+		form.Name = *u.Name
+	}
+	if u.Email != nil {
+		form.Email = *u.Email
+	}
+	if u.JobTitle != nil {
+		form.JobTitle = *u.JobTitle
+	}
+	if u.TeamIDs != nil {
+		form.TeamIDs = *u.TeamIDs
+	}
+	return form
 }
 
 // TeamPlanUse is a plan that uses a team, in the recycle bin or not (TeamPlanUse).
@@ -332,14 +350,32 @@ type TeamInput struct {
 	MemberIDs   []string `json:"memberIds"`
 }
 
-// TeamUpdate is the body of PATCH /api/teams/{teamId} and of its impact check (TeamUpdate): the whole
-// form, MemberIDs being every member after the change.
+// TeamUpdate is the body of PATCH /api/teams/{teamId} and of its impact check (TeamUpdate): only the
+// fields to change, plus the version (D-203, D-210). A field that is not sent (nil) keeps its value;
+// MemberIDs, when sent, is every member after the change.
 type TeamUpdate struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Colour      string   `json:"colour"`
-	MemberIDs   []string `json:"memberIds"`
-	Version     *int     `json:"version"`
+	Name        *string   `json:"name"`
+	Description *string   `json:"description"`
+	Colour      *string   `json:"colour"`
+	MemberIDs   *[]string `json:"memberIds"`
+	Version     *int      `json:"version"`
+}
+
+// applyTo returns form with the fields u sends put in place of the stored values.
+func (u TeamUpdate) applyTo(form teamForm) teamForm {
+	if u.Name != nil {
+		form.Name = *u.Name
+	}
+	if u.Description != nil {
+		form.Description = *u.Description
+	}
+	if u.Colour != nil {
+		form.Colour = *u.Colour
+	}
+	if u.MemberIDs != nil {
+		form.MemberIDs = *u.MemberIDs
+	}
+	return form
 }
 
 // StatusUpdate is the body of POST /api/people/{personId}/status and /api/teams/{teamId}/status

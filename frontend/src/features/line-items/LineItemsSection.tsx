@@ -82,7 +82,8 @@ export function LineItemsSection({ activityId }: LineItemsSectionProps) {
   }
 
   const { items, balance, grid, activity } = section.data;
-  const usdCode = balance.assigned.currency;
+  // The reader's display currency: the API answers the USD amounts in it (FR-005, D-213).
+  const displayCode = balance.assigned.currency;
 
   return (
     <Card
@@ -105,7 +106,7 @@ export function LineItemsSection({ activityId }: LineItemsSectionProps) {
                     {LABEL.plannedCost}
                   </th>
                   <th scope="col" className={styles.number}>
-                    {usdColumn(usdCode)}
+                    {usdColumn(displayCode)}
                   </th>
                   <th scope="col">Spread</th>
                   <th scope="col">Completeness</th>
@@ -174,7 +175,7 @@ function Row({
       </td>
       <td>{item.currency.code}</td>
       <td className={styles.number}>{moneyText(item.plannedCost)}</td>
-      <td className={styles.number}>{moneyText(item.plannedCostUsd)}</td>
+      <td className={styles.number}>{moneyText(item.plannedCostDisplay)}</td>
       <td>{SPREAD_LABELS[item.spread.method]}</td>
       <td>
         <CompletenessChip

@@ -5,9 +5,9 @@ import { useToast } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { LineItemForm } from './LineItemForm';
 import { newFormState } from './lineItemFormState';
-import { activityLineItemsHref, planIdOf } from './lineItemLinks';
+import { activityLineItemsHref } from './lineItemLinks';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
-import { useCreateLineItem, useLineItemFormOptions, usePlanBusinessUnit } from './lineItemsApi';
+import { useCreateLineItem, useLineItemFormOptions } from './lineItemsApi';
 import { createdToast, NEW_TITLE } from './lineItemText';
 
 /**
@@ -22,8 +22,6 @@ export function LineItemCreatePage() {
   const { show } = useToast();
   const options = useLineItemFormOptions(activityId);
   const attributeForm = useAttributeForm('lineItem');
-  const planId = options.data ? planIdOf(options.data.activity) : undefined;
-  const businessUnit = usePlanBusinessUnit(planId);
   const create = useCreateLineItem(activityId);
   // Each Save and add another starts a new form.
   const [round, setRound] = useState(0);
@@ -38,7 +36,7 @@ export function LineItemCreatePage() {
       />
     );
   }
-  if (!options.data || !attributeForm.data || businessUnit.isLoading) {
+  if (!options.data || !attributeForm.data) {
     return <LineItemLoading title={NEW_TITLE} />;
   }
 
@@ -51,8 +49,8 @@ export function LineItemCreatePage() {
       mode="create"
       options={options.data}
       attributeForm={attributeForm.data}
-      // A plan that cannot be read shows the attributes for every business unit as without one.
-      businessUnit={businessUnit.data ?? []}
+      // The plan's Business unit options decide which conditional attributes show (D-212).
+      businessUnit={activity.businessUnitOptionIds}
       initial={newFormState(options.data)}
       title={NEW_TITLE}
       breadcrumbEnd={NEW_TITLE}

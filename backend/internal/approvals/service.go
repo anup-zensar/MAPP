@@ -35,6 +35,8 @@ type Service struct {
 	ids        *ids.Generator
 	history    *history.Service
 	now        clock.Clock
+	// displayRates reads the reader's display currency (UseDisplayRates, D-213); nil shows USD.
+	displayRates DisplayRates
 }
 
 // NewService returns the approvals service. It keeps its records in repo, reads people from peopleRepo

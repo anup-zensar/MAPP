@@ -39,13 +39,27 @@ describe('PlanTree (FR-013, FR-014)', () => {
     expect(planRow).toHaveTextContent('FY2026 Lubricants Europe');
     expect(planRow).toHaveTextContent('P-1001');
     expect(planRow).toHaveTextContent('Priya Raman');
-    expect(planRow).toHaveTextContent('1 Jan – 31 Dec 2026');
+    expect(planRow).toHaveTextContent('01 Jan – 31 Dec 2026');
     expect(planRow).toHaveTextContent('Draft');
     expect(planRow).toHaveTextContent('$1,200,000.00Remaining $1,200,000.00');
     expect(planRow).toHaveTextContent('0 %');
     expect(
       screen.getByText('No campaigns yet — a campaign is a theme that runs for most of the year.'),
     ).toBeInTheDocument();
+  });
+
+  it("writes the plan row's dates in the person's date format, like every other row (D-216, 003 FR-024)", () => {
+    const user = testUser();
+    renderWithProviders(<PlanTree plan={plan()} childNodes={[]} />, {
+      user: { ...user, preferences: { ...user.preferences, dateFormat: 'DD/MM/YYYY' } },
+      route: '/plans/P-1001',
+      path: '/plans/:planId',
+    });
+
+    const planRow = within(screen.getByRole('treegrid', { name: 'Plan tree' })).getAllByRole(
+      'row',
+    )[1];
+    expect(planRow).toHaveTextContent('01/01/2026 – 31/12/2026');
   });
 
   it('says how far the campaigns go over the plan budget', () => {

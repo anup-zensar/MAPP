@@ -38,6 +38,10 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
     expect(details).toHaveTextContent('Description—');
 
     const lineItems = within(panel).getByRole('region', { name: 'Line items' });
+    // The second amount is in the reader's display currency, as the API converted it (D-213).
+    expect(
+      within(lineItems).getByRole('columnheader', { name: 'Planned cost (USD)' }),
+    ).toBeInTheDocument();
     const row = within(lineItems).getByRole('row', { name: /Agency fee/ });
     expect(row).toHaveTextContent('40,000.00 EUR');
     expect(row).toHaveTextContent('$43,200.00');

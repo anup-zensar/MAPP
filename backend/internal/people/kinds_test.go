@@ -158,7 +158,7 @@ func TestDescribe_TeamsMembersStatusColour_FR028(t *testing.T) {
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
 	europe := f.createTeam(t, alex, TeamInput{Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{priya.ID}})
 	_, err := f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID, TeamUpdate{
-		Name: "Lubricants Europe", Description: "Europe", Colour: "teal", MemberIDs: []string{priya.ID, daniel.ID}, Version: version(1),
+		Name: text("Lubricants Europe"), Description: text("Europe"), Colour: text("teal"), MemberIDs: idList(priya.ID, daniel.ID), Version: version(1),
 	})
 	if err != nil {
 		t.Fatalf("UpdateTeam: %v", err)

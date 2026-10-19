@@ -104,7 +104,8 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		Workflows: activityWorkflows{repo: approvalsRepo},
 	})
 	lineItemsService := lineitems.NewService(db, lineItemsRepo, generator, historyService,
-		lineItemDeps(settingsService, settingsRepo, activitiesService, activitiesRepo, campaignsRepo, plansRepo, peopleRepo), now)
+		lineItemDeps(settingsService, settingsRepo, activitiesService, activitiesRepo, campaignsRepo, plansRepo, peopleRepo,
+			peopleService), now)
 	activitiesService.UseLineItems(lineItemsForActivities{svc: lineItemsService})
 
 	// Feature 005: campaigns and initiatives, with their history kinds under the plan kind (parents first).
@@ -159,6 +160,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// Activities (006, and 007 through it) tell approvals when a re-approval change or a restore from the
 	// recycle bin ends an activity's approval (FR-022, FR-023).
 	activitiesService.UseApprovalHooks(activityApprovalHooks{svc: approvalsService})
+	approvalsService.UseDisplayRates(peopleService) // amounts on the Approvals page (D-213)
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
 
 	// Home (009): a read-only dashboard over the services of 003–008 (home_sources.go).

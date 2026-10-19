@@ -43,14 +43,13 @@ func ParseScope(text string) (Scope, error) {
 // SummaryView is the four summary cards and whether to show Getting started (HomeSummary, FR-005, FR-006,
 // FR-020).
 type SummaryView struct {
-	Scope               Scope            `json:"scope"`
-	DisplayCurrency     string           `json:"displayCurrency"`
-	UnavailableCurrency *string          `json:"unavailableCurrency"` // always null: an inactive display currency stays in use (D-201)
-	GettingStarted      *string          `json:"gettingStarted"`      // notInTeam, noTeamPlans or null
-	Plans               PlanCounts       `json:"plans"`
-	ActivitiesOwned     ActivityCounts   `json:"activitiesOwned"`
-	WaitingForMe        WaitingCounts    `json:"waitingForMe"`
-	PlannedCost         PlannedCostTotal `json:"plannedCost"`
+	Scope           Scope            `json:"scope"`
+	DisplayCurrency string           `json:"displayCurrency"` // an inactive one stays in use (D-063, D-201)
+	GettingStarted  *string          `json:"gettingStarted"`  // notInTeam, noTeamPlans or null
+	Plans           PlanCounts       `json:"plans"`
+	ActivitiesOwned ActivityCounts   `json:"activitiesOwned"`
+	WaitingForMe    WaitingCounts    `json:"waitingForMe"`
+	PlannedCost     PlannedCostTotal `json:"plannedCost"`
 }
 
 // PlanCounts are the plans in scope by status (HomePlanCounts).
@@ -83,11 +82,14 @@ type PlannedCostTotal struct {
 	PlansWithoutBudget int          `json:"plansWithoutBudget"`
 }
 
-// TeamView is one team of a plan row, and whether the person is a member (HomeTeam).
+// TeamView is one team of a plan row as every record shows a team (003's TeamRef: its colour, and
+// whether it is active), and whether the person is a member (HomeTeam, D-217).
 type TeamView struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Mine bool   `json:"mine"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Colour string `json:"colour"`
+	Active bool   `json:"active"`
+	Mine   bool   `json:"mine"`
 }
 
 // PlanRow is one plan of Plans at a glance (HomePlanRow, FR-008, FR-009).
@@ -101,8 +103,8 @@ type PlanRow struct {
 	CampaignCount         int          `json:"campaignCount"`
 	ActivityCount         int          `json:"activityCount"`
 	ApprovedActivityCount int          `json:"approvedActivityCount"`
-	Budget                *money.Money `json:"budget"` // null: "—" ("No budget")
-	PlannedCost           money.Money  `json:"plannedCost"`
+	Budget                *money.Money `json:"budget"`      // null: "—" ("No budget")
+	PlannedCost           *money.Money `json:"plannedCost"` // null when nothing is planned, as on the plan page (D-217)
 	BudgetUsedPercent     *int         `json:"budgetUsedPercent"`
 	OverBudget            bool         `json:"overBudget"`
 }

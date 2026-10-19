@@ -31,9 +31,9 @@ var now = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
 // The teams of these tests.
 var (
-	lubricantsEurope   = Team{ID: "T-1001", Name: "Lubricants Europe"}    // Priya, Daniel, Sara
-	mobilityChina      = Team{ID: "T-1002", Name: "Mobility China"}       // Mei, Sara
-	globalMarketingOps = Team{ID: "T-1003", Name: "Global Marketing Ops"} // Alex
+	lubricantsEurope   = Team{ID: "T-1001", Name: "Lubricants Europe", Colour: "blue", Active: true}      // Priya, Daniel, Sara
+	mobilityChina      = Team{ID: "T-1002", Name: "Mobility China", Colour: "teal", Active: true}         // Mei, Sara
+	globalMarketingOps = Team{ID: "T-1003", Name: "Global Marketing Ops", Colour: "violet", Active: true} // Alex
 )
 
 // fakeSources are Sources as the tests set them. Containers, activities and waiting lists are kept per

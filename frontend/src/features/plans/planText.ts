@@ -69,9 +69,12 @@ export function contentsText(contents: PlanContents): string {
   );
 }
 
-/** A plan's dates in the tree: "1 Jan – 31 Dec 2026". */
-export function yearDates(year: number): string {
-  return `1 Jan – 31 Dec ${year}`;
+/**
+ * A plan's dates in the tree, its whole year, as every date range reads (D-216): "01 Jan – 31 Dec
+ * 2026" with `dateRange` of useFormatters(), in the person's date format.
+ */
+export function yearDates(year: number, dateRange: (start: string, end: string) => string): string {
+  return dateRange(`${year}-01-01`, `${year}-12-31`);
 }
 
 /** "<n> of <m> activities approved" on cards and rows. */

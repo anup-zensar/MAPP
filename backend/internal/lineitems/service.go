@@ -56,9 +56,10 @@ func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, 
 
 // Section returns the Line items section of the activity activityID (FR-001 – FR-004, FR-023): its line
 // items in creation order, each with its USD amount at the currency's current rate, its spread, what is
-// missing and its SWBS request status; the unassigned planned cost; and the spread grid in USD. Nothing in
-// USD is stored, so a rate change in Settings shows at once and changes no status (FR-013, D-141). Every
-// signed-in person may see it (D-004), so a is not used yet.
+// missing and its SWBS request status; the unassigned planned cost; and the spread grid. Nothing in USD is
+// stored, so a rate change in Settings shows at once and changes no status (FR-013, D-141). The amounts the
+// section shows in USD are answered in a's display currency (FR-005, D-213); every signed-in person may see
+// it (D-004).
 func (s *Service) Section(ctx context.Context, a actor.Actor, activityID string) (Section, error) {
 	var section Section
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -74,7 +75,13 @@ func (s *Service) Section(ctx context.Context, a actor.Actor, activityID string)
 		if err != nil {
 			return err
 		}
-		section = Section{Activity: activityView(f), Items: views, Balance: balanceOf(f, views), Grid: Grid(f, views)}
+		d, err := s.displayOf(ctx, a)
+		if err != nil {
+			return err
+		}
+		section = Section{
+			Activity: activityView(f), Items: d.views(views), Balance: d.balance(balanceOf(f, views)), Grid: d.grid(Grid(f, views)),
+		}
 		return nil
 	})
 	if err != nil {
@@ -86,7 +93,8 @@ func (s *Service) Section(ctx context.Context, a actor.Actor, activityID string)
 // FormOptions returns what a new line item of the activity activityID starts with and the choices the
 // line-item form offers (FR-008, FR-011, FR-015): the defaults, each with its source; the active currencies,
 // USD first; the plan's year and every year with active finance budget items; their active items, the plan's
-// default finance budget first. Every signed-in person may add line items (D-004), so a is not used yet.
+// default finance budget first. Its balance stays in USD, the currency the form calculates in (D-213).
+// Every signed-in person may add line items (D-004), so a is not used yet.
 func (s *Service) FormOptions(ctx context.Context, a actor.Actor, activityID string) (FormOptions, error) {
 	var options FormOptions
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -267,7 +275,7 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, activityID string, 
 		if f, err = s.restart(ctx, a, f, fmt.Sprintf(addedReason, li.Name, li.ID, li.PlannedCost.Format(), li.Currency)); err != nil {
 			return err
 		}
-		view, err = s.view(ctx, f, li)
+		view, err = s.shownView(ctx, a, f, li)
 		return err
 	})
 	if err != nil {
@@ -276,7 +284,8 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, activityID string, 
 	return view, nil
 }
 
-// Get returns the line item id with its activity and the activity's unassigned planned cost now (FR-026).
+// Get returns the line item id with its activity and the activity's unassigned planned cost now (FR-026),
+// its amounts in USD answered in a's display currency (FR-005, D-213).
 // A line item that is gone answers 404 with why (D-154): its activity was deleted (it went to the recycle bin
 // with it), or the line item itself no longer exists.
 func (s *Service) Get(ctx context.Context, a actor.Actor, id string) (Details, error) {
@@ -301,8 +310,12 @@ func (s *Service) Get(ctx context.Context, a actor.Actor, id string) (Details, e
 		if err != nil {
 			return err
 		}
+		d, err := s.displayOf(ctx, a)
+		if err != nil {
+			return err
+		}
 		i := slices.IndexFunc(views, func(v View) bool { return v.ID == id })
-		details = Details{LineItem: views[i], Activity: activityView(f), Balance: balanceOf(f, views)}
+		details = Details{LineItem: d.view(views[i]), Activity: activityView(f), Balance: d.balance(balanceOf(f, views))}
 		return nil
 	})
 	if err != nil {
@@ -375,7 +388,7 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, u Update
 			return err
 		}
 		if len(changes) == 0 {
-			view, err = s.view(ctx, f, before)
+			view, err = s.shownView(ctx, a, f, before)
 			return err
 		}
 		costChanged := after.PlannedCost != before.PlannedCost || after.Currency != before.Currency
@@ -400,7 +413,7 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, u Update
 				return err
 			}
 		}
-		view, err = s.view(ctx, f, after)
+		view, err = s.shownView(ctx, a, f, after)
 		return err
 	})
 	if err != nil {
@@ -503,7 +516,7 @@ func (s *Service) Duplicate(ctx context.Context, a actor.Actor, id string, in Du
 		if f, err = s.restart(ctx, a, f, fmt.Sprintf(addedReason, dup.Name, dup.ID, dup.PlannedCost.Format(), dup.Currency)); err != nil {
 			return err
 		}
-		view, err = s.view(ctx, f, dup)
+		view, err = s.shownView(ctx, a, f, dup)
 		return err
 	})
 	if err != nil {
@@ -608,6 +621,20 @@ func (s *Service) facts(ctx context.Context, activityID string) (ActivityFacts, 
 	return f, nil
 }
 
+// shownView returns li of the activity f as an answer shows it to a: its view, with its USD planned cost
+// also in a's display currency (D-213).
+func (s *Service) shownView(ctx context.Context, a actor.Actor, f ActivityFacts, li LineItem) (View, error) {
+	v, err := s.view(ctx, f, li)
+	if err != nil {
+		return View{}, err
+	}
+	d, err := s.displayOf(ctx, a)
+	if err != nil {
+		return View{}, err
+	}
+	return d.view(v), nil
+}
+
 // views returns the views of the activity's line items, in the order given.
 func (s *Service) views(ctx context.Context, f ActivityFacts, items []LineItem) ([]View, error) {
 	views := make([]View, 0, len(items))
@@ -645,6 +672,7 @@ func (s *Service) view(ctx context.Context, f ActivityFacts, li LineItem) (View,
 		FinanceBudgetYear: li.FinanceBudgetYear,
 		Meta:              li.Meta,
 	}
+	v.PlannedCostDisplay = v.PlannedCostUSD // in USD until an answer converts it (display.view)
 	if li.ContractedAmount != nil {
 		v.ContractedAmount = &money.Money{Amount: *li.ContractedAmount, Currency: li.Currency}
 	}
@@ -720,6 +748,7 @@ func activityView(f ActivityFacts) ActivityView {
 		ID: f.ID, Name: f.Name, Status: f.Status, RestartsApproval: f.restartsApproval(),
 		StartDate: f.StartDate, EndDate: f.EndDate, Ongoing: f.Ongoing,
 		Path: orEmpty(f.Path), PlanYear: f.PlanYear, DefaultSpreadMethod: defaultSpread(f),
+		BusinessUnitOptionIDs: orEmpty(f.BusinessUnit),
 	}
 	if f.PlannedCost != nil {
 		planned := money.USD(*f.PlannedCost)

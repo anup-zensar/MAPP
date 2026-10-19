@@ -251,7 +251,10 @@ SP&A, AOP, SMP, INQ, MQL. Hive9 interface terms are replaced:
 | Plan Log / Finance Log | Activity log |
 
 Buttons use verbs; messages are short, friendly and specific; dates follow the user's format
-(default `DD MMM YYYY`, e.g. 12 Mar 2026).
+(default `DD MMM YYYY`, e.g. 12 Mar 2026). A date range shown as a value is written one way everywhere
+(D-216): in `DD MMM YYYY` with the year once when both dates fall in the same year ("01 Mar – 31 May
+2026"), otherwise both dates in full ("01 Dec 2026 – 31 Jan 2027"); in the other formats both dates in
+full ("01/03/2026 – 31/05/2026"); an ongoing activity reads "Ongoing from 01 Mar 2026".
 
 ---
 

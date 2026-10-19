@@ -42,7 +42,7 @@ func (s *Service) approval(ctx context.Context, a actor.Actor, facts ActivityFac
 
 	view := ActivityApproval{
 		ActivityID: facts.ID, ActivityName: facts.Name, ActivityVersion: facts.Version,
-		Status: facts.Status, DisplayStatus: facts.DisplayStatus, OwnerID: facts.OwnerID,
+		Status: facts.Status, DisplayStatus: facts.DisplayStatus, OwnerID: facts.OwnerID, Owner: d.owner(facts.OwnerID),
 		UpcomingLevels: []LevelView{}, Rounds: make([]RoundView, 0, len(rounds)),
 		Viewer:  Viewer{IsOwner: facts.OwnerID != "" && facts.OwnerID == a.ID, OnBehalfOf: []PersonView{}},
 		Actions: availableActions(facts.Status),

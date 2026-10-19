@@ -1,14 +1,12 @@
 import { useId } from 'react';
 import { ApiError } from '@/api/errors';
-import type { components } from '@/api/schema';
-import { useCurrencies } from '@/api/settingsQueries';
 import { useToast } from '@/components';
+import { currencyLabel, useDisplayCurrencies } from '@/features/people';
+import type { DisplayCurrencyOption } from '@/features/people';
 import { useFormatters } from '@/lib/useFormatters';
 import { useSaveDisplayCurrency } from './homeApi';
 import { CHOICE_NOT_SAVED } from './homeText';
 import styles from './CurrencyPicker.module.css';
-
-type Currency = components['schemas']['Currency'];
 
 interface CurrencyOption {
   code: string;
@@ -17,13 +15,18 @@ interface CurrencyOption {
 }
 
 /**
- * The active currencies (feature 002), plus the person's display currency when it has been set
- * inactive, because it stays in use (D-063, D-201).
+ * The currencies the person can show amounts in, as My profile offers them (003 FR-023, D-217):
+ * the active ones, plus their own display currency when it has been set inactive, because it
+ * stays in use (D-063, D-201). The chosen one is always offered, also while the list loads.
  */
-function currencyOptions(currencies: Currency[] | undefined, current: string): CurrencyOption[] {
-  const options = (currencies ?? [])
-    .filter((currency) => currency.active || currency.code === current)
-    .map((currency) => ({ code: currency.code, label: `${currency.code} — ${currency.name}` }));
+function currencyOptions(
+  currencies: DisplayCurrencyOption[] | undefined,
+  current: string,
+): CurrencyOption[] {
+  const options = (currencies ?? []).map((currency) => ({
+    code: currency.code,
+    label: currencyLabel(currency),
+  }));
   return options.some((option) => option.code === current)
     ? options
     : [{ code: current, label: current }, ...options];
@@ -37,7 +40,7 @@ function currencyOptions(currencies: Currency[] | undefined, current: string): C
 export function CurrencyPicker() {
   const id = useId();
   const { displayCurrency } = useFormatters();
-  const currencies = useCurrencies();
+  const currencies = useDisplayCurrencies();
   const save = useSaveDisplayCurrency();
   const { show } = useToast();
   // The chosen currency shows at once; it goes back to the saved one when the save fails.

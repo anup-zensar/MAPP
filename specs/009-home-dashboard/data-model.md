@@ -25,7 +25,7 @@ the **effective display currency** (§2).
 |---|---|
 | **Plans in scope** | `myTeams`: every plan with at least one of the person's teams (003), each plan once even when several of its teams are the person's (FR-004). `everything`: every plan. Deleted plans are not stored and never count (FR-019) |
 | **Personal cards** | Activities I own, Waiting for my approval, Needs your attention and My activities always cover **all plans** (FR-003 hint, edge case) |
-| **Effective display currency** | The person's display currency (003) when it is active (002), otherwise USD; `unavailableCurrency` then names the inactive one (edge case, plan D-201) |
+| **Display currency** | The person's display currency (003); one set inactive in Settings stays in use with its current rate (D-063, D-201). `unavailableCurrency` was removed from the contract (D-217) |
 | **Conversion** | Sums are made in USD and converted once at the current rate (002), 2 decimals half up (FR-017, D-010) |
 | **Budget used** | `plannedCost × 100 ÷ budget`, rounded half up to a whole number; null when there is no budget (or the budget is 0); **over budget** when planned cost > budget, compared exactly (plan D-176) |
 
@@ -34,7 +34,7 @@ the **effective display currency** (§2).
 | Field | Rule |
 |---|---|
 | `scope` | The scope asked for |
-| `displayCurrency` · `unavailableCurrency` | §2 |
+| `displayCurrency` | §2 |
 | `gettingStarted` | `notInTeam` when the person is in no team; `noTeamPlans` when no plan has one of their teams; otherwise null |
 | `plans` `{count, published, draft}` | Plans in scope by status (domain model §2.1) |
 | `activitiesOwned` `{count, declined, submitted}` | Activities whose owner is the person, all plans; declined and submitted by stored status |
@@ -65,7 +65,7 @@ reason:
 | `negativeBalance` | activity | Unassigned planned cost < 0 (domain model §4.3) | `amount` = how much the line items exceed |
 | `overAllocated` | plan, campaign | Remaining budget < 0 (domain model §4.1, D-015) | `amount` = −remaining budget |
 | `overBudget` | plan, campaign, initiative | A budget is set and planned cost > budget (domain model §4.2) | `amount` = planned cost − budget |
-| `missingFields` | all four | Own needed-to-publish/submit fields missing, or items below needing attention (domain model §2.6) | `missing[]` `{id, label}`, `itemsBelow` |
+| `missingFields` | all four | Own needed-to-publish/submit fields missing, or items below needing attention (domain model §2.6) | `missing[]` `{field, label, reason?}` (contract MissingField), `itemsBelow` |
 
 - A record appears **once** with all its reasons, in the order of the table.
 - Items are ordered by their first reason's group — declined, balance, budget (`overAllocated`,

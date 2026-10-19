@@ -319,7 +319,7 @@ func TestCurrentUser_VersionAndTeams_FR026(t *testing.T) {
 	f.addTeam(t, "Global Marketing Ops", "teal", true, alex)
 	f.addTeam(t, "lubricants Europe", "blue", true, priya)
 	_, err := f.service.UpdatePerson(t.Context(), alex.Actor(), priya.ID, PersonUpdate{
-		Name: priya.Name, Email: priya.Email, JobTitle: "Senior marketer", TeamIDs: []string{"T-1001", "T-1003"}, Version: version(1),
+		Name: text(priya.Name), Email: text(priya.Email), JobTitle: text("Senior marketer"), TeamIDs: idList("T-1001", "T-1003"), Version: version(1),
 	})
 	if err != nil {
 		t.Fatalf("UpdatePerson: %v", err)
@@ -389,7 +389,7 @@ func TestUpdateProfile_EmptyName_FR022(t *testing.T) {
 
 	_, problems := f.service.UpdateProfile(t.Context(), priya.Actor(), ProfileUpdate{Name: "   ", JobTitle: strings.Repeat("j", 121)})
 	_, err := f.service.UpdatePerson(t.Context(), alex.Actor(), priya.ID, PersonUpdate{
-		Name: priya.Name, Email: priya.Email, JobTitle: "Team leader", Version: version(1),
+		Name: text(priya.Name), Email: text(priya.Email), JobTitle: text("Team leader"), Version: version(1),
 	})
 	if err != nil {
 		t.Fatalf("Alex's update: %v", err)
@@ -672,6 +672,19 @@ func plansHook(plans ...PlanUse) PlanSource {
 // version returns a pointer to v, for the Version of updates.
 func version(v int) *int {
 	return &v
+}
+
+// text returns a pointer to s, for a text field an update sends (D-210).
+func text(s string) *string {
+	return &s
+}
+
+// idList returns a pointer to the list of ids, for the teams or members an update sends (D-210).
+func idList(list ...string) *[]string {
+	if list == nil {
+		list = []string{}
+	}
+	return &list
 }
 
 // testClock is a clock that shows a fixed time until Advance moves it.

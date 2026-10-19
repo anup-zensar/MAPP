@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatDateRange, formatMoney } from '@/lib/format';
 import {
   activityCountsText,
   approvedPercent,
@@ -133,17 +133,18 @@ describe('homeText — waiting for my approval (FR-013)', () => {
 describe('homeText — my activities (FR-014)', () => {
   const date = (value: string) => formatDate(value);
 
-  it("writes an activity's dates", () => {
+  it("writes an activity's dates as every date range reads (D-216)", () => {
+    const format = { date, dateRange: (start: string, end: string) => formatDateRange(start, end) };
     expect(
-      datesText({ startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false }, date),
-    ).toBe('01 Mar 2026 – 31 May 2026');
-    expect(datesText({ startDate: '2026-03-01', endDate: null, ongoing: true }, date)).toBe(
+      datesText({ startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false }, format),
+    ).toBe('01 Mar – 31 May 2026');
+    expect(datesText({ startDate: '2026-03-01', endDate: null, ongoing: true }, format)).toBe(
       'Ongoing from 01 Mar 2026',
     );
-    expect(datesText({ startDate: null, endDate: null, ongoing: false }, date)).toBe(
+    expect(datesText({ startDate: null, endDate: null, ongoing: false }, format)).toBe(
       'No dates yet',
     );
-    expect(datesText({ startDate: '2026-03-01', endDate: null, ongoing: false }, date)).toBe(
+    expect(datesText({ startDate: '2026-03-01', endDate: null, ongoing: false }, format)).toBe(
       '01 Mar 2026 – —',
     );
   });

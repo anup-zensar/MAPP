@@ -209,9 +209,10 @@ Active}`, `DisplayCurrencyPage{Items, Total}`, `ChangeImpact{Warnings []ImpactWa
 `ImpactWarning{Kind, Message string; Count int}` (the JSON of 002's schemas; `people` defines its own Go
 types so it never imports `settings`); `CurrentUser` gains `Version int`, `Teams []TeamRef`;
 `PreferencesView` gains `DisplayCurrency`, `DateFormat`. Inputs: `PersonInput{Name, Email, JobTitle
-string; TeamIDs []string}`, `PersonUpdate{Name, Email, JobTitle string; TeamIDs []string; Version *int}`,
+string; TeamIDs []string}`, `PersonUpdate{Name, Email, JobTitle *string; TeamIDs *[]string; Version *int}`,
 `TeamInput{Name, Description, Colour string; MemberIDs []string}`, `TeamUpdate{Name, Description, Colour
-string; MemberIDs []string; Version *int}`, `StatusUpdate{Active *bool; Version *int}`,
+*string; MemberIDs *[]string; Version *int}` (only the fields to change, as D-203 says; a field left out
+keeps its value, D-210), `StatusUpdate{Active *bool; Version *int}`,
 `ProfileUpdate{Name, JobTitle string; Version *int}`; `PreferencesUpdate` gains `DisplayCurrency *string`,
 `DateFormat *string`. Plus `DisplayRate{Code, Rate string}` (Go only).
 

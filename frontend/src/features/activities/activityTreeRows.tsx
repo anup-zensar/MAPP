@@ -11,6 +11,7 @@ import type { Activity, ActivitySummary } from './activitiesApi';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { ActivityRowCost, ActivityRowStatus } from './ActivityRowCells';
 import { activityEditHref, activityHref, datesText, EMPTY, newActivityHref } from './activityText';
+import type { DateWriters } from './activityText';
 import { CopyActivityDialog } from './CopyActivityDialog';
 import { MoveActivityDialog } from './MoveActivityDialog';
 
@@ -47,7 +48,7 @@ export function useActivityRows(planId: string): Map<string, TreeNode[]> {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { show } = useToast();
-  const { date } = useFormatters();
+  const format = useFormatters();
   const [open, setOpen] = useState<RowActions['open']>(null);
 
   async function ask(dialog: RowDialog, activityId: string) {
@@ -60,7 +61,7 @@ export function useActivityRows(planId: string): Map<string, TreeNode[]> {
     }
   }
 
-  return activityRowsByInitiative(query.data?.items ?? [], planId, navigate, date, {
+  return activityRowsByInitiative(query.data?.items ?? [], planId, navigate, format, {
     open,
     ask: (dialog, activityId) => void ask(dialog, activityId),
     close: () => setOpen(null),
@@ -72,7 +73,7 @@ export function activityRowsByInitiative(
   activities: ActivitySummary[],
   planId: string,
   navigate: NavigateFunction,
-  date: (date: string) => string,
+  format: DateWriters,
   rowActions?: RowActions,
 ): Map<string, TreeNode[]> {
   const rows = new Map<string, TreeNode[]>();
@@ -125,7 +126,7 @@ export function activityRowsByInitiative(
           </>
         ),
         owner: activity.owner ? <PersonLabel person={activity.owner} /> : EMPTY,
-        dates: datesText(activity.startDate, activity.endDate, activity.ongoing, date),
+        dates: datesText(activity.startDate, activity.endDate, activity.ongoing, format),
         status: <ActivityRowStatus row={activity} href={href} />,
         plannedCost: <ActivityRowCost row={activity} />,
       },

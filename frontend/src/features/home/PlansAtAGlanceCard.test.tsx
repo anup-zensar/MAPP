@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -6,14 +6,14 @@ import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import type { HomePlanRow, HomeScope } from './homeApi';
 import { PlansAtAGlanceCard } from './PlansAtAGlanceCard';
-import { TEAMS, planRowOf, usd } from './testData';
+import { planRowOf, usd } from './testData';
 
 const LUBRICANTS = planRowOf();
 const CHINA = planRowOf({
   id: 'P-1002',
   name: 'FY2026 Mobility China',
   status: 'draft',
-  teams: [{ id: 'T-1002', name: 'Mobility China', mine: true }],
+  teams: [{ id: 'T-1002', name: 'Mobility China', colour: 'teal', active: true, mine: true }],
   campaignCount: 2,
   activityCount: 4,
   approvedActivityCount: 4,
@@ -28,12 +28,14 @@ const GLOBAL_BRAND = planRowOf({
   year: 2027,
   strategicAop: true,
   status: 'draft',
-  teams: [{ id: 'T-1003', name: 'Global Marketing Ops', mine: false }],
+  teams: [
+    { id: 'T-1003', name: 'Global Marketing Ops', colour: 'violet', active: true, mine: false },
+  ],
   campaignCount: 1,
   activityCount: 0,
   approvedActivityCount: 0,
   budget: null,
-  plannedCost: usd('0.00'),
+  plannedCost: null,
   budgetUsedPercent: null,
   overBudget: false,
 });
@@ -45,10 +47,7 @@ function renderCard(
   plans: MockHandler = page([LUBRICANTS, CHINA]),
   onShowEverything = vi.fn(),
 ) {
-  const api = mockApi({
-    'GET /api/home/plans': plans,
-    'GET /api/teams': { body: { items: TEAMS, total: TEAMS.length } },
-  });
+  const api = mockApi({ 'GET /api/home/plans': plans });
   const rendered = renderWithProviders(
     <PlansAtAGlanceCard scope={scope} onShowEverything={onShowEverything} />,
     { user: testUser(), path: '/' },
@@ -89,16 +88,16 @@ describe('PlansAtAGlanceCard', () => {
     expect(api.requests.find((r) => r.path === '/api/home/plans')?.search).toBe('?scope=myTeams');
   });
 
-  it('shows each team as a pill in its own colour, with its name as text (FR-008, SC-007)', async () => {
-    renderCard();
+  it('shows each team as a pill in its own colour, with its name as text (FR-008, SC-007, D-217)', async () => {
+    const { api } = renderCard();
 
     await screen.findByRole('link', { name: 'FY2026 Mobility China' });
-    await waitFor(() => {
-      const pill = within(rowOf('FY2026 Mobility China')).getByText('Mobility China');
-      expect(pill.querySelector('[aria-hidden="true"]')?.getAttribute('style')).toContain(
-        'var(--team-teal)',
-      );
-    });
+    const pill = within(rowOf('FY2026 Mobility China')).getByText('Mobility China');
+    expect(pill.querySelector('[aria-hidden="true"]')?.getAttribute('style')).toContain(
+      'var(--team-teal)',
+    );
+    // The row carries the colour itself: no list of teams is asked for.
+    expect(api.requests.some((request) => request.path === '/api/teams')).toBe(false);
   });
 
   it('shows a budget used above 100 % in red (US2 scenario 2)', async () => {
@@ -123,6 +122,8 @@ describe('PlansAtAGlanceCard', () => {
     expect(row.getByText('No activities')).toBeInTheDocument();
     expect(row.getByText('No budget').parentElement).toHaveTextContent('— No budget');
     expect(row.queryByRole('progressbar')).not.toBeInTheDocument();
+    // Nothing planned shows "—", as on the plan page (D-217).
+    expect(row.getAllByRole('cell').at(-1)).toHaveTextContent('—');
     expect(row.getByText('Global Marketing Ops')).toBeInTheDocument();
   });
 

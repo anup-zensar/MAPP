@@ -5,12 +5,14 @@ import type { MockHandler } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { LineItemCreatePage } from './LineItemCreatePage';
+import { attribute, option } from '@/test/attributeForms';
 import {
   activity,
   approvedActivity,
   formAnswers,
   formOptions,
   lineItem,
+  lineItemForm,
   notFound,
   restartRefusal,
   usd,
@@ -342,5 +344,39 @@ describe('LineItemCreatePage (US2)', () => {
         'This activity has no planned cost yet — the unassigned planned cost appears once it has one.',
       ),
     ).toBeInTheDocument();
+  });
+
+  /** The line-item form with an attribute shown only for the Mobility business unit. */
+  function mobilityOnlyForm() {
+    const form = lineItemForm();
+    form.sections[0].attributes.push(
+      attribute({
+        id: 'SA-MOB',
+        label: 'Mobility channel',
+        conditionOptionIds: ['SO-BU-MOB'],
+        options: [option('SO-MOB-1', 'Fleet')],
+      }),
+    );
+    return { body: form };
+  }
+
+  it('hides a line-item attribute of another business unit than the plan has (002 FR-023, D-212)', async () => {
+    renderPage({ 'GET /api/shell-attribute-forms/lineItem': mobilityOnlyForm() });
+
+    await findForm();
+    expect(screen.queryByLabelText('Mobility channel')).not.toBeInTheDocument();
+  });
+
+  it("shows it from the activity's Business unit options alone, without asking for the plan (D-212)", async () => {
+    const { api } = renderPage({
+      'GET /api/shell-attribute-forms/lineItem': mobilityOnlyForm(),
+      'GET /api/activities/A-1001/line-items/form-options': {
+        body: formOptions({ activity: activity({ businessUnitOptionIds: ['SO-BU-MOB'] }) }),
+      },
+    });
+
+    await findForm();
+    expect(screen.getByLabelText('Mobility channel')).toBeInTheDocument();
+    expect(api.requests.some((request) => request.path.startsWith('/api/plans'))).toBe(false);
   });
 });

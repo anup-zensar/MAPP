@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { useCurrentUser } from '@/app/useSession';
 import { ConfirmDialog, TextAreaField, useToast } from '@/components';
-import { usePeople } from '@/features/people';
 import { useFormatters } from '@/lib/useFormatters';
 import { useDecide } from './approvalsApi';
 import type { ActivityApproval } from './approvalsApi';
@@ -23,11 +21,6 @@ export interface DecisionDialogProps {
   mode: 'approve' | 'decline';
   /** The activity's approval as the person sees it: its open round, current level and viewer. */
   approval: ActivityApproval;
-  /**
-   * The owner's name when the caller knows it (the approvals page's rows and preview); null for an
-   * activity without owner. Left out, the dialog finds it.
-   */
-  ownerName?: string | null;
   onClose: () => void;
   /** After the decision was recorded, with the activity's approval as it is now. */
   onDecided?: (approval: ActivityApproval) => void;
@@ -39,13 +32,7 @@ export interface DecisionDialogProps {
  * is not an approver of the level, and the comment — optional to approve, required to decline
  * (checked before anything is sent). A decision someone else made first is explained with its time.
  */
-export function DecisionDialog({
-  mode,
-  approval,
-  ownerName,
-  onClose,
-  onDecided,
-}: DecisionDialogProps) {
+export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionDialogProps) {
   const { show } = useToast();
   const { dateFormat } = useFormatters();
   const decide = useDecide();
@@ -132,7 +119,7 @@ export function DecisionDialog({
           ) : (
             <p>This is the last level — the activity becomes Approved.</p>
           ))}
-        {!approve && <GoesBackTo approval={approval} ownerName={ownerName} />}
+        {!approve && <GoesBackTo owner={approval.owner} />}
         {approval.viewer.isOwner && <p>You own this activity.</p>}
         {!approval.viewer.isCurrentApprover && approval.viewer.onBehalfOf.length > 0 && (
           <p className={styles.note}>
@@ -169,33 +156,15 @@ export function DecisionDialog({
   );
 }
 
-interface GoesBackToProps {
-  approval: ActivityApproval;
-  ownerName?: string | null;
-}
-
-/** "The activity goes back to Priya Raman, who can fix it and re-submit." */
-function GoesBackTo({ approval, ownerName }: GoesBackToProps) {
-  const user = useCurrentUser();
-  if (ownerName !== undefined || approval.viewer.isOwner || !approval.ownerId) {
-    const known = approval.viewer.isOwner ? user.name : ownerName;
-    return <GoesBackToText ownerName={known ?? null} />;
-  }
-  return <GoesBackToPerson ownerId={approval.ownerId} />;
-}
-
-/** The owner's name from the people list (shared with every person field). */
-function GoesBackToPerson({ ownerId }: { ownerId: string }) {
-  const people = usePeople();
-  const owner = people.data?.items.find((person) => person.id === ownerId);
-  return <GoesBackToText ownerName={owner?.name ?? null} />;
-}
-
-function GoesBackToText({ ownerName }: { ownerName: string | null }) {
+/**
+ * "The activity goes back to Priya Raman, who can fix it and re-submit." — the owner as the API
+ * names them with the approval (D-214); "its owner" for an activity without one.
+ */
+function GoesBackTo({ owner }: { owner: ActivityApproval['owner'] }) {
   return (
     <p>
-      {ownerName
-        ? `The activity goes back to ${ownerName}, who can fix it and re-submit.`
+      {owner
+        ? `The activity goes back to ${owner.name}, who can fix it and re-submit.`
         : 'The activity goes back to its owner, who can fix it and re-submit.'}
     </p>
   );

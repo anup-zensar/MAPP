@@ -21,7 +21,7 @@ func TestMembershipChange_BothSidesNewVersionAndLog_FR012_FR028(t *testing.T) {
 	f.addTeam(t, "Mobility China", "violet", true, sara)
 
 	got, err := f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID, TeamUpdate{
-		Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{daniel.ID, sara.ID}, Version: version(1),
+		Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: idList(daniel.ID, sara.ID), Version: version(1),
 	})
 	if err != nil {
 		t.Fatalf("UpdateTeam: %v", err)
@@ -57,7 +57,7 @@ func TestTeamImpact_OwnerLosesLastPlanTeam_Warns_FR013(t *testing.T) {
 		PlanUse{ID: "P-1002", Name: "FY2026 Lubricants Asia", OwnerID: daniel.ID, TeamIDs: []string{europe.ID}},
 		PlanUse{ID: "P-1003", Name: "FY2027 Lubricants Europe", OwnerID: daniel.ID, TeamIDs: []string{europe.ID}},
 	))
-	keepNobody := TeamUpdate{Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{}}
+	keepNobody := TeamUpdate{Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: idList()}
 
 	got, err := f.service.TeamImpact(t.Context(), alex.Actor(), europe.ID, keepNobody)
 	if err != nil {
@@ -91,7 +91,7 @@ func TestTeamImpact_OwnerStillInAnotherPlanTeam_NoWarning_FR013(t *testing.T) {
 	))
 
 	got, err := f.service.TeamImpact(t.Context(), alex.Actor(), europe.ID,
-		TeamUpdate{Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{}})
+		TeamUpdate{Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: idList()})
 
 	if err != nil || got.Warnings == nil || len(got.Warnings) != 0 {
 		t.Errorf("TeamImpact = %+v, %v; want no warnings", got, err)
@@ -111,7 +111,7 @@ func TestTeamImpact_InactiveTeamStillCounts_FR014(t *testing.T) {
 	))
 
 	got, err := f.service.TeamImpact(t.Context(), alex.Actor(), europe.ID,
-		TeamUpdate{Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{}})
+		TeamUpdate{Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: idList()})
 
 	if err != nil || len(got.Warnings) != 0 {
 		t.Errorf("TeamImpact = %+v, %v; want no warnings", got, err)
@@ -129,7 +129,7 @@ func TestImpact_IgnoresPlansInRecycleBin_FR013(t *testing.T) {
 	))
 
 	got, err := f.service.TeamImpact(t.Context(), alex.Actor(), europe.ID,
-		TeamUpdate{Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{}})
+		TeamUpdate{Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: idList()})
 
 	if err != nil || len(got.Warnings) != 0 {
 		t.Errorf("TeamImpact = %+v, %v; want no warnings", got, err)
@@ -146,13 +146,13 @@ func TestImpact_ValidatesLikeUpdate_SC007(t *testing.T) {
 	f.addTeam(t, "Mobility China", "violet", false)
 
 	_, team := f.service.TeamImpact(t.Context(), alex.Actor(), europe.ID, TeamUpdate{
-		Name: "mobility china", Description: strings.Repeat("d", 301), Colour: "", MemberIDs: []string{mei.ID},
+		Name: text("mobility china"), Description: text(strings.Repeat("d", 301)), Colour: text(""), MemberIDs: idList(mei.ID),
 	})
 	_, person := f.service.PersonImpact(t.Context(), alex.Actor(), mei.ID, PersonUpdate{
-		Name: "", Email: "ALEX.MORGAN@northstar.demo", TeamIDs: []string{"T-1002"},
+		Name: text(""), Email: text("ALEX.MORGAN@northstar.demo"), TeamIDs: idList("T-1002"),
 	})
-	_, teamGone := f.service.TeamImpact(t.Context(), alex.Actor(), "T-9999", TeamUpdate{Name: "X", Colour: "blue"})
-	_, personGone := f.service.PersonImpact(t.Context(), alex.Actor(), "U-9999", PersonUpdate{Name: "X", Email: "x@y.z"})
+	_, teamGone := f.service.TeamImpact(t.Context(), alex.Actor(), "T-9999", TeamUpdate{Name: text("X"), Colour: text("blue")})
+	_, personGone := f.service.PersonImpact(t.Context(), alex.Actor(), "U-9999", PersonUpdate{Name: text("X"), Email: text("x@y.z")})
 
 	assertError(t, team, errs.Validation(
 		errs.FieldError{Field: "name", Message: "A team called 'Mobility China' already exists."},
@@ -187,7 +187,7 @@ func TestPersonImpact_OneAndTwoRemovedTeams_FR013(t *testing.T) {
 	impact := func(teams ...string) []ImpactWarning {
 		t.Helper()
 		got, err := f.service.PersonImpact(t.Context(), alex.Actor(), priya.ID, PersonUpdate{
-			Name: "Priya Raman", Email: priya.Email, JobTitle: "Marketer", TeamIDs: teams,
+			Name: text("Priya Raman"), Email: text(priya.Email), JobTitle: text("Marketer"), TeamIDs: &teams,
 		})
 		if err != nil {
 			t.Fatalf("PersonImpact: %v", err)
@@ -227,7 +227,7 @@ func TestUpdateTeam_RemovingOwnerIsAllowed_FR013(t *testing.T) {
 	))
 
 	got, err := f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID,
-		TeamUpdate{Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{}, Version: version(1)})
+		TeamUpdate{Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: idList(), Version: version(1)})
 
 	if err != nil || len(got.Members) != 0 || !slices.Equal(got.Plans, []TeamPlanUse{{ID: "P-1001", Name: "FY2026 Lubricants Europe"}}) {
 		t.Errorf("UpdateTeam = %+v, %v; want no members, the plan kept", got, err)

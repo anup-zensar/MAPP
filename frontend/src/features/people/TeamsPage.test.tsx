@@ -302,14 +302,9 @@ describe('TeamsPage (feature 003, US2)', () => {
     expect(
       await within(panel).findAllByText("A team called 'Lubricants Europe' already exists."),
     ).toHaveLength(2);
+    // Only the changed field and the version (D-210).
     expect(api.bodiesOf('PATCH /api/teams/T-1002')).toEqual([
-      {
-        name: 'lubricants europe',
-        description: 'Mobility in China',
-        colour: 'teal',
-        memberIds: ['U-1003', 'U-1004'],
-        version: 1,
-      },
+      { name: 'lubricants europe', version: 1 },
     ]);
     expect(api.bodiesOf('POST /api/teams/T-1002/impact')).toEqual([]);
   });
@@ -393,13 +388,7 @@ describe('TeamsPage (feature 003, US2)', () => {
     await user.click(within(again).getByRole('button', { name: 'Save changes' }));
 
     expect(await screen.findByText("Team 'Lubricants Europe' saved")).toBeInTheDocument();
-    const body = {
-      name: 'Lubricants Europe',
-      description: 'Lubricants marketing for Europe',
-      colour: 'blue',
-      memberIds: ['U-1001', 'U-1005'],
-      version: 1,
-    };
+    const body = { memberIds: ['U-1001', 'U-1005'], version: 1 }; // only what changed (D-210)
     expect(api.bodiesOf('POST /api/teams/T-1001/impact')).toEqual([body, body]);
     expect(api.bodiesOf('PATCH /api/teams/T-1001')).toEqual([body]);
   });

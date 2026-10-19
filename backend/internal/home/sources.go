@@ -40,7 +40,8 @@ type MissingField = errs.MissingField
 
 // Team is a team as Home reads it.
 type Team struct {
-	ID, Name string
+	ID, Name, Colour string // Colour is one of 003's palette (D-065)
+	Active           bool
 }
 
 // Plan is a plan with its figures, all amounts in US dollars.

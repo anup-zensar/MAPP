@@ -77,23 +77,6 @@ export function useLineItem(lineItemId: string) {
   });
 }
 
-/**
- * The plan of the activity, for its business unit: the line-item Shell attributes shown for some
- * business units only depend on it (feature 002, R9).
- */
-export function usePlanBusinessUnit(planId: string | undefined) {
-  return useQuery({
-    queryKey: ['plans', planId, 'business-unit'],
-    queryFn: async () => {
-      const plan = await call(
-        api.GET('/api/plans/{planId}', { params: { path: { planId: planId ?? '' } } }),
-      );
-      return plan.businessUnit.map((option) => option.id);
-    },
-    enabled: Boolean(planId),
-  });
-}
-
 /** Creates a line item in an activity. */
 export function useCreateLineItem(activityId: string) {
   const refresh = useRefresh();

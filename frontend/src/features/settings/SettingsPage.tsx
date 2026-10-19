@@ -2,12 +2,12 @@ import { CircleAlert, RotateCw } from 'lucide-react';
 import { Link } from 'react-router';
 import { useSettingsOverview } from '@/api/settingsQueries';
 import type { components } from '@/api/schema';
-import { Button, PageHeader, Skeleton, StatusChip } from '@/components';
+import { Button, PageHeader, StatusChip } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
-import { formatWhole } from '@/lib/decimal';
 import { SETTINGS_SECTIONS } from './sections';
 import type { SettingsSection } from './sections';
 import styles from './SettingsPage.module.css';
+import { SettingsCount } from './shared/SettingsCount';
 
 type SettingsOverview = components['schemas']['SettingsOverview'];
 
@@ -84,20 +84,18 @@ function SectionCard({ section, counts }: SectionCardProps) {
   );
 }
 
-/** "<n> active": from the overview for 002's sections, from the section's own component otherwise. */
+/**
+ * "<n> active": from the overview for 002's sections, from the section's own component otherwise
+ * (which shows it with the same SettingsCount).
+ */
 function ActiveCount({ section, counts }: SectionCardProps) {
   if (!section.overviewKey) {
     return section.ActiveCount ? <section.ActiveCount /> : null;
   }
-  if (counts.state === 'loading') {
-    return <Skeleton width="64px" />;
-  }
-  if (counts.state === 'failed') {
-    return null;
-  }
   return (
-    <span
-      className={styles.count}
-    >{`${formatWhole(counts.overview[section.overviewKey])} active`}</span>
+    <SettingsCount
+      loading={counts.state === 'loading'}
+      count={counts.state === 'loaded' ? counts.overview[section.overviewKey] : undefined}
+    />
   );
 }

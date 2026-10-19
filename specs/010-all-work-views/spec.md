@@ -85,8 +85,8 @@ Line item**. Clicking a heading sorts rows within each parent, so the hierarchy 
    appears. It has values on campaign rows only and shows "—" for a campaign with no cluster. Shell
    attributes added later in Settings are offered automatically.
 2. **Given** the Grid, **When** the user clicks the **Planned cost** heading, **Then** the children of
-   every parent are ordered from highest to lowest, while totals and unassigned rows stay in place. A
-   second click reverses the order, and a third restores the default.
+   every parent are ordered from lowest to highest (FR-015, D-218), while totals and unassigned rows stay
+   in place. A second click reverses the order, and a third restores the default.
 
 ---
 

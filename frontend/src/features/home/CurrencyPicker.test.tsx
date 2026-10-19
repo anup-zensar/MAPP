@@ -7,12 +7,12 @@ import type { MockHandler } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { CurrencyPicker } from './CurrencyPicker';
-import { CURRENCIES } from './testData';
+import { DISPLAY_CURRENCIES } from './testData';
 
-const CURRENCY_LIST = { body: { items: CURRENCIES, total: CURRENCIES.length } };
+const CURRENCY_LIST = { body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length } };
 
 function renderPicker(answers: Record<string, MockHandler> = {}, user: CurrentUser = testUser()) {
-  const api = mockApi({ 'GET /api/currencies': CURRENCY_LIST, ...answers });
+  const api = mockApi({ 'GET /api/me/display-currencies': CURRENCY_LIST, ...answers });
   const rendered = renderWithProviders(<CurrencyPicker />, { user });
   return { ...rendered, api };
 }
@@ -28,18 +28,25 @@ function optionTexts() {
 }
 
 describe('CurrencyPicker', () => {
-  it('lists the active currencies and starts on the display currency (FR-002, US1 scenario 1)', async () => {
+  it('offers the currencies My profile offers and starts on the display currency (FR-002, US1 scenario 1, D-217)', async () => {
     renderPicker();
 
     await waitFor(() =>
-      expect(optionTexts()).toEqual(['USD — US dollar', 'EUR — Euro', 'GBP — Pound sterling']),
+      expect(optionTexts()).toEqual(['EUR — Euro', 'GBP — Pound sterling', 'USD — US dollar']),
     );
     expect(picker()).toHaveValue('USD');
   });
 
   it('keeps an inactive display currency in the list, because it stays in use (D-201)', async () => {
     renderPicker(
-      {},
+      {
+        'GET /api/me/display-currencies': {
+          body: {
+            items: [{ code: 'CNY', name: 'Chinese yuan', active: false }, ...DISPLAY_CURRENCIES],
+            total: 4,
+          },
+        },
+      },
       testUser({ preferences: { ...testUser().preferences, displayCurrency: 'CNY' } }),
     );
 
@@ -48,7 +55,7 @@ describe('CurrencyPicker', () => {
   });
 
   it('shows the display currency while the list is still loading', () => {
-    renderPicker({ 'GET /api/currencies': () => new Promise<never>(() => {}) });
+    renderPicker({ 'GET /api/me/display-currencies': () => new Promise<never>(() => {}) });
 
     expect(optionTexts()).toEqual(['USD']);
     expect(picker()).toHaveValue('USD');

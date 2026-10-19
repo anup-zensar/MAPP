@@ -57,7 +57,7 @@ describe('ActivityPage (feature 006, US2)', () => {
     expect(screen.getByText('A-1042')).toBeVisible();
     const facts = screen.getByText('Unassigned planned cost').closest('dl') as HTMLElement;
     expect(within(facts).getByText('Priya Raman')).toBeVisible();
-    expect(within(facts).getByText('01 Mar 2026 – 31 May 2026')).toBeVisible();
+    expect(within(facts).getByText('01 Mar – 31 May 2026')).toBeVisible();
     expect(within(facts).getByText('$120,000.00')).toBeVisible();
     expect(within(facts).getByText('$20,000.00')).toBeVisible();
     expect(

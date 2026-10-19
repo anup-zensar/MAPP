@@ -1,17 +1,18 @@
+import { SettingsCount } from '@/features/settings/shared/SettingsCount';
 import { usePeople, useTeams } from './peopleApi';
 
-/** "6 active" on the People card of the Settings page; nothing until the people have arrived. */
+/** "6 active" on the People card of the Settings page, as every Settings card shows its count. */
 export function ActivePeopleCount() {
   const people = usePeople();
-  return people.data ? activeText(people.data.items) : null;
+  return <SettingsCount loading={people.isPending} count={activeOf(people.data?.items)} />;
 }
 
-/** "3 active" on the Teams card of the Settings page; nothing until the teams have arrived. */
+/** "3 active" on the Teams card of the Settings page, as every Settings card shows its count. */
 export function ActiveTeamsCount() {
   const teams = useTeams();
-  return teams.data ? activeText(teams.data.items) : null;
+  return <SettingsCount loading={teams.isPending} count={activeOf(teams.data?.items)} />;
 }
 
-function activeText(records: { active: boolean }[]): string {
-  return `${records.filter((record) => record.active).length} active`;
+function activeOf(records: { active: boolean }[] | undefined): number | undefined {
+  return records?.filter((record) => record.active).length;
 }

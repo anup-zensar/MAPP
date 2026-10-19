@@ -68,20 +68,10 @@ export function ApprovalPreviewPanel({
         data && !gone ? (
           <>
             {data.approval.actions.approve.available && (
-              <DecisionButton
-                mode="approve"
-                approval={data.approval}
-                ownerName={data.activity.owner?.name ?? null}
-                onDecided={onDecided}
-              />
+              <DecisionButton mode="approve" approval={data.approval} onDecided={onDecided} />
             )}
             {data.approval.actions.decline.available && (
-              <DecisionButton
-                mode="decline"
-                approval={data.approval}
-                ownerName={data.activity.owner?.name ?? null}
-                onDecided={onDecided}
-              />
+              <DecisionButton mode="decline" approval={data.approval} onDecided={onDecided} />
             )}
             <LinkButton
               to={`${recordHref('activity', data.activity.id, planId)}#approval`}
@@ -163,7 +153,7 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
                     Planned cost
                   </th>
                   <th scope="col" className={styles.amount}>
-                    Planned cost (USD)
+                    {`Planned cost (${format.displayCurrency})`}
                   </th>
                   <th scope="col">Spend type</th>
                   <th scope="col">GL code</th>
@@ -178,7 +168,7 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
                       <span className={styles.id}>{item.id}</span>
                     </th>
                     <td className={styles.amount}>{format.money(item.plannedCost)}</td>
-                    <td className={styles.amount}>{format.money(item.plannedCostUsd)}</td>
+                    <td className={styles.amount}>{format.money(item.plannedCostDisplay)}</td>
                     <td>{item.spendType || '—'}</td>
                     <td>{item.glCode || '—'}</td>
                     <td>{item.financeBudgetItem || '—'}</td>

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { formatDateRange } from '@/lib/format';
 import {
   activitiesApprovedText,
   contentsText,
@@ -57,7 +58,10 @@ describe('planText', () => {
   });
 
   it('writes the year, approvals and record groups', () => {
-    expect(yearDates(2026)).toBe('1 Jan – 31 Dec 2026');
+    expect(yearDates(2026, formatDateRange)).toBe('01 Jan – 31 Dec 2026');
+    expect(yearDates(2026, (start, end) => formatDateRange(start, end, 'YYYY-MM-DD'))).toBe(
+      '2026-01-01 – 2026-12-31',
+    );
     expect(activitiesApprovedText(4, 7)).toBe('4 of 7 activities approved');
     expect(groupLabel({ type: 'plan', id: 'P-1001', name: 'FY2026' })).toBe('Plan');
     expect(groupLabel({ type: 'campaign', id: 'C-1001', name: 'Retail growth' })).toBe(

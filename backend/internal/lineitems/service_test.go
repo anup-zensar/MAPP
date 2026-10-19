@@ -507,6 +507,64 @@ func TestSection_RowsInCreationOrder_FR001(t *testing.T) {
 	}
 }
 
+// For a person who shows amounts in EUR, the section answers the USD column, the balance and the grid in
+// EUR, each amount converted once from its USD figure at 0.92, while plannedCostUsd stays the exact USD
+// amount; the line-item form's balance stays in USD, the currency the form calculates in, and the details
+// answer EUR like the section (FR-005, D-213). The activity carries its plan's Business unit options
+// (D-212).
+func TestSection_DisplayCurrency_FR005_D213(t *testing.T) {
+	f := newTestService(t)
+	launchFilmWithTwoItems(t, f)
+	facts := f.activities.facts[launchFilm]
+	facts.BusinessUnit = []string{"SO-1001"}
+	f.activities.facts[launchFilm] = facts
+
+	section, err := f.service.Section(t.Context(), lena, launchFilm)
+	if err != nil {
+		t.Fatalf("Section: %v", err)
+	}
+	options, err := f.service.FormOptions(t.Context(), lena, launchFilm)
+	if err != nil {
+		t.Fatalf("FormOptions: %v", err)
+	}
+	details, err := f.service.Get(t.Context(), lena, section.Items[1].ID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	usd, err := f.service.Section(t.Context(), priya, launchFilm)
+	if err != nil {
+		t.Fatalf("Section (USD): %v", err)
+	}
+
+	film := section.Items[1]
+	if film.PlannedCostUSD.Format() != "50,000.00 USD" || film.PlannedCostDisplay.Format() != "46,000.00 EUR" {
+		t.Errorf("Film production = %s, shown %s; want 50,000.00 USD shown as 46,000.00 EUR", film.PlannedCostUSD.Format(), film.PlannedCostDisplay.Format())
+	}
+	if b := section.Balance; b.State != BalanceLeft || b.PlannedCost.Format() != "110,400.00 EUR" ||
+		b.Assigned.Format() != "92,000.00 EUR" || b.Balance.Format() != "18,400.00 EUR" {
+		t.Errorf("balance = %+v, want 18,400.00 EUR left of 110,400.00 EUR", b)
+	}
+	if section.Grid.Total.Format() != "92,000.00 EUR" || section.Grid.Rows[1].Total.Format() != "46,000.00 EUR" ||
+		section.Grid.Rows[1].Cells[2].Format() != "15,333.35 EUR" {
+		t.Errorf("grid = %+v, want EUR totals and cells", section.Grid)
+	}
+	if got := options.Balance.Balance.Format(); got != "20,000.00 USD" {
+		t.Errorf("form balance = %s, want 20,000.00 USD", got)
+	}
+	if details.LineItem.PlannedCostDisplay.Format() != "46,000.00 EUR" || details.Balance.Balance.Format() != "18,400.00 EUR" {
+		t.Errorf("details = %s, balance %s; want EUR", details.LineItem.PlannedCostDisplay.Format(), details.Balance.Balance.Format())
+	}
+	if shown := usd.Items[1].PlannedCostDisplay.Format(); shown != "50,000.00 USD" || usd.Balance.Balance.Format() != "20,000.00 USD" {
+		t.Errorf("for a USD reader: %s and balance %s, want USD", shown, usd.Balance.Balance.Format())
+	}
+	if !slices.Equal(section.Activity.BusinessUnitOptionIDs, []string{"SO-1001"}) || usd.Activity.BusinessUnitOptionIDs == nil {
+		t.Errorf("business units = %q", section.Activity.BusinessUnitOptionIDs)
+	}
+	if empty, _ := f.service.Section(t.Context(), priya, tradeAds); empty.Activity.BusinessUnitOptionIDs == nil {
+		t.Errorf("an activity whose plan has no business unit answers nil, want []")
+	}
+}
+
 // An activity without line items has an empty list, its whole planned cost unassigned and its months as
 // grid columns (FR-004).
 func TestSection_Empty_FR004(t *testing.T) {

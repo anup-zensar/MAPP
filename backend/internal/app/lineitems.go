@@ -23,7 +23,7 @@ import (
 // lineItemDeps returns what the line-items service reads of the other features.
 func lineItemDeps(settingsService *settings.Service, settingsRepo settings.Repository, activitiesService *activities.Service,
 	activitiesRepo activities.Repository, campaignsRepo campaigns.Repository, plansRepo plans.Repository,
-	peopleRepo people.Repository) lineitems.Deps {
+	peopleRepo people.Repository, peopleService *people.Service) lineitems.Deps {
 	return lineitems.Deps{
 		Activities: lineItemActivities{
 			activities: activitiesRepo, campaigns: campaignsRepo, plans: plansRepo,
@@ -32,7 +32,7 @@ func lineItemDeps(settingsService *settings.Service, settingsRepo settings.Repos
 		Currencies:     settingsService,
 		FinanceBudgets: lineItemBudgets{repo: settingsRepo},
 		Attributes:     lineItemAttributes{settings: settingsService},
-		People:         lineItemPeople{repo: peopleRepo},
+		People:         lineItemPeople{repo: peopleRepo, service: peopleService},
 	}
 }
 
@@ -153,9 +153,15 @@ func budgetItem(budget settings.FinanceBudget, item settings.FinanceBudgetItem) 
 	}
 }
 
-// lineItemPeople implements lineitems.People over the people repository (003).
+// lineItemPeople implements lineitems.People over the people repository and service (003).
 type lineItemPeople struct {
-	repo people.Repository
+	repo    people.Repository
+	service *people.Service
+}
+
+// DisplayRateOf returns the display currency of the person personID with its rate (003 FR-023).
+func (x lineItemPeople) DisplayRateOf(ctx context.Context, personID string) (people.DisplayRate, error) {
+	return x.service.DisplayRateOf(ctx, personID)
 }
 
 // Person returns the person id as records show them, active or not.

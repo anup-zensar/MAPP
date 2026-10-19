@@ -115,7 +115,7 @@ func TestUpdateTeam_RenameUnique_FR011(t *testing.T) {
 	f.addTeam(t, "Mobility China", "violet", true)
 	rename := func(name string, from int) (TeamView, error) {
 		return f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID,
-			TeamUpdate{Name: name, Colour: "blue", MemberIDs: []string{}, Version: version(from)})
+			TeamUpdate{Name: text(name), Colour: text("blue"), MemberIDs: idList(), Version: version(from)})
 	}
 
 	_, err := rename(" MOBILITY china", 1)
@@ -148,7 +148,7 @@ func TestUpdateTeam_KeepsInactiveMember_FR011(t *testing.T) {
 			memberIDs = append(memberIDs, p.ID)
 		}
 		return f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID,
-			TeamUpdate{Name: "Lubricants Europe", Colour: "blue", MemberIDs: memberIDs, Version: version(from)})
+			TeamUpdate{Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: &memberIDs, Version: version(from)})
 	}
 
 	got, err := update(1, mei, daniel)
@@ -169,14 +169,14 @@ func TestUpdateTeam_VersionConflict_FR029(t *testing.T) {
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true)
 	f.clock.Advance(5*time.Hour + 32*time.Minute)
-	update := TeamUpdate{Name: "Daniel's name", Colour: "blue", Version: version(1)}
+	update := TeamUpdate{Name: text("Daniel's name"), Colour: text("blue"), Version: version(1)}
 	if _, err := f.service.UpdateTeam(t.Context(), daniel.Actor(), europe.ID, update); err != nil {
 		t.Fatalf("Daniel's update: %v", err)
 	}
 
-	update.Name = "Priya's name"
+	update.Name = text("Priya's name")
 	_, conflict := f.service.UpdateTeam(t.Context(), priya.Actor(), europe.ID, update)
-	_, missing := f.service.UpdateTeam(t.Context(), priya.Actor(), europe.ID, TeamUpdate{Name: " ", Colour: "blue"})
+	_, missing := f.service.UpdateTeam(t.Context(), priya.Actor(), europe.ID, TeamUpdate{Name: text(" "), Colour: text("blue")})
 	_, gone := f.service.UpdateTeam(t.Context(), priya.Actor(), "T-9999", update)
 
 	assertError(t, conflict, errs.VersionConflict("team", "Daniel Okoro", start.Add(5*time.Hour+32*time.Minute)))
@@ -198,13 +198,40 @@ func TestUpdateTeam_NoChangeNoVersionNoLog_FR028(t *testing.T) {
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true, priya)
 
 	got, err := f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID, TeamUpdate{
-		Name: " Lubricants Europe ", Colour: "blue", MemberIDs: []string{priya.ID, priya.ID}, Version: version(1),
+		Name: text(" Lubricants Europe "), Colour: text("blue"), MemberIDs: idList(priya.ID, priya.ID), Version: version(1),
 	})
 
 	if err != nil || got.Version != 1 || len(got.Members) != 1 {
 		t.Errorf("UpdateTeam without a change = %+v, %v; want version 1 with Priya", got, err)
 	}
 	assertLog(t, f, nil)
+}
+
+// An update sends only the fields to change (D-203, D-210): a new colour alone keeps the name, the
+// description and every member, and the impact check of it warns about nobody.
+func TestUpdateTeam_OnlySentFieldsChange_D210(t *testing.T) {
+	f := newFixture(t)
+	alex := f.addPerson(t, "Alex Morgan", "", true)
+	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
+	europe := f.addTeam(t, "Lubricants Europe", "blue", true, priya)
+	f.service.UsePlans(plansHook(
+		PlanUse{ID: "P-1001", Name: "FY2026 Lubricants Europe", OwnerID: priya.ID, TeamIDs: []string{europe.ID}},
+	))
+	update := TeamUpdate{Colour: text("teal"), Version: version(1)}
+
+	impact, impactErr := f.service.TeamImpact(t.Context(), alex.Actor(), europe.ID, update)
+	got, err := f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID, update)
+
+	if impactErr != nil || len(impact.Warnings) != 0 {
+		t.Errorf("TeamImpact = %+v, %v; want no warnings", impact, impactErr)
+	}
+	if err != nil || got.Version != 2 || got.Name != "Lubricants Europe" || got.Colour != "teal" ||
+		len(got.Members) != 1 || got.Members[0].ID != priya.ID {
+		t.Fatalf("UpdateTeam = %+v, %v; want only the colour changed", got, err)
+	}
+	if memberships := f.memberships(t); !slices.Equal(memberships, []string{europe.ID + "/" + priya.ID}) {
+		t.Errorf("memberships = %q, want Priya still a member", memberships)
+	}
 }
 
 // Members changed on a team show on the person at once (FR-012).
@@ -216,7 +243,7 @@ func TestTeamEdit_MembershipShowsOnPerson_FR012(t *testing.T) {
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true, priya)
 
 	_, err := f.service.UpdateTeam(t.Context(), alex.Actor(), europe.ID,
-		TeamUpdate{Name: "Lubricants Europe", Colour: "blue", MemberIDs: []string{sara.ID}, Version: version(1)})
+		TeamUpdate{Name: text("Lubricants Europe"), Colour: text("blue"), MemberIDs: idList(sara.ID), Version: version(1)})
 	if err != nil {
 		t.Fatalf("UpdateTeam: %v", err)
 	}
@@ -240,7 +267,7 @@ func TestPersonEdit_MembershipShowsOnTeam_FR012(t *testing.T) {
 	asia := f.addTeam(t, "Lubricants Asia", "teal", true)
 
 	_, err := f.service.UpdatePerson(t.Context(), alex.Actor(), priya.ID, PersonUpdate{
-		Name: "Priya Raman", Email: priya.Email, JobTitle: "Marketer", TeamIDs: []string{asia.ID}, Version: version(1),
+		Name: text("Priya Raman"), Email: text(priya.Email), JobTitle: text("Marketer"), TeamIDs: idList(asia.ID), Version: version(1),
 	})
 	if err != nil {
 		t.Fatalf("UpdatePerson: %v", err)
