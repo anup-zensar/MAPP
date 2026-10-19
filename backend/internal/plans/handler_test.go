@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -163,9 +164,9 @@ func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 		t.Errorf("all plans: %q, total %d, years %v", ids, all.Total, all.Years)
 	}
 	summary := all.Summary
-	if summary.Plans != 3 || summary.Draft != 2 || summary.Published != 1 || summary.PlannedCost != nil ||
-		summary.Budget == nil || summary.Budget.Format() != "2,500,000.00 USD" {
-		t.Errorf("summary = %+v; want 3 plans, 2 Draft, 1 Published, no planned cost yet, 2,500,000.00 USD", summary)
+	if summary.Plans != 3 || summary.Draft != 2 || summary.Published != 1 || summary.PlannedCost == nil ||
+		summary.PlannedCost.Format() != "650,000.00 USD" || summary.Budget == nil || summary.Budget.Format() != "2,500,000.00 USD" {
+		t.Errorf("summary = %+v; want 3 plans, 2 Draft, 1 Published, 650,000.00 USD planned, 2,500,000.00 USD", summary)
 	}
 	for name, list := range map[string]plans.PlanList{"draft 2026": draft2026, "mobility": byName, "p-1002": byID} {
 		if ids := listIDs(list); !reflect.DeepEqual(ids, []string{"P-1002"}) || list.Total != 3 {
@@ -190,8 +191,8 @@ func TestListPlans_MyTeams_FR004(t *testing.T) {
 
 // The plan page of FY2026 Lubricants Europe shows every stored field, its model with rates, team, owner,
 // business unit, budget and goals 250,000 → 5,000 → 250 → 2,500,000.00, all filled in; FY2026 Mobility
-// China needs its business unit, and below it its campaign Retail growth and initiative Fleet cards
-// (005's demo data) are incomplete; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
+// China needs its business unit, and below it its campaign Retail growth, initiative Fleet cards and
+// activities Grand opening Shanghai and Lunar new year promo (005's and 006's demo data) are incomplete; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
 // come from the levels below are proved with fakes in the service tests.
 func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	server := apitest.New(t)
@@ -227,25 +228,19 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	if len(plan.Completeness.Missing) != 0 || plan.Figures.Currency != "USD" || plan.Figures.Budget.Format() != "1,200,000.00 USD" {
 		t.Errorf("completeness %+v, figures %+v; want all filled in, in USD", plan.Completeness, plan.Figures)
 	}
-	assertFields(t, china, http.StatusOK, map[string]any{
-		"status": "draft", "businessUnit": []any{},
-		"completeness": map[string]any{
-			"missing": []any{map[string]any{"field": "attributes.SA-1001", "label": "Business unit"}},
-			"itemsBelow": []any{
-				map[string]any{
-					"record": map[string]any{"type": "campaign", "id": "C-1003", "name": "Retail growth"},
-					"missing": []any{
-						map[string]any{"field": "attributes.SA-1003", "label": "Cluster"},
-						map[string]any{"field": "attributes.SA-1004", "label": "Region"},
-					},
-				},
-				map[string]any{
-					"record":  map[string]any{"type": "initiative", "id": "I-1006", "name": "Fleet cards"},
-					"missing": []any{map[string]any{"field": "startDate", "label": "Dates"}},
-				},
-			},
-		},
-	})
+	assertFields(t, china, http.StatusOK, map[string]any{"status": "draft", "businessUnit": []any{}})
+	var chinaPlan plans.PlanView
+	china.Decode(t, &chinaPlan)
+	if missing := chinaPlan.Completeness.Missing; len(missing) != 1 || missing[0].Field != "attributes.SA-1001" || missing[0].Label != "Business unit" {
+		t.Errorf("completeness missing = %+v, want the Business unit", missing)
+	}
+	var below []string
+	for _, item := range chinaPlan.Completeness.ItemsBelow {
+		below = append(below, item.Record.Type+" "+item.Record.ID)
+	}
+	if want := []string{"campaign C-1003", "initiative I-1006", "activity A-1008", "activity A-1010"}; !slices.Equal(below, want) {
+		t.Errorf("completeness items below = %q, want %q", below, want)
+	}
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
 }
 

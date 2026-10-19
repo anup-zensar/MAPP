@@ -1,0 +1,65 @@
+.values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 24px;
+}
+
+.pair {
+  min-width: 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.pair dt {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.pair dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 4px 0 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.problem {
+  color: var(--status-problem-text);
+  font-size: 12.5px;
+}
+
+.description {
+  white-space: pre-line;
+}
+
+.finance {
+  padding: 16px 20px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.finance details[open] .values {
+  margin: 16px 0 12px;
+}
+
+.summary {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.summary:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 4px;
+  border-radius: 4px;
+}

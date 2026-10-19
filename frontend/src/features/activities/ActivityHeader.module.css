@@ -1,0 +1,116 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 0 20px;
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.title {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.id {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 24px;
+}
+
+.fact {
+  min-width: 0;
+}
+
+.fact dt {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.fact dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.withTip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+}
+
+.problem {
+  color: var(--status-problem-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.problemNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
+.problemNote svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+}
+
+.changed {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.banner {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  background: var(--banner-bg);
+  color: var(--banner-text);
+}

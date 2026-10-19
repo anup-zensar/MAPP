@@ -239,7 +239,7 @@ func (f formData) check(in AttributeInput) AttributeResult {
 		case !known:
 			problem(id, unknownAttributeMessage)
 		case a.Level != f.level:
-			problem(id, fmt.Sprintf(otherLevelMessage, a.Label, levelWords[f.level]))
+			problem(id, fmt.Sprintf(otherLevelMessage, a.Label, levelWords[a.Level])) // the form it belongs to
 		}
 	}
 

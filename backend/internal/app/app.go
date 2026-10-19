@@ -4,7 +4,10 @@ package app
 
 import (
 	"net/http"
+	"slices"
 
+	"northstar/internal/activities"
+	"northstar/internal/approvals"
 	"northstar/internal/auth"
 	"northstar/internal/campaigns"
 	"northstar/internal/history"
@@ -81,24 +84,37 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	}
 	plans.NewHandler(planService).Routes(router, signedIn)
 
+	// Activities (006) are built before campaigns, which roll their summaries up (campaigns.Activities).
+	campaignsRepo := campaigns.NewJSONRepository()
+	activitiesService := activities.NewService(db, activities.NewJSONRepository(), generator, historyService, now, activities.Deps{
+		Plans:     plansRepo,
+		Hierarchy: campaignsRepo,
+		Settings:  settingsService,
+		People:    peopleRepo,
+		Workflows: activities.NewSeededWorkflows(approvals.NewJSONRepository()),
+	})
+
 	// Feature 005: campaigns and initiatives, with their history kinds under the plan kind (parents first).
-	campaignsService := campaigns.NewService(db, campaigns.NewJSONRepository(), generator, historyService, now, campaigns.Deps{
+	campaignsService := campaigns.NewService(db, campaignsRepo, generator, historyService, now, campaigns.Deps{
 		Plans:      campaignPlans{repo: plansRepo},
 		People:     peopleRepo,
 		Settings:   settingsService,
-		Activities: campaigns.NoActivities{},
+		Activities: activitiesForCampaigns{svc: activitiesService},
 	})
-	for _, kind := range campaignsService.Kinds() {
+	// The history kinds, parents first: campaign and initiative (005), then activity (006).
+	for _, kind := range slices.Concat(campaignsService.Kinds(), activitiesService.Kinds()) {
 		if err := historyService.Register(kind); err != nil {
 			return nil, err
 		}
 	}
-	for _, level := range campaignLevels(campaignsService) {
+	// The levels below the plan, top-down: campaign, initiative (005), activity (006).
+	for _, level := range append(campaignLevels(campaignsService), activityLevel(activitiesService)) {
 		if err := planService.RegisterLevel(level); err != nil {
 			return nil, err
 		}
 	}
 	campaigns.NewHandler(campaignsService).Routes(router, signedIn)
+	activities.NewHandler(activitiesService).Routes(router, signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API

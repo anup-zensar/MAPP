@@ -152,7 +152,7 @@ func TestCheckAttributes_ShapesAndLimits_FR016(t *testing.T) {
 		tf.attribute(LevelCampaign, "Cluster").ID, `[]`, "SA-9999", `"x"`,
 	)})
 	wantProblems := []errs.FieldError{
-		{Field: "attributes." + tf.attribute(LevelCampaign, "Cluster").ID, Message: "Cluster belongs to the Activity form."},
+		{Field: "attributes." + tf.attribute(LevelCampaign, "Cluster").ID, Message: "Cluster belongs to the Campaign form."},
 		{Field: "attributes.SA-9999", Message: "This Shell attribute no longer exists — reload the page."},
 	}
 	wantValues := values(id("FIT4 ID"), `"FIT4-0042"`, id("Budget size"), `-999999999999`, id("PIR flag"), `false`,

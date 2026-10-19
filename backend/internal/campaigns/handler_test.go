@@ -133,8 +133,8 @@ func validationBody(fields ...string) string {
 func usd(text string) amount { return amount{Amount: text, Currency: "USD"} }
 
 // The plan tree of FY2026 Lubricants Europe: its 2 campaigns with their 4 initiatives in tree order, the
-// plan owner as the default owner, and the totals row — allocated 1,150,000.00 of 1,200,000.00 (FR-019 –
-// FR-022).
+// plan owner as the default owner, and the totals row — allocated 1,150,000.00 of 1,200,000.00, and the 7
+// activities of 006's demo data with 460,000.00 planned (FR-019 – FR-022).
 func TestListPlanCampaigns_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
@@ -159,9 +159,10 @@ func TestListPlanCampaigns_Contract(t *testing.T) {
 		t.Errorf("plan owner %+v, total %d", tree.PlanOwner, tree.Total)
 	}
 	totals := tree.Totals
-	if totals.Campaigns != 2 || totals.Initiatives != 4 || totals.Activities != 0 ||
+	if totals.Campaigns != 2 || totals.Initiatives != 4 || totals.Activities != 7 ||
 		totals.AllocatedToCampaigns != usd("1150000.00") || *totals.PlanBudget != usd("1200000.00") ||
-		*totals.RemainingPlanBudget != usd("50000.00") || totals.OverAllocatedBy != nil || totals.PlannedCost != nil {
+		*totals.RemainingPlanBudget != usd("50000.00") || totals.OverAllocatedBy != nil ||
+		totals.PlannedCost == nil || *totals.PlannedCost != usd("460000.00") {
 		t.Errorf("totals = %+v", totals)
 	}
 	helix := tree.Items[0]
