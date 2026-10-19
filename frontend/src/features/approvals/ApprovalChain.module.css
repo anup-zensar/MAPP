@@ -1,0 +1,97 @@
+.chain {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One level: the badge, the level and its approvers, then the state (under them when narrow). */
+.level {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  padding: 12px 0;
+}
+
+.level + .level {
+  border-top: 1px solid var(--hairline);
+}
+
+.level:first-child {
+  padding-top: 0;
+}
+
+.level:last-child {
+  padding-bottom: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--chip);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.approvers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.state {
+  grid-column: 2;
+  color: var(--ink-2);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.approved {
+  color: var(--status-positive-text);
+}
+
+.declined {
+  color: var(--status-problem-text);
+}
+
+.waiting {
+  color: var(--status-review-text);
+  font-weight: 600;
+}
+
+@media (min-width: 720px) {
+  .level {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 18rem);
+  }
+
+  .state {
+    grid-column: 3;
+    line-height: 24px;
+    text-align: right;
+  }
+}

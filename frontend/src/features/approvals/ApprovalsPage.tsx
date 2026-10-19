@@ -1,15 +1,257 @@
-import { BuildingPage } from '@/features/placeholders/BuildingPage';
+import { CircleCheckBig, SearchX } from 'lucide-react';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router';
+import {
+  Button,
+  Card,
+  CountBadge,
+  EmptyState,
+  ErrorState,
+  FilterChips,
+  PageHeader,
+  PillTabs,
+  SearchField,
+  Skeleton,
+  SummaryCard,
+} from '@/components';
+import type { PillTab } from '@/components';
+import type { components } from '@/api/schema';
+import { usePageTitle } from '@/lib/usePageTitle';
+import { useFormatters } from '@/lib/useFormatters';
+import {
+  NO_FILTERS,
+  applyFilters,
+  filterChips,
+  filterOptions,
+  filtersInUse,
+} from './approvalFilters';
+import type { ApprovalFilterKey, ApprovalFilterValues } from './approvalFilters';
+import { ApprovalPreviewPanel } from './ApprovalPreviewPanel';
+import { useApprovalRows } from './approvalsApi';
+import type { ApprovalRow, ApprovalTab } from './approvalsApi';
+import { ApprovalsFilters } from './ApprovalsFilters';
+import { ApprovalsTable } from './ApprovalsTable';
+import { useApprovalSummary } from './useApprovalSummary';
+import styles from './ApprovalsPage.module.css';
+
+type ApprovalCounts = components['schemas']['ApprovalCounts'];
+
+const TAB_VALUES: ApprovalTab[] = ['waiting', 'open', 'decided'];
+
+/** What an empty tab says (plan, "User-visible messages"). */
+const EMPTY_TAB: Record<ApprovalTab, string> = {
+  waiting: "Nothing is waiting for you. You're all caught up.",
+  open: 'No activities are waiting for approval.',
+  decided: "You haven't approved or declined any activities yet.",
+};
 
 /**
- * Approvals (feature 008, US3), at /approvals (?tab=waiting|open|decided, ?activity=<id> opens the
- * preview) — STUB of the shared foundation. Feature 008 replaces this file; the route stays.
+ * Approvals (US3, FR-027 – FR-032), at /approvals: the four summary cards, the tabs Waiting for me ·
+ * All open · Decided by me (?tab=), search and filters with chips and a count, and the rows; a row
+ * opens the preview (?activity=), where the approver decides without leaving the page.
  */
 export function ApprovalsPage() {
+  usePageTitle('Approvals');
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get('tab') as ApprovalTab | null;
+  const tab: ApprovalTab = tabParam && TAB_VALUES.includes(tabParam) ? tabParam : 'waiting';
+  const previewId = params.get('activity');
+  // Search and filters stay when the tab changes (plan, "Approvals page").
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<ApprovalFilterValues>(NO_FILTERS);
+  const summary = useApprovalSummary();
+  const rows = useApprovalRows(tab);
+  const allRows = rows.data?.items ?? [];
+  const visible = applyFilters(allRows, search, filters);
+
+  function changeParams(change: Record<string, string | null>, replace = false) {
+    const next = new URLSearchParams(params);
+    for (const [key, value] of Object.entries(change)) {
+      if (value === null) {
+        next.delete(key);
+      } else {
+        next.set(key, value);
+      }
+    }
+    setParams(next, { replace });
+  }
+
+  /** After a decision in the preview: the next row of the list as it was, or the first one. */
+  function moveOn(decidedId: string, before: ApprovalRow[]) {
+    const index = before.findIndex((row) => row.activity.id === decidedId);
+    const others = before.filter((row) => row.activity.id !== decidedId);
+    const next = before[index + 1] ?? others[0];
+    changeParams({ activity: next ? next.activity.id : null }, true);
+  }
+
+  const counts = summary.data;
+  const tabs: PillTab<ApprovalTab>[] = [
+    {
+      value: 'waiting',
+      label: 'Waiting for me',
+      badge: counts && <CountBadge count={counts.waitingForMe} label="activities" />,
+    },
+    {
+      value: 'open',
+      label: 'All open',
+      badge: counts && <CountBadge count={counts.allOpen} label="activities" />,
+    },
+    { value: 'decided', label: 'Decided by me' },
+  ];
+
   return (
-    <BuildingPage
-      eyebrow="Approvals"
-      title="Approvals"
-      description="Approve or decline the activities waiting for you, and follow the ones you sent."
-    />
+    <>
+      <PageHeader
+        eyebrow="Approvals"
+        title="Approvals"
+        description="Approve or decline the activities waiting for you, and follow the ones you sent."
+      />
+      <div className={styles.sections}>
+        <SummaryCards counts={counts} failed={summary.isError} />
+
+        <PillTabs
+          label="Approvals"
+          tabs={tabs}
+          value={tab}
+          onChange={(value) => changeParams({ tab: value })}
+        >
+          <Card>
+            <div className={styles.toolbar}>
+              <div className={styles.search}>
+                <SearchField
+                  label="Search activity name or ID"
+                  placeholder="Search activity name or ID"
+                  value={search}
+                  onChange={setSearch}
+                />
+              </div>
+              <ApprovalsFilters
+                filters={filters}
+                options={filterOptions(allRows)}
+                onChange={setFilters}
+              />
+              {rows.data && (
+                <p className={styles.count} aria-live="polite">
+                  {`${visible.length} of ${allRows.length}`}
+                </p>
+              )}
+            </div>
+            <Chips
+              filters={filters}
+              rows={allRows}
+              onChange={setFilters}
+              onClearAll={() => setFilters(NO_FILTERS)}
+            />
+            {rows.data ? (
+              visible.length > 0 ? (
+                <ApprovalsTable
+                  rows={visible}
+                  tab={tab}
+                  onOpen={(id) => changeParams({ activity: id })}
+                />
+              ) : allRows.length > 0 ? (
+                <EmptyState
+                  icon={<SearchX />}
+                  title="Nothing matches these filters"
+                  action={
+                    <Button
+                      onClick={() => {
+                        setSearch('');
+                        setFilters(NO_FILTERS);
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState icon={<CircleCheckBig />} title={EMPTY_TAB[tab]} />
+              )
+            ) : rows.isError ? (
+              <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />
+            ) : (
+              <Skeleton lines={6} height="18px" />
+            )}
+          </Card>
+        </PillTabs>
+      </div>
+
+      {previewId && (
+        <ApprovalPreviewPanel
+          activityId={previewId}
+          onClose={() => changeParams({ activity: null })}
+          onDecided={() => moveOn(previewId, visible)}
+        />
+      )}
+    </>
+  );
+}
+
+interface SummaryCardsProps {
+  counts: ApprovalCounts | undefined;
+  failed: boolean;
+}
+
+/** The four cards (FR-028); tabs and filters never change them. */
+function SummaryCards({ counts, failed }: SummaryCardsProps) {
+  if (!counts && !failed) {
+    return (
+      <div className={styles.summary}>
+        {[1, 2, 3, 4].map((key) => (
+          <Skeleton key={key} height="88px" />
+        ))}
+      </div>
+    );
+  }
+  const value = (count: number | undefined) => (count === undefined ? '—' : count);
+  return (
+    <div className={styles.summary}>
+      <SummaryCard
+        label="Waiting for me"
+        value={value(counts?.waitingForMe)}
+        tip="Submitted activities whose current approval level lists you."
+        tone={counts && counts.waitingForMe > 0 ? 'review' : undefined}
+      />
+      <SummaryCard
+        label="All open"
+        value={value(counts?.allOpen)}
+        tip="Every activity waiting for approval, at any level."
+      />
+      <SummaryCard
+        label="Approved this month"
+        value={value(counts?.approvedThisMonth)}
+        tip="Activities that got their final approval this calendar month."
+      />
+      <SummaryCard
+        label="Declined this month"
+        value={value(counts?.declinedThisMonth)}
+        tip="Activities declined this calendar month."
+      />
+    </div>
+  );
+}
+
+interface ChipsProps {
+  filters: ApprovalFilterValues;
+  rows: ApprovalRow[];
+  onChange: (filters: ApprovalFilterValues) => void;
+  onClearAll: () => void;
+}
+
+/** The filters in use as removable chips, and Clear filters. */
+function Chips({ filters, rows, onChange, onClearAll }: ChipsProps) {
+  const { date } = useFormatters();
+  if (filtersInUse(filters) === 0) {
+    return null;
+  }
+  const chips = filterChips(filters, filterOptions(rows), date);
+  return (
+    <div className={styles.chips}>
+      <FilterChips
+        chips={chips}
+        onRemove={(key) => onChange({ ...filters, [key as ApprovalFilterKey]: '' })}
+        onClearAll={onClearAll}
+      />
+    </div>
   );
 }

@@ -1,28 +1,45 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { detailsOf } from '@/features/approval-workflows/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
+
+const NO_ROWS = { body: { items: [], total: 0 } };
 
 // Feature 008's addresses (build guide §5). Feature 008 keeps this file up to date as it replaces
 // the stub pages (their own requests go into renderApp's answers).
 describe('Approvals routes (feature 008)', () => {
   it('opens /approvals, with Approvals current in the sidebar', async () => {
-    renderApp('/approvals');
+    renderApp('/approvals', { 'GET /api/approvals': NO_ROWS });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Approvals' })).toBeInTheDocument();
     expect(document.title).toBe('Approvals · NorthStar');
     expectCurrentSection('Approvals');
   });
 
-  it.each(['/settings/approval-workflows', '/settings/approval-workflows/WF-1001'])(
-    'opens %s, with Settings current in the sidebar',
-    async (path) => {
-      renderApp(path);
+  it('opens /settings/approval-workflows, with Settings current in the sidebar', async () => {
+    renderApp('/settings/approval-workflows', { 'GET /api/approval-workflows': NO_ROWS });
 
-      expect(
-        await screen.findByRole('heading', { level: 1, name: 'Approval workflows' }),
-      ).toBeInTheDocument();
-      expect(document.title).toBe('Approval workflows · NorthStar');
-      expectCurrentSection('Settings');
-    },
-  );
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Approval workflows' }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('Approval workflows · NorthStar');
+    expectCurrentSection('Settings');
+  });
+
+  it('opens /settings/approval-workflows/WF-1001 with the details panel over the list', async () => {
+    renderApp('/settings/approval-workflows/WF-1001', {
+      'GET /api/approval-workflows': NO_ROWS,
+      'GET /api/approval-workflows/WF-1001': { body: detailsOf() },
+    });
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Lubricants EU approval' }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('Approval workflows · NorthStar');
+    // The panel is modal: the page and the sidebar behind it are hidden from screen readers.
+    const navigation = screen.getByRole('navigation', { name: 'Main', hidden: true });
+    expect(
+      within(navigation).getByRole('link', { name: 'Settings', hidden: true }),
+    ).toHaveAttribute('aria-current', 'page');
+  });
 });

@@ -1,4 +1,7 @@
+import { useActivityApproval } from './approvalsApi';
 import type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';
+import { DecisionButton } from './DecisionButton';
+import { SubmitButton } from './SubmitButton';
 
 export interface ApprovalStatusActionProps {
   activity: ApprovalActivity;
@@ -6,12 +9,27 @@ export interface ApprovalStatusActionProps {
 }
 
 /**
- * The status button in feature 006's activity header (008 plan, "Activity page parts"): Submit
- * for approval, Re-submit for approval or Approve — STUB of the shared foundation: no button yet.
- * Feature 008 replaces this file; 006's ActivityPage already places it.
+ * The status button in feature 006's activity header (008 plan, "Activity page parts"; FR-009,
+ * FR-014): Created → **Submit for approval**; Declined → **Re-submit for approval**; Submitted →
+ * **Approve**; Approved (In progress, Complete) → nothing.
  */
 export function ApprovalStatusAction({ activity, onShowProblems }: ApprovalStatusActionProps) {
-  void activity;
-  void onShowProblems;
-  return null;
+  switch (activity.status) {
+    case 'created':
+    case 'declined':
+      return <SubmitButton activity={activity} onShowProblems={onShowProblems} />;
+    case 'submitted':
+      return <ApproveAction activityId={activity.id} />;
+    default:
+      return null;
+  }
+}
+
+/** Approve, once the activity's approval (shared with its Approval section) has arrived. */
+function ApproveAction({ activityId }: { activityId: string }) {
+  const approval = useActivityApproval(activityId);
+  if (!approval.data?.actions.approve.available) {
+    return null;
+  }
+  return <DecisionButton mode="approve" approval={approval.data} />;
 }

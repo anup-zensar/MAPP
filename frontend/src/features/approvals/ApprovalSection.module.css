@@ -1,0 +1,54 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+/* The latest decline, on the problem tint (design system §4). */
+.decline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--status-problem);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--status-problem) 10%, transparent);
+  overflow-wrap: anywhere;
+}
+
+.declineBy {
+  color: var(--status-problem-text);
+  font-weight: 600;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  overflow-wrap: anywhere;
+}
+
+.upcoming {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subheading {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reason {
+  color: var(--ink-2);
+}
