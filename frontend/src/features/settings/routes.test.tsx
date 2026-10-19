@@ -11,6 +11,10 @@ const PAGE_ANSWERS: Record<string, MockHandler> = {
   'GET /api/models': { body: { items: [], total: 0 } },
   'GET /api/activity-types': { body: { items: [], total: 0 } },
   'GET /api/currencies': { body: { items: [], total: 0 } },
+  // The People, Teams and Approval workflows cards count their active records (003, 008).
+  'GET /api/people': { body: { items: [], total: 0 } },
+  'GET /api/teams': { body: { items: [], total: 0 } },
+  'GET /api/approval-workflows': { body: { items: [], total: 0 } },
 };
 
 // Feature 002's addresses (build guide §5). Feature 002 keeps this file up to date as it replaces

@@ -18,6 +18,27 @@ const SIGN_IN_REQUIRED = {
 
 const BANNER = 'Demo environment — sign-in and data are for demonstration only';
 
+/** The Plans page's request, answered with no plans: these tests use /plans as a signed-in page. */
+const NO_PLANS = {
+  'GET /api/plans': {
+    body: {
+      items: [],
+      total: 0,
+      summary: {
+        plans: 0,
+        draft: 0,
+        published: 0,
+        plannedCost: { amount: '0.00', currency: 'USD' },
+        budget: { amount: '0.00', currency: 'USD' },
+      },
+      years: [],
+    },
+  },
+};
+
+/** The Approvals page's request, answered with no rows. */
+const NO_APPROVALS = { 'GET /api/approvals': { body: { items: [], total: 0 } } };
+
 afterEach(() => {
   localStorage.clear();
   delete document.documentElement.dataset.theme;
@@ -53,6 +74,7 @@ describe('RequireSignIn', () => {
     mockApi({
       'GET /api/me': () =>
         ++checks === 1 ? Promise.reject(new TypeError('Failed to fetch')) : { body: PRIYA },
+      ...NO_APPROVALS,
     });
     const { user } = renderRoutes(routes, { route: '/approvals' });
     await screen.findByRole('alert');
@@ -79,7 +101,7 @@ describe('RequireSignIn', () => {
   });
 
   it('shows the page inside the app layout to a signed-in person (FR-010)', async () => {
-    mockApi({ 'GET /api/me': { body: PRIYA } });
+    mockApi({ 'GET /api/me': { body: PRIYA }, ...NO_PLANS });
     renderRoutes(routes, { route: '/plans' });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Plans' })).toBeInTheDocument();
@@ -88,14 +110,15 @@ describe('RequireSignIn', () => {
   });
 
   it('checks the session again on every navigation (research R15)', async () => {
-    const api = mockApi({ 'GET /api/me': { body: PRIYA } });
+    const api = mockApi({ 'GET /api/me': { body: PRIYA }, ...NO_PLANS });
+    const sessionChecks = () => api.requests.filter((r) => r.path === '/api/me').length;
     const { user } = renderRoutes(routes, { route: '/' });
     await screen.findByRole('heading', { level: 1, name: 'Welcome back, Priya.' });
-    const checksBefore = api.requests.length;
+    const checksBefore = sessionChecks();
 
     await user.click(screen.getByRole('link', { name: 'Plans' }));
 
-    await waitFor(() => expect(api.requests).toHaveLength(checksBefore + 1));
-    expect(api.requests.at(-1)).toMatchObject({ method: 'GET', path: '/api/me' });
+    await waitFor(() => expect(sessionChecks()).toBe(checksBefore + 1));
+    await screen.findByRole('heading', { level: 1, name: 'Plans' });
   });
 });

@@ -33,6 +33,9 @@ export const planActivitiesKey = (planId: string) => ['plan-activities', planId]
 export const ACTIVITY_PLANNING_KEYS: QueryKey[] = [
   ['activity'],
   ['activity-form'],
+  // Its line items' spreads and unassigned planned cost (007), and its approval (008).
+  ['line-items'],
+  ['approval'],
   ['plan-activities'],
   ['plans'],
   ['plan'],
@@ -43,8 +46,8 @@ export const ACTIVITY_PLANNING_KEYS: QueryKey[] = [
   ['activity-log'],
 ];
 
-/** What a delete refreshes: everything but the deleted activity and its forms. */
-const LISTS_AFTER_DELETE = ACTIVITY_PLANNING_KEYS.slice(2);
+/** What a delete refreshes: everything but the deleted activity, its forms, line items and approval. */
+const LISTS_AFTER_DELETE = ACTIVITY_PLANNING_KEYS.slice(4);
 
 /** An activity with its status, completeness and ready-to-submit check (GET /api/activities/{id}). */
 export function useActivity(id: string) {

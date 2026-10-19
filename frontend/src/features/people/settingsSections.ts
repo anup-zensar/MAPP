@@ -9,14 +9,14 @@ import { ActivePeopleCount, ActiveTeamsCount } from './ActiveCounts';
 export const PEOPLE_SETTINGS_SECTIONS: SettingsSection[] = [
   {
     title: 'People',
-    description: 'Everyone who can sign in, with their job title and teams.',
+    description: 'Everyone who can sign in to NorthStar.',
     path: '/settings/people',
     icon: Users,
     ActiveCount: ActivePeopleCount,
   },
   {
     title: 'Teams',
-    description: 'Groups of people that plans are assigned to.',
+    description: 'The teams plans belong to.',
     path: '/settings/teams',
     icon: UsersRound,
     ActiveCount: ActiveTeamsCount,

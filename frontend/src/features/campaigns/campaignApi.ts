@@ -30,14 +30,16 @@ export const campaignKeys = {
 
 /**
  * Everything a change to a campaign or initiative can show in: plan lists and the campaigns list
- * (['plans']), the plan page and its summary cards (['plan']), the panels, the recycle bin and the
- * activity log. Undo refreshes the same.
+ * (['plans']), the plan page and its summary cards (['plan']), the panels, the activity rows and
+ * pages below them (feature 006), the recycle bin and the activity log. Undo refreshes the same.
  */
 export const PLANNING_KEYS: QueryKey[] = [
   ['plans'],
   ['plan'],
   ['campaigns'],
   ['initiatives'],
+  ['plan-activities'],
+  ['activity'],
   ['recycle-bin'],
   ['activity-log'],
 ];

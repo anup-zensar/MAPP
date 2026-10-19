@@ -20,11 +20,21 @@ export type LineItemCurrency = components['schemas']['LineItemCurrency'];
 export type FinanceBudgetItemRef = components['schemas']['FinanceBudgetItemRef'];
 export type Money = components['schemas']['Money'];
 
-/** The lists a line-item change shows in; Undo refreshes them too. */
+/**
+ * Everything a line-item change shows in; Undo refreshes them too: the line items, the activity's
+ * page (its unassigned planned cost, completeness and, after a restart, status and approval —
+ * features 006 and 008), the activity rows and roll-ups of the plan tree (004, 005, 006), the
+ * recycle bin and the activity log.
+ */
 export const LINE_ITEM_CHANGE_KEYS: QueryKey[] = [
   ['line-items'],
-  ['activities'],
+  ['activity'],
+  ['approval'],
+  ['plan-activities'],
   ['plans'],
+  ['plan'],
+  ['campaigns'],
+  ['initiatives'],
   ['recycle-bin'],
   ['activity-log'],
 ];

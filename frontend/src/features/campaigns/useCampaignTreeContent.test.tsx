@@ -47,7 +47,11 @@ function PlanStandIn() {
 }
 
 function renderTree(answers: Record<string, MockHandler>, route: unknown = '/plans/P-1001') {
-  const api = mockApi(answers);
+  // Feature 006 adds the plan's activities under the initiatives: none here.
+  const api = mockApi({
+    'GET /api/plans/P-1001/activities': { body: { items: [], total: 0 } },
+    ...answers,
+  });
   const rendered = renderRoutes(
     [
       {

@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useId } from 'react';
-import { Link, NavLink } from 'react-router';
+import { Link, useLocation, useMatch } from 'react-router';
 import { Logo, Tooltip } from '@/components';
 import { cx } from '@/lib/cx';
 import { AccountMenu } from './AccountMenu';
@@ -88,15 +88,19 @@ function NavItems({ items, collapsed, labelledBy }: NavItemsProps) {
 }
 
 /**
- * A sidebar link; NavLink marks the current section with aria-current="page", which also gives it
- * its highlight (Sidebar.module.css). Home is current only on Home itself ("end"); a section is
- * current on its sub-pages too.
+ * A sidebar link, marked with aria-current="page" on the current section, which also gives it its
+ * highlight (Sidebar.module.css). Home is current only on Home itself; a section is current on its
+ * sub-pages too, and on the addresses in its `alsoCurrentOn`.
  */
 function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
-  // A plain class name, not NavLink's className function: in the icon rail the link is the
-  // trigger of a Tooltip, which joins class names as text and would turn a function into text.
+  const { pathname } = useLocation();
+  const onSection = useMatch({ path: item.path, end: item.path === '/' }) !== null;
+  const current =
+    onSection || (item.alsoCurrentOn ?? []).some((start) => pathname.startsWith(start));
+  // A plain class name: in the icon rail the link is the trigger of a Tooltip, which joins class
+  // names as text.
   const link = (
-    <NavLink to={item.path} end={item.path === '/'} className={styles.item}>
+    <Link to={item.path} className={styles.item} aria-current={current ? 'page' : undefined}>
       <item.icon className={styles.icon} />
       {/* Hidden on screen in the icon rail, never removed: the link keeps its name. */}
       <span className={collapsed ? 'visually-hidden' : undefined}>{item.label}</span>
@@ -107,7 +111,7 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
           <item.Badge collapsed={collapsed} />
         </>
       )}
-    </NavLink>
+    </Link>
   );
 
   // In the icon rail a tooltip shows the hidden label on hover and focus.

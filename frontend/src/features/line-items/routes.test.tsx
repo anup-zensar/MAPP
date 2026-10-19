@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderApp } from '@/test/app';
+import { expectCurrentSection, renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
 import { details, formAnswers, formOptions } from './testData';
 
@@ -19,10 +19,11 @@ describe('Line item routes (feature 007)', () => {
     ['/activities/A-1001/line-items/new', 'New line item', 'New line item', FORM_OPTIONS],
     ['/line-items/L-1001', 'Agency fee', 'Agency fee', DETAILS],
     ['/line-items/L-1001/edit', "Edit 'Agency fee'", 'Edit Agency fee', DETAILS],
-  ])('opens %s: "%s"', async (path, heading, tab, answers) => {
+  ])('opens %s: "%s", with Plans current in the sidebar', async (path, heading, tab, answers) => {
     renderApp(path, answers);
 
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
     expect(document.title).toBe(`${tab} · NorthStar`);
+    expectCurrentSection('Plans');
   });
 });

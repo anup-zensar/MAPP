@@ -83,10 +83,13 @@ describe('PlanTree (FR-013, FR-014)', () => {
     expect(screen.getByText('No budget set')).toBeInTheDocument();
   });
 
-  it('expands and collapses everything', async () => {
+  it('starts with the plan and campaign rows open, and expands and collapses everything', async () => {
     const { user } = renderTree(CAMPAIGNS);
 
-    expect(screen.getAllByRole('row')).toHaveLength(4);
+    expect(screen.getAllByRole('row')).toHaveLength(5);
+    expect(screen.getByText('Digital & social')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Collapse Retail growth' }));
+    expect(screen.queryByText('Digital & social')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Expand all' }));
     expect(screen.getByText('Digital & social')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Collapse all' }));
@@ -106,6 +109,46 @@ describe('PlanTree (FR-013, FR-014)', () => {
     expect(screen.getByText('Digital & social')).toBeInTheDocument();
     expect(screen.getByText('Retail growth')).toBeInTheDocument();
     expect(screen.queryByText('Fleet deals')).not.toBeInTheDocument();
+  });
+
+  it('opens the path to the highlighted row (005 FR-004)', () => {
+    const [retail, fleet] = CAMPAIGNS;
+    renderTree([
+      {
+        ...retail,
+        children: [
+          {
+            ...retail.children[0],
+            children: [
+              {
+                id: 'A-1001',
+                level: 'activity',
+                name: 'Launch film',
+                cells: {},
+                children: [],
+                highlighted: true,
+              },
+            ],
+          },
+        ],
+      },
+      fleet,
+    ]);
+
+    expect(screen.getByText('Launch film')).toBeInTheDocument();
+  });
+
+  it('shows Try again when the rows below the plan cannot be read', () => {
+    renderWithProviders(<PlanTree plan={plan()} error={new Error('down')} onRetry={() => {}} />, {
+      user: testUser(),
+    });
+
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        'No campaigns yet — a campaign is a theme that runs for most of the year.',
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it('says when nothing matches', async () => {

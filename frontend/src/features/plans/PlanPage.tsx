@@ -71,6 +71,9 @@ export function PlanPage() {
           footer={campaigns.footer}
           planRowActions={campaigns.planRowActions}
           emptyAction={campaigns.emptyAction}
+          isLoading={campaigns.isLoading}
+          error={campaigns.error}
+          onRetry={campaigns.refetch}
         />
         <div className={styles.columns}>
           <PlanDetails plan={data} />

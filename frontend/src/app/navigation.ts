@@ -30,6 +30,11 @@ export interface NavItem {
    * you"); `collapsed` is the icon rail.
    */
   Badge?: ComponentType<{ collapsed: boolean }>;
+  /**
+   * Other address beginnings under which the section is current too: pages of the section whose
+   * address does not start with its own (Plans: an activity's short link and line items, 006 and 007).
+   */
+  alsoCurrentOn?: string[];
 }
 
 /** A section a later feature builds; until then its page says in one sentence what it will do. */
@@ -39,7 +44,12 @@ export interface ComingSoonSection extends NavItem {
 
 const HOME: NavItem = { label: 'Home', path: '/', icon: House };
 
-const PLANS: NavItem = { label: 'Plans', path: '/plans', icon: ClipboardList };
+const PLANS: NavItem = {
+  label: 'Plans',
+  path: '/plans',
+  icon: ClipboardList,
+  alsoCurrentOn: ['/activities/', '/line-items/'],
+};
 
 const APPROVALS: NavItem = {
   label: 'Approvals',

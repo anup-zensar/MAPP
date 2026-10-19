@@ -39,6 +39,27 @@ const SIGN_IN_REQUIRED = {
 };
 const SESSION_EXPIRED = { code: 'session_expired', message: 'Please sign in again', fields: [] };
 
+/** The Plans page's request, answered with no plans: these tests use /plans as a signed-in page. */
+const NO_PLANS = {
+  'GET /api/plans': {
+    body: {
+      items: [],
+      total: 0,
+      summary: {
+        plans: 0,
+        draft: 0,
+        published: 0,
+        plannedCost: { amount: '0.00', currency: 'USD' },
+        budget: { amount: '0.00', currency: 'USD' },
+      },
+      years: [],
+    },
+  },
+};
+
+/** The Approvals page's request, answered with no rows. */
+const NO_APPROVALS = { 'GET /api/approvals': { body: { items: [], total: 0 } } };
+
 /** Shows what useSession() says, with a button that checks the session again. */
 function SessionProbe() {
   const session = useSession();
@@ -265,6 +286,7 @@ describe('SessionProvider: ending a session (US4)', () => {
         ++checks === 1 ? { status: 401, body: SESSION_EXPIRED } : { body: PRIYA },
       'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
       'POST /api/auth/sign-in': { body: PRIYA },
+      ...NO_PLANS,
     });
     const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
     await screen.findByText('Please sign in again');
@@ -288,6 +310,7 @@ describe('SessionProvider: ending a session (US4)', () => {
         return { status: 401, body: SESSION_EXPIRED };
       },
       'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      ...NO_PLANS,
     });
     const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
     await screen.findByRole('heading', { level: 1, name: 'Plans' });
@@ -314,7 +337,11 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('notices another person signing in in another tab, and starts again on Home (edge case)', async () => {
     let checks = 0;
-    mockApi({ 'GET /api/me': () => ({ body: ++checks === 1 ? PRIYA : DANIEL }) });
+    mockApi({
+      'GET /api/me': () => ({ body: ++checks === 1 ? PRIYA : DANIEL }),
+      ...NO_PLANS,
+      ...NO_APPROVALS,
+    });
     const { user, router, queryClient } = renderRoutes(routes, { route: '/plans' });
     await screen.findByRole('heading', { level: 1, name: 'Plans' });
     queryClient.setQueryData(['sample-folders'], { items: [], total: 0 });

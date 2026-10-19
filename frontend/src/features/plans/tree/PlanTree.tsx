@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, Card, filterTree, ProgressBar, SearchField, TreeTable } from '@/components';
+import {
+  Button,
+  Card,
+  ErrorState,
+  filterTree,
+  ProgressBar,
+  SearchField,
+  Skeleton,
+  TreeTable,
+} from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableColumn, TreeTableFooter } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import { PlanCompleteness, PlanStatusChip } from '../PlanFacts';
@@ -25,6 +34,19 @@ function allIds(nodes: TreeNode[]): string[] {
   );
 }
 
+/**
+ * The rows open before anyone expands or collapses them: the plan and campaign rows (005 FR-020)
+ * and every row on the path to a highlighted one, the record just created, moved or copied.
+ */
+function openAtFirst(nodes: TreeNode[], path: string[] = []): string[] {
+  return nodes.flatMap((node) => {
+    const below = openAtFirst(node.children, [...path, node.id]);
+    const own = node.level === 'plan' || node.level === 'campaign' ? [node.id] : [];
+    const toHighlight = node.highlighted ? path : [];
+    return [...own, ...toHighlight, ...below];
+  });
+}
+
 export interface PlanTreeProps {
   plan: Plan;
   /** The rows under the plan row: campaigns with their initiatives (feature 005). */
@@ -37,6 +59,12 @@ export interface PlanTreeProps {
   planRowActions?: ActionsMenuItem[];
   /** Under the "No campaigns yet" sentence (feature 005: Add campaign). */
   emptyAction?: ReactNode;
+  /** The rows below the plan are still loading (feature 005). */
+  isLoading?: boolean;
+  /** Reading the rows below the plan failed (feature 005); shown with Try again. */
+  error?: unknown;
+  /** Reads the rows below the plan again. */
+  onRetry?: () => void;
 }
 
 /**
@@ -51,10 +79,15 @@ export function PlanTree({
   footer,
   planRowActions,
   emptyAction,
+  isLoading = false,
+  error,
+  onRetry,
 }: PlanTreeProps) {
   const { money } = useFormatters();
   const [query, setQuery] = useState('');
-  const [expandedIds, setExpandedIds] = useState(() => new Set([plan.id]));
+  // What someone opened or closed, by row id; the other rows follow openAtFirst, so rows that load
+  // later (campaigns) start the way 005 FR-020 says.
+  const [toggled, setToggled] = useState<ReadonlyMap<string, boolean>>(() => new Map());
   const { figures } = plan;
 
   const planNode: TreeNode = {
@@ -107,24 +140,29 @@ export function PlanTree({
   };
 
   const filtered = filterTree([planNode], query);
+  const openFirst = new Set(openAtFirst([planNode]));
+  const expandedIds = new Set(
+    allIds([planNode]).filter((id) => toggled.get(id) ?? openFirst.has(id)),
+  );
+
+  /** Sets every row in ids open or closed. */
+  function setOpen(ids: Iterable<string>, open: boolean) {
+    setToggled((current) => {
+      const next = new Map(current);
+      for (const id of ids) {
+        next.set(id, open);
+      }
+      return next;
+    });
+  }
 
   /** Filters the rows and opens the path to every match. */
   function search(text: string) {
     setQuery(text);
     const { openIds } = filterTree([planNode], text);
     if (openIds.size > 0) {
-      setExpandedIds((current) => new Set([...current, ...openIds]));
+      setOpen(openIds, true);
     }
-  }
-
-  function toggle(id: string) {
-    setExpandedIds((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) {
-        next.add(id);
-      }
-      return next;
-    });
   }
 
   return (
@@ -139,10 +177,10 @@ export function PlanTree({
               onChange={search}
             />
           </div>
-          <Button size="sm" onClick={() => setExpandedIds(new Set(allIds([planNode])))}>
+          <Button size="sm" onClick={() => setOpen(allIds([planNode]), true)}>
             Expand all
           </Button>
-          <Button size="sm" onClick={() => setExpandedIds(new Set())}>
+          <Button size="sm" onClick={() => setOpen(allIds([planNode]), false)}>
             Collapse all
           </Button>
           {toolbarActions}
@@ -152,15 +190,24 @@ export function PlanTree({
           columns={COLUMNS}
           nodes={filtered.nodes}
           expandedIds={expandedIds}
-          onToggle={toggle}
+          onToggle={(id) => setOpen([id], !expandedIds.has(id))}
           emptyText={`Nothing in this plan matches '${query.trim()}'`}
           footer={footer}
         />
-        {childNodes.length === 0 && !query.trim() && (
-          <div className={styles.empty}>
-            <p>{NO_CAMPAIGNS}</p>
-            {emptyAction}
+        {error ? (
+          <ErrorState error={error} onRetry={() => onRetry?.()} />
+        ) : isLoading ? (
+          <div aria-busy="true" aria-label="Loading the campaigns">
+            <Skeleton lines={3} />
           </div>
+        ) : (
+          childNodes.length === 0 &&
+          !query.trim() && (
+            <div className={styles.empty}>
+              <p>{NO_CAMPAIGNS}</p>
+              {emptyAction}
+            </div>
+          )
         )}
       </div>
     </Card>

@@ -203,7 +203,9 @@ describe('LineItemCreatePage (US2)', () => {
       restartApproval: false,
     });
     const keys = invalidate.mock.calls.map(([filters]) => filters?.queryKey);
-    expect(keys).toEqual(expect.arrayContaining([['line-items'], ['activities'], ['plans']]));
+    expect(keys).toEqual(
+      expect.arrayContaining([['line-items'], ['activity'], ['plan-activities'], ['plans']]),
+    );
   });
 
   it('opens a new form with the new balance after Save and add another (scenario 7)', async () => {

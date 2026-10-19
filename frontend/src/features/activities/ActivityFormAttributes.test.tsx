@@ -1,5 +1,6 @@
 import { configure, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { launchFilmSection } from '@/features/line-items/testData';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
@@ -27,6 +28,12 @@ function openNewForm(answers: Record<string, MockHandler> = {}) {
   return { ...rendered, api };
 }
 
+// The edit form's dates say what a change does to the line items' spreads (feature 007's
+// SpreadEffectNote), which reads the activity's line items: here it has none.
+const NO_LINE_ITEMS = {
+  'GET /api/activities/A-1042/line-items': { body: launchFilmSection({ items: [] }) },
+};
+
 function openEditForm(activity: Activity) {
   const api = mockApi({
     'GET /api/activities/A-1042': { body: activity },
@@ -34,6 +41,7 @@ function openEditForm(activity: Activity) {
     'GET /api/people': { body: PEOPLE },
     'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
     'PATCH /api/activities/A-1042': { body: activity },
+    ...NO_LINE_ITEMS,
   });
   const rendered = renderWithProviders(<ActivityFormPage mode="edit" />, {
     route: '/plans/P-1001/activities/A-1042/edit',
