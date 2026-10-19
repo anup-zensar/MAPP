@@ -46,6 +46,7 @@ const (
 	choosePersonMessage     = "Choose an active person."
 	chooseWorkflowMessage   = "Choose an active approval workflow."
 	workflowLockedMessage   = "The approval workflow can't change while the activity is submitted or approved."
+	workflowRecallMessage   = "Recall the activity to choose another workflow." // while Submitted (008 FR-013)
 	ongoingLockedMessage    = "Ongoing can't be undone — to plan with an end date, create a new activity."
 	costNegativeMessage     = "Planned cost can't be negative."
 	costCurrencyMessage     = "Enter the planned cost in USD."
@@ -396,8 +397,9 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update U
 
 // RestartApproval sends the Submitted or Approved activity activityID back to Created (FR-027, D-196), for
 // changes made elsewhere, such as feature 007's line-item changes: it runs inside the caller's Write,
-// writes one status entry with the reasons and tells feature 008. An activity with another status is left
-// as it is.
+// writes one status entry with the reasons and tells feature 008, which keeps each reason, a ready-made
+// sentence, as one change of its approval history (008 plan, Reconciliation). An activity with another
+// status is left as it is.
 func (s *Service) RestartApproval(ctx context.Context, a actor.Actor, activityID string, reasons []string) error {
 	return s.tx.Write(ctx, func(ctx context.Context) error {
 		activity, found, err := s.repo.Get(ctx, activityID)
@@ -416,24 +418,25 @@ func (s *Service) RestartApproval(ctx context.Context, a actor.Actor, activityID
 		if err := s.repo.Put(ctx, activity); err != nil {
 			return err
 		}
-		return s.logRestart(ctx, a, before, activity, nil, strings.Join(reasons, " "))
+		changes := make([]history.Change, 0, len(reasons))
+		for _, reason := range reasons {
+			changes = append(changes, history.Change{Label: reason}) // no old or new text: the label says it all
+		}
+		return s.logRestart(ctx, a, before, activity, changes, strings.Join(reasons, " "))
 	})
 }
 
 // logRestart writes the status entry of a restarted approval (Submitted or Approved → Created) with its
 // details, and tells feature 008 through the approval hooks, in the caller's Write. changes are the
-// changes that caused it; nil means the status change itself.
+// changes that caused it, with their labels and texts.
 func (s *Service) logRestart(ctx context.Context, a actor.Actor, before, after Activity, changes []history.Change, details string) error {
-	entry, err := s.history.Log(ctx, a, history.LogInput{
+	_, err := s.history.Log(ctx, a, history.LogInput{
 		Kind: kindName, RecordID: after.ID, RecordName: after.Name, Action: history.ActionStatusChanged, Verb: restartVerb,
 		Changes: []history.Change{{Field: "status", Old: mustJSON(before.Status), New: mustJSON(after.Status)}},
 		Details: details,
 	})
 	if err != nil {
 		return err
-	}
-	if changes == nil {
-		changes = entry.Changes
 	}
 	return s.hooks.ApprovalRestarted(ctx, a, before, after, changes)
 }
@@ -636,6 +639,8 @@ func (s *Service) checkFields(ctx context.Context, problems *errs.Problems, pc p
 	next.ApprovalWorkflowID = strings.TrimSpace(deref(in.ApprovalWorkflowID))
 	if before == nil || before.ApprovalWorkflowID != next.ApprovalWorkflowID {
 		switch {
+		case before != nil && before.Status == StatusSubmitted: // an open approval round (008 FR-013)
+			problems.Add("approvalWorkflowId", workflowRecallMessage)
 		case before != nil && inApproval(*before):
 			problems.Add("approvalWorkflowId", workflowLockedMessage)
 		case next.ApprovalWorkflowID != "":

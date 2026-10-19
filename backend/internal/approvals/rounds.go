@@ -282,6 +282,82 @@ func (s *Service) decide(ctx context.Context, a actor.Actor, activityID string, 
 	return approval, nil
 }
 
+// Recall takes back the submission of a Submitted activity, as in.RoundID names its open round, with an
+// optional reason (FR-021): the round ends as recalled at the level it waited at, the activity is Created
+// again and leaves the approvers' lists, the round's history and the activity log record it with the reason
+// (FR-026), and the owner and the approvers of the waiting level are told (FR-035). Anyone may recall in
+// this phase (D-020). An Approved activity cannot be recalled — a change of domain model §2.5 sends it back
+// for approval — and the refusal says so. A round that ended meanwhile is refused, saying what ended it
+// (FR-018).
+func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, in RecallInput) (ActivityApproval, error) {
+	reason := strings.TrimSpace(in.Reason)
+	var problems errs.Problems
+	if in.RoundID == "" {
+		problems.Add("roundId", reloadMessage)
+	}
+	if tooLong(reason, maxCommentLength) {
+		problems.Add("reason", tooLong2000Message)
+	}
+	if err := problems.Err(); err != nil {
+		return ActivityApproval{}, err
+	}
+
+	var approval ActivityApproval
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
+		facts, err := s.activity(ctx, activityID)
+		if err != nil {
+			return err
+		}
+		if facts.Status == StatusApproved {
+			return errs.BadRequest(approvedNoRecallMessage)
+		}
+		round, found, err := s.repo.GetRound(ctx, in.RoundID)
+		if err != nil {
+			return err
+		}
+		if !found || round.ActivityID != facts.ID {
+			return errs.NotFound(roundNotOfActivity)
+		}
+		if round.Outcome != OutcomeOpen {
+			return s.movedOn(ctx, round, 0) // no level is decided by a recall: what ended the round explains it
+		}
+
+		now := s.now()
+		waiting := round.Levels[round.CurrentLevel-1]
+		round.Outcome, round.EndedAt = OutcomeRecalled, &now
+		round.Touch(a, now)
+		if err := s.repo.PutRound(ctx, round); err != nil {
+			return err
+		}
+		if err := s.addAction(ctx, round, ActionRecalled, waiting.Number, a, nil, now, reason); err != nil {
+			return err
+		}
+		updated, err := s.activities.SetStatus(ctx, a, facts.ID, StatusCreated)
+		if err != nil {
+			return err
+		}
+		err = s.logOnActivity(ctx, a, updated, statusLog{
+			verb: "recalled", oldStatus: facts.Status, newer: StatusCreated, comment: reason,
+			details: fmt.Sprintf("Round %d · was waiting for level %d (%s)", round.Number, waiting.Number, names(waiting.Approvers)),
+		})
+		if err != nil {
+			return err
+		}
+		recipients := append([]string{facts.OwnerID}, idsOf(waiting.Approvers)...)
+		err = s.notifier(a, updated, now).send(ctx, recipients, NotifyRecalled, recalledTitle,
+			fmt.Sprintf(recalledText, a.Name, activityText(updated)))
+		if err != nil {
+			return err
+		}
+		approval, err = s.approval(ctx, a, updated)
+		return err
+	})
+	if err != nil {
+		return ActivityApproval{}, err
+	}
+	return approval, nil
+}
+
 // movedOn explains why a decision on level of round comes too late (FR-018, D-155): the level was decided,
 // or the round ended, after the person opened the activity. Only the first decision counts, so nothing
 // changes. A level the round has not reached yet is a stale request.
@@ -387,9 +463,20 @@ func roundLevels(levels []Level, d directory) []RoundLevel {
 // onBehalf is nil for actions other than decisions.
 func (s *Service) addAction(ctx context.Context, round Round, kind ActionKind, level int, by actor.Actor,
 	onBehalf []actor.Actor, at time.Time, comment string) error {
-	id, err := s.ids.Next(ctx, ids.PrefixApprovalAction)
+	entry, err := s.newAction(ctx, round, kind, level, by, onBehalf, at, comment)
 	if err != nil {
 		return err
+	}
+	return s.repo.PutAction(ctx, entry)
+}
+
+// newAction returns a new history entry of round about level (0 for none), with its id and without
+// changes, for the caller to store.
+func (s *Service) newAction(ctx context.Context, round Round, kind ActionKind, level int, by actor.Actor,
+	onBehalf []actor.Actor, at time.Time, comment string) (Action, error) {
+	id, err := s.ids.Next(ctx, ids.PrefixApprovalAction)
+	if err != nil {
+		return Action{}, err
 	}
 	entry := Action{
 		ID: id, RoundID: round.ID, RoundNumber: round.Number, ActivityID: round.ActivityID, Action: kind,
@@ -403,7 +490,7 @@ func (s *Service) addAction(ctx context.Context, round Round, kind ActionKind, l
 	if onBehalf != nil {
 		entry.OnBehalfOf = onBehalf
 	}
-	return s.repo.PutAction(ctx, entry)
+	return entry, nil
 }
 
 // workflowRef is how an activity refers to w.

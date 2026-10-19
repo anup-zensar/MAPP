@@ -6,7 +6,7 @@ import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { ApprovalPreviewPanel } from './ApprovalPreviewPanel';
 import { ACTIVITY_GONE } from './messages';
-import { approvalOf, previewOf } from './testData';
+import { approvalOf, previewOf, roundOf, SUBMITTED } from './testData';
 
 const PREVIEW = 'GET /api/approvals/activities/A-1042';
 const APPROVE = 'POST /api/activities/A-1042/approval/approve';
@@ -148,6 +148,96 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
     expect(panel).toHaveAccessibleDescription('A-1042 · Approved');
     expect(within(panel).queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
     expect(within(panel).getByRole('link', { name: 'Open activity' })).toBeInTheDocument();
+  });
+
+  it('shows an approval restarted by a change, without a decision (FR-022)', async () => {
+    const preview = previewOf();
+    const none = { available: false, reason: '' };
+    const restarted = roundOf({
+      outcome: 'restarted',
+      endedAt: '2026-03-12T10:15:00Z',
+      levels: [{ ...roundOf().levels[0], state: 'notDecided' }, roundOf().levels[1]],
+      history: [
+        {
+          ...SUBMITTED,
+          id: 'AH-1002',
+          action: 'restarted',
+          comment: '',
+          at: '2026-03-12T10:15:00Z',
+          changes: [
+            {
+              label: 'Planned cost',
+              oldText: '$50,000.00',
+              newText: '$65,000.00',
+              text: 'Planned cost changed from $50,000.00 to $65,000.00',
+            },
+          ],
+        },
+        SUBMITTED,
+      ],
+    });
+    renderPanel({
+      [PREVIEW]: {
+        body: {
+          ...preview,
+          activity: { ...preview.activity, status: 'created', displayStatus: 'created' },
+          approval: approvalOf({
+            status: 'created',
+            displayStatus: 'created',
+            rounds: [restarted],
+            actions: {
+              submit: { available: true, reason: '' },
+              resubmit: none,
+              approve: none,
+              decline: none,
+              recall: none,
+            },
+          }),
+        },
+      },
+    });
+
+    const panel = await screen.findByRole('dialog', { name: 'Launch film' });
+    expect(panel).toHaveAccessibleDescription('A-1042 · Created');
+    expect(panel).toHaveTextContent('Not decided — approval restarted');
+    const history = within(panel).getByRole('region', { name: 'Approval history' });
+    expect(history).toHaveTextContent(
+      'Approval restarted · Round 1 · Level 1 · 12 Mar 2026, 10:15',
+    );
+    expect(history).toHaveTextContent('Planned cost changed from $50,000.00 to $65,000.00');
+    expect(within(panel).queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
+    expect(within(panel).queryByRole('button', { name: 'Decline' })).not.toBeInTheDocument();
+  });
+
+  it('explains an approval restarted after the preview was opened (FR-018, FR-022)', async () => {
+    const { user, onDecided } = renderPanel({
+      [PREVIEW]: { body: previewOf() },
+      [DECLINE]: {
+        status: 409,
+        body: {
+          code: 'version_conflict',
+          message: 'Approval was restarted by Priya Raman',
+          fields: [],
+          conflict: { changedBy: 'Priya Raman', changedAt: '2026-03-11T10:15:00Z' },
+        },
+      },
+    });
+
+    const panel = await screen.findByRole('dialog', { name: 'Launch film' });
+    await user.click(within(panel).getByRole('button', { name: 'Decline' }));
+    const dialog = await screen.findByRole('alertdialog');
+    await user.type(
+      within(dialog).getByRole('textbox', { name: /Why are you declining it\?/ }),
+      'Too expensive',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Decline activity' }));
+
+    expect(
+      await screen.findByText(
+        /^Approval was restarted by Priya Raman on 11 Mar 2026 at \d\d:\d\d\.$/,
+      ),
+    ).toBeInTheDocument();
+    expect(onDecided).not.toHaveBeenCalled();
   });
 
   it('says when the activity no longer exists, with Close', async () => {

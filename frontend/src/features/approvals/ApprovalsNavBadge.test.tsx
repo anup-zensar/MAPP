@@ -1,5 +1,5 @@
-import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar } from '@/app/Sidebar';
 import { mockApi } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
@@ -10,6 +10,10 @@ const counts = (waitingForMe: number) => ({
 });
 
 describe('ApprovalsNavBadge (feature 008, FR-027)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('shows the waiting count inside the Approvals link', async () => {
     const api = mockApi({ 'GET /api/approvals/summary': counts(3) });
     renderWithProviders(<Sidebar />, { user: testUser() });
@@ -29,5 +33,27 @@ describe('ApprovalsNavBadge (feature 008, FR-027)', () => {
     await screen.findByRole('link', { name: 'Approvals' });
     expect(api.requests.some((request) => request.path === '/api/approvals/summary')).toBe(true);
     expect(screen.queryByText('waiting for you')).not.toBeInTheDocument();
+  });
+
+  it('shows a new count within a minute, without reloading the page (FR-036)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let calls = 0;
+    mockApi({
+      'GET /api/approvals/summary': () => {
+        calls += 1;
+        return counts(calls === 1 ? 0 : 2);
+      },
+    });
+    renderWithProviders(<Sidebar />, { user: testUser() });
+    await screen.findByRole('link', { name: 'Approvals' }, { timeout: 10_000 });
+    await waitFor(() => expect(calls).toBe(1));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+
+    expect(
+      await screen.findByRole('link', { name: 'Approvals 2 waiting for you' }),
+    ).toBeInTheDocument();
   });
 });

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"slices"
 	"strings"
 
 	"northstar/internal/history"
@@ -42,6 +41,7 @@ func (s *Service) Kinds() []history.Kind {
 		Put:            s.put,
 		Describe:       s.describe,
 		PrepareRestore: s.prepareRestore,
+		AfterRestore:   s.afterRestore,
 	}}
 }
 
@@ -53,15 +53,9 @@ const (
 	restoredReason       = "Line item '%s' (%s) restored: %s %s"
 )
 
-// prepareRestore applies the rules of a line item that comes back (data model §7.1). Names stay unique in the
-// activity: an Undo of a name that is taken meanwhile is refused (D-037), a Restore renames to "<name>
-// (restored)", " (restored 2)", … and says so. When the line item itself was deleted (not with its
-// activity) and its activity is Submitted or Approved now, bringing it back counts as adding one: the
-// activity goes back to Created and a note says so (FR-033, D-147). An Undo right after a delete that ended
-// an approval finds the activity Created, so it never brings that approval back.
-//
-// The FR-033 rule belongs in the optional history hook Kind.AfterRestore (plan, "History"); until history
-// has it, the rule runs here, which history calls only while the entry is still in the bin.
+// prepareRestore applies the name rule of a line item that comes back (data model §7.1). Names stay unique
+// in the activity: an Undo of a name that is taken meanwhile is refused (D-037), a Restore renames to "<name>
+// (restored)", " (restored 2)", … and says so.
 func (s *Service) prepareRestore(ctx context.Context, rc history.RestoreContext, snapshot *history.Snapshot) ([]string, error) {
 	var li LineItem
 	if err := json.Unmarshal(snapshot.Data, &li); err != nil {
@@ -85,32 +79,28 @@ func (s *Service) prepareRestore(ctx context.Context, rc history.RestoreContext,
 		snapshot.Name, snapshot.Data = li.Name, data
 		notes = append(notes, fmt.Sprintf(renamedNote, li.Name))
 	}
+	return notes, nil
+}
 
-	deletedAlone, err := s.deletedAlone(ctx, rc, li.ID)
-	if err != nil || !deletedAlone {
-		return notes, err
+// afterRestore applies FR-033 once the line item the person deleted is back, after an Undo or a Restore:
+// history calls it only when the line item itself was deleted, never when it comes back with its activity
+// (or a level above). When its activity is Submitted or Approved now, bringing it back counts as adding one:
+// the activity goes back to Created and a note says so (D-147). An Undo right after a delete that ended an
+// approval finds the activity Created, so it never brings that approval back.
+func (s *Service) afterRestore(ctx context.Context, rc history.RestoreContext, top history.Snapshot) ([]string, error) {
+	var li LineItem
+	if err := json.Unmarshal(top.Data, &li); err != nil {
+		return nil, err
 	}
 	f, err := s.facts(ctx, li.ActivityID)
 	if err != nil || !f.restartsApproval() {
-		return notes, err
+		return nil, err
 	}
 	reason := fmt.Sprintf(restoredReason, li.Name, li.ID, li.PlannedCost.Format(), li.Currency)
 	if err := s.deps.Activities.RestartApproval(ctx, rc.Actor, f.ID, []string{reason}); err != nil {
 		return nil, err
 	}
-	return append(notes, fmt.Sprintf(restartedNote, f.Name)), nil
-}
-
-// deletedAlone reports whether the line item id comes back from a recycle-bin entry of its own, not inside
-// its activity's (or a level above's).
-func (s *Service) deletedAlone(ctx context.Context, rc history.RestoreContext, id string) (bool, error) {
-	entries, err := s.history.ListBin(ctx, rc.Actor)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(entries, func(e history.BinEntry) bool {
-		return e.RecordType == lineItemKind && e.RecordID == id
-	}), nil
+	return []string{fmt.Sprintf(restartedNote, f.Name)}, nil
 }
 
 // restoredNameSuffix is the suffix of the n-th restored name: " (restored)", " (restored 2)", …

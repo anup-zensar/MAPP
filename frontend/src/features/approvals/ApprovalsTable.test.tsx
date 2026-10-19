@@ -88,6 +88,31 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(row).not.toHaveTextContent('waiting');
   });
 
+  it('shows my decision on a round that a change restarted, back in Created (FR-022)', () => {
+    renderTable(
+      [
+        rowOf({
+          activity: {
+            id: 'A-1042',
+            name: 'Launch film',
+            status: 'created',
+            displayStatus: 'created',
+          },
+          round: { ...rowOf().round, outcome: 'restarted', currentLevel: 2 },
+          waitingSince: null,
+          myDecision: { action: 'approved', at: '2026-03-11T09:00:00Z', roundNumber: 1, level: 1 },
+        }),
+      ],
+      'decided',
+    );
+
+    const row = screen.getByRole('row', { name: /Launch film/ });
+    expect(row).toHaveTextContent('Approved · 11 Mar 2026');
+    expect(row).toHaveTextContent('Created');
+    expect(row).not.toHaveTextContent('Level 2 of 2');
+    expect(row).not.toHaveTextContent('waiting');
+  });
+
   it('opens the preview from the activity name', async () => {
     const { user, onOpen } = renderTable();
 

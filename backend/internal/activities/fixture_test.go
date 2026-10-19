@@ -303,12 +303,16 @@ func (l *fakeLineItems) DatesChanged(_ context.Context, _ actor.Actor, _, after 
 // fakeHooks record what feature 008 is told.
 type fakeHooks struct {
 	restarted []string // "<id>: <before status> → <after status>"
+	changes   []string // the changes of every restart, "<label>: <old text> → <new text>"
 	deleting  []string
 	restored  []string
 }
 
-func (h *fakeHooks) ApprovalRestarted(_ context.Context, _ actor.Actor, before, after activities.Activity, _ []history.Change) error {
+func (h *fakeHooks) ApprovalRestarted(_ context.Context, _ actor.Actor, before, after activities.Activity, changes []history.Change) error {
 	h.restarted = append(h.restarted, after.ID+": "+string(before.Status)+" → "+string(after.Status))
+	for _, c := range changes {
+		h.changes = append(h.changes, c.Label+": "+c.OldText+" → "+c.NewText)
+	}
 	return nil
 }
 

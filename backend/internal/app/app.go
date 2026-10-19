@@ -151,6 +151,9 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
+	// Activities (006, and 007 through it) tell approvals when a re-approval change or a restore from the
+	// recycle bin ends an activity's approval (FR-022, FR-023).
+	activitiesService.UseApprovalHooks(activityApprovalHooks{svc: approvalsService})
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
 
 	// Where the records of people (003) and Settings (002) are used, now that every feature is built

@@ -10,6 +10,7 @@ import (
 	"northstar/internal/activities"
 	"northstar/internal/approvals"
 	"northstar/internal/campaigns"
+	"northstar/internal/history"
 	"northstar/internal/lineitems"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
@@ -362,4 +363,34 @@ func workflowFacts(w approvals.Workflow) activities.WorkflowFacts {
 		levels = append(levels, activities.WorkflowLevelFacts{Name: l.Name, ApproverIDs: slices.Clone(l.ApproverIDs)})
 	}
 	return activities.WorkflowFacts{ID: w.ID, Name: w.Name, Active: w.Active, Levels: levels}
+}
+
+// activityApprovalHooks implements activities.ApprovalHooks (feature 006) over the approvals service (008
+// plan, Reconciliation): a re-approval change ends the activity's approval (FR-022) and a restore from the
+// recycle bin ends the round that was open at the delete (FR-023). Every call runs inside the activities
+// Write that caused it.
+type activityApprovalHooks struct {
+	svc *approvals.Service
+}
+
+// The compiler checks here that activityApprovalHooks implements activities.ApprovalHooks.
+var _ activities.ApprovalHooks = activityApprovalHooks{}
+
+// ApprovalRestarted ends the approval of after, which a re-approval change sent back from before's status
+// to Created.
+func (h activityApprovalHooks) ApprovalRestarted(ctx context.Context, a actor.Actor, before, after activities.Activity, changes []history.Change) error {
+	return h.svc.ApprovalRestarted(ctx, a, after.ID, string(before.Status), changes)
+}
+
+// ActivityDeleting changes nothing: the open round of a deleted activity stays stored as it is, so that an
+// Undo brings the activity back exactly, still Submitted (008-P3, D-031). The activity simply leaves every
+// approvals list while it is not stored.
+func (activityApprovalHooks) ActivityDeleting(context.Context, actor.Actor, activities.Activity) error {
+	return nil
+}
+
+// ActivityRestored ends the round that was open at the delete, now that a restore brings the activity back
+// Created, and returns the note for the "restored" log entry.
+func (h activityApprovalHooks) ActivityRestored(ctx context.Context, rc history.RestoreContext, activityID string) ([]string, error) {
+	return h.svc.ActivityRestored(ctx, rc, activityID)
 }

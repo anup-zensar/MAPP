@@ -8,6 +8,7 @@ import type { ActivityApproval } from './approvalsApi';
 import type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';
 import { DecisionButton } from './DecisionButton';
 import { declineBoxText } from './messages';
+import { RecallButton } from './RecallButton';
 import { SubmitButton } from './SubmitButton';
 import styles from './ApprovalSection.module.css';
 
@@ -94,13 +95,15 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
       {(actions.submit.available ||
         actions.resubmit.available ||
         actions.approve.available ||
-        actions.decline.available) && (
+        actions.decline.available ||
+        actions.recall.available) && (
         <div className={styles.actions}>
           {(actions.submit.available || actions.resubmit.available) && (
             <SubmitButton activity={current} onShowProblems={onShowProblems} variant="secondary" />
           )}
           {actions.approve.available && <DecisionButton mode="approve" approval={approval} />}
           {actions.decline.available && <DecisionButton mode="decline" approval={approval} />}
+          {actions.recall.available && <RecallButton approval={approval} />}
         </div>
       )}
       {recallReason && <p className={styles.reason}>{recallReason}</p>}

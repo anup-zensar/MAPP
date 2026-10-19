@@ -762,6 +762,97 @@ func TestApprovalActions_Logged_FR026_SC004(t *testing.T) {
 	})
 }
 
+// recall recalls the submission of the activity id as a, naming its open round, and stops the test when
+// that fails.
+func (f *fixture) recall(t *testing.T, a actor.Actor, id, reason string) ActivityApproval {
+	t.Helper()
+	approval, err := f.service.Recall(t.Context(), a, id, RecallInput{RoundID: f.openRound(t, id).ID, Reason: reason})
+	if err != nil {
+		t.Fatalf("Recall(%s): %v", id, err)
+	}
+	return approval
+}
+
+// Recalling a Submitted activity ends its round as recalled at the level it waited at, with the reason;
+// the activity is Created again, can be submitted again and leaves the approvers' Waiting for me; the
+// history, the log and the owner and waiting approvers record it. Anyone may recall (D-020). Recalling the
+// same round again explains what ended it; the reason holds at most 2,000 characters (FR-021, FR-018).
+func TestRecall_FR021(t *testing.T) {
+	f := newFixture(t)
+	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
+	f.submit(t, mei, "A-1009", "")
+	f.approve(t, carlos, "A-1009", "")
+	round := f.openRound(t, "A-1009")
+	f.clock.Advance(time.Hour)
+	recalledAt := f.clock.Now()
+	_, tooLongReason := f.service.Recall(t.Context(), priya, "A-1009", RecallInput{RoundID: round.ID, Reason: strings.Repeat("x", 2001)})
+	_, noRound := f.service.Recall(t.Context(), priya, "A-1009", RecallInput{})
+
+	approval := f.recall(t, priya, "A-1009", "  Wrong workflow.  ")
+
+	assertError(t, tooLongReason, errs.Validation(errs.FieldError{Field: "reason", Message: "Use 2,000 characters or fewer."}))
+	assertError(t, noRound, errs.Validation(errs.FieldError{Field: "roundId", Message: "Reload the page and try again."}))
+	if facts := f.activities.facts["A-1009"]; facts.Status != StatusCreated || facts.UpdatedBy != priya {
+		t.Errorf("activity = %s, changed by %v; want Created by Priya Raman", facts.Status, facts.UpdatedBy)
+	}
+	ended := f.rounds(t, "A-1009")[0]
+	if ended.Outcome != OutcomeRecalled || ended.CurrentLevel != 2 || ended.EndedAt == nil || !ended.EndedAt.Equal(recalledAt) || ended.UpdatedBy != priya {
+		t.Errorf("round = %+v, want recalled at level 2 now, by Priya Raman", ended)
+	}
+	last := f.actions(t, "A-1009")[2]
+	if last.Action != ActionRecalled || last.Level != 2 || !reflect.DeepEqual(last.Approvers, []actor.Actor{alex}) || last.Actor != priya ||
+		last.Comment != "Wrong workflow." || !last.At.Equal(recalledAt) {
+		t.Errorf("history entry = %+v, want recalled at level 2 by Priya Raman with the reason", last)
+	}
+	if states := chainStates(approval.Rounds[0]); states != "L1 approved, L2 notDecided" || approval.Rounds[0].Outcome != OutcomeRecalled {
+		t.Errorf("chain = %s (%s), want L1 approved, L2 notDecided, recalled", states, approval.Rounds[0].Outcome)
+	}
+	if !approval.Actions.Submit.Available || approval.Actions.Recall.Available {
+		t.Errorf("actions = %+v, want submit again, no recall", approval.Actions)
+	}
+	if entries := f.log(t, "A-1009"); logLine(entries[0]) !=
+		`Priya Raman recalled activity 'Fleet card launch' [submitted → created] "Wrong workflow." (Round 1 · was waiting for level 2 (Alex Morgan))` {
+		t.Errorf("latest log entry = %s", logLine(entries[0]))
+	}
+	assertNotified(t, f, alex, "recalled: Submission recalled — Priya Raman recalled 'Fleet card launch' (A-1009)",
+		"approvalNeeded: Approval needed — Carlos Mendes approved level 1 of 'Fleet card launch' (A-1009) — level 2 waits for you")
+	if got := f.notifications(t, mei.ID); len(got) != 2 || got[0].Kind != NotifyRecalled {
+		t.Errorf("Mei's notifications = %+v, want the recall on top", got)
+	}
+	if waiting := f.inboxIDs(t, alex, TabWaiting); len(waiting) != 0 {
+		t.Errorf("Alex's waiting = %q, want none", waiting)
+	}
+
+	f.clock.Advance(time.Minute)
+	_, again := f.service.Recall(t.Context(), mei, "A-1009", RecallInput{RoundID: round.ID})
+	assertError(t, again, decidedConflict("The submission was recalled by Priya Raman", "Priya Raman", recalledAt))
+	_, otherRound := f.service.Recall(t.Context(), mei, "A-1009", RecallInput{RoundID: "AR-9999"})
+	assertError(t, otherRound, errs.NotFound("This approval round doesn't belong to this activity. Reload the page and try again."))
+}
+
+// An Approved activity can't be recalled: the refusal says that a change of planned cost, dates or
+// line-item amounts sends it back for approval, and nothing changes (FR-021).
+func TestRecall_ApprovedRefused_FR021(t *testing.T) {
+	f := newFixture(t)
+	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
+	f.submit(t, priya, "A-1004", "")
+	round := f.openRound(t, "A-1004")
+	approval := f.approve(t, daniel, "A-1004", "")
+	entries, told := len(f.log(t, "A-1004")), len(f.notifications(t, daniel.ID))
+
+	_, err := f.service.Recall(t.Context(), priya, "A-1004", RecallInput{RoundID: round.ID, Reason: "Changed my mind."})
+
+	reason := "Approved activities can't be recalled. Changing its planned cost, dates or line-item amounts sends it back for approval."
+	assertError(t, err, errs.BadRequest(reason))
+	if approval.Actions.Recall.Available || approval.Actions.Recall.Reason != reason {
+		t.Errorf("recall action = %+v, want unavailable with the reason", approval.Actions.Recall)
+	}
+	if f.activities.facts["A-1004"].Status != StatusApproved || f.rounds(t, "A-1004")[0].Outcome != OutcomeApproved ||
+		len(f.log(t, "A-1004")) != entries || len(f.notifications(t, daniel.ID)) != told {
+		t.Error("the refused recall changed something")
+	}
+}
+
 // assertNotified checks the notifications of person p, newest first, each written as
 // "<kind>: <title> — <text>".
 func assertNotified(t *testing.T, f *fixture, p actor.Actor, want ...string) {

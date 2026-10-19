@@ -327,11 +327,6 @@ var notYetServed = []string{
 	"GET /api/activities/{activityId}/destinations",
 	"POST /api/activities/{activityId}/move",
 	"POST /api/activities/{activityId}/copy",
-	// 008 Activity approvals
-	"POST /api/activities/{activityId}/approval/recall",
-	"GET /api/notifications",
-	"POST /api/notifications/{notificationId}/read",
-	"POST /api/notifications/read-all",
 	// 009 Home dashboard
 	"GET /api/home/summary",
 	"GET /api/home/plans",
