@@ -2,6 +2,9 @@ package plans
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"slices"
 	"time"
 
 	"northstar/internal/platform/actor"
@@ -63,4 +66,35 @@ type CopyJob struct {
 	Years        int               // 0 same year, 1 next year: every copied date + Years (date.AddYears)
 	NewIDs       map[string]string // old ID → new ID of every record copied so far, the plan first
 	Counts       map[string]int    // records copied per level name, for the log details
+}
+
+// RegisterLevel adds a level below the plan. internal/app calls it while the API starts, top-down: campaign,
+// initiative (005), activity (006), line item (007). It refuses a level without a name or with a name
+// already registered, and a level without AddFacts or Copy; a refusal stops the API from starting.
+func (s *Service) RegisterLevel(l Level) error {
+	switch {
+	case l.Name == "":
+		return errors.New("plans: a level needs a name")
+	case slices.ContainsFunc(s.levels, func(registered Level) bool { return registered.Name == l.Name }):
+		return fmt.Errorf("plans: the level %q is already registered", l.Name)
+	case l.AddFacts == nil || l.Copy == nil:
+		return fmt.Errorf("plans: the level %q needs the functions AddFacts and Copy", l.Name)
+	}
+	s.levels = append(s.levels, l)
+	return nil
+}
+
+// facts asks every level once for the facts of all the plans planIDs (SC-009: never once per plan). A plan
+// below which no level has anything keeps zero Facts.
+func (s *Service) facts(ctx context.Context, planIDs []string) (map[string]*Facts, error) {
+	facts := make(map[string]*Facts, len(planIDs))
+	for _, id := range planIDs {
+		facts[id] = &Facts{}
+	}
+	for _, l := range s.levels {
+		if err := l.AddFacts(ctx, planIDs, facts); err != nil {
+			return nil, err
+		}
+	}
+	return facts, nil
 }

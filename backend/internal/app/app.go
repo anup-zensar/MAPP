@@ -8,11 +8,13 @@ import (
 	"northstar/internal/auth"
 	"northstar/internal/history"
 	"northstar/internal/people"
+	"northstar/internal/plans"
 	"northstar/internal/platform/clock"
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/store"
 	"northstar/internal/platform/web"
 	"northstar/internal/samples"
+	"northstar/internal/settings"
 )
 
 // App is the NorthStar API, ready to serve.
@@ -44,6 +46,19 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
 	history.NewHandler(historyService).Routes(router, signedIn)
+
+	// Plans (004). Plans reads Settings and people and teams through the adapters of plans_deps.go. Its
+	// history kind comes before the kinds of the levels below the plan (005–007), which also register
+	// themselves with planService.RegisterLevel, top-down.
+	settingsRepo := settings.NewJSONRepository()
+	planService := plans.NewService(db, plans.NewJSONRepository(), generator, historyService,
+		settingsForPlans{repo: settingsRepo}, directoryForPlans{people: peopleRepo, settings: settingsRepo}, now)
+	for _, kind := range planService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	plans.NewHandler(planService).Routes(router, signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API

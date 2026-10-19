@@ -238,7 +238,7 @@ type PlanList struct {
 // ListFilter is the query of GET /api/plans.
 type ListFilter struct {
 	Scope  string // ScopeAll or ScopeMyTeams
-	Status string // "", "all", "draft" or "published"
+	Status string // "" (every status), "draft" or "published"
 	Year   *int
 	Q      string // contained in the name or ID, ignoring case
 }
