@@ -12,8 +12,11 @@ import { useFormatters } from '@/lib/useFormatters';
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
 
-/** The noun of the conflict message: "Not saved — Alex Morgan changed this team at 14:32". */
-export type RecordNoun = 'person' | 'team';
+/**
+ * The noun of the conflict message: "Not saved — Alex Morgan changed this team at 14:32"; on My
+ * profile, "… changed this profile …".
+ */
+export type RecordNoun = 'person' | 'team' | 'profile';
 
 /** A failed save, split as the form shows it. */
 export interface FormFailure {

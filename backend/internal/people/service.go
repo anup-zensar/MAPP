@@ -90,23 +90,18 @@ func (s *Service) ActivePeople(ctx context.Context) ([]DemoPerson, error) {
 }
 
 // CurrentUser returns the signed-in person a with their preferences: what the sidebar and the account menu
-// show (FR-012). A person who no longer exists must sign in again.
+// show (FR-012), with the person's version, which My profile sends back (003 FR-021), and their teams,
+// active or not, by name: "My teams" (003 FR-026). The display currency and date format of a person who
+// never chose one are the defaults (003 FR-023, FR-024). A person who no longer exists must sign in again.
 func (s *Service) CurrentUser(ctx context.Context, a actor.Actor) (CurrentUser, error) {
 	var user CurrentUser
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		person, found, err := s.repo.Get(ctx, a.ID)
+		person, err := s.signedInPerson(ctx, a)
 		if err != nil {
 			return err
 		}
-		if !found {
-			return errs.SignInRequired()
-		}
-		prefs, err := s.preferences(ctx, a.ID)
-		if err != nil {
-			return err
-		}
-		user = person.currentUser(prefs)
-		return nil
+		user, err = s.currentUser(ctx, person)
+		return err
 	})
 	if err != nil {
 		return CurrentUser{}, err
@@ -114,9 +109,62 @@ func (s *Service) CurrentUser(ctx context.Context, a actor.Actor) (CurrentUser, 
 	return user, nil
 }
 
-// UpdatePreferences changes the preferences of the signed-in person a (FR-011, FR-014): only the fields
-// that were sent change. It returns the preferences after the change. Preferences are not business
-// records, so the change has no version and is not written to the activity log (D-038).
+// UpdateProfile changes the name and job title of the signed-in person a from My profile (003 FR-021,
+// FR-022), with the rules of the People form (FR-002): the name is required with at most 120 characters,
+// the job title has at most 120. Every problem, a missing version included, is reported at once; an
+// out-of-date version is refused with version_conflict. The e-mail is the sign-in name and is changed only in
+// Settings › People (FR-021). A change gives the person a new version and one "changed" entry in the log
+// (FR-028); it shows wherever they are named, because other records keep only their id. A form that changes
+// nothing writes nothing. A person who no longer exists must sign in again.
+func (s *Service) UpdateProfile(ctx context.Context, a actor.Actor, update ProfileUpdate) (CurrentUser, error) {
+	var user CurrentUser
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
+		p, err := s.signedInPerson(ctx, a)
+		if err != nil {
+			return err
+		}
+		var problems errs.Problems
+		name := checkPersonName(&problems, update.Name)
+		jobTitle := checkJobTitle(&problems, update.JobTitle)
+		checkVersionSent(&problems, update.Version)
+		if err := problems.Err(); err != nil {
+			return err
+		}
+		if err := p.CheckVersion(*update.Version, personSingular); err != nil {
+			return err
+		}
+
+		changed := p
+		changed.Name, changed.JobTitle = name, jobTitle
+		changes, err := history.Diff(p.logView(nil), changed.logView(nil)) // the teams do not change here
+		if err != nil {
+			return err
+		}
+		if len(changes) > 0 {
+			changed.Touch(a, s.now())
+			if err := s.repo.Put(ctx, changed); err != nil {
+				return err
+			}
+			_, err = s.history.Log(ctx, a, history.LogInput{
+				Kind: personKind, RecordID: changed.ID, RecordName: changed.Name, Action: history.ActionChanged, Changes: changes,
+			})
+			if err != nil {
+				return err
+			}
+		}
+		user, err = s.currentUser(ctx, changed)
+		return err
+	})
+	if err != nil {
+		return CurrentUser{}, err
+	}
+	return user, nil
+}
+
+// UpdatePreferences changes the preferences of the signed-in person a (FR-011, FR-014; 003 FR-023 –
+// FR-025): only the fields that were sent change. It returns the preferences after the change. They are
+// saved with the person, so every browser they sign in from shows them (003 FR-025). Preferences are not
+// business records, so the change has no version and is not written to the activity log (D-038, D-062).
 func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update PreferencesUpdate) (PreferencesView, error) {
 	var view PreferencesView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -132,7 +180,19 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 		if update.SidebarCollapsed != nil {
 			changed.SidebarCollapsed = *update.SidebarCollapsed
 		}
-		if err := validatePreferences(changed); err != nil {
+		if update.DisplayCurrency != nil {
+			changed.DisplayCurrency = *update.DisplayCurrency
+		}
+		if update.DateFormat != nil {
+			changed.DateFormat = *update.DateFormat
+		}
+		var currencies []Currency // needed only to choose another display currency
+		if changed.DisplayCurrency != current.DisplayCurrency {
+			if currencies, err = s.currencies(ctx); err != nil {
+				return err
+			}
+		}
+		if err := validatePreferences(current, changed, currencies); err != nil {
 			return err
 		}
 
@@ -151,7 +211,64 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 	return view, nil
 }
 
-// preferences returns the saved preferences of a person, or the defaults when they have saved none.
+// DisplayCurrencies returns the currencies the signed-in person a can show amounts in, sorted by code (003
+// FR-023): every active currency of feature 002, and their current display currency when it has been set
+// inactive since they chose it: they keep it (D-063), but nobody can choose it again.
+func (s *Service) DisplayCurrencies(ctx context.Context, a actor.Actor) ([]DisplayCurrencyOption, error) {
+	var options []DisplayCurrencyOption
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		prefs, err := s.preferences(ctx, a.ID)
+		if err != nil {
+			return err
+		}
+		currencies, err := s.currencies(ctx)
+		if err != nil {
+			return err
+		}
+		options = []DisplayCurrencyOption{}
+		for _, c := range currencies {
+			if c.Active || c.Code == prefs.DisplayCurrency {
+				options = append(options, DisplayCurrencyOption{Code: c.Code, Name: c.Name, Active: c.Active})
+			}
+		}
+		slices.SortFunc(options, func(x, y DisplayCurrencyOption) int { return strings.Compare(x.Code, y.Code) })
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return options, nil
+}
+
+// signedInPerson returns the stored record of the signed-in person a, inside the caller's transaction. A
+// person who no longer exists must sign in again.
+func (s *Service) signedInPerson(ctx context.Context, a actor.Actor) (Person, error) {
+	p, found, err := s.repo.Get(ctx, a.ID)
+	if err != nil {
+		return Person{}, err
+	}
+	if !found {
+		return Person{}, errs.SignInRequired()
+	}
+	return p, nil
+}
+
+// currentUser returns p as the signed-in person, with their preferences and teams, inside the caller's
+// transaction.
+func (s *Service) currentUser(ctx context.Context, p Person) (CurrentUser, error) {
+	prefs, err := s.preferences(ctx, p.ID)
+	if err != nil {
+		return CurrentUser{}, err
+	}
+	d, err := s.readDirectory(ctx)
+	if err != nil {
+		return CurrentUser{}, err
+	}
+	return p.currentUser(prefs, d.teamRefs(d.teamIDsOf(p.ID))), nil
+}
+
+// preferences returns the saved preferences of a person, or the defaults when they have saved none. A
+// record saved by feature 001 gets the default display currency and date format (003 data model §4).
 func (s *Service) preferences(ctx context.Context, personID string) (Preferences, error) {
 	prefs, found, err := s.repo.GetPreferences(ctx, personID)
 	if err != nil {
@@ -160,14 +277,25 @@ func (s *Service) preferences(ctx context.Context, personID string) (Preferences
 	if !found {
 		return defaultPreferences(personID), nil
 	}
-	return prefs, nil
+	return prefs.withDefaults(), nil
 }
 
-// validatePreferences checks the rules of data model §2 and reports every problem at once.
-func validatePreferences(p Preferences) error {
+// validatePreferences checks the preferences changed, which were current before the change, against the
+// rules of data model §2 and 003 data model §4, and reports every problem at once. A display currency other
+// than the current one must be one of the active currencies among currencies: a display currency set
+// inactive after the person chose it is kept (spec edge case), but cannot be chosen again (003 FR-023). The
+// date format is one of DateFormats (003 FR-024).
+func validatePreferences(current, changed Preferences, currencies []Currency) error {
 	var problems errs.Problems
-	if !slices.Contains(themes, p.Theme) {
+	if !slices.Contains(themes, changed.Theme) {
 		problems.Add("theme", "Choose system, light or dark.")
+	}
+	activeCurrency := func(c Currency) bool { return c.Active && c.Code == changed.DisplayCurrency }
+	if changed.DisplayCurrency != current.DisplayCurrency && !slices.ContainsFunc(currencies, activeCurrency) {
+		problems.Add("displayCurrency", chooseCurrencyMessage)
+	}
+	if !slices.Contains(DateFormats, changed.DateFormat) {
+		problems.Add("dateFormat", chooseDateFormatMessage)
 	}
 	return problems.Err()
 }

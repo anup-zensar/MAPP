@@ -2,6 +2,7 @@ package people_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,7 +18,15 @@ const (
 	sessionExpiredBody = `{"code":"session_expired","message":"Please sign in again","fields":[]}`
 )
 
-// GET /api/me answers who is signed in, with everything the sidebar and the account menu show (FR-012).
+// The answers about Priya Raman as the seed has her: her preferences are the defaults, and she is in the
+// team Lubricants Europe.
+const (
+	defaultPreferencesBody = `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY"}`
+	priyasTeamsBody        = `[{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}]`
+)
+
+// GET /api/me answers who is signed in, with everything the sidebar and the account menu show (FR-012),
+// and what My profile shows: the version, the four preferences and the person's teams (003 FR-021, FR-026).
 func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
@@ -26,7 +35,7 @@ func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Raman","firstName":"Priya",`+
 		`"email":"priya.raman@northstar.demo","jobTitle":"Marketer","initials":"PR",`+
-		`"preferences":{"theme":"system","sidebarCollapsed":false}}`)
+		`"preferences":`+defaultPreferencesBody+`,"version":1,"teams":`+priyasTeamsBody+`}`)
 }
 
 // Without a session cookie, the API asks the person to sign in (FR-005).
@@ -57,7 +66,7 @@ func TestPatchPreferences_NothingSent_FR011(t *testing.T) {
 
 	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{})
 
-	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false}`)
+	assertAnswer(t, response, http.StatusOK, defaultPreferencesBody)
 }
 
 // Only the preferences sent change, and the person keeps them (FR-011, FR-014).
@@ -65,14 +74,15 @@ func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	collapse := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"sidebarCollapsed": true})
-	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true}`)
+	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY"}`)
 
 	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "dark"})
 
-	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true}`)
+	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY"}`)
 	var me people.CurrentUser
 	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
-	if want := (people.PreferencesView{Theme: "dark", SidebarCollapsed: true}); me.Preferences != want {
+	want := people.PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY"}
+	if me.Preferences != want {
 		t.Errorf("GET /api/me preferences = %+v, want %+v", me.Preferences, want)
 	}
 }
@@ -96,6 +106,127 @@ func TestPatchPreferences_WithoutSession_FR005(t *testing.T) {
 	response := server.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "dark"})
 
 	assertAnswer(t, response, http.StatusUnauthorized, signInRequiredBody)
+}
+
+// My profile changes the signed-in person's name and job title: the answer is the signed-in person after
+// the change, with initials and version, and every screen naming them shows the new name (003 FR-021,
+// FR-022, US4 scenario 2).
+func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+	alex := server.SignIn(t, alexsEmail)
+
+	response := priya.Do(t, http.MethodPatch, "/api/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Senior marketer", "version": 1})
+
+	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Sharma","firstName":"Priya",`+
+		`"email":"priya.raman@northstar.demo","jobTitle":"Senior marketer","initials":"PS",`+
+		`"preferences":`+defaultPreferencesBody+`,"version":2,"teams":`+priyasTeamsBody+`}`)
+	var me people.CurrentUser
+	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	var details people.PersonDetails
+	alex.Do(t, http.MethodGet, "/api/people/U-1002", nil).Decode(t, &details)
+	if me.Name != "Priya Sharma" || details.Name != "Priya Sharma" || details.UpdatedBy.Name != "Priya Raman" {
+		t.Errorf("after the change: GET /api/me %q, GET /api/people/U-1002 %q changed by %q; want the new name",
+			me.Name, details.Name, details.UpdatedBy.Name)
+	}
+}
+
+// A profile change from an out-of-date copy answers 409, naming who changed the person and when; nothing
+// is saved (003 FR-022, 001 FR-029).
+func TestPatchMe_VersionConflict_FR022(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+	alex := server.SignIn(t, alexsEmail)
+	server.Advance(time.Hour)
+	changed := alex.Do(t, http.MethodPatch, "/api/people/U-1002", map[string]any{"name": "Priya Raman",
+		"email": priyasEmail, "jobTitle": "Team leader", "teamIds": []string{"T-1001"}, "version": 1})
+	if changed.Status != http.StatusOK {
+		t.Fatalf("Alex's change = %d %s", changed.Status, changed.Body)
+	}
+
+	response := priya.Do(t, http.MethodPatch, "/api/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Marketer", "version": 1})
+
+	assertAnswer(t, response, http.StatusConflict, `{"code":"version_conflict",`+
+		`"message":"Not saved — Alex Morgan changed this person","fields":[],`+
+		`"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T10:00:00Z"}}`)
+	var me people.CurrentUser
+	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	if me.Name != "Priya Raman" || me.JobTitle != "Team leader" || me.Version != 2 {
+		t.Errorf("GET /api/me = %+v, want only Alex's change", me)
+	}
+}
+
+// An empty name and a job title over 120 characters are reported together (003 FR-022, SC-007).
+func TestPatchMe_AllProblemsAtOnce_FR022(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	response := priya.Do(t, http.MethodPatch, "/api/me", map[string]any{"name": " ", "jobTitle": strings.Repeat("j", 121), "version": 1})
+
+	assertAnswer(t, response, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a name."},`+
+		`{"field":"jobTitle","message":"Use 120 characters or fewer."}`))
+}
+
+// The display currency and the date format are preferences like the theme: the answer has all four, and
+// anything but an active currency or one of the four date formats is refused next to its field, both at once
+// (003 FR-023, FR-024).
+func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	chosen := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "DD/MM/YYYY"})
+	invalid := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "XYZ", "dateFormat": "DD.MM.YYYY"})
+
+	assertAnswer(t, chosen, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"EUR","dateFormat":"DD/MM/YYYY"}`)
+	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"displayCurrency","message":"Choose one of the active currencies."},`+
+		`{"field":"dateFormat","message":"Choose one of the date formats."}`))
+}
+
+// The display currencies offered are the active currencies of Settings, by code; a currency set inactive
+// after a person chose it is still offered to that person, marked inactive, and to nobody else (003
+// FR-023, D-063).
+func TestGetDisplayCurrencies_FR023(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+	daniel := server.SignIn(t, danielsEmail)
+	alex := server.SignIn(t, alexsEmail)
+
+	before := daniel.Do(t, http.MethodGet, "/api/me/display-currencies", nil)
+	priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "GBP"})
+	var gbp struct {
+		Version int `json:"version"`
+	}
+	alex.Do(t, http.MethodGet, "/api/currencies/GBP", nil).Decode(t, &gbp)
+	inactive := alex.Do(t, http.MethodPost, "/api/currencies/GBP/status", map[string]any{"active": false, "version": gbp.Version})
+	if inactive.Status != http.StatusOK {
+		t.Fatalf("setting GBP inactive = %d %s", inactive.Status, inactive.Body)
+	}
+	priyas := priya.Do(t, http.MethodGet, "/api/me/display-currencies", nil)
+	daniels := daniel.Do(t, http.MethodGet, "/api/me/display-currencies", nil)
+
+	cny, eur := `{"code":"CNY","name":"Chinese yuan","active":true}`, `{"code":"EUR","name":"Euro","active":true}`
+	inr, usd := `{"code":"INR","name":"Indian rupee","active":true}`, `{"code":"USD","name":"US dollar","active":true}`
+	assertAnswer(t, before, http.StatusOK, `{"items":[`+cny+`,`+eur+`,{"code":"GBP","name":"Pound sterling","active":true},`+
+		inr+`,`+usd+`],"total":5}`)
+	assertAnswer(t, priyas, http.StatusOK, `{"items":[`+cny+`,`+eur+`,{"code":"GBP","name":"Pound sterling","active":false},`+
+		inr+`,`+usd+`],"total":5}`)
+	assertAnswer(t, daniels, http.StatusOK, `{"items":[`+cny+`,`+eur+`,`+inr+`,`+usd+`],"total":4}`)
+}
+
+// Preferences belong to the person, not to the browser: signed in from another browser, the person sees
+// the display currency and date format they chose (003 FR-025).
+func TestPreferences_SameInAnotherBrowser_FR025(t *testing.T) {
+	server := apitest.New(t)
+	firstBrowser := server.SignIn(t, priyasEmail)
+	secondBrowser := server.SignIn(t, priyasEmail)
+
+	firstBrowser.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "YYYY-MM-DD"})
+	var me people.CurrentUser
+	secondBrowser.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+
+	if me.Preferences.DisplayCurrency != "EUR" || me.Preferences.DateFormat != "YYYY-MM-DD" {
+		t.Errorf("preferences in the second browser = %+v, want EUR and YYYY-MM-DD", me.Preferences)
+	}
 }
 
 // assertAnswer checks the status and the exact body of an answer.

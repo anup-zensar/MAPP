@@ -310,9 +310,6 @@ var notYetServed = []string{
 	"PATCH /api/finance-budget-items/{itemId}",
 	"DELETE /api/finance-budget-items/{itemId}",
 	"POST /api/finance-budget-items/{itemId}/status",
-	// 003 People and teams
-	"PATCH /api/me",
-	"GET /api/me/display-currencies",
 	// 004 Plans
 	"GET /api/plans/{planId}/copy-options",
 	"POST /api/plans/{planId}/copy",

@@ -11,6 +11,7 @@ import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/schema';
 import { SESSION_KEY } from '@/app/useSession';
+import type { CurrentUser, PreferencesUpdate } from '@/app/useSession';
 
 export type Person = components['schemas']['Person'];
 export type PersonDetails = components['schemas']['PersonDetails'];
@@ -24,10 +25,14 @@ export type PersonRef = components['schemas']['PersonRef'];
 export type TeamRef = components['schemas']['TeamRef'];
 export type UsageCount = components['schemas']['UsageCount'];
 export type ImpactWarning = components['schemas']['ImpactWarning'];
+export type ProfileUpdate = components['schemas']['ProfileUpdate'];
+export type DisplayCurrencyOption = components['schemas']['DisplayCurrencyOption'];
 
 /** The query keys of people and teams; every change invalidates both (FR-012). */
 export const PEOPLE_KEY = ['people'] as const;
 export const TEAMS_KEY = ['teams'] as const;
+/** The currencies the signed-in person can choose as display currency. */
+export const DISPLAY_CURRENCIES_KEY = ['display-currencies'] as const;
 
 /** What every change refreshes (plan "Data hooks"). */
 const CHANGED_BY_EVERY_CHANGE: QueryKey[] = [
@@ -194,6 +199,50 @@ export function useDeleteTeam() {
     mutationFn: (id: string) =>
       call(api.DELETE('/api/teams/{teamId}', { params: { path: { teamId: id } } })),
     onSettled: refresh,
+  });
+}
+
+/**
+ * The display currencies the signed-in person can choose (FR-023): every active currency, plus
+ * their current one when it has been set inactive (it then has active false).
+ */
+export function useDisplayCurrencies() {
+  return useQuery({
+    queryKey: DISPLAY_CURRENCIES_KEY,
+    queryFn: () => call(api.GET('/api/me/display-currencies')),
+  });
+}
+
+/**
+ * Saves the signed-in person's name and job title (My profile, FR-022). The answer is the person
+ * as now stored: it goes into the session at once, so the account button and the avatar show the
+ * new name straight away (US4-2); then everything that names people is refreshed.
+ */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  const refresh = useRefreshAfterChange();
+  return useMutation({
+    mutationFn: (body: ProfileUpdate) => call(api.PATCH('/api/me', { body })),
+    onSuccess: (person) => queryClient.setQueryData<CurrentUser | null>(SESSION_KEY, person),
+    onSettled: refresh,
+  });
+}
+
+/**
+ * Saves the display currency and the date format together (FR-023, FR-024). Dates follow the new
+ * format at once (from the session); then every query is asked again, so amounts arrive converted
+ * by the API to the new display currency (D-061, SC-006). Preferences are not logged (D-062).
+ */
+export function useUpdateDisplayPreferences() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: PreferencesUpdate) => call(api.PATCH('/api/me/preferences', { body })),
+    onSuccess: (preferences) => {
+      queryClient.setQueryData<CurrentUser | null>(SESSION_KEY, (user) =>
+        user ? { ...user, preferences } : user,
+      );
+      return queryClient.invalidateQueries();
+    },
   });
 }
 
