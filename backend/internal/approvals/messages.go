@@ -18,6 +18,13 @@ const (
 	approvedNoRecallMessage = "Approved activities can't be recalled. " +
 		"Changing its planned cost, dates or line-item amounts sends it back for approval."
 
+	// The note of the "restored" log entry when a restore ends the round that was open at the delete
+	// (FR-023, 008-P3).
+	cancelledNote = "Approval round %d was cancelled because the activity was deleted — submit it for approval again."
+
+	// A notification that is not the signed-in person's, or none (FR-034).
+	notificationGoneMessage = "This notification no longer exists."
+
 	// Comments.
 	declineCommentMessage = "Add a comment explaining why the activity is declined."
 	tooLong2000Message    = "Use 2,000 characters or fewer."
@@ -51,10 +58,14 @@ const (
 	levelApprovedTitle    = "Level %d approved"
 	activityApprovedTitle = "Activity approved"
 	activityDeclinedTitle = "Activity declined"
+	recalledTitle         = "Submission recalled"
+	restartedTitle        = "Approval restarted"
 	submittedText         = "%s submitted %s"
 	resubmittedText       = "%s re-submitted %s"
 	nextLevelWaitsText    = "%s approved level %d of %s — level %d waits for you"
 	levelApprovedText     = "%s approved level %d of %d of %s"
 	approvedText          = "%s approved %s"
 	declinedText          = "%s declined %s: \"%s\""
+	recalledText          = "%s recalled %s"
+	restartedText         = "%s changed %s — it needs approval again"
 )

@@ -43,14 +43,25 @@ type Kind struct {
 	// s.Name, and records the change in the record's record.Meta with Touch. It returns short notes for the
 	// log and the person, such as "Renamed to 'Ideas (restored)' because the name was taken."
 	PrepareRestore func(ctx context.Context, rc RestoreContext, s *Snapshot) (notes []string, err error)
+	// AfterRestore runs once per Undo or Restore, only for the kind of the record the person deleted (the bin
+	// entry's first snapshot), after every record of the entry is back; top is that record as it was put
+	// back. It may change other records in the same Write and returns notes for the log and the person, like
+	// PrepareRestore; an error changes nothing. The records under it get no AfterRestore call: their
+	// parent's rules cover them (feature 007: a line item that comes back on its own counts as added, FR-033).
+	AfterRestore func(ctx context.Context, rc RestoreContext, top Snapshot) (notes []string, err error)
 }
 
-// RestoreContext tells PrepareRestore who is restoring, when, and whether it is an Undo, which must put the
-// record back exactly, or a Restore from the recycle bin, which applies the kind's restore rules.
+// RestoreContext tells PrepareRestore and AfterRestore who is restoring, when, and whether it is an Undo,
+// which must put the record back exactly, or a Restore from the recycle bin, which applies the kind's
+// restore rules. DeletedAt and DeletedBy say when the records were deleted and by whom, as the recycle-bin
+// entry holds it: feature 008 ends an approval round that was open at the delete with that time and person
+// (008-P3).
 type RestoreContext struct {
-	Actor actor.Actor
-	Now   time.Time
-	Undo  bool
+	Actor     actor.Actor
+	Now       time.Time
+	Undo      bool
+	DeletedAt time.Time
+	DeletedBy actor.Actor
 }
 
 // Register adds k to the kinds history knows. It is called while the API starts, before the API serves

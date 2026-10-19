@@ -37,9 +37,47 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/activities/{activityId}/approval/submit", signedIn(h.submit))
 	r.Handle("POST /api/activities/{activityId}/approval/approve", signedIn(h.decision(h.service.Approve)))
 	r.Handle("POST /api/activities/{activityId}/approval/decline", signedIn(h.decision(h.service.Decline)))
+	r.Handle("POST /api/activities/{activityId}/approval/recall", signedIn(h.recall))
 	r.Handle("GET /api/approvals", signedIn(h.inbox))
 	r.Handle("GET /api/approvals/summary", signedIn(h.summary))
 	r.Handle("GET /api/approvals/activities/{activityId}", signedIn(h.preview))
+	r.Handle("GET /api/notifications", signedIn(h.listNotifications))
+	r.Handle("POST /api/notifications/{notificationId}/read", signedIn(h.markRead))
+	r.Handle("POST /api/notifications/read-all", signedIn(h.markAllRead))
+}
+
+// listNotifications answers GET /api/notifications: the signed-in person's 50 most recent notifications
+// and the unread count.
+func (h *Handler) listNotifications(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	page, err := h.service.ListNotifications(r.Context(), a)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, page)
+}
+
+// markRead answers POST /api/notifications/{notificationId}/read with the notification, now read.
+func (h *Handler) markRead(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	notification, err := h.service.MarkRead(r.Context(), a, r.PathValue("notificationId"))
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, notification)
+}
+
+// markAllRead answers POST /api/notifications/read-all with how many notifications it marked read.
+func (h *Handler) markAllRead(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	result, err := h.service.MarkAllRead(r.Context(), a)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, result)
 }
 
 // decision answers POST /api/activities/{activityId}/approval/approve and …/decline, with decide being
@@ -93,6 +131,23 @@ func (h *Handler) submit(w http.ResponseWriter, r *http.Request) {
 	}
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	approval, err := h.service.Submit(r.Context(), a, r.PathValue("activityId"), input)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, approval)
+}
+
+// recall answers POST /api/activities/{activityId}/approval/recall with the Approval section after the
+// recall.
+func (h *Handler) recall(w http.ResponseWriter, r *http.Request) {
+	var input RecallInput
+	if err := web.ReadJSON(w, r, &input); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	approval, err := h.service.Recall(r.Context(), a, r.PathValue("activityId"), input)
 	if err != nil {
 		web.WriteError(w, r, err)
 		return

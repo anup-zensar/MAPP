@@ -381,8 +381,8 @@ func (s *Service) Restore(ctx context.Context, a actor.Actor, entryID string) (R
 }
 
 // putBack does the work of Undo (undo true) and Restore, in one Write: it checks that the entry can come
-// back, puts its records back, marks the entry as resolved and writes one "restored" log entry. When
-// anything refuses, nothing changes.
+// back, puts its records back, runs the AfterRestore of the deleted record's kind, marks the entry as
+// resolved and writes one "restored" log entry. When anything refuses, nothing changes.
 func (s *Service) putBack(ctx context.Context, a actor.Actor, entryID string, undo bool) (RestoreResult, error) {
 	var result RestoreResult
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -398,10 +398,22 @@ func (s *Service) putBack(ctx context.Context, a actor.Actor, entryID string, un
 			return err
 		}
 
-		before := entry.Snapshots[0] // an entry in the bin always holds its record first
-		after, notes, err := s.putSnapshots(ctx, RestoreContext{Actor: a, Now: now, Undo: undo}, entry.Snapshots)
+		k, err := s.registeredKind(entry.RecordType)
 		if err != nil {
 			return err
+		}
+		before := entry.Snapshots[0] // an entry in the bin always holds its record first
+		rc := RestoreContext{Actor: a, Now: now, Undo: undo, DeletedAt: entry.DeletedAt, DeletedBy: entry.DeletedBy}
+		after, notes, err := s.putSnapshots(ctx, rc, entry.Snapshots)
+		if err != nil {
+			return err
+		}
+		if k.AfterRestore != nil { // once, for the record the person deleted, now that everything is back
+			afterNotes, err := k.AfterRestore(ctx, rc, after)
+			if err != nil {
+				return err
+			}
+			notes = append(notes, afterNotes...)
 		}
 		changes, err := Diff(before.Data, after.Data) // what PrepareRestore changed, such as the name
 		if err != nil {
@@ -429,10 +441,6 @@ func (s *Service) putBack(ctx context.Context, a actor.Actor, entryID string, un
 			return err
 		}
 
-		k, err := s.registeredKind(entry.RecordType)
-		if err != nil {
-			return err
-		}
 		result = RestoreResult{
 			RecordType:      k.Name,
 			RecordTypeLabel: k.Singular,

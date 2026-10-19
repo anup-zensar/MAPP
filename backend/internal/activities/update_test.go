@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -236,14 +237,63 @@ func TestUpdate_OngoingCannotBeUndone_FR010(t *testing.T) {
 // The approval workflow can change only while the activity is Created or Declined (FR-012).
 func TestUpdate_WorkflowLockedWhenSubmittedOrApproved_FR012(t *testing.T) {
 	f := newFixture(t)
-	locked := problems("approvalWorkflowId", "The approval workflow can't change while the activity is submitted or approved.")
 
-	for _, id := range []string{"A-1004", "A-1002"} {
-		_, err := f.edit(t, priya, id, func(u *activities.Update) { u.ApprovalWorkflowID = text(chinaFlow) })
-		assertError(t, err, locked)
-	}
+	_, err := f.edit(t, priya, "A-1002", func(u *activities.Update) { u.ApprovalWorkflowID = text(chinaFlow) })
+
+	assertError(t, err, problems("approvalWorkflowId", "The approval workflow can't change while the activity is submitted or approved."))
 	if view := f.mustEdit(t, "A-1005", func(u *activities.Update) { u.ApprovalWorkflowID = nil }); view.ApprovalWorkflow != nil {
 		t.Errorf("declined activity: workflow %+v, want removed", view.ApprovalWorkflow)
+	}
+}
+
+// While a round is open — the activity is Submitted — the workflow field says how to change it: recall the
+// activity first (008 FR-013); nothing is saved.
+func TestWorkflowFieldLockReason_FR013(t *testing.T) {
+	f := newFixture(t)
+
+	_, chosen := f.edit(t, priya, "A-1004", func(u *activities.Update) { u.ApprovalWorkflowID = text(chinaFlow) })
+	_, removed := f.edit(t, priya, "A-1004", func(u *activities.Update) { u.ApprovalWorkflowID = nil })
+
+	locked := problems("approvalWorkflowId", "Recall the activity to choose another workflow.")
+	assertError(t, chosen, locked)
+	assertError(t, removed, locked)
+	if stored, _ := f.stored(t, "A-1004"); stored.Version != 1 || stored.ApprovalWorkflowID != lubricantsFlow {
+		t.Errorf("stored = version %d, workflow %s; want nothing saved", stored.Version, stored.ApprovalWorkflowID)
+	}
+}
+
+// A confirmed re-approval change tells feature 008 the changes of the save's "changed" entry, with the
+// labels and texts people read (008 FR-022).
+func TestReapprovalChange_CallsApprovalHook_FR022(t *testing.T) {
+	f := newFixture(t)
+
+	f.mustEdit(t, "A-1004", func(u *activities.Update) {
+		u.PlannedCost = usdInput("65000.00")
+		u.RestartApproval = true
+	})
+
+	stored, _ := f.stored(t, "A-1004")
+	if !slices.Equal(f.hooks.restarted, []string{"A-1004: submitted → created"}) || stored.Status != activities.StatusCreated {
+		t.Errorf("approval hooks %q, stored %s; want one restart of the Submitted activity", f.hooks.restarted, stored.Status)
+	}
+	if len(f.hooks.changes) != 1 || !strings.HasPrefix(f.hooks.changes[0], "Planned cost: ") || !strings.HasSuffix(f.hooks.changes[0], " → 65,000.00 USD") {
+		t.Errorf("changes = %q, want the planned cost with its old and new text", f.hooks.changes)
+	}
+}
+
+// A line-item change that restarts approval (feature 007, through RestartApproval) tells feature 008 each
+// reason as one change, a ready-made sentence without old and new texts (008 FR-022, plan Reconciliation).
+func TestLineItemReapprovalChange_CallsApprovalHook_FR022(t *testing.T) {
+	f := newFixture(t)
+	reasons := []string{"Planned cost of line item 'Media booking' (L-1002): 18,000.00 USD → 18,000.00 EUR"}
+
+	if err := f.service.RestartApproval(t.Context(), daniel, "A-1004", reasons); err != nil {
+		t.Fatalf("RestartApproval: %v", err)
+	}
+
+	if !slices.Equal(f.hooks.restarted, []string{"A-1004: submitted → created"}) ||
+		!slices.Equal(f.hooks.changes, []string{reasons[0] + ":  → "}) {
+		t.Errorf("approval hooks %q with changes %q, want one restart with the reason", f.hooks.restarted, f.hooks.changes)
 	}
 }
 

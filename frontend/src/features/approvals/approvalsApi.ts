@@ -120,3 +120,24 @@ export function useDecide() {
     onSettled: () => invalidateAllButSession(queryClient),
   });
 }
+
+/** A recall of the round the person saw, with an optional reason (FR-021). */
+export interface RecallInput {
+  activityId: string;
+  roundId: string;
+  reason: string;
+}
+
+export function useRecall() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ activityId, roundId, reason }: RecallInput) =>
+      call(
+        api.POST('/api/activities/{activityId}/approval/recall', {
+          params: { path: { activityId } },
+          body: reason ? { roundId, reason } : { roundId },
+        }),
+      ),
+    onSettled: () => invalidateAllButSession(queryClient),
+  });
+}

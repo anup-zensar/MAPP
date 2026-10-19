@@ -1,9 +1,10 @@
+import { useNotifications } from './notificationsApi';
+
 /**
- * How many notifications the signed-in person has not read (008 plan, "Notification bell") —
- * STUB of the shared foundation: 0, until feature 008 replaces this file with the count from its
- * notifications query (GET /api/notifications, polled every 30 s). 001's NotificationBell already
- * shows it as a CountBadge and in the bell's name ("Notifications, 3 unread").
+ * How many notifications the signed-in person has not read (FR-033), from the bell's list query
+ * (asked again every 30 s): 001's NotificationBell shows it as a CountBadge and in the bell's name
+ * ("Notifications, 3 unread"). 0 until the list has arrived.
  */
 export function useUnreadNotificationCount(): number {
-  return 0;
+  return useNotifications().data?.unread ?? 0;
 }

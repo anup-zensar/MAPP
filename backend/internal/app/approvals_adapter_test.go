@@ -70,3 +70,41 @@ func TestAdapter_WorkflowFacts_FR007(t *testing.T) {
 		t.Errorf("GetWorkflow = %+v %v, unknown found %v; want the inactive WF-1001 and no unknown one", one, found, missing)
 	}
 }
+
+// Deleting a Submitted activity leaves its open round stored exactly as it was, so that an Undo brings the
+// activity back Submitted with the same round (008-P3, D-031); the round only ends when a restore brings
+// the activity back Created (FR-023).
+func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	repo := approvals.NewJSONRepository()
+	at := time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
+	priya := actor.Actor{ID: "U-1002", Name: "Priya Raman"}
+	open := approvals.Round{
+		ID: "AR-1001", ActivityID: "A-1004", Number: 1, WorkflowID: "WF-1001", WorkflowName: "Lubricants EU approval",
+		Levels:       []approvals.RoundLevel{{Number: 1, Approvers: []actor.Actor{{ID: "U-1003", Name: "Daniel Okoro"}}}},
+		CurrentLevel: 1, Outcome: approvals.OutcomeOpen, SubmittedAt: at, SubmittedBy: priya, Meta: record.NewMeta(priya, at),
+	}
+	hooks := activityApprovalHooks{} // the delete needs nothing of the approvals service
+
+	var after approvals.Round
+	err = db.Write(t.Context(), func(ctx context.Context) error {
+		if err := repo.PutRound(ctx, open); err != nil {
+			return err
+		}
+		if err := hooks.ActivityDeleting(ctx, priya, activities.Activity{ID: "A-1004", Status: activities.StatusSubmitted}); err != nil {
+			return err
+		}
+		after, _, err = repo.GetRound(ctx, open.ID)
+		return err
+	})
+
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if !reflect.DeepEqual(after, open) {
+		t.Errorf("round after the delete =\n%+v\nwant it unchanged\n%+v", after, open)
+	}
+}
