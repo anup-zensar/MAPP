@@ -1,0 +1,42 @@
+/* The worked example: a calm grey box under the model's values (design system §6.6, Calculated). */
+.example {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--gray-bg);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.title {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.calculated {
+  margin-left: auto;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.result {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.result:empty {
+  display: none;
+}

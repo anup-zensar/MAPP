@@ -1,6 +1,17 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectCurrentSection, renderApp } from '@/test/app';
+import type { MockHandler } from '@/test/mockApi';
+
+/** The requests the section pages make when they open, answered with empty lists. */
+const PAGE_ANSWERS: Record<string, MockHandler> = {
+  'GET /api/settings/overview': {
+    body: { models: 0, activityTypes: 0, shellAttributes: 0, currencies: 1, financeBudgetItems: 0 },
+  },
+  'GET /api/models': { body: { items: [], total: 0 } },
+  'GET /api/activity-types': { body: { items: [], total: 0 } },
+  'GET /api/currencies': { body: { items: [], total: 0 } },
+};
 
 // Feature 002's addresses (build guide §5). Feature 002 keeps this file up to date as it replaces
 // the stub pages (their own requests go into renderApp's answers).
@@ -16,7 +27,7 @@ describe('Settings routes (feature 002)', () => {
     ['/settings/currencies', 'Currencies'],
     ['/settings/finance-budget-items', 'Finance budget items'],
   ])('opens %s: "%s", with Settings current in the sidebar', async (path, title) => {
-    renderApp(path);
+    renderApp(path, PAGE_ANSWERS);
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
     expect(document.title).toBe(`${title} · NorthStar`);
@@ -24,13 +35,13 @@ describe('Settings routes (feature 002)', () => {
   });
 
   it('lists every Settings section, those of features 003 and 008 included (FR-001)', async () => {
-    renderApp('/settings');
+    renderApp('/settings', PAGE_ANSWERS);
 
-    const sections = await screen.findByRole('region', { name: 'Sections' });
+    const sections = await screen.findByRole('list', { name: 'Sections' });
     expect(
       within(sections)
-        .getAllByRole('link')
-        .map((link) => link.textContent),
+        .getAllByRole('heading')
+        .map((heading) => heading.textContent),
     ).toEqual([
       'Models',
       'Activity types',
@@ -41,5 +52,6 @@ describe('Settings routes (feature 002)', () => {
       'Teams',
       'Approval workflows',
     ]);
+    expect(await within(sections).findByText('1 active')).toBeInTheDocument();
   });
 });
