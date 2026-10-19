@@ -3,6 +3,7 @@ import type { RouteObject } from 'react-router';
 import { ActivityFormPage } from '@/features/activities/ActivityFormPage';
 import { ActivityPage } from '@/features/activities/ActivityPage';
 import { ActivityShortLink } from '@/features/activities/ActivityShortLink';
+import { AllWorkPage } from '@/features/all-work/AllWorkPage';
 import { ApprovalWorkflowsPage } from '@/features/approval-workflows/ApprovalWorkflowsPage';
 import { ApprovalsPage } from '@/features/approvals/ApprovalsPage';
 import { CampaignPanel } from '@/features/campaigns/CampaignPanel';
@@ -158,6 +159,8 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
     element: <ApprovalWorkflowsPage />,
     ...titled('Approval workflows'),
   },
+  // 010 All work
+  { path: '/all-work', element: <AllWorkPage />, ...titled('All work') },
 ];
 
 /**

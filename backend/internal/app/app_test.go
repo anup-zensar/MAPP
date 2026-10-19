@@ -299,17 +299,6 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 var notYetServed = []string{
 	// 009 Home dashboard
 	"GET /api/home/recent-changes",
-	// 010 All work views
-	"GET /api/all-work",
-	"GET /api/all-work/options",
-	"GET /api/all-work/export",
-	"GET /api/all-work/records/{recordId}",
-	"GET /api/all-work/preferences",
-	"PUT /api/all-work/preferences",
-	"GET /api/saved-views",
-	"POST /api/saved-views",
-	"PATCH /api/saved-views/{viewId}",
-	"DELETE /api/saved-views/{viewId}",
 	// 011 Activity log and recycle bin
 	"GET /api/activity-log/summary",
 	"POST /api/recycle-bin/empty",

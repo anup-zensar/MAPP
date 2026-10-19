@@ -1,0 +1,87 @@
+/* "Modified": a small amber word on the Views button (FR-030). */
+.modified {
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--status-review) 16%, transparent);
+  color: var(--status-review-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.menu {
+  z-index: 50;
+  min-width: 240px;
+  max-width: min(340px, calc(100vw - 32px));
+  max-height: min(440px, calc(100vh - 120px));
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--hover);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.tick {
+  display: inline-grid;
+  flex: none;
+  width: 16px;
+  place-items: center;
+}
+
+.tick svg {
+  width: 14px;
+  height: 14px;
+  color: var(--blue);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.default {
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--chip);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.separator {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--hairline);
+}
+
+.empty {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}

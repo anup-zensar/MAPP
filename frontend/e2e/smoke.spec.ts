@@ -56,12 +56,12 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   const nav = page.getByRole('navigation', { name: 'Main' });
   const main = page.getByRole('main');
 
-  // Plans, Approvals and Settings are built (features 002–008); All work (010), Recycle bin and
+  // Plans, Approvals, Settings (features 002–008) and All work (010) are built; Recycle bin and
   // Activity log (011) still show their "Coming soon" page.
   const pages: { item: string; heading: string; comingSoon: boolean }[] = [
     { item: 'Plans', heading: 'Plans', comingSoon: false },
     { item: 'Approvals', heading: 'Approvals', comingSoon: false },
-    { item: 'All work', heading: 'All work', comingSoon: true },
+    { item: 'All work', heading: 'See all planned work across plans', comingSoon: false },
     { item: 'Settings', heading: 'Settings', comingSoon: false },
     { item: 'Recycle bin', heading: 'Recycle bin', comingSoon: true },
     { item: 'Activity log', heading: 'Activity log', comingSoon: true },

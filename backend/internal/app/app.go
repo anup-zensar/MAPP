@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"northstar/internal/activities"
+	"northstar/internal/allwork"
 	"northstar/internal/approvals"
 	"northstar/internal/auth"
 	"northstar/internal/campaigns"
@@ -30,6 +31,9 @@ type App struct {
 	// Routes lists the "METHOD /path" pattern of every operation the API serves. Tests compare it with
 	// the operations of the contract, backend/api/openapi.yaml.
 	Routes []string
+
+	// allWork is the source All work reads (allwork_source.go), kept for the adapter's tests.
+	allWork allwork.Source
 }
 
 // New builds the API on the data in db, with now as the clock of the services that need one (a fixed clock
@@ -162,6 +166,19 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		approvalsService))
 	home.NewHandler(homeService).Routes(router, signedIn)
 
+	// All work (010): a read-only view of a year over plans (004) and the records below them (005–007),
+	// read through the adapter allWorkSource (allwork_source.go), with its own personal settings — saved
+	// views and remembered columns — which are not business records: no history kinds (D-121).
+	allWork := allWorkSource{
+		plans: planService, plansRepo: plansRepo, campaigns: campaignsService, campaignsRepo: campaignsRepo,
+		activities: activitiesService, activitiesRepo: activitiesRepo, lineItems: lineItemsService,
+		lineItemsRepo: lineItemsRepo, settings: settingsService, budgetItems: lineItemBudgets{repo: settingsRepo},
+		workflows: activityWorkflows{repo: approvalsRepo}, people: peopleService, peopleRepo: peopleRepo,
+		history: historyService,
+	}
+	allWorkService := allwork.NewService(db, allwork.NewJSONRepository(), allWork, generator, now)
+	allwork.NewHandler(allWorkService).Routes(router, signedIn)
+
 	// Where the records of people (003) and Settings (002) are used, now that every feature is built
 	// (references.go): people's plans (004), owner and approver counts (005–008) and currencies (002);
 	// Settings' "Used by", in-use deletes and impact statements over people (003), plans (004) and the
@@ -181,7 +198,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// Every other path or method under /api/ answers JSON 404 (http.ServeMux would answer plain text).
 	router.Handle("/api/", web.NotFound)
 
-	return &App{Handler: web.Middleware(router), Routes: routes}, nil
+	return &App{Handler: web.Middleware(router), Routes: routes, allWork: allWork}, nil
 }
 
 // healthAnswer is the answer of GET /api/health.

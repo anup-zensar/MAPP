@@ -1,0 +1,202 @@
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.legendTitle {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.legendList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The timeline is at least wide enough for every month's name; it scrolls inside its card. */
+.calendar .trackHead,
+.calendar .trackCell {
+  width: 100%;
+  min-width: 720px;
+  padding-inline: 0;
+}
+
+.track {
+  position: relative;
+  min-height: 28px;
+}
+
+.months {
+  display: grid;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.months span {
+  padding-left: 6px;
+  border-left: 1px solid var(--hairline);
+}
+
+.lines {
+  position: absolute;
+  inset: -8px 0;
+  display: grid;
+}
+
+.lines span {
+  border-left: 1px solid color-mix(in srgb, var(--hairline) 60%, transparent);
+}
+
+/* The Today line crosses every row at the same place (FR-026). */
+.today {
+  position: absolute;
+  top: -9px;
+  bottom: -9px;
+  width: 0;
+  border-left: 2px solid var(--status-problem);
+}
+
+.todayLabel {
+  position: absolute;
+  top: 100%;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--status-problem);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 600;
+  transform: translateX(-50%);
+}
+
+/* A bar: its status colour, the name and the status word (never colour alone). */
+.bar {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 6px;
+  overflow: hidden;
+  padding: 0 6px;
+  border: 1px solid var(--bar-colour);
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bar-colour) 16%, var(--surface));
+  color: var(--ink);
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bar:hover {
+  background: color-mix(in srgb, var(--bar-colour) 26%, var(--surface));
+}
+
+.bar:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  z-index: 2;
+}
+
+.neutral {
+  --bar-colour: var(--status-neutral);
+}
+
+.review {
+  --bar-colour: var(--status-review);
+}
+
+.positive {
+  --bar-colour: var(--status-positive);
+}
+
+.active {
+  --bar-colour: var(--status-active);
+}
+
+.done {
+  --bar-colour: var(--status-done);
+}
+
+.problem {
+  --bar-colour: var(--status-problem);
+}
+
+/* Cut by the start of the year: a straight, dashed left edge. */
+.cutStart {
+  border-left-style: dashed;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Ongoing or cut by the end of the year: an open, dashed right edge. */
+.openEnd {
+  border-right-style: dashed;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.barName {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.barStatus,
+.edge {
+  color: var(--ink-2);
+}
+
+.tip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.tipTitle {
+  font-weight: 600;
+}
+
+.undated {
+  padding: 12px;
+  border-top: 1px solid var(--hairline);
+}
+
+.undatedTitle {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.undatedList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.undatedItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.undatedLink {
+  color: var(--link);
+  font-weight: 600;
+}

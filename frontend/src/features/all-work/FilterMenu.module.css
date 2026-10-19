@@ -1,0 +1,125 @@
+/* A pill-shaped button per filter (design system §2, §6.1). */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 10px 4px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.button:hover {
+  background: var(--hover);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.button svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-2);
+}
+
+/* A filter in use: a tint of the selection blue, and its count or value as words. */
+.inUse {
+  border-color: color-mix(in srgb, var(--blue) 40%, transparent);
+  background: color-mix(in srgb, var(--blue) 8%, var(--surface));
+}
+
+.summary {
+  font-weight: 600;
+}
+
+.menu {
+  z-index: 50;
+  width: min(300px, calc(100vw - 32px));
+  max-height: min(420px, calc(100vh - 120px));
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.search {
+  padding: 4px 4px 8px;
+}
+
+.search input {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.search input:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.choice:hover {
+  background: var(--hover);
+}
+
+.choice input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.quick {
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--hairline);
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+}
+
+.group {
+  margin: 8px 8px 2px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nothing {
+  margin: 0;
+  padding: 8px;
+  color: var(--ink-2);
+}

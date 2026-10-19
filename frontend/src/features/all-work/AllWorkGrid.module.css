@@ -1,0 +1,156 @@
+/* The tables of All work (Grid, Budget & cost) share these styles. */
+.grid {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.continued {
+  margin: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* The table scrolls sideways inside its card; the page itself never does (390 px, 1280 px). */
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+}
+
+.table th,
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table td {
+  white-space: nowrap;
+}
+
+.table .end {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* A sortable heading: the label and an arrow that shows the order (FR-015). */
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sort:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.sort:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.sort svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0.5;
+}
+
+.sorted {
+  color: var(--ink);
+}
+
+.sorted svg {
+  opacity: 1;
+}
+
+/* The names stay on the left while the other columns scroll. */
+.nameHead,
+.nameCell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 260px;
+  max-width: 460px;
+  background: var(--surface);
+}
+
+.table .nameCell {
+  border-left: 4px solid transparent;
+  font-weight: 400;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover td,
+.row:hover .nameCell {
+  background: color-mix(in srgb, var(--ink) 4%, var(--surface));
+}
+
+/* The 4 px level bar beside the name (design system §4). */
+.table .plan {
+  border-left-color: var(--level-plan);
+}
+
+.table .campaign {
+  border-left-color: var(--level-campaign);
+}
+
+.table .initiative {
+  border-left-color: var(--level-initiative);
+}
+
+.table .activity {
+  border-left-color: var(--level-activity);
+}
+
+.table .lineItem,
+.table .unassigned {
+  border-left-color: var(--level-line-item);
+}
+
+/* Context rows: lighter text, never counted (FR-005). */
+.context td {
+  color: var(--ink-2);
+}
+
+.unassignedRow td {
+  font-style: italic;
+}
+
+.totals th,
+.totals td {
+  border-top: 2px solid var(--hairline);
+  border-bottom: 0;
+  font-weight: 600;
+  white-space: nowrap;
+}

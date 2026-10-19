@@ -3,8 +3,8 @@
  * until a later feature builds a section — the sentence its "Coming soon" page shows (FR-015).
  * A feature that builds a section removes its sentence and gives it a real page in router.tsx.
  *
- * Plans (004–007), Approvals (008), Settings (002, 003) and My profile (003) have their pages; All
- * work (010), Recycle bin and Activity log (011) come later.
+ * Plans (004–007), Approvals (008), All work (010), Settings (002, 003) and My profile (003) have
+ * their pages; Recycle bin and Activity log (011) come later.
  */
 import {
   CircleCheckBig,
@@ -58,13 +58,7 @@ const APPROVALS: NavItem = {
   Badge: ApprovalsNavBadge,
 };
 
-const ALL_WORK: ComingSoonSection = {
-  label: 'All work',
-  path: '/all-work',
-  icon: LayoutGrid,
-  comingSoon:
-    'See every campaign, initiative, activity and line item across plans as a grid, a calendar or a budget view.',
-};
+const ALL_WORK: NavItem = { label: 'All work', path: '/all-work', icon: LayoutGrid };
 
 const SETTINGS: NavItem = { label: 'Settings', path: '/settings', icon: Settings };
 
@@ -92,4 +86,4 @@ export const MAIN_ITEMS: NavItem[] = [HOME, PLANS, APPROVALS, ALL_WORK];
 export const MORE_ITEMS: NavItem[] = [SETTINGS, RECYCLE_BIN, ACTIVITY_LOG];
 
 /** Every section that shows a "Coming soon" page for now. */
-export const COMING_SOON_SECTIONS: ComingSoonSection[] = [ALL_WORK, RECYCLE_BIN, ACTIVITY_LOG];
+export const COMING_SOON_SECTIONS: ComingSoonSection[] = [RECYCLE_BIN, ACTIVITY_LOG];

@@ -14,12 +14,8 @@ function section(label: string) {
 
 describe('ComingSoonPage', () => {
   // The sentences of the plan's "Coming soon" table (FR-015), word for word, for the sections
-  // that later features build (009–012); Plans, Approvals, Settings and My profile have pages.
+  // that later features build (011); Plans, Approvals, All work, Settings and My profile have pages.
   it.each([
-    [
-      'All work',
-      'See every campaign, initiative, activity and line item across plans as a grid, a calendar or a budget view.',
-    ],
     [
       'Recycle bin',
       'Bring back anything that was deleted, together with everything that was under it.',
@@ -34,11 +30,7 @@ describe('ComingSoonPage', () => {
   });
 
   it('is only for the sections still to come (Plan-module foundation)', () => {
-    expect(COMING_SOON_SECTIONS.map((item) => item.label)).toEqual([
-      'All work',
-      'Recycle bin',
-      'Activity log',
-    ]);
+    expect(COMING_SOON_SECTIONS.map((item) => item.label)).toEqual(['Recycle bin', 'Activity log']);
   });
 
   it('says that the section is coming soon, with the section name as the eyebrow (FR-015)', () => {
@@ -50,9 +42,10 @@ describe('ComingSoonPage', () => {
   });
 
   it('offers a way back to Home (FR-015)', async () => {
-    const { user, router } = renderWithProviders(<ComingSoonPage section={section('All work')} />, {
-      route: '/all-work',
-    });
+    const { user, router } = renderWithProviders(
+      <ComingSoonPage section={section('Recycle bin')} />,
+      { route: '/recycle-bin' },
+    );
 
     await user.click(screen.getByRole('link', { name: 'Go to Home' }));
 
