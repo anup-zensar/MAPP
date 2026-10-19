@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Bell } from 'lucide-react';
 import { Tooltip as RadixTooltip } from 'radix-ui';
@@ -42,6 +42,30 @@ describe('Tooltip', () => {
     expect(button).toHaveFocus();
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Notifications');
     expect(button).toHaveAccessibleDescription('Notifications');
+  });
+
+  it('stays closed when a mouse action gives the focus back to the control', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Save</button>
+        <Tooltip content="Notifications">
+          <button type="button" aria-label="Notifications">
+            <Bell />
+          </button>
+        </Tooltip>
+      </>,
+      { wrapper: TooltipProvider },
+    );
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    // As a menu or dialog closed with the mouse does: the focus returns to its trigger.
+    const bell = screen.getByRole('button', { name: 'Notifications' });
+    act(() => bell.focus());
+
+    expect(bell).toHaveFocus();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
   it('closes on Escape', async () => {

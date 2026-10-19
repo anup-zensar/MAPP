@@ -1,11 +1,11 @@
 import { CircleAlert } from 'lucide-react';
 import { Link } from 'react-router';
 import { StatusChip } from '@/components';
-import { plural } from '@/lib/text';
 import { useFormatters } from '@/lib/useFormatters';
 import type { ActivitySummary } from './activitiesApi';
 import styles from './ActivityRowCells.module.css';
 import { ActivityStatusChip } from './ActivityStatusChip';
+import { lineItemsAttentionText } from './activityText';
 
 /**
  * The status cell of an activity row (FR-033): the status chip and the completeness — "All filled
@@ -30,9 +30,7 @@ export function ActivityRowStatus({ row, href }: { row: ActivitySummary; href: s
       {lineItemsNeedingAttention > 0 && (
         <Link to={`${href}#ready`} className={styles.chipLink}>
           <StatusChip tone="problem">
-            {lineItemsNeedingAttention === 1
-              ? '1 line item needs attention'
-              : `${plural(lineItemsNeedingAttention, 'line item')} need attention`}
+            {lineItemsAttentionText(lineItemsNeedingAttention)}
           </StatusChip>
         </Link>
       )}

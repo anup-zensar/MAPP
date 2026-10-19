@@ -112,9 +112,9 @@ describe('ComponentGalleryPage', () => {
 
     const summaries = card('SummaryCard');
     expect(within(summaries).getAllByRole('button', { name: /^About / })).toHaveLength(4);
-    expect(within(summaries).getByRole('button', { name: '$1,250,000.00' })).toHaveTextContent(
-      '$1.25M',
-    );
+    expect(
+      within(summaries).getByRole('button', { name: '$1.25M ($1,250,000.00)' }),
+    ).toHaveTextContent('$1.25M');
   });
 
   it('shows the avatar sizes next to the names they stand for (FR-019)', () => {

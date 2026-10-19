@@ -53,7 +53,7 @@ describe('ActivityPage (feature 006, US2)', () => {
     expect(screen.getByText('ACTIVITY')).toBeVisible();
     expect(screen.getByText('Created')).toBeVisible();
     expect(screen.getByRole('button', { name: '3 fields needed' })).toBeVisible();
-    expect(screen.getByRole('button', { name: '1 item below needs attention' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '1 line item needs attention' })).toBeVisible();
     expect(screen.getByText('A-1042')).toBeVisible();
     const facts = screen.getByText('Unassigned planned cost').closest('dl') as HTMLElement;
     expect(within(facts).getByText('Priya Raman')).toBeVisible();

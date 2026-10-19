@@ -86,6 +86,19 @@ describe('CompletenessChip', () => {
     expect(onItemsBelowSelect).toHaveBeenCalledOnce();
   });
 
+  it('names the records below when they have a name of their own (feature 006)', () => {
+    render(
+      <CompletenessChip
+        missing={[]}
+        itemsBelow={2}
+        itemsBelowText={(count) => `${count} line items need attention`}
+      />,
+    );
+
+    expect(screen.getByText('2 line items need attention')).toBeInTheDocument();
+    expect(screen.queryByText(/below/)).not.toBeInTheDocument();
+  });
+
   it('lists the records below with links to them', async () => {
     const { user } = renderWithProviders(
       <CompletenessChip

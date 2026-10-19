@@ -44,10 +44,12 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     expect(within(summary).getByText('Plans').parentElement).toHaveTextContent('3');
     expect(within(summary).getByText('Draft').parentElement).toHaveTextContent('2');
     expect(within(summary).getByText('Published').parentElement).toHaveTextContent('1');
-    expect(within(summary).getByRole('button', { name: '$2,260,000.00' })).toHaveTextContent(
-      '$2.26M',
-    );
-    expect(within(summary).getByRole('button', { name: '$2,400,000.00' })).toBeInTheDocument();
+    expect(
+      within(summary).getByRole('button', { name: '$2.26M ($2,260,000.00)' }),
+    ).toHaveTextContent('$2.26M');
+    expect(
+      within(summary).getByRole('button', { name: /^\S+ \(\$2,400,000\.00\)$/ }),
+    ).toBeInTheDocument();
     expect(screen.getByText('3 of 3')).toBeInTheDocument();
   });
 

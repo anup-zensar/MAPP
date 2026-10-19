@@ -41,7 +41,8 @@ describe('SummaryCard', () => {
       wrapper: TooltipProvider,
     });
 
-    const value = screen.getByRole('button', { name: '$1,250,000.00' });
+    // The name starts with the visible text (WCAG 2.5.3) and adds the full value.
+    const value = screen.getByRole('button', { name: '$1.25M ($1,250,000.00)' });
     expect(value).toHaveTextContent('$1.25M');
 
     await user.tab();

@@ -216,7 +216,10 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
 
     const down = await screen.findByRole('button', { name: "Move 'Media channel' down" });
     expect(down).toHaveAttribute('aria-disabled', 'true');
-    down.focus();
+    // Keyboard focus, which shows the tooltip: Tab from the button just before it.
+    screen.getByRole('button', { name: "Move 'Media channel' up" }).focus();
+    await user.tab();
+    expect(down).toHaveFocus();
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       'Clear the search and filters to change the order.',
     );
@@ -260,11 +263,14 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
   });
 
   it('shows the lock of Business unit on its order buttons (FR-023)', async () => {
-    renderPage('/settings/shell-attributes');
+    const { user } = renderPage('/settings/shell-attributes');
 
     const down = await screen.findByRole('button', { name: "Move 'Business unit' down" });
     expect(down).toHaveAttribute('aria-disabled', 'true');
-    down.focus();
+    // Keyboard focus, which shows the tooltip: Tab from the button just before it.
+    screen.getByRole('button', { name: "Move 'Business unit' up" }).focus();
+    await user.tab();
+    expect(down).toHaveFocus();
     expect(await screen.findByRole('tooltip')).toHaveTextContent(BUSINESS_UNIT_LOCK);
   });
 });

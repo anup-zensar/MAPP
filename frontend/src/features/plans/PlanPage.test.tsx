@@ -109,7 +109,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
       within(card('Remaining budget')).getByText('Over-allocated by $100,000.00'),
     ).toBeInTheDocument();
     expect(
-      within(card('Remaining budget')).getByRole('button', { name: '-$100,000.00' }),
+      within(card('Remaining budget')).getByRole('button', { name: /\(-\$100,000\.00\)$/ }),
     ).toBeInTheDocument();
   });
 

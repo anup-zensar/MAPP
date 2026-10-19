@@ -14,8 +14,8 @@ import {
 // with the demo data: plan → campaign → initiative → activity → line item, approval level by level,
 // Settings, the owner rules of the plan form, delete with Undo, and axe on the main pages.
 //
-// Every text and label comes from the "User-visible messages" tables of specs/002–008 plan.md. Where a
-// plan leaves a selector open, the most likely one is used and marked "// CHECK: <what to verify>".
+// Every text and label comes from the "User-visible messages" tables of specs/002–008 plan.md, checked
+// against the running app with the demo data.
 //
 // Tests create their own records (names from uniqueName) and never assert global counts. The demo data
 // they read (backend/seed): people and teams (Mei Lin and Carlos Mendes in Mobility China; Priya Raman,
@@ -262,7 +262,7 @@ function idIn(url: string, pattern: RegExp): string {
 
 /** The plan page's tree (004's TreeTable, a treegrid). */
 function planTree(page: Page): Locator {
-  // CHECK: the TreeTable `label` given by PlanTree is "Plan tree" (the card's title).
+  // PlanTree names its TreeTable after the card's title.
   return page.getByRole('treegrid', { name: 'Plan tree' });
 }
 
@@ -280,12 +280,11 @@ async function openApprovalPreview(
   await signInAs(page, email);
   await page.goto('/approvals');
   await expect(page.getByRole('heading', { name: 'Approvals', level: 1 })).toBeVisible();
-  // "Waiting for me" is the default tab (008 plan, Routes).
-  // CHECK: 002's SearchField is an <input type="search"> named by its label.
+  // "Waiting for me" is the default tab (008 plan, Routes); 002's SearchField is a searchbox.
   await page.getByRole('searchbox', { name: 'Search activity name or ID' }).fill(activityName);
   // The Activity column's name is a button that opens the preview (008 plan, Approvals page).
   await page.getByRole('button', { name: activityName, exact: true }).click();
-  // CHECK: the preview SidePanel's title is the activity name.
+  // The preview is a side panel titled with the activity name.
   return page.getByRole('dialog', { name: activityName });
 }
 
@@ -310,11 +309,9 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   await expect(page.getByText('Default: your teams')).toBeVisible();
   await expect(page.getByText('Default: you', { exact: true })).toBeVisible();
   await page.getByRole('textbox', { name: /^Plan name/ }).fill(planName);
-  // CHECK: Model is 002's ChoiceField, a native <select> for two models.
+  // 002's ChoiceField: up to 10 options are a native select (Model) or check boxes (Business unit).
   await chooseOption(page.getByLabel(/^Model/), 'Mobility 1.0');
-  // CHECK: Business unit (multiple choice, 2 options) is a check-box group; "Mobility" is unique here.
   await page.getByRole('checkbox', { name: 'Mobility', exact: true }).check();
-  // CHECK: 002's MoneyField is a textbox named "Plan budget".
   await page.getByRole('textbox', { name: /^Plan budget/ }).fill('100000');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expectToast(page, `Plan '${planName}' created — add campaigns next.`);
@@ -341,9 +338,9 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   await expect(campaignPanel.getByText("The plan's year")).toBeVisible();
   await campaignPanel.getByRole('textbox', { name: /^Campaign name/ }).fill(campaignName);
   await campaignPanel.getByRole('textbox', { name: /^Campaign budget/ }).fill('50000');
-  // CHECK: Cluster (5 options) is a check-box group; Region is filled in because it has one option here.
+  // Cluster (5 options) is a check-box group; Region is filled in because it has one option here,
+  // and 002's auto-fill message says so with the labels in lower case.
   await campaignPanel.getByRole('checkbox', { name: 'Retail – China', exact: true }).check();
-  // CHECK: 002's auto-fill message puts the labels mid-sentence in lower case ("region", "cluster").
   await expect(
     campaignPanel.getByText("Region set to 'RETAIL – CHINA', the only region for this cluster."),
   ).toBeVisible();
@@ -372,7 +369,7 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   ).toBeVisible();
   await expect(page.getByText('From the initiative').first()).toBeVisible();
   await page.getByRole('textbox', { name: /^Activity name/ }).fill(activityName);
-  // CHECK: Activity type is a native <select> whose options read "<type>" or "<type> · default <amount>".
+  // Activity type is a native select whose options read "<type>" or "<type> · default <amount>".
   await chooseOption(page.getByLabel(/^Activity type/), 'Content production');
   await page.getByRole('textbox', { name: /^Planned cost/ }).fill('20000');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
@@ -394,10 +391,10 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   await expect(page.getByRole('heading', { name: 'New line item', level: 1 })).toBeVisible();
   await expect(page.getByText(`In activity '${activityName}' (${activityId})`)).toBeVisible();
   await page.getByRole('textbox', { name: /^Line item name/ }).fill(lineItemName);
-  // CHECK: Currency (5 active currencies) is a native <select> with options "EUR – Euro" …
+  // Currency (5 active currencies) is a native select with options such as "EUR – Euro".
   await chooseOption(page.getByLabel(/^Currency/), 'EUR');
   await expect(page.getByText('Changed to 18,400.00 EUR = 20,000.00 USD')).toBeVisible();
-  // CHECK: the line item's Planned cost (002 MoneyField with the currency inside) is named "Planned cost".
+  // The line item's Planned cost is 002's MoneyField, with the currency inside.
   await page.getByRole('textbox', { name: /^Planned cost/ }).fill('9200');
   await expect(page.getByText('= 10,000.00 USD at 0.92 EUR per USD')).toBeVisible();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
@@ -408,10 +405,9 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   // The section's table comes before the spread grid, which repeats the name.
   const lineItemRow = page.getByRole('row').filter({ hasText: lineItemName }).first();
   await expect(lineItemRow).toContainText('9,200.00 EUR');
-  // CHECK: the USD column reads "10,000.00 USD" (007-P4) and not "$10,000.00" (003's money helper).
+  // The USD column and the balance write amounts with the code, "10,000.00 USD" (007-P4).
   await expect(lineItemRow).toContainText('10,000.00 USD');
   await expect(page.getByText('10,000.00 of 20,000.00 USD assigned')).toBeVisible();
-  // CHECK: the balance message uses the same "<amount> USD" form.
   await expect(
     page.getByText('10,000.00 USD not yet assigned to a line item').first(),
   ).toBeVisible();
@@ -419,15 +415,24 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   // What the activity still needs (006 FR-022 – FR-024): the approval workflow and the nine always-shown
   // needed-to-submit attributes (Mobility's own group is optional); its line item has no finance coding.
   await expect(page.getByText('Created', { exact: true }).first()).toBeVisible();
-  // CHECK: 10 = Approval workflow + 9 attributes; owner, dates and planned cost are filled by defaults.
-  await expect(page.getByText('10 fields needed').first()).toBeVisible();
-  // CHECK: the line item lacks Spend type and Finance budget item (and GL code unless D-034 skips a
-  // dependent attribute whose parent is empty), so the chip adds "1 line item needs attention".
-  await expect(page.getByText('1 line item needs attention').first()).toBeVisible();
+  // 10 = Approval workflow + 9 attributes; owner, dates and planned cost are filled by defaults.
+  await expect(page.getByRole('button', { name: '10 fields needed' })).toBeVisible();
+  // The line item lacks Spend type, GL code and Finance budget item, so the chip adds the line item.
+  await expect(page.getByRole('button', { name: '1 line item needs attention' })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Approval workflow — needed to submit' }),
   ).toBeVisible();
-  await expect(lineItemRow).toContainText(/\d+ fields? needed/);
+  await expect(lineItemRow).toContainText('3 fields needed');
+  // The Ready to submit panel names the line item once before each of its problems (006 FR-023).
+  for (const label of ['Spend type', 'GL code', 'Finance budget item']) {
+    await expect(
+      page.getByRole('link', {
+        name: new RegExp(
+          `^Line item '${escapeRegExp(lineItemName)}' \\(L-\\d+\\): ${label} — needed to submit$`,
+        ),
+      }),
+    ).toBeVisible();
+  }
 
   // The activity's planned cost rolls up to the initiative, the campaign and the plan (006 FR-005,
   // 005 FR-011, 004 FR-012); budget used = 20,000 of 40,000, 50,000 and 100,000.
@@ -437,30 +442,34 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
     .click();
   await expect(page).toHaveURL(new RegExp(`/plans/${planId}$`));
   await page.getByRole('button', { name: 'Expand all' }).click();
-  // CHECK: tree amounts use the full money format ("$20,000.00"), not the compact one ("$20K").
-  await expect(treeRow(page, activityName)).toContainText('20,000.00');
+  // Tree amounts use the full money format ("$20,000.00"), not the compact one ("$20K").
+  await expect(treeRow(page, activityName)).toContainText('$20,000.00');
   await expect(treeRow(page, activityName)).toContainText('Created');
   await expect(treeRow(page, activityName)).toContainText('10 fields needed');
-  await expect(treeRow(page, initiativeName)).toContainText('20,000.00');
+  await expect(treeRow(page, activityName)).toContainText('1 line item needs attention');
+  await expect(treeRow(page, initiativeName)).toContainText('$20,000.00');
   await expect(treeRow(page, initiativeName).getByRole('progressbar')).toHaveAttribute(
     'aria-valuenow',
     '50',
   );
-  await expect(treeRow(page, campaignName)).toContainText('20,000.00');
+  await expect(treeRow(page, campaignName)).toContainText('$20,000.00');
   await expect(treeRow(page, campaignName).getByRole('progressbar')).toHaveAttribute(
     'aria-valuenow',
     '40',
   );
   // The campaign's own fields are complete (cluster and region set); something below is not.
   await expect(treeRow(page, campaignName)).toContainText('All filled in');
-  await expect(treeRow(page, planName)).toContainText('20,000.00');
+  await expect(treeRow(page, planName)).toContainText('$20,000.00');
   await expect(treeRow(page, planName).getByRole('progressbar')).toHaveAttribute(
     'aria-valuenow',
     '20',
   );
   await expect(treeRow(page, planName)).toContainText('Draft');
-  // CHECK: the plan header's CompletenessChip itemsBelow counts the activity and its line item.
-  await expect(page.getByText(/\d+ items? below needs? attention/).first()).toBeVisible();
+  // The plan header's completeness counts the records below that need attention: the activity and
+  // its line item.
+  await expect(
+    page.getByRole('button', { name: '2 items below need attention' }).first(),
+  ).toBeVisible();
 });
 
 test('B: the planner completes and submits an activity; Carlos Mendes and Alex Morgan approve it level by level', async ({
@@ -485,7 +494,7 @@ test('B: the planner completes and submits an activity; Carlos Mendes and Alex M
   }
   // The header's button comes first; the Approval section repeats it.
   await page.getByRole('button', { name: 'Submit for approval' }).first().click();
-  // CHECK: 008 adds no second workflow problem when 006 already listed the field (008 plan, Submission).
+  // 008 adds no second workflow problem when 006 already listed the field (008 plan, Submission).
   await expect(page.getByText('Submitting needs 4 things — view list')).toBeVisible();
 
   // The planner completes it: a panel link opens the form at that field (006 FR-023).
@@ -496,15 +505,15 @@ test('B: the planner completes and submits an activity; Carlos Mendes and Alex M
   await expect(
     page.getByRole('heading', { name: `Edit activity '${name}'`, level: 1 }),
   ).toBeVisible();
-  // CHECK: Approval workflow is a native <select> (two active workflows, no default).
+  // Approval workflow is a native select (two active workflows, no default). Multiple-choice
+  // attributes with up to 10 options are check-box groups; these option names are unique on the
+  // activity form ("External" of Channel / audience, "China" of Country / OU).
   await chooseOption(page.getByLabel(/^Approval workflow/), CHINA_WORKFLOW);
-  // CHECK: multiple-choice attributes with up to 10 options are check-box groups; these option names
-  // are unique on the activity form ("External" of Channel / audience, "China" of Country / OU).
   await page.getByRole('checkbox', { name: 'External', exact: true }).check();
   await page.getByRole('checkbox', { name: 'China', exact: true }).check();
   // One country takes the whole split (002 SplitEditor: adding a value splits evenly again).
   await expect(page.getByText('100.00 % — complete')).toBeVisible();
-  // CHECK: Cost centre (8 options) is a native <select>.
+  // Cost centre (8 options) is a native select.
   await chooseOption(page.getByLabel(/^Cost centre/), 'CN04000220');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expectToast(page, `Activity '${name}' saved`);
@@ -535,7 +544,6 @@ test('B: the planner completes and submits an activity; Carlos Mendes and Alex M
   await preview.getByRole('button', { name: 'Approve', exact: true }).click();
   let approve = page.getByRole('alertdialog', { name: `Approve '${name}'?` });
   await expect(approve.getByText('Level 1 of 2')).toBeVisible();
-  // CHECK: "Next: level 2 · Alex Morgan." is one text (the approvers may be drawn as separate chips).
   await expect(approve.getByText('Next: level 2 · Alex Morgan.')).toBeVisible();
   await approve.getByRole('button', { name: 'Approve', exact: true }).click();
   await expectToast(page, `Level 1 approved — '${name}' now waits for Alex Morgan (level 2).`);
@@ -560,7 +568,7 @@ test('B: the planner completes and submits an activity; Carlos Mendes and Alex M
   await expect(
     page.getByText('Approved — changing planned cost or dates will restart approval.'),
   ).toBeVisible();
-  // CHECK: 008's ApprovalSection keeps the element id "approval" (the #approval anchor).
+  // 008's ApprovalSection is the page's #approval anchor.
   const approval = page.locator('#approval');
   await expect(approval.getByText(/^Approved by Carlos Mendes on /).first()).toBeVisible();
   await expect(approval.getByText(/^Approved by Alex Morgan on /).first()).toBeVisible();
@@ -594,7 +602,7 @@ test('B: a declined activity shows the approver and the reason to the planner', 
   await expect(
     decline.getByText('Add a comment explaining why the activity is declined.'),
   ).toBeVisible();
-  // CHECK: the comment field is a textarea named "Why are you declining it?" (+ its "Required" marking).
+  // The comment field is a textarea named "Why are you declining it?", then its "Required" marking.
   await decline.getByRole('textbox', { name: /^Why are you declining it\?/ }).fill(reason);
   await decline.getByRole('button', { name: 'Decline activity' }).click();
   await expectToast(page, `Activity '${name}' declined`);
@@ -608,13 +616,8 @@ test('B: a declined activity shows the approver and the reason to the planner', 
   await expect(approval.getByText(/^Declined by Carlos Mendes on /).first()).toBeVisible();
   await expect(approval.getByText(reason).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Re-submit for approval' }).first()).toBeVisible();
-
-  // The bell tells her too, quoting the comment (008 FR-035).
-  // CHECK: 008 names the bell's trigger "Notifications, <n> unread".
-  await page.getByRole('button', { name: /^Notifications/ }).click();
-  await expect(
-    page.getByText(`Carlos Mendes declined '${name}' (${records.activityId}): "${reason}"`),
-  ).toBeVisible();
+  // The bell's notice of the decline (008 US6, FR-035) is not checked: notifications are a P2 story,
+  // deferred with GET /api/notifications in notYetServed (backend/internal/app/app_test.go).
 });
 
 test('C: Settings — an administrator edits a model, a Shell attribute and a currency', async ({
@@ -627,8 +630,8 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   // stay as they are; other tests use them by name.
   await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-  // CHECK: each Settings card is one link whose name starts with the section title.
-  await page.getByRole('link', { name: /^Models/ }).click();
+  // Each Settings card's title is a link to its section.
+  await page.getByRole('link', { name: 'Models', exact: true }).click();
   await expect(page).toHaveURL(/\/settings\/models/);
   await expect(page.getByRole('heading', { name: 'Models', level: 1 })).toBeVisible();
   const modelName = uniqueName('Core model');
@@ -644,9 +647,8 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   await page.getByRole('button', { name: `Actions for ${modelName}` }).click();
   await page.getByRole('menuitem', { name: 'Edit' }).click();
   const editModel = page.getByRole('dialog', { name: 'Edit model' });
-  // CHECK: 002's DecimalField is a textbox named by its label; the "%" suffix is outside the name.
+  // 002's DecimalField is a textbox named by its label; the worked example starts from 250,000 INQ.
   await editModel.getByRole('textbox', { name: /^INQ→MQL rate/ }).fill('3');
-  // CHECK: the worked example starts from 250,000 inquiries (as 002's own e2e journey reads it).
   await expect(
     editModel.getByText('250,000 INQ → 7,500 MQL → 375 deals → 3,750,000.00 USD revenue'),
   ).toBeVisible();
@@ -659,9 +661,9 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
 
   // Shell attributes (002 US2): the help text of the optional line-item attribute Contracted spend.
   await page.goto('/settings');
-  await page.getByRole('link', { name: /^Shell attributes/ }).click();
+  await page.getByRole('link', { name: 'Shell attributes', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Shell attributes', level: 1 })).toBeVisible();
-  // CHECK: the level filter is 002's SegmentedFilter: buttons named "<level> <count>".
+  // The level filter is 002's SegmentedFilter: buttons named "<level> <count>".
   await page.getByRole('button', { name: /^Line item/ }).click();
   await page.getByRole('link', { name: 'Contracted spend', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Contracted spend', level: 1 })).toBeVisible();
@@ -673,31 +675,30 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   await page.getByRole('textbox', { name: /^Help text/ }).fill(helpText);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expectToast(page, "Shell attribute 'Contracted spend' saved");
-  // CHECK: after an edit the editor returns to the attribute page, whose Settings card shows the help text.
+  // After an edit the editor returns to the attribute page, which shows the help text.
   await expect(page.getByRole('heading', { name: 'Contracted spend', level: 1 })).toBeVisible();
   await expect(page.getByText(helpText).first()).toBeVisible();
 
   // Currencies (002 US4): INR's rate, which no demo line item uses (so no impact to confirm), with the
   // live line both ways; put back to 83.50 at the end for the tests that follow.
   await page.goto('/settings');
-  await page.getByRole('link', { name: /^Currencies/ }).click();
+  await page.getByRole('link', { name: 'Currencies', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Currencies', level: 1 })).toBeVisible();
   const inrRow = page.getByRole('row').filter({ hasText: 'INR' });
   await expect(inrRow).toContainText('1 USD = 83.50 INR');
-  // CHECK: the row's ⋯ menu is labelled with the code or the name of the currency.
-  await inrRow.getByRole('button', { name: /^Actions for / }).click();
+  // The row's ⋯ menu is named with the currency's code.
+  await inrRow.getByRole('button', { name: 'Actions for INR' }).click();
   await page.getByRole('menuitem', { name: 'Edit' }).click();
   const editCurrency = page.getByRole('dialog', { name: 'Edit currency' });
   await expect(
     editCurrency.getByText("The code can't change once the currency is saved."),
   ).toBeVisible();
-  // CHECK: the rate field is a textbox named "Rate (units per 1 USD)".
   await editCurrency.getByRole('textbox', { name: /^Rate/ }).fill('84');
   await expect(editCurrency.getByText('1 USD = 84.00 INR')).toBeVisible();
   await expect(editCurrency.getByText('1 INR = 0.011905 USD')).toBeVisible();
   await editCurrency.getByRole('button', { name: 'Save', exact: true }).click();
-  // CHECK: the toast names the currency by its name ("Indian rupee") or its code.
-  await expectToast(page, /^Currency '(Indian rupee|INR)' saved/);
+  // The toast names the currency by its name.
+  await expectToast(page, "Currency 'Indian rupee' saved");
   await expect(inrRow).toContainText('1 USD = 84.00 INR');
 
   const inr = await callApi<{ version: number }>(page, 'GET', '/api/currencies/INR');
@@ -710,7 +711,7 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await signInAs(page, PRIYA);
   await page.goto('/plans/new');
   await expect(page.getByRole('heading', { name: 'New plan', level: 1 })).toBeVisible();
-  // CHECK: 003's TeamPicker and PersonPicker inputs are comboboxes named by their labels.
+  // 003's TeamPicker and PersonPicker inputs are comboboxes named by their labels.
   const teams = page.getByRole('combobox', { name: /^Teams/ });
   const owner = page.getByRole('combobox', { name: /^Owner/ });
 
@@ -720,13 +721,15 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await expect(page.getByRole('button', { name: 'Remove Lubricants Europe' })).toBeVisible();
 
   // The owner list holds only active members of Lubricants Europe, Priya first (003 FR-017, FR-019).
+  // The picker's list is a listbox named like its field; the form's native selects have options too.
+  const owners = page.getByRole('listbox', { name: 'Owner' });
   await owner.click();
   await owner.press('ArrowDown');
-  // CHECK: an option's name starts with the person's name ("Priya Raman (you)", then the job title).
-  await expect(page.getByRole('option').first()).toHaveAccessibleName(/^Priya Raman \(you\)/);
-  await expect(page.getByRole('option', { name: /^Daniel Okoro/ })).toBeVisible();
-  await expect(page.getByRole('option', { name: /^Sara Novak/ })).toBeVisible();
-  await expect(page.getByRole('option', { name: /^Mei Lin/ })).toHaveCount(0);
+  // An option's name is the person's name, then the job title and teams.
+  await expect(owners.getByRole('option').first()).toHaveAccessibleName(/^Priya Raman \(you\)/);
+  await expect(owners.getByRole('option', { name: /^Daniel Okoro/ })).toBeVisible();
+  await expect(owners.getByRole('option', { name: /^Sara Novak/ })).toBeVisible();
+  await expect(owners.getByRole('option', { name: /^Mei Lin/ })).toHaveCount(0);
   await expect(page.getByText('3 people').first()).toBeVisible();
   await owner.fill('mei');
   await expect(
@@ -743,9 +746,8 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await page.getByRole('button', { name: 'Remove Lubricants Europe' }).click();
   const notInTeams =
     "Priya Raman isn't in any of the chosen teams — choose another owner or clear the field";
+  // The owner picker flags the chosen owner with this sentence (the plan form's notMemberText).
   await expect(page.getByText(notInTeams).first()).toBeVisible();
-  // CHECK: the picker also flags the chosen owner with its default notMemberText.
-  await expect(page.getByText("Not a member of the plan's teams").first()).toBeVisible();
 
   // Saving anyway is refused by the API with the same rule, listed in the error summary.
   const planName = uniqueName('Owner rules plan');
@@ -773,15 +775,15 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await page.getByRole('option', { name: /^Mobility China/ }).click();
   await teams.press('Escape');
   await owner.fill('finance');
-  await expect(page.getByRole('option', { name: /^Sara Novak/ })).toBeVisible();
+  await expect(owners.getByRole('option', { name: /^Sara Novak/ })).toBeVisible();
   await owner.fill('Mei');
-  await page.getByRole('option', { name: /^Mei Lin/ }).click();
+  await owners.getByRole('option', { name: /^Mei Lin/ }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expectToast(page, `Plan '${planName}' created — add campaigns next.`);
   await expect(page).toHaveURL(/\/plans\/P-\d+$/);
   await expect(page.getByRole('heading', { name: planName, level: 1 })).toBeVisible();
-  // CHECK: the header's owner fact reads "Owner: <name>" as one text.
+  // The header's owner fact reads "Owner: <name>".
   await expect(page.getByText('Owner: Mei Lin').first()).toBeVisible();
   await expect(page.getByText('Mobility China').first()).toBeVisible();
 });
@@ -798,13 +800,13 @@ test('E: deleting an activity moves it to the recycle bin with its cost, and Und
 
   await page.goto(records.activityPath);
   await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
-  // CHECK: the header's More menu is 001's ActionsMenu labelled with the activity name.
+  // The header's More menu is 001's ActionsMenu, named with the activity name.
   await page.getByRole('button', { name: `Actions for ${name}` }).click();
   await page.getByRole('menuitem', { name: 'Delete' }).click();
   const dialog = page.getByRole('alertdialog', { name: `Delete activity '${name}'?` });
-  // CHECK: the amount uses the display-currency format ("$20,000.00").
+  // The amount is written with its currency code, as in the API's messages.
   await expect(
-    dialog.getByText(/^The initiative, campaign and plan planned costs go down by .*20,000\.00\.$/),
+    dialog.getByText('The initiative, campaign and plan planned costs go down by 20,000.00 USD.'),
   ).toBeVisible();
   await expect(dialog.getByText('It moves to the recycle bin; you can restore it.')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
@@ -816,7 +818,7 @@ test('E: deleting an activity moves it to the recycle bin with its cost, and Und
   await page.getByRole('button', { name: 'Expand all' }).click();
   await expect(treeRow(page, records.initiativeName)).toBeVisible();
   await expect(treeRow(page, name)).toHaveCount(0);
-  await expect(treeRow(page, records.initiativeName)).not.toContainText('20,000.00');
+  await expect(treeRow(page, records.initiativeName)).not.toContainText('$20,000.00');
 
   // Undo within the toast's 10 seconds brings it back with the same ID (001 FR-026).
   await page.getByRole('button', { name: 'Undo' }).click();
@@ -826,7 +828,7 @@ test('E: deleting an activity moves it to the recycle bin with its cost, and Und
     'href',
     new RegExp(`/activities/${records.activityId}$`),
   );
-  await expect(treeRow(page, records.initiativeName)).toContainText('20,000.00');
+  await expect(treeRow(page, records.initiativeName)).toContainText('$20,000.00');
 });
 
 test('Accessibility: the Plans list, a plan page, an activity page and Approvals pass axe', async ({

@@ -3,8 +3,8 @@
  * until a later feature builds a section — the sentence its "Coming soon" page shows (FR-015).
  * A feature that builds a section removes its sentence and gives it a real page in router.tsx.
  *
- * Plans (004), Approvals (008), Settings (002) and My profile (003) have their pages (stubs until
- * those features replace them); All work (010), Recycle bin and Activity log (011) come later.
+ * Plans (004–007), Approvals (008), Settings (002, 003) and My profile (003) have their pages; All
+ * work (010), Recycle bin and Activity log (011) come later.
  */
 import {
   CircleCheckBig,

@@ -186,10 +186,13 @@ export const FIVE_PROBLEMS: Activity['readiness'] = {
     ),
   ],
   lineItems: [
-    problem('missingField', 'attributes.SA-1033', 'GL code — needed to submit', {
-      id: 'L-1001',
-      name: 'Film shoot',
-    }),
+    // The API's message names the line item already (006 plan, "Ready to submit panel").
+    problem(
+      'missingField',
+      'attributes.SA-1033',
+      "Line item 'Film shoot' (L-1001): GL code — needed to submit",
+      { id: 'L-1001', name: 'Film shoot' },
+    ),
     problem(
       'negativeUnassigned',
       'lineItems',

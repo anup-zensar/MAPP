@@ -41,6 +41,11 @@ export function lineItemsText(count: number): string {
   return plural(count, 'line item');
 }
 
+/** The completeness chip's second text: "1 line item needs attention", "3 line items need attention". */
+export function lineItemsAttentionText(count: number): string {
+  return count === 1 ? '1 line item needs attention' : `${lineItemsText(count)} need attention`;
+}
+
 /** The activity page: /plans/:planId/activities/:id. */
 export function activityHref(planId: string, id: string): string {
   return recordHref('activity', id, planId);

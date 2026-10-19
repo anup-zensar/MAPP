@@ -34,10 +34,11 @@ export function SummaryCard({ label, value, tip, tone, fullValue, detail }: Summ
       </p>
       <p className={cx(styles.value, tone && styles[tone])}>
         {isShortened ? (
-          // A button, so keyboard and screen-reader users can reach the full value too.
+          // A button, so keyboard and screen-reader users can reach the full value too. Its name
+          // starts with the visible text (WCAG 2.5.3): "$1.25M ($1,250,000.00)".
           <Tooltip content={fullValue}>
-            <button type="button" className={styles.fullValue} aria-label={fullValue}>
-              {value}
+            <button type="button" className={styles.fullValue}>
+              {value} <span className="visually-hidden">({fullValue})</span>
             </button>
           </Tooltip>
         ) : (

@@ -9,7 +9,7 @@ import type { Activity } from './activitiesApi';
 import { activityBannerText } from './activityStatus';
 import { ActivityStatusChip } from './ActivityStatusChip';
 import styles from './ActivityHeader.module.css';
-import { activityEditHref, datesText, EMPTY } from './activityText';
+import { activityEditHref, datesText, EMPTY, lineItemsAttentionText } from './activityText';
 
 export interface ActivityHeaderProps {
   activity: Activity;
@@ -59,6 +59,7 @@ export function ActivityHeader({ activity, actions, onOpenReady }: ActivityHeade
                   void navigate(activityEditHref(plan.id, activity.id, field))
                 }
                 itemsBelow={activity.completeness.lineItemsNeedingAttention}
+                itemsBelowText={lineItemsAttentionText}
                 onItemsBelowSelect={onOpenReady}
               />
               <span className={styles.id}>{activity.id}</span>

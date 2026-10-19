@@ -31,6 +31,15 @@ export interface CompletenessChipProps {
   itemsBelow?: number | ItemBelow[];
   /** Makes a counted second chip a button: opens the place that lists them. */
   onItemsBelowSelect?: () => void;
+  /**
+   * The second chip's text when the records below have a name of their own (feature 006: "1 line
+   * item needs attention"); "<n> items below need attention" otherwise.
+   */
+  itemsBelowText?: (count: number) => string;
+}
+
+function itemsBelowSummary(count: number): string {
+  return count === 1 ? '1 item below needs attention' : `${count} items below need attention`;
 }
 
 /**
@@ -42,6 +51,7 @@ export function CompletenessChip({
   onSelectField,
   itemsBelow,
   onItemsBelowSelect,
+  itemsBelowText = itemsBelowSummary,
 }: CompletenessChipProps) {
   const below = typeof itemsBelow === 'number' ? itemsBelow : (itemsBelow?.length ?? 0);
   if (below === 0) {
@@ -50,7 +60,11 @@ export function CompletenessChip({
   return (
     <span className={styles.chips}>
       <FieldsChip missing={missing} onSelectField={onSelectField} />
-      <ItemsBelowChip itemsBelow={itemsBelow ?? 0} onSelect={onItemsBelowSelect} />
+      <ItemsBelowChip
+        itemsBelow={itemsBelow ?? 0}
+        onSelect={onItemsBelowSelect}
+        summary={itemsBelowText(below)}
+      />
     </span>
   );
 }
@@ -120,14 +134,12 @@ function FieldsChip({
 function ItemsBelowChip({
   itemsBelow,
   onSelect,
+  summary,
 }: {
   itemsBelow: number | ItemBelow[];
   onSelect?: () => void;
+  summary: string;
 }) {
-  const count = typeof itemsBelow === 'number' ? itemsBelow : itemsBelow.length;
-  const summary =
-    count === 1 ? '1 item below needs attention' : `${count} items below need attention`;
-
   if (typeof itemsBelow === 'number') {
     return onSelect ? (
       <button type="button" className={cx(styles.chip, styles.incomplete)} onClick={onSelect}>

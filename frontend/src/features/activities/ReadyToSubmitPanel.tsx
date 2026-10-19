@@ -125,11 +125,10 @@ function ProblemLink({
   planId: string;
   id: string;
 }) {
+  // A line item's message names the line item already: "Line item '<name>' (<id>): <problem>".
   if (problem.lineItemId) {
     return (
-      <Link to={fieldHref('lineItem', problem.lineItemId, problem.field)}>
-        Line item &apos;{problem.lineItemName}&apos; ({problem.lineItemId}): {problem.message}
-      </Link>
+      <Link to={fieldHref('lineItem', problem.lineItemId, problem.field)}>{problem.message}</Link>
     );
   }
   if (problem.field === 'lineItems') {

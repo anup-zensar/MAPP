@@ -54,20 +54,25 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   await signInAs(page, 'daniel.okoro@northstar.demo');
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
+  const main = page.getByRole('main');
 
-  const pages: [string, string][] = [
-    ['Plans', 'Plans · NorthStar'],
-    ['Approvals', 'Approvals · NorthStar'],
-    ['All work', 'All work · NorthStar'],
-    ['Settings', 'Settings · NorthStar'],
-    ['Recycle bin', 'Recycle bin · NorthStar'],
-    ['Activity log', 'Activity log · NorthStar'],
-    ['Home', 'Home · NorthStar'],
+  // Plans, Approvals and Settings are built (features 002–008); All work (010), Recycle bin and
+  // Activity log (011) still show their "Coming soon" page.
+  const pages: { item: string; heading: string; comingSoon: boolean }[] = [
+    { item: 'Plans', heading: 'Plans', comingSoon: false },
+    { item: 'Approvals', heading: 'Approvals', comingSoon: false },
+    { item: 'All work', heading: 'All work', comingSoon: true },
+    { item: 'Settings', heading: 'Settings', comingSoon: false },
+    { item: 'Recycle bin', heading: 'Recycle bin', comingSoon: true },
+    { item: 'Activity log', heading: 'Activity log', comingSoon: true },
+    { item: 'Home', heading: 'Welcome back, Daniel.', comingSoon: false },
   ];
-  for (const [item, title] of pages) {
+  for (const { item, heading, comingSoon } of pages) {
     await nav.getByRole('link', { name: item }).click();
-    await expect(page).toHaveTitle(title);
+    await expect(page).toHaveTitle(`${item} · NorthStar`);
     await expect(nav.getByRole('link', { name: item })).toHaveAttribute('aria-current', 'page');
+    await expect(main.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+    await expect(main.getByText('Coming soon', { exact: true })).toHaveCount(comingSoon ? 1 : 0);
   }
 
   await page.goto('/nowhere');
