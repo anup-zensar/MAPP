@@ -23,18 +23,19 @@ export interface AccountMenuProps {
 export function AccountMenu({ variant }: AccountMenuProps) {
   const person = useCurrentUser();
   const { signOut } = useSession();
-  // The button's name includes the words written on it (the full name in the drawer).
+  // The full name in the drawer, the first name elsewhere.
   const shownName = variant === 'drawer' ? person.name : person.firstName;
 
+  // The button's name comes from its text, "Priya — account menu", so it always contains the words
+  // written on it (WCAG 2.5.3, label in name). In the icon rail the name is there but hidden.
   const trigger = (
     <DropdownMenu.Trigger asChild>
-      <button
-        type="button"
-        className={cx(styles.button, styles[variant])}
-        aria-label={`${shownName} — account menu`}
-      >
+      <button type="button" className={cx(styles.button, styles[variant])}>
         <Avatar initials={person.initials} />
-        {variant !== 'rail' && <span className={styles.name}>{shownName}</span>}
+        <span className={variant === 'rail' ? 'visually-hidden' : styles.name}>
+          {shownName}
+        </span>{' '}
+        <span className="visually-hidden">— account menu</span>
       </button>
     </DropdownMenu.Trigger>
   );

@@ -104,9 +104,8 @@ describe('Sidebar', () => {
     expect(within(plans).getByText('Plans')).toHaveClass('visually-hidden');
     expect(screen.getByText('More')).toHaveClass('visually-hidden');
     expect(screen.queryByRole('button', { name: 'Collapse' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Priya — account menu' })).not.toHaveTextContent(
-      'Priya',
-    );
+    const account = screen.getByRole('button', { name: 'Priya — account menu' });
+    expect(within(account).getByText('Priya')).toHaveClass('visually-hidden');
   });
 
   it('keeps the item style and the highlight in the icon rail, where each link has a tooltip (FR-011)', () => {

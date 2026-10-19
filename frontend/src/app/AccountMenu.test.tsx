@@ -128,7 +128,8 @@ describe('AccountMenu', () => {
     renderWithProviders(<AccountMenu variant="rail" />, { user: PRIYA });
 
     expect(accountButton()).toHaveTextContent('PR');
-    expect(accountButton()).not.toHaveTextContent('Priya');
+    // The first name is still part of the button's name, but only screen readers get it.
+    expect(within(accountButton()).getByText('Priya')).toHaveClass('visually-hidden');
   });
 
   it('writes the full name out in the menu drawer, with no tooltip (plan "Layout")', async () => {

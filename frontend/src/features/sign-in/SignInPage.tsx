@@ -303,27 +303,23 @@ function DemoPeopleContent({ query, onChoose }: DemoPeopleSectionProps) {
     <ul className={styles.people}>
       {query.data.people.map((person) => (
         <li key={person.id}>
-          <button
-            type="button"
-            className={styles.person}
-            aria-label={signInAsLabel(person)}
-            onClick={() => onChoose(person)}
-          >
+          {/* The button's name comes from its text: "Sign in as Priya Raman, Marketer". The hidden
+              words keep the visible name and job title inside it (WCAG 2.5.3, label in name). */}
+          <button type="button" className={styles.person} onClick={() => onChoose(person)}>
             <Avatar initials={person.initials} size="sm" />
             <span className={styles.personText}>
-              <span className={styles.personName}>{person.name}</span>
-              <span className={styles.personTitle}>{person.jobTitle}</span>
+              <span className={styles.personName}>
+                <span className="visually-hidden">Sign in as</span> {person.name}
+              </span>
+              {person.jobTitle && (
+                <span className={styles.personTitle}>
+                  <span className="visually-hidden">,</span> {person.jobTitle}
+                </span>
+              )}
             </span>
           </button>
         </li>
       ))}
     </ul>
   );
-}
-
-/** "Sign in as Priya Raman, Marketer", or "Sign in as Priya Raman" without a job title. */
-function signInAsLabel(person: DemoPerson): string {
-  return person.jobTitle
-    ? `Sign in as ${person.name}, ${person.jobTitle}`
-    : `Sign in as ${person.name}`;
 }
