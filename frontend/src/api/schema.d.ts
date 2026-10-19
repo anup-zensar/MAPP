@@ -2957,7 +2957,7 @@ export interface components {
         };
         ImpactWarning: {
             /** @enum {string} */
-            kind: "goalsRecalculated" | "activityTypeRemoved" | "becomesIncomplete" | "optionsRemoved" | "amountsRecalculated";
+            kind: "goalsRecalculated" | "activityTypeRemoved" | "becomesIncomplete" | "optionsRemoved" | "amountsRecalculated" | "ownerNeedsAttention";
             /** @description The sentence to show before saving. */
             message: string;
             /** @description How many records the warning is about. */

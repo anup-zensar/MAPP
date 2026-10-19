@@ -215,9 +215,13 @@ func count(tallies map[string]*tally, key string, inBin bool) {
 // settingsInUse returns the models, attributes and options that may use other Settings records: those
 // stored and those in the recycle bin.
 func (s *Service) settingsInUse(ctx context.Context) ([]binned[Model], []binned[Attribute], []binned[Option], error) {
-	inBin, err := s.snapshotsInBin(ctx)
-	if err != nil {
-		return nil, nil, nil, err
+	inBin := map[string][]history.Snapshot{}
+	for _, kind := range []string{modelKind, attributeKind, optionKind} {
+		snapshots, err := s.history.SnapshotsInBin(ctx, kind)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		inBin[kind] = snapshots
 	}
 	storedModels, err := s.repo.ListModels(ctx)
 	if err != nil {
@@ -244,25 +248,6 @@ func (s *Service) settingsInUse(ctx context.Context) ([]binned[Model], []binned[
 		return nil, nil, nil, err
 	}
 	return models, attributes, options, nil
-}
-
-// snapshotsInBin returns the snapshots of the records in the recycle bin by kind, oldest entry first. An
-// entry that was undone or restored holds no snapshots any more.
-func (s *Service) snapshotsInBin(ctx context.Context) (map[string][]history.Snapshot, error) {
-	entries, err := s.bin.BinEntries(ctx)
-	if err != nil {
-		return nil, err
-	}
-	byKind := map[string][]history.Snapshot{}
-	for _, entry := range entries {
-		if entry.Resolution != nil {
-			continue
-		}
-		for _, snapshot := range entry.Snapshots {
-			byKind[snapshot.Kind] = append(byKind[snapshot.Kind], snapshot)
-		}
-	}
-	return byKind, nil
 }
 
 // withBinned returns the stored records followed by the records of the snapshots, marked as in the bin.

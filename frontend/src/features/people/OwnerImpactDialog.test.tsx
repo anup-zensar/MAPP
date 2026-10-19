@@ -5,7 +5,7 @@ import { OwnerImpactDialog } from './OwnerImpactDialog';
 import { removedIds } from './removedIds';
 import type { ImpactWarning } from './peopleApi';
 
-const WARNINGS = [
+const WARNINGS: ImpactWarning[] = [
   {
     kind: 'ownerNeedsAttention',
     count: 1,
@@ -18,7 +18,7 @@ const WARNINGS = [
     message:
       'Alex Morgan owns 2 plans that use this team: FY2026 A, FY2026 B. Alex will no longer belong to their teams, so their owner will need attention.',
   },
-] as unknown as ImpactWarning[];
+];
 
 describe('OwnerImpactDialog (feature 003, FR-013)', () => {
   it('lists every warning, with Keep editing focused', () => {

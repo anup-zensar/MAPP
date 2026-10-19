@@ -70,8 +70,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
-	// Features 003–007 tell Settings where its records are used ("Used by", in-use deletes, impact
-	// statements) by adding their sources here: settingsService.AddReferenceSource(…).
+	// Features 003–007 tell Settings where its records are used at the end of New, once they are built.
 	settings.NewHandler(settingsService).Routes(router, signedIn)
 
 	// Plans (004). Plans reads Settings (002) and people and teams (003) through their services. Its history
@@ -90,6 +89,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// line items (007) next to them: each reads the other (activities.LineItems, lineitems.Activities).
 	campaignsRepo := campaigns.NewJSONRepository()
 	activitiesRepo := activities.NewJSONRepository()
+	lineItemsRepo := lineitems.NewJSONRepository()
 	approvalsRepo := approvals.NewJSONRepository() // the approval workflows of 008 are the activities' workflows
 	activitiesService := activities.NewService(db, activitiesRepo, generator, historyService, now, activities.Deps{
 		Plans:     plansRepo,
@@ -98,7 +98,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		People:    peopleRepo,
 		Workflows: activityWorkflows{repo: approvalsRepo},
 	})
-	lineItemsService := lineitems.NewService(db, lineitems.NewJSONRepository(), generator, historyService,
+	lineItemsService := lineitems.NewService(db, lineItemsRepo, generator, historyService,
 		lineItemDeps(settingsService, settingsRepo, activitiesService, activitiesRepo, campaignsRepo, plansRepo, peopleRepo), now)
 	activitiesService.UseLineItems(lineItemsForActivities{svc: lineItemsService})
 
@@ -116,7 +116,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	// The levels below the plan, top-down: campaign, initiative (005), activity (006), line item (007).
-	levels := append(campaignLevels(campaignsService), activityLevel(activitiesService),
+	levels := append(campaignLevels(campaignsService), activityLevel(activitiesService, activitiesRepo, campaignsRepo),
 		lineItemLevel(lineItemsService, activitiesRepo, campaignsRepo))
 	for _, level := range levels {
 		if err := planService.RegisterLevel(level); err != nil {
@@ -143,7 +143,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// Activity approvals (008), built after activities and line items: approval actions are logged on the
 	// activity, and Submit runs 006's ready-to-submit check, line items included.
 	approvalsService := approvals.NewService(db, approvalsRepo, peopleRepo, &approvalsActivities{
-		activities: activitiesRepo, lineItems: lineitems.NewJSONRepository(), campaigns: campaignsRepo,
+		activities: activitiesRepo, lineItems: lineItemsRepo, campaigns: campaignsRepo,
 		plans: plansRepo, settings: settingsRepo, check: activitiesService.SubmitCheck, now: now,
 	}, generator, historyService, now)
 	for _, kind := range approvalsService.Kinds() {
@@ -152,6 +152,20 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
+
+	// Where the records of people (003) and Settings (002) are used, now that every feature is built
+	// (references.go): people's plans (004), owner and approver counts (005–008) and currencies (002);
+	// Settings' "Used by", in-use deletes and impact statements over people (003), plans (004) and the
+	// records below them (005–007), stored and in the recycle bin.
+	peopleService.UsePlans(planUses(planService))
+	peopleService.UseCurrencies(peopleCurrencies(settingsService))
+	for _, usage := range personUsages(campaignsRepo, activitiesRepo, lineItemsRepo, approvalsRepo) {
+		peopleService.AddPersonUsage(usage)
+	}
+	planning := planningRecords{history: historyService, campaigns: campaignsRepo, activities: activitiesRepo, lineItems: lineItemsRepo}
+	settingsService.AddReferenceSource(personReferences(peopleService))
+	settingsService.AddReferenceSource(planReferences(planService))
+	settingsService.AddReferenceSource(planning.references)
 
 	// Routes lists the operations only: the catch-all registered next is not an operation of the contract.
 	routes := router.Patterns()

@@ -5878,6 +5878,7 @@ components:
             - becomesIncomplete
             - optionsRemoved
             - amountsRecalculated
+            - ownerNeedsAttention
         message:
           type: string
           description: The sentence to show before saving.
