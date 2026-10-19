@@ -1,5 +1,6 @@
 import { History } from 'lucide-react';
 import { Link } from 'react-router';
+import { COMING_SOON_SECTIONS } from '@/app/navigation';
 import { Avatar, Card, EmptyState, LinkButton, Skeleton, Tooltip } from '@/components';
 import { recordHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
@@ -11,23 +12,41 @@ import styles from './RecentChangesCard.module.css';
 import { SectionError } from './SectionError';
 
 /**
+ * Recent changes come from the activity log (feature 011). Until the Activity log is built — while
+ * it is still a "Coming soon" section — the API does not serve them, and the card says so instead
+ * of asking.
+ */
+function activityLogBuilt(): boolean {
+  return !COMING_SOON_SECTIONS.some((section) => section.path === '/activity-log');
+}
+
+/**
  * Recent changes (FR-015, FR-016): the 10 newest activity-log entries about the plans in scope —
  * who changed what, and when — each naming its record with a link while it exists.
  */
 export function RecentChangesCard({ scope }: { scope: HomeScope }) {
-  const changes = useHomeRecentChanges(scope);
+  const built = activityLogBuilt();
+  const changes = useHomeRecentChanges(scope, built);
 
   return (
     <Card
       title="Recent changes"
       subtitle={RECENT_CHANGES.subtitle[scope]}
       actions={
-        <LinkButton size="sm" to="/activity-log">
-          View activity log
-        </LinkButton>
+        built ? (
+          <LinkButton size="sm" to="/activity-log">
+            View activity log
+          </LinkButton>
+        ) : undefined
       }
     >
-      {changes.isPending ? (
+      {!built ? (
+        <EmptyState
+          icon={<History />}
+          title={RECENT_CHANGES.comingSoon.title}
+          text={RECENT_CHANGES.comingSoon.text}
+        />
+      ) : changes.isPending ? (
         <Skeleton lines={4} height="18px" />
       ) : changes.isError ? (
         <SectionError onRetry={() => void changes.refetch()} />

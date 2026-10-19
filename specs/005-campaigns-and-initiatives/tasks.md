@@ -96,15 +96,15 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### US6 — Move or copy a campaign or initiative (P2)
 
-- [ ] T030 [US6] Write destination tests in `backend/internal/campaigns/moves_test.go`: `TestInitiativeDestinations_Move_UnavailableWithReasonAndFix_FR023`, `TestInitiativeDestinations_Copy_CurrentFirstSuggestedNames_FR026`, `TestCampaignDestinations_Move_SameYearOnly_FR023`, `TestCampaignDestinations_Consequences_FR024`, `TestDestinations_OverAllocationWarning_FR026`, `TestDestinations_NoneAvailable_EmptyList_EdgeCase`, `TestDestinations_BadPurpose_Refused`
-- [ ] T031 [US6] Implement `CampaignDestinations`, `InitiativeDestinations` and `suggestCopyName` in `backend/internal/campaigns/moves.go`
-- [ ] T032 [US6] Write move tests in `moves_test.go`: `TestMoveInitiative_KeepsIDDatesValuesAndChildren_FR025`, `TestMoveInitiative_RefusedWithEveryReason_FR023`, `TestMoveCampaign_SameYearOnly_FR023`, `TestMoveCampaign_KeepsOutsideYearWarning_FR023`, `TestMove_LogsParentChange_FR030`, `TestMove_VersionConflict_FR025`
-- [ ] T033 [US6] Implement `MoveCampaign` and `MoveInitiative` in `moves.go` (log `moved` with the `parent` change)
-- [ ] T034 [US6] Write copy tests in `moves_test.go`: `TestCopyCampaign_CopiesEverythingBelow_FR027`, `TestCopyCampaign_AllOrNothing_FR027`, `TestCopyCampaign_NameCheckedInDestination_FR026`, `TestCopyInitiative_DatesMustFit_FR026`, `TestCopy_OneCopiedEntryWithDetails_DecisionH`, `TestSuggestCopyName_CopyThenNumbers_R13`, `TestSuggestCopyName_ShortensLongNames_EdgeCase`, `TestCopyPlanContents_ShiftsDatesKeepsNames_For004`
-- [ ] T035 [US6] Implement `CopyCampaign`, `CopyInitiative` (one Write; `Activities.CopyAll` per initiative; log `copied` on the new record only) and `CopyPlanContents` (campaigns and initiatives only, returning the old → new IDs for 004's `CopyJob`) in `moves.go`
-- [ ] T036 [US6] Add the six move/copy/destination routes to `handler.go`; tests `TestCampaignDestinations_Contract`, `TestMoveCampaign_Contract`, `TestMoveCampaign_Refused400`, `TestCopyCampaign_Contract201`, `TestInitiativeDestinations_Contract`, `TestMoveInitiative_Contract`, `TestCopyInitiative_Contract201` in `handler_test.go`
-- [ ] T037 [US6] Run `go test ./internal/app/`: `TestRoutesMatchContract` and `TestEveryProtectedOperationRequiresSignIn_FR005` pass with the 15 new routes
-- [ ] T038 [US6] Backend done: `gofmt -l .` prints nothing, `go vet ./...` and `go test ./...` pass in `backend/`
+- [X] T030 [US6] Write destination tests in `backend/internal/campaigns/moves_test.go`: `TestInitiativeDestinations_Move_UnavailableWithReasonAndFix_FR023`, `TestInitiativeDestinations_Copy_CurrentFirstSuggestedNames_FR026`, `TestCampaignDestinations_Move_SameYearOnly_FR023`, `TestCampaignDestinations_Consequences_FR024`, `TestDestinations_OverAllocationWarning_FR026`, `TestDestinations_NoneAvailable_EmptyList_EdgeCase`, `TestDestinations_BadPurpose_Refused`
+- [X] T031 [US6] Implement `CampaignDestinations`, `InitiativeDestinations` and `suggestCopyName` in `backend/internal/campaigns/moves.go`
+- [X] T032 [US6] Write move tests in `moves_test.go`: `TestMoveInitiative_KeepsIDDatesValuesAndChildren_FR025`, `TestMoveInitiative_RefusedWithEveryReason_FR023`, `TestMoveCampaign_SameYearOnly_FR023`, `TestMoveCampaign_KeepsOutsideYearWarning_FR023`, `TestMove_LogsParentChange_FR030`, `TestMove_VersionConflict_FR025`
+- [X] T033 [US6] Implement `MoveCampaign` and `MoveInitiative` in `moves.go` (log `moved` with the `parent` change)
+- [X] T034 [US6] Write copy tests in `moves_test.go`: `TestCopyCampaign_CopiesEverythingBelow_FR027`, `TestCopyCampaign_AllOrNothing_FR027`, `TestCopyCampaign_NameCheckedInDestination_FR026`, `TestCopyInitiative_DatesMustFit_FR026`, `TestCopy_OneCopiedEntryWithDetails_DecisionH`, `TestSuggestCopyName_CopyThenNumbers_R13`, `TestSuggestCopyName_ShortensLongNames_EdgeCase`, `TestCopyPlanContents_ShiftsDatesKeepsNames_For004`
+- [X] T035 [US6] Implement `CopyCampaign`, `CopyInitiative` (one Write; `Activities.CopyAll` per initiative; log `copied` on the new record only) and `CopyPlanContents` (campaigns and initiatives only, returning the old → new IDs for 004's `CopyJob`) in `moves.go`
+- [X] T036 [US6] Add the six move/copy/destination routes to `handler.go`; tests `TestCampaignDestinations_Contract`, `TestMoveCampaign_Contract`, `TestMoveCampaign_Refused400`, `TestCopyCampaign_Contract201`, `TestInitiativeDestinations_Contract`, `TestMoveInitiative_Contract`, `TestCopyInitiative_Contract201` in `handler_test.go`
+- [X] T037 [US6] Run `go test ./internal/app/`: `TestRoutesMatchContract` and `TestEveryProtectedOperationRequiresSignIn_FR005` pass with the 15 new routes
+- [X] T038 [US6] Backend done: `gofmt -l .` prints nothing, `go vet ./...` and `go test ./...` pass in `backend/`
 
 ---
 
@@ -152,9 +152,9 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### US6 — Move or copy a campaign or initiative (P2)
 
-- [ ] T059 [P] [US6] Write `frontend/src/features/campaigns/MoveDialog.tsx` (on 004's `FormDialog`) and `MoveDialog.test.tsx`: US6 scenarios 1–3, FR-023 (rule, disabled destinations with reasons, empty text), FR-024 (consequences block), FR-025 (version sent, toast with **View**, highlight), budget warning, "Choose where to move it.", 400/409 shown in the dialog
-- [ ] T060 [P] [US6] Write `frontend/src/features/campaigns/CopyDialog.tsx` (on 004's `FormDialog`) and `CopyDialog.test.tsx`: US6 scenarios 4–5, FR-026 (suggested name follows the destination until edited, current first with "Current", counts and R13 sentences, warning, name error from a 400), FR-027 (toast "… created" with **View**, new row highlighted)
-- [ ] T061 [US6] Wire **Copy** and **Move to…** into `useRecordActions.ts`, the row ⋯ menus (`campaignRows.ts`) and both panels' More menus; extend `useCampaignTreeContent.test.tsx` to open each dialog from a row
+- [X] T059 [P] [US6] Write `frontend/src/features/campaigns/MoveDialog.tsx` (on 004's `FormDialog`) and `MoveDialog.test.tsx`: US6 scenarios 1–3, FR-023 (rule, disabled destinations with reasons, empty text), FR-024 (consequences block), FR-025 (version sent, toast with **View**, highlight), budget warning, "Choose where to move it.", 400/409 shown in the dialog
+- [X] T060 [P] [US6] Write `frontend/src/features/campaigns/CopyDialog.tsx` (on 004's `FormDialog`) and `CopyDialog.test.tsx`: US6 scenarios 4–5, FR-026 (suggested name follows the destination until edited, current first with "Current", counts and R13 sentences, warning, name error from a 400), FR-027 (toast "… created" with **View**, new row highlighted)
+- [X] T061 [US6] Wire **Copy** and **Move to…** into `useRecordActions.ts`, the row ⋯ menus (`campaignRows.ts`) and both panels' More menus; extend `useCampaignTreeContent.test.tsx` to open each dialog from a row
 
 **Checkpoint**: `npm run check` passes in `frontend/`.
 

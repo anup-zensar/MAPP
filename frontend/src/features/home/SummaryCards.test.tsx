@@ -39,8 +39,8 @@ describe('SummaryCards', () => {
     expect(cardOf(plans)).toHaveTextContent('1 published · 0 draft');
 
     const owned = screen.getByRole('link', { name: 'Activities I own: 6 — open your activities' });
-    // All work is still "Coming soon": the card leads to My activities on Home (D-174).
-    expect(owned).toHaveAttribute('href', '#my-activities');
+    // The card leads to All work, filtered to the person's activities (D-174).
+    expect(owned).toHaveAttribute('href', '/all-work?owner=U-1002');
     expect(cardOf(owned)).toHaveTextContent('1 declined · 2 submitted');
 
     const waiting = screen.getByRole('link', {

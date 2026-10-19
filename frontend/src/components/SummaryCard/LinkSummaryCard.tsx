@@ -1,9 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router';
-import { InfoTip, Tooltip } from '@/components';
-import type { StatusTone } from '@/components';
 import { cx } from '@/lib/cx';
-import { cardLinkName } from './homeText';
+import { InfoTip } from '../InfoTip/InfoTip';
+import type { StatusTone } from '../StatusChip/StatusChip';
+import { Tooltip } from '../Tooltip/Tooltip';
 import styles from './LinkSummaryCard.module.css';
 
 export interface LinkSummaryCardProps {
@@ -29,9 +29,9 @@ export interface LinkSummaryCardProps {
 }
 
 /**
- * A summary card of Home that opens its list (FR-005, FR-007): the whole card is one link, named
- * "<label>: <value> — <link label>". It is the link variant of the shared SummaryCard (plan
- * "Shared parts", D-197), kept in Home's folder until it moves to `@/components`.
+ * The link variant of SummaryCard (feature 009, D-197): a summary card that opens its list, as on
+ * Home (009 FR-005, FR-007). The whole card is one link, named "<label>: <value> — <link label>";
+ * its icon sits on a tinted tile, and the info tip stays above the link.
  */
 export function LinkSummaryCard({
   icon,
@@ -46,7 +46,7 @@ export function LinkSummaryCard({
   linkLabel,
 }: LinkSummaryCardProps) {
   const isShortened = fullValue !== undefined && fullValue !== value;
-  const name = cardLinkName(label, isShortened ? `${value} (${fullValue})` : value, linkLabel);
+  const name = `${label}: ${isShortened ? `${value} (${fullValue})` : value} — ${linkLabel}`;
   // The link covers the whole card (its ::after); the visible value is its text.
   const link = to.startsWith('#') ? (
     <a href={to} aria-label={name} className={styles.link}>

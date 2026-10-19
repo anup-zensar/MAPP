@@ -1,4 +1,4 @@
-import { ClipboardList, Copy, Plus } from 'lucide-react';
+import { ClipboardList, Copy, ListChecks, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
 import {
@@ -14,6 +14,7 @@ import {
   FormErrorSummary,
   InfoTip,
   LinkButton,
+  LinkSummaryCard,
   Logo,
   PageHeader,
   PasswordField,
@@ -26,7 +27,7 @@ import {
   useToast,
 } from '@/components';
 import type { FieldProblem, MissingField, StatusTone } from '@/components';
-import { formatMoney, formatMoneyCompact } from '@/lib/format';
+import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import styles from './ComponentGalleryPage.module.css';
 import { PlanModuleGallery } from './PlanModuleGallery';
@@ -74,6 +75,8 @@ function doNothing() {}
 export function ComponentGalleryPage() {
   usePageTitle('Shared building blocks');
   const { show } = useToast();
+  // Amounts as the signed-in person shows them (feature 003, FR-023).
+  const { money, moneyCompact } = useFormatters();
   const [panelOpen, setPanelOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -138,8 +141,8 @@ export function ComponentGalleryPage() {
             <SummaryCard label="Plans" value={6} tip="The plans of this year that you can see." />
             <SummaryCard
               label="Planned cost"
-              value={formatMoneyCompact('1250000', 'USD')}
-              fullValue={formatMoney('1250000', 'USD')}
+              value={moneyCompact({ amount: '1250000', currency: 'USD' })}
+              fullValue={money({ amount: '1250000', currency: 'USD' })}
               tip="The planned cost of every activity in these plans."
             />
             <SummaryCard
@@ -150,9 +153,34 @@ export function ComponentGalleryPage() {
             />
             <SummaryCard
               label="Over budget"
-              value={formatMoney('-12500', 'USD')}
+              value={money({ amount: '-12500', currency: 'USD' })}
               tone="problem"
               tip="How much the planned cost is above the budget."
+            />
+          </div>
+        </Card>
+
+        <Card title="LinkSummaryCard" subtitle="The link variant: the whole card opens its list">
+          <div className={styles.summaries}>
+            <LinkSummaryCard
+              icon={<ClipboardList />}
+              tint="var(--blue)"
+              label="My teams' plans"
+              tip="Plans that have at least one of your teams."
+              value="3"
+              detail={<span>2 published · 1 draft</span>}
+              to="/plans?scope=myTeams"
+              linkLabel="open the Plans list"
+            />
+            <LinkSummaryCard
+              icon={<ListChecks />}
+              tint="var(--level-campaign)"
+              label="Planned cost"
+              tip="The planned cost of every activity in these plans."
+              value={moneyCompact({ amount: '1250000', currency: 'USD' })}
+              fullValue={money({ amount: '1250000', currency: 'USD' })}
+              to="#main"
+              linkLabel="go to the top of this page"
             />
           </div>
         </Card>

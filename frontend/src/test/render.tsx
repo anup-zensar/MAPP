@@ -97,10 +97,11 @@ export function renderRoutes(
 /**
  * The messages area (toasts), once it shows a message that takes clicks. Radix lets the area take
  * clicks only after it has counted a new message, a moment after the text is on screen; so a test
- * that clicks a message's button (Try again, Undo) finds the area with this first.
+ * that clicks a message's button (Try again, Undo) finds the area with this first. The area is
+ * waited for too: while a modal panel is still closing, everything outside it is hidden.
  */
 export async function findMessages(): Promise<HTMLElement> {
-  const messages = screen.getByRole('region', { name: 'Messages (F8)' });
+  const messages = await screen.findByRole('region', { name: 'Messages (F8)' });
   await waitFor(() => expect(messages).not.toHaveStyle({ pointerEvents: 'none' }));
   return messages;
 }

@@ -22,11 +22,6 @@ export const SECTION_FAILED = "This section couldn't load";
 /** A failed save of the person's choice (001's preference pattern). */
 export const CHOICE_NOT_SAVED = "Your choice couldn't be saved.";
 
-/** "<label>: <value> — <link label>": the name of a summary card that opens a list (FR-007). */
-export function cardLinkName(label: string, value: string, linkLabel: string): string {
-  return `${label}: ${value} — ${linkLabel}`;
-}
-
 /** Card 1's label and tip by scope (FR-005). */
 export const PLANS_CARD: Record<HomeScope, { label: string; tip: string }> = {
   myTeams: {
@@ -221,6 +216,11 @@ export const RECENT_CHANGES = {
     everything: 'Latest changes in all plans',
   } satisfies Record<HomeScope, string>,
   empty: 'No changes yet in these plans.',
+  /** While the Activity log (feature 011) is still "Coming soon". */
+  comingSoon: {
+    title: 'Coming soon',
+    text: 'Recent changes will show here once the Activity log is built.',
+  },
 };
 
 /**

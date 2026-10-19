@@ -80,6 +80,16 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     );
   });
 
+  it('has the sections Home links to: #budget and #completeness (feature 009, FR-012)', async () => {
+    renderPage();
+
+    await screen.findByRole('heading', { level: 1, name: 'FY2026 Lubricants Europe' });
+    expect(screen.getByRole('region', { name: 'Summary' })).toHaveAttribute('id', 'budget');
+    const completeness = document.getElementById('completeness');
+    expect(completeness).not.toBeNull();
+    expect(completeness?.closest('header')).not.toBeNull();
+  });
+
   it('shows the owner problem in words (FR-021)', async () => {
     renderPage({
       body: plan({

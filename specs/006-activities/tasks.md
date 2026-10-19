@@ -38,7 +38,7 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 - [X] TC00 When an operation is served, remove it from `notYetServed` in `backend/internal/app/app_test.go` (D-192).
 - [X] TC01 Export `RestartApproval(ctx, a, activityID, reasons)` and use it from `Update`; tests `TestRestartApproval_SendsBackAndLogs_FR027` (D-196).
 - [X] TC02 Add `ApprovalHooks.ActivityRestored` and call it after a recycle-bin restore (not Undo) (D-196).
-- [ ] TC03 `LineItems.CopyAll` and `campaigns.Activities.CopyAll` take `yearShift` (D-195).
+- [X] TC03 `LineItems.CopyAll` and `campaigns.Activities.CopyAll` take `yearShift` (D-195).
 - [X] TC04 [P] Add the route `/activities/:activityId` that redirects to the activity under its plan, keeping the hash, with a test; add the activity entry to `recordHref` (D-194).
 - [X] TC05 Use 004's `CompletenessChip` `itemsBelow` instead of new `below`/`onOpen` props (D-199).
 - [ ] TC99 Check the success criteria SC-002, SC-003, SC-004, SC-005, SC-006, SC-007, SC-008, which no task above names, in the final review (timed end-to-end run or moderated session, as each criterion says) and record the result in `checklists/`.
@@ -97,10 +97,10 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### User Story 5 — Move, copy and delete an activity (backend)
 
-- [ ] T029 [US5] Write `backend/internal/activities/move_copy_test.go`: `TestDestinations_ReasonsPerTarget_FR029_FR030`, `TestMove_Refusals_FR029` (other plan, same initiative, dates not fitting — the exact message —, name taken), `TestMove_KeepsStatusAndLogsParent_FR029`, `TestCopy_Names_FR030`, `TestCopy_CreatedWithLineItems_FR030` (Approved source → Created copy, new ID, all values, `LineItems.CopyAll` called, one `copied` entry with details), `TestCopy_TargetDatesMustFit_FR030`
+- [X] T029 [US5] Write `backend/internal/activities/move_copy_test.go`: `TestDestinations_ReasonsPerTarget_FR029_FR030`, `TestMove_Refusals_FR029` (other plan, same initiative, dates not fitting — the exact message —, name taken), `TestMove_KeepsStatusAndLogsParent_FR029`, `TestCopy_Names_FR030`, `TestCopy_CreatedWithLineItems_FR030` (Approved source → Created copy, new ID, all values, `LineItems.CopyAll` called, one `copied` entry with details), `TestCopy_TargetDatesMustFit_FR030`
 - [X] T030 [P] [US5] Add to `backend/internal/activities/kinds_test.go` `TestDelete_MovesToBin_FR031` (bin entry, `ActivityDeleting` called), `TestUndo_RestoresExactly_FR031` (same ID, values, status, version), `TestUndo_NameTakenRefused_FR031`, `TestRestore_ResetsToCreatedAndRenames_FR031`; extend `TestRollups_FollowEveryChange_FR005` in `provided_test.go` with move, copy, delete and Undo
-- [ ] T031 [US5] Implement `Destinations`, `Move` and `Copy` in `backend/internal/activities/move_copy.go`, `Delete` in `service.go` and `PrepareRestore` in `kinds.go` so T029–T030 pass
-- [ ] T032 [US5] Add `DELETE /api/activities/{activityId}`, `GET /api/activities/{activityId}/destinations`, `POST /api/activities/{activityId}/move` and `POST /api/activities/{activityId}/copy` to `handler.go`; contract tests `TestDeleteActivity_ThenUndo_Contract_FR031`, `TestActivityDestinations_Contract_FR029`, `TestMoveActivity_Contract_FR029` (200; 400 with the dates message; 409), `TestCopyActivity_Contract_FR030` (201) in `handler_test.go`; `TestRoutesMatchContract` and `TestEveryProtectedOperationRequiresSignIn_FR005` pass
+- [X] T031 [US5] Implement `Destinations`, `Move` and `Copy` in `backend/internal/activities/move_copy.go`, `Delete` in `service.go` and `PrepareRestore` in `kinds.go` so T029–T030 pass
+- [X] T032 [US5] Add `DELETE /api/activities/{activityId}`, `GET /api/activities/{activityId}/destinations`, `POST /api/activities/{activityId}/move` and `POST /api/activities/{activityId}/copy` to `handler.go`; contract tests `TestDeleteActivity_ThenUndo_Contract_FR031`, `TestActivityDestinations_Contract_FR029`, `TestMoveActivity_Contract_FR029` (200; 400 with the dates message; 409), `TestCopyActivity_Contract_FR030` (201) in `handler_test.go`; `TestRoutesMatchContract` and `TestEveryProtectedOperationRequiresSignIn_FR005` pass
 
 ### Provided to other features (backend)
 
@@ -151,10 +151,10 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### User Story 5 — Move, copy and delete (frontend)
 
-- [ ] T056 [US5] Write `frontend/src/features/activities/MoveActivityDialog.test.tsx` (grouped destinations, search, unavailable ones visible with their reason, no-destination text, API refusal shown, toast — FR-029), `CopyActivityDialog.test.tsx` (current initiative preselected, text with the line-item count, opens the copy — FR-030), `DeleteActivityDialog.test.tsx` (every line of the dialog by status and counts, Cancel focused, **Delete activity** — FR-031) and `useActivityActions.test.tsx` (delete → plan page and "Activity 'Launch film' moved to the recycle bin" with Undo calling the undo endpoint; View history → `/activity-log?recordType=activity&recordId=…` — FR-031, FR-032)
-- [ ] T057 [P] [US5] Write `frontend/src/features/activities/DestinationList.tsx` (+ `.module.css`), `MoveActivityDialog.tsx` and `CopyActivityDialog.tsx`
+- [X] T056 [US5] Write `frontend/src/features/activities/MoveActivityDialog.test.tsx` (grouped destinations, search, unavailable ones visible with their reason, no-destination text, API refusal shown, toast — FR-029), `CopyActivityDialog.test.tsx` (current initiative preselected, text with the line-item count, opens the copy — FR-030), `DeleteActivityDialog.test.tsx` (every line of the dialog by status and counts, Cancel focused, **Delete activity** — FR-031) and `useActivityActions.test.tsx` (delete → plan page and "Activity 'Launch film' moved to the recycle bin" with Undo calling the undo endpoint; View history → `/activity-log?recordType=activity&recordId=…` — FR-031, FR-032)
+- [X] T057 [P] [US5] Write `frontend/src/features/activities/DestinationList.tsx` (+ `.module.css`), `MoveActivityDialog.tsx` and `CopyActivityDialog.tsx`
 - [X] T058 [P] [US5] Write `frontend/src/features/activities/DeleteActivityDialog.tsx`
-- [ ] T059 [US5] Write `frontend/src/features/activities/useActivityActions.tsx` (Copy, Move, View history, Delete with `useUndoableDelete`) and use it in the **More** menu of `ActivityHeader.tsx` and the row menu of `activityTreeRows.tsx` — so T056 passes
+- [X] T059 [US5] Write `frontend/src/features/activities/useActivityActions.tsx` (Copy, Move, View history, Delete with `useUndoableDelete`) and use it in the **More** menu of `ActivityHeader.tsx` and the row menu of `activityTreeRows.tsx` — so T056 passes
 
 **Checkpoint**: `npm run check` passes in `frontend/`.
 

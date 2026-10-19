@@ -1,5 +1,6 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { HOME_ANSWERS } from '@/features/home/testData';
 import { mockApi } from '@/test/mockApi';
 import { renderRoutes } from '@/test/render';
 import { routes } from './router';
@@ -170,6 +171,7 @@ describe('SessionProvider: ending a session (US4)', () => {
     mockApi({
       'GET /api/me': { body: PRIYA },
       'POST /api/auth/sign-out': { status: 204 },
+      ...HOME_ANSWERS,
       'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { user, router } = renderRoutes(routes, { route: '/' });
@@ -187,6 +189,7 @@ describe('SessionProvider: ending a session (US4)', () => {
     mockApi({
       'GET /api/me': { body: PRIYA },
       'POST /api/auth/sign-out': { status: 204 },
+      ...HOME_ANSWERS,
       'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { user, router, queryClient } = renderRoutes(routes, { route: '/' });
@@ -232,6 +235,7 @@ describe('SessionProvider: ending a session (US4)', () => {
         body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
       },
       'POST /api/auth/sign-out': { status: 204 },
+      ...HOME_ANSWERS,
       'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { user, router } = renderRoutes(routes, { route: '/' });
@@ -258,6 +262,7 @@ describe('SessionProvider: ending a session (US4)', () => {
         return { body: priyaInLight };
       },
       'POST /api/auth/sign-out': { status: 204 },
+      ...HOME_ANSWERS,
     });
     const { user, router } = renderRoutes(routes, { route: '/sign-in' });
 
@@ -335,12 +340,49 @@ describe('SessionProvider: ending a session (US4)', () => {
     expect(screen.queryByText("Your choice couldn't be saved.")).not.toBeInTheDocument();
   });
 
+  it('stays signed out when a session check that was on its way answers after signing out (US4 scenario 1)', async () => {
+    const lateAnswer = gate();
+    let checks = 0;
+    mockApi({
+      'GET /api/me': async () => {
+        checks += 1;
+        if (checks === 2) {
+          // The check of the next navigation: the API answers it only after the sign-out.
+          await lateAnswer.opened;
+        }
+        return checks <= 2 ? { body: PRIYA } : { status: 401, body: SIGN_IN_REQUIRED };
+      },
+      'POST /api/auth/sign-out': { status: 204 },
+      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      ...NO_PLANS,
+      ...NO_APPROVALS,
+      ...HOME_ANSWERS,
+    });
+    const { user, router, queryClient } = renderRoutes(routes, { route: '/plans' });
+    await screen.findByRole('heading', { level: 1, name: 'Plans' });
+    await user.click(screen.getByRole('link', { name: 'Approvals' }));
+    await waitFor(() => expect(checks).toBe(2));
+
+    await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
+    act(() => lateAnswer.open());
+    await waitFor(() => expect(queryClient.getQueryState(['session'])?.fetchStatus).toBe('idle'));
+
+    // The late answer is about the session that has just ended: it does not bring Priya back.
+    expect(queryClient.getQueryData(['session'])).toBeNull();
+    expect(router.state.location.pathname).toBe('/sign-in');
+    expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
+    expect(screen.queryByText('Please sign in again')).not.toBeInTheDocument();
+  });
+
   it('notices another person signing in in another tab, and starts again on Home (edge case)', async () => {
     let checks = 0;
     mockApi({
       'GET /api/me': () => ({ body: ++checks === 1 ? PRIYA : DANIEL }),
       ...NO_PLANS,
       ...NO_APPROVALS,
+      ...HOME_ANSWERS,
     });
     const { user, router, queryClient } = renderRoutes(routes, { route: '/plans' });
     await screen.findByRole('heading', { level: 1, name: 'Plans' });

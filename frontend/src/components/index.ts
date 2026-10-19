@@ -82,6 +82,8 @@ export { SplitEditor } from './SplitEditor/SplitEditor';
 export type { SplitShare } from './SplitEditor/SplitEditor';
 export { StatusChip } from './StatusChip/StatusChip';
 export type { StatusTone } from './StatusChip/StatusChip';
+export { LinkSummaryCard } from './SummaryCard/LinkSummaryCard';
+export type { LinkSummaryCardProps } from './SummaryCard/LinkSummaryCard';
 export { SummaryCard } from './SummaryCard/SummaryCard';
 export { TeamPicker } from './TeamPicker/TeamPicker';
 export { TeamPill, TeamPills } from './TeamPill/TeamPill';

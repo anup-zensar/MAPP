@@ -4,7 +4,6 @@ import {
   activityCountsText,
   approvedPercent,
   approvedText,
-  cardLinkName,
   changedFieldsText,
   datesText,
   initialsOf,
@@ -27,12 +26,6 @@ import {
 import { logEntryOf, reasonOf, usd } from './testData';
 
 describe('homeText — summary cards (FR-005, FR-006, FR-007)', () => {
-  it('names a card link "<label>: <value> — <link label>"', () => {
-    expect(cardLinkName("My teams' plans", '3', 'open the Plans list')).toBe(
-      "My teams' plans: 3 — open the Plans list",
-    );
-  });
-
   it('counts plans and activities with their statuses', () => {
     expect(planCountsText(1, 0)).toBe('1 published · 0 draft');
     expect(planCountsText(1250, 3)).toBe('1,250 published · 3 draft');

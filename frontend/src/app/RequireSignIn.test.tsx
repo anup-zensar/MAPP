@@ -1,5 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { HOME_ANSWERS } from '@/features/home/testData';
 import { mockApi } from '@/test/mockApi';
 import { renderRoutes } from '@/test/render';
 import { routes } from './router';
@@ -110,7 +111,7 @@ describe('RequireSignIn', () => {
   });
 
   it('checks the session again on every navigation (research R15)', async () => {
-    const api = mockApi({ 'GET /api/me': { body: PRIYA }, ...NO_PLANS });
+    const api = mockApi({ 'GET /api/me': { body: PRIYA }, ...NO_PLANS, ...HOME_ANSWERS });
     const sessionChecks = () => api.requests.filter((r) => r.path === '/api/me').length;
     const { user } = renderRoutes(routes, { route: '/' });
     await screen.findByRole('heading', { level: 1, name: 'Welcome back, Priya.' });

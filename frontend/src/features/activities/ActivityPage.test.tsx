@@ -142,6 +142,13 @@ describe('ActivityPage (feature 006, US2)', () => {
     expect(router.state.location.hash).toBe('#ready');
   });
 
+  it('opens Ready to submit for the Show fields link of Home (#completeness, feature 009)', async () => {
+    openPage({ body: launchFilm() }, '/plans/P-1001/activities/A-1042#completeness');
+
+    const panel = await screen.findByRole('region', { name: 'Ready to submit' });
+    await waitFor(() => expect(panel).toHaveFocus());
+  });
+
   it('shows grey shapes while loading', async () => {
     openPage(() => new Promise(() => {}));
 

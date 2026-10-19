@@ -95,6 +95,12 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
+  scroll-margin-top: 80px;
+}
+
+/* A part of the page that an address's #hash leads to (Home's links, feature 009). */
+.anchor {
+  scroll-margin-top: 80px;
 }
 
 .problem {

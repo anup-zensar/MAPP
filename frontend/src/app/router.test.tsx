@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { HOME_ANSWERS } from '@/features/home/testData';
 import { mockApi } from '@/test/mockApi';
 import { renderRoutes } from '@/test/render';
 import { testUser } from '@/test/users';
@@ -66,7 +67,7 @@ describe('routes', () => {
   )(
     'opens %s from the sidebar address %s, highlighted, with its tab title (US2 scenario 1, SC-003)',
     async (label, path) => {
-      mockApi({ 'GET /api/me': { body: PRIYA } });
+      mockApi({ 'GET /api/me': { body: PRIYA }, ...HOME_ANSWERS });
       renderRoutes(routes, { route: path });
 
       const title = label === 'Home' ? 'Welcome back, Priya.' : label;

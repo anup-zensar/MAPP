@@ -29,7 +29,8 @@ const ACTIVITY_GONE = 'This activity no longer exists — someone may have delet
  * An activity's page (feature 006, US2, FR-019 – FR-025), at /plans/:planId/activities/:activityId:
  * the header with status, completeness and the facts, Ready to submit, the details, then the line
  * items (feature 007, in #line-items) and the approval (feature 008, in #approval). An address
- * with another plan's ID is replaced by the right one.
+ * ending in #ready or #completeness (Home's "Show fields", feature 009) opens Ready to submit. An
+ * address with another plan's ID is replaced by the right one.
  */
 export function ActivityPage() {
   const { planId = '', activityId = '' } = useParams();
@@ -65,14 +66,17 @@ export function ActivityPage() {
     <ActivityView
       key={activity.id}
       activity={activity}
-      openReadyFirst={location.hash === '#ready'}
+      openReadyFirst={location.hash === '#ready' || location.hash === '#completeness'}
     />
   );
 }
 
 interface ActivityViewProps {
   activity: Activity;
-  /** The address ends in #ready (a completeness chip of the plan tree): open the panel there. */
+  /**
+   * The address ends in #ready (a completeness chip of the plan tree) or #completeness (Home's
+   * Needs your attention): open the panel there.
+   */
   openReadyFirst: boolean;
 }
 

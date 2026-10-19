@@ -33,7 +33,10 @@ export function PlanHeader({ plan, statusAction, moreItems }: PlanHeaderProps) {
           <h1 className={styles.title}>{plan.name}</h1>
           <div className={styles.chips}>
             <PlanStatusChip status={plan.status} />
-            <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
+            {/* #completeness: where Home's "Show fields" leads (feature 009). */}
+            <span id="completeness" className={styles.anchor}>
+              <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
+            </span>
             {plan.aop && <StatusChip tone="active">AOP</StatusChip>}
           </div>
         </div>

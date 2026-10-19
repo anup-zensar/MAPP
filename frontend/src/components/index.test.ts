@@ -31,6 +31,7 @@ describe('the shared building blocks', () => {
       'InfoTip',
       'LevelTag',
       'LinkButton',
+      'LinkSummaryCard',
       'LockedNote',
       'Logo',
       'MoneyField',

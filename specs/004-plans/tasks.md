@@ -38,7 +38,7 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 - [ ] TC02 [P] Create `frontend/src/lib/recordLinks.ts` (`recordHref(type, id, planId?)`, plans entry) with a test (D-194).
 - [ ] TC03 `CompletenessChip.itemsBelow` accepts a count or a list (D-199).
 - [ ] TC04 `References`/`ReferencesFromSnapshot` include the plan name and recycle-bin state (003 `PlanUse`, 002 `settings.Reference`).
-- [ ] TC05 Use `platform/date` instead of `ShiftDate` (D-198).
+- [X] TC05 Use `platform/date` instead of `ShiftDate` (D-198).
 
 ## Phase 1: Setup (shared contract)
 
@@ -91,8 +91,8 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### User Story 6 — Copy or delete a plan (backend)
 
-- [ ] T023 [P] [US6] Write `backend/internal/plans/copy_test.go`: `TestCopyName_Suffixes_FR026` ("(copy)", then "(copy 2)" when taken in any case), `TestCopyName_ShortenedTo120_EdgeCase`, `TestCopyOptions_NextYearAvailability_FR028` (2026 plan → 2027 available; 2031 plan with current year 2026 → 2032 unavailable with reason), `TestCopy_PlanOnly_FR027` (all fields, Draft, new ID, creator = copier, one `copied` entry with details "from '…' (P-…)"), `TestCopy_WithContents_FR027` (fake levels called in order with `NewIDs` holding the plan, `Years` 0 or 1, counts in details), `TestCopy_AllOrNothing_FR027` (a level fails → no plan, no counter-visible record, no log), `TestCopy_NextYear_FR028` (2027, finance budget cleared, note), `TestShiftDate_FR028` (2026-03-12 → 2027-03-12, 2028-02-29 → 2029-02-28, "" → "")
-- [ ] T024 [US6] Write `backend/internal/plans/copy.go` (`copyName`, `CopyOptions`, `Copy`, exported `ShiftDate`); add `GET …/copy-options` and `POST …/copy` to `handler.go`; `TestCopyOptions_FR026` and `TestCopy_201_FR027_FR028` in `handler_test.go` (copy FY2026 Lubricants Europe into 2027 → 201, Draft, year 2027, no default finance budget, note)
+- [X] T023 [P] [US6] Write `backend/internal/plans/copy_test.go`: `TestCopyName_Suffixes_FR026` ("(copy)", then "(copy 2)" when taken in any case), `TestCopyName_ShortenedTo120_EdgeCase`, `TestCopyOptions_NextYearAvailability_FR028` (2026 plan → 2027 available; 2031 plan with current year 2026 → 2032 unavailable with reason), `TestCopy_PlanOnly_FR027` (all fields, Draft, new ID, creator = copier, one `copied` entry with details "from '…' (P-…)"), `TestCopy_WithContents_FR027` (fake levels called in order with `NewIDs` holding the plan, `Years` 0 or 1, counts in details), `TestCopy_AllOrNothing_FR027` (a level fails → no plan, no counter-visible record, no log), `TestCopy_NextYear_FR028` (2027, finance budget cleared, note), `TestShiftDate_FR028` (2026-03-12 → 2027-03-12, 2028-02-29 → 2029-02-28, "" → "")
+- [X] T024 [US6] Write `backend/internal/plans/copy.go` (`copyName`, `CopyOptions`, `Copy`, exported `ShiftDate`); add `GET …/copy-options` and `POST …/copy` to `handler.go`; `TestCopyOptions_FR026` and `TestCopy_201_FR027_FR028` in `handler_test.go` (copy FY2026 Lubricants Europe into 2027 → 201, Draft, year 2027, no default finance budget, note)
 - [X] T025 [P] [US6] Write `backend/internal/plans/kinds_test.go`: `TestDelete_MovesToBin_FR029` (one bin entry, `deleted` entry, plan gone; with a fake child kind registered under `plan`, the child goes too and the details count it), `TestUndo_RestoresExactly_FR030` (same ID, version, status Published), `TestUndo_NameTaken_EdgeCase`, `TestRestore_RenamesAndReturnsDraft_R14` (Published → Draft, " (restored)", notes), `TestDescribe_ReadableLog_FR031`
 - [X] T026 [US6] Write `backend/internal/plans/kinds.go` (`Kinds()`: snapshot, remove, put, describe, prepareRestore) and `Service.Delete`; add `DELETE /api/plans/{planId}` to `handler.go`; `TestDeletePlan_AndUndo_FR029_FR030` in `handler_test.go` (delete → `DeleteResult` with `recordTypeLabel` "plan"; `POST /api/recycle-bin/{id}/undo` → plan back with the same ID)
 
@@ -156,8 +156,8 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### User Story 6 — Copy or delete a plan (frontend)
 
-- [ ] T055 [US6] Write `frontend/src/features/plans/dialogs/CopyPlanDialog.test.tsx` and `DeletePlanDialog.test.tsx`: copy options name "(copy)", Same / Next year, next year unavailable with its reason, include checkbox with counts, "This plan has nothing inside yet.", next-year note, success → new plan page + toasts incl. notes (US6#1–2, FR-026–FR-028); delete dialog sentences for a published plan with 2 campaigns, 4 initiatives, 7 activities (4 approved) and 15 line items, Cancel focused, **Delete plan** red (US6#3, FR-029); after delete → `/plans` and Undo toast; Undo restores (US6#4, FR-030)
-- [ ] T056 [US6] Write `frontend/src/features/plans/dialogs/CopyPlanDialog.tsx` and `DeletePlanDialog.tsx`; add copy and delete to `usePlanActions.ts` (delete uses `useUndoableDelete({ invalidate: [['plans']] })`)
+- [X] T055 [US6] Write `frontend/src/features/plans/dialogs/CopyPlanDialog.test.tsx` and `DeletePlanDialog.test.tsx`: copy options name "(copy)", Same / Next year, next year unavailable with its reason, include checkbox with counts, "This plan has nothing inside yet.", next-year note, success → new plan page + toasts incl. notes (US6#1–2, FR-026–FR-028); delete dialog sentences for a published plan with 2 campaigns, 4 initiatives, 7 activities (4 approved) and 15 line items, Cancel focused, **Delete plan** red (US6#3, FR-029); after delete → `/plans` and Undo toast; Undo restores (US6#4, FR-030)
+- [X] T056 [US6] Write `frontend/src/features/plans/dialogs/CopyPlanDialog.tsx` and `DeletePlanDialog.tsx`; add copy and delete to `usePlanActions.ts` (delete uses `useUndoableDelete({ invalidate: [['plans']] })`)
 
 ### Navigation and checks
 

@@ -1,6 +1,6 @@
 import { ClipboardList, Hourglass, ListChecks, Wallet } from 'lucide-react';
 import { useCurrentUser } from '@/app/useSession';
-import { ProgressBar, Skeleton } from '@/components';
+import { LinkSummaryCard, ProgressBar, Skeleton } from '@/components';
 import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
@@ -16,7 +16,6 @@ import {
   plansWithoutBudgetText,
 } from './homeText';
 import { myActivitiesHref, plansListHref, waitingForMeHref } from './homeLinks';
-import { LinkSummaryCard } from './LinkSummaryCard';
 import { SectionError } from './SectionError';
 import styles from './SummaryCards.module.css';
 

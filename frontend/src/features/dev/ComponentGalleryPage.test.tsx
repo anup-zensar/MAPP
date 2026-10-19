@@ -12,6 +12,7 @@ const COMPONENT_CARDS = [
   'Button and LinkButton',
   'PageHeader',
   'SummaryCard',
+  'LinkSummaryCard',
   'Card',
   'StatusChip',
   'CompletenessChip',
@@ -115,6 +116,20 @@ describe('ComponentGalleryPage', () => {
     expect(
       within(summaries).getByRole('button', { name: '$1.25M ($1,250,000.00)' }),
     ).toHaveTextContent('$1.25M');
+  });
+
+  it('shows the link variant of the summary card: one link per card, named with its value (009 D-197)', () => {
+    renderGallery();
+
+    const cards = card('LinkSummaryCard');
+    expect(
+      within(cards).getByRole('link', { name: "My teams' plans: 3 — open the Plans list" }),
+    ).toHaveAttribute('href', '/plans?scope=myTeams');
+    expect(
+      within(cards).getByRole('link', {
+        name: 'Planned cost: $1.25M ($1,250,000.00) — go to the top of this page',
+      }),
+    ).toHaveAttribute('href', '#main');
   });
 
   it('shows the avatar sizes next to the names they stand for (FR-019)', () => {

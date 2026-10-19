@@ -39,14 +39,15 @@ src/
   features/     the pages of each area: sign-in/, home/, placeholders/ (Coming soon, Page not found,
                 and BuildingPage — the stub of a page still being built), dev/ (the developer pages),
                 and the Plan module's settings/, people/, plans/, campaigns/, activities/, line-items/,
-                approvals/, approval-workflows/, notifications/ (002–008)
+                approvals/, approval-workflows/, notifications/ (002–008), home/ (009, the Home
+                dashboard) and all-work/ (010)
   api/          client.ts (api and call()), errors.ts (ApiError and its messages), settingsQueries.ts
                 (Settings read hooks) and schema.d.ts — generated from the contract: never edit it by hand
   lib/          small helpers: format.ts (dates, date ranges, relative times and money), decimal.ts
                 (typed amounts, percentages, rates — exact, with BigInt), text.ts, waterfall.ts,
                 recordLinks.ts (the address of every planning record), useFormatters (dates and money
-                for the signed-in person), safeNext.ts, usePageTitle, useUndoableDelete,
-                useUnsavedChanges, cx
+                for the signed-in person), download.ts (files the API sends: All work's export),
+                safeNext.ts, usePageTitle, useUndoableDelete, useUnsavedChanges, cx
   styles/       tokens.css (every colour and size, light and dark) and global.css
   test/         test helpers: setup.ts, mockApi.ts, render.tsx, users.ts (testUser()) and
                 attributeForms.ts (Shell attribute forms)

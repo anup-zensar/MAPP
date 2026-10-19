@@ -134,17 +134,20 @@ export function RecordDetails({
             <LevelTag level={level} />
             <ApprovalProgressChip progress={record.approvalProgress} />
             <TimingChip timing={record.timing} />
-            <CompletenessChip
-              missing={record.completeness.missing.map((field) => ({
-                id: field.field,
-                label: field.label,
-              }))}
-              onSelectField={(field) => void navigate(fieldHref(level, record.id, field, planId))}
-              itemsBelow={record.completeness.itemsBelowNeedingAttention}
-              onItemsBelowSelect={() =>
-                void navigate(planHref, { state: { highlight: record.id } })
-              }
-            />
+            {/* #completeness: where Home's "Show fields" leads (feature 009). */}
+            <span id="completeness">
+              <CompletenessChip
+                missing={record.completeness.missing.map((field) => ({
+                  id: field.field,
+                  label: field.label,
+                }))}
+                onSelectField={(field) => void navigate(fieldHref(level, record.id, field, planId))}
+                itemsBelow={record.completeness.itemsBelowNeedingAttention}
+                onItemsBelowSelect={() =>
+                  void navigate(planHref, { state: { highlight: record.id } })
+                }
+              />
+            </span>
           </div>
           {isCampaign && (record as Campaign).outsidePlanYear && (
             <OutsideYearNote year={record.plan.year} />

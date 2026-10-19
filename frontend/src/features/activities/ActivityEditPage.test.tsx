@@ -190,6 +190,14 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
     ).toBeVisible();
     expect(screen.queryByText("Ongoing can't be undone after saving.")).not.toBeInTheDocument();
     expect(screen.getByLabelText('Approval workflow')).toBeDisabled();
+    // While the round is open, the person can recall the submission first (008 FR-013).
+    expect(screen.getByText('Recall the activity to choose another workflow.')).toBeVisible();
+  });
+
+  it('locks the workflow of an approved activity, saying why (FR-012)', async () => {
+    openEditForm(launchFilm({ status: 'approved', displayStatus: 'approved' }));
+
+    expect(await screen.findByLabelText('Approval workflow')).toBeDisabled();
     expect(
       screen.getByText("It can't change while the activity is submitted or approved."),
     ).toBeVisible();

@@ -38,6 +38,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     pageOnScreen.current = location;
   }, [location]);
 
+  // Counts the sessions this tab has ended or begun. A check of GET /api/me that was on its way
+  // when the session ended (or a new one began) answers for a session that is no longer the one
+  // on screen: its answer must not bring the person back after signing out, nor end a new session.
+  const sessionChanges = useRef(0);
+
   /**
    * The one way a session ends in the web app (plan "Session"): the sign-in page opens with "You
    * have been signed out." or, when the session was lost, with "Please sign in again" and the
@@ -52,6 +57,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // First forget the person, then show the sign-in page in the same moment (flushSync).
       // Otherwise the page on screen, or the sign-in page, would see the old state in between
       // and send people on a second time, without the notice.
+      sessionChanges.current += 1;
       queryClient.setQueryData(SESSION_KEY, null);
       const to = reason === 'sessionLost' ? sessionLostAddress(pageOnScreen.current) : '/sign-in';
       navigate(to, { replace: true, state: { notice: reason }, flushSync: true });
@@ -78,8 +84,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const sessionQuery = useQuery({
     queryKey: SESSION_KEY,
     queryFn: async (): Promise<CurrentUser | null> => {
+      const changesBefore = sessionChanges.current;
+      // The session ended or began while this check was on its way: keep what is on screen now.
+      const outOfDate = () => sessionChanges.current !== changesBefore;
       try {
         const person = await call(api.GET('/api/me'));
+        if (outOfDate()) {
+          return queryClient.getQueryData<CurrentUser | null>(SESSION_KEY) ?? null;
+        }
         const known = queryClient.getQueryData<CurrentUser | null>(SESSION_KEY);
         if (known && known.id !== person.id) {
           followOtherPerson(person);
@@ -88,6 +100,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (!isSessionGone(error)) {
           throw error;
+        }
+        if (outOfDate()) {
+          return queryClient.getQueryData<CurrentUser | null>(SESSION_KEY) ?? null;
         }
         // The person's session ended (it expired, was signed out in another tab, or the person
         // was deactivated), or this browser came back after its session expired.
@@ -127,6 +142,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     const signedIn = await call(api.POST('/api/auth/sign-in', { body: { email, password } }));
+    sessionChanges.current += 1;
     queryClient.setQueryData(SESSION_KEY, signedIn);
   }
 

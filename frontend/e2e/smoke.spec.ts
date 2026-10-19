@@ -45,7 +45,9 @@ test('US1: wrong password is refused; e-mail case and spaces are ignored (FR-003
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Welcome back, Priya.' })).toBeVisible();
-  await expect(page.getByText('Getting started')).toBeVisible();
+  // Priya's teams have plans, so Home shows them at a glance (Getting started is for people in no
+  // team, or in teams without plans: feature 009).
+  await expect(page.getByRole('region', { name: 'Plans at a glance' })).toBeVisible();
 });
 
 test('US2: every navigation item opens its page with its tab title (FR-010, FR-015, FR-017, SC-003)', async ({
@@ -56,8 +58,9 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   const nav = page.getByRole('navigation', { name: 'Main' });
   const main = page.getByRole('main');
 
-  // Plans, Approvals, Settings (features 002–008) and All work (010) are built; Recycle bin and
-  // Activity log (011) still show their "Coming soon" page.
+  // Plans, Approvals, Settings (features 002–008), Home (009) and All work (010) are built; Recycle
+  // bin and Activity log (011) still show their "Coming soon" page. (Home's Recent changes card says
+  // "Coming soon" too until 011 is built, so the page is recognised by its own sentence.)
   const pages: { item: string; heading: string; comingSoon: boolean }[] = [
     { item: 'Plans', heading: 'Plans', comingSoon: false },
     { item: 'Approvals', heading: 'Approvals', comingSoon: false },
@@ -72,7 +75,9 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
     await expect(page).toHaveTitle(`${item} · NorthStar`);
     await expect(nav.getByRole('link', { name: item })).toHaveAttribute('aria-current', 'page');
     await expect(main.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
-    await expect(main.getByText('Coming soon', { exact: true })).toHaveCount(comingSoon ? 1 : 0);
+    await expect(main.getByText("This part of NorthStar isn't built yet.")).toHaveCount(
+      comingSoon ? 1 : 0,
+    );
   }
 
   await page.goto('/nowhere');

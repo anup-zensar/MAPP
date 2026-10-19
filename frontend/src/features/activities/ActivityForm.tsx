@@ -66,6 +66,8 @@ const FROM_INITIATIVE = 'From the initiative';
 const ONGOING_WARNING = "Ongoing can't be undone after saving.";
 const ONGOING_LOCKED = "Ongoing can't be undone — to plan with an end date, create a new activity.";
 const WORKFLOW_LOCKED = "It can't change while the activity is submitted or approved.";
+/** While a round is open the person can recall the submission first (008 FR-013). */
+const WORKFLOW_RECALL = 'Recall the activity to choose another workflow.';
 const NO_WORKFLOW = 'No approval workflow is active — an administrator sets them up in Settings.';
 
 /** A type change that would replace a planned cost already there (FR-007). */
@@ -213,7 +215,13 @@ export function ActivityForm({
           }))}
           value={value.approvalWorkflowId}
           onChange={(approvalWorkflowId) => set({ approvalWorkflowId })}
-          disabledReason={underApproval ? WORKFLOW_LOCKED : undefined}
+          disabledReason={
+            stored?.status === 'submitted'
+              ? WORKFLOW_RECALL
+              : underApproval
+                ? WORKFLOW_LOCKED
+                : undefined
+          }
           note={form.approvalWorkflows.length === 0 ? NO_WORKFLOW : undefined}
           error={error('approvalWorkflowId')}
         />

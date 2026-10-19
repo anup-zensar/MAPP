@@ -15,7 +15,8 @@ export function PlanSummaryCards({ plan }: { plan: Plan }) {
   const noBudget = <span>No plan budget set</span>;
 
   return (
-    <section className={styles.summary} aria-label="Summary">
+    // #budget: where Home's "Open budget" leads (feature 009).
+    <section id="budget" className={styles.summary} aria-label="Summary">
       <SummaryCard
         label="Plan budget"
         value={moneyCompact(figures.budget)}

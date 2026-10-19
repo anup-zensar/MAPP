@@ -127,7 +127,7 @@ export function BudgetCostSection({
   const { money } = useFormatters();
   const { plannedCost, budgetUsedPercent, overBudget, leftToPlan } = budgetAndCost;
   return (
-    <PanelSection title={BUDGET_AND_COST}>
+    <PanelSection id="budget" title={BUDGET_AND_COST}>
       <Facts>
         <Fact label={BUDGET}>
           <RemainingAmount value={budget} none={NO_BUDGET_SET} />

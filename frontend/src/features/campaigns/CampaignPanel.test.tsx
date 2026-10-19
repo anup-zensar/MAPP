@@ -97,6 +97,9 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     expect(document.title).toBe('Helix launch · NorthStar');
 
     const money = within(panel).getByRole('region', { name: 'Budget and cost' });
+    // Home's "Open budget" and "Show fields" lead here (feature 009).
+    expect(money).toHaveAttribute('id', 'budget');
+    expect(within(panel).getByText('All filled in').closest('#completeness')).not.toBeNull();
     // The budget, and what is left to plan with nothing planned yet.
     expect(within(money).getAllByText('$400,000.00')).toHaveLength(2);
     expect(within(money).getByText('Allocated to initiatives')).toBeInTheDocument();
@@ -322,6 +325,8 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   it('opens under the right plan when the campaign has moved (FR-017)', async () => {
     const { router } = renderPanel(DETAILS, {
       'GET /api/campaigns/C-1001': { body: campaign({ planId: 'P-1002' }) },
+      // The panel at its new address may ask for its plan before the test ends.
+      'GET /api/plans/P-1002': { body: { ...planAnswer(), id: 'P-1002' } },
     });
 
     await waitFor(() =>

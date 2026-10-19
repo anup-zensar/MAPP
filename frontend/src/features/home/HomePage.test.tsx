@@ -1,5 +1,5 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { CurrentUser } from '@/app/useSession';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -15,6 +15,18 @@ import {
   summaryOf,
   waitingItemOf,
 } from './testData';
+
+// These tests show the Recent changes card as it is once the Activity log (feature 011) is built.
+// Until then the card says it is coming soon (see RecentChangesCard.comingSoon.test.tsx).
+vi.mock('@/app/navigation', async (importOriginal) => {
+  const navigation = await importOriginal<typeof import('@/app/navigation')>();
+  return {
+    ...navigation,
+    COMING_SOON_SECTIONS: navigation.COMING_SOON_SECTIONS.filter(
+      (section) => section.path !== '/activity-log',
+    ),
+  };
+});
 
 /** The summary of a person who has nothing yet, as HOME_ANSWERS gives it. */
 const HOME_EMPTY_SUMMARY = HOME_ANSWERS['GET /api/home/summary'].body as object;
