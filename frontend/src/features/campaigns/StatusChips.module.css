@@ -1,0 +1,41 @@
+.noTiming {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-2);
+}
+
+/* R4: amber icon, the text in ink (a warning that never blocks). */
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.warning svg,
+.warningIcon svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--status-review);
+}
+
+.warningIcon {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
+  border-radius: 4px;
+}
+
+.warningIcon svg {
+  margin-top: 0;
+}
+
+.warningIcon:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}

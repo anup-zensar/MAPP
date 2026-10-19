@@ -190,9 +190,9 @@ func TestListPlans_MyTeams_FR004(t *testing.T) {
 
 // The plan page of FY2026 Lubricants Europe shows every stored field, its model with rates, team, owner,
 // business unit, budget and goals 250,000 → 5,000 → 250 → 2,500,000.00, all filled in; FY2026 Mobility
-// China needs its business unit; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
-// come from the levels below are proved with fakes in the service tests: here they depend on which levels
-// are wired.
+// China needs its business unit, and below it its campaign Retail growth and initiative Fleet cards
+// (005's demo data) are incomplete; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
+// come from the levels below are proved with fakes in the service tests.
 func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
@@ -230,8 +230,20 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	assertFields(t, china, http.StatusOK, map[string]any{
 		"status": "draft", "businessUnit": []any{},
 		"completeness": map[string]any{
-			"missing":    []any{map[string]any{"field": "attributes.SA-1001", "label": "Business unit"}},
-			"itemsBelow": []any{},
+			"missing": []any{map[string]any{"field": "attributes.SA-1001", "label": "Business unit"}},
+			"itemsBelow": []any{
+				map[string]any{
+					"record": map[string]any{"type": "campaign", "id": "C-1003", "name": "Retail growth"},
+					"missing": []any{
+						map[string]any{"field": "attributes.SA-1003", "label": "Cluster"},
+						map[string]any{"field": "attributes.SA-1004", "label": "Region"},
+					},
+				},
+				map[string]any{
+					"record":  map[string]any{"type": "initiative", "id": "I-1006", "name": "Fleet cards"},
+					"missing": []any{map[string]any{"field": "startDate", "label": "Dates"}},
+				},
+			},
 		},
 	})
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
@@ -341,8 +353,10 @@ func formOf(p plans.PlanView) map[string]any {
 	return form
 }
 
-// FY2026 Mobility China has no business unit, so Publish lists it under "Plan" and the plan stays Draft;
-// once the business unit is filled in, Publish succeeds (FR-024, US5 scenarios 1 and 2).
+// FY2026 Mobility China has no business unit, and its campaign Retail growth has no cluster and region and
+// its initiative Fleet cards no dates (005's demo data). Publish lists the plan's field first, then each
+// record below that blocks publishing, and the plan stays Draft; once the business unit is filled in and the
+// incomplete campaign is gone, Publish succeeds (FR-024, US5 scenarios 1 and 2).
 func TestPublish_NotReadyThenPublished_FR024(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
@@ -353,16 +367,26 @@ func TestPublish_NotReadyThenPublished_FR024(t *testing.T) {
 	form := formOf(china)
 	form["attributes"] = map[string]any{"SA-1001": []string{"SO-1002"}}
 	saved := priya.Do(t, http.MethodPatch, "/api/plans/P-1002", form)
+	stillRefused := priya.Do(t, http.MethodPost, "/api/plans/P-1002/publish", nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/campaigns/C-1003", nil)
 	published := priya.Do(t, http.MethodPost, "/api/plans/P-1002/publish", nil)
 	gone := priya.Do(t, http.MethodPost, "/api/plans/P-9999/publish", nil)
 
-	assertAnswer(t, refused, http.StatusConflict, `{"code":"not_ready","message":"Publish needs 1 field","fields":[],`+
+	below := `{"record":{"type":"campaign","id":"C-1003","name":"Retail growth"},` +
+		`"fields":[{"field":"attributes.SA-1003","label":"Cluster"},{"field":"attributes.SA-1004","label":"Region"}]},` +
+		`{"record":{"type":"initiative","id":"I-1006","name":"Fleet cards"},"fields":[{"field":"startDate","label":"Dates"}]}`
+	assertAnswer(t, refused, http.StatusConflict, `{"code":"not_ready","message":"Publish needs 4 fields","fields":[],`+
 		`"missing":[{"record":{"type":"plan","id":"P-1002","name":"FY2026 Mobility China"},`+
-		`"fields":[{"field":"attributes.SA-1001","label":"Business unit"}]}]}`)
+		`"fields":[{"field":"attributes.SA-1001","label":"Business unit"}]},`+below+`]}`)
 	if china.Status != plans.StatusDraft || china.Version != 1 {
 		t.Errorf("after the refusal: %s, version %d; want Draft, version 1", china.Status, china.Version)
 	}
 	assertFields(t, saved, http.StatusOK, map[string]any{"status": "draft", "version": 2})
+	assertAnswer(t, stillRefused, http.StatusConflict, `{"code":"not_ready","message":"Publish needs 3 fields","fields":[],`+
+		`"missing":[`+below+`]}`)
+	if deleted.Status != http.StatusOK {
+		t.Fatalf("deleting Retail growth = %d %s, want 200", deleted.Status, deleted.Body)
+	}
 	assertFields(t, published, http.StatusOK, map[string]any{
 		"status": "published", "version": 3, "updatedBy": map[string]any{"id": "U-1002", "name": "Priya Raman"},
 	})

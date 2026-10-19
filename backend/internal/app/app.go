@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"northstar/internal/auth"
+	"northstar/internal/campaigns"
 	"northstar/internal/history"
 	"northstar/internal/people"
 	"northstar/internal/plans"
@@ -58,8 +59,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 
 	// Settings (feature 002) exist in every environment. Their kinds are registered with history, parents
 	// first, so that their deletes can be undone and restored.
-	settingsRepo := settings.NewJSONRepository()
-	settingsService := settings.NewService(db, settingsRepo, generator, historyService, now)
+	settingsService := settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now)
 	for _, kind := range settingsService.Kinds() {
 		if err := historyService.Register(kind); err != nil {
 			return nil, err
@@ -69,17 +69,36 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// statements) by adding their sources here: settingsService.AddReferenceSource(…).
 	settings.NewHandler(settingsService).Routes(router, signedIn)
 
-	// Plans (004). Plans reads Settings and people and teams through the adapters of plans_deps.go. Its
-	// history kind comes before the kinds of the levels below the plan (005–007), which also register
-	// themselves with planService.RegisterLevel, top-down.
-	planService := plans.NewService(db, plans.NewJSONRepository(), generator, historyService,
-		settingsForPlans{repo: settingsRepo}, directoryForPlans{people: peopleRepo, settings: settingsRepo}, now)
+	// Plans (004). Plans reads Settings (002) and people and teams (003) through their services. Its history
+	// kind comes before the kinds of the levels below the plan (005–007), which also register themselves
+	// with planService.RegisterLevel, top-down.
+	plansRepo := plans.NewJSONRepository()
+	planService := plans.NewService(db, plansRepo, generator, historyService, settingsService, peopleService, now)
 	for _, kind := range planService.Kinds() {
 		if err := historyService.Register(kind); err != nil {
 			return nil, err
 		}
 	}
 	plans.NewHandler(planService).Routes(router, signedIn)
+
+	// Feature 005: campaigns and initiatives, with their history kinds under the plan kind (parents first).
+	campaignsService := campaigns.NewService(db, campaigns.NewJSONRepository(), generator, historyService, now, campaigns.Deps{
+		Plans:      campaignPlans{repo: plansRepo},
+		People:     peopleRepo,
+		Settings:   settingsService,
+		Activities: campaigns.NoActivities{},
+	})
+	for _, kind := range campaignsService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	for _, level := range campaignLevels(campaignsService) {
+		if err := planService.RegisterLevel(level); err != nil {
+			return nil, err
+		}
+	}
+	campaigns.NewHandler(campaignsService).Routes(router, signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API

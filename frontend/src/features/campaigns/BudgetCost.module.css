@@ -1,0 +1,69 @@
+.stack {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* Over-allocated or over budget: red, with words beside it (colour is never the only signal). */
+.negative {
+  color: var(--status-problem-text);
+  font-weight: 600;
+}
+
+.negativeDetail {
+  color: var(--status-problem-text);
+  font-size: 12.5px;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  font-size: 14px;
+}
+
+.lineLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-2);
+}
+
+.calculated {
+  padding: 1px 6px;
+  border-radius: var(--radius-chip);
+  background: var(--chip);
+  color: var(--ink-2);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.used {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 220px;
+}
+
+.used > :first-child {
+  flex: 1;
+}
+
+/* A money cell of the plan tree: right-aligned, with a second line beneath. */
+.cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}

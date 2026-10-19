@@ -1,23 +1,15 @@
 import { useParams } from 'react-router';
-import { BuildingPanel } from '@/features/placeholders/BuildingPage';
+import { useCampaign } from './campaignApi';
+import { RecordPanel } from './RecordPanel';
 
 export interface CampaignPanelProps {
   /** details: /plans/:planId/campaigns/:campaignId; edit: …/edit (?focus=<field>). */
   mode: 'details' | 'edit';
 }
 
-/**
- * A campaign's details or edit form (feature 005, US3), a side panel over the plan page — STUB of
- * the shared foundation. Feature 005 replaces this file; the routes stay.
- */
+/** A campaign's details or edit form (US3, FR-016 – FR-018), a side panel over the plan page. */
 export function CampaignPanel({ mode }: CampaignPanelProps) {
   const { planId = '', campaignId = '' } = useParams();
-  return (
-    <BuildingPanel
-      title={mode === 'edit' ? 'Edit campaign' : 'Campaign'}
-      description={campaignId}
-      closeTo={`/plans/${planId}`}
-      closeLabel="Back to the plan"
-    />
-  );
+  const query = useCampaign(campaignId);
+  return <RecordPanel level="campaign" mode={mode} planId={planId} query={query} />;
 }

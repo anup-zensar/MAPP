@@ -7,16 +7,20 @@ import (
 	"testing"
 	"time"
 
+	"northstar/internal/history"
 	"northstar/internal/people"
+	"northstar/internal/plans"
+	"northstar/internal/platform/ids"
 	"northstar/internal/platform/store"
 	"northstar/internal/settings"
 	"northstar/seed"
 )
 
-// The adapters give plans what it reads from Settings and from people and teams, here on the demo data:
-// Lubricants 1.0 with its rates and deal size, Priya's team, the Business unit options and US dollars as
-// her display currency (004 T030).
-func TestPlansAdapters_ReadTheDemoData(t *testing.T) {
+// Plans reads Settings and people and teams through 002's and 003's services, which app.New passes to
+// plans.NewService as its plans.Settings and plans.Directory. Here on the demo data: Lubricants 1.0 with
+// its rates and deal size, Priya's team, the Business unit options and US dollars as her display currency
+// (004 T030).
+func TestPlansDependencies_ReadTheDemoData(t *testing.T) {
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
@@ -25,9 +29,10 @@ func TestPlansAdapters_ReadTheDemoData(t *testing.T) {
 	if err := seed.Load(t.Context(), db, now); err != nil {
 		t.Fatalf("seed.Load: %v", err)
 	}
-	settingsRepo := settings.NewJSONRepository()
-	s := settingsForPlans{repo: settingsRepo}
-	d := directoryForPlans{people: people.NewJSONRepository(), settings: settingsRepo}
+	generator := ids.NewGenerator(ids.NewJSONCounters())
+	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
+	var s plans.Settings = settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now)
+	var d plans.Directory = people.NewService(db, people.NewJSONRepository(), generator, historyService, now)
 
 	err = db.Read(t.Context(), func(ctx context.Context) error {
 		model, found, err := s.Model(ctx, "MOD-1001")
