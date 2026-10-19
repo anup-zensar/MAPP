@@ -6,10 +6,13 @@ import (
 	"net/http"
 
 	"northstar/internal/auth"
+	"northstar/internal/history"
 	"northstar/internal/people"
 	"northstar/internal/platform/clock"
+	"northstar/internal/platform/ids"
 	"northstar/internal/platform/store"
 	"northstar/internal/platform/web"
+	"northstar/internal/samples"
 )
 
 // App is the NorthStar API, ready to serve.
@@ -25,17 +28,35 @@ type App struct {
 // in tests). It keeps no package-level state, so tests can build as many APIs as they need. An error means
 // the API cannot start.
 func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
+	// One generator gives out every readable ID, from the counters in the store.
+	generator := ids.NewGenerator(ids.NewJSONCounters())
+
 	// The services, each on its own repositories, with the store as their Transactor. Sign-in also looks
 	// people up, so it shares the people repository.
 	peopleRepo := people.NewJSONRepository()
 	peopleService := people.NewService(db, peopleRepo)
 	authService := auth.NewService(db, auth.NewJSONRepository(), peopleRepo, cfg.DemoMode(), cfg.DemoPassword, now)
+	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
 	signedIn := authService.RequireSignIn // wraps every route that needs a signed-in person
 
 	router := web.NewRouter()
 	router.Handle("GET /api/health", health(cfg))
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
+	history.NewHandler(historyService).Routes(router, signedIn)
+
+	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
+	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API
+	// from starting.
+	if cfg.DemoMode() {
+		samplesService := samples.NewService(db, samples.NewJSONRepository(), generator, historyService, now)
+		for _, kind := range samplesService.Kinds() {
+			if err := historyService.Register(kind); err != nil {
+				return nil, err
+			}
+		}
+		samples.NewHandler(samplesService).Routes(router, signedIn)
+	}
 
 	// Routes lists the operations only: the catch-all registered next is not an operation of the contract.
 	routes := router.Patterns()
