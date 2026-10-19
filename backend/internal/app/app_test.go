@@ -314,17 +314,8 @@ var notYetServed = []string{
 	"PATCH /api/me",
 	"GET /api/me/display-currencies",
 	// 004 Plans
-	"GET /api/plan-defaults",
-	"GET /api/plans",
-	"POST /api/plans",
-	"GET /api/plans/{planId}",
-	"PATCH /api/plans/{planId}",
-	"DELETE /api/plans/{planId}",
-	"POST /api/plans/{planId}/publish",
-	"POST /api/plans/{planId}/unpublish",
 	"GET /api/plans/{planId}/copy-options",
 	"POST /api/plans/{planId}/copy",
-	"POST /api/plans/{planId}/change-effects",
 	// 005 Campaigns and initiatives
 	"GET /api/plans/{planId}/campaigns",
 	"POST /api/plans/{planId}/campaigns",

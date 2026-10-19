@@ -1,0 +1,75 @@
+.tree {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Search, Expand all, Collapse all and later features' buttons; wraps on narrow screens. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.search {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 360px;
+}
+
+.id {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.money {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.money span {
+  font-size: 12px;
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.problem {
+  color: var(--status-problem-text);
+}
+
+.used {
+  display: grid;
+  grid-template-columns: 72px auto;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The sentence under the plan row while it has no campaigns. */
+.empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 4px 4px 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.empty p {
+  margin: 0;
+}
