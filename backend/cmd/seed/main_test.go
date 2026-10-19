@@ -133,6 +133,27 @@ func TestRun_RefusesWhileTheAPIIsRunning_FR028(t *testing.T) {
 	}
 }
 
+// Another program on APP_PORT that answers /api/health with a web page and 200 OK, as a single-page app
+// does for every path, is not a NorthStar API: the seed goes on (FR-028).
+func TestRun_IgnoresAnotherProgramOnThePort_FR028(t *testing.T) {
+	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte("<!doctype html><title>Another app</title>"))
+	}))
+	defer other.Close()
+	port := strconv.Itoa(other.Listener.Addr().(*net.TCPAddr).Port)
+	dir := t.TempDir()
+
+	err := run([]string{"-data", dir}, environment(t, map[string]string{"APP_PORT": port}), io.Discard)
+
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if got := len(storedPeople(t, dir)); got != 6 {
+		t.Errorf("%d people stored, want 6", got)
+	}
+}
+
 // An argument that is not an option stops the seed before anything is deleted, so a mistyped command such
 // as "-reset data2" never resets the default folder.
 func TestRun_RefusesUnexpectedArguments(t *testing.T) {
