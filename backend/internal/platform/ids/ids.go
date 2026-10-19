@@ -47,6 +47,9 @@ const (
 	PrefixApprovalRound    = "AR" // approval rounds
 	PrefixApprovalAction   = "AH" // approval history entries
 	PrefixNotification     = "NT" // notifications
+
+	// Feature 010, All work (D-125).
+	PrefixSavedView = "SV" // saved views
 )
 
 // Prefixes lists every prefix above, in that order.
@@ -56,6 +59,7 @@ var Prefixes = []string{
 	PrefixTeam, PrefixTeamMembership,
 	PrefixPlan, PrefixCampaign, PrefixInitiative, PrefixActivity, PrefixLineItem,
 	PrefixApprovalWorkflow, PrefixApprovalRound, PrefixApprovalAction, PrefixNotification,
+	PrefixSavedView,
 }
 
 // firstNumber is the number of the first ID of every prefix: "P-1001".

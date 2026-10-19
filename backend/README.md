@@ -14,7 +14,7 @@ Run them in this folder (`backend/`).
 
 | Command | What it does |
 |---|---|
-| `go run ./cmd/seed` | Loads the demo data (people, teams, Settings, plans with their campaigns, initiatives, activities and line items, approvals) into an empty data folder — stop the API first |
+| `go run ./cmd/seed` | Loads the demo data (people, teams, Settings, plans with their campaigns, initiatives, activities and line items, approvals, two saved All work views) into an empty data folder — stop the API first |
 | `go run ./cmd/seed -reset` | Deletes the data files (`*.json`, `*.jsonl`, `*.tmp`) and loads the demo data again |
 | `go run ./cmd/seed -data <folder>` | Uses another data folder |
 | `go run ./cmd/api` | Starts the API on <http://127.0.0.1:8080>; Ctrl+C stops it |
@@ -60,6 +60,7 @@ internal/
     apitest/          test helper: the real API on a temporary data folder, every call checked against the contract
     money/            exact money: Amount, Money, Input, Rate, Rates, Percent; half-up rounding (owner: 002)
     date/             calendar dates: date.Date ("2026-03-01" in JSON), AddYears, Today, Format (owner: 005)
+    sheet/            spreadsheet files with the standard library: .xlsx workbooks and CSV (owner: 010)
   auth/               demo sign-in, sessions and the RequireSignIn middleware
   people/             people, "me" (GET /api/me), display preferences; teams and memberships (003)
   history/            activity log and recycle bin core: Log, MoveToBin, Undo, Restore and the Kind registry
@@ -70,6 +71,8 @@ internal/
   activities/         activities (006)
   lineitems/          line items (007)
   approvals/          approval workflows, rounds, history entries and notifications (008)
+  allwork/            All work (010): the read-only Grid, Calendar and Budget & cost of a year, export, saved
+                      views; it reads 004–007 through allwork.Source (internal/app/allwork_source.go)
 ```
 
 The Plan module's packages (002–008) started from a shared foundation: each has its stored types and API
