@@ -11,6 +11,7 @@ const PAGE_ANSWERS: Record<string, MockHandler> = {
   'GET /api/models': { body: { items: [], total: 0 } },
   'GET /api/activity-types': { body: { items: [], total: 0 } },
   'GET /api/currencies': { body: { items: [], total: 0 } },
+  'GET /api/finance-budgets': { body: { items: [], total: 0, year: 2026, years: [2026] } },
   // The People, Teams and Approval workflows cards count their active records (003, 008).
   'GET /api/people': { body: { items: [], total: 0 } },
   'GET /api/teams': { body: { items: [], total: 0 } },

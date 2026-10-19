@@ -6,12 +6,8 @@ import { useFormatters } from '@/lib/useFormatters';
 /** "Shell attribute" or "option": the record type as it reads mid-sentence. */
 export type RecordType = 'Shell attribute' | 'option';
 
-/** Feature 001's next step after a conflict on a form: the typed values stay. */
-export const CONFLICT_NEXT_STEP =
-  'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
-
-/** The record type at the start of a sentence: "Option 'TV' added". */
-export function sentenceStart(recordType: RecordType): string {
+/** The record type at the start of a sentence: "Option 'TV' set inactive". */
+function sentenceStart(recordType: RecordType): string {
   return `${recordType.charAt(0).toUpperCase()}${recordType.slice(1)}`;
 }
 

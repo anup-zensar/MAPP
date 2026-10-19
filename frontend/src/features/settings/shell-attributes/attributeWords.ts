@@ -4,6 +4,7 @@
  * offers. The API stays the judge: these only shape what is offered.
  */
 import type { components } from '@/api/schema';
+import { midSentence } from '@/lib/text';
 
 export type AttributeLevel = components['schemas']['AttributeLevel'];
 export type AttributeType = components['schemas']['AttributeType'];
@@ -94,4 +95,54 @@ export function shownWhenText(attribute: ShellAttribute): string {
 /** The reason a field or action of the attribute is locked (data model §4.1), if it is. */
 export function lockReason(attribute: ShellAttribute, field: string): string | undefined {
   return attribute.locks.find((lock) => lock.field === field)?.reason;
+}
+
+export type FormAttribute = components['schemas']['FormAttribute'];
+type AttributeForm = components['schemas']['AttributeForm'];
+
+/** One attribute of a level's form (GET /api/shell-attribute-forms/{level}), with its options. */
+export function findFormAttribute(form: AttributeForm, id: string): FormAttribute | undefined {
+  return form.sections
+    .flatMap((section) => section.attributes)
+    .find((attribute) => attribute.id === id);
+}
+
+/** The section of an attribute whose Section field is left empty (FR-019). */
+export const DEFAULT_SECTION = 'Shell attributes';
+
+/** "Link 'RETAIL – CHINA' to at least one cluster option." (FR-022, as the API says it.) */
+export function linkOptionText(optionLabel: string, parentLabel: string): string {
+  return `Link '${optionLabel.trim()}' to at least one ${midSentence(parentLabel)} option.`;
+}
+
+/** "Shown when one of these cluster options is chosen." — the hint of Linked to. */
+export function linkedToHint(parentLabel: string): string {
+  return `Shown when one of these ${midSentence(parentLabel)} options is chosen.`;
+}
+
+/**
+ * The attributes an attribute may depend on (FR-022, data model §4.2): the single and multiple
+ * choice attributes of `level` placed before it. An attribute that keeps its section keeps its
+ * place; a new attribute, or one moved to another section, goes last in that section (or last on
+ * the form when the section is new). `level` lists every attribute in display order. The API
+ * checks again when saving.
+ */
+export function parentCandidates(
+  all: ShellAttribute[],
+  level: AttributeLevel,
+  section: string,
+  attribute?: ShellAttribute,
+): ShellAttribute[] {
+  const target = section.trim() || DEFAULT_SECTION;
+  const levelList = all.filter((each) => each.level === level);
+  let before: ShellAttribute[];
+  const ownPlace = attribute ? levelList.findIndex((each) => each.id === attribute.id) : -1;
+  if (attribute && ownPlace !== -1 && attribute.section === target) {
+    before = levelList.slice(0, ownPlace);
+  } else {
+    const others = levelList.filter((each) => each.id !== attribute?.id);
+    const lastOfSection = others.findLastIndex((each) => each.section === target);
+    before = lastOfSection === -1 ? others : others.slice(0, lastOfSection + 1);
+  }
+  return before.filter((each) => each.type === 'singleChoice' || each.type === 'multipleChoice');
 }

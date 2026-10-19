@@ -7,6 +7,9 @@ import type { components } from '@/api/schema';
 type ShellAttribute = components['schemas']['ShellAttribute'];
 type ShellAttributeOption = components['schemas']['ShellAttributeOption'];
 type Usage = components['schemas']['Usage'];
+type AttributeForm = components['schemas']['AttributeForm'];
+type FormAttribute = components['schemas']['FormAttribute'];
+type FormOption = components['schemas']['FormOption'];
 
 export const PRIYA_REF = { id: 'U-1002', name: 'Priya Raman' };
 export const DANIEL_REF = { id: 'U-1003', name: 'Daniel Okoro' };
@@ -124,13 +127,124 @@ export const BUSINESS_UNIT = shellAttribute({
   businessUnit: true,
   optionCount: 3,
   activeOptionCount: 3,
-  locks: ['type', 'level', 'section', 'position', 'active', 'delete'].map((field) => ({
-    field,
-    reason: BUSINESS_UNIT_LOCK,
-  })),
+  locks: [
+    'type',
+    'level',
+    'section',
+    'position',
+    'active',
+    'delete',
+    'condition',
+    'parentAttributeId',
+  ].map((field) => ({ field, reason: BUSINESS_UNIT_LOCK })),
 });
 
 /** `{ items, total }` as the list answers of the API. */
 export function page<T>(items: T[], total = items.length) {
   return { items, total };
 }
+
+export const LUBRICANTS = 'SO-BU-LUB';
+export const MOBILITY = 'SO-BU-MOB';
+
+/** A form option; `parents` are the parent attribute's option ids it is linked to. */
+export function formOption(
+  id: string,
+  label: string,
+  parents: string[] = [],
+  active = true,
+): FormOption {
+  return { id, label, active, parentOptionIds: parents };
+}
+
+/** A form attribute: an active optional single choice without options unless told otherwise. */
+export function formAttribute(
+  overrides: Partial<FormAttribute> & { id: string; label: string },
+): FormAttribute {
+  return {
+    helpText: '',
+    type: 'singleChoice',
+    marking: 'optional',
+    active: true,
+    parentAttributeId: null,
+    conditionOptionIds: [],
+    options: [],
+    ...overrides,
+  };
+}
+
+const BUSINESS_UNIT_OPTIONS = [
+  formOption(LUBRICANTS, 'Lubricants'),
+  formOption(MOBILITY, 'Mobility'),
+];
+
+/** A level's form without attributes, with the demo's business units. */
+export function emptyForm(level: AttributeForm['level']): AttributeForm {
+  return {
+    level,
+    sections: [],
+    businessUnitAttributeId: 'SA-1001',
+    businessUnitOptions: BUSINESS_UNIT_OPTIONS,
+  };
+}
+
+/** The activity form of ACTIVITY_ATTRIBUTES (GET /api/shell-attribute-forms/activity). */
+export function activityForm(): AttributeForm {
+  return {
+    ...emptyForm('activity'),
+    sections: [
+      {
+        name: 'Shell attributes',
+        conditional: false,
+        attributes: [
+          formAttribute({
+            id: MEDIA_CHANNEL.id,
+            label: 'Media channel',
+            marking: 'neededToSubmit',
+            options: [
+              formOption('SO-1101', 'TV'),
+              formOption('SO-1102', 'Radio'),
+              formOption('SO-1103', 'Print', [], false),
+              formOption('SO-1104', 'Online'),
+            ],
+          }),
+          formAttribute({
+            id: PIR.id,
+            label: 'PIR',
+            options: [formOption('SO-1201', 'Yes'), formOption('SO-1202', 'No')],
+          }),
+        ],
+      },
+      {
+        name: 'Lubricants attributes',
+        conditional: true,
+        attributes: [
+          formAttribute({
+            id: BRANDS.id,
+            label: 'Brands',
+            type: 'multipleChoiceSplit',
+            marking: 'neededToSubmit',
+            conditionOptionIds: [LUBRICANTS],
+            options: [formOption('SO-1301', 'Shell Helix'), formOption('SO-1302', 'Shell Rimula')],
+          }),
+          formAttribute({
+            id: OLD_NOTES.id,
+            label: 'Old notes',
+            type: 'longText',
+            active: false,
+            conditionOptionIds: [LUBRICANTS],
+          }),
+        ],
+      },
+    ],
+  };
+}
+
+/** The forms of every level: the activity form above, the others empty. */
+export const FORM_ANSWERS = {
+  'GET /api/shell-attribute-forms/plan': { body: emptyForm('plan') },
+  'GET /api/shell-attribute-forms/campaign': { body: emptyForm('campaign') },
+  'GET /api/shell-attribute-forms/initiative': { body: emptyForm('initiative') },
+  'GET /api/shell-attribute-forms/activity': { body: activityForm() },
+  'GET /api/shell-attribute-forms/lineItem': { body: emptyForm('lineItem') },
+};

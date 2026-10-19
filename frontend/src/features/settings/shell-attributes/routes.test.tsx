@@ -1,13 +1,14 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectCurrentSection, renderApp } from '@/test/app';
-import { BUSINESS_UNIT, page } from './testData';
+import { BUSINESS_UNIT, FORM_ANSWERS, page } from './testData';
 
 /** What the Shell attribute pages ask the API when they open. */
 const ANSWERS = {
   'GET /api/shell-attributes': { body: page([BUSINESS_UNIT]) },
   'GET /api/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
   'GET /api/shell-attributes/SA-1001/options': { body: page([]) },
+  ...FORM_ANSWERS,
 };
 
 // The addresses of the Shell attribute pages (feature 002, US2; plan "Routes and navigation").

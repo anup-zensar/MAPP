@@ -1,0 +1,25 @@
+/* The Finance budget items page (feature 002, US5): the filters, then one card per budget. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* The budget years on their own line, then search, status and the count. */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.toolbar > :first-child {
+  flex: 1 1 220px;
+  max-width: 360px;
+}

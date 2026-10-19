@@ -1,9 +1,11 @@
 package settings_test
 
 import (
+	"encoding/base64"
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -176,8 +178,9 @@ func TestModelsAPI_DeleteAndUndo_FR004(t *testing.T) {
 }
 
 // The activity types are listed by name with the models allowing them; one is read with its default
-// planned cost (FR-013).
-func TestActivityTypesAPI_ListGet_FR013(t *testing.T) {
+// planned cost; a new one answers 201, allowed in the models ticked, which list it from then on; every
+// problem of a new one comes at once (FR-013, US5-1).
+func TestActivityTypesAPI_ListCreateGet_FR013(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var list struct {
@@ -192,6 +195,13 @@ func TestActivityTypesAPI_ListGet_FR013(t *testing.T) {
 
 	alex.Do(t, http.MethodGet, "/api/activity-types/AT-1002", nil).Decode(t, &event)
 	gone := alex.Do(t, http.MethodGet, "/api/activity-types/AT-9999", nil)
+	created := alex.Do(t, http.MethodPost, "/api/activity-types", webinarBody("MOD-1001"))
+	got := alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil)
+	invalid := alex.Do(t, http.MethodPost, "/api/activity-types", map[string]any{
+		"name": " event ", "defaultPlannedCost": map[string]string{"amount": "-5", "currency": "USD"}, "modelIds": []string{"MOD-9999"},
+	})
+	var lubricants struct{ ActivityTypes []struct{ Name string } }
+	alex.Do(t, http.MethodGet, "/api/models/MOD-1001", nil).Decode(t, &lubricants)
 
 	var names []string
 	for _, item := range list.Items {
@@ -204,7 +214,161 @@ func TestActivityTypesAPI_ListGet_FR013(t *testing.T) {
 	if event.Name != "Event" || event.DefaultPlannedCost.Amount != "25000.00" || len(event.Models) != 2 || event.Models[0].Name != "Lubricants 1.0" {
 		t.Errorf("Event = %+v", event)
 	}
-	assertAnswer(t, gone, http.StatusNotFound, `{"code":"not_found","message":"This activity type no longer exists — someone may have deleted it.","fields":[]}`)
+	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
+	assertAnswer(t, created, http.StatusCreated, webinarAnswer(1, lubricantsRef, allowedInOneModel, alexAtStart))
+	assertAnswer(t, got, http.StatusOK, webinarAnswer(1, lubricantsRef, allowedInOneModel, alexAtStart))
+	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(
+		`{"field":"name","message":"An activity type called 'Event' already exists."},`+
+			`{"field":"defaultPlannedCost","message":"Enter an amount of 0 or more, with at most two decimals."},`+
+			`{"field":"modelIds","message":"A model you ticked no longer exists — reload the page and try again."}`))
+	if len(lubricants.ActivityTypes) != 6 || lubricants.ActivityTypes[5].Name != "Webinar" {
+		t.Errorf("Lubricants 1.0 allows %+v, want Webinar last by name", lubricants.ActivityTypes)
+	}
+}
+
+// Bodies of the activity-type tests.
+const (
+	activityTypeGoneBody = `{"code":"not_found","message":"This activity type no longer exists — someone may have deleted it.","fields":[]}`
+	lubricantsRef        = `{"id":"MOD-1001","name":"Lubricants 1.0","active":true}`
+	mobilityRef          = `{"id":"MOD-1002","name":"Mobility 1.0","active":true}`
+	allowedInOneModel    = `{"inUse":true,"summary":"Allowed in 1 model","parts":[{"kind":"model","text":"Allowed in 1 model","count":1,"inRecycleBin":0}],"records":[]}`
+)
+
+// webinarBody is the new activity type of US5-1: "Webinar", default planned cost 5,000 USD, allowed in the
+// models.
+func webinarBody(modelIDs ...string) map[string]any {
+	if modelIDs == nil {
+		modelIDs = []string{}
+	}
+	return map[string]any{"name": "Webinar", "defaultPlannedCost": map[string]string{"amount": "5000", "currency": "USD"}, "modelIds": modelIDs}
+}
+
+// webinarAnswer is the answer for the activity type webinarBody (AT-1007) at version, with the models
+// allowing it (JSON objects, comma separated), its usage and its bookkeeping meta.
+func webinarAnswer(version int, models, usage, meta string) string {
+	return `{"id":"AT-1007","name":"Webinar","defaultPlannedCost":{"amount":"5000.00","currency":"USD"},"models":[` + models +
+		`],"active":true,"usage":` + usage + `,"version":` + itoa(version) + `,` + meta + `}`
+}
+
+// A save from an out-of-date copy is refused with who changed the activity type and when (FR-007).
+func TestActivityTypesAPI_UpdateConflict_FR007(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	daniel := server.SignIn(t, danielsEmail)
+	mustCreate(t, alex, "/api/activity-types", webinarBody())
+	server.Advance(90 * time.Minute)
+	daniels := daniel.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"defaultPlannedCost": nil, "version": 1})
+
+	alexs := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"name": "Webinars", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-9999", map[string]any{"name": "X", "version": 1})
+
+	assertAnswer(t, daniels, http.StatusOK, `{"id":"AT-1007","name":"Webinar","defaultPlannedCost":null,"models":[],"active":true,"usage":`+
+		unusedBody+`,"version":2,"createdAt":"2026-03-12T09:00:00Z","createdBy":{"id":"U-1001","name":"Alex Morgan"},`+
+		`"updatedAt":"2026-03-12T10:30:00Z","updatedBy":{"id":"U-1003","name":"Daniel Okoro"}}`)
+	assertAnswer(t, alexs, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this activity type",`+
+		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}`)
+	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
+}
+
+// The impact check validates like the update and answers, per model the type is removed from, the
+// activities of its plans that keep the type; it saves nothing (FR-012, D-044).
+func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	mustCreate(t, alex, "/api/activity-types", webinarBody("MOD-1001"))
+	var event struct {
+		Warnings []struct {
+			Kind, Message string
+			Count         int
+		}
+	}
+
+	unused := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/impact", map[string]any{"modelIds": []string{}, "version": 1})
+	alex.Do(t, http.MethodPost, "/api/activity-types/AT-1002/impact", map[string]any{"modelIds": []string{"MOD-1002"}, "version": 1}).Decode(t, &event)
+	invalid := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/impact", map[string]any{"modelIds": []string{"MOD-9999"}, "version": 1})
+	gone := alex.Do(t, http.MethodPost, "/api/activity-types/AT-9999/impact", map[string]any{"version": 1})
+
+	assertAnswer(t, unused, http.StatusOK, `{"warnings":[]}`)
+	if len(event.Warnings) != 1 || event.Warnings[0].Kind != "activityTypeRemoved" || event.Warnings[0].Count < 1 ||
+		!strings.HasPrefix(event.Warnings[0].Message, "In plans using 'Lubricants 1.0', ") {
+		t.Errorf("removing Event from Lubricants 1.0 = %+v", event)
+	}
+	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"modelIds","message":"A model you ticked no longer exists — reload the page and try again."}`))
+	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil), http.StatusOK,
+		webinarAnswer(1, lubricantsRef, allowedInOneModel, alexAtStart))
+}
+
+// Set inactive and Reactivate answer the activity type with its new status; an out-of-date version is
+// refused (FR-004).
+func TestActivityTypesAPI_Status_FR004(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	mustCreate(t, alex, "/api/activity-types", webinarBody())
+
+	inactive := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/status", map[string]any{"active": false, "version": 1})
+	stale := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/status", map[string]any{"active": true, "version": 1})
+	active := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/status", map[string]any{"active": true, "version": 2})
+
+	assertAnswer(t, inactive, http.StatusOK, replace(webinarAnswer(2, "", unusedBody, alexAtStart), `"active":true`, `"active":false`))
+	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
+		t.Errorf("stale %d %s; reactivate %d %s", stale.Status, stale.Body, active.Status, active.Body)
+	}
+}
+
+// An unused activity type moves to the recycle bin and Undo brings it back; a type in use is refused with
+// in_use (FR-004, US5-5).
+func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	mustCreate(t, alex, "/api/activity-types", webinarBody())
+
+	deleted := alex.Do(t, http.MethodDelete, "/api/activity-types/AT-1007", nil)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/undo", nil)
+	inUse := alex.Do(t, http.MethodDelete, "/api/activity-types/AT-1002", nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/activity-types/AT-9999", nil)
+	var refused struct{ Code, Message string }
+	inUse.Decode(t, &refused)
+
+	assertAnswer(t, deleted, http.StatusOK, `{"recycleBinEntry":{"id":"BIN-1001","recordType":"activityType","recordTypeLabel":"activity type",`+
+		`"recordId":"AT-1007","recordName":"Webinar","path":[],"parent":null,"deletedAt":"2026-03-12T09:00:00Z",`+
+		`"deletedBy":{"id":"U-1001","name":"Alex Morgan"},"contents":[]}}`)
+	assertAnswer(t, afterDelete, http.StatusNotFound, activityTypeGoneBody)
+	assertAnswer(t, undone, http.StatusOK, `{"recordType":"activityType","recordTypeLabel":"activity type","recordId":"AT-1007",`+
+		`"recordName":"Webinar","details":""}`)
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil), http.StatusOK, webinarAnswer(1, "", unusedBody, alexAtStart))
+	if inUse.Status != http.StatusConflict || refused.Code != "in_use" || !strings.HasPrefix(refused.Message, "'Event' is in use (used by ") ||
+		!strings.HasSuffix(refused.Message, " · Allowed in 2 models) — set it inactive instead.") {
+		t.Errorf("deleting Event = %d %s", inUse.Status, inUse.Body)
+	}
+	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
+}
+
+// The models allowing a type are edited from the type: the models left out lose it and the models added
+// gain it; a model is never left without a type (FR-013, FR-009).
+func TestActivityTypesAPI_ModelsEditedFromType_FR013(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	mustCreate(t, alex, "/api/activity-types", webinarBody("MOD-1001"))
+
+	moved := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"modelIds": []string{"MOD-1002"}, "version": 1})
+	var lubricants, mobility struct{ ActivityTypes []struct{ ID string } }
+	alex.Do(t, http.MethodGet, "/api/models/MOD-1001", nil).Decode(t, &lubricants)
+	alex.Do(t, http.MethodGet, "/api/models/MOD-1002", nil).Decode(t, &mobility)
+	mustCreate(t, alex, "/api/models", map[string]any{"name": "Webinars only", "inqToMqlRate": "2", "mqlToDealRate": "5",
+		"averageDealSize": map[string]string{"amount": "10000", "currency": "USD"}, "activityTypeIds": []string{"AT-1007"}})
+	lastType := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"modelIds": []string{}, "version": 1})
+
+	assertAnswer(t, moved, http.StatusOK, webinarAnswer(1, mobilityRef, allowedInOneModel, alexAtStart))
+	has := func(types []struct{ ID string }) bool {
+		return slices.ContainsFunc(types, func(t struct{ ID string }) bool { return t.ID == "AT-1007" })
+	}
+	if has(lubricants.ActivityTypes) || !has(mobility.ActivityTypes) {
+		t.Errorf("Lubricants 1.0 = %+v, Mobility 1.0 = %+v", lubricants, mobility)
+	}
+	assertAnswer(t, lastType, http.StatusBadRequest, validationBody(
+		`{"field":"modelIds","message":"'Webinars only' needs at least one activity type, so 'Webinar' can't be removed from it."}`))
 }
 
 // The attributes of a level come in display order — sections in the order of their first attribute — and
@@ -483,7 +647,135 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 	if notANumber.Status != http.StatusBadRequest {
 		t.Errorf("year=next = %d %s", notANumber.Status, notANumber.Body)
 	}
-	assertAnswer(t, gone, http.StatusNotFound, `{"code":"not_found","message":"This finance budget item no longer exists — someone may have deleted it.","fields":[]}`)
+	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
+}
+
+// Bodies of the finance tests.
+const (
+	itemGoneBody   = `{"code":"not_found","message":"This finance budget item no longer exists — someone may have deleted it.","fields":[]}`
+	budgetGoneBody = `{"code":"not_found","message":"This finance budget no longer exists — someone may have deleted it.","fields":[]}`
+	yearLockBody   = `[{"field":"year","reason":"The year can't change once the item is saved — create a new item for another year."}]`
+)
+
+// retailBody is the new item of US5-3: "Europe – Retail" in "2026 Lubricants Budget", code "LUB-EU-RET".
+var retailBody = map[string]any{"year": 2026, "budgetName": "2026 Lubricants Budget", "name": "Europe – Retail", "code": "LUB-EU-RET"}
+
+// retailAnswer is the answer for the item retailBody (FBI-1007) in the budget budget (id and name) at
+// version, with its code, status and bookkeeping meta.
+func retailAnswer(budgetID, budgetName, code string, version int, active bool, meta string) string {
+	return `{"id":"FBI-1007","budgetId":"` + budgetID + `","budgetName":"` + budgetName + `","year":2026,"name":"Europe – Retail","code":"` + code +
+		`","active":` + strconv.FormatBool(active) + `,"usage":` + unusedBody + `,"locks":` + yearLockBody + `,"version":` + itoa(version) + `,` + meta + `}`
+}
+
+// A new item answers 201 in the budget of its year and name and is read back; a new budget name moves it to
+// a new budget of the same year; every problem comes at once (FR-014, US5-3, US5-4).
+func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+
+	created := alex.Do(t, http.MethodPost, "/api/finance-budget-items", retailBody)
+	got := alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1007", nil)
+	moved := alex.Do(t, http.MethodPatch, "/api/finance-budget-items/FBI-1007", map[string]any{"budgetName": "2026 Retail Budget", "code": "", "version": 1})
+	taken := alex.Do(t, http.MethodPost, "/api/finance-budget-items", map[string]any{
+		"year": 2026, "budgetName": " 2026 lubricants budget", "name": "europe – digital", "code": "lub-eu-dig"})
+	invalid := alex.Do(t, http.MethodPost, "/api/finance-budget-items", map[string]any{"year": 2040, "budgetName": " ", "name": ""})
+	stale := alex.Do(t, http.MethodPatch, "/api/finance-budget-items/FBI-1007", map[string]any{"name": "X", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/finance-budget-items/FBI-9999", map[string]any{"name": "X", "version": 1})
+
+	assertAnswer(t, created, http.StatusCreated, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
+	assertAnswer(t, got, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
+	assertAnswer(t, moved, http.StatusOK, retailAnswer("FB-1003", "2026 Retail Budget", "", 2, true, alexAtStart))
+	assertAnswer(t, taken, http.StatusBadRequest, validationBody(
+		`{"field":"name","message":"The budget '2026 Lubricants Budget' already has an item called 'Europe – Digital'."},`+
+			`{"field":"code","message":"The code 'lub-eu-dig' is already used in 2026 by 'Europe – Digital'."}`))
+	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"year","message":"Choose a year from 2025 to 2031."},`+
+		`{"field":"budgetName","message":"Enter a budget name."},{"field":"name","message":"Enter a name."}`))
+	if stale.Status != http.StatusConflict {
+		t.Errorf("stale update = %d %s", stale.Status, stale.Body)
+	}
+	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
+}
+
+// Rename budget answers the budget with all its items under the new name; the name must be free in its
+// year; an out-of-date version is refused (FR-015, US5-4).
+func TestFinanceAPI_Rename_FR015(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	var renamed struct {
+		Name    string
+		Version int
+		Items   []struct{ BudgetName string }
+		Usage   struct{ Summary string }
+	}
+	var item struct{ BudgetName string }
+
+	alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-1002", map[string]any{"name": "2026 Mobility Budget (China)", "version": 1}).Decode(t, &renamed)
+	alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1004", nil).Decode(t, &item)
+	taken := alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-1002", map[string]any{"name": "2026 lubricants budget", "version": 2})
+	stale := alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-1002", map[string]any{"name": "Other", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-9999", map[string]any{"name": "Other", "version": 1})
+
+	if renamed.Name != "2026 Mobility Budget (China)" || renamed.Version != 2 || len(renamed.Items) != 3 ||
+		renamed.Items[0].BudgetName != "2026 Mobility Budget (China)" || !strings.HasPrefix(renamed.Usage.Summary, "Default finance budget of ") {
+		t.Errorf("renamed = %+v", renamed)
+	}
+	if item.BudgetName != "2026 Mobility Budget (China)" {
+		t.Errorf("China – Retail is in %q", item.BudgetName)
+	}
+	assertAnswer(t, taken, http.StatusBadRequest, validationBody(`{"field":"name","message":"2026 already has a budget called '2026 Lubricants Budget'."}`))
+	assertAnswer(t, stale, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Alex Morgan changed this finance budget",`+
+		`"fields":[],"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T09:00:00Z"}}`)
+	assertAnswer(t, gone, http.StatusNotFound, budgetGoneBody)
+}
+
+// Set inactive and Reactivate answer the item with its new status; an out-of-date version is refused
+// (FR-004).
+func TestFinanceAPI_Status_FR004(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	mustCreate(t, alex, "/api/finance-budget-items", retailBody)
+
+	inactive := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-1007/status", map[string]any{"active": false, "version": 1})
+	stale := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 1})
+	active := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 2})
+	gone := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-9999/status", map[string]any{"active": true, "version": 1})
+
+	assertAnswer(t, inactive, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 2, false, alexAtStart))
+	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
+		t.Errorf("stale %d %s; reactivate %d %s", stale.Status, stale.Body, active.Status, active.Body)
+	}
+	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
+}
+
+// An unused item moves to the recycle bin under its budget and Undo brings it back; an item linked to line
+// items is refused with in_use (FR-004, US5-5).
+func TestFinanceAPI_Delete_FR004(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	mustCreate(t, alex, "/api/finance-budget-items", retailBody)
+
+	deleted := alex.Do(t, http.MethodDelete, "/api/finance-budget-items/FBI-1007", nil)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1007", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/undo", nil)
+	inUse := alex.Do(t, http.MethodDelete, "/api/finance-budget-items/FBI-1001", nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/finance-budget-items/FBI-9999", nil)
+	var refused struct{ Code, Message string }
+	inUse.Decode(t, &refused)
+
+	budget := `{"type":"financeBudget","id":"FB-1001","name":"2026 Lubricants Budget"}`
+	assertAnswer(t, deleted, http.StatusOK, `{"recycleBinEntry":{"id":"BIN-1001","recordType":"financeBudgetItem","recordTypeLabel":"finance budget item",`+
+		`"recordId":"FBI-1007","recordName":"Europe – Retail","path":[`+budget+`],"parent":`+budget+`,"deletedAt":"2026-03-12T09:00:00Z",`+
+		`"deletedBy":{"id":"U-1001","name":"Alex Morgan"},"contents":[]}}`)
+	assertAnswer(t, afterDelete, http.StatusNotFound, itemGoneBody)
+	assertAnswer(t, undone, http.StatusOK, `{"recordType":"financeBudgetItem","recordTypeLabel":"finance budget item","recordId":"FBI-1007",`+
+		`"recordName":"Europe – Retail","details":""}`)
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1007", nil), http.StatusOK,
+		retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
+	if inUse.Status != http.StatusConflict || refused.Code != "in_use" ||
+		!strings.HasPrefix(refused.Message, "'Europe – Digital' is in use (linked to ") {
+		t.Errorf("deleting Europe – Digital = %d %s", inUse.Status, inUse.Body)
+	}
+	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
 }
 
 // Bodies of the Shell attribute tests.
@@ -781,6 +1073,41 @@ func TestOptionsAPI_Delete_FR004(t *testing.T) {
 	}
 	assertAnswer(t, last, http.StatusConflict, `{"code":"in_use","message":"'Media channel' needs at least one option, so 'TV' can't be deleted.","fields":[]}`)
 	assertAnswer(t, gone, http.StatusNotFound, optionGoneBody)
+}
+
+// The import check answers every row's outcome and adds nothing; the import adds the new valid rows and
+// answers the counts; a file with nothing new, a file over 700 KB and an attribute that is gone are refused
+// (FR-031, US6-1, US6-2).
+func TestImportAPI_CheckAndImport_FR031(t *testing.T) {
+	server := apitest.New(t)
+	alex := server.SignIn(t, alexsEmail)
+	var created savedAttribute
+	mustCreate(t, alex, "/api/shell-attributes", map[string]any{"label": "Cost centre", "level": "lineItem", "type": "singleChoice",
+		"marking": "optional", "section": "Finance coding", "options": []map[string]any{{"label": "CN04000001"}}}).Decode(t, &created)
+	file := func(text string) map[string]string {
+		return map[string]string{"fileName": "cost-centres.csv", "content": base64.StdEncoding.EncodeToString([]byte(text))}
+	}
+	path := "/api/shell-attributes/" + created.ID + "/options/"
+	csv := "Option\nCN04000001\nCN04000002\n,see the note\n"
+
+	checked := alex.Do(t, http.MethodPost, path+"import-check", file(csv))
+	imported := alex.Do(t, http.MethodPost, path+"import", file(csv))
+	again := alex.Do(t, http.MethodPost, path+"import", file(csv))
+	tooLarge := alex.Do(t, http.MethodPost, path+"import-check", file(strings.Repeat("a", 700*1024+10)))
+	gone := alex.Do(t, http.MethodPost, "/api/shell-attributes/SA-9999/options/import", file(csv))
+	var options struct{ Items []savedOption }
+	alex.Do(t, http.MethodGet, path[:len(path)-1], nil).Decode(t, &options)
+
+	assertAnswer(t, checked, http.StatusOK, `{"totalRows":3,"toAdd":[{"row":3,"label":"CN04000002","parentLabel":"","message":""}],`+
+		`"alreadyPresent":[{"row":2,"label":"CN04000001","parentLabel":"","message":"Already an option — skipped."}],`+
+		`"problems":[{"row":4,"label":"","parentLabel":"","message":"Empty — enter an option."}]}`)
+	assertAnswer(t, imported, http.StatusOK, `{"added":1,"alreadyPresent":1,"problems":1}`)
+	assertAnswer(t, again, http.StatusBadRequest, validationBody(`{"field":"content","message":"Nothing to add — every row is already an option or has a problem."}`))
+	assertAnswer(t, tooLarge, http.StatusBadRequest, validationBody(`{"field":"content","message":"The file is larger than 700 KB — split it into smaller files."}`))
+	assertAnswer(t, gone, http.StatusNotFound, attributeGoneBody)
+	if len(options.Items) != 2 || options.Items[1].Label != "CN04000002" || options.Items[1].Position != 2 || !options.Items[1].Active {
+		t.Errorf("options = %+v", options.Items)
+	}
 }
 
 // Bodies of the currency tests.

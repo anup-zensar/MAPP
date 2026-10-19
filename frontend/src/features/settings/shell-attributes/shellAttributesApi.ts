@@ -27,6 +27,11 @@ export type ShellAttributeUpdate = components['schemas']['ShellAttributeUpdate']
 export type ChangeImpact = components['schemas']['ChangeImpact'];
 export type Usage = components['schemas']['Usage'];
 export type DeleteResult = components['schemas']['DeleteResult'];
+export type AttributeCheckRequest = components['schemas']['AttributeCheckRequest'];
+export type AttributeCheckResult = components['schemas']['AttributeCheckResult'];
+export type OptionImportRequest = components['schemas']['OptionImportRequest'];
+export type OptionImportCheck = components['schemas']['OptionImportCheck'];
+export type ImportRow = components['schemas']['ImportRow'];
 
 /** The status filter of the options list. */
 export type OptionStatus = 'active' | 'inactive' | 'all';
@@ -226,43 +231,51 @@ export function useDeleteAttribute() {
   });
 }
 
-/** A new option: the attribute it belongs to and its label. */
+/**
+ * A new option: the attribute it belongs to, its label and — for a dependent attribute — the
+ * parent options it is linked to (FR-022).
+ */
 export interface NewOption {
   attributeId: string;
   label: string;
+  parentOptionIds?: string[];
 }
 
 /** Adds an option at the end of the attribute's list (FR-018). */
 export function useCreateOption() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: ({ attributeId, label }: NewOption) =>
+    mutationFn: ({ attributeId, label, parentOptionIds }: NewOption) =>
       call(
         api.POST('/api/shell-attributes/{attributeId}/options', {
           params: { path: { attributeId } },
-          body: { label },
+          body: { label, parentOptionIds },
         }),
       ),
     onSettled: () => refresh(),
   });
 }
 
-/** A new label for an option, and the version the person started from. */
-export interface OptionRename {
+/**
+ * A change to an option: a new label and/or new parent links (only what changed, D-203), and the
+ * version the person started from.
+ */
+export interface OptionChange {
   id: string;
-  label: string;
+  label?: string;
+  parentOptionIds?: string[];
   version: number;
 }
 
-/** Renames an option (FR-018). */
+/** Renames an option or changes its links to the parent's options (FR-018, FR-022). */
 export function useUpdateOption() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: ({ id, label, version }: OptionRename) =>
+    mutationFn: ({ id, label, parentOptionIds, version }: OptionChange) =>
       call(
         api.PATCH('/api/shell-attribute-options/{optionId}', {
           params: { path: { optionId: id } },
-          body: { label, version },
+          body: { label, parentOptionIds, version },
         }),
       ),
     onSettled: () => refresh(),
@@ -317,6 +330,51 @@ export function useDeleteOption() {
       ),
     onSettled: () => refresh(),
   });
+}
+
+/** An option file of an attribute: what its rows would do, before anything is added (FR-031). */
+export function checkOptionImport(
+  attributeId: string,
+  body: OptionImportRequest,
+): Promise<OptionImportCheck> {
+  return call(
+    api.POST('/api/shell-attributes/{attributeId}/options/import-check', {
+      params: { path: { attributeId } },
+      body,
+    }),
+  );
+}
+
+/**
+ * Adds the new valid options of an option file, after its check (FR-031); never removes, renames
+ * or reactivates options.
+ */
+export function useImportOptions() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ attributeId, file }: { attributeId: string; file: OptionImportRequest }) =>
+      call(
+        api.POST('/api/shell-attributes/{attributeId}/options/import', {
+          params: { path: { attributeId } },
+          body: file,
+        }),
+      ),
+    onSettled: () => refresh(),
+  });
+}
+
+/**
+ * What saving these values on a record of `level` would say (the preview's **Try saving**,
+ * FR-020): the problems, the dependent values it would clear and the fields still needed. Saves
+ * nothing.
+ */
+export function checkAttributeValues(
+  level: ShellAttribute['level'],
+  body: AttributeCheckRequest,
+): Promise<AttributeCheckResult> {
+  return call(
+    api.POST('/api/shell-attribute-forms/{level}/check', { params: { path: { level } }, body }),
+  );
 }
 
 /** The attributes of every level, with `level`'s replaced by its new order. */

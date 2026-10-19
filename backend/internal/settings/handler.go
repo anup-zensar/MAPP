@@ -37,7 +37,12 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/models/{modelId}/status", signedIn(h.setModelStatus))
 
 	r.Handle("GET /api/activity-types", signedIn(h.listActivityTypes))
+	r.Handle("POST /api/activity-types", signedIn(h.createActivityType))
 	r.Handle("GET /api/activity-types/{activityTypeId}", signedIn(h.getActivityType))
+	r.Handle("PATCH /api/activity-types/{activityTypeId}", signedIn(h.updateActivityType))
+	r.Handle("DELETE /api/activity-types/{activityTypeId}", signedIn(h.deleteActivityType))
+	r.Handle("POST /api/activity-types/{activityTypeId}/impact", signedIn(h.activityTypeImpact))
+	r.Handle("POST /api/activity-types/{activityTypeId}/status", signedIn(h.setActivityTypeStatus))
 
 	r.Handle("GET /api/shell-attributes", signedIn(h.listAttributes))
 	r.Handle("POST /api/shell-attributes", signedIn(h.createAttribute))
@@ -49,6 +54,8 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/shell-attributes/{attributeId}/move", signedIn(h.moveAttribute))
 	r.Handle("GET /api/shell-attributes/{attributeId}/options", signedIn(h.listOptions))
 	r.Handle("POST /api/shell-attributes/{attributeId}/options", signedIn(h.createOption))
+	r.Handle("POST /api/shell-attributes/{attributeId}/options/import-check", signedIn(h.checkImport))
+	r.Handle("POST /api/shell-attributes/{attributeId}/options/import", signedIn(h.importOptions))
 	r.Handle("PATCH /api/shell-attribute-options/{optionId}", signedIn(h.updateOption))
 	r.Handle("DELETE /api/shell-attribute-options/{optionId}", signedIn(h.deleteOption))
 	r.Handle("POST /api/shell-attribute-options/{optionId}/status", signedIn(h.setOptionStatus))
@@ -65,7 +72,12 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/currencies/{code}/status", signedIn(h.setCurrencyStatus))
 
 	r.Handle("GET /api/finance-budgets", signedIn(h.listFinanceBudgets))
+	r.Handle("PATCH /api/finance-budgets/{budgetId}", signedIn(h.renameFinanceBudget))
+	r.Handle("POST /api/finance-budget-items", signedIn(h.createFinanceBudgetItem))
 	r.Handle("GET /api/finance-budget-items/{itemId}", signedIn(h.getFinanceBudgetItem))
+	r.Handle("PATCH /api/finance-budget-items/{itemId}", signedIn(h.updateFinanceBudgetItem))
+	r.Handle("DELETE /api/finance-budget-items/{itemId}", signedIn(h.deleteFinanceBudgetItem))
+	r.Handle("POST /api/finance-budget-items/{itemId}/status", signedIn(h.setFinanceBudgetItemStatus))
 }
 
 // overview answers GET /api/settings/overview: the active records of each section (FR-001).
@@ -142,6 +154,55 @@ func (h *Handler) listActivityTypes(w http.ResponseWriter, r *http.Request) {
 // getActivityType answers GET /api/activity-types/{activityTypeId}.
 func (h *Handler) getActivityType(w http.ResponseWriter, r *http.Request) {
 	activityType, err := h.service.GetActivityType(r.Context(), actorOf(r), r.PathValue("activityTypeId"))
+	respond(w, r, http.StatusOK, activityType, err)
+}
+
+// createActivityType answers POST /api/activity-types with 201 and the new activity type.
+func (h *Handler) createActivityType(w http.ResponseWriter, r *http.Request) {
+	var input ActivityTypeInput
+	if !readBody(w, r, &input) {
+		return
+	}
+	activityType, err := h.service.CreateActivityType(r.Context(), actorOf(r), input)
+	respond(w, r, http.StatusCreated, activityType, err)
+}
+
+// updateActivityType answers PATCH /api/activity-types/{activityTypeId} with the activity type after the
+// change.
+func (h *Handler) updateActivityType(w http.ResponseWriter, r *http.Request) {
+	var update ActivityTypeUpdate
+	if !readBody(w, r, &update) {
+		return
+	}
+	activityType, err := h.service.UpdateActivityType(r.Context(), actorOf(r), r.PathValue("activityTypeId"), update)
+	respond(w, r, http.StatusOK, activityType, err)
+}
+
+// deleteActivityType answers DELETE /api/activity-types/{activityTypeId} with the recycle-bin entry.
+func (h *Handler) deleteActivityType(w http.ResponseWriter, r *http.Request) {
+	entry, err := h.service.DeleteActivityType(r.Context(), actorOf(r), r.PathValue("activityTypeId"))
+	respondDeleted(w, r, entry, err)
+}
+
+// activityTypeImpact answers POST /api/activity-types/{activityTypeId}/impact with the warnings to confirm
+// before saving.
+func (h *Handler) activityTypeImpact(w http.ResponseWriter, r *http.Request) {
+	var update ActivityTypeUpdate
+	if !readBody(w, r, &update) {
+		return
+	}
+	impact, err := h.service.ActivityTypeImpact(r.Context(), actorOf(r), r.PathValue("activityTypeId"), update)
+	respond(w, r, http.StatusOK, impact, err)
+}
+
+// setActivityTypeStatus answers POST /api/activity-types/{activityTypeId}/status with the activity type in
+// its new status.
+func (h *Handler) setActivityTypeStatus(w http.ResponseWriter, r *http.Request) {
+	var update StatusUpdate
+	if !readBody(w, r, &update) {
+		return
+	}
+	activityType, err := h.service.SetActivityTypeActive(r.Context(), actorOf(r), r.PathValue("activityTypeId"), update)
 	respond(w, r, http.StatusOK, activityType, err)
 }
 
@@ -234,6 +295,28 @@ func (h *Handler) createOption(w http.ResponseWriter, r *http.Request) {
 	}
 	option, err := h.service.CreateOption(r.Context(), actorOf(r), r.PathValue("attributeId"), input)
 	respond(w, r, http.StatusCreated, option, err)
+}
+
+// checkImport answers POST /api/shell-attributes/{attributeId}/options/import-check with every row's outcome.
+// The request body holds a file, which is never logged.
+func (h *Handler) checkImport(w http.ResponseWriter, r *http.Request) {
+	var file ImportFile
+	if !readBody(w, r, &file) {
+		return
+	}
+	check, err := h.service.CheckImport(r.Context(), actorOf(r), r.PathValue("attributeId"), file)
+	respond(w, r, http.StatusOK, check, err)
+}
+
+// importOptions answers POST /api/shell-attributes/{attributeId}/options/import with what was added and
+// skipped. The request body holds a file, which is never logged.
+func (h *Handler) importOptions(w http.ResponseWriter, r *http.Request) {
+	var file ImportFile
+	if !readBody(w, r, &file) {
+		return
+	}
+	result, err := h.service.Import(r.Context(), actorOf(r), r.PathValue("attributeId"), file)
+	respond(w, r, http.StatusOK, result, err)
 }
 
 // updateOption answers PATCH /api/shell-attribute-options/{optionId} with the option after the change.
@@ -388,9 +471,57 @@ func (h *Handler) listFinanceBudgets(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusOK, page, err)
 }
 
+// renameFinanceBudget answers PATCH /api/finance-budgets/{budgetId} with the budget and its items after the
+// rename.
+func (h *Handler) renameFinanceBudget(w http.ResponseWriter, r *http.Request) {
+	var input RenameInput
+	if !readBody(w, r, &input) {
+		return
+	}
+	budget, err := h.service.RenameFinanceBudget(r.Context(), actorOf(r), r.PathValue("budgetId"), input)
+	respond(w, r, http.StatusOK, budget, err)
+}
+
+// createFinanceBudgetItem answers POST /api/finance-budget-items with 201 and the new item.
+func (h *Handler) createFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
+	var input ItemInput
+	if !readBody(w, r, &input) {
+		return
+	}
+	item, err := h.service.CreateFinanceBudgetItem(r.Context(), actorOf(r), input)
+	respond(w, r, http.StatusCreated, item, err)
+}
+
 // getFinanceBudgetItem answers GET /api/finance-budget-items/{itemId}.
 func (h *Handler) getFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
 	item, err := h.service.GetFinanceBudgetItem(r.Context(), actorOf(r), r.PathValue("itemId"))
+	respond(w, r, http.StatusOK, item, err)
+}
+
+// updateFinanceBudgetItem answers PATCH /api/finance-budget-items/{itemId} with the item after the change.
+func (h *Handler) updateFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
+	var update ItemUpdate
+	if !readBody(w, r, &update) {
+		return
+	}
+	item, err := h.service.UpdateFinanceBudgetItem(r.Context(), actorOf(r), r.PathValue("itemId"), update)
+	respond(w, r, http.StatusOK, item, err)
+}
+
+// deleteFinanceBudgetItem answers DELETE /api/finance-budget-items/{itemId} with the recycle-bin entry.
+func (h *Handler) deleteFinanceBudgetItem(w http.ResponseWriter, r *http.Request) {
+	entry, err := h.service.DeleteFinanceBudgetItem(r.Context(), actorOf(r), r.PathValue("itemId"))
+	respondDeleted(w, r, entry, err)
+}
+
+// setFinanceBudgetItemStatus answers POST /api/finance-budget-items/{itemId}/status with the item in its new
+// status.
+func (h *Handler) setFinanceBudgetItemStatus(w http.ResponseWriter, r *http.Request) {
+	var update StatusUpdate
+	if !readBody(w, r, &update) {
+		return
+	}
+	item, err := h.service.SetFinanceBudgetItemActive(r.Context(), actorOf(r), r.PathValue("itemId"), update)
 	respond(w, r, http.StatusOK, item, err)
 }
 
