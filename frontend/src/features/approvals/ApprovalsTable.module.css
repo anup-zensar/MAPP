@@ -1,0 +1,96 @@
+/* Wide content scrolls sideways inside its card, never the whole page (design system §2). */
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  padding-block: 8px;
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: var(--hover);
+}
+
+.table th[scope='row'] {
+  min-width: 12rem;
+}
+
+/* The activity's name opens the preview: a link-coloured button. */
+.open {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.open:hover {
+  text-decoration: underline;
+}
+
+.open:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.id {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip {
+  display: block;
+  margin-top: 4px;
+}
+
+.table .amount {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.nowrap {
+  display: block;
+  white-space: nowrap;
+}
+
+.secondary {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12px;
+  white-space: nowrap;
+}

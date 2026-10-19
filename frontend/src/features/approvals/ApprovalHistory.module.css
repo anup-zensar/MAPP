@@ -1,0 +1,83 @@
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.heading {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.empty {
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+
+.rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roundHeading {
+  margin-bottom: 6px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* The entries on a thin line, like a timeline. */
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--hairline);
+  list-style: none;
+}
+
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.what {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.action {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.meta {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.comment {
+  margin-top: 2px;
+  padding: 6px 10px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  font-style: italic;
+}
+
+.changes {
+  margin: 2px 0 0;
+  padding-left: 18px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}

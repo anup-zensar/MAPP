@@ -1,0 +1,104 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* "Level 2 has no active approver": needs attention, blocks nothing. */
+.warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--status-review);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--status-review) 12%, transparent);
+}
+
+.warning {
+  color: var(--status-review-text);
+  font-weight: 600;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.heading {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.activities {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 10px 0;
+}
+
+.activity + .activity {
+  border-top: 1px solid var(--hairline);
+}
+
+.activity:first-child {
+  padding-top: 0;
+}
+
+.activityMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.activityMain a {
+  color: var(--link);
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.secondary {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* Delete in red: it removes something (design system §6.1). */
+button.delete {
+  margin-left: auto;
+  color: var(--status-problem-text);
+}

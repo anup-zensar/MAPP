@@ -1,0 +1,27 @@
+/* The content of the approval dialogs: short paragraphs, the levels and the comment field. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-wrap: anywhere;
+}
+
+.levels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  list-style: none;
+}
+
+/* A note that needs attention but blocks nothing (an unassigned amount, acting on behalf). */
+.note {
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--status-review) 12%, transparent);
+  color: var(--status-review-text);
+}
