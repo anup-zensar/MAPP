@@ -1,6 +1,8 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { expectCurrentSection, renderApp } from '@/test/app';
+import type { MockHandler } from '@/test/mockApi';
+import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
 
 // The parts features 007 and 008 show on the activity pages are tested by those features; here
 // they stand in, so those features never break these tests.
@@ -23,29 +25,42 @@ vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
   ApprovalStatusAction: () => <button type="button">Submit for approval</button>,
 }));
 
+/** The requests of each page. */
+const ANSWERS: Record<string, MockHandler> = {
+  'GET /api/initiatives/I-1001/activity-form': { body: newForm() },
+  'GET /api/people': { body: PEOPLE },
+  'GET /api/activities/A-1001': { body: launchFilm({ id: 'A-1001' }) },
+  'GET /api/activities/A-1001/form': { body: editForm() },
+  'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
+};
+
 // Feature 006's addresses (build guide §5, D-194). Feature 006 keeps this file up to date as it
 // replaces the stub pages (their own requests go into renderApp's answers).
 describe('Activity routes (feature 006)', () => {
   it.each([
-    ['/plans/P-1001/initiatives/I-1001/activities/new', 'New activity'],
-    ['/plans/P-1001/activities/A-1001', 'Activity'],
-    ['/plans/P-1001/activities/A-1001/edit', 'Edit activity'],
-  ])('opens %s: "%s", with Plans current in the sidebar', async (path, title) => {
-    renderApp(path);
+    ['/plans/P-1001/initiatives/I-1001/activities/new', 'New activity', 'New activity'],
+    ['/plans/P-1001/activities/A-1001', 'Launch film', 'Launch film'],
+    ['/plans/P-1001/activities/A-1001/edit', "Edit activity 'Launch film'", 'Edit Launch film'],
+  ])('opens %s: "%s", with Plans current in the sidebar', async (path, heading, tab) => {
+    renderApp(path, ANSWERS);
 
-    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · NorthStar`);
+    expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
+    await waitFor(() => expect(document.title).toBe(`${tab} · NorthStar`));
     expectCurrentSection('Plans');
   });
 
-  it('opens the short address /activities/:activityId (D-194)', async () => {
-    renderApp('/activities/A-1001');
+  it('opens the short address /activities/:activityId at the page under its plan, keeping the #part (D-194)', async () => {
+    const { router } = renderApp('/activities/A-1001#line-items', ANSWERS);
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Activity' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Launch film' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1001');
+    expect(router.state.location.hash).toBe('#line-items');
   });
 
   it('places the line items (007) and the approval (008) on the activity page', async () => {
-    renderApp('/plans/P-1001/activities/A-1001');
+    renderApp('/plans/P-1001/activities/A-1001', ANSWERS);
 
     const lineItems = await screen.findByRole('region', { name: 'Line items' });
     expect(lineItems).toHaveTextContent('Line items of A-1001');
@@ -57,7 +72,7 @@ describe('Activity routes (feature 006)', () => {
   });
 
   it('places the spread effect note (007) on the edit form', async () => {
-    renderApp('/plans/P-1001/activities/A-1001/edit');
+    renderApp('/plans/P-1001/activities/A-1001/edit', ANSWERS);
 
     expect(await screen.findByText('Spread effect for A-1001')).toBeInTheDocument();
   });

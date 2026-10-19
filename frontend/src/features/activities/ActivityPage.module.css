@@ -1,0 +1,20 @@
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Links to #line-items and #approval land below the sticky top bar. */
+.anchor {
+  scroll-margin-top: 80px;
+}
+
+.alert {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--status-problem);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+}

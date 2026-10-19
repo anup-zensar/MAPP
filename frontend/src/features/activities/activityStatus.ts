@@ -26,3 +26,20 @@ export function activityStatusWord(status: ActivityDisplayStatus): string {
 export function activityStatusTone(status: ActivityDisplayStatus): StatusTone {
   return STATUS[status].tone;
 }
+
+/** How the banner names the statuses whose planned cost and dates are under approval. */
+const BANNER_WORD: Partial<Record<ActivityDisplayStatus, string>> = {
+  submitted: 'Submitted for approval',
+  approved: 'Approved',
+  inProgress: 'In progress',
+  complete: 'Complete',
+};
+
+/**
+ * The banner of a submitted or approved activity (FR-027): "Approved — changing planned cost or
+ * dates will restart approval."; null for Created and Declined.
+ */
+export function activityBannerText(status: ActivityDisplayStatus): string | null {
+  const word = BANNER_WORD[status];
+  return word ? `${word} — changing planned cost or dates will restart approval.` : null;
+}

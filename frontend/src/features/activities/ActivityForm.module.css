@@ -1,0 +1,68 @@
+/* One column, at most 720 px wide (design system §7). */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+  min-width: 0;
+}
+
+.readOnly {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pairs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 24px;
+}
+
+.pair {
+  min-width: 0;
+}
+
+.pair dt {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.pair dd {
+  margin: 2px 0 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* A warning that does not block saving: amber icon, the text in ink. */
+.warning,
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.warning svg,
+.notice svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--status-review);
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  background: var(--banner-bg);
+  color: var(--banner-text);
+}
+
+.muted {
+  color: var(--ink-2);
+}

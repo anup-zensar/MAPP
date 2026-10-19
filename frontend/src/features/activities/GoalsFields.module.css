@@ -1,0 +1,37 @@
+.stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 24px;
+}
+
+.stage dt {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.stage dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 4px 0 0;
+}
+
+.value {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.calculated {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.note {
+  color: var(--ink);
+  font-size: 13px;
+}
