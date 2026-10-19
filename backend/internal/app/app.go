@@ -5,6 +5,7 @@ package app
 import (
 	"net/http"
 
+	"northstar/internal/activities"
 	"northstar/internal/auth"
 	"northstar/internal/history"
 	"northstar/internal/people"
@@ -44,6 +45,13 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
 	history.NewHandler(historyService).Routes(router, signedIn)
+
+	// Activities (feature 006): their kind is registered after the initiative kind, its parent.
+	activitiesService, err := newActivities(db, generator, historyService, now, peopleRepo)
+	if err != nil {
+		return nil, err
+	}
+	activities.NewHandler(activitiesService).Routes(router, signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API

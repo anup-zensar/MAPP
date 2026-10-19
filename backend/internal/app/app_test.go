@@ -362,14 +362,7 @@ var notYetServed = []string{
 	"GET /api/initiatives/{initiativeId}/destinations",
 	"POST /api/initiatives/{initiativeId}/move",
 	"POST /api/initiatives/{initiativeId}/copy",
-	// 006 Activities
-	"GET /api/initiatives/{initiativeId}/activity-form",
-	"POST /api/initiatives/{initiativeId}/activities",
-	"GET /api/plans/{planId}/activities",
-	"GET /api/activities/{activityId}",
-	"PATCH /api/activities/{activityId}",
-	"DELETE /api/activities/{activityId}",
-	"GET /api/activities/{activityId}/form",
+	// 006 Activities (moving and copying come later)
 	"GET /api/activities/{activityId}/destinations",
 	"POST /api/activities/{activityId}/move",
 	"POST /api/activities/{activityId}/copy",
