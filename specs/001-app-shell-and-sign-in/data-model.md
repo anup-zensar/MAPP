@@ -33,7 +33,9 @@ Bookkeeping fields are never listed as "changed fields" in the activity log.
 ## 1. Person — table `people`
 
 Someone who can sign in. Feature 003 extends it with teams and profile fields; the rules below are
-feature 003's (FR-002, FR-009), so both features agree.
+feature 003's (FR-002, FR-009), so both features agree. In 001 only the seed creates people, so the rules
+are written on the Go type (`people.Person`) and checked from feature 003, which adds the screens that
+create and change people.
 
 | Field | Type | Rules |
 |---|---|---|
@@ -58,7 +60,9 @@ Seed (`backend/seed`, in the order of the demo-users table): Alex Morgan (`U-100
 ## 2. Preferences — table `preferences`
 
 One record per person who changed a preference; the key is the person's id. A person without a record
-uses the defaults. Not a business record: changes are not logged and have no version (decision D-038).
+uses the defaults. The record is written only when a value actually changes, so
+`PATCH /api/me/preferences` with `{}` (or with the current values) creates nothing. Not a business
+record: changes are not logged and have no version (decision D-038).
 
 | Field | Type | Rules |
 |---|---|---|
@@ -133,7 +137,7 @@ features 002–010 cannot be completed later (011 Key Entities and Assumptions).
 | `path` | list of RecordRef | Where the record was at the time: its ancestors, top level first (`[]` for top-level records). The plan a record belongs to is the first element when its type is `plan` |
 | `changes` | list of Change | `changed` and `statusChanged`: every changed field; `moved`: field `parent` with the old and new place; `restored`: the changes the restore made (a status reset, a name suffix); otherwise empty |
 | `comment` | string | A reason the person gave (for example a decline reason, feature 008); empty when none |
-| `details` | string | Plain text, empty when there is nothing to add. Deletes: "with 2 sample notes". Restores: "Undo" or "Restored from the recycle bin", followed by ", with 2 sample notes" when it had contents |
+| `details` | string | Plain text, empty when there is nothing to add. Deletes: "with 2 sample notes" (several kinds: "with 2 campaigns, 5 initiatives and 9 activities"). Restores: "Undo" or "Restored from the recycle bin", followed by ", with 2 sample notes" when it had contents, then — after a period, only when there are any — the restore's notes ("Restored from the recycle bin. Renamed to 'Ideas (restored)' because the name was taken."). The API's `RestoreResult.details` holds only the notes |
 
 **Change**: `{field, label, old, new, oldText, newText}` — `field` is the JSON field name; `old`/`new`
 the stored JSON values; `label` and `oldText`/`newText` are what people read, fixed at the time:
@@ -142,7 +146,9 @@ the stored JSON values; `label` and `oldText`/`newText` are what people read, fi
   "Planned cost");
 - `oldText`/`newText`: from `Describe` (option labels, people's names, money with currency, dates as
   `DD MMM YYYY`), otherwise a default: text as it is, `true`/`false` → "Yes"/"No", numbers as written,
-  lists joined with ", ", empty or missing → "Not filled in".
+  lists joined with ", ", an object → its compact JSON (kinds describe objects such as money with
+  `Describe`), empty or missing → "Not filled in". `Describe` receives the stored value decoded; an empty
+  label or text from it means "use the default".
 
 ## 6. Recycle-bin entry — table `recycle_bin`
 
@@ -217,7 +223,7 @@ The demonstration record type of User Story 5 (local and development environment
 | Field | Type | Rules |
 |---|---|---|
 | `id` | string | `SF-1001`, … |
-| `name` | string | **Required** ("Enter a name."); trimmed; at most 80 characters ("Use 80 characters or fewer."); unique among sample folders ignoring case and surrounding spaces ("There is already a sample folder called '<name>'. Choose another name."). A taken name refuses an Undo (`name_taken`); on Restore it gets " (restored)", " (restored 2)", … |
+| `name` | string | **Required** ("Enter a name."); trimmed; at most 80 characters ("Use 80 characters or fewer."); unique among sample folders ignoring case and surrounding spaces ("There is already a sample folder called '<name>'. Choose another name."; this message and the `name_taken` one name the other folder as it is stored). A taken name refuses an Undo (`name_taken`); on Restore it gets " (restored)", " (restored 2)", …, which may take it past 80 characters: only a missing parent may block a restore |
 | *bookkeeping* | `record.Meta` | |
 
 ## 9. Sample note — table `sample_notes` (developer page only)

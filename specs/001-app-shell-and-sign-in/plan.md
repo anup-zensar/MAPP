@@ -157,12 +157,14 @@ frontend/
     │   ├── navigation.ts        # sidebar items, My profile, and the "Coming soon" sentences
     │   ├── SessionProvider.tsx · useSession.ts      # session state and endSession
     │   ├── RequireSignIn.tsx · PublicLayout.tsx · DevOnly.tsx
+    │   ├── SessionCheckPage.tsx (+ .module.css)   # full page while the session is checked or unreachable
+    │   ├── NotFoundRoute.tsx    # "Page not found" in the app layout or the public layout
     │   ├── theme.ts · useTheme.ts
     │   ├── AppLayout.tsx · Sidebar.tsx · MobileTopBar.tsx · NavDrawer.tsx (+ .module.css)
     │   ├── AccountMenu.tsx · NotificationBell.tsx · ThemeToggle.tsx (+ .module.css)
-    │   └── *.test.tsx
+    │   └── *.test.tsx           # also App, router, RouteErrorPage and PublicLayout
     ├── components/              # FR-019 shared building blocks — one folder per component
-    │   ├── index.ts             # features import only from '@/components'
+    │   ├── index.ts             # features import only from '@/components' (+ index.test.ts)
     │   └── Button/ PageHeader/ SummaryCard/ Card/ StatusChip/ CompletenessChip/ InfoTip/ Tooltip/
     │       Avatar/ Logo/ SidePanel/ ConfirmDialog/ Toast/ EmptyState/ Skeleton/ FormErrorSummary/
     │       TextField/ PasswordField/ ErrorState/ DemoBanner/ ActionsMenu/
@@ -171,25 +173,28 @@ frontend/
     │   ├── sign-in/SignInPage.tsx (+ css, test)
     │   ├── home/HomePage.tsx (+ css, test)
     │   ├── placeholders/ComingSoonPage.tsx · NotFoundPage.tsx (+ tests)
-    │   └── dev/SampleRecordsPage.tsx · ComponentGalleryPage.tsx · sampleApi.ts (+ tests)
+    │   └── dev/SampleRecordsPage.tsx · SamplePanels.tsx · ComponentGalleryPage.tsx · sampleApi.ts
+    │       (+ css, tests)
     ├── api/
     │   ├── schema.d.ts          # GENERATED from backend/api/openapi.yaml — never edit by hand
     │   ├── client.ts            # openapi-fetch client, call(), session-lost hook
     │   └── errors.ts            # ApiError and its kinds; conflictMessage(); resolvedMessage()
-    ├── lib/
+    ├── lib/                     # every file with its test (cx.test.ts, format.test.ts, …)
     │   ├── format.ts            # formatDate, formatDateTime, formatTime, formatMoney, formatMoneyCompact
     │   ├── safeNext.ts          # the only place that decides where to go after sign-in
     │   ├── useUndoableDelete.ts # shared delete message with Undo (US5)
-    │   ├── useUnsavedChanges.ts # Keep editing / Discard changes guard (useBlocker + beforeunload)
+    │   ├── useUnsavedChanges.tsx # Keep editing / Discard changes guard (useBlocker + beforeunload)
     │   ├── usePageTitle.ts      # "<Page> · NorthStar"
     │   └── cx.ts                # join class names
     ├── styles/
     │   ├── tokens.css           # design tokens, light + dark (values below)
     │   └── global.css           # base styles, focus ring, reduced motion, .visually-hidden
-    └── test/
+    └── test/                    # the helpers have tests too (mockApi.test.ts, render.test.tsx)
         ├── setup.ts             # jest-dom; stubs; fails a test that made an unmocked request
         ├── mockApi.ts           # replaces fetch with canned answers per "METHOD /path"
-        └── render.tsx           # renderWithProviders(ui, { route, user }) → { router, queryClient, user }
+        └── render.tsx           # renderWithProviders(ui, { route, user, path }) and
+                                 # renderRoutes(routes, { route, user }) → { router, queryClient, user };
+                                 # findMessages(): the toast area, once it takes clicks
 ```
 
 **Structure decision**: the web-application layout of `docs/architecture/repository-layout.md` (updated in
@@ -201,8 +206,8 @@ this feature). The `@/` import alias points to `frontend/src` (Vite, TypeScript 
 
 ```
 HTTP request
-  → web.Middleware: recover panics → log the request (no personal data) → refuse a Host that is not
-    127.0.0.1 / localhost / [::1] → http.CrossOriginProtection → API headers (no-store, nosniff)
+  → web.Middleware: recover panics → log the request (no personal data) → API headers (no-store,
+    nosniff) → refuse a Host that is not 127.0.0.1 / localhost / [::1] → http.CrossOriginProtection
   → ServeMux pattern ("PATCH /api/sample-folders/{folderId}")
   → auth.RequireSignIn (signed-in routes): Authenticate in one Write → actor in a fresh context (or 401)
   → handler: web.ReadJSON, actor.From(ctx), call the service, web.WriteJSON / web.WriteError
@@ -218,10 +223,10 @@ HTTP request
 | `clock` | `type Clock func() time.Time`; `func System() time.Time` (UTC, truncated to milliseconds) |
 | `errs` | Owns the error parts every package shares: `Error{Status int \`json:"-"\`; Code string \`json:"code"\`; Message string \`json:"message"\`; Fields []FieldError \`json:"fields"\`; Conflict *Conflict \`json:"conflict,omitempty"\`; Parent *RecordRef \`json:"parent,omitempty"\`; Resolution *Resolution \`json:"resolution,omitempty"\`}` implementing `error`; `FieldError{Field \`json:"field"\`; Message \`json:"message"\`}`; `Conflict{ChangedBy string \`json:"changedBy"\`; ChangedAt time.Time \`json:"changedAt"\`}`; `RecordRef{Type \`json:"type"\`; ID \`json:"id"\`; Name \`json:"name"\`}`; `Resolution{How string \`json:"how"\`; By actor.Actor \`json:"by"\`; At time.Time \`json:"at"\`}`. Code constants of research R9 (incl. `already_resolved`, `name_taken`). Constructors (each sets `Fields` to an empty list and uses the messages table): `Validation(...FieldError)`, `BadRequest(msg)`, `SignInRequired()`, `SessionExpired()`, `IncorrectCredentials()`, `NotFound(msg)`, `VersionConflict(noun, changedBy, changedAt)`, `RestoreParentFirst(parent RecordRef)`, `UndoExpired()`, `AlreadyResolved(name string, r Resolution)`, `NameTaken(msg)`, `Internal()`. `Problems.Add(field, message)` / `Problems.Err()` (nil when empty) |
 | `web` | `ReadJSON(w, r, dst) error` — only `Content-Type: application/json`, 1 MB limit, unknown fields rejected, nothing after the JSON value; failure → `bad_request` with the messages-table text (detail only in the log); `WriteJSON(w, status, v)`; `WriteError(w, r, err)` — `errors.As` finds an `*errs.Error`, anything else is logged and becomes `500 internal_error`; `NotFound(w, r)`; `Middleware(next) http.Handler` (as in the request flow; refused cross-origin or wrong-host requests answer `400 bad_request` "This request came from another site and was refused."); `type Wrap func(http.HandlerFunc) http.HandlerFunc`; `type Router` (`NewRouter()`, `Handle(pattern string, h http.HandlerFunc)` registering on its `ServeMux` and recording the pattern, `Patterns() []string`, `ServeHTTP`) |
-| `store` | `type Transactor interface{ Read(ctx, fn func(ctx) error) error; Write(ctx, fn func(ctx) error) error }`; `type DB` implementing it; `Open(dir) (*DB, error)`; `(*DB).IsEmpty() bool` (no `*.json` or `*.jsonl` table yet); helpers for JSON repositories `Get[T](ctx, table, id) (T, bool, error)`, `List[T](ctx, table) ([]T, error)`, `Put(ctx, table, id, v) error`, `Delete(ctx, table, id) error`, `Append(ctx, table, v) error`, `Scan[T](ctx, table) ([]T, error)`; errors `ErrNoTransaction`, `ErrReadOnly`, `ErrFailed`. Behaviour exactly as research R3: encoded tables; an overlay the transaction reads (own writes visible); joining an existing transaction; `fn`'s error returned unchanged; commit order (temp files + Sync → `counters` first → other tables by name with a 2 s rename retry → log lines appended + Sync → memory); **no file handle stays open between commits**; failed state; `Open` creates the folder, missing table = empty, removes leftover `*.tmp`, stops on invalid JSON, ignores a partial last log line; `List` sorted (shorter ids first, then alphabetical) and never nil |
+| `store` | `type Transactor interface{ Read(ctx, fn func(ctx) error) error; Write(ctx, fn func(ctx) error) error }`; `type DB` implementing it; `Open(dir) (*DB, error)`; `(*DB).IsEmpty() bool` (no `*.json` or `*.jsonl` table yet); helpers for JSON repositories `Get[T](ctx, table, id) (T, bool, error)`, `List[T](ctx, table) ([]T, error)`, `Put(ctx, table, id, v) error`, `Delete(ctx, table, id) error`, `Append(ctx, table, v) error`, `Scan[T](ctx, table) ([]T, error)`; errors `ErrNoTransaction`, `ErrReadOnly`, `ErrFailed`. Behaviour exactly as research R3: encoded tables; an overlay the transaction reads (own writes visible); joining an existing transaction; `fn`'s error returned unchanged; commit order (temp files + Sync → `counters` first → other tables by name with a 2 s rename retry → log lines appended + Sync → memory); **no file handle stays open between commits**; failed state from the first rename on; `Open` creates the folder, missing table = empty, removes leftover `*.tmp`, stops on invalid JSON, cuts a partial last log line off the file; `List` sorted (shorter ids first, then alphabetical) and never nil |
 | `ids` | `type Counters interface{ Increment(ctx context.Context, prefix string) (int, error) }` (the repository of the last number per prefix); `NewJSONCounters() Counters` (table `counters`); `type Generator`; `NewGenerator(c Counters) *Generator`; `(*Generator).Next(ctx, prefix) (string, error)` → `"P-1001"`; `(*Generator).NextNumber(ctx, prefix) (int, error)` (research R4) |
 | `record` | `type Meta struct{ Version int \`json:"version"\`; CreatedAt time.Time \`json:"createdAt"\`; CreatedBy actor.Actor \`json:"createdBy"\`; UpdatedAt time.Time \`json:"updatedAt"\`; UpdatedBy actor.Actor \`json:"updatedBy"\` }` (embedded, JSON flattened); `NewMeta(by, now) Meta`; `(*Meta).Touch(by, now)`; `(Meta).CheckVersion(expected int, noun string) error` |
-| `apitest` | `New(t, opts...) *Server`: temporary data folder (or `WithDataDir(dir)`), demo-people seed unless `WithoutSeed()` (seeding arrives with the seed package in US1), fixed clock 2026-03-12 09:00 UTC with `(*Server).Advance(d)`, demo mode unless `WithEnv("production")`; `(*Server).Do(t, method, path, body any, opts...) *Response` validates request and response with libopenapi-validator (`config.WithFormatAssertions()`, `config.WithoutSecurityValidation()`) and sends `Host: 127.0.0.1` unless `WithHost(h)`; request options `SkipRequestValidation()`, `SkipValidation()`, `RawBody([]byte)` (sent as `application/json`), `WithCookie(*http.Cookie)`; `Response{Status int; Header http.Header; Body []byte}` with `Cookie(name) *http.Cookie` and `Decode(t, &v)`; `(*Server).SignIn(t, email) *Client` (same `Do`, sending that person's cookie). Only external test packages import it |
+| `apitest` | `New(t, opts...) *Server`: temporary data folder (or `WithDataDir(dir)`), demo-people seed unless `WithoutSeed()` or the folder already has data (seeding arrives with the seed package in US1), fixed clock 2026-03-12 09:00 UTC with `(*Server).Advance(d)`, demo mode unless `WithEnv("production")`; `(*Server).Do(t, method, path, body any, opts...) *Response` validates request and response with libopenapi-validator (`config.WithFormatAssertions()`, `config.WithoutSecurityValidation()`) and sends `Host: 127.0.0.1` unless `WithHost(h)`; request options `SkipRequestValidation()`, `SkipValidation()`, `RawBody([]byte)` (sent as `application/json`), `WithCookie(*http.Cookie)`; `Response{Status int; Header http.Header; Body []byte}` with `Cookie(name) *http.Cookie` and `Decode(t, &v)`; `(*Server).SignIn(t, email) *Client` (same `Do`, sending that person's cookie). Only external test packages import it |
 
 ### Constructors and wiring
 
@@ -246,17 +251,19 @@ and `web.Middleware` around the router. No package-level state: everything is bu
 
 Every package keeps **stored records** and **API types** separate in `model.go` (`samples.Folder` vs
 `samples.FolderView`; `people.Person` vs `people.CurrentUser`, `people.DemoPerson` and
-`people.PreferencesView`); handlers return only API types; stored records never contain lists of their
-children. Every service method takes the actor (`ctx, a actor.Actor, …`), reads included. The exceptions
-work before an actor exists or produce it: `auth.DemoPeople`, `auth.SignIn`, `auth.SignOut`,
-`auth.Authenticate` and `people.ActivePeople`.
+`people.PreferencesView`; `history.BinEntry` vs `history.BinEntryView`); handlers return only API
+types; stored records never contain lists of their children. `history.Entry` and `samples.Note` serve
+as both: the API returns them exactly as stored. Every service method takes the actor
+(`ctx, a actor.Actor, …`), reads included. The exceptions work before an actor exists or produce it:
+`auth.SignIn`, `auth.SignOut`, `auth.Authenticate` and `people.ActivePeople` (`auth.DemoMode()` and
+`auth.DemoPassword()` only return settings).
 
 | Package | Responsibility | Key operations |
 |---|---|---|
-| `auth` | Demo sign-in and sessions (research R6) | `DemoPeople(ctx)`, `SignIn(ctx, email, password, oldToken) (token, people.Person, error)`, `SignOut(ctx, token)`, `Authenticate(ctx, token) (actor.Actor, error)` — one `Write`: missing → `sign_in_required`; expired (`now − lastUsedAt > 12 h 1 min`) → delete + `session_expired`; person missing or inactive → delete + `sign_in_required`; otherwise update `lastUsedAt` when it is at least 1 minute old. `RequireSignIn(next)` lets that transaction finish and calls the handler with `r.WithContext(actor.With(r.Context(), a))`; with demo mode off it answers `sign_in_required` to everything. Handler: `GET /api/auth/demo-people` and `POST /api/auth/sign-in` **only in demo mode**; `POST /api/auth/sign-out` always (cookie cleared with `MaxAge: -1`) |
-| `people` | People, "me", preferences | `ActivePeople(ctx)` (sorted by name), `CurrentUser(ctx, a)`, `UpdatePreferences(ctx, a, PreferencesUpdate)` with `PreferencesUpdate{ Theme *string; SidebarCollapsed *bool }` — nil means unchanged; one `Write`: read the stored record or the defaults, apply the sent fields, validate, save. Handler: `GET /api/me`, `PATCH /api/me/preferences` |
-| `history` | Activity log and recycle bin (research R8, data-model §5–§7) | `Register(Kind) error`; `Log(ctx, a, LogInput) (Entry, error)`; `Diff(before, after any) ([]Change, error)`; `MoveToBin(ctx, a, kind, id) (BinEntry, error)`; `Undo(ctx, a, entryID) (RestoreResult, error)`; `Restore(ctx, a, entryID) (RestoreResult, error)`; `ListLog(ctx, a, LogFilter) ([]Entry, int, error)`; `ListBin(ctx, a) ([]BinEntry, error)`. Handler: `GET /api/activity-log`, `GET /api/recycle-bin`, `POST /api/recycle-bin/{entryId}/undo`, `POST /api/recycle-bin/{entryId}/restore` |
-| `samples` | Developer sample folders and notes | `ListFolders(ctx, a)`, `CreateFolder(ctx, a, FolderInput)`, `UpdateFolder(ctx, a, id, FolderUpdate)` (`Version *int`: missing or < 1 → `validation_failed` on `version`; then the version check, unique name, `history.Diff` → `changed` entry; no change → nothing), `DeleteFolder(ctx, a, id)` (→ `MoveToBin`), `CreateNote(ctx, a, folderID, NoteInput)`, `DeleteNote(ctx, a, id)`, `Kinds()` — the folder kind's `PrepareRestore`: when another folder has the name, an **Undo** is refused with `NameTaken` and a **Restore** renames to " (restored)", " (restored 2)", …, calls `Meta.Touch` and returns the note "Renamed to '<new name>' because the name was taken.". Handler: the `/api/sample-*` operations; missing records answer `404 not_found` with the messages-table texts |
+| `auth` | Demo sign-in and sessions (research R6) | `DemoMode()`, `DemoPassword()`, `SignIn(ctx, email, password, oldToken) (token, people.Person, error)`, `SignOut(ctx, token)`, `Authenticate(ctx, token) (actor.Actor, error)` — one `Write`: missing → `sign_in_required`; expired (`now − lastUsedAt > 12 h 1 min`) → delete + `session_expired`; person missing or inactive → delete + `sign_in_required`; otherwise update `lastUsedAt` when it is at least 1 minute old. `RequireSignIn(next)` lets that transaction finish and calls the handler with `r.WithContext(actor.With(r.Context(), a))`; with demo mode off it answers `sign_in_required` to everything. Handler: `GET /api/auth/demo-people` (answers `people.ActivePeople` — a `[]DemoPerson` — with `DemoPassword()`) and `POST /api/auth/sign-in` **only in demo mode**; `POST /api/auth/sign-out` always: it clears the cookie first (`MaxAge: -1`), then deletes the session, and answers `204` (`500` only when the store fails) |
+| `people` | People, "me", preferences | `ActivePeople(ctx)` (sorted by name, as `[]DemoPerson`), `CurrentUser(ctx, a)` (`sign_in_required` when the person no longer exists), `UpdatePreferences(ctx, a, PreferencesUpdate)` with `PreferencesUpdate{ Theme *string; SidebarCollapsed *bool }` — nil means unchanged; one `Write`: read the stored record or the defaults, apply the sent fields, validate, save only when a value changed. Handler: `GET /api/me`, `PATCH /api/me/preferences` |
+| `history` | Activity log and recycle bin (research R8, data-model §5–§7) | `Register(Kind) error`; `Log(ctx, a, LogInput) (Entry, error)`; `Diff(before, after any) ([]Change, error)`; `MoveToBin(ctx, a, kind, id) (BinEntry, error)`; `Undo(ctx, a, entryID) (RestoreResult, error)`; `Restore(ctx, a, entryID) (RestoreResult, error)`; `ListLog(ctx, a, LogFilter) ([]Entry, int, error)`; `ListBin(ctx, a) ([]BinEntry, error)`. API types: `BinEntryView` (from `BinEntry.View()`), `DeleteResult{RecycleBinEntry}` (the answer of every delete), `RestoreResult`, and `LogPage` / `BinPage` (`{items, total}`). Handler: `GET /api/activity-log` (`limit` 1–200, 50 when not sent; any other value, an empty `limit=` included, → `validation_failed` on `limit`), `GET /api/recycle-bin`, `POST /api/recycle-bin/{entryId}/undo`, `POST /api/recycle-bin/{entryId}/restore` |
+| `samples` | Developer sample folders and notes | `ListFolders(ctx, a)` (sorted by name ignoring letter case; each folder's notes oldest first; the handler answers `FolderPage`, `{items, total}`), `CreateFolder(ctx, a, FolderInput)`, `UpdateFolder(ctx, a, id, FolderUpdate)` (`Version *int`: missing or < 1 → `validation_failed` on `version`; then the version check, unique name, `history.Diff` → `changed` entry; no change → nothing), `DeleteFolder(ctx, a, id)` (→ `MoveToBin`), `CreateNote(ctx, a, folderID, NoteInput)`, `DeleteNote(ctx, a, id)`, `Kinds()` — the folder kind's `PrepareRestore`: when another folder has the name, an **Undo** is refused with `NameTaken` and a **Restore** renames to " (restored)", " (restored 2)", …, calls `Meta.Touch` and returns the note "Renamed to '<new name>' because the name was taken.". Handler: the `/api/sample-*` operations; missing records answer `404 not_found` with the messages-table texts |
 
 `history.Kind`, `LogInput` and the types `history` shares with `errs`:
 
@@ -275,7 +282,8 @@ type Kind struct {
     Remove   func(ctx context.Context, id string) error
     Put      func(ctx context.Context, s Snapshot) error
 
-    // Optional.
+    // Optional. Describe gets the stored value decoded (nil, bool, json.Number, string, []any or
+    // map[string]any); an empty label or text means "use the default".
     Describe       func(ctx context.Context, field string, value any) (label, text string, err error)
     PrepareRestore func(ctx context.Context, rc RestoreContext, s *Snapshot) (notes []string, err error)
 }
@@ -284,7 +292,7 @@ type RestoreContext struct { Actor actor.Actor; Now time.Time; Undo bool }
 
 type LogInput struct {
     Kind, RecordID, RecordName string
-    ParentID string   // optional: where to start the path when the record itself is gone
+    ParentID string   // where the path starts when the record itself is gone (then required for a child kind)
     Action   Action   // created, changed, statusChanged, moved, copied, deleted, restored
     Verb     string   // optional; required for statusChanged ("published")
     Changes  []Change // from Diff; history fills label, oldText, newText
@@ -295,27 +303,33 @@ type LogInput struct {
 `Register` errors: empty or duplicate name, `Parent` equal to the name or not yet registered, missing
 `Snapshot`/`Remove`/`Put`, missing `ChildIDs` when `Parent` is set. Children are visited in registration
 order with sorted ids; `contents` lists only kinds with a count of at least 1, in that order; `Remove` runs
-children first. Undo or Restore of an entry whose kind is not registered answers `404 not_found`.
-`MoveToBin`, `Undo`, `Restore` and `Log` join the caller's transaction when there is one. Details texts:
-deletes "with 2 sample notes"; restores "Undo" or "Restored from the recycle bin", then ", with 2 sample
-notes" when it had contents, then each note as its own sentence (". Renamed to …").
+children first. `Log` fails, writing nothing, for an unknown kind or action, a status change without its
+verb, or a gone child-kind record without `ParentID`. Undo and Restore check in this order: unknown entry
+→ `404 not_found`; a kind not registered here → `404 not_found`; already undone or restored →
+`already_resolved`; Undo more than 2 minutes after the delete → `undo_expired`; parent missing →
+`restore_parent_first`; then each kind's `PrepareRestore` (which refuses an Undo of a taken name with
+`name_taken`). `MoveToBin`, `Undo`, `Restore` and `Log` join the caller's transaction when there is one.
+Details texts: deletes "with 2 sample notes"; restores "Undo" or "Restored from the recycle bin", then
+", with 2 sample notes" when it had contents, then each note as its own sentence (". Renamed to …").
 
 ### Configuration and commands
 
 - `Config` (environment): `APP_ENV` (`local` default | `development` | `production`), `APP_PORT` (1–65535,
   default 8080), `DATA_DIR` (default `data`), `DEMO_PASSWORD` (default `northstar`; blank refused);
   `DemoMode()` = `local` or `development`. No host setting: the API always listens on `127.0.0.1`.
-  Invalid values stop the program with the messages-table texts.
+  An empty variable counts as not set (its default applies). Invalid values stop the program with the
+  messages-table texts — all of them together, one per line.
 - `GET /api/health` → `{"status": "ok", "environment": "...", "demoSignIn": true|false}` (public).
   Everything else under `/api/` that is not registered answers JSON `404 not_found` (wrong methods too).
 - `cmd/api`: reads the config, opens the store, listens on `127.0.0.1:APP_PORT`; a busy port (Windows
   error 10048 or `syscall.EADDRINUSE`) prints the messages-table text and exits 1; Ctrl+C shuts down
   gracefully; prints the start-up line.
 - `cmd/seed`: `run(args []string, getenv func(string) string, out io.Writer) error` holds the logic (tested
-  in `main_test.go`); `-data` (default `DATA_DIR` or `data`, created when missing), `-reset` (deletes only
-  `*.json`, `*.jsonl` and `*.tmp`); refuses a folder with data (`IsEmpty`) without `-reset`, refuses in
-  `production`, refuses while `GET http://127.0.0.1:<APP_PORT>/api/health` answers (1-second timeout);
-  prints "Loaded the demo data into <folder>: 6 people."
+  in `main_test.go`) and reads the settings through `app.LoadConfig`; `-data` (default `DATA_DIR` or
+  `data`, created when missing), `-reset` (deletes only `*.json`, `*.jsonl` and `*.tmp`); refuses an
+  extra argument, a folder with data (`IsEmpty`) without `-reset`, `production`, and a running API —
+  `GET http://127.0.0.1:<APP_PORT>/api/health` answering `200 OK` within 1 second (another program on the
+  port does not count); prints "Loaded the demo data into <folder>: 6 people."
 
 ## Frontend design
 
@@ -366,27 +380,34 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
 
 ### Session (research R15)
 
-- `useSession()` → `{ status: 'loading' | 'signedIn' | 'signedOut' | 'unreachable', user, error, refetch,
-  signIn(email, password), signOut(), updatePreferences(patch) }`, built on the `['session']` query
+- `useSession()` → `{ status: 'loading' | 'signedIn' | 'signedOut' | 'unreachable', user, error, theme,
+  refetch, signIn(email, password), signOut(), updatePreferences(patch) }` (`theme`: the colours shown,
+  `light` or `dark`, for the theme switch; `useCurrentUser()` returns the person inside `RequireSignIn`,
+  where someone is always signed in), built on the `['session']` query
   (`GET /api/me`, `staleTime` 30 s, checked again when the window regains focus and by `RequireSignIn`
   on every navigation). Rules: a 401 means `signedOut`; any other failure while no person is cached
   means `unreachable`; a failed background check while a person is cached keeps `signedIn`. A 401
   `session_expired` from `GET /api/me` puts "Please sign in again" on the sign-in page even when no person
   was cached (a reload after expiry).
 - While `loading`, `RequireSignIn`, the sign-in page and the not-found route show a full-page loading
-  placeholder (banner only, no sidebar). While `unreachable`, they show a full-page `ErrorState` (public
-  layout) whose **Try again** calls `refetch()`; the tab title stays the requested page's title; there is
-  no redirect.
+  placeholder (`SessionCheckPage`: banner only, no sidebar). While `unreachable`, they show a full-page
+  `ErrorState` (public layout) whose **Try again** calls `refetch()`; the tab title stays the requested
+  page's title (each signed-in route names its page in `handle: { title }` in `router.tsx`); there is no
+  redirect.
 - **One way to end a session in the web app** — `endSession(reason: 'signedOut' | 'sessionLost')`,
   created inside `SessionProvider` from `useNavigate()` and `useQueryClient()` (it never imports the
   router, so there is no import cycle):
   (1) if the cached `['session']` is already `null`, do nothing (several 401s at once end it once);
-  (2) navigate to `/sign-in` with `replace` and `state: { notice: reason }`, adding
-  `'?' + new URLSearchParams({ next: pathname + search })` for `sessionLost`;
-  (3) `queryClient.setQueryData(['session'], null)`;
+  (2) `queryClient.setQueryData(['session'], null)`;
+  (3) navigate to `/sign-in` with `replace`, `state: { notice: reason }` and `flushSync: true`, adding
+  `'?' + new URLSearchParams({ next: pathname + search })` of the page on screen for `sessionLost` (a
+  session found expired on the sign-in page itself keeps that page's address and its `next`). Steps 2
+  and 3 show in the same moment, so neither the page on screen nor the sign-in page sees the old state
+  in between and sends people on a second time, without the notice;
   (4) `queryClient.removeQueries({ predicate: q => q.queryKey[0] !== 'session' })` — never
   `queryClient.clear()`.
-  Sign out calls `POST /api/auth/sign-out` and then `endSession('signedOut')`. The API client's
+  Sign out calls `POST /api/auth/sign-out` and then `endSession('signedOut')`; when that call fails, the
+  person stays signed in and a message says why, with **Try again**. The API client's
   session-lost hook (any call except `/api/auth/*` and `GET /api/me` answering `sign_in_required` or
   `session_expired`) calls `endSession('sessionLost')`; so does a `GET /api/me` 401 while a person is
   cached. The sign-in page reads the notice from `useLocation().state`.
@@ -427,7 +448,9 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   choice and shows the toast "Your choice couldn't be saved." with **Try again** (re-sends the PATCH) —
   except for `sign_in_required` / `session_expired`, which only run the session-lost flow.
 - Signed out (sign-in and public not-found pages): the theme switch changes only
-  `localStorage['northstar.theme']`; after sign-in the person's saved preference takes over.
+  `localStorage['northstar.theme']`; after sign-in the person's saved preference takes over and the
+  visitor's choice is forgotten. After sign-out the sign-in page keeps this browser's last theme (the
+  person's own), as a reload would.
 
 ### Layout (FR-010 – FR-017, design system §2)
 
@@ -442,7 +465,8 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   .05em, `--ink-2`); Settings, Recycle bin, Activity log. Items: 19 px icon + 13.5 px label, radius 12 px;
   hover moves 2 px right with a 5 % black fill (white 6 % in dark mode; no movement with reduced motion);
   the current item is semibold with a blue icon, a soft blue gradient background and a 3 px blue bar on the
-  left (ZenReach), and has `aria-current="page"`. Footer (top hairline): **Collapse** (chevron + text);
+  left (ZenReach), and has `aria-current="page"` (set by `NavLink`; the CSS styles the current item
+  through `[aria-current='page']`). Footer (top hairline): **Collapse** (chevron + text);
   then the account button, the bell and the theme switch in a row.
 - **Collapsed** (FR-011): 72 px icon rail. Labels stay in the DOM with `.visually-hidden` (never
   `display: none`), so links keep their names; each item has a Radix Tooltip on the right (200 ms delay)
@@ -452,7 +476,8 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   **Open menu** (tooltip), logo, bell and theme switch. The drawer (Radix Dialog from the left, overlay,
   focus trapped) has a visually hidden title "Menu", `aria-describedby={undefined}`, a **Close menu**
   button without tooltip, always shows the **expanded** sidebar without the Collapse button, shows the
-  account button with avatar and the **full name, wrapped** (no ellipsis, no tooltip), and shows footer
+  account button with avatar and the **full name, wrapped** (no ellipsis, no tooltip; accessible name
+  "<full name> — account menu"), and shows footer
   controls with text labels ("Notifications", "Dark mode" / "Light mode") instead of tooltips, so one
   Escape always closes it. It closes on Escape, on an overlay click, after choosing an item, and when the
   window becomes 768 px or wider.
@@ -523,14 +548,14 @@ literals outside `tokens.css`) and have a component test.
 | `Card` | `title?`, `subtitle?`, `actions?`, `children` | White, radius 16 px, `--card-border`, `--shadow-sm`, 20–24 px padding; 15 px semibold title, 12.5 px subtitle |
 | `StatusChip` | `tone: 'neutral' \| 'review' \| 'positive' \| 'active' \| 'done' \| 'problem'`, `children` | 11–12 px semibold `--status-<tone>-text` on a 12 % tint of `--status-<tone>`, radius 8 px; the word is always shown |
 | `CompletenessChip` | `missing: { id: string; label: string }[]`, `onSelectField?` | "All filled in" (positive) or "1 field needed" / "3 fields needed" (problem); a click opens a Popover listing the fields as buttons |
-| `InfoTip` | `text`, `label` | Muted ⓘ button, accessible name "About <label>"; Radix **Popover** opened on hover, focus, click and tap; closes on Escape, blur and outside click |
+| `InfoTip` | `text`, `label` | Muted ⓘ button, accessible name "About <label>"; Radix **Popover** opened on hover, focus, click and tap; closes on Escape, blur, outside click and when the mouse leaves (after 150 ms, so the mouse can move onto the bubble — WCAG 1.4.13) |
 | `Tooltip` | `content`, `side?`, `children` | Radix Tooltip, dark bubble, 12 px; never inside menus or as the only name of a control |
 | `ActionsMenu` | `label`, `items: { label, onSelect, tone?: 'danger', separatorBefore?: boolean }[]` | "⋯" button with accessible name "Actions for <label>", Radix DropdownMenu `modal={false}`; Delete last and separated; an item that opens a dialog waits until the menu has closed; focus returns to the "⋯" button when the dialog closes |
-| `Avatar` | `name`, `initials`, `size?` | Circle with initials on `--brand-gradient-strong`; `aria-hidden` because the name is always next to it |
-| `Logo` | `size?`, `withWordmark?` | NorthStar mark (white four-point star on the brand gradient tile) |
-| `SidePanel` | `open`, `onOpenChange`, `title`, `description?`, `children`, `footer` | Radix Dialog from the right, 480–560 px (full width below 640 px), header with a **Close** button (no tooltip), scrolling body, sticky footer; `aria-describedby={undefined}` when there is no description |
-| `ConfirmDialog` | `open`, `onOpenChange`, `title`, `children`, `confirmLabel`, `onConfirm`, `tone?: 'danger'`, `busy?` | Radix AlertDialog; **Cancel** has focus; the confirm button names the action |
-| `ToastProvider` + `useToast()` | `show({ message, action?: { label, altText, onClick }, durationMs? })` | Radix Toast, bottom centre; 4 s by default, 10 s with an action (FR-026); pauses on hover and focus; type foreground (announced at once); viewport label "Messages ({hotkey})" |
+| `Avatar` | `initials`, `size?: 'sm' \| 'md' \| 'lg'` (28, 32, 40 px) | Circle with initials on `--brand-gradient-strong`; `aria-hidden` because the name is always next to it |
+| `Logo` | `size?: 'md' \| 'lg'` (28 or 32 px tile), `withWordmark?` | NorthStar mark (white four-point star on the brand gradient tile) |
+| `SidePanel` | `open`, `onOpenChange`, `title`, `description?`, `children`, `footer` | Radix Dialog from the right, 480–560 px (full width below 640 px), header with a **Close** button (no tooltip), scrolling body, sticky footer; `aria-describedby={undefined}` when there is no description; on closing, focus returns to the control that opened it |
+| `ConfirmDialog` | `open`, `onOpenChange`, `title`, `children`, `confirmLabel`, `cancelLabel?` (default "Cancel"), `onConfirm`, `tone?: 'danger'`, `busy?` | Radix AlertDialog; **Cancel** has focus; the confirm button names the action; the dialog stays open until the caller closes it, showing `busy` meanwhile (a second click is then ignored); on closing, focus returns to the control that opened it |
+| `ToastProvider` + `useToast()` | `show({ message, action?: { label, altText, onClick }, durationMs? })`, which returns a function that closes the message early | Radix Toast, bottom centre; several messages can be on screen at once; 4 s by default, 10 s with an action (FR-026); pauses on hover and focus; type foreground (announced at once); viewport label "Messages ({hotkey})" |
 | `EmptyState` | `icon?`, `title`, `text?`, `action?` | Centred icon, one sentence, the create button |
 | `Skeleton` | `width?`, `height?`, `lines?` | `<div role="status">` with a visually hidden "Loading…" and an `aria-hidden` block of grey shimmering shapes (still with reduced motion) |
 | `FormErrorSummary` | `errors: { field, message }[]`, `fieldId?(field)` | `--status-problem` tinted box with the messages-table title, links that focus each field; it takes focus when it appears |
@@ -598,8 +623,10 @@ with Undo.
 | `--page-bg` · `--surface` · `--gray-bg` | `#ffffff` · `#ffffff` · `#f5f5f7` | `#0b0b0d` · `#1c1c1e` · `#161618` |
 | `--ink` · `--ink-2` · `--muted` | `#1d1d1f` · `#6e6e73` · `#86868b` | `#f5f5f7` · `#a1a1a6` · `#8a8a8e` |
 | `--hairline` · `--card-border` · `--chip` | `#d2d2d7` · `rgba(0,0,0,.07)` · `rgba(0,0,0,.05)` | `#38383a` · `rgba(255,255,255,.1)` · `rgba(255,255,255,.09)` |
+| `--hover` (background of a hovered item) | `rgba(0,0,0,.05)` | `rgba(255,255,255,.06)` |
 | `--blue` · `--link` | `#0071e3` · `#0066cc` | `#2a91ff` · `#59a8ff` |
 | `--button-primary-bg` · `--button-primary-bg-hover` · `--danger-bg` | `#0071e3` · `#0062c4` · `#d03b3b` | same |
+| `--on-accent` (text and icons on blue, red and brand-gradient surfaces) | `#ffffff` | same |
 | `--brand-gradient` | `linear-gradient(135deg, #2a78d6, #9f4bd6)` | same |
 | `--brand-gradient-strong` | `linear-gradient(135deg, #256abc, #8c42bc)` | same |
 | `--status-neutral` / `-text` | `#86868b` / `#636366` | `#86868b` / `#b0b0b5` |
@@ -609,10 +636,11 @@ with Undo.
 | `--status-done` / `-text` | `#5b6b7a` / `#4d5c6a` | `#5b6b7a` / `#a9b8c6` |
 | `--status-problem` / `-text` | `#d03b3b` / `#b42c2c` | `#d03b3b` / `#ff7b7b` |
 | `--banner-bg` · `--banner-text` | `#fff4ce` · `#1d1d1f` | `#3a2f00` · `#f5f5f7` |
+| `--overlay` (behind dialogs, side panels and the drawer) · `--tooltip-bg` · `--tooltip-text` | `rgba(0,0,0,.3)` · `#1d1d1f` · `#ffffff` | `rgba(0,0,0,.6)` · `#3a3a3c` · `#f5f5f7` |
 | `--level-plan` … `--level-line-item` | `#2a78d6`, `#4a3aa7`, `#1baf7a`, `#e87ba4`, `#86868b` (used from 004) | same |
 | shadows | `--shadow-sm`, `--shadow-md`, `--shadow-lg` as ZenReach `index.css` | ZenReach dark values |
 | shape and size | `--radius-card` 16 px, `--radius-control` 10 px, `--radius-chip` 8 px, `--radius-pill` 999 px, `--content-max` 1120 px, `--sidebar` 244 px, `--sidebar-collapsed` 72 px | same |
-| motion and font | `--ease-out` `cubic-bezier(0.22, 1, 0.36, 1)`, `--dur` 0.24 s; font `-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif` | same |
+| motion and font | `--ease-out` `cubic-bezier(0.22, 1, 0.36, 1)`, `--dur` 0.24 s; `--font` `-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif` | same |
 
 White text on a gradient is checked by hand (axe skips gradients): on `--brand-gradient-strong` it is
 5.4:1 and 5.8:1.
@@ -675,8 +703,8 @@ filled in at run time.
 | Validation, API message / missing version / invalid theme / invalid limit | Some fields need your attention. / Reload the page and try again. / Choose system, light or dark. / Choose a number from 1 to 200. |
 | API: unreadable request / other site / unknown path / internal | NorthStar couldn't read this request. Reload the page and try again. / This request came from another site and was refused. / This page or record doesn't exist. / Something went wrong on our side. Please try again. |
 | API: not signed in / session expired / store failed | Please sign in to continue. / Please sign in again / NorthStar could not save its data folder — restart the API. |
-| Store: invalid file | <folder>/<table>.json is not valid JSON (line <n>) — fix it or run go run ./cmd/seed -reset. |
-| Seed | Loaded the demo data into <folder>: 6 people. · The data folder <folder> already has data. Run go run ./cmd/seed -reset to replace it (this deletes the current data). · The NorthStar API is running — stop it, then run the seed again. · The demo data is never loaded when APP_ENV is production. |
+| Store: invalid file (`<table>.json`, or `<table>.jsonl` for the activity log) | <folder>/<file> is not valid JSON (line <n>) — fix it or run go run ./cmd/seed -reset. |
+| Seed | Loaded the demo data into <folder>: 6 people. · The data folder <folder> already has data. Run go run ./cmd/seed -reset to replace it (this deletes the current data). · The NorthStar API is running — stop it, then run the seed again. · The demo data is never loaded when APP_ENV is production. · Unexpected argument '<arg>' — the options are -data <folder> and -reset. |
 | API start-up and config | NorthStar API listening on http://127.0.0.1:<port> (environment: <env>, demo sign-in on\|off) · Port <port> is already in use — stop the other program or set APP_PORT. · APP_ENV must be local, development or production (it is '<value>'). · APP_PORT must be a number from 1 to 65535 (it is '<value>'). · DEMO_PASSWORD can't be blank. |
 
 ## Shared files this feature creates and later features extend
@@ -704,8 +732,8 @@ filled in at run time.
 | A missing or inactive person's session ends at the next request | `TestAuthenticate_InactivePersonSessionEnds_FR007` |
 | Two sessions of one person are independent | `TestSessions_IndependentPerBrowser_EdgeCase` |
 | A handler behind the middleware can write | `auth/handler_test.go` `TestRequireSignIn_HandlerCanWrite_FR007` |
-| Demo routes only in local/development; no session works in production | `app/app_test.go` `TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009`, `TestDemoModeOff_ExistingSessionRefused_FR009` |
-| Every contract operation is served and every route is in the contract; every signed-in operation refuses a request without a session | `TestRoutesMatchContract`, `TestEveryProtectedOperationRequiresSignIn_FR005` |
+| Demo routes and the sample records only in local/development; no session works in production | `app/app_test.go` `TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009`, `TestSampleRecords_OnlyInLocalAndDevelopment_D036`, `TestDemoModeOff_ExistingSessionRefused_FR009` |
+| Every contract operation is served and every route is in the contract; every signed-in operation refuses a request without a session, and only health and the three `/api/auth/*` operations work without one | `TestRoutesMatchContract`, `TestEveryProtectedOperationRequiresSignIn_FR005` |
 | Config: APP_ENV values, port range, blank demo password | `app/config_test.go` |
 | Requests from another origin, with another Host, with a non-JSON content type or with data after the JSON are refused | `platform/web/web_test.go` |
 | Errors always carry `fields` (an empty list); errors returned through a transaction keep their status | `web_test.go`, `errs_test.go` |
@@ -790,6 +818,10 @@ per test with `page.route('**/api/**', …)` (abort, or an empty `text/plain` 50
 | `session.spec.ts` | US4: account menu content (long names in a tooltip), sign out + Back, switch to another person (the account button shows the new first name), lost session (cookie removed, then the theme switch) → "Please sign in again" → back on the same page; another tab signs in as someone else → toast; API unreachable → spec sentence and **Try again** recovers |
 | `history.spec.ts` | US5 scenarios 1–4 on the sample page: create, rename, add a note, delete through the ⋯ menu → log entries with actor, path and readable changes; the rows and summary cards drop; Undo within 10 s brings back the same IDs and logs `restored`; delete a note then its folder → one Undo message, Undo brings back the folder; restore refused naming the parent; FR-008: Daniel renames a folder Priya created, no permission message; two-person conflict (Priya's page refetches before she saves and still gets the message); unsaved-changes guard on Back; the page stays usable after a menu-opened dialog; no horizontal scroll at 1280 × 720 and 390 px (SC-007) |
 | `accessibility.spec.ts` | axe (WCAG 2.1 A/AA) in light and dark mode on: sign-in (plain, with the error summary, with "Incorrect e-mail or password.", with no demo people, demo off, unreachable); Home; a Coming-soon page; Not found (signed in and out); collapsed sidebar; 390 px with the drawer open; account menu open; bell popover open; sample page with the side panel and its errors, the confirm dialog, the Undo message; the gallery. Keyboard-only journeys: sign in, every sidebar item, collapse and expand, theme, bell, account menu → Sign out; on the sample page create, rename, delete and reach **Undo** with F8 within 10 s (SC-006) |
+
+**Written so far (decision D-040)**: `smoke.spec.ts` only — the main journey of US1, US2, US4 and US5, that
+Home shows the Getting started card, and axe on the sign-in page and Home in light mode. The six files in
+the table are deferred (tasks T055, T060, T063, T075, T078 and T080 stay open).
 
 ## Documentation updates in this feature
 

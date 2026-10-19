@@ -269,7 +269,7 @@ paths:
     get:
       tags: [Samples]
       operationId: listSampleFolders
-      summary: All sample folders with their notes, sorted by name
+      summary: All sample folders with their notes, sorted by name, ignoring letter case
       responses:
         "200":
           description: The sample folders.

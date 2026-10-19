@@ -50,7 +50,7 @@ documents, backend, frontend) before tasks were written; their findings are fold
     plans for 50,000 entries). It is stored as **JSON Lines** (`activity_log.jsonl`, one entry per line):
     `store.Append` adds a record and `store.Scan` reads them in order. A commit appends the new lines to
     the end of the file instead of rewriting it; a half-written last line (a crash during an append) is
-    ignored at start-up.
+    cut off the file (`os.Truncate`) when the store opens, so the next append starts on a fresh line.
   - **Transactions**: `db.Write(ctx, fn)` runs `fn` with exclusive access; `db.Read(ctx, fn)` gives a
     consistent read-only view (one `sync.RWMutex`, released with `defer`, so a panic in `fn` never leaves
     the store locked). A `Write` keeps an **overlay** of its changes per table; `Get`, `List` and `Scan`
@@ -66,15 +66,17 @@ documents, backend, frontend) before tasks were written; their findings are fold
     1. encode every changed table; a `Write` that changed nothing writes no file;
     2. write each to `<table>.json.tmp` in the data folder, `Sync`, `Close` — on any error delete the
        temporary files and return the error; memory and files stay unchanged;
-    3. rename `counters.json` first, then the other tables in name order; on Windows a rename is retried
-       for up to 2 seconds because antivirus or indexing can hold a file open for a moment;
+    3. rename `counters.json` first, then the other tables in name order; a failed rename is retried for
+       up to 2 seconds on every operating system (on Windows, antivirus or indexing can hold a file open
+       for a moment);
     4. append the new activity-log lines and `Sync`;
     5. only then apply the overlay to memory.
-    If a step fails after a rename already succeeded, memory and disk differ: the store logs it, returns
-    the error and refuses every later `Write` with "NorthStar could not save its data folder — restart
-    the API." (reads keep working).
+    If anything fails once files start changing (from the first rename on), memory and disk may differ:
+    the store logs it, returns the error and refuses every later `Write` with "NorthStar could not save
+    its data folder — restart the API." (reads keep working).
   - **Opening**: `Open(dir)` creates the folder when it is missing, treats a table without a file as
-    empty, deletes leftover `*.tmp` files, and stops start-up on a file that is not valid JSON with
+    empty, deletes leftover `*.tmp` files, cuts a half-written last line off an append-only file, and
+    stops start-up on a file (`.json` or `.jsonl`) that is not valid JSON with
     "backend/data/people.json is not valid JSON (line N) — fix it or run go run ./cmd/seed -reset."
   - **Seam for PostgreSQL**: services depend on the interface `store.Transactor` (`Read`, `Write`) and on
     their own repository interfaces — never on the JSON store. PostgreSQL later adds a second
@@ -157,8 +159,8 @@ documents, backend, frontend) before tasks were written; their findings are fold
   - **Demo mode** (`APP_ENV` = `local`, the default, or `development`): `GET /api/auth/demo-people` and
     `POST /api/auth/sign-in` exist. In any other environment they are not registered (`404`) and the
     sign-in middleware answers `401 sign_in_required` to every request, even with an old demo session,
-    because no sign-in method exists until Entra ID (FR-009). `POST /api/auth/sign-out` always exists and
-    always answers `204`.
+    because no sign-in method exists until Entra ID (FR-009). `POST /api/auth/sign-out` always exists:
+    it clears the cookie first and answers `204` (`500` only when the store fails).
 - **Protection against forged requests**: a browser "site" ignores the port, so `SameSite=Strict` alone
   does not stop another local web page on `127.0.0.1` from sending requests. The API therefore also:
   wraps every route in Go's `http.CrossOriginProtection` (it refuses unsafe requests whose
@@ -180,8 +182,10 @@ documents, backend, frontend) before tasks were written; their findings are fold
   context helpers `actor.With(ctx, a)` and `actor.From(ctx)`. The sign-in middleware puts the actor in the
   request context; handlers read it and pass it **explicitly** to every service method — reads included
   (`svc.ListFolders(ctx, a)`, `svc.UpdateFolder(ctx, a, id, input)`), as the architecture overview shows
-  (FR-007, constitution VI). The only operations without an actor are the ones used before sign-in:
-  `auth.DemoPeople`, `auth.SignIn` and `people.ActivePeople`.
+  (FR-007, constitution VI). The only operations without an actor are the ones that work before an
+  actor exists or produce it: `auth.SignIn`, `auth.SignOut`, `auth.Authenticate` and
+  `people.ActivePeople` (`GET /api/auth/demo-people` answers `people.ActivePeople` with the password from
+  `auth.DemoPassword()`, a setting).
 - **Rationale**: services can always record who acted, and adding permission checks later is one line at
   the top of a service method. A leaf package avoids import cycles (`auth` needs `people`; `people` needs
   the actor).
@@ -315,9 +319,10 @@ documents, backend, frontend) before tasks were written; their findings are fold
   writes it from [contracts/openapi.yaml](contracts/openapi.yaml); each later feature adds its paths and
   schemas. The small Go package `northstar/api` embeds the file (`//go:embed`) for the tests.
   - **Contract-test helper** `internal/platform/apitest`: builds the real application (`app.New`) on a
-    temporary data folder (seeded with the demo people unless `WithoutSeed()` — seeding arrives with the
-    seed package in US1), with a fixed clock that tests can move, and checks **every** request and
-    response it sends with libopenapi-validator, created with `config.WithFormatAssertions()` (so
+    temporary data folder (seeded with the demo people unless `WithoutSeed()` is given or the folder
+    already has data — seeding arrives with the seed package in US1), with a fixed clock that tests can
+    move, and checks **every** request and response it sends with libopenapi-validator, created with
+    `config.WithFormatAssertions()` (so
     `date-time` is checked) and `config.WithoutSecurityValidation()` (the API's own middleware enforces
     sign-in and has its own tests). Options: `SkipRequestValidation()` for deliberately invalid requests
     (missing cookie, bad body), `SkipValidation()` for paths or methods that are not in the contract,
@@ -550,6 +555,8 @@ for dots, bars, borders and tints.
   program stops with a clear message instead of silently moving.
 - `APP_ENV`: `local` (default) or `development` enable demo sign-in and the developer pages;
   `production` disables them. Any other value stops the API with a clear message.
+- An empty environment variable counts as not set (its default applies). When several values are
+  invalid, the API reports all of them together, one message per line.
 
 ## R22. Demo data loader (FR-028)
 
@@ -559,9 +566,12 @@ for dots, bars, borders and tints.
   files). It refuses:
   - a folder that already has data, unless `-reset` is given;
   - to run when `APP_ENV=production` (the demo data never goes into production);
-  - to run while an API answers `GET http://127.0.0.1:<APP_PORT>/api/health` — "The NorthStar API is
-    running — stop it, then run the seed again." — because the running API would overwrite the new files
-    from its memory.
+  - to run while an API answers `GET http://127.0.0.1:<APP_PORT>/api/health` within 1 second with
+    `200 OK` and NorthStar's health answer (`{"status": "ok", …}`; another program on the port does not
+    count, whatever it answers) — "The NorthStar API is running — stop it, then run the seed again." —
+    because the running API would overwrite the new files from its memory;
+  - an unexpected extra argument ("Unexpected argument '<arg>' — the options are -data <folder> and
+    -reset.").
 - Package `backend/seed` creates every record through the normal repositories and `ids.Next` inside one
   `Write`, with the time passed in by its caller (`seed.Load(ctx, db, now)`), so `counters.json` ends
   with `U = 1006` and tests can fix the time. Each later feature adds its own records there (and can

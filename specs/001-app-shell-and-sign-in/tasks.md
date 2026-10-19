@@ -114,8 +114,9 @@ for each), and confirm Home greets that person by name.
 - [X] T051 [US1] Write `frontend/src/app/navigation.ts` (label, path, lucide icon and Coming-soon sentence of every section and of My profile, as the plan)
 - [X] T052 [US1] Write the first version of `frontend/src/app/AppLayout.tsx` and `frontend/src/app/Sidebar.tsx` (skip link, banner in the content column, sidebar with logo, the navigation items from `navigation.ts` and the account button with avatar + first name) and `frontend/src/features/home/HomePage.tsx` with the greeting `PageHeader` ("Welcome back, <first name>.") and `usePageTitle('Home')`
 - [X] T053 [US1] Write `frontend/src/app/RequireSignIn.tsx` (checks the session again on every navigation) and put the `/sign-in` route and the signed-in root with `/` (HomePage) in `frontend/src/app/router.tsx`, replacing the temporary index route
-- [ ] T054 [US1] Write `frontend/playwright.config.ts` (as the plan's *End-to-end tests* configuration) and `frontend/e2e/fixtures.ts` (`signInAs(page, email)` through the API + preference reset, axe helper, unique-name helper)
+- [X] T054 [US1] Write `frontend/playwright.config.ts` (as the plan's *End-to-end tests* configuration) and `frontend/e2e/fixtures.ts` (`signInAs(page, email)` through the API + preference reset, axe helper, unique-name helper)
 - [ ] T055 [US1] Write `frontend/e2e/sign-in.spec.ts` (the plan's row for this file)
+  - Deferred (decision D-040, 2026-10-19): `frontend/e2e/smoke.spec.ts` covers the main journeys for now (what it covers is in D-040); T055, T060, T063, T075, T078 and T080 stay open.
 
 **Checkpoint**: US1 works on its own — sign in as every demo person and see the greeting.
 
@@ -200,9 +201,9 @@ with the actor and the changed fields; Undo after the delete brings the record b
 
 - [X] T079 [P] Write `frontend/src/features/dev/ComponentGalleryPage.tsx` (+ CSS and test) as the plan's *Developer pages*; add `/dev/components` (inside `DevOnly`) to `frontend/src/app/router.tsx`
 - [ ] T080 Write `frontend/e2e/accessibility.spec.ts` (every state and keyboard journey in the plan's row for this file)
-- [ ] T081 [P] Write the documentation: `README.md` (what NorthStar is, prerequisites, run, test, URLs, demo password, developer pages), `backend/README.md` (packages, commands, how to add a business package: model, repository, store_json, service, handler, kind, routes, contract), `frontend/README.md` (structure, commands, how to add a page and use shared components, regenerating API types)
-- [ ] T082 Run the backend checks from `backend/`: `gofmt -l .` prints nothing, `go vet ./...` and `go test ./...` pass
-- [ ] T083 Run the web-app checks from `frontend/`: `npm run check`, `npm run build` and `npm run test:e2e` pass (twice in a row for the end-to-end tests)
+- [X] T081 [P] Write the documentation: `README.md` (what NorthStar is, prerequisites, run, test, URLs, demo password, developer pages), `backend/README.md` (packages, commands, how to add a business package: model, repository, store_json, service, handler, kind, routes, contract), `frontend/README.md` (structure, commands, how to add a page and use shared components, regenerating API types)
+- [X] T082 Run the backend checks from `backend/`: `gofmt -l .` prints nothing, `go vet ./...` and `go test ./...` pass
+- [X] T083 Run the web-app checks from `frontend/`: `npm run check`, `npm run build` and `npm run test:e2e` pass (twice in a row for the end-to-end tests; for now only the smoke test, decision D-040)
 - [ ] T084 Walk through `specs/001-app-shell-and-sign-in/quickstart.md` §4 steps 1–23 with the seed data; compare the screens with `docs/product/design-system.md` and the ZenReach screenshots (`docs/reference/zenreach-screenshots/`); record anything that does not match as a new task
 - [ ] T085 Run the SC-002 moderated session (at least 5 people who have not used NorthStar) with the product owner and record the results in `specs/001-app-shell-and-sign-in/checklists/usability.md`
 - [ ] T086 Set feature 001 to Done in `docs/sdd/feature-map.md` once the product owner accepts the demo

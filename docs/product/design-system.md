@@ -73,14 +73,19 @@ Primary navigation for this phase: **Home · Plans · Approvals · All work** an
 | `--muted` | `#86868b` | `#8a8a8e` | Hints, placeholders |
 | `--hairline` | `#d2d2d7` | `#38383a` | Dividers, input borders |
 | `--card-border` | `rgba(0,0,0,.07)` | `rgba(255,255,255,.1)` | Card borders |
+| `--hover` | `rgba(0,0,0,.05)` | `rgba(255,255,255,.06)` | Background of a hovered item |
 | `--blue` | `#0071e3` | `#2a91ff` | Selection, focus ring, eyebrows, active icons |
 | `--link` | `#0066cc` | `#59a8ff` | Link text (readable on white and on `--gray-bg`) |
 | `--button-primary-bg` | `#0071e3` | `#0071e3` | Primary button fill (white text stays readable in dark mode) |
+| `--on-accent` | `#ffffff` | same | Text and icons on blue, red and brand-gradient surfaces |
 | `--brand-gradient` | `linear-gradient(135deg,#2a78d6,#9f4bd6)` | same | Logo, progress bars |
 | `--brand-gradient-strong` | the brand gradient darkened by 12 % | same | Surfaces with white text: sign-in header, avatars |
 | `--chip` | `rgba(0,0,0,.05)` | `rgba(255,255,255,.09)` | Neutral chips |
+| `--overlay` | `rgba(0,0,0,.3)` | `rgba(0,0,0,.6)` | Dims the page behind dialogs, side panels and the menu drawer |
+| `--tooltip-bg` / `--tooltip-text` | `#1d1d1f` / `#ffffff` | `#3a3a3c` / `#f5f5f7` | Tooltip bubble and its text |
 
-- **Font:** system font stack (`-apple-system, "Segoe UI", Inter, sans-serif`); numbers use tabular
+- **Font:** token `--font`, the system font stack
+  (`-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif`); numbers use tabular
   figures. Sentence case everywhere.
 - **Radius:** cards 16 px, inputs and buttons 10 px, chips 8 px, pills 999 px.
 - **Spacing:** 4 px grid; cards 20–24 px padding.

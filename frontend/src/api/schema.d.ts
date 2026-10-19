@@ -197,7 +197,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** All sample folders with their notes, sorted by name */
+        /** All sample folders with their notes, sorted by name, ignoring letter case */
         get: operations["listSampleFolders"];
         put?: never;
         /** Create a sample folder */
