@@ -14,16 +14,13 @@ const PAGE_ANSWERS: Record<string, MockHandler> = {
 };
 
 // Feature 002's addresses (build guide §5). Feature 002 keeps this file up to date as it replaces
-// the stub pages (their own requests go into renderApp's answers).
+// the stub pages (their own requests go into renderApp's answers). The Shell attribute pages are
+// in shell-attributes/routes.test.tsx.
 describe('Settings routes (feature 002)', () => {
   it.each([
     ['/settings', 'Settings'],
     ['/settings/models', 'Models'],
     ['/settings/activity-types', 'Activity types'],
-    ['/settings/shell-attributes', 'Shell attributes'],
-    ['/settings/shell-attributes/new', 'New Shell attribute'],
-    ['/settings/shell-attributes/SA-1001', 'Shell attribute'],
-    ['/settings/shell-attributes/SA-1001/edit', 'Edit Shell attribute'],
     ['/settings/currencies', 'Currencies'],
     ['/settings/finance-budget-items', 'Finance budget items'],
   ])('opens %s: "%s", with Settings current in the sidebar', async (path, title) => {
