@@ -1,0 +1,838 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 003 People and Teams (fragment)
+  version: 0.3.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT to be merged into backend/api/openapi.yaml. It holds only feature 003's paths and component
+    schemas, in the conventions of feature 001 (research R9, R10). Every $ref that is not defined here points
+    at a component of the merged file:
+    - feature 001: responses BadRequest, Unauthorized, NotFound, Conflict, Error; schemas ActorRef,
+      DeleteResult;
+    - feature 002 (Settings records, same conventions): schemas StatusUpdate ({active, version}, the body of
+      every POST .../status) and ChangeImpact ({warnings: ImpactWarning[]}, the answer of every
+      POST .../impact).
+
+    Changes to other features' components when merging:
+    - CurrentUser, Preferences and PreferencesUpdate (feature 001) are REPLACED by the versions below.
+      GET /api/me, POST /api/auth/sign-in and PATCH /api/me/preferences keep their operations; their answers
+      gain the new fields.
+    - The path /api/me gains the operation PATCH (updateMyProfile); its GET stays as it is.
+    - Error.code gains not_allowed (409: an action the rules forbid, such as deactivating yourself). The code
+      in_use (409) is feature 002's and is also used here (a team used by plans cannot be deleted). The
+      Conflict response's description lists both.
+    - ImpactWarning.kind (feature 002) gains ownerNeedsAttention (a plan whose owner will no longer belong to
+      any of its teams, feature 003 FR-013).
+    - Tag People and teams is added.
+tags:
+  - name: People and teams
+    description: People directory, teams and memberships, My profile (feature 003)
+paths:
+  /api/people:
+    get:
+      tags: [People and teams]
+      operationId: listPeople
+      summary: Every person, active or not, with their teams, sorted by name ignoring letter case
+      description: The web app filters and searches this list itself (Settings › People and every person picker).
+      responses:
+        "200":
+          description: Everyone.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [People and teams]
+      operationId: createPerson
+      summary: Add a person (they can sign in straight away with the demo password)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/people/{personId}:
+    parameters:
+      - $ref: "#/components/parameters/PersonId"
+    get:
+      tags: [People and teams]
+      operationId: getPerson
+      summary: One person with their teams and what they own or approve
+      responses:
+        "200":
+          description: The person.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonDetails"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [People and teams]
+      operationId: updatePerson
+      summary: Change a person's name, e-mail, job title and teams
+      description: teamIds is the complete list of the person's teams after the change. Removing teams is allowed even when a plan's owner is affected; POST .../impact says so first.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonUpdate"
+      responses:
+        "200":
+          description: The person after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/people/{personId}/impact:
+    parameters:
+      - $ref: "#/components/parameters/PersonId"
+    post:
+      tags: [People and teams]
+      operationId: checkPersonImpact
+      summary: What a change of the person would affect, before saving it (FR-013). Saves nothing.
+      description: Validates the body like PATCH (validation_failed lists every problem) and returns the warnings to confirm — one ownerNeedsAttention warning when removed teams leave the person outside every team of a plan they own. The version is not checked here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonUpdate"
+      responses:
+        "200":
+          description: The warnings; an empty list means nothing to confirm.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/people/{personId}/status:
+    parameters:
+      - $ref: "#/components/parameters/PersonId"
+    post:
+      tags: [People and teams]
+      operationId: setPersonStatus
+      summary: Deactivate (active false) or reactivate (active true) a person — people are never deleted
+      description: |
+        Deactivated, the person can no longer sign in (an open session ends at its next request) and is no
+        longer offered in pickers; records and team memberships keep them. Deactivating the signed-in person
+        themselves answers 409 not_allowed. A person already in the asked status is answered unchanged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The person with their status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/teams:
+    get:
+      tags: [People and teams]
+      operationId: listTeams
+      summary: Every team, active or not, with members and the plans using it, sorted by name ignoring letter case
+      responses:
+        "200":
+          description: Every team.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [People and teams]
+      operationId: createTeam
+      summary: Create a team with its members
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/teams/{teamId}:
+    parameters:
+      - $ref: "#/components/parameters/TeamId"
+    get:
+      tags: [People and teams]
+      operationId: getTeam
+      summary: One team with its members and the plans using it
+      responses:
+        "200":
+          description: The team.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [People and teams]
+      operationId: updateTeam
+      summary: Change a team's name, description, colour and members
+      description: memberIds is the complete list of members after the change. Removing members is allowed even when a plan's owner is affected; POST .../impact says so first.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamUpdate"
+      responses:
+        "200":
+          description: The team after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [People and teams]
+      operationId: deleteTeam
+      summary: Delete a team no plan uses (it goes to the recycle bin with its memberships)
+      description: Answers 409 in_use while any plan uses the team, including plans in the recycle bin.
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/teams/{teamId}/impact:
+    parameters:
+      - $ref: "#/components/parameters/TeamId"
+    post:
+      tags: [People and teams]
+      operationId: checkTeamImpact
+      summary: What a change of the team would affect, before saving it (FR-013). Saves nothing.
+      description: Validates the body like PATCH (validation_failed lists every problem) and returns the warnings to confirm — one ownerNeedsAttention warning per removed member who then belongs to none of the teams of a plan they own. The version is not checked here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamUpdate"
+      responses:
+        "200":
+          description: The warnings; an empty list means nothing to confirm.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/teams/{teamId}/status:
+    parameters:
+      - $ref: "#/components/parameters/TeamId"
+    post:
+      tags: [People and teams]
+      operationId: setTeamStatus
+      summary: Set a team inactive (active false) or reactivate it (active true)
+      description: An inactive team is no longer offered for new plans; plans and members keep it. A team already in the asked status is answered unchanged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The team with its status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/me:
+    # Merge note: only the operation PATCH is new; GET /api/me (getCurrentUser) stays as in feature 001.
+    patch:
+      tags: [Me]
+      operationId: updateMyProfile
+      summary: Change the signed-in person's name and job title (My profile)
+      description: The e-mail is changed only in Settings › People. The change is written to the activity log.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: The signed-in person after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/me/display-currencies:
+    get:
+      tags: [Me]
+      operationId: listDisplayCurrencies
+      summary: The currencies the signed-in person can choose as display currency
+      description: Every active currency (feature 002), plus the person's current display currency when it has been set inactive; sorted by code.
+      responses:
+        "200":
+          description: The choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisplayCurrencyPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    PersonId:
+      name: personId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: U-1002
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: T-1001
+
+  schemas:
+    PersonRef:
+      type: object
+      additionalProperties: false
+      description: |
+        A person as every other record shows them (owners, approvers, members). Names are read when the
+        answer is made, so a rename shows everywhere. When active is false, screens add "(inactive)".
+      required: [id, name, initials, jobTitle, active]
+      properties:
+        id:
+          type: string
+          example: U-1002
+        name:
+          type: string
+          example: Priya Raman
+        initials:
+          type: string
+          example: PR
+        jobTitle:
+          type: string
+          description: Empty when the person has none.
+          example: Marketer
+        active:
+          type: boolean
+
+    TeamRef:
+      type: object
+      additionalProperties: false
+      description: A team as every other record shows it (plan teams, My teams). When active is false, screens add "(inactive)".
+      required: [id, name, colour, active]
+      properties:
+        id:
+          type: string
+          example: T-1001
+        name:
+          type: string
+          example: Lubricants Europe
+        colour:
+          $ref: "#/components/schemas/TeamColour"
+        active:
+          type: boolean
+
+    TeamColour:
+      type: string
+      description: The team's colour from the team palette (decision D-025).
+      enum: [blue, violet, teal, magenta, orange, green, slate, gold]
+
+    Person:
+      type: object
+      additionalProperties: false
+      required: [id, name, email, jobTitle, initials, active, teams, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: U-1002
+        name:
+          type: string
+        email:
+          type: string
+          description: The sign-in name, in lower case.
+          example: priya.raman@northstar.demo
+        jobTitle:
+          type: string
+        initials:
+          type: string
+          example: PR
+        active:
+          type: boolean
+        teams:
+          type: array
+          description: The person's teams, active or not, sorted by name.
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    UsageCount:
+      type: object
+      additionalProperties: false
+      description: How many records of one type name the person in one role (records in the recycle bin are not counted).
+      required: [role, recordType, label, count]
+      properties:
+        role:
+          type: string
+          enum: [owner, approver]
+        recordType:
+          type: string
+          example: plan
+        label:
+          type: string
+          description: Singular when count is 1, plural otherwise.
+          example: plans
+        count:
+          type: integer
+          minimum: 1
+
+    PersonDetails:
+      type: object
+      additionalProperties: false
+      required: [id, name, email, jobTitle, initials, active, teams, usage, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: U-1002
+        name:
+          type: string
+        email:
+          type: string
+        jobTitle:
+          type: string
+        initials:
+          type: string
+        active:
+          type: boolean
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        usage:
+          type: array
+          description: What the person owns (role owner) and approves (role approver), owners first; empty until features 004–008 provide records.
+          items:
+            $ref: "#/components/schemas/UsageCount"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    PersonPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+        total:
+          type: integer
+
+    PersonCreate:
+      type: object
+      additionalProperties: false
+      required: [name, email]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        jobTitle:
+          type: string
+          description: Empty when not sent.
+        teamIds:
+          type: array
+          description: The person's teams; empty when not sent.
+          items:
+            type: string
+
+    PersonUpdate:
+      type: object
+      additionalProperties: false
+      required: [name, email, jobTitle, teamIds, version]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        jobTitle:
+          type: string
+        teamIds:
+          type: array
+          description: Every team of the person after the change.
+          items:
+            type: string
+        version:
+          type: integer
+          description: The version the user started editing from.
+
+    TeamPlanUse:
+      type: object
+      additionalProperties: false
+      description: A plan that uses the team (feature 004).
+      required: [id, name, inRecycleBin]
+      properties:
+        id:
+          type: string
+          example: P-1001
+        name:
+          type: string
+          example: FY2026 Lubricants Europe
+        inRecycleBin:
+          type: boolean
+          description: The plan is in the recycle bin; it still keeps the team from being deleted.
+
+    Team:
+      type: object
+      additionalProperties: false
+      required: [id, name, description, colour, active, members, plans, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: T-1001
+        name:
+          type: string
+        description:
+          type: string
+        colour:
+          $ref: "#/components/schemas/TeamColour"
+        active:
+          type: boolean
+        members:
+          type: array
+          description: The members, active or not, sorted by name.
+          items:
+            $ref: "#/components/schemas/PersonRef"
+        plans:
+          type: array
+          description: Every plan that uses the team, including plans in the recycle bin, sorted by name; empty until feature 004.
+          items:
+            $ref: "#/components/schemas/TeamPlanUse"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    TeamPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Team"
+        total:
+          type: integer
+
+    TeamCreate:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          description: Empty when not sent.
+        colour:
+          type: string
+          description: One of TeamColour; when not sent, the colour used by the fewest teams. Any other value answers validation_failed.
+        memberIds:
+          type: array
+          description: The members; empty when not sent.
+          items:
+            type: string
+
+    TeamUpdate:
+      type: object
+      additionalProperties: false
+      required: [name, description, colour, memberIds, version]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        colour:
+          type: string
+          description: One of TeamColour; any other value answers validation_failed.
+        memberIds:
+          type: array
+          description: Every member after the change.
+          items:
+            type: string
+        version:
+          type: integer
+          description: The version the user started editing from.
+
+    ProfileUpdate:
+      type: object
+      additionalProperties: false
+      required: [name, jobTitle, version]
+      properties:
+        name:
+          type: string
+        jobTitle:
+          type: string
+        version:
+          type: integer
+          description: The version of the person the user started editing from (CurrentUser.version).
+
+    DisplayCurrencyOption:
+      type: object
+      additionalProperties: false
+      required: [code, name, active]
+      properties:
+        code:
+          type: string
+          example: EUR
+        name:
+          type: string
+          example: Euro
+        active:
+          type: boolean
+          description: False only for the person's current display currency after it was set inactive.
+
+    DisplayCurrencyPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DisplayCurrencyOption"
+        total:
+          type: integer
+
+    DateFormat:
+      type: string
+      description: How dates are shown and typed (default DD MMM YYYY, "12 Mar 2026").
+      enum: ["DD MMM YYYY", "DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
+
+    # --- Feature 001 components REPLACED by feature 003 (same names, more fields) ---
+
+    Preferences:
+      type: object
+      additionalProperties: false
+      required: [theme, sidebarCollapsed, displayCurrency, dateFormat]
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: system follows the computer's setting.
+        sidebarCollapsed:
+          type: boolean
+        displayCurrency:
+          type: string
+          description: ISO code of the currency the API converts USD amounts to for this person (default USD).
+          example: USD
+        dateFormat:
+          $ref: "#/components/schemas/DateFormat"
+
+    PreferencesUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the preferences to change.
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: The server also checks the value and answers validation_failed for anything else.
+        sidebarCollapsed:
+          type: boolean
+        displayCurrency:
+          type: string
+          description: An active currency's code, or the current one. Anything else answers validation_failed.
+        dateFormat:
+          type: string
+          description: One of DateFormat. Anything else answers validation_failed.
+
+    CurrentUser:
+      type: object
+      additionalProperties: false
+      required: [id, name, firstName, email, jobTitle, initials, version, teams, preferences]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        firstName:
+          type: string
+        email:
+          type: string
+        jobTitle:
+          type: string
+        initials:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+          description: The person's version, sent back by PATCH /api/me.
+        teams:
+          type: array
+          description: The signed-in person's teams, active or not, sorted by name ("My teams" filters, plan defaults).
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        preferences:
+          $ref: "#/components/schemas/Preferences"

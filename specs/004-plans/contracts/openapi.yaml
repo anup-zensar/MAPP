@@ -1,0 +1,993 @@
+# OpenAPI 3.1 FRAGMENT — feature 004 (Plans).
+#
+# Only this feature's paths and component schemas. Merged into backend/api/openapi.yaml by task T001,
+# in the conventions of that file (feature 001 research R9, R10). Shared components are referenced by
+# their names in the merged file.
+#
+# Uses from 001: parameters -, responses BadRequest, Unauthorized, NotFound, Conflict, Error;
+#   schemas Error, ActorRef, RecordRef, DeleteResult.
+# From 002 (by name): Money, Percent, AttributeValue, MissingField {field, label, reason?}.
+# Owned here (consolidation 2026-10-19): ModelSummary, FinanceBudgetRef, OptionRef (002's plan maps the
+#   plan's summary shapes to 004).
+# From 003 (by name): PersonRef {id, name, initials, jobTitle, active}, TeamRef {id, name, colour, active}.
+#
+# CHANGE TO A SHARED SCHEMA (owned by 001), applied while merging (plan "Contract changes to shared schemas"):
+#   components.schemas.Error.properties.code.enum   += not_ready
+#   components.schemas.Error.properties             += missing:
+#       type: array
+#       description: Every field that stops the action, grouped by record (only with not_ready).
+#       items: {$ref: "#/components/schemas/ReadinessGroup"}
+#   components.responses.Conflict.description       += "… or not_ready (an action needs fields filled first)"
+
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 004 (Plans) fragment
+  version: 0.4.0
+tags:
+  - name: Plans
+    description: Plans, the top of the planning hierarchy (feature 004)
+
+paths:
+  /api/plan-defaults:
+    get:
+      tags: [Plans]
+      operationId: getPlanDefaults
+      summary: The default values of a new plan for the signed-in person
+      description: |
+        Year = the current year; years = current year - 1 to + 5; teams = the person's active teams;
+        owner = the person when they have one; model = the only active model.
+      responses:
+        "200":
+          description: The defaults.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanDefaults"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans:
+    get:
+      tags: [Plans]
+      operationId: listPlans
+      summary: Plans matching the filters, newest year first, then by name
+      description: |
+        total counts every plan in the team scope; summary covers the plans in the team scope and the chosen
+        year (status and search ignored); years lists every year with a plan in the team scope.
+        Amounts are in the signed-in person's display currency.
+      parameters:
+        - name: scope
+          in: query
+          description: all (default) or myTeams (plans with one of the signed-in person's teams).
+          schema:
+            type: string
+            enum: [all, myTeams]
+            default: all
+        - name: status
+          in: query
+          description: Only plans with this status; every status when not sent.
+          schema:
+            $ref: "#/components/schemas/PlanStatus"
+        - name: year
+          in: query
+          description: Only plans of this year; every year when not sent.
+          schema:
+            type: integer
+          example: 2026
+        - name: q
+          in: query
+          description: Part of the name or of the ID, ignoring letter case and surrounding spaces.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The matching plans and the summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Plans]
+      operationId: createPlan
+      summary: Create a plan (it starts as Draft)
+      description: Only name, year and model are required to save; every problem is reported at once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}:
+    get:
+      tags: [Plans]
+      operationId: getPlan
+      summary: One plan with its calculated figures, goals and completeness
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: The plan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Plans]
+      operationId: updatePlan
+      summary: Save the plan form (every editable field, plus the version it started from)
+      description: |
+        The year never changes. A Published plan stays Published. Only changed fields are saved and logged;
+        a save without any change creates no version and no log entry.
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanUpdate"
+      responses:
+        "200":
+          description: The plan after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Plans]
+      operationId: deletePlan
+      summary: Delete a plan and everything in it (they go to the recycle bin)
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/publish:
+    post:
+      tags: [Plans]
+      operationId: publishPlan
+      summary: Publish a Draft plan
+      description: |
+        Succeeds only when the plan and every campaign and initiative in it have all needed-to-publish fields
+        filled; otherwise answers 409 not_ready listing every missing field grouped by record, and nothing
+        changes. Publishing a Published plan changes nothing.
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: The plan (Published).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/unpublish:
+    post:
+      tags: [Plans]
+      operationId: unpublishPlan
+      summary: Return a Published plan to Draft, with a reason
+      description: The reason is recorded in the activity log. Unpublishing a Draft plan changes nothing.
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnpublishRequest"
+      responses:
+        "200":
+          description: The plan (Draft).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/copy-options:
+    get:
+      tags: [Plans]
+      operationId: getPlanCopyOptions
+      summary: What the copy dialog offers for this plan
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: The suggested name, the years and the counts of what can be copied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanCopyOptions"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/copy:
+    post:
+      tags: [Plans]
+      operationId: copyPlan
+      summary: Copy a plan, with or without everything in it, into the same or the next year
+      description: |
+        The copy is a Draft plan with a new ID, made completely or not at all. A next-year copy moves every
+        copied date one year later and clears the default finance budget (said in notes).
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanCopyRequest"
+      responses:
+        "201":
+          description: The new plan and notes about what changed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanCopyResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/change-effects:
+    post:
+      tags: [Plans]
+      operationId: getPlanChangeEffects
+      summary: What a new model or business unit would change (nothing is saved)
+      description: |
+        Lists the plan's activities whose type the new model does not allow, and the Shell attribute groups
+        that the new business unit would hide or show. Read-only.
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanChangeEffectsRequest"
+      responses:
+        "200":
+          description: The effects.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanChangeEffects"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    PlanId:
+      name: planId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: P-1001
+
+  schemas:
+    PlanStatus:
+      type: string
+      enum: [draft, published]
+      description: Draft (being prepared) or Published (the agreed plan of record).
+
+    GoalStage:
+      type: string
+      enum: [inq, mql, revenue]
+      description: The stage at which the plan's goal is set (INQ, MQL or Revenue).
+
+    SpreadMethod:
+      type: string
+      enum: [evenly, firstMonth, lastMonth, custom]
+      description: How a line item's planned cost is spread over the months (Evenly, All in first month, All in last month, Custom). Reused by feature 007.
+
+    ApprovalProgress:
+      type: string
+      enum: [noActivities, inProgress, allApproved]
+
+    ModelSummary:
+      type: object
+      additionalProperties: false
+      description: The plan's model with what the goal waterfall needs (owned by 004; read from 002's Model). Inactive models are labelled "(inactive)".
+      required: [id, name, active, inqToMqlRate, mqlToDealRate, averageDealSize]
+      properties:
+        id:
+          type: string
+          example: MOD-1001
+        name:
+          type: string
+          example: Lubricants 1.0
+        active:
+          type: boolean
+        inqToMqlRate:
+          $ref: "#/components/schemas/Percent"
+        mqlToDealRate:
+          $ref: "#/components/schemas/Percent"
+        averageDealSize:
+          $ref: "#/components/schemas/Money"
+
+    FinanceBudgetRef:
+      type: object
+      additionalProperties: false
+      description: A finance budget (002) referred to by a plan; its name is read when the answer is made, so a rename shows everywhere.
+      required: [id, year, name]
+      properties:
+        id:
+          type: string
+          example: FB-1001
+        year:
+          type: integer
+          example: 2026
+        name:
+          type: string
+          example: 2026 Lubricants Budget
+
+    OptionRef:
+      type: object
+      additionalProperties: false
+      description: A Shell attribute option (002) referred to by a record, such as the plan's business unit. Inactive options are labelled "(inactive)".
+      required: [id, label, active]
+      properties:
+        id:
+          type: string
+          example: SO-1001
+        label:
+          type: string
+          example: Lubricants
+        active:
+          type: boolean
+
+    AttentionItem:
+      type: object
+      additionalProperties: false
+      description: A record below that is not complete, with its missing fields.
+      required: [record, missing]
+      properties:
+        record:
+          $ref: "#/components/schemas/RecordRef"
+        missing:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingField"
+
+    Completeness:
+      type: object
+      additionalProperties: false
+      required: [missing, itemsBelow]
+      properties:
+        missing:
+          type: array
+          description: The record's own needed fields that are empty, in form order ("All filled in" when empty).
+          items:
+            $ref: "#/components/schemas/MissingField"
+        itemsBelow:
+          type: array
+          description: Every campaign, initiative, activity and line item below that is not complete.
+          items:
+            $ref: "#/components/schemas/AttentionItem"
+
+    ReadinessGroup:
+      type: object
+      additionalProperties: false
+      description: The fields one record still needs before an action (publish a plan; later submit an activity).
+      required: [record, fields]
+      properties:
+        record:
+          $ref: "#/components/schemas/RecordRef"
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingField"
+
+    PlanContents:
+      type: object
+      additionalProperties: false
+      description: What is inside the plan (0 until features 005-007 add their records).
+      required: [campaigns, initiatives, activities, approvedActivities, lineItems]
+      properties:
+        campaigns:
+          type: integer
+          minimum: 0
+        initiatives:
+          type: integer
+          minimum: 0
+        activities:
+          type: integer
+          minimum: 0
+        approvedActivities:
+          type: integer
+          minimum: 0
+          description: Activities that are Approved, In progress or Complete.
+        lineItems:
+          type: integer
+          minimum: 0
+
+    PlanFigures:
+      type: object
+      additionalProperties: false
+      description: Calculated money and progress, in the signed-in person's display currency.
+      required: [currency, budget, plannedCost, campaignBudgets, remainingBudget, overAllocatedBy, budgetUsedPercent, overBudget, activities, activitiesApproved, approvalProgress]
+      properties:
+        currency:
+          type: string
+          description: The display currency code of every amount below.
+          example: USD
+        budget:
+          description: The plan budget; null when none is set.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          description: Sum of the activities' planned cost; null when nothing below has a planned cost.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        campaignBudgets:
+          $ref: "#/components/schemas/Money"
+        remainingBudget:
+          description: Plan budget minus campaign budgets (may be negative); null without a plan budget.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        overAllocatedBy:
+          description: How far campaign budgets exceed the plan budget; null when they do not.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetUsedPercent:
+          type: [integer, "null"]
+          description: Planned cost divided by plan budget, as a whole percent; null without a budget or with a budget of 0.
+        overBudget:
+          type: boolean
+          description: Planned cost is above the plan budget (the bar is red).
+        activities:
+          type: integer
+          minimum: 0
+        activitiesApproved:
+          type: integer
+          minimum: 0
+        approvalProgress:
+          $ref: "#/components/schemas/ApprovalProgress"
+
+    GoalFigures:
+      type: object
+      additionalProperties: false
+      description: The plan goal at every stage; the typed stage as typed, the others calculated from the model.
+      required: [inq, mql, deals, revenue, reasons]
+      properties:
+        inq:
+          type: [integer, "null"]
+        mql:
+          type: [integer, "null"]
+        deals:
+          type: [integer, "null"]
+        revenue:
+          description: In the display currency.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        reasons:
+          type: object
+          additionalProperties: false
+          description: Why a stage could not be calculated (only for stages that are null although a goal amount is set).
+          properties:
+            inq:
+              type: string
+            mql:
+              type: string
+            deals:
+              type: string
+            revenue:
+              type: string
+
+    GoalTotals:
+      type: object
+      additionalProperties: false
+      description: The sum of the goals of every activity in the plan.
+      required: [inq, mql, revenue]
+      properties:
+        inq:
+          type: integer
+          minimum: 0
+        mql:
+          type: integer
+          minimum: 0
+        revenue:
+          $ref: "#/components/schemas/Money"
+
+    PlanGoals:
+      type: object
+      additionalProperties: false
+      required: [stage, plan, activities, plannedPercent]
+      properties:
+        stage:
+          $ref: "#/components/schemas/GoalStage"
+        plan:
+          $ref: "#/components/schemas/GoalFigures"
+        activities:
+          $ref: "#/components/schemas/GoalTotals"
+        plannedPercent:
+          type: [integer, "null"]
+          description: Activity total of the goal stage as a whole percent of the plan goal; null without a goal or with a goal of 0.
+
+    Plan:
+      type: object
+      additionalProperties: false
+      description: A plan as stored (stored amounts in USD) with its calculated values (display currency).
+      required: [id, name, year, status, model, teams, owner, ownerProblem, aop, description, budget, defaultFinanceBudget, defaultSpread, bcpir, goalStage, goalAmount, attributes, businessUnit, figures, goals, completeness, contents, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: P-1001
+        name:
+          type: string
+          example: FY2026 Lubricants Europe
+        year:
+          type: integer
+          example: 2026
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        model:
+          $ref: "#/components/schemas/ModelSummary"
+        teams:
+          type: array
+          description: Sorted by name; inactive teams are kept and flagged.
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        ownerProblem:
+          type: string
+          description: The R1 message when the owner is in none of the plan's teams; empty otherwise.
+        aop:
+          type: boolean
+          description: Strategic / AOP plan.
+        description:
+          type: string
+        budget:
+          description: The plan budget in USD, as stored and typed; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        defaultFinanceBudget:
+          oneOf:
+            - $ref: "#/components/schemas/FinanceBudgetRef"
+            - type: "null"
+        defaultSpread:
+          $ref: "#/components/schemas/SpreadMethod"
+        bcpir:
+          type: boolean
+          description: BCPIR plan.
+        goalStage:
+          $ref: "#/components/schemas/GoalStage"
+        goalAmount:
+          type: [string, "null"]
+          description: The typed goal; a whole number for inq and mql, a USD amount for revenue.
+          example: "250000"
+        attributes:
+          type: object
+          description: Plan-level Shell attribute values by attribute ID, including hidden ones (kept, R9).
+          additionalProperties:
+            $ref: "#/components/schemas/AttributeValue"
+        businessUnit:
+          type: array
+          description: The chosen options of the Business unit attribute.
+          items:
+            $ref: "#/components/schemas/OptionRef"
+        figures:
+          $ref: "#/components/schemas/PlanFigures"
+        goals:
+          $ref: "#/components/schemas/PlanGoals"
+        completeness:
+          $ref: "#/components/schemas/Completeness"
+        contents:
+          $ref: "#/components/schemas/PlanContents"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    PlanSummary:
+      type: object
+      additionalProperties: false
+      description: A plan as the Plans list shows it.
+      required: [id, name, year, status, aop, owner, teams, businessUnit, figures, completeness]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        year:
+          type: integer
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        aop:
+          type: boolean
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        businessUnit:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionRef"
+        figures:
+          $ref: "#/components/schemas/PlanFigures"
+        completeness:
+          $ref: "#/components/schemas/Completeness"
+
+    PlanListSummary:
+      type: object
+      additionalProperties: false
+      description: The summary cards of the Plans page, over the team scope and the chosen year.
+      required: [plans, draft, published, plannedCost, budget]
+      properties:
+        plans:
+          type: integer
+          minimum: 0
+        draft:
+          type: integer
+          minimum: 0
+        published:
+          type: integer
+          minimum: 0
+        plannedCost:
+          description: Sum of the known planned costs; null when no plan has one.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budget:
+          description: Sum of the plan budgets that are set; null when none is set.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    PlanList:
+      type: object
+      additionalProperties: false
+      required: [items, total, summary, years]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanSummary"
+        total:
+          type: integer
+          description: Every plan in the team scope (the "of" of the result count).
+        summary:
+          $ref: "#/components/schemas/PlanListSummary"
+        years:
+          type: array
+          description: Every year with a plan in the team scope, newest first.
+          items:
+            type: integer
+
+    PlanDefaults:
+      type: object
+      additionalProperties: false
+      required: [currentYear, years, year, teamIds, ownerId, modelId, aop, bcpir, defaultSpread, goalStage]
+      properties:
+        currentYear:
+          type: integer
+        years:
+          type: array
+          description: The years a new plan may have (current - 1 to current + 5).
+          items:
+            type: integer
+        year:
+          type: integer
+        teamIds:
+          type: array
+          items:
+            type: string
+        ownerId:
+          type: [string, "null"]
+        modelId:
+          type: [string, "null"]
+          description: The only active model; null when there are none or several.
+        aop:
+          type: boolean
+        bcpir:
+          type: boolean
+        defaultSpread:
+          $ref: "#/components/schemas/SpreadMethod"
+        goalStage:
+          $ref: "#/components/schemas/GoalStage"
+
+    PlanCreate:
+      type: object
+      additionalProperties: false
+      description: The whole plan form. Empty values are sent as null (or "" for text, [] and {} for lists).
+      required: [name, year, modelId, teamIds, ownerId, aop, description, budget, defaultFinanceBudgetId, defaultSpread, bcpir, goalStage, goalAmount, attributes]
+      properties:
+        name:
+          type: string
+        year:
+          type: [integer, "null"]
+        modelId:
+          type: [string, "null"]
+        teamIds:
+          type: array
+          items:
+            type: string
+        ownerId:
+          type: [string, "null"]
+        aop:
+          type: boolean
+        description:
+          type: string
+        budget:
+          description: In USD; null for no budget.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        defaultFinanceBudgetId:
+          type: [string, "null"]
+        defaultSpread:
+          type: string
+          description: One of SpreadMethod; checked by the server.
+        bcpir:
+          type: boolean
+        goalStage:
+          type: string
+          description: One of GoalStage; checked by the server.
+        goalAmount:
+          type: [string, "null"]
+        attributes:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AttributeValue"
+
+    PlanUpdate:
+      type: object
+      additionalProperties: false
+      description: The whole plan form (the year is not part of it) and the version the person started from.
+      required: [version, name, modelId, teamIds, ownerId, aop, description, budget, defaultFinanceBudgetId, defaultSpread, bcpir, goalStage, goalAmount, attributes]
+      properties:
+        version:
+          type: integer
+          description: The version the person started editing from.
+        name:
+          type: string
+        modelId:
+          type: [string, "null"]
+        teamIds:
+          type: array
+          items:
+            type: string
+        ownerId:
+          type: [string, "null"]
+        aop:
+          type: boolean
+        description:
+          type: string
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        defaultFinanceBudgetId:
+          type: [string, "null"]
+        defaultSpread:
+          type: string
+        bcpir:
+          type: boolean
+        goalStage:
+          type: string
+        goalAmount:
+          type: [string, "null"]
+        attributes:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AttributeValue"
+
+    UnpublishRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: Why the plan is unpublished, 1 to 500 characters after trimming.
+
+    NextYearOption:
+      type: object
+      additionalProperties: false
+      required: [year, available, reason]
+      properties:
+        year:
+          type: integer
+        available:
+          type: boolean
+        reason:
+          type: string
+          description: Why the next year can't be chosen; empty when it can.
+
+    PlanCopyOptions:
+      type: object
+      additionalProperties: false
+      required: [name, sameYear, nextYear, contents]
+      properties:
+        name:
+          type: string
+          description: The suggested name, "<name> (copy)" or the next free "(copy n)", at most 120 characters.
+        sameYear:
+          type: integer
+        nextYear:
+          $ref: "#/components/schemas/NextYearOption"
+        contents:
+          $ref: "#/components/schemas/PlanContents"
+
+    PlanCopyRequest:
+      type: object
+      additionalProperties: false
+      required: [name, year, includeContents]
+      properties:
+        name:
+          type: string
+        year:
+          type: integer
+          description: The source plan's year or the next one.
+        includeContents:
+          type: boolean
+          description: Also copy campaigns, initiatives, activities and line items.
+
+    PlanCopyResult:
+      type: object
+      additionalProperties: false
+      required: [plan, notes]
+      properties:
+        plan:
+          $ref: "#/components/schemas/Plan"
+        notes:
+          type: array
+          description: What the copy changed on purpose, for example a cleared default finance budget.
+          items:
+            type: string
+
+    PlanChangeEffectsRequest:
+      type: object
+      additionalProperties: false
+      required: [modelId, attributes]
+      properties:
+        modelId:
+          type: [string, "null"]
+        attributes:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AttributeValue"
+
+    AttributeGroupChange:
+      type: object
+      additionalProperties: false
+      description: Shell attributes tied to one business-unit option that a change would hide or show.
+      required: [unit, levels, attributes]
+      properties:
+        unit:
+          type: string
+          example: Lubricants
+        levels:
+          type: array
+          description: Where those attributes are, top-down.
+          items:
+            type: string
+            enum: [plan, campaign, initiative, activity, lineItem]
+        attributes:
+          type: array
+          description: Their labels, in display order.
+          items:
+            type: string
+
+    PlanChangeEffects:
+      type: object
+      additionalProperties: false
+      required: [modelChanged, disallowedActivities, hiddenGroups, shownGroups]
+      properties:
+        modelChanged:
+          type: boolean
+        disallowedActivities:
+          type: array
+          description: Activities whose type the new model does not allow; they keep it until changed.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        hiddenGroups:
+          type: array
+          description: Groups hidden by the new business unit (values kept).
+          items:
+            $ref: "#/components/schemas/AttributeGroupChange"
+        shownGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttributeGroupChange"

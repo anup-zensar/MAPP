@@ -1,0 +1,570 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 009 fragment (home dashboard)
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT to merge into backend/api/openapi.yaml. It follows that file's conventions and reuses its
+    components by $ref: responses BadRequest, Unauthorized, Error; schemas RecordRef, ActorRef (001),
+    ActivityLogEntry (001, extended by 011), Money (002), PlanStatus (004), MissingField (002),
+    ActivityDisplayStatus (006: the shown status, with inProgress and complete).
+
+    Every operation only reads. Every amount is in the person's effective display currency: their
+    display currency, also when it is inactive (D-063, D-201; unavailableCurrency is always null).
+
+    Merge rules: add the tag Home, the paths, the parameter HomeScope and the schemas below;
+    Preferences and PreferencesUpdate are 001 schemas extended here with homeScope (feature 003 adds
+    displayCurrency and dateFormat; feature 011 adds historyIncludeInside).
+tags:
+  - name: Home
+    description: The home dashboard (read-only figures for the signed-in person)
+paths:
+  /api/home/summary:
+    get:
+      tags: [Home]
+      operationId: getHomeSummary
+      summary: The four summary cards and whether to show Getting started
+      parameters:
+        - $ref: "#/components/parameters/HomeScope"
+      responses:
+        "200":
+          description: The summary for the scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/home/plans:
+    get:
+      tags: [Home]
+      operationId: listHomePlans
+      summary: Plans at a glance (at most 10 rows; total counts every plan in scope)
+      parameters:
+        - $ref: "#/components/parameters/HomeScope"
+      responses:
+        "200":
+          description: The plans in scope, newest year first, then by name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomePlanPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/home/attention:
+    get:
+      tags: [Home]
+      operationId: listHomeAttention
+      summary: Needs your attention — records the person owns that have a problem (all plans)
+      responses:
+        "200":
+          description: Every record with at least one reason, in display order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeAttentionPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/home/waiting:
+    get:
+      tags: [Home]
+      operationId: listHomeWaiting
+      summary: Waiting for my approval — the first 5 of the Waiting for me list, oldest first
+      responses:
+        "200":
+          description: The activities waiting for the person's decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WaitingPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/home/my-activities:
+    get:
+      tags: [Home]
+      operationId: listHomeMyActivities
+      summary: My activities — the activities the person owns, grouped by displayed status (all plans)
+      responses:
+        "200":
+          description: The groups in display order; empty groups are left out.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyActivitiesPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/home/recent-changes:
+    get:
+      tags: [Home]
+      operationId: listHomeRecentChanges
+      summary: Recent changes — the 10 newest activity-log entries about the plans in scope
+      parameters:
+        - $ref: "#/components/parameters/HomeScope"
+      responses:
+        "200":
+          description: The newest entries about plans, campaigns, initiatives, activities and line items of the plans in scope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecentChangesPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    HomeScope:
+      name: scope
+      in: query
+      required: true
+      description: myTeams covers plans with at least one of the person's teams; everything covers all plans.
+      schema:
+        $ref: "#/components/schemas/HomeScope"
+
+  schemas:
+    HomeScope:
+      type: string
+      enum: [myTeams, everything]
+
+    Preferences:
+      type: object
+      additionalProperties: false
+      description: (extends 001) Adds homeScope. Feature 003 adds displayCurrency and dateFormat; feature 011 adds historyIncludeInside.
+      required: [theme, sidebarCollapsed, homeScope]
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: system follows the computer's setting.
+        sidebarCollapsed:
+          type: boolean
+        homeScope:
+          $ref: "#/components/schemas/HomeScope"
+
+    PreferencesUpdate:
+      type: object
+      additionalProperties: false
+      description: (extends 001) Only the preferences to change.
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: The server also checks the value and answers validation_failed for anything else.
+        sidebarCollapsed:
+          type: boolean
+        homeScope:
+          type: string
+          enum: [myTeams, everything]
+          description: The server also checks the value and answers validation_failed for anything else.
+
+    HomeSummary:
+      type: object
+      additionalProperties: false
+      required: [scope, displayCurrency, unavailableCurrency, gettingStarted, plans, activitiesOwned, waitingForMe, plannedCost]
+      properties:
+        scope:
+          $ref: "#/components/schemas/HomeScope"
+        displayCurrency:
+          type: string
+          description: The currency every amount is shown in (the person's display currency, or USD when it is inactive).
+          example: EUR
+        unavailableCurrency:
+          description: The person's display currency when it has been set inactive (amounts are then in USD); null otherwise.
+          oneOf:
+            - type: string
+            - type: "null"
+        gettingStarted:
+          description: Why the Getting started card is shown; null when it is not shown.
+          oneOf:
+            - type: string
+              enum: [notInTeam, noTeamPlans]
+            - type: "null"
+        plans:
+          $ref: "#/components/schemas/HomePlanCounts"
+        activitiesOwned:
+          $ref: "#/components/schemas/HomeActivityCounts"
+        waitingForMe:
+          $ref: "#/components/schemas/HomeWaitingCounts"
+        plannedCost:
+          $ref: "#/components/schemas/HomePlannedCost"
+
+    HomePlanCounts:
+      type: object
+      additionalProperties: false
+      description: The plans in scope (each plan once).
+      required: [count, published, draft]
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        published:
+          type: integer
+          minimum: 0
+        draft:
+          type: integer
+          minimum: 0
+
+    HomeActivityCounts:
+      type: object
+      additionalProperties: false
+      description: The activities the person owns, in every plan.
+      required: [count, declined, submitted]
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        declined:
+          type: integer
+          minimum: 0
+        submitted:
+          type: integer
+          minimum: 0
+
+    HomeWaitingCounts:
+      type: object
+      additionalProperties: false
+      required: [count, oldestWaitingSince]
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        oldestWaitingSince:
+          description: When the longest-waiting activity reached its current level; null when nothing waits.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+
+    HomePlannedCost:
+      type: object
+      additionalProperties: false
+      required: [planCount, plannedCost, planBudget, budgetUsedPercent, overBudget, plansWithoutBudget]
+      properties:
+        planCount:
+          type: integer
+          minimum: 0
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        planBudget:
+          description: Total plan budget of the plans in scope that have one; null when none has.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetUsedPercent:
+          description: Total planned cost x 100 / total plan budget, rounded half up to a whole number; null without a budget.
+          oneOf:
+            - type: integer
+            - type: "null"
+        overBudget:
+          type: boolean
+          description: Total planned cost is more than the total plan budget.
+        plansWithoutBudget:
+          type: integer
+          minimum: 0
+
+    HomeTeam:
+      type: object
+      additionalProperties: false
+      required: [id, name, mine]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: Lubricants Europe
+        mine:
+          type: boolean
+          description: The signed-in person is a member.
+
+    HomePlanRow:
+      type: object
+      additionalProperties: false
+      required: [id, name, year, strategicAop, status, teams, campaignCount, activityCount, approvedActivityCount, budget, plannedCost, budgetUsedPercent, overBudget]
+      properties:
+        id:
+          type: string
+          example: P-1001
+        name:
+          type: string
+          example: FY2026 Lubricants Europe
+        year:
+          type: integer
+          example: 2026
+        strategicAop:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        teams:
+          type: array
+          description: The person's own teams first, then by name.
+          items:
+            $ref: "#/components/schemas/HomeTeam"
+        campaignCount:
+          type: integer
+          minimum: 0
+        activityCount:
+          type: integer
+          minimum: 0
+        approvedActivityCount:
+          type: integer
+          minimum: 0
+          description: Activities Approved, In progress or Complete.
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        budgetUsedPercent:
+          oneOf:
+            - type: integer
+            - type: "null"
+        overBudget:
+          type: boolean
+
+    HomePlanPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/HomePlanRow"
+        total:
+          type: integer
+          description: Every plan in scope.
+
+    HomeAttentionReason:
+      type: object
+      additionalProperties: false
+      description: One reason a record needs attention. Fields that do not apply to the kind are null (or empty / 0).
+      required: [kind, amount, declinedBy, declinedAt, comment, missing, itemsBelow]
+      properties:
+        kind:
+          type: string
+          enum: [declined, negativeBalance, overAllocated, overBudget, missingFields]
+        amount:
+          description: negativeBalance, overAllocated and overBudget - the amount over (positive).
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        declinedBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+        declinedAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        comment:
+          oneOf:
+            - type: string
+            - type: "null"
+        missing:
+          type: array
+          description: missingFields - the record's own empty needed fields.
+          items:
+            $ref: "#/components/schemas/MissingField"
+        itemsBelow:
+          type: integer
+          minimum: 0
+          description: missingFields - records below that need attention.
+
+    HomeAttentionItem:
+      type: object
+      additionalProperties: false
+      required: [recordType, recordTypeLabel, id, name, plan, path, changedAt, reasons]
+      properties:
+        recordType:
+          type: string
+          enum: [plan, campaign, initiative, activity]
+        recordTypeLabel:
+          type: string
+          example: activity
+        id:
+          type: string
+          example: A-1042
+        name:
+          type: string
+          example: Launch film
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        path:
+          type: array
+          description: The record's ancestors, plan first; empty for a plan.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        changedAt:
+          type: string
+          format: date-time
+        reasons:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/HomeAttentionReason"
+
+    HomeAttentionPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HomeAttentionItem"
+        total:
+          type: integer
+
+    WaitingItem:
+      type: object
+      additionalProperties: false
+      required: [id, name, plan, owner, plannedCost, level, levels, waitingSince]
+      properties:
+        id:
+          type: string
+          example: A-1042
+        name:
+          type: string
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        level:
+          type: integer
+          minimum: 1
+        levels:
+          type: integer
+          minimum: 1
+        waitingSince:
+          type: string
+          format: date-time
+          description: When the approval round reached its current level.
+
+    WaitingPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/WaitingItem"
+        total:
+          type: integer
+
+    MyActivityRow:
+      type: object
+      additionalProperties: false
+      required: [id, name, plan, campaign, initiative, status, startDate, endDate, ongoing, plannedCost, missing, itemsBelow]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        campaign:
+          $ref: "#/components/schemas/RecordRef"
+        initiative:
+          $ref: "#/components/schemas/RecordRef"
+        status:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        startDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        endDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        ongoing:
+          type: boolean
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        missing:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingField"
+        itemsBelow:
+          type: integer
+          minimum: 0
+          description: Line items that need attention.
+
+    MyActivityGroup:
+      type: object
+      additionalProperties: false
+      required: [status, count, items]
+      properties:
+        status:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        count:
+          type: integer
+          minimum: 1
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyActivityRow"
+
+    MyActivitiesPage:
+      type: object
+      additionalProperties: false
+      required: [groups, total]
+      properties:
+        groups:
+          type: array
+          description: In the order declined, created, submitted, approved, inProgress, complete; empty groups left out.
+          items:
+            $ref: "#/components/schemas/MyActivityGroup"
+        total:
+          type: integer
+
+    RecentChangesPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/ActivityLogEntry"
+        total:
+          type: integer
+          description: How many entries match in all.

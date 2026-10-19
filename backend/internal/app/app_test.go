@@ -182,6 +182,8 @@ func TestNew_RoutesListTheOperations(t *testing.T) {
 // The API serves exactly the operations of its contract, backend/api/openapi.yaml: every operation of the
 // contract is served, and every route the API serves is in the contract (research R11). The API runs in
 // demo mode, so that demo sign-in and the developer sample records are served too.
+//
+// Operations of the Plan module that are designed but not built yet are listed in notYetServed and skipped.
 func TestRoutesMatchContract(t *testing.T) {
 	served := newApp(t, "local").Routes
 	var inContract []string
@@ -190,8 +192,8 @@ func TestRoutesMatchContract(t *testing.T) {
 	}
 
 	for _, route := range inContract {
-		if !slices.Contains(served, route) {
-			t.Errorf("the contract's operation %s is not served", route)
+		if !slices.Contains(served, route) && !slices.Contains(notYetServed, route) {
+			t.Errorf("the contract's operation %s is not served (and not listed in notYetServed)", route)
 		}
 	}
 	for _, route := range served {
@@ -202,7 +204,8 @@ func TestRoutesMatchContract(t *testing.T) {
 }
 
 // Every operation except health and demo sign-in needs a signed-in person, and refuses a request without a
-// session with sign_in_required before it reads anything else of the request (FR-005).
+// session with sign_in_required before it reads anything else of the request (FR-005). Operations listed in
+// notYetServed are skipped until they are built.
 func TestEveryProtectedOperationRequiresSignIn_FR005(t *testing.T) {
 	server := apitest.New(t)
 	var public []string
@@ -211,6 +214,9 @@ func TestEveryProtectedOperationRequiresSignIn_FR005(t *testing.T) {
 		if !op.needsSession {
 			public = append(public, op.route)
 			continue
+		}
+		if slices.Contains(notYetServed, op.route) {
+			continue // not built yet: it would answer 404
 		}
 		method, path, _ := strings.Cut(op.route, " ")
 		path = pathParameter.ReplaceAllString(path, "X-1001") // any value: the sign-in check comes first
@@ -253,6 +259,206 @@ func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
 	response := production.Do(t, http.MethodGet, "/api/sample-folders", nil)
 	if response.Status != http.StatusNotFound || string(response.Body) != notFoundBody {
 		t.Errorf("production: GET /api/sample-folders = %d %s\nwant 404 %s", response.Status, response.Body, notFoundBody)
+	}
+}
+
+// notYetServed lists the operations of the contract that are designed but not served yet: the operations of
+// the Plan module, features 002-012, merged into backend/api/openapi.yaml before they are built (decision
+// D-192). The routes are written as the tests format them, "METHOD /path" with the contract's path.
+//
+// Each feature's backend removes its own operations from this list in the change that serves them.
+// TestNotYetServedIsAccurate fails when a listed operation is served or is not in the contract, so the list
+// cannot go stale. The list must be empty when the Plan module is done; then remove it and its uses.
+var notYetServed = []string{
+	// 002 Settings and Shell attributes
+	"GET /api/settings/overview",
+	"GET /api/models",
+	"POST /api/models",
+	"GET /api/models/{modelId}",
+	"PATCH /api/models/{modelId}",
+	"DELETE /api/models/{modelId}",
+	"POST /api/models/{modelId}/impact",
+	"POST /api/models/{modelId}/status",
+	"GET /api/activity-types",
+	"POST /api/activity-types",
+	"GET /api/activity-types/{activityTypeId}",
+	"PATCH /api/activity-types/{activityTypeId}",
+	"DELETE /api/activity-types/{activityTypeId}",
+	"POST /api/activity-types/{activityTypeId}/impact",
+	"POST /api/activity-types/{activityTypeId}/status",
+	"GET /api/shell-attributes",
+	"POST /api/shell-attributes",
+	"GET /api/shell-attributes/{attributeId}",
+	"PATCH /api/shell-attributes/{attributeId}",
+	"DELETE /api/shell-attributes/{attributeId}",
+	"POST /api/shell-attributes/{attributeId}/impact",
+	"POST /api/shell-attributes/{attributeId}/status",
+	"POST /api/shell-attributes/{attributeId}/move",
+	"GET /api/shell-attributes/{attributeId}/options",
+	"POST /api/shell-attributes/{attributeId}/options",
+	"POST /api/shell-attributes/{attributeId}/options/import-check",
+	"POST /api/shell-attributes/{attributeId}/options/import",
+	"PATCH /api/shell-attribute-options/{optionId}",
+	"DELETE /api/shell-attribute-options/{optionId}",
+	"POST /api/shell-attribute-options/{optionId}/status",
+	"POST /api/shell-attribute-options/{optionId}/move",
+	"GET /api/shell-attribute-forms/{level}",
+	"POST /api/shell-attribute-forms/{level}/check",
+	"GET /api/currencies",
+	"POST /api/currencies",
+	"GET /api/currencies/{code}",
+	"PATCH /api/currencies/{code}",
+	"DELETE /api/currencies/{code}",
+	"POST /api/currencies/{code}/impact",
+	"POST /api/currencies/{code}/status",
+	"GET /api/finance-budgets",
+	"PATCH /api/finance-budgets/{budgetId}",
+	"POST /api/finance-budget-items",
+	"GET /api/finance-budget-items/{itemId}",
+	"PATCH /api/finance-budget-items/{itemId}",
+	"DELETE /api/finance-budget-items/{itemId}",
+	"POST /api/finance-budget-items/{itemId}/status",
+	// 003 People and teams
+	"GET /api/people",
+	"POST /api/people",
+	"GET /api/people/{personId}",
+	"PATCH /api/people/{personId}",
+	"POST /api/people/{personId}/impact",
+	"POST /api/people/{personId}/status",
+	"GET /api/teams",
+	"POST /api/teams",
+	"GET /api/teams/{teamId}",
+	"PATCH /api/teams/{teamId}",
+	"DELETE /api/teams/{teamId}",
+	"POST /api/teams/{teamId}/impact",
+	"POST /api/teams/{teamId}/status",
+	"PATCH /api/me",
+	"GET /api/me/display-currencies",
+	// 004 Plans
+	"GET /api/plan-defaults",
+	"GET /api/plans",
+	"POST /api/plans",
+	"GET /api/plans/{planId}",
+	"PATCH /api/plans/{planId}",
+	"DELETE /api/plans/{planId}",
+	"POST /api/plans/{planId}/publish",
+	"POST /api/plans/{planId}/unpublish",
+	"GET /api/plans/{planId}/copy-options",
+	"POST /api/plans/{planId}/copy",
+	"POST /api/plans/{planId}/change-effects",
+	// 005 Campaigns and initiatives
+	"GET /api/plans/{planId}/campaigns",
+	"POST /api/plans/{planId}/campaigns",
+	"GET /api/campaigns/{campaignId}",
+	"PATCH /api/campaigns/{campaignId}",
+	"DELETE /api/campaigns/{campaignId}",
+	"GET /api/campaigns/{campaignId}/destinations",
+	"POST /api/campaigns/{campaignId}/move",
+	"POST /api/campaigns/{campaignId}/copy",
+	"POST /api/campaigns/{campaignId}/initiatives",
+	"GET /api/initiatives/{initiativeId}",
+	"PATCH /api/initiatives/{initiativeId}",
+	"DELETE /api/initiatives/{initiativeId}",
+	"GET /api/initiatives/{initiativeId}/destinations",
+	"POST /api/initiatives/{initiativeId}/move",
+	"POST /api/initiatives/{initiativeId}/copy",
+	// 006 Activities
+	"GET /api/initiatives/{initiativeId}/activity-form",
+	"POST /api/initiatives/{initiativeId}/activities",
+	"GET /api/plans/{planId}/activities",
+	"GET /api/activities/{activityId}",
+	"PATCH /api/activities/{activityId}",
+	"DELETE /api/activities/{activityId}",
+	"GET /api/activities/{activityId}/form",
+	"GET /api/activities/{activityId}/destinations",
+	"POST /api/activities/{activityId}/move",
+	"POST /api/activities/{activityId}/copy",
+	// 007 Line items
+	"GET /api/activities/{activityId}/line-items",
+	"POST /api/activities/{activityId}/line-items",
+	"GET /api/activities/{activityId}/line-items/form-options",
+	"GET /api/line-items/{lineItemId}",
+	"PATCH /api/line-items/{lineItemId}",
+	"DELETE /api/line-items/{lineItemId}",
+	"POST /api/line-items/{lineItemId}/duplicate",
+	// 008 Activity approvals
+	"GET /api/approval-workflows",
+	"POST /api/approval-workflows",
+	"GET /api/approval-workflows/{workflowId}",
+	"PATCH /api/approval-workflows/{workflowId}",
+	"DELETE /api/approval-workflows/{workflowId}",
+	"POST /api/approval-workflows/{workflowId}/deactivate",
+	"POST /api/approval-workflows/{workflowId}/activate",
+	"GET /api/activities/{activityId}/approval",
+	"GET /api/activities/{activityId}/approval/submission",
+	"POST /api/activities/{activityId}/approval/submit",
+	"POST /api/activities/{activityId}/approval/approve",
+	"POST /api/activities/{activityId}/approval/decline",
+	"POST /api/activities/{activityId}/approval/recall",
+	"GET /api/approvals",
+	"GET /api/approvals/summary",
+	"GET /api/approvals/activities/{activityId}",
+	"GET /api/notifications",
+	"POST /api/notifications/{notificationId}/read",
+	"POST /api/notifications/read-all",
+	// 009 Home dashboard
+	"GET /api/home/summary",
+	"GET /api/home/plans",
+	"GET /api/home/attention",
+	"GET /api/home/waiting",
+	"GET /api/home/my-activities",
+	"GET /api/home/recent-changes",
+	// 010 All work views
+	"GET /api/all-work",
+	"GET /api/all-work/options",
+	"GET /api/all-work/export",
+	"GET /api/all-work/records/{recordId}",
+	"GET /api/all-work/preferences",
+	"PUT /api/all-work/preferences",
+	"GET /api/saved-views",
+	"POST /api/saved-views",
+	"PATCH /api/saved-views/{viewId}",
+	"DELETE /api/saved-views/{viewId}",
+	// 011 Activity log and recycle bin
+	"GET /api/activity-log/summary",
+	"POST /api/recycle-bin/empty",
+	"DELETE /api/recycle-bin/{entryId}",
+	"GET /api/recycle-bin/{entryId}/restore-preview",
+	// 012 Bulk actions and import
+	"GET /api/bulk-actions/fields",
+	"POST /api/bulk-actions/targets",
+	"POST /api/bulk-actions/preview",
+	"POST /api/bulk-actions",
+	"POST /api/bulk-actions/{bulkActionId}/undo",
+	"GET /api/plans/{planId}/imports",
+	"POST /api/plans/{planId}/imports",
+	"POST /api/plans/{planId}/imports/check",
+	"GET /api/plans/{planId}/import-template",
+	"GET /api/imports/{importId}",
+	"POST /api/imports/{importId}/undo",
+}
+
+// The list of operations not yet served stays accurate: every entry is an operation of the contract, none
+// is served already, and none is listed twice (decision D-192).
+func TestNotYetServedIsAccurate(t *testing.T) {
+	served := newApp(t, "local").Routes
+	var inContract []string
+	for _, op := range contractOperations(t) {
+		inContract = append(inContract, op.route)
+	}
+
+	seen := map[string]bool{}
+	for _, route := range notYetServed {
+		if seen[route] {
+			t.Errorf("notYetServed lists %s twice", route)
+		}
+		seen[route] = true
+		if !slices.Contains(inContract, route) {
+			t.Errorf("notYetServed lists %s, which is not an operation of the contract", route)
+		}
+		if slices.Contains(served, route) {
+			t.Errorf("notYetServed lists %s, which the API now serves: remove it from the list", route)
+		}
 	}
 }
 

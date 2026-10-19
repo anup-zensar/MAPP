@@ -1,0 +1,1411 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 008 Activity approvals (fragment)
+  version: 0.8.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT: only the paths and component schemas feature 008 adds. They are merged into
+    backend/api/openapi.yaml (the source of truth) by the consolidation step, in the conventions of
+    feature 001 (research R9, R10): camelCase JSON, UTC timestamps, YYYY-MM-DD dates, lists answer
+    items and total, every failure answers the shared Error object, updates send the version they started
+    from, deletes answer DeleteResult.
+
+    Reused from backend/api/openapi.yaml (feature 001): responses BadRequest, Unauthorized, NotFound,
+    Conflict, Error; schemas DeleteResult, RecordRef, ActorRef.
+
+    Expected from other features (referenced by name, listed in plan.md "Dependencies"):
+    - schemas/Money (feature 002): {amount: decimal string, currency: ISO code}.
+    - schemas/ActivityStatus (feature 006): enum created, submitted, declined, approved.
+    - schemas/ActivityDisplayStatus (feature 006): enum created, submitted, declined, approved, inProgress, complete.
+    - parameters/ActivityId (feature 006): path parameter activityId, example A-1042.
+
+    Change to a shared component: Error.code gains in_use (409, "Used by 3 activities — set it
+    inactive instead."), also needed by feature 002 for settings in use (Proposed decision 008-P10).
+    The Conflict response then reads: version_conflict, restore_parent_first, undo_expired,
+    already_resolved, name_taken or in_use.
+
+    Approval decisions name the round and level they decide. When the level was decided or the round
+    ended after the user opened the activity, the API answers 409 version_conflict whose message says
+    what happened ("Level 1 was already approved by Daniel Okoro") and whose conflict object says who and
+    when (FR-018); the web app adds the time.
+tags:
+  - name: Approval workflows
+    description: Settings › Approval workflows (feature 008)
+  - name: Approvals
+    description: Submitting, approving, declining and recalling activities; the approvals page (feature 008)
+  - name: Notifications
+    description: The signed-in person's in-app notifications, shown under the bell (feature 008)
+
+paths:
+  /api/approval-workflows:
+    get:
+      tags: [Approval workflows]
+      operationId: listApprovalWorkflows
+      summary: Every approval workflow, active and inactive, sorted by name ignoring letter case
+      description: Search and the Active / Inactive filter run in the web app on this list. Feature 006 offers the active ones in the activity's Approval workflow field.
+      responses:
+        "200":
+          description: The workflows with their levels, usage and warnings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflowPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Approval workflows]
+      operationId: createApprovalWorkflow
+      summary: Create an approval workflow (FR-002, FR-003)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalWorkflowCreate"
+      responses:
+        "201":
+          description: Created, active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflow"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approval-workflows/{workflowId}:
+    get:
+      tags: [Approval workflows]
+      operationId: getApprovalWorkflow
+      summary: One workflow with the activities that use it (FR-005)
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      responses:
+        "200":
+          description: The workflow and its activities.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflowDetails"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Approval workflows]
+      operationId: updateApprovalWorkflow
+      summary: Change name, description or levels (FR-002, FR-003, FR-006)
+      description: Only the fields sent change. Open rounds keep the levels they were submitted with.
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalWorkflowUpdate"
+      responses:
+        "200":
+          description: The workflow after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflow"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Approval workflows]
+      operationId: deleteApprovalWorkflow
+      summary: Delete a workflow no activity uses (it goes to the recycle bin) (FR-008)
+      description: Refused with 409 in_use when any stored activity uses it or has an approval round with it.
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approval-workflows/{workflowId}/deactivate:
+    post:
+      tags: [Approval workflows]
+      operationId: deactivateApprovalWorkflow
+      summary: Set a workflow inactive (FR-007)
+      description: No longer offered on activities; activities keep it; open rounds finish. Setting an inactive workflow inactive changes nothing.
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalWorkflowStatusChange"
+      responses:
+        "200":
+          description: The workflow after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflow"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approval-workflows/{workflowId}/activate:
+    post:
+      tags: [Approval workflows]
+      operationId: activateApprovalWorkflow
+      summary: Set an inactive workflow active again (FR-007)
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalWorkflowStatusChange"
+      responses:
+        "200":
+          description: The workflow after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflow"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/approval:
+    get:
+      tags: [Approvals]
+      operationId: getActivityApproval
+      summary: The activity's Approval section — chain, history, latest decline and available actions (FR-024, FR-025)
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: The approval state of the activity, seen by the signed-in person.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityApproval"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/approval/submission:
+    get:
+      tags: [Approvals]
+      operationId: getApprovalSubmission
+      summary: What Submit / Re-submit would do now — every problem, or the workflow levels to confirm (FR-010, FR-011)
+      description: Changes nothing. Asked when the person chooses Submit for approval or Re-submit for approval.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: The ready-to-submit check and the confirmation's content.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalSubmission"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/approval/submit:
+    post:
+      tags: [Approvals]
+      operationId: submitActivityForApproval
+      summary: Submit a Created activity, or re-submit a Declined one (FR-009 – FR-012, FR-020)
+      description: |
+        Runs the ready-to-submit check again; with problems it changes nothing and answers
+        validation_failed listing every problem (field keys as SubmitProblem.field). Otherwise the activity
+        becomes Submitted and a new round starts at level 1 with a copy of the workflow's current levels.
+        An activity that is not Created or Declined answers bad_request. Any plan status is allowed (Q-007).
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitRequest"
+      responses:
+        "200":
+          description: Submitted; the activity's approval state after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/approval/approve:
+    post:
+      tags: [Approvals]
+      operationId: approveActivityLevel
+      summary: Approve the current level of the open round (FR-014, FR-015, FR-017, FR-018)
+      description: Any signed-in person may approve (D-020); a person who is not an approver of the level is recorded as acting on behalf of the level's approvers. Approving the last level makes the activity Approved.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionRequest"
+      responses:
+        "200":
+          description: Approved; the activity's approval state after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/approval/decline:
+    post:
+      tags: [Approvals]
+      operationId: declineActivity
+      summary: Decline the activity at the current level; a comment is required (FR-016 – FR-018)
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionRequest"
+      responses:
+        "200":
+          description: Declined; the activity's approval state after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/approval/recall:
+    post:
+      tags: [Approvals]
+      operationId: recallActivitySubmission
+      summary: Recall a Submitted activity back to Created, with an optional reason (FR-021)
+      description: Approved activities answer bad_request with the explanation of FR-021.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecallRequest"
+      responses:
+        "200":
+          description: Recalled; the activity's approval state after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityApproval"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approvals:
+    get:
+      tags: [Approvals]
+      operationId: listApprovals
+      summary: The rows of one tab of the approvals page (FR-029, FR-030)
+      description: |
+        waiting — Submitted activities whose current level lists the signed-in person, oldest submission first;
+        open — every Submitted activity, oldest submission first;
+        decided — activities on which the signed-in person approved or declined a level, latest decision first.
+        Search and filters run in the web app on these rows (Proposed decision 008-P12).
+      parameters:
+        - name: tab
+          in: query
+          description: Which tab (default waiting).
+          schema:
+            type: string
+            enum: [waiting, open, decided]
+            default: waiting
+      responses:
+        "200":
+          description: Every row of the tab; total is the number of rows.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRowPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approvals/summary:
+    get:
+      tags: [Approvals]
+      operationId: getApprovalSummary
+      summary: The four summary cards and the sidebar count (FR-027, FR-028)
+      description: monthStart and monthEnd are the viewer's local calendar month as UTC instants; send both or neither (neither = the current UTC month).
+      parameters:
+        - name: monthStart
+          in: query
+          schema:
+            type: string
+            format: date-time
+          example: "2026-02-28T23:00:00Z"
+        - name: monthEnd
+          in: query
+          description: The first instant after the month.
+          schema:
+            type: string
+            format: date-time
+          example: "2026-03-31T22:00:00Z"
+      responses:
+        "200":
+          description: The counts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalCounts"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approvals/activities/{activityId}:
+    get:
+      tags: [Approvals]
+      operationId: getApprovalPreview
+      summary: The preview side panel of the approvals page (FR-032)
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: Key facts, line items, unassigned planned cost and the approval state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalPreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      operationId: listNotifications
+      summary: The signed-in person's 50 most recent notifications, newest first, and the unread count (FR-033)
+      responses:
+        "200":
+          description: The notifications.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/notifications/{notificationId}/read:
+    post:
+      tags: [Notifications]
+      operationId: markNotificationRead
+      summary: Mark one of the signed-in person's notifications as read (FR-034)
+      description: Another person's notification answers 404. Marking a read notification again changes nothing.
+      parameters:
+        - $ref: "#/components/parameters/NotificationId"
+      responses:
+        "200":
+          description: The notification after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/notifications/read-all:
+    post:
+      tags: [Notifications]
+      operationId: markAllNotificationsRead
+      summary: Mark all of the signed-in person's notifications as read (FR-034)
+      responses:
+        "200":
+          description: How many changed; unread is then 0.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationReadAll"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    WorkflowId:
+      name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: WF-1001
+    NotificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: NT-1001
+
+  schemas:
+    ApprovalPerson:
+      type: object
+      additionalProperties: false
+      description: A designated approver or owner, with the live active flag ("(inactive)").
+      required: [id, name, initials, active]
+      properties:
+        id:
+          type: string
+          example: U-1003
+        name:
+          type: string
+          example: Daniel Okoro
+        initials:
+          type: string
+          example: DO
+        active:
+          type: boolean
+
+    WorkflowRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, active]
+      properties:
+        id:
+          type: string
+          example: WF-1002
+        name:
+          type: string
+          example: China BC approval workflow
+        active:
+          type: boolean
+
+    ApprovalWorkflowLevel:
+      type: object
+      additionalProperties: false
+      required: [number, name, label, approvers]
+      properties:
+        number:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          description: The stored level name; empty when the level has none.
+        label:
+          type: string
+          description: The name, or "Level <number>" when empty.
+          example: Level 1
+        approvers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+
+    ApprovalWorkflow:
+      type: object
+      additionalProperties: false
+      required: [id, name, description, active, levels, levelsText, usedByCount, waitingCount, warnings, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: WF-1002
+        name:
+          type: string
+        description:
+          type: string
+        active:
+          type: boolean
+        levels:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevel"
+        levelsText:
+          type: string
+          example: Level 1 · Carlos Mendes → Level 2 · Alex Morgan
+        usedByCount:
+          type: integer
+          minimum: 0
+          description: Stored activities that have it in their Approval workflow field or have an approval round with it.
+        waitingCount:
+          type: integer
+          minimum: 0
+          description: Stored activities with an open round of this workflow.
+        warnings:
+          type: array
+          description: For example "Level 2 has no active approver".
+          items:
+            type: string
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    ApprovalWorkflowPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflow"
+        total:
+          type: integer
+
+    ApprovalWorkflowUsage:
+      type: object
+      additionalProperties: false
+      required: [activity, path, displayStatus, waiting]
+      properties:
+        activity:
+          $ref: "#/components/schemas/RecordRef"
+        path:
+          type: array
+          description: Plan, campaign and initiative of the activity, top level first.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        displayStatus:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        waiting:
+          type: boolean
+          description: It has an open round of this workflow.
+
+    ApprovalWorkflowDetails:
+      type: object
+      additionalProperties: false
+      required: [workflow, activities]
+      properties:
+        workflow:
+          $ref: "#/components/schemas/ApprovalWorkflow"
+        activities:
+          type: array
+          description: The activities counted in usedByCount, sorted by plan, then activity name.
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowUsage"
+
+    ApprovalWorkflowLevelInput:
+      type: object
+      additionalProperties: false
+      required: [name, approverIds]
+      properties:
+        name:
+          type: string
+          description: Optional level name; empty for "Level <n>".
+        approverIds:
+          type: array
+          items:
+            type: string
+          example: [U-1005]
+
+    ApprovalWorkflowCreate:
+      type: object
+      additionalProperties: false
+      required: [name, levels]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        levels:
+          type: array
+          description: In order; the first is level 1. The server reports an empty list as a field problem.
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevelInput"
+
+    ApprovalWorkflowUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, plus the version the person started editing from.
+      required: [version]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        levels:
+          type: array
+          description: The complete new list of levels, in order.
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevelInput"
+        version:
+          type: integer
+
+    ApprovalWorkflowStatusChange:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          description: The version the person saw when confirming.
+
+    ApprovalDecision:
+      type: object
+      additionalProperties: false
+      required: [action, actor, onBehalfOf, at, comment]
+      properties:
+        action:
+          type: string
+          enum: [approved, declined]
+        actor:
+          $ref: "#/components/schemas/ActorRef"
+        onBehalfOf:
+          type: array
+          description: The level's approvers when the actor is not one of them; empty otherwise.
+          items:
+            $ref: "#/components/schemas/ActorRef"
+        at:
+          type: string
+          format: date-time
+        comment:
+          type: string
+
+    ApprovalChainLevel:
+      type: object
+      additionalProperties: false
+      required: [number, label, approvers, state, decision]
+      properties:
+        number:
+          type: integer
+          minimum: 1
+        label:
+          type: string
+          example: Level 1
+        approvers:
+          type: array
+          description: The designated approvers copied at submission, with their live active flag.
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+        state:
+          type: string
+          enum: [approved, declined, waiting, notReached, notDecided]
+          description: notDecided = the level was waiting when the round was recalled, restarted or cancelled.
+        decision:
+          description: The decision on this level (approved or declined); null otherwise.
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalDecision"
+            - type: "null"
+
+    ApprovalChange:
+      type: object
+      additionalProperties: false
+      required: [label, oldText, newText, text]
+      properties:
+        label:
+          type: string
+          example: Planned cost
+        oldText:
+          type: string
+          example: "$50,000.00"
+        newText:
+          type: string
+          example: "$65,000.00"
+        text:
+          type: string
+          description: |
+            The sentence shown: "<label> changed from <oldText> to <newText>", "<label> added: <newText>"
+            (oldText "Not filled in"), "<label> removed (was <oldText>)" (newText "Not filled in"), or the
+            label unchanged when both texts are empty (a ready-made sentence such as a line-item change).
+          example: Planned cost changed from $50,000.00 to $65,000.00
+
+    ApprovalHistoryEntry:
+      type: object
+      additionalProperties: false
+      required: [id, roundNumber, level, levelLabel, approvers, actor, onBehalfOf, action, at, comment, changes]
+      properties:
+        id:
+          type: string
+          example: AH-1001
+        roundNumber:
+          type: integer
+          minimum: 1
+        level:
+          type: integer
+          minimum: 0
+          description: 0 for a restart of an approved activity (no level was waiting).
+        levelLabel:
+          type: string
+          description: '"Level 1" or the level name; empty when level is 0.'
+        approvers:
+          type: array
+          description: The level's designated approvers at the time.
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+        actor:
+          $ref: "#/components/schemas/ActorRef"
+        onBehalfOf:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActorRef"
+        action:
+          type: string
+          enum: [submitted, resubmitted, approved, declined, recalled, restarted, cancelled]
+        at:
+          type: string
+          format: date-time
+        comment:
+          type: string
+        changes:
+          type: array
+          description: restarted only — the changed values.
+          items:
+            $ref: "#/components/schemas/ApprovalChange"
+
+    ApprovalRound:
+      type: object
+      additionalProperties: false
+      required: [id, number, outcome, workflow, submittedAt, submittedBy, comment, endedAt, currentLevel, levelCount, levels, history]
+      properties:
+        id:
+          type: string
+          example: AR-1001
+        number:
+          type: integer
+          minimum: 1
+        outcome:
+          type: string
+          enum: [open, approved, declined, recalled, restarted, cancelled]
+        workflow:
+          type: object
+          additionalProperties: false
+          description: The workflow as it was at submission.
+          required: [id, name]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+        submittedAt:
+          type: string
+          format: date-time
+        submittedBy:
+          $ref: "#/components/schemas/ActorRef"
+        comment:
+          type: string
+        endedAt:
+          type: [string, "null"]
+          format: date-time
+        currentLevel:
+          type: integer
+          minimum: 1
+        levelCount:
+          type: integer
+          minimum: 1
+        levels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalChainLevel"
+        history:
+          type: array
+          description: The round's history entries, newest first.
+          items:
+            $ref: "#/components/schemas/ApprovalHistoryEntry"
+
+    DeclineNote:
+      type: object
+      additionalProperties: false
+      description: The latest decline, shown at the top of the Approval section while the activity is Declined.
+      required: [roundNumber, level, levelLabel, actor, onBehalfOf, at, comment]
+      properties:
+        roundNumber:
+          type: integer
+        level:
+          type: integer
+        levelLabel:
+          type: string
+        actor:
+          $ref: "#/components/schemas/ActorRef"
+        onBehalfOf:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActorRef"
+        at:
+          type: string
+          format: date-time
+        comment:
+          type: string
+
+    ApprovalActionAvailability:
+      type: object
+      additionalProperties: false
+      required: [available, reason]
+      properties:
+        available:
+          type: boolean
+        reason:
+          type: string
+          description: Why it is not available, when the screen must say so (for example recall of an Approved activity); empty otherwise.
+
+    ApprovalViewer:
+      type: object
+      additionalProperties: false
+      description: The signed-in person's relation to the activity, for the dialogs (FR-017, edge cases).
+      required: [isOwner, isCurrentApprover, onBehalfOf]
+      properties:
+        isOwner:
+          type: boolean
+        isCurrentApprover:
+          type: boolean
+          description: The person is a designated approver of the open round's current level.
+        onBehalfOf:
+          type: array
+          description: The current level's approvers when the person is not one of them; empty otherwise.
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+
+    ActivityApproval:
+      type: object
+      additionalProperties: false
+      required: [activityId, activityName, activityVersion, status, displayStatus, ownerId, workflow, upcomingLevels, rounds, latestDecline, viewer, actions]
+      properties:
+        activityId:
+          type: string
+          example: A-1042
+        activityName:
+          type: string
+        activityVersion:
+          type: integer
+          minimum: 1
+          description: Send it with Submit.
+        status:
+          $ref: "#/components/schemas/ActivityStatus"
+        displayStatus:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        ownerId:
+          type: string
+          description: Empty when the activity has no owner.
+        workflow:
+          description: The activity's Approval workflow field now; null when empty or the workflow no longer exists.
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        upcomingLevels:
+          type: array
+          description: The current workflow's levels while the activity has no round yet ("Not submitted yet"); empty otherwise.
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevel"
+        rounds:
+          type: array
+          description: Every round, newest first; the first is the chain the section shows (the open round, or the last one).
+          items:
+            $ref: "#/components/schemas/ApprovalRound"
+        latestDecline:
+          oneOf:
+            - $ref: "#/components/schemas/DeclineNote"
+            - type: "null"
+        viewer:
+          $ref: "#/components/schemas/ApprovalViewer"
+        actions:
+          type: object
+          additionalProperties: false
+          required: [submit, resubmit, approve, decline, recall]
+          properties:
+            submit:
+              $ref: "#/components/schemas/ApprovalActionAvailability"
+            resubmit:
+              $ref: "#/components/schemas/ApprovalActionAvailability"
+            approve:
+              $ref: "#/components/schemas/ApprovalActionAvailability"
+            decline:
+              $ref: "#/components/schemas/ApprovalActionAvailability"
+            recall:
+              $ref: "#/components/schemas/ApprovalActionAvailability"
+
+    SubmitProblem:
+      type: object
+      additionalProperties: false
+      required: [field, group, lineItemId, message]
+      properties:
+        field:
+          type: string
+          description: The field key of feature 006's Ready to submit panel (lineItems.<id>.<field> for line items).
+          example: ownerId
+        group:
+          type: string
+          enum: [activity, lineItem]
+        lineItemId:
+          type: string
+          description: The line item (L-…) for the lineItem group; empty otherwise.
+        message:
+          type: string
+          example: Owner — needed to submit
+
+    ApprovalSubmission:
+      type: object
+      additionalProperties: false
+      required: [activityId, activityName, activityVersion, kind, available, reason, roundNumber, ready, problems, workflow, levels, unassignedPlannedCost]
+      properties:
+        activityId:
+          type: string
+        activityName:
+          type: string
+        activityVersion:
+          type: integer
+          minimum: 1
+        kind:
+          type: string
+          enum: [submit, resubmit]
+          description: resubmit when the activity is Declined.
+        available:
+          type: boolean
+          description: false when the activity is neither Created nor Declined.
+        reason:
+          type: string
+        roundNumber:
+          type: integer
+          minimum: 1
+          description: The number the new round would get.
+        ready:
+          type: boolean
+          description: true when problems is empty.
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubmitProblem"
+        workflow:
+          oneOf:
+            - $ref: "#/components/schemas/WorkflowRef"
+            - type: "null"
+        levels:
+          type: array
+          description: The levels the round would copy (empty when there is no workflow).
+          items:
+            $ref: "#/components/schemas/ApprovalWorkflowLevel"
+        unassignedPlannedCost:
+          description: A positive unassigned planned cost, shown as a note; null otherwise.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    SubmitRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          description: The activity version the person saw (activityVersion).
+        comment:
+          type: string
+          description: Optional, at most 2,000 characters.
+
+    DecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [roundId, level]
+      properties:
+        roundId:
+          type: string
+          example: AR-1003
+        level:
+          type: integer
+          description: The level the person is deciding (the current level they saw).
+        comment:
+          type: string
+          description: Optional for approve; required (not blank) for decline; at most 2,000 characters.
+
+    RecallRequest:
+      type: object
+      additionalProperties: false
+      required: [roundId]
+      properties:
+        roundId:
+          type: string
+        reason:
+          type: string
+          description: Optional, at most 2,000 characters.
+
+    ApprovalRowRound:
+      type: object
+      additionalProperties: false
+      required: [id, number, outcome, currentLevel, levelCount, levelLabel, approvers]
+      properties:
+        id:
+          type: string
+        number:
+          type: integer
+        outcome:
+          type: string
+          enum: [open, approved, declined, recalled, restarted, cancelled]
+        currentLevel:
+          type: integer
+        levelCount:
+          type: integer
+        levelLabel:
+          type: string
+        approvers:
+          type: array
+          description: The current level's designated approvers.
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+
+    MyDecision:
+      type: object
+      additionalProperties: false
+      required: [action, at, roundNumber, level]
+      properties:
+        action:
+          type: string
+          enum: [approved, declined]
+        at:
+          type: string
+          format: date-time
+        roundNumber:
+          type: integer
+        level:
+          type: integer
+
+    ApprovalRow:
+      type: object
+      additionalProperties: false
+      required: [activity, path, owner, plannedCost, workflow, round, submittedAt, waitingSince, startDate, startDatePassed, myDecision]
+      properties:
+        activity:
+          type: object
+          additionalProperties: false
+          required: [id, name, status, displayStatus]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            status:
+              $ref: "#/components/schemas/ActivityStatus"
+            displayStatus:
+              $ref: "#/components/schemas/ActivityDisplayStatus"
+        path:
+          type: array
+          description: Plan, campaign, initiative.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        plannedCost:
+          description: USD; the web app shows it in the viewer's display currency.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        workflow:
+          $ref: "#/components/schemas/WorkflowRef"
+        round:
+          $ref: "#/components/schemas/ApprovalRowRound"
+        submittedAt:
+          type: string
+          format: date-time
+        waitingSince:
+          description: When the open round reached its current level; null when the round has ended.
+          type: [string, "null"]
+          format: date-time
+        startDate:
+          type: [string, "null"]
+          format: date
+        startDatePassed:
+          type: boolean
+          description: Submitted and the start date is before today.
+        myDecision:
+          description: decided tab only — the signed-in person's latest decision; null in the other tabs.
+          oneOf:
+            - $ref: "#/components/schemas/MyDecision"
+            - type: "null"
+
+    ApprovalRowPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalRow"
+        total:
+          type: integer
+
+    ApprovalCounts:
+      type: object
+      additionalProperties: false
+      required: [waitingForMe, allOpen, approvedThisMonth, declinedThisMonth]
+      properties:
+        waitingForMe:
+          type: integer
+          minimum: 0
+        allOpen:
+          type: integer
+          minimum: 0
+        approvedThisMonth:
+          type: integer
+          minimum: 0
+        declinedThisMonth:
+          type: integer
+          minimum: 0
+
+    MissingFieldRef:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+
+    PreviewLineItem:
+      type: object
+      additionalProperties: false
+      required: [id, name, plannedCost, plannedCostUsd, spendType, glCode, financeBudgetItem]
+      properties:
+        id:
+          type: string
+          example: L-1003
+        name:
+          type: string
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        plannedCostUsd:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        spendType:
+          type: string
+          description: Readable label; empty when not filled in.
+        glCode:
+          type: string
+        financeBudgetItem:
+          type: string
+
+    ApprovalPreview:
+      type: object
+      additionalProperties: false
+      required: [activity, lineItems, unassignedPlannedCost, approval]
+      properties:
+        activity:
+          type: object
+          additionalProperties: false
+          required: [id, name, status, displayStatus, missing, path, owner, startDate, endDate, ongoing, plannedCost, typeName, description]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            status:
+              $ref: "#/components/schemas/ActivityStatus"
+            displayStatus:
+              $ref: "#/components/schemas/ActivityDisplayStatus"
+            missing:
+              type: array
+              description: The activity's completeness — its empty needed-to-submit fields.
+              items:
+                $ref: "#/components/schemas/MissingFieldRef"
+            path:
+              type: array
+              items:
+                $ref: "#/components/schemas/RecordRef"
+            owner:
+              oneOf:
+                - $ref: "#/components/schemas/ApprovalPerson"
+                - type: "null"
+            startDate:
+              type: [string, "null"]
+              format: date
+            endDate:
+              type: [string, "null"]
+              format: date
+            ongoing:
+              type: boolean
+            plannedCost:
+              oneOf:
+                - $ref: "#/components/schemas/Money"
+                - type: "null"
+            typeName:
+              type: string
+            description:
+              type: string
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreviewLineItem"
+        unassignedPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        approval:
+          $ref: "#/components/schemas/ActivityApproval"
+
+    Notification:
+      type: object
+      additionalProperties: false
+      required: [id, kind, title, text, activity, actor, at, read]
+      properties:
+        id:
+          type: string
+          example: NT-1001
+        kind:
+          type: string
+          enum: [approvalNeeded, levelApproved, approved, declined, recalled, restarted]
+        title:
+          type: string
+          example: Approval needed
+        text:
+          type: string
+          example: Priya Raman submitted 'Launch film' (A-1042)
+        activity:
+          type: object
+          additionalProperties: false
+          required: [id, name, exists]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+              description: The name at the time.
+            exists:
+              type: boolean
+              description: false when the activity is no longer stored (deleted).
+        actor:
+          $ref: "#/components/schemas/ActorRef"
+        at:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+
+    NotificationPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, unread]
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/Notification"
+        total:
+          type: integer
+          description: All of the person's notifications (items holds at most 50).
+        unread:
+          type: integer
+          description: All unread notifications of the person.
+
+    NotificationReadAll:
+      type: object
+      additionalProperties: false
+      required: [marked, unread]
+      properties:
+        marked:
+          type: integer
+          description: How many were unread and are now read.
+        unread:
+          type: integer
+          description: Always 0 after the call.

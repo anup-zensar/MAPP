@@ -285,10 +285,8 @@ undo the delete; check totals, statuses and the activity log at each step.
   the model no longer allows; and the line-item problems feature 007 adds. With nothing listed it MUST say
   "Ready to submit".
 - **FR-024**: A positive unassigned planned cost MUST appear in the panel as advice that does not block
-  ("2,000.00 USD not yet assigned to a line item"). [NEEDS CLARIFICATION: Must an activity's planned cost
-  be fully assigned to line items (unassigned planned cost exactly 0.00, so at least one line item when
-  the planned cost is above 0) before it can be submitted, or is a positive balance only advice? Default
-  until answered: advice only, as domain model §4.3 blocks only a negative balance.]
+  ("2,000.00 USD not yet assigned to a line item"). Resolved: a positive balance is advice only and never
+  blocks submitting; a negative balance blocks it (D-016, D-204).
 - **FR-025**: **Submit for approval** MUST always be visible; while problems remain, choosing it MUST say
   "Submitting needs <n> things — view list" and open the panel. Submitting itself is feature 008.
 

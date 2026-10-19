@@ -1,0 +1,1088 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 005 fragment (campaigns and initiatives)
+  version: 0.5.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT of backend/api/openapi.yaml: only the paths and component schemas of feature 005. It is
+    merged into the one contract file; every "#/components/..." reference resolves there.
+
+    Reused from feature 001 (backend/api/openapi.yaml): responses BadRequest, Unauthorized, NotFound,
+    Conflict, Error; schemas DeleteResult, RecordRef, ActorRef.
+    Expected from other features (by these names): Money and AttributeValues (feature 002),
+    PersonRef (feature 003), MissingField ({field, label}) and ApprovalProgress (the state enum
+    noActivities | inProgress | allApproved) (feature 004). Those names are not redefined here.
+    Completeness (feature 004) has another shape (a list of items below); this feature's record
+    answers use RecordCompleteness (a count of items below) - see plan "Alignment with feature 004".
+
+    Conventions (feature 001 research R9, R10): camelCase JSON; calendar dates YYYY-MM-DD; money
+    {"amount": "1234.50", "currency": "USD"} with string amounts (budgets are always USD); lists answer
+    an object with items and total; every update sends the version it started from; a delete answers
+    the recycle-bin entry; every failure answers the Error object.
+
+    Derived values (budgetAndCost, approvalProgress, timing, completeness, goals, counts,
+    outsidePlanYear, parentRemainingBudget) are calculated by the API on every read and are never sent
+    by the web app (plan "Roll-ups").
+tags:
+  - name: Campaigns
+    description: Campaigns and initiatives inside a plan; budgets flow down, costs roll up (feature 005)
+
+paths:
+  /api/plans/{planId}/campaigns:
+    parameters:
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+        example: P-1001
+    get:
+      tags: [Campaigns]
+      operationId: listPlanCampaigns
+      summary: The campaigns of a plan, each with its initiatives, and the plan's totals
+      description: |
+        Campaigns and, inside each, initiatives are ordered by start date, then name ignoring letter
+        case; records without dates come last (FR-020). The totals feed the plan tree's totals row and
+        the plan's remaining budget (FR-022).
+      responses:
+        "200":
+          description: The plan's campaigns with their initiatives and roll-ups.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanCampaigns"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Campaigns]
+      operationId: createCampaign
+      summary: Add a campaign to a plan
+      description: |
+        Only the name is required (FR-005). The API stores exactly what it receives: the defaults of
+        FR-003 (owner and dates from the plan, yes/no attributes No) are filled in and shown by the form.
+        Every problem is reported at once, including a name already used in the plan.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/campaigns/{campaignId}:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+    get:
+      tags: [Campaigns]
+      operationId: getCampaign
+      summary: One campaign with its initiatives and roll-ups (its details panel)
+      responses:
+        "200":
+          description: The campaign.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Campaigns]
+      operationId: updateCampaign
+      summary: Save a campaign's form (every editable field and the version it started from)
+      description: |
+        Allowed whatever the plan's status (FR-018). Refused with validation_failed when the new dates
+        would leave initiatives outside them (FR-007), naming each. A save that changes nothing answers
+        the campaign unchanged, with no new version and no log entry.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignUpdate"
+      responses:
+        "200":
+          description: The campaign after the change, with recalculated values.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Campaigns]
+      operationId: deleteCampaign
+      summary: Delete a campaign with its initiatives, activities and line items (they go to the recycle bin)
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/campaigns/{campaignId}/destinations:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+      - $ref: "#/components/parameters/Purpose"
+    get:
+      tags: [Campaigns]
+      operationId: listCampaignDestinations
+      summary: The plans a campaign can be moved or copied to (plans of the same year)
+      description: |
+        purpose=move lists the other plans of the campaign's year (Draft or Published); a plan that
+        already has a campaign with this name is listed but not available, with the reason and the fix
+        (FR-023). purpose=copy lists the campaign's own plan first (current) and the other plans of the
+        year, all available, each with a suggested name (FR-026). Each item says whether the record's
+        budget would over-allocate it and, for another model or business unit, the consequences (FR-024).
+      responses:
+        "200":
+          description: The destinations, current first, then by name ignoring letter case.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DestinationList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/campaigns/{campaignId}/move:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+    post:
+      tags: [Campaigns]
+      operationId: moveCampaign
+      summary: Move a campaign, with everything below it, to another plan of the same year
+      description: |
+        Keeps IDs, dates, values and statuses below (FR-025). Refused with validation_failed on planId
+        when the plan is gone, of another year, the current plan, or already has a campaign with this name.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignMove"
+      responses:
+        "200":
+          description: The campaign in its new plan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/campaigns/{campaignId}/copy:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+    post:
+      tags: [Campaigns]
+      operationId: copyCampaign
+      summary: Copy a campaign with everything below it into its plan or another plan of the same year
+      description: |
+        Copies per R13 (new IDs, activities Created, no approvals, comments, history or GSAP values),
+        completely or not at all (FR-027). The name is checked like a new campaign's name in the
+        destination plan.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignCopy"
+      responses:
+        "201":
+          description: The new campaign.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/campaigns/{campaignId}/initiatives:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+    post:
+      tags: [Campaigns]
+      operationId: createInitiative
+      summary: Add an initiative to a campaign
+      description: Only the name is required (FR-005); the dates must lie inside the campaign's dates when it has both (R3, FR-006).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiativeCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Initiative"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/initiatives/{initiativeId}:
+    parameters:
+      - $ref: "#/components/parameters/InitiativeId"
+    get:
+      tags: [Campaigns]
+      operationId: getInitiative
+      summary: One initiative with its roll-ups (its details panel)
+      responses:
+        "200":
+          description: The initiative.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Initiative"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Campaigns]
+      operationId: updateInitiative
+      summary: Save an initiative's form (every editable field and the version it started from)
+      description: Refused with validation_failed when the dates leave the campaign's dates (R3) or would leave activities outside them (FR-007; only the start date of ongoing activities).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiativeUpdate"
+      responses:
+        "200":
+          description: The initiative after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Initiative"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Campaigns]
+      operationId: deleteInitiative
+      summary: Delete an initiative with its activities and line items (they go to the recycle bin)
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/initiatives/{initiativeId}/destinations:
+    parameters:
+      - $ref: "#/components/parameters/InitiativeId"
+      - $ref: "#/components/parameters/Purpose"
+    get:
+      tags: [Campaigns]
+      operationId: listInitiativeDestinations
+      summary: The campaigns of the same plan an initiative can be moved or copied to
+      description: |
+        purpose=move lists the other campaigns of the plan with their dates; a campaign that already has
+        an initiative with this name, or whose dates do not contain the initiative's dates, is listed but
+        not available, with the reason and the fix (FR-023). purpose=copy lists the initiative's own
+        campaign first (current) and the others; only the date rule makes one unavailable (FR-026).
+      responses:
+        "200":
+          description: The destinations, current first, then by start date and name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DestinationList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/initiatives/{initiativeId}/move:
+    parameters:
+      - $ref: "#/components/parameters/InitiativeId"
+    post:
+      tags: [Campaigns]
+      operationId: moveInitiative
+      summary: Move an initiative, with its activities and line items, to another campaign of the same plan
+      description: Refused with validation_failed on campaignId when the campaign is gone, in another plan, the current one, already has an initiative with this name, or its dates do not contain the initiative's dates.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiativeMove"
+      responses:
+        "200":
+          description: The initiative in its new campaign.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Initiative"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/initiatives/{initiativeId}/copy:
+    parameters:
+      - $ref: "#/components/parameters/InitiativeId"
+    post:
+      tags: [Campaigns]
+      operationId: copyInitiative
+      summary: Copy an initiative with its activities and line items into a campaign of the same plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiativeCopy"
+      responses:
+        "201":
+          description: The new initiative.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Initiative"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    CampaignId:
+      name: campaignId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: C-1001
+    InitiativeId:
+      name: initiativeId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: I-1001
+    Purpose:
+      name: purpose
+      in: query
+      required: true
+      description: What the destinations are for. Anything else answers validation_failed on purpose.
+      schema:
+        type: string
+        enum: [move, copy]
+
+  schemas:
+    PlanRef:
+      type: object
+      additionalProperties: false
+      description: The plan a campaign or initiative belongs to, for the breadcrumb and the R4 warning.
+      required: [id, name, year]
+      properties:
+        id:
+          type: string
+          example: P-1001
+        name:
+          type: string
+          example: FY2026 Lubricants Europe
+        year:
+          type: integer
+          example: 2026
+
+    CampaignRef:
+      type: object
+      additionalProperties: false
+      description: The campaign an initiative belongs to, with its dates (the initiative's allowed range, R3).
+      required: [id, name, startDate, endDate]
+      properties:
+        id:
+          type: string
+          example: C-1001
+        name:
+          type: string
+          example: Helix launch
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+
+    BudgetAndCost:
+      type: object
+      additionalProperties: false
+      description: Budget flowing down and cost rolling up for one campaign or initiative (domain model §4.1–4.2). All USD.
+      required: [allocatedToChildren, remainingForChildren, overAllocatedBy, plannedCost, budgetUsedPercent, overBudget, leftToPlan]
+      properties:
+        allocatedToChildren:
+          description: Sum of the children's budgets (0.00 when none; always 0.00 for an initiative).
+          $ref: "#/components/schemas/Money"
+        remainingForChildren:
+          description: Budget minus allocatedToChildren; null when the record has no budget. May be negative.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        overAllocatedBy:
+          description: The positive amount by which remainingForChildren is below zero; null otherwise.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          description: Sum of the planned costs below; null when nothing below has a planned cost.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetUsedPercent:
+          type: [integer, "null"]
+          minimum: 0
+          description: plannedCost × 100 ÷ budget rounded half up; null without a budget, with a budget of 0.00 or without a planned cost.
+        overBudget:
+          type: boolean
+          description: plannedCost is greater than the budget (exact comparison).
+        leftToPlan:
+          description: Budget minus planned cost (0.00 when none); null without a budget. Negative when over budget.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    ApprovalSummary:
+      type: object
+      additionalProperties: false
+      description: Approval progress derived from the activities below (domain model §2.2) with its counts; Approved, In progress and Complete count as approved.
+      required: [state, approved, total]
+      properties:
+        state:
+          $ref: "#/components/schemas/ApprovalProgress"
+        approved:
+          type: integer
+          minimum: 0
+        total:
+          type: integer
+          minimum: 0
+
+    RecordCompleteness:
+      type: object
+      additionalProperties: false
+      description: The record's own empty needed-to-publish fields and how many records below are incomplete (domain model §2.6). MissingField.field is ownerId, startDate or attributes.<attributeId>.
+      required: [missing, itemsBelowNeedingAttention]
+      properties:
+        missing:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingField"
+        itemsBelowNeedingAttention:
+          type: integer
+          minimum: 0
+
+    GoalSums:
+      type: object
+      additionalProperties: false
+      description: Sum of the activities' goals below (domain model §4.5); each null when no activity has that value.
+      required: [inq, mql, revenue]
+      properties:
+        inq:
+          type: [integer, "null"]
+          minimum: 0
+        mql:
+          type: [integer, "null"]
+          minimum: 0
+        revenue:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    CampaignCounts:
+      type: object
+      additionalProperties: false
+      required: [initiatives, activities, approvedActivities, lineItems]
+      properties:
+        initiatives:
+          type: integer
+          minimum: 0
+        activities:
+          type: integer
+          minimum: 0
+        approvedActivities:
+          type: integer
+          minimum: 0
+          description: Activities whose status is Approved (shown as Approved, In progress or Complete).
+        lineItems:
+          type: integer
+          minimum: 0
+
+    InitiativeCounts:
+      type: object
+      additionalProperties: false
+      required: [activities, approvedActivities, lineItems]
+      properties:
+        activities:
+          type: integer
+          minimum: 0
+        approvedActivities:
+          type: integer
+          minimum: 0
+        lineItems:
+          type: integer
+          minimum: 0
+
+    Initiative:
+      type: object
+      additionalProperties: false
+      required: [id, planId, campaignId, name, description, ownerId, owner, startDate, endDate, budget, attributes, plan, campaign, parentRemainingBudget, budgetAndCost, approvalProgress, timing, completeness, goals, counts, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: I-1001
+        planId:
+          type: string
+          description: The plan of its campaign (derived, not stored).
+        campaignId:
+          type: string
+        name:
+          type: string
+          example: Digital & social
+        description:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        owner:
+          description: The owner as people read it (inactive people included, labelled by the web app).
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        plan:
+          $ref: "#/components/schemas/PlanRef"
+        campaign:
+          $ref: "#/components/schemas/CampaignRef"
+        parentRemainingBudget:
+          description: The campaign's remaining budget (campaign budget minus all its initiatives' budgets, this one included); null when the campaign has no budget.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetAndCost:
+          $ref: "#/components/schemas/BudgetAndCost"
+        approvalProgress:
+          $ref: "#/components/schemas/ApprovalSummary"
+        timing:
+          type: [string, "null"]
+          enum: [notStarted, running, finished, null]
+          description: Compared with today's date (UTC); null while the record has no dates.
+        completeness:
+          $ref: "#/components/schemas/RecordCompleteness"
+        goals:
+          $ref: "#/components/schemas/GoalSums"
+        counts:
+          $ref: "#/components/schemas/InitiativeCounts"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    Campaign:
+      type: object
+      additionalProperties: false
+      required: [id, planId, name, description, ownerId, owner, startDate, endDate, budget, attributes, plan, outsidePlanYear, parentRemainingBudget, budgetAndCost, approvalProgress, timing, completeness, goals, counts, initiatives, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: C-1001
+        planId:
+          type: string
+        name:
+          type: string
+          example: Helix launch
+        description:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        plan:
+          $ref: "#/components/schemas/PlanRef"
+        outsidePlanYear:
+          type: boolean
+          description: The dates start before 1 January or end after 31 December of the plan's year (R4 warning; never blocks).
+        parentRemainingBudget:
+          description: The plan's remaining budget (plan budget minus all its campaigns' budgets, this one included); null when the plan has no budget.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetAndCost:
+          $ref: "#/components/schemas/BudgetAndCost"
+        approvalProgress:
+          $ref: "#/components/schemas/ApprovalSummary"
+        timing:
+          type: [string, "null"]
+          enum: [notStarted, running, finished, null]
+        completeness:
+          $ref: "#/components/schemas/RecordCompleteness"
+        goals:
+          $ref: "#/components/schemas/GoalSums"
+        counts:
+          $ref: "#/components/schemas/CampaignCounts"
+        initiatives:
+          type: array
+          description: Its initiatives, ordered by start date, then name; without dates last.
+          items:
+            $ref: "#/components/schemas/Initiative"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    PlanCampaignTotals:
+      type: object
+      additionalProperties: false
+      description: The plan tree's totals row and the plan's budget position (FR-022, domain model §4.1–4.2).
+      required: [campaigns, initiatives, activities, allocatedToCampaigns, planBudget, remainingPlanBudget, overAllocatedBy, plannedCost]
+      properties:
+        campaigns:
+          type: integer
+          minimum: 0
+        initiatives:
+          type: integer
+          minimum: 0
+        activities:
+          type: integer
+          minimum: 0
+        allocatedToCampaigns:
+          description: Sum of the campaigns' budgets (0.00 when none).
+          $ref: "#/components/schemas/Money"
+        planBudget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        remainingPlanBudget:
+          description: Plan budget minus allocatedToCampaigns; null when the plan has no budget.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        overAllocatedBy:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCost:
+          description: The plan's planned cost (sum of its campaigns'); null when nothing has a planned cost.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    PlanCampaigns:
+      type: object
+      additionalProperties: false
+      description: Answer of GET /api/plans/{planId}/campaigns.
+      required: [plan, planOwner, items, total, totals]
+      properties:
+        plan:
+          $ref: "#/components/schemas/PlanRef"
+        planOwner:
+          description: The plan's owner, the default owner of a new campaign (R2).
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Campaign"
+        total:
+          type: integer
+          description: The number of campaigns.
+        totals:
+          $ref: "#/components/schemas/PlanCampaignTotals"
+
+    CampaignCreate:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        budget:
+          description: USD only; at most 2 decimals; not negative.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+
+    CampaignUpdate:
+      type: object
+      additionalProperties: false
+      description: The whole form, every field sent; null or "" clears a field.
+      required: [name, description, ownerId, startDate, endDate, budget, attributes, version]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        version:
+          type: integer
+          description: The version the user started editing from. Missing or below 1 answers validation_failed on version.
+
+    InitiativeCreate:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+
+    InitiativeUpdate:
+      type: object
+      additionalProperties: false
+      description: The whole form, every field sent; the campaign changes only with Move.
+      required: [name, description, ownerId, startDate, endDate, budget, attributes, version]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        version:
+          type: integer
+
+    CampaignMove:
+      type: object
+      additionalProperties: false
+      required: [planId, version]
+      properties:
+        planId:
+          type: string
+          description: The plan to move to (same year).
+        version:
+          type: integer
+          description: The version of the campaign the user saw.
+
+    InitiativeMove:
+      type: object
+      additionalProperties: false
+      required: [campaignId, version]
+      properties:
+        campaignId:
+          type: string
+          description: The campaign to move to (same plan).
+        version:
+          type: integer
+
+    CampaignCopy:
+      type: object
+      additionalProperties: false
+      required: [planId, name]
+      properties:
+        planId:
+          type: string
+          description: The plan to copy into (the campaign's own plan or another of the same year).
+        name:
+          type: string
+          description: The copy's name; required, at most 120 characters, unique in the destination plan.
+
+    InitiativeCopy:
+      type: object
+      additionalProperties: false
+      required: [campaignId, name]
+      properties:
+        campaignId:
+          type: string
+          description: The campaign to copy into (the initiative's own campaign or another of the same plan).
+        name:
+          type: string
+
+    TypeNotAllowed:
+      type: object
+      additionalProperties: false
+      description: An activity whose type the destination plan's model does not allow (R7); it keeps its type.
+      required: [id, name, typeName]
+      properties:
+        id:
+          type: string
+          example: A-1042
+        name:
+          type: string
+          example: Launch film
+        typeName:
+          type: string
+          example: Event
+
+    MoveConsequences:
+      type: object
+      additionalProperties: false
+      description: What changes for the records below when a campaign lands in a plan with another model or business unit (FR-024).
+      required: [modelName, modelChanges, businessUnitChanges, typesNotAllowed, groupsHidden, groupsShown]
+      properties:
+        modelName:
+          type: string
+          description: The destination plan's model.
+          example: Mobility 1.0
+        modelChanges:
+          type: boolean
+          description: The destination uses another model; calculated goals will be recalculated with it.
+        businessUnitChanges:
+          type: boolean
+        typesNotAllowed:
+          type: array
+          items:
+            $ref: "#/components/schemas/TypeNotAllowed"
+        groupsHidden:
+          type: array
+          description: Names of attribute groups that will be hidden there (values kept, R9), e.g. Lubricants attributes (activities).
+          items:
+            type: string
+        groupsShown:
+          type: array
+          items:
+            type: string
+
+    Destination:
+      type: object
+      additionalProperties: false
+      description: A plan (for a campaign) or a campaign (for an initiative) to move or copy to.
+      required: [id, name, current, available, unavailableReason, planStatus, startDate, endDate, suggestedName, remainingAfter, overAllocatedBy, consequences]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        current:
+          type: boolean
+          description: The record's own parent (listed only for copies, first, as the default).
+        available:
+          type: boolean
+        unavailableReason:
+          type: [string, "null"]
+          description: Why it cannot be chosen and how to fix it; null when available.
+          example: Dates don't fit (01 Mar – 31 Dec 2026) — change the initiative's dates first
+        planStatus:
+          type: [string, "null"]
+          enum: [draft, published, null]
+          description: The plan's status when the destination is a plan; null for campaigns.
+        startDate:
+          type: [string, "null"]
+          format: date
+          description: The campaign's dates when the destination is a campaign; null for plans.
+        endDate:
+          type: [string, "null"]
+          format: date
+        suggestedName:
+          type: [string, "null"]
+          description: For copies, the first free name "<name> (copy)", "(copy 2)", … in this destination; null for moves.
+        remainingAfter:
+          description: The destination's remaining budget for its children once this record's budget is added there; null when the destination has no budget.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        overAllocatedBy:
+          description: Positive amount when remainingAfter is below zero; null otherwise.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        consequences:
+          description: Only for a campaign going to a plan with another model or business unit; null otherwise.
+          oneOf:
+            - $ref: "#/components/schemas/MoveConsequences"
+            - type: "null"
+
+    DestinationList:
+      type: object
+      additionalProperties: false
+      required: [items, total, rule]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        total:
+          type: integer
+        rule:
+          type: string
+          description: The sentence that explains which destinations are offered.
+          example: Campaigns move only between plans of the same year

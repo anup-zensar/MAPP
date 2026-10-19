@@ -1,0 +1,1085 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 010 All work views (fragment)
+  version: 0.1.0
+  description: |
+    Fragment merged into backend/api/openapi.yaml. Conventions, error responses, ActorRef and the Error
+    schema are feature 001's. Money is owned by feature 002 (expected schema name: Money, an object
+    {"amount": "1234.50", "currency": "USD"} with a decimal string amount).
+
+    All work is read-only on business records. Every money value is already converted to the signed-in
+    person's display currency (summed in USD first, converted once). Saved views and All work preferences
+    are personal settings: no version, not in the activity log.
+tags:
+  - name: All work
+    description: The cross-plan grid, calendar and budget views, their export and the person's saved views
+paths:
+  /api/all-work:
+    get:
+      tags: [All work]
+      operationId: getAllWork
+      summary: Everything one All work view shows for a filter set
+      description: |
+        Rows come in their final order (tree order, sorted within each parent). Each row is a match or a
+        context row. Cells follow the requested columns, in order. The view budget adds period amounts;
+        the view calendar leaves out line-item and unassigned rows. Unknown IDs and columns are ignored
+        and listed in leftOut.
+      parameters:
+        - $ref: "#/components/parameters/AllWorkYear"
+        - $ref: "#/components/parameters/AllWorkView"
+        - $ref: "#/components/parameters/AllWorkPlan"
+        - $ref: "#/components/parameters/AllWorkPlanStatus"
+        - $ref: "#/components/parameters/AllWorkContainerStatus"
+        - $ref: "#/components/parameters/AllWorkActivityStatus"
+        - $ref: "#/components/parameters/AllWorkOwner"
+        - $ref: "#/components/parameters/AllWorkTeam"
+        - $ref: "#/components/parameters/AllWorkBusinessUnit"
+        - $ref: "#/components/parameters/AllWorkActivityType"
+        - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkShowLevels"
+        - $ref: "#/components/parameters/AllWorkSearch"
+        - $ref: "#/components/parameters/AllWorkColumn"
+        - $ref: "#/components/parameters/AllWorkSort"
+        - $ref: "#/components/parameters/AllWorkPeriod"
+      responses:
+        "200":
+          description: The view.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllWorkResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/all-work/options:
+    get:
+      tags: [All work]
+      operationId: getAllWorkOptions
+      summary: The choices of the filter bar for a year, and the column catalogue
+      parameters:
+        - $ref: "#/components/parameters/AllWorkYear"
+      responses:
+        "200":
+          description: The choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllWorkOptions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/all-work/export:
+    get:
+      tags: [All work]
+      operationId: exportAllWork
+      summary: The current view as a spreadsheet (.xlsx) or CSV file
+      description: |
+        Every matching and context row, including rows in collapsed branches, with Level and Path columns,
+        the view's columns and the totals row; the notes (view, year, filters, search, Show levels,
+        display currency, exporter, time) come before the data (spreadsheet - first sheet "About this
+        export").
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [xlsx, csv]
+        - name: unassigned
+          in: query
+          description: Include the unassigned planned cost rows (the screen's switch). Default true.
+          schema:
+            type: boolean
+            default: true
+        - $ref: "#/components/parameters/AllWorkYear"
+        - $ref: "#/components/parameters/AllWorkView"
+        - $ref: "#/components/parameters/AllWorkPlan"
+        - $ref: "#/components/parameters/AllWorkPlanStatus"
+        - $ref: "#/components/parameters/AllWorkContainerStatus"
+        - $ref: "#/components/parameters/AllWorkActivityStatus"
+        - $ref: "#/components/parameters/AllWorkOwner"
+        - $ref: "#/components/parameters/AllWorkTeam"
+        - $ref: "#/components/parameters/AllWorkBusinessUnit"
+        - $ref: "#/components/parameters/AllWorkActivityType"
+        - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkShowLevels"
+        - $ref: "#/components/parameters/AllWorkSearch"
+        - $ref: "#/components/parameters/AllWorkColumn"
+        - $ref: "#/components/parameters/AllWorkSort"
+        - $ref: "#/components/parameters/AllWorkPeriod"
+      responses:
+        "200":
+          description: The file. Its name is in Content-Disposition, e.g. NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx.
+          headers:
+            Content-Disposition:
+              description: attachment with filename (ASCII) and filename* (UTF-8).
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/all-work/records/{recordId}:
+    get:
+      tags: [All work]
+      operationId: locateAllWorkRecord
+      summary: Check that a row's record still exists before opening it
+      description: A deleted record answers 404 with "This <level> was deleted — it is in the recycle bin" or "This <level> no longer exists — someone may have deleted it."
+      parameters:
+        - $ref: "#/components/parameters/AllWorkRecordId"
+      responses:
+        "200":
+          description: The record exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllWorkRecordLocation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/all-work/preferences:
+    get:
+      tags: [All work]
+      operationId: getAllWorkPreferences
+      summary: The signed-in person's remembered columns and sort (the defaults when never changed)
+      responses:
+        "200":
+          description: The preferences.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllWorkPreferences"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [All work]
+      operationId: updateAllWorkPreferences
+      summary: Remember the signed-in person's columns, their order and the sort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllWorkPreferences"
+      responses:
+        "200":
+          description: The preferences after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllWorkPreferences"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/saved-views:
+    get:
+      tags: [All work]
+      operationId: listSavedViews
+      summary: The signed-in person's saved views, sorted by name ignoring letter case
+      responses:
+        "200":
+          description: Only the signed-in person's views.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedViewPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [All work]
+      operationId: createSavedView
+      summary: Save the current All work state under a name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedViewCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedView"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/saved-views/{viewId}:
+    patch:
+      tags: [All work]
+      operationId: updateSavedView
+      summary: Rename a saved view, replace its state, or set or remove it as the default
+      parameters:
+        - $ref: "#/components/parameters/ViewId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedViewUpdate"
+      responses:
+        "200":
+          description: The view after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedView"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [All work]
+      operationId: deleteSavedView
+      summary: Delete a saved view (not to the recycle bin; the answer lets the web app offer Undo)
+      parameters:
+        - $ref: "#/components/parameters/ViewId"
+      responses:
+        "200":
+          description: The deleted view, so that Undo can save it again.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedView"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    AllWorkYear:
+      name: year
+      in: query
+      description: The plans' year. Default - the current year.
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    AllWorkView:
+      name: view
+      in: query
+      description: grid (default), calendar or budget (Budget & cost).
+      schema:
+        type: string
+        enum: [grid, calendar, budget]
+        default: grid
+    AllWorkPlan:
+      name: plan
+      in: query
+      description: Plan IDs (repeat the parameter for several).
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          example: P-1001
+    AllWorkPlanStatus:
+      name: planStatus
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [draft, published]
+    AllWorkContainerStatus:
+      name: containerStatus
+      in: query
+      description: Campaign and initiative statuses. OR within Approval progress and within Timing; AND between the two.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [noActivities, inProgress, allApproved, notStarted, running, finished]
+    AllWorkActivityStatus:
+      name: activityStatus
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [created, submitted, declined, approved, inProgress, complete]
+    AllWorkOwner:
+      name: owner
+      in: query
+      description: Person IDs; tested on plans, campaigns, initiatives and activities.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          example: U-1003
+    AllWorkTeam:
+      name: team
+      in: query
+      description: Team IDs; tested on the plan's teams.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    AllWorkBusinessUnit:
+      name: businessUnit
+      in: query
+      description: Option IDs of the plan-level Business unit attribute.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    AllWorkActivityType:
+      name: activityType
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    AllWorkStrategic:
+      name: strategic
+      in: query
+      description: Strategic / AOP plans.
+      schema:
+        type: string
+        enum: [include, only, exclude]
+        default: include
+    AllWorkShowLevels:
+      name: showLevels
+      in: query
+      schema:
+        type: string
+        enum: [everything, completeBranches, campaignsWithoutInitiatives, initiativesWithoutActivities]
+        default: everything
+    AllWorkSearch:
+      name: search
+      in: query
+      description: Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters).
+      schema:
+        type: string
+    AllWorkColumn:
+      name: column
+      in: query
+      description: Grid columns in display order (repeat the parameter). Name is always shown and is not a column.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          example: plannedCost
+    AllWorkSort:
+      name: sort
+      in: query
+      description: A column key and a direction, e.g. plannedCost:desc. Children are sorted within each parent.
+      schema:
+        type: string
+        pattern: "^[A-Za-z0-9._-]+:(asc|desc)$"
+    AllWorkPeriod:
+      name: period
+      in: query
+      description: Budget & cost columns by month (default) or quarter.
+      schema:
+        type: string
+        enum: [month, quarter]
+        default: month
+    AllWorkRecordId:
+      name: recordId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: A-1001
+    ViewId:
+      name: viewId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: SV-1001
+
+  schemas:
+    AllWorkLevel:
+      type: string
+      enum: [plan, campaign, initiative, activity, lineItem, unassigned]
+
+    AllWorkTone:
+      type: string
+      enum: [neutral, review, positive, active, done, problem]
+
+    AllWorkStatus:
+      type: object
+      additionalProperties: false
+      description: A status chip - the word, its colour family, and an optional detail (e.g. 3 of 5 activities approved).
+      required: [value, label, tone]
+      properties:
+        value:
+          type: string
+          example: inProgress
+        label:
+          type: string
+          example: In progress
+        tone:
+          $ref: "#/components/schemas/AllWorkTone"
+        detail:
+          type: string
+          example: 3 of 5 activities approved
+
+    AllWorkCell:
+      type: object
+      additionalProperties: false
+      description: One value of the grid. kind says which property holds it; empty means "—" on the column's own level.
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [empty, text, money, number, percent, date, dateTime, status]
+        text:
+          type: string
+          description: text cells, and the label of status cells.
+        money:
+          $ref: "#/components/schemas/Money"
+        number:
+          type: integer
+        percent:
+          type: string
+          description: Whole per cent, e.g. "80".
+        date:
+          type: string
+          format: date
+        dateTime:
+          type: string
+          format: date-time
+        tone:
+          $ref: "#/components/schemas/AllWorkTone"
+        inactive:
+          type: boolean
+          description: The value is an inactive option, type or person (shown with "(inactive)").
+        unfiltered:
+          $ref: "#/components/schemas/AllWorkCell"
+
+    AllWorkSearchHit:
+      type: object
+      additionalProperties: false
+      required: [fields]
+      properties:
+        fields:
+          type: array
+          items:
+            type: string
+            enum: [name, id, externalName, description]
+        excerpt:
+          type: string
+          description: About 60 characters around the first hit in the external name or description.
+
+    AllWorkOwner:
+      type: object
+      additionalProperties: false
+      required: [id, name, inactive]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        inactive:
+          type: boolean
+
+    AllWorkRow:
+      type: object
+      additionalProperties: false
+      required: [key, parentKey, level, recordId, planId, depth, name, role, status, hasChildren, cells]
+      properties:
+        key:
+          type: string
+          description: Unique row key - the record ID, or <activity ID>:unassigned.
+          example: A-1001
+        parentKey:
+          oneOf:
+            - type: string
+            - type: "null"
+        level:
+          $ref: "#/components/schemas/AllWorkLevel"
+        recordId:
+          type: string
+          description: The record the row opens (for an unassigned row, its activity).
+        planId:
+          type: string
+        activityId:
+          type: string
+          description: For line items and unassigned rows, their activity.
+        depth:
+          type: integer
+          minimum: 0
+          maximum: 4
+        name:
+          type: string
+        role:
+          type: string
+          enum: [match, context]
+        searchHit:
+          $ref: "#/components/schemas/AllWorkSearchHit"
+        strategic:
+          type: boolean
+          description: Plans only - Strategic / AOP plan (the AOP tag).
+        status:
+          oneOf:
+            - $ref: "#/components/schemas/AllWorkStatus"
+            - type: "null"
+        timing:
+          $ref: "#/components/schemas/AllWorkStatus"
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        ongoing:
+          type: boolean
+        owner:
+          $ref: "#/components/schemas/AllWorkOwner"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        balance:
+          $ref: "#/components/schemas/Money"
+        budget:
+          $ref: "#/components/schemas/Money"
+        hasChildren:
+          type: boolean
+        filtered:
+          type: boolean
+          description: Containers only - filters hide some records below.
+        cells:
+          type: array
+          description: One per column of AllWorkResult.columns, in order; null = blank (the column belongs to another level).
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/AllWorkCell"
+              - type: "null"
+        periods:
+          type: array
+          description: Budget & cost only - one amount per AllWorkResult.periods entry; null = "—".
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        total:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    AllWorkColumn:
+      type: object
+      additionalProperties: false
+      required: [key, label, group, kind, levels, sortable, inactive]
+      properties:
+        key:
+          type: string
+          example: attr.cluster
+        label:
+          type: string
+          example: Cluster
+        group:
+          type: string
+          enum: [standard, plan, campaign, initiative, activity, lineItem]
+        kind:
+          type: string
+          enum: [text, money, number, percent, date, dateTime, status]
+        levels:
+          type: array
+          description: The levels on which the column has values.
+          items:
+            $ref: "#/components/schemas/AllWorkLevel"
+        sortable:
+          type: boolean
+        inactive:
+          type: boolean
+
+    AllWorkColumnGroup:
+      type: object
+      additionalProperties: false
+      required: [group, label, columns]
+      properties:
+        group:
+          type: string
+          enum: [standard, plan, campaign, initiative, activity, lineItem]
+        label:
+          type: string
+          example: Campaign
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkColumn"
+
+    AllWorkPeriod:
+      type: object
+      additionalProperties: false
+      required: [key, label]
+      properties:
+        key:
+          type: string
+          description: 2026-01 … 2026-12, Q1 … Q4, other or noDates.
+        label:
+          type: string
+          example: Mar
+
+    AllWorkSummary:
+      type: object
+      additionalProperties: false
+      required: [campaigns, initiatives, activities, plannedCost, planBudget, unassignedPlannedCost, negativeBalanceCount]
+      properties:
+        campaigns:
+          type: integer
+        initiatives:
+          type: integer
+        activities:
+          type: integer
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        planBudget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        unassignedPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        negativeBalanceCount:
+          type: integer
+          description: Matching activities whose line items exceed their planned cost.
+
+    AllWorkCount:
+      type: object
+      additionalProperties: false
+      required: [shown, total, noun]
+      properties:
+        shown:
+          type: integer
+        total:
+          type: integer
+        noun:
+          type: string
+          enum: [activities, campaigns, initiatives]
+
+    AllWorkTotals:
+      type: object
+      additionalProperties: false
+      required: [activities, cells, plannedCost, planBudget]
+      properties:
+        activities:
+          type: integer
+        cells:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/AllWorkCell"
+              - type: "null"
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        planBudget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        periods:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        total:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    AllWorkLeftOut:
+      type: object
+      additionalProperties: false
+      required: [filter, id]
+      properties:
+        filter:
+          type: string
+          enum: [plan, owner, team, businessUnit, activityType, column, sort]
+        id:
+          type: string
+
+    AllWorkResult:
+      type: object
+      additionalProperties: false
+      required: [year, today, view, displayCurrency, generatedAt, columns, periods, rows, summary, count, totals, leftOut]
+      properties:
+        year:
+          type: integer
+        today:
+          type: string
+          format: date
+          description: The server's date, for the calendar's Today line.
+        view:
+          type: string
+          enum: [grid, calendar, budget]
+        displayCurrency:
+          type: string
+          example: USD
+        generatedAt:
+          type: string
+          format: date-time
+          description: When the data was read ("Updated at 14:05").
+        columns:
+          type: array
+          description: The requested columns that exist, in order (grid only; empty otherwise).
+          items:
+            $ref: "#/components/schemas/AllWorkColumn"
+        periods:
+          type: array
+          description: Budget & cost only; empty otherwise.
+          items:
+            $ref: "#/components/schemas/AllWorkPeriod"
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkRow"
+        summary:
+          $ref: "#/components/schemas/AllWorkSummary"
+        count:
+          $ref: "#/components/schemas/AllWorkCount"
+        totals:
+          $ref: "#/components/schemas/AllWorkTotals"
+        leftOut:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkLeftOut"
+
+    AllWorkOption:
+      type: object
+      additionalProperties: false
+      required: [id, label, inactive]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        inactive:
+          type: boolean
+        mine:
+          type: boolean
+          description: Teams only - the signed-in person belongs to it (listed first).
+
+    AllWorkPlanOption:
+      type: object
+      additionalProperties: false
+      required: [id, label, status, strategic]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        strategic:
+          type: boolean
+
+    AllWorkOptions:
+      type: object
+      additionalProperties: false
+      required: [year, currentYear, years, plans, owners, teams, businessUnits, activityTypes, columnGroups, defaultColumns]
+      properties:
+        year:
+          type: integer
+        currentYear:
+          type: integer
+        years:
+          type: array
+          description: Years with plans plus the current year, newest first.
+          items:
+            type: integer
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkPlanOption"
+        owners:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkOption"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkOption"
+        businessUnits:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkOption"
+        activityTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkOption"
+        columnGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkColumnGroup"
+        defaultColumns:
+          type: array
+          items:
+            type: string
+
+    AllWorkRecordLocation:
+      type: object
+      additionalProperties: false
+      required: [recordId, level, name, planId]
+      properties:
+        recordId:
+          type: string
+        level:
+          type: string
+          enum: [plan, campaign, initiative, activity, lineItem]
+        name:
+          type: string
+        planId:
+          type: string
+        activityId:
+          type: string
+
+    AllWorkSort:
+      type: object
+      additionalProperties: false
+      required: [column, direction]
+      properties:
+        column:
+          type: string
+        direction:
+          type: string
+          enum: [asc, desc]
+
+    AllWorkPreferences:
+      type: object
+      additionalProperties: false
+      required: [columns, sort]
+      properties:
+        columns:
+          type: array
+          description: Column keys in order (at most 100, no duplicates; Name is always shown).
+          items:
+            type: string
+        sort:
+          oneOf:
+            - $ref: "#/components/schemas/AllWorkSort"
+            - type: "null"
+
+    AllWorkFilterValue:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+          description: The name when the view was saved, used to name a value that no longer exists.
+
+    AllWorkFilters:
+      type: object
+      additionalProperties: false
+      required: [plans, planStatuses, containerStatuses, activityStatuses, owners, teams, businessUnits, activityTypes, strategic, showLevels]
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkFilterValue"
+        planStatuses:
+          type: array
+          items:
+            type: string
+            enum: [draft, published]
+        containerStatuses:
+          type: array
+          items:
+            type: string
+            enum: [noActivities, inProgress, allApproved, notStarted, running, finished]
+        activityStatuses:
+          type: array
+          items:
+            type: string
+            enum: [created, submitted, declined, approved, inProgress, complete]
+        owners:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkFilterValue"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkFilterValue"
+        businessUnits:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkFilterValue"
+        activityTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkFilterValue"
+        strategic:
+          type: string
+          enum: [include, only, exclude]
+        showLevels:
+          type: string
+          enum: [everything, completeBranches, campaignsWithoutInitiatives, initiativesWithoutActivities]
+
+    AllWorkExpansion:
+      type: object
+      additionalProperties: false
+      required: [mode, toggled]
+      properties:
+        mode:
+          type: string
+          enum: [default, allExpanded, allCollapsed]
+        toggled:
+          type: array
+          description: Row keys opened or closed against the mode.
+          items:
+            type: string
+
+    AllWorkViewState:
+      type: object
+      additionalProperties: false
+      required: [view, year, filters, search, columns, sort, expansion, showUnassigned, period, calendarLayout]
+      properties:
+        view:
+          type: string
+          enum: [grid, calendar, budget]
+        year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        filters:
+          $ref: "#/components/schemas/AllWorkFilters"
+        search:
+          type: string
+        columns:
+          type: array
+          items:
+            type: string
+        sort:
+          oneOf:
+            - $ref: "#/components/schemas/AllWorkSort"
+            - type: "null"
+        expansion:
+          $ref: "#/components/schemas/AllWorkExpansion"
+        showUnassigned:
+          type: boolean
+        period:
+          type: string
+          enum: [month, quarter]
+        calendarLayout:
+          type: string
+          enum: [timeline, month]
+
+    SavedView:
+      type: object
+      additionalProperties: false
+      required: [id, name, isDefault, state, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          example: SV-1001
+        name:
+          type: string
+        isDefault:
+          type: boolean
+        state:
+          $ref: "#/components/schemas/AllWorkViewState"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SavedViewPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SavedView"
+        total:
+          type: integer
+
+    SavedViewCreate:
+      type: object
+      additionalProperties: false
+      required: [name, state]
+      properties:
+        name:
+          type: string
+        state:
+          $ref: "#/components/schemas/AllWorkViewState"
+        isDefault:
+          type: boolean
+          default: false
+
+    SavedViewUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the parts to change.
+      properties:
+        name:
+          type: string
+        state:
+          $ref: "#/components/schemas/AllWorkViewState"
+        isDefault:
+          type: boolean

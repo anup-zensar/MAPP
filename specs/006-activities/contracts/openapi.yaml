@@ -1,0 +1,953 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 006 Activities (fragment)
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    The paths and schemas feature 006 adds to backend/api/openapi.yaml. Merge them into that file; the
+    references below point at components the merged file already has:
+    - from feature 001: responses BadRequest, Unauthorized, NotFound, Conflict, Error; schemas RecordRef,
+      ActorRef, DeleteResult;
+    - from feature 002 (expected names): schemas Money ({"amount": "1234.50", "currency": "USD"}),
+      AttributeValues (an activity's Shell attribute values) and ShellAttribute (one attribute definition
+      with its options, marking, section, order, parent attribute and business-unit condition);
+    - from feature 003 (expected name): schema PersonRef ({id, name, initials, jobTitle, active}).
+
+    Conventions are 001's: camelCase JSON, calendar dates YYYY-MM-DD, lists answer {items, total}, every
+    failure answers Error with every field problem at once, updates carry the version they started from,
+    deletes answer DeleteResult so the web app can offer Undo.
+tags:
+  - name: Activities
+    description: Activities under initiatives — planned cost, Shell attributes, goals, status and the ready-to-submit check
+paths:
+  /api/initiatives/{initiativeId}/activity-form:
+    get:
+      tags: [Activities]
+      operationId: getNewActivityForm
+      summary: Everything the new-activity form needs, with its defaults
+      description: |
+        The plan, campaign and initiative, the plan's model and business units, the active activity types the
+        model allows (each with its default planned cost), the active approval workflows, the activity-level
+        Shell attributes, the names already used in the initiative, and the defaults (owner and dates from the
+        initiative, the approval workflow when exactly one is active).
+      parameters:
+        - $ref: "#/components/parameters/InitiativeIdPath"
+      responses:
+        "200":
+          description: The form's context, choices and defaults.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityForm"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/initiatives/{initiativeId}/activities:
+    post:
+      tags: [Activities]
+      operationId: createActivity
+      summary: Create an activity under an initiative (status Created)
+      description: Only the name and the activity type are required; needed-to-submit fields may stay empty.
+      parameters:
+        - $ref: "#/components/parameters/InitiativeIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/activities:
+    get:
+      tags: [Activities]
+      operationId: listPlanActivities
+      summary: Every activity of a plan, as plan-tree rows
+      description: Ordered by start date, then name ignoring letter case; activities without dates last.
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: P-1001
+      responses:
+        "200":
+          description: The plan's activities.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivitySummaryPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}:
+    get:
+      tags: [Activities]
+      operationId: getActivity
+      summary: An activity with its status, completeness, unassigned planned cost and ready-to-submit check
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: The activity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Activities]
+      operationId: updateActivity
+      summary: Save an edited activity
+      description: |
+        The body holds every editable field (null clears an optional one) and the version the person started
+        from. On a Submitted or Approved activity, a change of planned cost, start date, end date or ongoing is
+        refused (validation_failed on restartApproval) unless restartApproval is true; then the activity returns
+        to Created. A save that changes nothing answers the activity unchanged.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityUpdate"
+      responses:
+        "200":
+          description: The activity after the save.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Activities]
+      operationId: deleteActivity
+      summary: Delete an activity and its line items (they go to the recycle bin)
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/form:
+    get:
+      tags: [Activities]
+      operationId: getActivityEditForm
+      summary: Everything the edit form needs (no defaults)
+      description: As the new-activity form, plus the activity's current type and workflow even when inactive or no longer allowed; existingNames leaves out the activity itself.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: The form's context and choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityForm"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/destinations:
+    get:
+      tags: [Activities]
+      operationId: listActivityDestinations
+      summary: The initiatives of the activity's plan it can be moved or copied to, with the reason when not
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: Every initiative of the plan, grouped by campaign (campaigns, then initiatives, by start date then name).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityDestinationPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/move:
+    post:
+      tags: [Activities]
+      operationId: moveActivity
+      summary: Move an activity, with its line items and status, to another initiative of the same plan
+      description: Refused (validation_failed on initiativeId) when the target is not another initiative of the plan, when the activity's dates are not inside the target's dates, or when the target already has an activity with that name.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityMove"
+      responses:
+        "200":
+          description: The activity after the move.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/copy:
+    post:
+      tags: [Activities]
+      operationId: copyActivity
+      summary: Copy an activity with its line items into an initiative of the same plan
+      description: The copy is named "<name> (copy)", "<name> (copy 2)", …, starts as Created and has no approvals, comments, history or GSAP values (R13).
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityCopy"
+      responses:
+        "201":
+          description: The copy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    ActivityId:
+      name: activityId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: A-1001
+    InitiativeIdPath:
+      name: initiativeId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: I-1001
+
+  schemas:
+    ActivityStatus:
+      type: string
+      description: The stored status (domain model §2.3).
+      enum: [created, submitted, declined, approved]
+
+    ActivityDisplayStatus:
+      type: string
+      description: The status shown — approved activities show inProgress from their start date and complete after their end date (never when ongoing).
+      enum: [created, submitted, declined, approved, inProgress, complete]
+
+    ActivityTypeRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, active, allowed]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: Event
+        active:
+          type: boolean
+        allowed:
+          type: boolean
+          description: Whether the plan's model allows this type (R7).
+
+    ActivityWorkflowRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, active]
+      properties:
+        id:
+          type: string
+          example: WF-1001
+        name:
+          type: string
+          example: Lubricants EU approval
+        active:
+          type: boolean
+
+    ActivityGoals:
+      type: object
+      additionalProperties: false
+      description: INQ as typed; MQL, deals and revenue calculated from the plan's model unless setLaterStagesMyself is true (then MQL and revenue as typed, deals null).
+      required: [inq, setLaterStagesMyself, mql, deals, revenue, calculated]
+      properties:
+        inq:
+          type: [integer, "null"]
+          minimum: 0
+        setLaterStagesMyself:
+          type: boolean
+        mql:
+          type: [integer, "null"]
+          minimum: 0
+        deals:
+          type: [integer, "null"]
+          minimum: 0
+        revenue:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        calculated:
+          type: boolean
+          description: True when MQL and revenue come from the model.
+
+    ActivityGoalsInput:
+      type: object
+      additionalProperties: false
+      description: mql and revenue are used only when setLaterStagesMyself is true.
+      required: [inq, setLaterStagesMyself, mql, revenue]
+      properties:
+        inq:
+          type: [integer, "null"]
+        setLaterStagesMyself:
+          type: boolean
+        mql:
+          type: [integer, "null"]
+        revenue:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+
+    ActivityLineItemTotals:
+      type: object
+      additionalProperties: false
+      description: The activity's line items in short (feature 007; zero until it is delivered).
+      required: [count, plannedCost, autoSpread, customSpread]
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        autoSpread:
+          type: integer
+          minimum: 0
+          description: Line items spread Evenly, in the first or in the last month — re-spread when the dates change.
+        customSpread:
+          type: integer
+          minimum: 0
+          description: Line items with a custom spread — kept as typed when the dates change.
+
+    ActivityCompleteness:
+      type: object
+      additionalProperties: false
+      required: [missingFields, lineItemsNeedingAttention]
+      properties:
+        missingFields:
+          type: integer
+          minimum: 0
+          description: Items of the This activity group of the ready-to-submit check.
+        lineItemsNeedingAttention:
+          type: integer
+          minimum: 0
+
+    ActivitySubmitProblem:
+      type: object
+      additionalProperties: false
+      required: [code, field, lineItemId, lineItemName, message]
+      properties:
+        code:
+          type: string
+          description: missingField, splitIncomplete, datesOutsideInitiative, typeNotAllowed, inactiveWorkflow, negativeUnassigned, unassignedRemaining, or a line-item code of feature 007.
+          example: missingField
+        field:
+          type: string
+          description: The form field that fixes it, for example ownerId or attributes.<attributeId>; lineItems for the unassigned balance.
+          example: ownerId
+        lineItemId:
+          type: [string, "null"]
+        lineItemName:
+          type: [string, "null"]
+        message:
+          type: string
+          example: Owner — needed to submit
+
+    ActivitySubmitCheck:
+      type: object
+      additionalProperties: false
+      description: Everything that stops the activity from being submitted, all at once (FR-023); advice never blocks.
+      required: [ready, problemCount, activity, lineItems, advice]
+      properties:
+        ready:
+          type: boolean
+        problemCount:
+          type: integer
+          minimum: 0
+        activity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivitySubmitProblem"
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivitySubmitProblem"
+        advice:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivitySubmitProblem"
+
+    Activity:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - externalName
+        - plan
+        - campaign
+        - initiative
+        - activityType
+        - owner
+        - startDate
+        - endDate
+        - ongoing
+        - plannedCost
+        - approvalWorkflow
+        - description
+        - attributes
+        - goals
+        - status
+        - displayStatus
+        - unassignedPlannedCost
+        - lineItems
+        - completeness
+        - readiness
+        - version
+        - createdAt
+        - createdBy
+        - updatedAt
+        - updatedBy
+      properties:
+        id:
+          type: string
+          example: A-1001
+        name:
+          type: string
+          example: Launch film
+        externalName:
+          type: string
+          description: Empty when the activity name is used.
+        plan:
+          $ref: "#/components/schemas/RecordRef"
+        campaign:
+          $ref: "#/components/schemas/RecordRef"
+        initiative:
+          $ref: "#/components/schemas/RecordRef"
+        activityType:
+          $ref: "#/components/schemas/ActivityTypeRef"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+          description: Null when not set or when the activity is ongoing.
+        ongoing:
+          type: boolean
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        approvalWorkflow:
+          oneOf:
+            - $ref: "#/components/schemas/ActivityWorkflowRef"
+            - type: "null"
+        description:
+          type: string
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        goals:
+          $ref: "#/components/schemas/ActivityGoals"
+        status:
+          $ref: "#/components/schemas/ActivityStatus"
+        displayStatus:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        unassignedPlannedCost:
+          description: Planned cost minus the line items' USD planned costs (Sys_Gen_Balance); null when there is neither.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        lineItems:
+          $ref: "#/components/schemas/ActivityLineItemTotals"
+        completeness:
+          $ref: "#/components/schemas/ActivityCompleteness"
+        readiness:
+          $ref: "#/components/schemas/ActivitySubmitCheck"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    ActivitySummary:
+      type: object
+      additionalProperties: false
+      description: An activity as a row of the plan tree.
+      required: [id, name, initiativeId, activityType, owner, startDate, endDate, ongoing, plannedCost, unassignedPlannedCost, status, displayStatus, completeness, version]
+      properties:
+        id:
+          type: string
+          example: A-1001
+        name:
+          type: string
+        initiativeId:
+          type: string
+          example: I-1001
+        activityType:
+          $ref: "#/components/schemas/ActivityTypeRef"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        ongoing:
+          type: boolean
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        unassignedPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        status:
+          $ref: "#/components/schemas/ActivityStatus"
+        displayStatus:
+          $ref: "#/components/schemas/ActivityDisplayStatus"
+        completeness:
+          $ref: "#/components/schemas/ActivityCompleteness"
+        version:
+          type: integer
+          minimum: 1
+
+    ActivitySummaryPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivitySummary"
+        total:
+          type: integer
+
+    ActivityCreate:
+      type: object
+      additionalProperties: false
+      description: A new activity. Only name and activityTypeId are required; the others may be left out or null.
+      required: [name, activityTypeId]
+      properties:
+        name:
+          type: string
+        externalName:
+          type: string
+        activityTypeId:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        startDate:
+          type: [string, "null"]
+          description: YYYY-MM-DD; the server checks the value and answers validation_failed when it is not a date.
+        endDate:
+          type: [string, "null"]
+          description: YYYY-MM-DD; ignored when ongoing is true.
+        ongoing:
+          type: boolean
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        approvalWorkflowId:
+          type: [string, "null"]
+        description:
+          type: string
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        goals:
+          $ref: "#/components/schemas/ActivityGoalsInput"
+
+    ActivityUpdate:
+      type: object
+      additionalProperties: false
+      description: Every editable field (null clears an optional one), the version the person started from, and whether a change that needs approval again was confirmed.
+      required: [name, externalName, activityTypeId, ownerId, startDate, endDate, ongoing, plannedCost, approvalWorkflowId, description, attributes, goals, version, restartApproval]
+      properties:
+        name:
+          type: string
+        externalName:
+          type: string
+        activityTypeId:
+          type: string
+        ownerId:
+          type: [string, "null"]
+        startDate:
+          type: [string, "null"]
+        endDate:
+          type: [string, "null"]
+        ongoing:
+          type: boolean
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        approvalWorkflowId:
+          type: [string, "null"]
+        description:
+          type: string
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        goals:
+          $ref: "#/components/schemas/ActivityGoalsInput"
+        version:
+          type: integer
+          description: The version the person started editing from.
+        restartApproval:
+          type: boolean
+          description: True when the person confirmed "This activity will need approval again".
+
+    ActivityMove:
+      type: object
+      additionalProperties: false
+      required: [initiativeId, version]
+      properties:
+        initiativeId:
+          type: string
+          description: Another initiative of the same plan.
+        version:
+          type: integer
+
+    ActivityCopy:
+      type: object
+      additionalProperties: false
+      required: [initiativeId]
+      properties:
+        initiativeId:
+          type: string
+          description: The activity's own initiative or another initiative of the same plan.
+
+    ActivityDestination:
+      type: object
+      additionalProperties: false
+      required: [campaign, initiative, startDate, endDate, current, moveProblem, copyProblem]
+      properties:
+        campaign:
+          $ref: "#/components/schemas/RecordRef"
+        initiative:
+          $ref: "#/components/schemas/RecordRef"
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        current:
+          type: boolean
+          description: The activity's own initiative.
+        moveProblem:
+          type: [string, "null"]
+          description: Why the activity can't be moved here (null when it can).
+        copyProblem:
+          type: [string, "null"]
+          description: Why the activity can't be copied here (null when it can).
+
+    ActivityDestinationPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityDestination"
+        total:
+          type: integer
+
+    ActivityPlanFacts:
+      type: object
+      additionalProperties: false
+      required: [id, name, year, status]
+      properties:
+        id:
+          type: string
+          example: P-1001
+        name:
+          type: string
+        year:
+          type: integer
+          example: 2026
+        status:
+          type: string
+          description: The plan's status (feature 004), for example draft or published.
+
+    ActivityInitiativeFacts:
+      type: object
+      additionalProperties: false
+      required: [id, name, owner, startDate, endDate]
+      properties:
+        id:
+          type: string
+          example: I-1001
+        name:
+          type: string
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+
+    ActivityModelFacts:
+      type: object
+      additionalProperties: false
+      required: [id, name, inqToMqlRate, mqlToDealRate, averageDealSize, active]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: Lubricants 1.0
+        inqToMqlRate:
+          type: string
+          description: Percent with two decimals.
+          example: "2.00"
+        mqlToDealRate:
+          type: string
+          description: Percent with two decimals.
+          example: "5.00"
+        averageDealSize:
+          $ref: "#/components/schemas/Money"
+        active:
+          type: boolean
+
+    ActivityBusinessUnit:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          description: The option id of the plan-level Business unit attribute.
+        label:
+          type: string
+          example: Lubricants
+
+    ActivityFormContext:
+      type: object
+      additionalProperties: false
+      required: [plan, campaign, initiative, model, businessUnits, latestEndDate]
+      properties:
+        plan:
+          $ref: "#/components/schemas/ActivityPlanFacts"
+        campaign:
+          $ref: "#/components/schemas/RecordRef"
+        initiative:
+          $ref: "#/components/schemas/ActivityInitiativeFacts"
+        model:
+          $ref: "#/components/schemas/ActivityModelFacts"
+        businessUnits:
+          type: array
+          description: The business units the plan includes (empty when none is set).
+          items:
+            $ref: "#/components/schemas/ActivityBusinessUnit"
+        latestEndDate:
+          type: string
+          format: date
+          description: 31 December of the plan's year + 10 (R5).
+
+    ActivityTypeOption:
+      type: object
+      additionalProperties: false
+      required: [id, name, defaultPlannedCost, active, allowed]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        defaultPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        active:
+          type: boolean
+        allowed:
+          type: boolean
+
+    ActivityWorkflowLevel:
+      type: object
+      additionalProperties: false
+      required: [name, approvers]
+      properties:
+        name:
+          type: string
+          example: Level 1
+        approvers:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonRef"
+
+    ActivityWorkflowOption:
+      type: object
+      additionalProperties: false
+      required: [id, name, active, levels]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+        levels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityWorkflowLevel"
+
+    ActivityDefaults:
+      type: object
+      additionalProperties: false
+      description: What a new activity starts with.
+      required: [owner, startDate, endDate, approvalWorkflowId]
+      properties:
+        owner:
+          description: The initiative's owner, when active.
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        startDate:
+          type: [string, "null"]
+          format: date
+        endDate:
+          type: [string, "null"]
+          format: date
+        approvalWorkflowId:
+          type: [string, "null"]
+          description: Set when exactly one approval workflow is active.
+
+    ActivityForm:
+      type: object
+      additionalProperties: false
+      required: [context, activityTypes, approvalWorkflows, attributes, existingNames, defaults]
+      properties:
+        context:
+          $ref: "#/components/schemas/ActivityFormContext"
+        activityTypes:
+          type: array
+          description: The active types the plan's model allows, sorted by name; for an edit also the current type when inactive or not allowed.
+          items:
+            $ref: "#/components/schemas/ActivityTypeOption"
+        approvalWorkflows:
+          type: array
+          description: The active approval workflows, sorted by name; for an edit also the current one when inactive.
+          items:
+            $ref: "#/components/schemas/ActivityWorkflowOption"
+        attributes:
+          type: array
+          description: The activity-level Shell attributes in section and display order (active ones, plus inactive ones holding a value of this activity).
+          items:
+            $ref: "#/components/schemas/ShellAttribute"
+        existingNames:
+          type: array
+          description: Names of the other activities in the initiative, for the uniqueness check while typing.
+          items:
+            type: string
+        defaults:
+          description: Only for a new activity; null for an edit.
+          oneOf:
+            - $ref: "#/components/schemas/ActivityDefaults"
+            - type: "null"

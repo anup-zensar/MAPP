@@ -1,0 +1,744 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 011 fragment (activity log and recycle bin)
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT to merge into backend/api/openapi.yaml. It follows that file's conventions and reuses its
+    components by $ref (responses BadRequest, Unauthorized, NotFound, Conflict, Error; parameter EntryId;
+    schemas ActorRef, RecordRef, Change, ContentCount, RestoreResult).
+
+    Merge rules:
+    - Paths marked "(replaces 001)" replace feature 001's operation of the same method and path.
+    - Schemas marked "(replaces 001)" replace 001's schema of the same name; they keep every 001 field.
+    - Error, Resolution, Preferences and PreferencesUpdate are 001 schemas extended here; feature 003
+      adds displayCurrency and dateFormat and feature 009 adds homeScope to the two Preferences schemas.
+paths:
+  /api/activity-log:
+    get:
+      tags: [History]
+      operationId: listActivityLog
+      summary: Activity-log entries, newest first, filtered (replaces 001)
+      description: |
+        Every filter applies to the whole log (FR-003). total counts the matching entries (ignoring
+        beforeSeq); unfilteredTotal counts the whole log. Load more passes the seq of the last entry
+        received as beforeSeq (FR-009). Each entry says where its record is now (recordNow, FR-008).
+      parameters:
+        - name: actorId
+          in: query
+          description: Only entries by this person.
+          schema:
+            type: string
+          example: U-1003
+        - name: recordType
+          in: query
+          description: Only entries about this kind of record, for example activity.
+          schema:
+            type: string
+        - name: action
+          in: query
+          description: Only entries with one of these actions. deletedPermanently also matches entries that emptied the recycle bin.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ActivityLogActionFilter"
+        - name: planId
+          in: query
+          description: Only entries about this plan and anything that is or was inside it.
+          schema:
+            type: string
+          example: P-1001
+        - name: recordId
+          in: query
+          description: Only entries about this record (with includeInside, also about everything that is or was below it).
+          schema:
+            type: string
+          example: A-1042
+        - name: includeInside
+          in: query
+          description: With recordId, also entries about the records that are or were below it.
+          schema:
+            type: boolean
+            default: false
+        - name: from
+          in: query
+          description: Only entries at or after this moment (the browser sends local midnight in UTC).
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: Only entries before this moment (exclusive). Must be after from.
+          schema:
+            type: string
+            format: date-time
+        - name: q
+          in: query
+          description: Search on record name, record ID or the person's name, ignoring letter case.
+          schema:
+            type: string
+        - name: beforeSeq
+          in: query
+          description: Only entries with a smaller seq (Load more).
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          description: How many entries to return (1 to 200, default 50).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: The newest matching entries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLogPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activity-log/summary:
+    get:
+      tags: [History]
+      operationId: getActivityLogSummary
+      summary: Summary cards and filter choices of the activity log (whole log, ignoring filters)
+      parameters:
+        - name: todayStart
+          in: query
+          required: true
+          description: Midnight today in the person's time zone, as a UTC moment.
+          schema:
+            type: string
+            format: date-time
+        - name: weekStart
+          in: query
+          required: true
+          description: Midnight of this week's Monday in the person's time zone, as a UTC moment. Not after todayStart.
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: The counts and the filter choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLogSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin:
+    get:
+      tags: [History]
+      operationId: listRecycleBin
+      summary: Everything in the recycle bin, newest first, with restore states and contents (replaces 001)
+      responses:
+        "200":
+          description: The unresolved recycle-bin entries whose record types this API knows.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecycleBinPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin/empty:
+    post:
+      tags: [History]
+      operationId: emptyRecycleBin
+      summary: Delete permanently the listed recycle-bin entries (Empty recycle bin)
+      description: |
+        Purges every listed entry that is still in the recycle bin; entries already restored or deleted
+        by someone else, and entries not listed, are left alone. Writes one activity-log entry
+        "emptied the recycle bin" with the list when at least one entry was purged (FR-029, FR-030).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyRecycleBinRequest"
+      responses:
+        "200":
+          description: How many entries were deleted permanently (0 when none was left).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyRecycleBinResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin/{entryId}:
+    delete:
+      tags: [History]
+      operationId: deleteRecycleBinEntryPermanently
+      summary: Delete a recycle-bin entry permanently (it can't be undone)
+      description: The records of the entry are removed for good; their IDs are never reused and the activity-log entries about them are kept (FR-030).
+      parameters:
+        - $ref: "#/components/parameters/EntryId"
+      responses:
+        "200":
+          description: Deleted permanently.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurgeResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin/{entryId}/restore-preview:
+    get:
+      tags: [History]
+      operationId: previewRestore
+      summary: What a restore from the recycle bin would do, without doing it
+      description: |
+        A dry run of the restore (parents still in the recycle bin first): where the item returns, what
+        comes with it and every status and name change. Nothing is saved. For an entry whose parent was
+        deleted permanently the lists are empty (the restore is not possible).
+      parameters:
+        - $ref: "#/components/parameters/EntryId"
+      responses:
+        "200":
+          description: The preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestorePreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/recycle-bin/{entryId}/restore:
+    post:
+      tags: [History]
+      operationId: restoreFromRecycleBin
+      summary: Restore a recycle-bin entry, optionally with its parents still in the bin (replaces 001)
+      description: |
+        Puts back the record and everything under it with the same IDs; plans return as Draft and
+        activities as Created, names that are taken get " (restored)", and restored line items send a
+        submitted or approved activity back to Created (FR-019 – FR-022). With withParents=true the
+        entries holding its missing parents are restored first, in the same step (FR-023). A parent that
+        is still in the bin without withParents answers restore_parent_first; a parent deleted
+        permanently answers parent_deleted_permanently (FR-024).
+      parameters:
+        - $ref: "#/components/parameters/EntryId"
+        - name: withParents
+          in: query
+          description: Also restore the entries that hold its missing parents, parents first.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Restored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestoreResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      description: (extends 001) The code list gains parent_deleted_permanently.
+      required: [code, message, fields]
+      properties:
+        code:
+          type: string
+          enum:
+            - validation_failed
+            - bad_request
+            - sign_in_required
+            - session_expired
+            - incorrect_credentials
+            - not_found
+            - version_conflict
+            - restore_parent_first
+            - parent_deleted_permanently
+            - undo_expired
+            - already_resolved
+            - name_taken
+            - internal_error
+        message:
+          type: string
+          description: Plain-language message for the user (never technical details).
+        fields:
+          type: array
+          description: Every field problem (validation_failed); always present, empty otherwise.
+          items:
+            $ref: "#/components/schemas/FieldError"
+        conflict:
+          $ref: "#/components/schemas/Conflict"
+        parent:
+          $ref: "#/components/schemas/RecordRef"
+        resolution:
+          $ref: "#/components/schemas/Resolution"
+
+    Resolution:
+      type: object
+      additionalProperties: false
+      description: (extends 001) How a recycle-bin entry left the bin, by whom and when (already_resolved).
+      required: [how, by, at]
+      properties:
+        how:
+          type: string
+          enum: [undone, restored, deletedPermanently]
+        by:
+          $ref: "#/components/schemas/ActorRef"
+        at:
+          type: string
+          format: date-time
+
+    Preferences:
+      type: object
+      additionalProperties: false
+      description: (extends 001) Adds historyIncludeInside. Feature 003 adds displayCurrency and dateFormat; feature 009 adds homeScope.
+      required: [theme, sidebarCollapsed, historyIncludeInside]
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: system follows the computer's setting.
+        sidebarCollapsed:
+          type: boolean
+        historyIncludeInside:
+          type: boolean
+          description: Include items inside / Include line items on History sections (default false).
+
+    PreferencesUpdate:
+      type: object
+      additionalProperties: false
+      description: (extends 001) Only the preferences to change.
+      properties:
+        theme:
+          type: string
+          enum: [system, light, dark]
+          description: The server also checks the value and answers validation_failed for anything else.
+        sidebarCollapsed:
+          type: boolean
+        historyIncludeInside:
+          type: boolean
+
+    ActivityLogActionFilter:
+      type: string
+      description: The Action filter values (deletedPermanently also matches emptiedRecycleBin entries).
+      enum: [created, changed, statusChanged, moved, copied, deleted, restored, deletedPermanently]
+
+    ActivityLogEntry:
+      type: object
+      additionalProperties: false
+      description: (replaces 001) Adds the actions deletedPermanently and emptiedRecycleBin, items and recordNow.
+      required: [id, seq, at, actor, action, verb, recordType, recordTypeLabel, recordId, recordName, path, changes, comment, details, items, recordNow]
+      properties:
+        id:
+          type: string
+          example: LOG-1001
+        seq:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        actor:
+          $ref: "#/components/schemas/ActorRef"
+        action:
+          type: string
+          enum: [created, changed, statusChanged, moved, copied, deleted, restored, deletedPermanently, emptiedRecycleBin]
+          description: Category used for filters and the action chip.
+        verb:
+          type: string
+          description: The plain verb of the sentence, for example created, published or permanently deleted.
+          example: changed
+        recordType:
+          type: string
+          description: The kind, for example activity; recycleBin for an emptied recycle bin.
+          example: activity
+        recordTypeLabel:
+          type: string
+          description: Mid-sentence name of the record type at the time.
+          example: activity
+        recordId:
+          type: string
+          description: Empty for an emptied recycle bin.
+          example: A-1042
+        recordName:
+          type: string
+          description: The record's name at the time.
+        path:
+          type: array
+          description: The record's ancestors at the time, top level first (empty for top-level records).
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Change"
+        comment:
+          type: string
+          description: A reason the person gave; empty when none.
+        details:
+          type: string
+          description: Plain-text extra information, for example with 2 activities and 5 line items; empty when none.
+        items:
+          type: array
+          description: The purged entries of an emptied recycle bin; empty for every other entry.
+          items:
+            $ref: "#/components/schemas/ActivityLogItem"
+        recordNow:
+          $ref: "#/components/schemas/RecordNow"
+
+    ActivityLogItem:
+      type: object
+      additionalProperties: false
+      required: [recordType, recordTypeLabel, recordId, recordName, details]
+      properties:
+        recordType:
+          type: string
+        recordTypeLabel:
+          type: string
+        recordId:
+          type: string
+        recordName:
+          type: string
+        details:
+          type: string
+          description: What was inside it, for example with 1 activity and 1 line item; empty when nothing.
+
+    RecordNow:
+      type: object
+      additionalProperties: false
+      description: Where the entry's record is now (computed when the entry is read).
+      required: [state, name, path, binEntryId]
+      properties:
+        state:
+          type: string
+          enum: [exists, inRecycleBin, deletedPermanently, none]
+        name:
+          type: string
+          description: The current name (exists) or the name in the recycle bin; empty otherwise.
+        path:
+          type: array
+          description: The record's current ancestors when it exists; empty otherwise.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        binEntryId:
+          type: string
+          description: The recycle-bin entry holding the record when it is in the bin; empty otherwise.
+          example: BIN-1001
+
+    ActivityLogPage:
+      type: object
+      additionalProperties: false
+      description: (replaces 001) Adds unfilteredTotal and record.
+      required: [items, total, unfilteredTotal, record]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityLogEntry"
+        total:
+          type: integer
+          description: How many entries match the filters (ignoring beforeSeq).
+        unfilteredTotal:
+          type: integer
+          description: How many entries the whole log holds.
+        record:
+          description: The record named by recordId (current name, or its latest name in the log); null without recordId or when unknown.
+          oneOf:
+            - $ref: "#/components/schemas/RecordRef"
+            - type: "null"
+
+    ActivityLogSummary:
+      type: object
+      additionalProperties: false
+      required: [changesToday, changesThisWeek, peopleActiveThisWeek, deletionsThisWeek, total, people, recordTypes, plans]
+      properties:
+        changesToday:
+          type: integer
+        changesThisWeek:
+          type: integer
+        peopleActiveThisWeek:
+          type: integer
+        deletionsThisWeek:
+          type: integer
+          description: Deletes, permanent deletes and emptied recycle bins this week.
+        total:
+          type: integer
+        people:
+          type: array
+          description: Everyone with an entry, sorted by name (Person filter).
+          items:
+            $ref: "#/components/schemas/ActorRef"
+        recordTypes:
+          type: array
+          description: The record types present in the log, sorted by label (Record type filter).
+          items:
+            $ref: "#/components/schemas/RecordTypeCount"
+        plans:
+          type: array
+          description: The plans named in the log with their latest name, sorted by name (Plan filter).
+          items:
+            $ref: "#/components/schemas/RecordRef"
+
+    RecordTypeCount:
+      type: object
+      additionalProperties: false
+      required: [type, label, count]
+      properties:
+        type:
+          type: string
+          example: activity
+        label:
+          type: string
+          example: activity
+        count:
+          type: integer
+          minimum: 1
+
+    LabelledRef:
+      type: object
+      additionalProperties: false
+      description: A record with the mid-sentence name of its type.
+      required: [type, typeLabel, id, name]
+      properties:
+        type:
+          type: string
+          example: initiative
+        typeLabel:
+          type: string
+          example: initiative
+        id:
+          type: string
+          example: I-1003
+        name:
+          type: string
+          example: Digital & social
+
+    RecycleBinRecord:
+      type: object
+      additionalProperties: false
+      description: One record kept in a recycle-bin entry (without its data).
+      required: [recordType, recordTypeLabel, recordId, recordName, parentId]
+      properties:
+        recordType:
+          type: string
+        recordTypeLabel:
+          type: string
+        recordId:
+          type: string
+        recordName:
+          type: string
+        parentId:
+          type: string
+          description: The record's parent ID; empty for top-level records.
+
+    RecycleBinListItem:
+      type: object
+      additionalProperties: false
+      description: A recycle-bin entry as the recycle bin page lists it (001's RecycleBinEntry plus restore state and contents).
+      required: [id, recordType, recordTypeLabel, recordTypePlural, recordId, recordName, path, parent, deletedAt, deletedBy, contents, restoreState, missingParent, parentEntryIds, insideEntryIds, records]
+      properties:
+        id:
+          type: string
+          example: BIN-1001
+        recordType:
+          type: string
+        recordTypeLabel:
+          type: string
+          example: initiative
+        recordTypePlural:
+          type: string
+          example: initiatives
+        recordId:
+          type: string
+        recordName:
+          type: string
+        path:
+          type: array
+          description: Where the record was when it was deleted, top level first.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        parent:
+          description: The record it belonged to when it was deleted (null for top-level records).
+          oneOf:
+            - $ref: "#/components/schemas/RecordRef"
+            - type: "null"
+        deletedAt:
+          type: string
+          format: date-time
+        deletedBy:
+          $ref: "#/components/schemas/ActorRef"
+        contents:
+          type: array
+          description: What was under it, counted by kind.
+          items:
+            $ref: "#/components/schemas/ContentCount"
+        restoreState:
+          type: string
+          enum: [restorable, parentInRecycleBin, parentDeletedPermanently]
+        missingParent:
+          description: The parent that is in the recycle bin, or the record above it that was deleted permanently; null when restorable.
+          oneOf:
+            - $ref: "#/components/schemas/LabelledRef"
+            - type: "null"
+        parentEntryIds:
+          type: array
+          description: The entries Restore both / Restore all brings back first, top-most first.
+          items:
+            type: string
+        insideEntryIds:
+          type: array
+          description: Other entries that can no longer be restored once this one is deleted permanently.
+          items:
+            type: string
+        records:
+          type: array
+          description: The record first, then everything inside it, parents before children.
+          items:
+            $ref: "#/components/schemas/RecycleBinRecord"
+
+    RecycleBinPage:
+      type: object
+      additionalProperties: false
+      description: (replaces 001) Items are RecycleBinListItem.
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecycleBinListItem"
+        total:
+          type: integer
+
+    RestorePreviewChange:
+      type: object
+      additionalProperties: false
+      description: One changed field of one record in a restore preview.
+      required: [recordType, recordTypeLabel, recordId, recordName, restored, field, label, oldText, newText]
+      properties:
+        recordType:
+          type: string
+        recordTypeLabel:
+          type: string
+        recordId:
+          type: string
+        recordName:
+          type: string
+        restored:
+          type: boolean
+          description: true for a record that comes back; false for an existing record the restore changes.
+        field:
+          type: string
+          example: status
+        label:
+          type: string
+          example: Status
+        oldText:
+          type: string
+          example: Approved
+        newText:
+          type: string
+          example: Created
+
+    RestorePreview:
+      type: object
+      additionalProperties: false
+      required: [entry, destination, parentEntries, changes, notes]
+      properties:
+        entry:
+          $ref: "#/components/schemas/RecycleBinListItem"
+        destination:
+          type: array
+          description: The parent's current path including the parent; empty for top-level records.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        parentEntries:
+          type: array
+          description: The entries restored first (Restore both / Restore all), top-most first.
+          items:
+            $ref: "#/components/schemas/RecycleBinListItem"
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestorePreviewChange"
+        notes:
+          type: array
+          description: Plain sentences from the record types' restore rules.
+          items:
+            type: string
+
+    PurgeResult:
+      type: object
+      additionalProperties: false
+      required: [recordType, recordTypeLabel, recordId, recordName]
+      properties:
+        recordType:
+          type: string
+        recordTypeLabel:
+          type: string
+        recordId:
+          type: string
+        recordName:
+          type: string
+
+    EmptyRecycleBinRequest:
+      type: object
+      additionalProperties: false
+      required: [entryIds]
+      properties:
+        entryIds:
+          type: array
+          description: The entries the person saw in the confirmation.
+          minItems: 1
+          items:
+            type: string
+
+    EmptyRecycleBinResult:
+      type: object
+      additionalProperties: false
+      required: [count]
+      properties:
+        count:
+          type: integer
+          minimum: 0

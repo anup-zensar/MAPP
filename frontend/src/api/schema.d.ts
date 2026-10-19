@@ -96,7 +96,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Change the signed-in person's name and job title (My profile)
+         * @description The e-mail is changed only in Settings › People. The change is written to the activity log.
+         */
+        patch: operations["updateMyProfile"];
         trace?: never;
     };
     "/api/me/preferences": {
@@ -123,7 +127,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Activity-log entries, newest first */
+        /**
+         * Activity-log entries, newest first, filtered (replaces 001)
+         * @description Every filter applies to the whole log (FR-003). total counts the matching entries (ignoring
+         *     beforeSeq); unfilteredTotal counts the whole log. Load more passes the seq of the last entry
+         *     received as beforeSeq (FR-009). Each entry says where its record is now (recordNow, FR-008).
+         */
         get: operations["listActivityLog"];
         put?: never;
         post?: never;
@@ -140,7 +149,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Everything in the recycle bin, newest first */
+        /** Everything in the recycle bin, newest first, with restore states and contents (replaces 001) */
         get: operations["listRecycleBin"];
         put?: never;
         post?: never;
@@ -180,8 +189,13 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Restore a recycle-bin entry (its parent must exist)
-         * @description Puts back the record and everything under it with the same IDs; status rules of domain model R14 apply, and a name that is taken gets the suffix (restored).
+         * Restore a recycle-bin entry, optionally with its parents still in the bin (replaces 001)
+         * @description Puts back the record and everything under it with the same IDs; plans return as Draft and
+         *     activities as Created, names that are taken get " (restored)", and restored line items send a
+         *     submitted or approved activity back to Created (FR-019 – FR-022). With withParents=true the
+         *     entries holding its missing parents are restored first, in the same step (FR-023). A parent that
+         *     is still in the bin without withParents answers restore_parent_first; a parent deleted
+         *     permanently answers parent_deleted_permanently (FR-024).
          */
         post: operations["restoreFromRecycleBin"];
         delete?: never;
@@ -260,13 +274,2349 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Count of active records per Settings section (the Settings page cards) */
+        get: operations["getSettingsOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every model (active and inactive), sorted by name ignoring letter case */
+        get: operations["listModels"];
+        put?: never;
+        /** Create a model (FR-009) */
+        post: operations["createModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/{modelId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        /** One model with its usage and the plans using it */
+        get: operations["getModel"];
+        put?: never;
+        post?: never;
+        /** Delete an unused model (it goes to the recycle bin); a model in use answers 409 in_use */
+        delete: operations["deleteModel"];
+        options?: never;
+        head?: never;
+        /** Change a model (only the fields sent; FR-009, FR-011, FR-012) */
+        patch: operations["updateModel"];
+        trace?: never;
+    };
+    "/api/models/{modelId}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a change would affect, before saving it (FR-011, FR-012). Saves nothing.
+         * @description Validates the body like PATCH (validation_failed lists every problem) and returns the warnings to confirm. The version is not checked here.
+         */
+        post: operations["checkModelImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/{modelId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set a model inactive or reactivate it (FR-004) */
+        post: operations["setModelStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activity-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every activity type (active and inactive), sorted by name ignoring letter case */
+        get: operations["listActivityTypes"];
+        put?: never;
+        /** Create an activity type, optionally allowed in models (FR-013) */
+        post: operations["createActivityType"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activity-types/{activityTypeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        /** One activity type with its models and usage */
+        get: operations["getActivityType"];
+        put?: never;
+        post?: never;
+        /** Delete an unused activity type (not used by activities and not allowed in any model) */
+        delete: operations["deleteActivityType"];
+        options?: never;
+        head?: never;
+        /** Change an activity type and the models allowing it (FR-012, FR-013) */
+        patch: operations["updateActivityType"];
+        trace?: never;
+    };
+    "/api/activity-types/{activityTypeId}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What removing models from the type would affect, before saving (FR-012). Saves nothing. */
+        post: operations["checkActivityTypeImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activity-types/{activityTypeId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set an activity type inactive or reactivate it (FR-004) */
+        post: operations["setActivityTypeStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Shell attributes of one level (or of every level), in display order */
+        get: operations["listShellAttributes"];
+        put?: never;
+        /** Create a Shell attribute with its first options (FR-016 - FR-019, FR-022, FR-023) */
+        post: operations["createShellAttribute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attributes/{attributeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        /** One Shell attribute with its locks and usage (its options are listed separately) */
+        get: operations["getShellAttribute"];
+        put?: never;
+        post?: never;
+        /** Delete an unused Shell attribute and its options (they go to the recycle bin) */
+        delete: operations["deleteShellAttribute"];
+        options?: never;
+        head?: never;
+        /** Change a Shell attribute (FR-016 - FR-023) */
+        patch: operations["updateShellAttribute"];
+        trace?: never;
+    };
+    "/api/shell-attributes/{attributeId}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a change would affect, before saving (FR-021 marking and type). Saves nothing. */
+        post: operations["checkShellAttributeImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attributes/{attributeId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set a Shell attribute inactive or reactivate it (FR-004, FR-023) */
+        post: operations["setShellAttributeStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attributes/{attributeId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move the attribute (or its whole section) up or down on its level's form (FR-019) */
+        post: operations["moveShellAttribute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attributes/{attributeId}/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        /** The attribute's options in display order, searchable by any part of the label (FR-018, SC-007) */
+        get: operations["listShellAttributeOptions"];
+        put?: never;
+        /** Add one option at the end of the list (FR-018, FR-022) */
+        post: operations["createShellAttributeOption"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attributes/{attributeId}/options/import-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read a CSV or Excel file and say what importing it would do, row by row (FR-031). Adds nothing. */
+        post: operations["checkShellAttributeOptionImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attributes/{attributeId}/options/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add the new valid options of the file (checked again now); never removes, renames or reactivates (FR-031) */
+        post: operations["importShellAttributeOptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attribute-options/{optionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an unused option (it goes to the recycle bin) */
+        delete: operations["deleteShellAttributeOption"];
+        options?: never;
+        head?: never;
+        /** Rename an option or change its parent links (FR-018, FR-022) */
+        patch: operations["updateShellAttributeOption"];
+        trace?: never;
+    };
+    "/api/shell-attribute-options/{optionId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set an option inactive or reactivate it (FR-018) */
+        post: operations["setShellAttributeOptionStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attribute-options/{optionId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move an option one place up or down in its list (FR-018) */
+        post: operations["moveShellAttributeOption"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attribute-forms/{level}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                level: components["parameters"]["LevelPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Everything a level's form needs to show its Shell attributes (FR-024 - FR-027; used by the preview and by features 004-007)
+         * @description Every attribute of the level, active and inactive (inactive ones are shown only where a record already has a value), with every option, in display order.
+         */
+        get: operations["getShellAttributeForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shell-attribute-forms/{level}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                level: components["parameters"]["LevelPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check values exactly as a save of a record of this level would (the preview's Try saving, FR-020). Saves nothing. */
+        post: operations["checkShellAttributeValues"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/currencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every currency (active and inactive), USD first, then by code */
+        get: operations["listCurrencies"];
+        put?: never;
+        /** Add a currency with its rate per 1 USD (FR-028) */
+        post: operations["createCurrency"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/currencies/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        /** One currency with its usage */
+        get: operations["getCurrency"];
+        put?: never;
+        post?: never;
+        /** Delete an unused currency (never USD) */
+        delete: operations["deleteCurrency"];
+        options?: never;
+        head?: never;
+        /** Change a currency's name, symbol or rate (the code never changes; FR-028 - FR-030) */
+        patch: operations["updateCurrency"];
+        trace?: never;
+    };
+    "/api/currencies/{code}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Line items and activities a rate change would recalculate, with USD totals before and after (FR-030). Saves nothing. */
+        post: operations["checkCurrencyImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/currencies/{code}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set a currency inactive or reactivate it (never USD; FR-004, FR-028) */
+        post: operations["setCurrencyStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance-budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The finance budgets of one year with their items, sorted by budget name then item name (FR-015) */
+        get: operations["listFinanceBudgets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance-budgets/{budgetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FB-1001 */
+                budgetId: components["parameters"]["BudgetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename budget - renames all its items at once; plans using it as their default follow (FR-015) */
+        patch: operations["renameFinanceBudget"];
+        trace?: never;
+    };
+    "/api/finance-budget-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a finance budget item; its budget is created when the name is new for that year (FR-014) */
+        post: operations["createFinanceBudgetItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance-budget-items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FBI-1001 */
+                itemId: components["parameters"]["ItemId"];
+            };
+            cookie?: never;
+        };
+        /** One finance budget item with its usage */
+        get: operations["getFinanceBudgetItem"];
+        put?: never;
+        post?: never;
+        /** Delete an unused finance budget item (it goes to the recycle bin) */
+        delete: operations["deleteFinanceBudgetItem"];
+        options?: never;
+        head?: never;
+        /** Change an item's name, code or budget (same year; FR-014) */
+        patch: operations["updateFinanceBudgetItem"];
+        trace?: never;
+    };
+    "/api/finance-budget-items/{itemId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FBI-1001 */
+                itemId: components["parameters"]["ItemId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set a finance budget item inactive or reactivate it (FR-004) */
+        post: operations["setFinanceBudgetItemStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every person, active or not, with their teams, sorted by name ignoring letter case
+         * @description The web app filters and searches this list itself (Settings › People and every person picker).
+         */
+        get: operations["listPeople"];
+        put?: never;
+        /** Add a person (they can sign in straight away with the demo password) */
+        post: operations["createPerson"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/people/{personId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        /** One person with their teams and what they own or approve */
+        get: operations["getPerson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change a person's name, e-mail, job title and teams
+         * @description teamIds is the complete list of the person's teams after the change. Removing teams is allowed even when a plan's owner is affected; POST .../impact says so first.
+         */
+        patch: operations["updatePerson"];
+        trace?: never;
+    };
+    "/api/people/{personId}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a change of the person would affect, before saving it (FR-013). Saves nothing.
+         * @description Validates the body like PATCH (validation_failed lists every problem) and returns the warnings to confirm — one ownerNeedsAttention warning when removed teams leave the person outside every team of a plan they own. The version is not checked here.
+         */
+        post: operations["checkPersonImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/people/{personId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deactivate (active false) or reactivate (active true) a person — people are never deleted
+         * @description Deactivated, the person can no longer sign in (an open session ends at its next request) and is no
+         *     longer offered in pickers; records and team memberships keep them. Deactivating the signed-in person
+         *     themselves answers 409 not_allowed. A person already in the asked status is answered unchanged.
+         */
+        post: operations["setPersonStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every team, active or not, with members and the plans using it, sorted by name ignoring letter case */
+        get: operations["listTeams"];
+        put?: never;
+        /** Create a team with its members */
+        post: operations["createTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        /** One team with its members and the plans using it */
+        get: operations["getTeam"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a team no plan uses (it goes to the recycle bin with its memberships)
+         * @description Answers 409 in_use while any plan uses the team, including plans in the recycle bin.
+         */
+        delete: operations["deleteTeam"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a team's name, description, colour and members
+         * @description memberIds is the complete list of members after the change. Removing members is allowed even when a plan's owner is affected; POST .../impact says so first.
+         */
+        patch: operations["updateTeam"];
+        trace?: never;
+    };
+    "/api/teams/{teamId}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a change of the team would affect, before saving it (FR-013). Saves nothing.
+         * @description Validates the body like PATCH (validation_failed lists every problem) and returns the warnings to confirm — one ownerNeedsAttention warning per removed member who then belongs to none of the teams of a plan they own. The version is not checked here.
+         */
+        post: operations["checkTeamImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a team inactive (active false) or reactivate it (active true)
+         * @description An inactive team is no longer offered for new plans; plans and members keep it. A team already in the asked status is answered unchanged.
+         */
+        post: operations["setTeamStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/display-currencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The currencies the signed-in person can choose as display currency
+         * @description Every active currency (feature 002), plus the person's current display currency when it has been set inactive; sorted by code.
+         */
+        get: operations["listDisplayCurrencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan-defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The default values of a new plan for the signed-in person
+         * @description Year = the current year; years = current year - 1 to + 5; teams = the person's active teams;
+         *     owner = the person when they have one; model = the only active model.
+         */
+        get: operations["getPlanDefaults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Plans matching the filters, newest year first, then by name
+         * @description total counts every plan in the team scope; summary covers the plans in the team scope and the chosen
+         *     year (status and search ignored); years lists every year with a plan in the team scope.
+         *     Amounts are in the signed-in person's display currency.
+         */
+        get: operations["listPlans"];
+        put?: never;
+        /**
+         * Create a plan (it starts as Draft)
+         * @description Only name, year and model are required to save; every problem is reported at once.
+         */
+        post: operations["createPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One plan with its calculated figures, goals and completeness */
+        get: operations["getPlan"];
+        put?: never;
+        post?: never;
+        /** Delete a plan and everything in it (they go to the recycle bin) */
+        delete: operations["deletePlan"];
+        options?: never;
+        head?: never;
+        /**
+         * Save the plan form (every editable field, plus the version it started from)
+         * @description The year never changes. A Published plan stays Published. Only changed fields are saved and logged;
+         *     a save without any change creates no version and no log entry.
+         */
+        patch: operations["updatePlan"];
+        trace?: never;
+    };
+    "/api/plans/{planId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish a Draft plan
+         * @description Succeeds only when the plan and every campaign and initiative in it have all needed-to-publish fields
+         *     filled; otherwise answers 409 not_ready listing every missing field grouped by record, and nothing
+         *     changes. Publishing a Published plan changes nothing.
+         */
+        post: operations["publishPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Return a Published plan to Draft, with a reason
+         * @description The reason is recorded in the activity log. Unpublishing a Draft plan changes nothing.
+         */
+        post: operations["unpublishPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/copy-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the copy dialog offers for this plan */
+        get: operations["getPlanCopyOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy a plan, with or without everything in it, into the same or the next year
+         * @description The copy is a Draft plan with a new ID, made completely or not at all. A next-year copy moves every
+         *     copied date one year later and clears the default finance budget (said in notes).
+         */
+        post: operations["copyPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/change-effects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a new model or business unit would change (nothing is saved)
+         * @description Lists the plan's activities whose type the new model does not allow, and the Shell attribute groups
+         *     that the new business unit would hide or show. Read-only.
+         */
+        post: operations["getPlanChangeEffects"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * The campaigns of a plan, each with its initiatives, and the plan's totals
+         * @description Campaigns and, inside each, initiatives are ordered by start date, then name ignoring letter
+         *     case; records without dates come last (FR-020). The totals feed the plan tree's totals row and
+         *     the plan's remaining budget (FR-022).
+         */
+        get: operations["listPlanCampaigns"];
+        put?: never;
+        /**
+         * Add a campaign to a plan
+         * @description Only the name is required (FR-005). The API stores exactly what it receives: the defaults of
+         *     FR-003 (owner and dates from the plan, yes/no attributes No) are filled in and shown by the form.
+         *     Every problem is reported at once, including a name already used in the plan.
+         */
+        post: operations["createCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaignId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        /** One campaign with its initiatives and roll-ups (its details panel) */
+        get: operations["getCampaign"];
+        put?: never;
+        post?: never;
+        /** Delete a campaign with its initiatives, activities and line items (they go to the recycle bin) */
+        delete: operations["deleteCampaign"];
+        options?: never;
+        head?: never;
+        /**
+         * Save a campaign's form (every editable field and the version it started from)
+         * @description Allowed whatever the plan's status (FR-018). Refused with validation_failed when the new dates
+         *     would leave initiatives outside them (FR-007), naming each. A save that changes nothing answers
+         *     the campaign unchanged, with no new version and no log entry.
+         */
+        patch: operations["updateCampaign"];
+        trace?: never;
+    };
+    "/api/campaigns/{campaignId}/destinations": {
+        parameters: {
+            query: {
+                /** @description What the destinations are for. Anything else answers validation_failed on purpose. */
+                purpose: components["parameters"]["Purpose"];
+            };
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The plans a campaign can be moved or copied to (plans of the same year)
+         * @description purpose=move lists the other plans of the campaign's year (Draft or Published); a plan that
+         *     already has a campaign with this name is listed but not available, with the reason and the fix
+         *     (FR-023). purpose=copy lists the campaign's own plan first (current) and the other plans of the
+         *     year, all available, each with a suggested name (FR-026). Each item says whether the record's
+         *     budget would over-allocate it and, for another model or business unit, the consequences (FR-024).
+         */
+        get: operations["listCampaignDestinations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaignId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move a campaign, with everything below it, to another plan of the same year
+         * @description Keeps IDs, dates, values and statuses below (FR-025). Refused with validation_failed on planId
+         *     when the plan is gone, of another year, the current plan, or already has a campaign with this name.
+         */
+        post: operations["moveCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaignId}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy a campaign with everything below it into its plan or another plan of the same year
+         * @description Copies per R13 (new IDs, activities Created, no approvals, comments, history or GSAP values),
+         *     completely or not at all (FR-027). The name is checked like a new campaign's name in the
+         *     destination plan.
+         */
+        post: operations["copyCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaignId}/initiatives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add an initiative to a campaign
+         * @description Only the name is required (FR-005); the dates must lie inside the campaign's dates when it has both (R3, FR-006).
+         */
+        post: operations["createInitiative"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/initiatives/{initiativeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        /** One initiative with its roll-ups (its details panel) */
+        get: operations["getInitiative"];
+        put?: never;
+        post?: never;
+        /** Delete an initiative with its activities and line items (they go to the recycle bin) */
+        delete: operations["deleteInitiative"];
+        options?: never;
+        head?: never;
+        /**
+         * Save an initiative's form (every editable field and the version it started from)
+         * @description Refused with validation_failed when the dates leave the campaign's dates (R3) or would leave activities outside them (FR-007; only the start date of ongoing activities).
+         */
+        patch: operations["updateInitiative"];
+        trace?: never;
+    };
+    "/api/initiatives/{initiativeId}/destinations": {
+        parameters: {
+            query: {
+                /** @description What the destinations are for. Anything else answers validation_failed on purpose. */
+                purpose: components["parameters"]["Purpose"];
+            };
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The campaigns of the same plan an initiative can be moved or copied to
+         * @description purpose=move lists the other campaigns of the plan with their dates; a campaign that already has
+         *     an initiative with this name, or whose dates do not contain the initiative's dates, is listed but
+         *     not available, with the reason and the fix (FR-023). purpose=copy lists the initiative's own
+         *     campaign first (current) and the others; only the date rule makes one unavailable (FR-026).
+         */
+        get: operations["listInitiativeDestinations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/initiatives/{initiativeId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move an initiative, with its activities and line items, to another campaign of the same plan
+         * @description Refused with validation_failed on campaignId when the campaign is gone, in another plan, the current one, already has an initiative with this name, or its dates do not contain the initiative's dates.
+         */
+        post: operations["moveInitiative"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/initiatives/{initiativeId}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Copy an initiative with its activities and line items into a campaign of the same plan */
+        post: operations["copyInitiative"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/initiatives/{initiativeId}/activity-form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everything the new-activity form needs, with its defaults
+         * @description The plan, campaign and initiative, the plan's model and business units, the active activity types the
+         *     model allows (each with its default planned cost), the active approval workflows, the activity-level
+         *     Shell attributes, the names already used in the initiative, and the defaults (owner and dates from the
+         *     initiative, the approval workflow when exactly one is active).
+         */
+        get: operations["getNewActivityForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/initiatives/{initiativeId}/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an activity under an initiative (status Created)
+         * @description Only the name and the activity type are required; needed-to-submit fields may stay empty.
+         */
+        post: operations["createActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every activity of a plan, as plan-tree rows
+         * @description Ordered by start date, then name ignoring letter case; activities without dates last.
+         */
+        get: operations["listPlanActivities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** An activity with its status, completeness, unassigned planned cost and ready-to-submit check */
+        get: operations["getActivity"];
+        put?: never;
+        post?: never;
+        /** Delete an activity and its line items (they go to the recycle bin) */
+        delete: operations["deleteActivity"];
+        options?: never;
+        head?: never;
+        /**
+         * Save an edited activity
+         * @description The body holds every editable field (null clears an optional one) and the version the person started
+         *     from. On a Submitted or Approved activity, a change of planned cost, start date, end date or ongoing is
+         *     refused (validation_failed on restartApproval) unless restartApproval is true; then the activity returns
+         *     to Created. A save that changes nothing answers the activity unchanged.
+         */
+        patch: operations["updateActivity"];
+        trace?: never;
+    };
+    "/api/activities/{activityId}/form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everything the edit form needs (no defaults)
+         * @description As the new-activity form, plus the activity's current type and workflow even when inactive or no longer allowed; existingNames leaves out the activity itself.
+         */
+        get: operations["getActivityEditForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/destinations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The initiatives of the activity's plan it can be moved or copied to, with the reason when not */
+        get: operations["listActivityDestinations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move an activity, with its line items and status, to another initiative of the same plan
+         * @description Refused (validation_failed on initiativeId) when the target is not another initiative of the plan, when the activity's dates are not inside the target's dates, or when the target already has an activity with that name.
+         */
+        post: operations["moveActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy an activity with its line items into an initiative of the same plan
+         * @description The copy is named "<name> (copy)", "<name> (copy 2)", …, starts as Created and has no approvals, comments, history or GSAP values (R13).
+         */
+        post: operations["copyActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/line-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Line items section of an activity — its line items, unassigned planned cost and spread grid
+         * @description Line items in creation order, each with its USD amount at the current rate, spread, completeness and SWBS request status; the unassigned planned cost (Sys_Gen_Balance); and the month-by-month grid in USD.
+         */
+        get: operations["listActivityLineItems"];
+        put?: never;
+        /**
+         * Add a line item to an activity
+         * @description Only name, currency and planned cost are required to save (FR-009). On a Submitted or Approved
+         *     activity the request must confirm that the activity goes back for approval
+         *     (restartApproval true); otherwise nothing is saved and the answer is 400
+         *     validation_failed on restartApproval.
+         */
+        post: operations["createLineItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/line-items/form-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a new line item of this activity starts with, and the choices the line-item form offers
+         * @description The defaults of FR-008 with their sources, the active currencies, the finance budget years and their active items (FR-015), the activity's context and its current unassigned planned cost. The edit form uses the same choices; a value already on the line item that is no longer offered (an inactive currency or item) comes with the line item itself.
+         */
+        get: operations["getLineItemFormOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/line-items/{lineItemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One line item with its activity's context and unassigned planned cost */
+        get: operations["getLineItem"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a line item (it goes to the recycle bin)
+         * @description On a Submitted or Approved activity the query parameter restartApproval must be true (400 validation_failed on restartApproval otherwise); the activity then returns to Created.
+         */
+        delete: operations["deleteLineItem"];
+        options?: never;
+        head?: never;
+        /**
+         * Save a line item (the whole form and the version it started from)
+         * @description Every editable field is sent, with the version the person started editing from. Changing the
+         *     planned cost or the currency of a line item of a Submitted or Approved activity needs
+         *     restartApproval true (400 validation_failed on restartApproval otherwise); other changes never change
+         *     the activity's status (FR-032). A save that changes nothing creates no new version.
+         */
+        patch: operations["updateLineItem"];
+        trace?: never;
+    };
+    "/api/line-items/{lineItemId}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a line item in the same activity
+         * @description The copy has every value, a new ID and the name "<name> (copy)", "(copy 2)", … (FR-029). Counts as adding a line item (restartApproval on a Submitted or Approved activity).
+         */
+        post: operations["duplicateLineItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approval-workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every approval workflow, active and inactive, sorted by name ignoring letter case
+         * @description Search and the Active / Inactive filter run in the web app on this list. Feature 006 offers the active ones in the activity's Approval workflow field.
+         */
+        get: operations["listApprovalWorkflows"];
+        put?: never;
+        /** Create an approval workflow (FR-002, FR-003) */
+        post: operations["createApprovalWorkflow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approval-workflows/{workflowId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One workflow with the activities that use it (FR-005) */
+        get: operations["getApprovalWorkflow"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a workflow no activity uses (it goes to the recycle bin) (FR-008)
+         * @description Refused with 409 in_use when any stored activity uses it or has an approval round with it.
+         */
+        delete: operations["deleteApprovalWorkflow"];
+        options?: never;
+        head?: never;
+        /**
+         * Change name, description or levels (FR-002, FR-003, FR-006)
+         * @description Only the fields sent change. Open rounds keep the levels they were submitted with.
+         */
+        patch: operations["updateApprovalWorkflow"];
+        trace?: never;
+    };
+    "/api/approval-workflows/{workflowId}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a workflow inactive (FR-007)
+         * @description No longer offered on activities; activities keep it; open rounds finish. Setting an inactive workflow inactive changes nothing.
+         */
+        post: operations["deactivateApprovalWorkflow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approval-workflows/{workflowId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set an inactive workflow active again (FR-007) */
+        post: operations["activateApprovalWorkflow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The activity's Approval section — chain, history, latest decline and available actions (FR-024, FR-025) */
+        get: operations["getActivityApproval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/approval/submission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What Submit / Re-submit would do now — every problem, or the workflow levels to confirm (FR-010, FR-011)
+         * @description Changes nothing. Asked when the person chooses Submit for approval or Re-submit for approval.
+         */
+        get: operations["getApprovalSubmission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/approval/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit a Created activity, or re-submit a Declined one (FR-009 – FR-012, FR-020)
+         * @description Runs the ready-to-submit check again; with problems it changes nothing and answers
+         *     validation_failed listing every problem (field keys as SubmitProblem.field). Otherwise the activity
+         *     becomes Submitted and a new round starts at level 1 with a copy of the workflow's current levels.
+         *     An activity that is not Created or Declined answers bad_request. Any plan status is allowed (Q-007).
+         */
+        post: operations["submitActivityForApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/approval/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve the current level of the open round (FR-014, FR-015, FR-017, FR-018)
+         * @description Any signed-in person may approve (D-020); a person who is not an approver of the level is recorded as acting on behalf of the level's approvers. Approving the last level makes the activity Approved.
+         */
+        post: operations["approveActivityLevel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/approval/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline the activity at the current level; a comment is required (FR-016 – FR-018) */
+        post: operations["declineActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/approval/recall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recall a Submitted activity back to Created, with an optional reason (FR-021)
+         * @description Approved activities answer bad_request with the explanation of FR-021.
+         */
+        post: operations["recallActivitySubmission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The rows of one tab of the approvals page (FR-029, FR-030)
+         * @description waiting — Submitted activities whose current level lists the signed-in person, oldest submission first;
+         *     open — every Submitted activity, oldest submission first;
+         *     decided — activities on which the signed-in person approved or declined a level, latest decision first.
+         *     Search and filters run in the web app on these rows (Proposed decision 008-P12).
+         */
+        get: operations["listApprovals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The four summary cards and the sidebar count (FR-027, FR-028)
+         * @description monthStart and monthEnd are the viewer's local calendar month as UTC instants; send both or neither (neither = the current UTC month).
+         */
+        get: operations["getApprovalSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/activities/{activityId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The preview side panel of the approvals page (FR-032) */
+        get: operations["getApprovalPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's 50 most recent notifications, newest first, and the unread count (FR-033) */
+        get: operations["listNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{notificationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark one of the signed-in person's notifications as read (FR-034)
+         * @description Another person's notification answers 404. Marking a read notification again changes nothing.
+         */
+        post: operations["markNotificationRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark all of the signed-in person's notifications as read (FR-034) */
+        post: operations["markAllNotificationsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The four summary cards and whether to show Getting started */
+        get: operations["getHomeSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plans at a glance (at most 10 rows; total counts every plan in scope) */
+        get: operations["listHomePlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/attention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Needs your attention — records the person owns that have a problem (all plans) */
+        get: operations["listHomeAttention"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/waiting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Waiting for my approval — the first 5 of the Waiting for me list, oldest first */
+        get: operations["listHomeWaiting"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/my-activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My activities — the activities the person owns, grouped by displayed status (all plans) */
+        get: operations["listHomeMyActivities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/recent-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent changes — the 10 newest activity-log entries about the plans in scope */
+        get: operations["listHomeRecentChanges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/all-work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everything one All work view shows for a filter set
+         * @description Rows come in their final order (tree order, sorted within each parent). Each row is a match or a
+         *     context row. Cells follow the requested columns, in order. The view budget adds period amounts;
+         *     the view calendar leaves out line-item and unassigned rows. Unknown IDs and columns are ignored
+         *     and listed in leftOut.
+         */
+        get: operations["getAllWork"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/all-work/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The choices of the filter bar for a year, and the column catalogue */
+        get: operations["getAllWorkOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/all-work/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The current view as a spreadsheet (.xlsx) or CSV file
+         * @description Every matching and context row, including rows in collapsed branches, with Level and Path columns,
+         *     the view's columns and the totals row; the notes (view, year, filters, search, Show levels,
+         *     display currency, exporter, time) come before the data (spreadsheet - first sheet "About this
+         *     export").
+         */
+        get: operations["exportAllWork"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/all-work/records/{recordId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check that a row's record still exists before opening it
+         * @description A deleted record answers 404 with "This <level> was deleted — it is in the recycle bin" or "This <level> no longer exists — someone may have deleted it."
+         */
+        get: operations["locateAllWorkRecord"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/all-work/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's remembered columns and sort (the defaults when never changed) */
+        get: operations["getAllWorkPreferences"];
+        /** Remember the signed-in person's columns, their order and the sort */
+        put: operations["updateAllWorkPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/saved-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's saved views, sorted by name ignoring letter case */
+        get: operations["listSavedViews"];
+        put?: never;
+        /** Save the current All work state under a name */
+        post: operations["createSavedView"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/saved-views/{viewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a saved view (not to the recycle bin; the answer lets the web app offer Undo) */
+        delete: operations["deleteSavedView"];
+        options?: never;
+        head?: never;
+        /** Rename a saved view, replace its state, or set or remove it as the default */
+        patch: operations["updateSavedView"];
+        trace?: never;
+    };
+    "/api/activity-log/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summary cards and filter choices of the activity log (whole log, ignoring filters) */
+        get: operations["getActivityLogSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recycle-bin/empty": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete permanently the listed recycle-bin entries (Empty recycle bin)
+         * @description Purges every listed entry that is still in the recycle bin; entries already restored or deleted
+         *     by someone else, and entries not listed, are left alone. Writes one activity-log entry
+         *     "emptied the recycle bin" with the list when at least one entry was purged (FR-029, FR-030).
+         */
+        post: operations["emptyRecycleBin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recycle-bin/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a recycle-bin entry permanently (it can't be undone)
+         * @description The records of the entry are removed for good; their IDs are never reused and the activity-log entries about them are kept (FR-030).
+         */
+        delete: operations["deleteRecycleBinEntryPermanently"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recycle-bin/{entryId}/restore-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a restore from the recycle bin would do, without doing it
+         * @description A dry run of the restore (parents still in the recycle bin first): where the item returns, what
+         *     comes with it and every status and name change. Nothing is saved. For an entry whose parent was
+         *     deleted permanently the lists are empty (the restore is not possible).
+         */
+        get: operations["previewRestore"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bulk-actions/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The fields Change field offers for one level, with their choices */
+        get: operations["listBulkFields"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bulk-actions/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Where the selected records may be copied or moved (searchable, with the full path)
+         * @description POST because the selection (up to 1,000 IDs) is sent in the body; nothing changes.
+         */
+        post: operations["listBulkTargets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bulk-actions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a bulk action would do - counts, re-approvals, effects and every skip reason - without saving */
+        post: operations["previewBulkAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bulk-actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a bulk action on the selected records
+         * @description Each record is changed, skipped (a rule prevents it) or failed (it no longer exists). Every change is in the activity log with the action's note.
+         */
+        post: operations["runBulkAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bulk-actions/{bulkActionId}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo a bulk delete - every deleted record comes back in one step (within 2 minutes) */
+        post: operations["undoBulkDelete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The plan's imports, newest first, and whether it can take an import now */
+        get: operations["listPlanImports"];
+        put?: never;
+        /** Import the confirmed rows of a file as Created activities */
+        post: operations["importActivities"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/imports/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check a filled template - every problem of every row at once; nothing is created */
+        post: operations["checkImportFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/import-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The import template made for this plan (.xlsx)
+         * @description Refused with validation_failed until the plan has a campaign and an initiative.
+         */
+        get: operations["getImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One import with its results and what Undo import would do */
+        get: operations["getImport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{importId}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move every record the import created, with anything added under them since, to the recycle bin */
+        post: operations["undoImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Every failure. Codes added by 002-012: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011). */
         Error: {
             /** @enum {string} */
-            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error";
+            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error" | "parent_deleted_permanently" | "in_use" | "cannot_restore" | "not_allowed" | "not_ready";
             /** @description Plain-language message for the user (never technical details). */
             message: string;
             /** @description Every field problem (validation_failed); always present, empty otherwise. */
@@ -274,6 +2624,8 @@ export interface components {
             conflict?: components["schemas"]["Conflict"];
             parent?: components["schemas"]["RecordRef"];
             resolution?: components["schemas"]["Resolution"];
+            /** @description Every needed field that stops the action, grouped by record (only with not_ready: publishing a plan, submitting an activity). */
+            missing?: components["schemas"]["ReadinessGroup"][];
         };
         FieldError: {
             /** @description Name of the field in the request body, for example email. */
@@ -284,7 +2636,7 @@ export interface components {
         /** @description How a recycle-bin entry left the bin, by whom and when (already_resolved). */
         Resolution: {
             /** @enum {string} */
-            how: "undone" | "restored";
+            how: "undone" | "restored" | "deletedPermanently";
             by: components["schemas"]["ActorRef"];
             /** Format: date-time */
             at: string;
@@ -336,6 +2688,7 @@ export interface components {
             email: string;
             password: string;
         };
+        /** @description Extended by later features: displayCurrency (003), dateFormat (003), homeScope (009), historyIncludeInside (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         Preferences: {
             /**
              * @description system follows the computer's setting.
@@ -343,8 +2696,17 @@ export interface components {
              */
             theme: "system" | "light" | "dark";
             sidebarCollapsed: boolean;
+            /**
+             * @description ISO code of the currency the API converts USD amounts to for this person (default USD).
+             * @example USD
+             */
+            displayCurrency?: string;
+            dateFormat?: components["schemas"]["DateFormat"];
+            homeScope?: components["schemas"]["HomeScope"];
+            /** @description Include items inside / Include line items on History sections (default false). */
+            historyIncludeInside?: boolean;
         };
-        /** @description Only the preferences to change. */
+        /** @description Only the preferences to change. Extended by later features: displayCurrency (003), dateFormat (003), homeScope (009), historyIncludeInside (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         PreferencesUpdate: {
             /**
              * @description The server also checks the value and answers validation_failed for anything else.
@@ -352,7 +2714,18 @@ export interface components {
              */
             theme?: "system" | "light" | "dark";
             sidebarCollapsed?: boolean;
+            /** @description An active currency's code, or the current one. Anything else answers validation_failed. */
+            displayCurrency?: string;
+            /** @description One of DateFormat. Anything else answers validation_failed. */
+            dateFormat?: string;
+            /**
+             * @description The server also checks the value and answers validation_failed for anything else.
+             * @enum {string}
+             */
+            homeScope?: "myTeams" | "everything";
+            historyIncludeInside?: boolean;
         };
+        /** @description Extended by later features: version (003), teams (003). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         CurrentUser: {
             id: string;
             name: string;
@@ -361,6 +2734,10 @@ export interface components {
             jobTitle: string;
             initials: string;
             preferences: components["schemas"]["Preferences"];
+            /** @description The person's version, sent back by PATCH /api/me. */
+            version?: number;
+            /** @description The signed-in person's teams, active or not, sorted by name ("My teams" filters, plan defaults). */
+            teams?: components["schemas"]["TeamRef"][];
         };
         Change: {
             /** @example name */
@@ -379,6 +2756,7 @@ export interface components {
             /** @description The value after the change as people read it (Not filled in when empty). */
             newText: string;
         };
+        /** @description Extended by later features: items (011), recordNow (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         ActivityLogEntry: {
             /** @example LOG-1001 */
             id: string;
@@ -390,7 +2768,7 @@ export interface components {
              * @description Category used for filters and the action chip (feature 011 adds more).
              * @enum {string}
              */
-            action: "created" | "changed" | "statusChanged" | "moved" | "copied" | "deleted" | "restored";
+            action: "created" | "changed" | "statusChanged" | "moved" | "copied" | "deleted" | "restored" | "deletedPermanently" | "emptiedRecycleBin";
             /**
              * @description The plain verb of the sentence, for example created or published.
              * @example created
@@ -412,10 +2790,18 @@ export interface components {
             comment: string;
             /** @description Plain-text extra information, for example with 2 sample notes; empty when none. */
             details: string;
+            /** @description The purged entries of an emptied recycle bin; empty for every other entry. */
+            items?: components["schemas"]["ActivityLogItem"][];
+            recordNow?: components["schemas"]["RecordNow"];
         };
+        /** @description Extended by later features: unfilteredTotal (011), record (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         ActivityLogPage: {
             items: components["schemas"]["ActivityLogEntry"][];
             total: number;
+            /** @description How many entries the whole log holds. */
+            unfilteredTotal?: number;
+            /** @description The record named by recordId (current name, or its latest name in the log); null without recordId or when unknown. */
+            record?: components["schemas"]["RecordRef"] | null;
         };
         ContentCount: {
             /** @example sampleNote */
@@ -445,8 +2831,9 @@ export interface components {
             /** @description What was under it, counted by kind. */
             contents: components["schemas"]["ContentCount"][];
         };
+        /** @description Extended by later features: items changed (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         RecycleBinPage: {
-            items: components["schemas"]["RecycleBinEntry"][];
+            items: components["schemas"]["RecycleBinListItem"][];
             total: number;
         };
         DeleteResult: {
@@ -503,6 +2890,3152 @@ export interface components {
         SampleNoteCreate: {
             title: string;
         };
+        /** @description An exact amount with its currency, as the API answers it. The amount always has two decimals. */
+        Money: {
+            /** @example 1234.50 */
+            amount: string;
+            /** @example USD */
+            currency: string;
+        };
+        /** @description An amount sent to the API. The amount is a decimal string with at most two decimals ("12500", "12500.5", "12500.50"); the API checks it and answers validation_failed with a message for the field otherwise. */
+        MoneyInput: {
+            /** @example 12500.00 */
+            amount: string;
+            /** @example USD */
+            currency: string;
+        };
+        /**
+         * @description A percentage with two decimals, as the API answers it ("2.00" means 2.00 %).
+         * @example 2.00
+         */
+        Percent: string;
+        /**
+         * @description Units of a currency per 1 USD, exact to six decimals, without trailing zeros.
+         * @example 0.92
+         */
+        ExchangeRate: string;
+        /** @description A Settings record referred to by another one, with its status (inactive ones are labelled "(inactive)"). */
+        SettingRef: {
+            id: string;
+            name: string;
+            active: boolean;
+        };
+        UsagePart: {
+            /**
+             * @description What uses the record.
+             * @enum {string}
+             */
+            kind: "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "person" | "model" | "dependentAttribute" | "condition" | "linkedOption";
+            /** @description The part as people read it, for example Used by 12 activities (1 in the recycle bin). */
+            text: string;
+            /** @description Records using it, those in the recycle bin included. */
+            count: number;
+            inRecycleBin: number;
+        };
+        /** @description Where a Settings record is used (FR-003), counting records in the recycle bin. */
+        Usage: {
+            /** @description True when anything uses it; then it cannot be deleted, only set inactive. */
+            inUse: boolean;
+            /**
+             * @description The parts joined with " · ", or Not used yet.
+             * @example Used by 2 plans
+             */
+            summary: string;
+            parts: components["schemas"]["UsagePart"][];
+            /** @description Models and finance budgets only - the plans using it (not in the recycle bin), sorted by name, at most 50. Empty otherwise. */
+            records: components["schemas"]["RecordRef"][];
+        };
+        /** @description A field or action that cannot be used, and why (design system 6.6). */
+        Lock: {
+            /**
+             * @description The locked field (type, level, code, rate, year, section, position, condition, parentAttributeId) or action (active, delete).
+             * @example type
+             */
+            field: string;
+            /** @example Type can't change once records use this attribute — create a new attribute instead. */
+            reason: string;
+        };
+        ImpactWarning: {
+            /** @enum {string} */
+            kind: "goalsRecalculated" | "activityTypeRemoved" | "becomesIncomplete" | "optionsRemoved" | "amountsRecalculated";
+            /** @description The sentence to show before saving. */
+            message: string;
+            /** @description How many records the warning is about. */
+            count: number;
+        };
+        ChangeImpact: {
+            warnings: components["schemas"]["ImpactWarning"][];
+        };
+        StatusUpdate: {
+            /** @description false sets the record inactive; true reactivates it. */
+            active: boolean;
+            /** @description The version the user started from. */
+            version: number;
+        };
+        /** @description The number of active records of each Settings section of feature 002. */
+        SettingsOverview: {
+            models: number;
+            activityTypes: number;
+            shellAttributes: number;
+            currencies: number;
+            financeBudgetItems: number;
+        };
+        Model: {
+            /** @example MOD-1001 */
+            id: string;
+            /** @example Lubricants 1.0 */
+            name: string;
+            inqToMqlRate: components["schemas"]["Percent"];
+            mqlToDealRate: components["schemas"]["Percent"];
+            averageDealSize: components["schemas"]["Money"];
+            /** @description The allowed activity types, sorted by name. */
+            activityTypes: components["schemas"]["SettingRef"][];
+            active: boolean;
+            usage: components["schemas"]["Usage"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ModelPage: {
+            items: components["schemas"]["Model"][];
+            total: number;
+        };
+        ModelCreate: {
+            name: string;
+            /**
+             * @description Percent with at most two decimals, above 0 and at most 100; "" when not filled in.
+             * @example 2
+             */
+            inqToMqlRate: string;
+            /** @example 5 */
+            mqlToDealRate: string;
+            /** @description USD; null when not filled in. */
+            averageDealSize: components["schemas"]["MoneyInput"] | null;
+            activityTypeIds: string[];
+        };
+        /** @description Only the fields to change, and the version. Also the body of the impact check. */
+        ModelUpdate: {
+            name?: string;
+            inqToMqlRate?: string;
+            mqlToDealRate?: string;
+            averageDealSize?: components["schemas"]["MoneyInput"] | null;
+            activityTypeIds?: string[];
+            version: number;
+        };
+        ActivityType: {
+            /** @example AT-1002 */
+            id: string;
+            /** @example Event */
+            name: string;
+            /** @description USD, offered when someone picks this type (R7); null when none. */
+            defaultPlannedCost: components["schemas"]["Money"] | null;
+            /** @description The models that allow this type, sorted by name. */
+            models: components["schemas"]["SettingRef"][];
+            active: boolean;
+            usage: components["schemas"]["Usage"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ActivityTypePage: {
+            items: components["schemas"]["ActivityType"][];
+            total: number;
+        };
+        ActivityTypeCreate: {
+            name: string;
+            defaultPlannedCost: components["schemas"]["MoneyInput"] | null;
+            /** @description The models that allow the new type (each model's list gains it). */
+            modelIds: string[];
+        };
+        /** @description Only the fields to change, and the version. defaultPlannedCost null removes the default. modelIds is the complete new list of models allowing the type. Also the body of the impact check. */
+        ActivityTypeUpdate: {
+            name?: string;
+            defaultPlannedCost?: components["schemas"]["MoneyInput"] | null;
+            modelIds?: string[];
+            version: number;
+        };
+        /** @enum {string} */
+        AttributeLevel: "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+        /** @enum {string} */
+        AttributeType: "singleChoice" | "multipleChoice" | "multipleChoiceSplit" | "yesNo" | "text" | "longText" | "number";
+        /** @enum {string} */
+        AttributeMarking: "optional" | "neededToPublish" | "neededToSubmit";
+        ShellAttribute: {
+            /** @example SA-1004 */
+            id: string;
+            /** @example Region */
+            label: string;
+            /** @description Empty when none. */
+            helpText: string;
+            level: components["schemas"]["AttributeLevel"];
+            type: components["schemas"]["AttributeType"];
+            marking: components["schemas"]["AttributeMarking"];
+            /** @example Shell attributes */
+            section: string;
+            position: number;
+            /** @description The attribute whose value limits this one's options (Depends on); null when none. */
+            parentAttribute: components["schemas"]["SettingRef"] | null;
+            /** @description The Business unit options of which the plan must include any for this attribute to be shown; empty when always shown. */
+            condition: components["schemas"]["SettingRef"][];
+            /** @description True for the plan-level Business unit attribute, which conditions depend on (FR-023). */
+            businessUnit: boolean;
+            active: boolean;
+            optionCount: number;
+            activeOptionCount: number;
+            usage: components["schemas"]["Usage"];
+            locks: components["schemas"]["Lock"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ShellAttributePage: {
+            /** @description In display order. */
+            items: components["schemas"]["ShellAttribute"][];
+            total: number;
+        };
+        NewOption: {
+            label: string;
+            /** @description For a dependent attribute, the parent options it belongs to (at least one). */
+            parentOptionIds?: string[];
+        };
+        ShellAttributeCreate: {
+            label: string;
+            helpText?: string;
+            /** @description plan, campaign, initiative, activity or lineItem; "" when not chosen. */
+            level: string;
+            /** @description One of AttributeType; "" when not chosen. */
+            type: string;
+            /** @description One of AttributeMarking; "" when not chosen. */
+            marking: string;
+            /** @description Empty means Shell attributes. */
+            section?: string;
+            /** @description Depends on; "" for none. */
+            parentAttributeId?: string;
+            conditionOptionIds?: string[];
+            /** @description The first options of a choice attribute, in order. */
+            options?: components["schemas"]["NewOption"][];
+        };
+        OptionLinks: {
+            optionId: string;
+            parentOptionIds: string[];
+        };
+        /** @description Only the fields to change, and the version. When parentAttributeId changes to an attribute, optionLinks must link every active option. Also the body of the impact check. */
+        ShellAttributeUpdate: {
+            label?: string;
+            helpText?: string;
+            level?: string;
+            type?: string;
+            marking?: string;
+            section?: string;
+            parentAttributeId?: string;
+            conditionOptionIds?: string[];
+            optionLinks?: components["schemas"]["OptionLinks"][];
+            version: number;
+        };
+        AttributeMove: {
+            /**
+             * @description attribute moves it within its section; section moves its whole section.
+             * @enum {string}
+             */
+            what: "attribute" | "section";
+            /** @enum {string} */
+            direction: "up" | "down";
+            /** @description The version of the attribute the user started from. */
+            version: number;
+        };
+        ShellAttributeOption: {
+            /** @example SO-1012 */
+            id: string;
+            attributeId: string;
+            /** @example RETAIL – CHINA */
+            label: string;
+            position: number;
+            /** @description The parent options it is linked to (dependent attributes); empty otherwise. */
+            parentOptions: components["schemas"]["SettingRef"][];
+            active: boolean;
+            usage: components["schemas"]["Usage"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ShellAttributeOptionPage: {
+            items: components["schemas"]["ShellAttributeOption"][];
+            /** @description Every matching option, also those beyond limit. */
+            total: number;
+        };
+        OptionCreate: {
+            label: string;
+            parentOptionIds?: string[];
+        };
+        OptionUpdate: {
+            label?: string;
+            parentOptionIds?: string[];
+            version: number;
+        };
+        OptionMove: {
+            /** @enum {string} */
+            direction: "up" | "down";
+            version: number;
+        };
+        OptionImportRequest: {
+            /** @example cost-centres.xlsx */
+            fileName: string;
+            /** @description The file (.csv or .xlsx, at most 700 KB) encoded as base64. */
+            content: string;
+        };
+        ImportRow: {
+            /** @description The row number in the file (the header is row 1). */
+            row: number;
+            label: string;
+            /** @description The Parent option column (dependent attributes); empty otherwise. */
+            parentLabel: string;
+            /** @description Why the row is skipped or has a problem; empty for rows to add. */
+            message: string;
+        };
+        OptionImportCheck: {
+            /** @description Data rows in the file (without the header). */
+            totalRows: number;
+            toAdd: components["schemas"]["ImportRow"][];
+            alreadyPresent: components["schemas"]["ImportRow"][];
+            problems: components["schemas"]["ImportRow"][];
+        };
+        OptionImportResult: {
+            added: number;
+            alreadyPresent: number;
+            problems: number;
+        };
+        FormOption: {
+            id: string;
+            label: string;
+            active: boolean;
+            parentOptionIds: string[];
+        };
+        FormAttribute: {
+            id: string;
+            label: string;
+            helpText: string;
+            type: components["schemas"]["AttributeType"];
+            marking: components["schemas"]["AttributeMarking"];
+            active: boolean;
+            parentAttributeId: string | null;
+            conditionOptionIds: string[];
+            /** @description Every option in display order, inactive ones included (shown only when a record already has them). */
+            options: components["schemas"]["FormOption"][];
+        };
+        FormSection: {
+            name: string;
+            /** @description True when every attribute of the section has a business-unit condition. */
+            conditional: boolean;
+            attributes: components["schemas"]["FormAttribute"][];
+        };
+        AttributeForm: {
+            level: components["schemas"]["AttributeLevel"];
+            /** @description In the order of their first attribute. */
+            sections: components["schemas"]["FormSection"][];
+            /** @description The plan-level Business unit attribute (null when none exists). */
+            businessUnitAttributeId: string | null;
+            /** @description The Business unit options, for condition notes and the preview. */
+            businessUnitOptions: components["schemas"]["FormOption"][];
+        };
+        SplitShare: {
+            optionId: string;
+            /**
+             * @description Percent with at most two decimals, above 0.
+             * @example 60.00
+             */
+            share: string;
+        };
+        /** @description One attribute's value: an option id (single choice) or a text (text, long text); a list of option ids (multiple choice); a list of shares (multiple choice with % split); true or false (yes/no); a whole number (number); null removes the value. */
+        AttributeValue: string | boolean | number | string[] | components["schemas"]["SplitShare"][] | null;
+        /** @description A record's Shell attribute values (attributes field of plans, campaigns, initiatives, activities and line items), keyed by attribute id. */
+        AttributeValues: {
+            [key: string]: components["schemas"]["AttributeValue"];
+        };
+        AttributeCheckRequest: {
+            values: components["schemas"]["AttributeValues"];
+            previousValues?: components["schemas"]["AttributeValues"];
+            /** @description The plan's business unit (levels below the plan); ignored at plan level, where the values hold it. */
+            businessUnitOptionIds?: string[];
+        };
+        /** @description A field that is still needed to publish or submit (the one MissingField of the module, used by 002-012; consolidation 2026-10-19). */
+        MissingField: {
+            /** @example attributes.SA-1003 */
+            field: string;
+            /** @example Cluster */
+            label: string;
+            /** @description Absent or empty, or why a filled-in field still counts (for example a split that does not add up to 100 %). */
+            reason?: string;
+        };
+        ClearedValue: {
+            attributeId: string;
+            /** @example Region */
+            label: string;
+            optionIds: string[];
+            optionLabels: string[];
+        };
+        AttributeCheckResult: {
+            /** @description Problems that block saving, each for field attributes.<attributeId>. */
+            problems: components["schemas"]["FieldError"][];
+            missing: components["schemas"]["MissingField"][];
+            cleared: components["schemas"]["ClearedValue"][];
+            values: components["schemas"]["AttributeValues"];
+        };
+        Currency: {
+            /** @example EUR */
+            code: string;
+            /** @example Euro */
+            name: string;
+            /**
+             * @description Empty when none.
+             * @example €
+             */
+            symbol: string;
+            rate: components["schemas"]["ExchangeRate"];
+            inverseRate: components["schemas"]["ExchangeRate"];
+            /** Format: date-time */
+            rateChangedAt: string;
+            rateChangedBy: components["schemas"]["ActorRef"];
+            active: boolean;
+            usage: components["schemas"]["Usage"];
+            locks: components["schemas"]["Lock"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        CurrencyPage: {
+            items: components["schemas"]["Currency"][];
+            total: number;
+        };
+        CurrencyCreate: {
+            /** @example JPY */
+            code: string;
+            /** @example Japanese yen */
+            name: string;
+            /** @example ¥ */
+            symbol?: string;
+            /**
+             * @description Units per 1 USD, above 0, at most six decimals; "" when not filled in.
+             * @example 150
+             */
+            rate: string;
+        };
+        /** @description Only the fields to change, and the version. Also the body of the impact check. */
+        CurrencyUpdate: {
+            name?: string;
+            symbol?: string;
+            rate?: string;
+            version: number;
+        };
+        FinanceBudgetItem: {
+            /** @example FBI-1001 */
+            id: string;
+            /** @example FB-1001 */
+            budgetId: string;
+            /** @example 2026 Lubricants Budget */
+            budgetName: string;
+            /** @example 2026 */
+            year: number;
+            /** @example Europe – Digital */
+            name: string;
+            /**
+             * @description Empty when none.
+             * @example LUB-EU-DIG
+             */
+            code: string;
+            active: boolean;
+            usage: components["schemas"]["Usage"];
+            locks: components["schemas"]["Lock"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        FinanceBudget: {
+            /** @example FB-1001 */
+            id: string;
+            year: number;
+            /** @example 2026 Lubricants Budget */
+            name: string;
+            /** @description Its items (active and inactive), sorted by name. */
+            items: components["schemas"]["FinanceBudgetItem"][];
+            activeItemCount: number;
+            usage: components["schemas"]["Usage"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        FinanceBudgetPage: {
+            /** @description The year's budgets that have at least one item, sorted by name. */
+            items: components["schemas"]["FinanceBudget"][];
+            total: number;
+            /** @description The year shown. */
+            year: number;
+            /** @description The years that can be chosen - current year - 1 to + 5, and any other year with items - ascending. */
+            years: number[];
+        };
+        FinanceBudgetRename: {
+            name: string;
+            version: number;
+        };
+        FinanceBudgetItemCreate: {
+            year: number;
+            budgetName: string;
+            name: string;
+            code?: string;
+        };
+        /** @description Only the fields to change, and the version. A new budgetName moves the item to that budget of the same year (created when new). */
+        FinanceBudgetItemUpdate: {
+            budgetName?: string;
+            name?: string;
+            code?: string;
+            version: number;
+        };
+        /**
+         * @description A person as every other record shows them (owners, approvers, members). Names are read when the
+         *     answer is made, so a rename shows everywhere. When active is false, screens add "(inactive)".
+         */
+        PersonRef: {
+            /** @example U-1002 */
+            id: string;
+            /** @example Priya Raman */
+            name: string;
+            /** @example PR */
+            initials: string;
+            /**
+             * @description Empty when the person has none.
+             * @example Marketer
+             */
+            jobTitle: string;
+            active: boolean;
+        };
+        /** @description A team as every other record shows it (plan teams, My teams). When active is false, screens add "(inactive)". */
+        TeamRef: {
+            /** @example T-1001 */
+            id: string;
+            /** @example Lubricants Europe */
+            name: string;
+            colour: components["schemas"]["TeamColour"];
+            active: boolean;
+        };
+        /**
+         * @description The team's colour from the team palette (decision D-025).
+         * @enum {string}
+         */
+        TeamColour: "blue" | "violet" | "teal" | "magenta" | "orange" | "green" | "slate" | "gold";
+        Person: {
+            /** @example U-1002 */
+            id: string;
+            name: string;
+            /**
+             * @description The sign-in name, in lower case.
+             * @example priya.raman@northstar.demo
+             */
+            email: string;
+            jobTitle: string;
+            /** @example PR */
+            initials: string;
+            active: boolean;
+            /** @description The person's teams, active or not, sorted by name. */
+            teams: components["schemas"]["TeamRef"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        /** @description How many records of one type name the person in one role (records in the recycle bin are not counted). */
+        UsageCount: {
+            /** @enum {string} */
+            role: "owner" | "approver";
+            /** @example plan */
+            recordType: string;
+            /**
+             * @description Singular when count is 1, plural otherwise.
+             * @example plans
+             */
+            label: string;
+            count: number;
+        };
+        PersonDetails: {
+            /** @example U-1002 */
+            id: string;
+            name: string;
+            email: string;
+            jobTitle: string;
+            initials: string;
+            active: boolean;
+            teams: components["schemas"]["TeamRef"][];
+            /** @description What the person owns (role owner) and approves (role approver), owners first; empty until features 004–008 provide records. */
+            usage: components["schemas"]["UsageCount"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        PersonPage: {
+            items: components["schemas"]["Person"][];
+            total: number;
+        };
+        PersonCreate: {
+            name: string;
+            email: string;
+            /** @description Empty when not sent. */
+            jobTitle?: string;
+            /** @description The person's teams; empty when not sent. */
+            teamIds?: string[];
+        };
+        PersonUpdate: {
+            name: string;
+            email: string;
+            jobTitle: string;
+            /** @description Every team of the person after the change. */
+            teamIds: string[];
+            /** @description The version the user started editing from. */
+            version: number;
+        };
+        /** @description A plan that uses the team (feature 004). */
+        TeamPlanUse: {
+            /** @example P-1001 */
+            id: string;
+            /** @example FY2026 Lubricants Europe */
+            name: string;
+            /** @description The plan is in the recycle bin; it still keeps the team from being deleted. */
+            inRecycleBin: boolean;
+        };
+        Team: {
+            /** @example T-1001 */
+            id: string;
+            name: string;
+            description: string;
+            colour: components["schemas"]["TeamColour"];
+            active: boolean;
+            /** @description The members, active or not, sorted by name. */
+            members: components["schemas"]["PersonRef"][];
+            /** @description Every plan that uses the team, including plans in the recycle bin, sorted by name; empty until feature 004. */
+            plans: components["schemas"]["TeamPlanUse"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        TeamPage: {
+            items: components["schemas"]["Team"][];
+            total: number;
+        };
+        TeamCreate: {
+            name: string;
+            /** @description Empty when not sent. */
+            description?: string;
+            /** @description One of TeamColour; when not sent, the colour used by the fewest teams. Any other value answers validation_failed. */
+            colour?: string;
+            /** @description The members; empty when not sent. */
+            memberIds?: string[];
+        };
+        TeamUpdate: {
+            name: string;
+            description: string;
+            /** @description One of TeamColour; any other value answers validation_failed. */
+            colour: string;
+            /** @description Every member after the change. */
+            memberIds: string[];
+            /** @description The version the user started editing from. */
+            version: number;
+        };
+        ProfileUpdate: {
+            name: string;
+            jobTitle: string;
+            /** @description The version of the person the user started editing from (CurrentUser.version). */
+            version: number;
+        };
+        DisplayCurrencyOption: {
+            /** @example EUR */
+            code: string;
+            /** @example Euro */
+            name: string;
+            /** @description False only for the person's current display currency after it was set inactive. */
+            active: boolean;
+        };
+        DisplayCurrencyPage: {
+            items: components["schemas"]["DisplayCurrencyOption"][];
+            total: number;
+        };
+        /**
+         * @description How dates are shown and typed (default DD MMM YYYY, "12 Mar 2026").
+         * @enum {string}
+         */
+        DateFormat: "DD MMM YYYY" | "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+        /**
+         * @description Draft (being prepared) or Published (the agreed plan of record).
+         * @enum {string}
+         */
+        PlanStatus: "draft" | "published";
+        /**
+         * @description The stage at which the plan's goal is set (INQ, MQL or Revenue).
+         * @enum {string}
+         */
+        GoalStage: "inq" | "mql" | "revenue";
+        /**
+         * @description How a line item's planned cost is spread over the months (Evenly, All in first month, All in last month, Custom). Reused by feature 007.
+         * @enum {string}
+         */
+        SpreadMethod: "evenly" | "firstMonth" | "lastMonth" | "custom";
+        /** @enum {string} */
+        ApprovalProgress: "noActivities" | "inProgress" | "allApproved";
+        /** @description The plan's model with what the goal waterfall needs (owned by 004; read from 002's Model). Inactive models are labelled "(inactive)". */
+        ModelSummary: {
+            /** @example MOD-1001 */
+            id: string;
+            /** @example Lubricants 1.0 */
+            name: string;
+            active: boolean;
+            inqToMqlRate: components["schemas"]["Percent"];
+            mqlToDealRate: components["schemas"]["Percent"];
+            averageDealSize: components["schemas"]["Money"];
+        };
+        /** @description A finance budget (002) referred to by a plan; its name is read when the answer is made, so a rename shows everywhere. */
+        FinanceBudgetRef: {
+            /** @example FB-1001 */
+            id: string;
+            /** @example 2026 */
+            year: number;
+            /** @example 2026 Lubricants Budget */
+            name: string;
+        };
+        /** @description A Shell attribute option (002) referred to by a record, such as the plan's business unit. Inactive options are labelled "(inactive)". */
+        OptionRef: {
+            /** @example SO-1001 */
+            id: string;
+            /** @example Lubricants */
+            label: string;
+            active: boolean;
+        };
+        /** @description A record below that is not complete, with its missing fields. */
+        AttentionItem: {
+            record: components["schemas"]["RecordRef"];
+            missing: components["schemas"]["MissingField"][];
+        };
+        Completeness: {
+            /** @description The record's own needed fields that are empty, in form order ("All filled in" when empty). */
+            missing: components["schemas"]["MissingField"][];
+            /** @description Every campaign, initiative, activity and line item below that is not complete. */
+            itemsBelow: components["schemas"]["AttentionItem"][];
+        };
+        /** @description The fields one record still needs before an action (publish a plan; later submit an activity). */
+        ReadinessGroup: {
+            record: components["schemas"]["RecordRef"];
+            fields: components["schemas"]["MissingField"][];
+        };
+        /** @description What is inside the plan (0 until features 005-007 add their records). */
+        PlanContents: {
+            campaigns: number;
+            initiatives: number;
+            activities: number;
+            /** @description Activities that are Approved, In progress or Complete. */
+            approvedActivities: number;
+            lineItems: number;
+        };
+        /** @description Calculated money and progress, in the signed-in person's display currency. */
+        PlanFigures: {
+            /**
+             * @description The display currency code of every amount below.
+             * @example USD
+             */
+            currency: string;
+            /** @description The plan budget; null when none is set. */
+            budget: components["schemas"]["Money"] | null;
+            /** @description Sum of the activities' planned cost; null when nothing below has a planned cost. */
+            plannedCost: components["schemas"]["Money"] | null;
+            campaignBudgets: components["schemas"]["Money"];
+            /** @description Plan budget minus campaign budgets (may be negative); null without a plan budget. */
+            remainingBudget: components["schemas"]["Money"] | null;
+            /** @description How far campaign budgets exceed the plan budget; null when they do not. */
+            overAllocatedBy: components["schemas"]["Money"] | null;
+            /** @description Planned cost divided by plan budget, as a whole percent; null without a budget or with a budget of 0. */
+            budgetUsedPercent: number | null;
+            /** @description Planned cost is above the plan budget (the bar is red). */
+            overBudget: boolean;
+            activities: number;
+            activitiesApproved: number;
+            approvalProgress: components["schemas"]["ApprovalProgress"];
+        };
+        /** @description The plan goal at every stage; the typed stage as typed, the others calculated from the model. */
+        GoalFigures: {
+            inq: number | null;
+            mql: number | null;
+            deals: number | null;
+            /** @description In the display currency. */
+            revenue: components["schemas"]["Money"] | null;
+            /** @description Why a stage could not be calculated (only for stages that are null although a goal amount is set). */
+            reasons: {
+                inq?: string;
+                mql?: string;
+                deals?: string;
+                revenue?: string;
+            };
+        };
+        /** @description The sum of the goals of every activity in the plan. */
+        GoalTotals: {
+            inq: number;
+            mql: number;
+            revenue: components["schemas"]["Money"];
+        };
+        PlanGoals: {
+            stage: components["schemas"]["GoalStage"];
+            plan: components["schemas"]["GoalFigures"];
+            activities: components["schemas"]["GoalTotals"];
+            /** @description Activity total of the goal stage as a whole percent of the plan goal; null without a goal or with a goal of 0. */
+            plannedPercent: number | null;
+        };
+        /** @description A plan as stored (stored amounts in USD) with its calculated values (display currency). */
+        Plan: {
+            /** @example P-1001 */
+            id: string;
+            /** @example FY2026 Lubricants Europe */
+            name: string;
+            /** @example 2026 */
+            year: number;
+            status: components["schemas"]["PlanStatus"];
+            model: components["schemas"]["ModelSummary"];
+            /** @description Sorted by name; inactive teams are kept and flagged. */
+            teams: components["schemas"]["TeamRef"][];
+            owner: components["schemas"]["PersonRef"] | null;
+            /** @description The R1 message when the owner is in none of the plan's teams; empty otherwise. */
+            ownerProblem: string;
+            /** @description Strategic / AOP plan. */
+            aop: boolean;
+            description: string;
+            /** @description The plan budget in USD, as stored and typed; null when none. */
+            budget: components["schemas"]["Money"] | null;
+            defaultFinanceBudget: components["schemas"]["FinanceBudgetRef"] | null;
+            defaultSpread: components["schemas"]["SpreadMethod"];
+            /** @description BCPIR plan. */
+            bcpir: boolean;
+            goalStage: components["schemas"]["GoalStage"];
+            /**
+             * @description The typed goal; a whole number for inq and mql, a USD amount for revenue.
+             * @example 250000
+             */
+            goalAmount: string | null;
+            /** @description Plan-level Shell attribute values by attribute ID, including hidden ones (kept, R9). */
+            attributes: {
+                [key: string]: components["schemas"]["AttributeValue"];
+            };
+            /** @description The chosen options of the Business unit attribute. */
+            businessUnit: components["schemas"]["OptionRef"][];
+            figures: components["schemas"]["PlanFigures"];
+            goals: components["schemas"]["PlanGoals"];
+            completeness: components["schemas"]["Completeness"];
+            contents: components["schemas"]["PlanContents"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        /** @description A plan as the Plans list shows it. */
+        PlanSummary: {
+            id: string;
+            name: string;
+            year: number;
+            status: components["schemas"]["PlanStatus"];
+            aop: boolean;
+            owner: components["schemas"]["PersonRef"] | null;
+            teams: components["schemas"]["TeamRef"][];
+            businessUnit: components["schemas"]["OptionRef"][];
+            figures: components["schemas"]["PlanFigures"];
+            completeness: components["schemas"]["Completeness"];
+        };
+        /** @description The summary cards of the Plans page, over the team scope and the chosen year. */
+        PlanListSummary: {
+            plans: number;
+            draft: number;
+            published: number;
+            /** @description Sum of the known planned costs; null when no plan has one. */
+            plannedCost: components["schemas"]["Money"] | null;
+            /** @description Sum of the plan budgets that are set; null when none is set. */
+            budget: components["schemas"]["Money"] | null;
+        };
+        PlanList: {
+            items: components["schemas"]["PlanSummary"][];
+            /** @description Every plan in the team scope (the "of" of the result count). */
+            total: number;
+            summary: components["schemas"]["PlanListSummary"];
+            /** @description Every year with a plan in the team scope, newest first. */
+            years: number[];
+        };
+        PlanDefaults: {
+            currentYear: number;
+            /** @description The years a new plan may have (current - 1 to current + 5). */
+            years: number[];
+            year: number;
+            teamIds: string[];
+            ownerId: string | null;
+            /** @description The only active model; null when there are none or several. */
+            modelId: string | null;
+            aop: boolean;
+            bcpir: boolean;
+            defaultSpread: components["schemas"]["SpreadMethod"];
+            goalStage: components["schemas"]["GoalStage"];
+        };
+        /** @description The whole plan form. Empty values are sent as null (or "" for text, [] and {} for lists). */
+        PlanCreate: {
+            name: string;
+            year: number | null;
+            modelId: string | null;
+            teamIds: string[];
+            ownerId: string | null;
+            aop: boolean;
+            description: string;
+            /** @description In USD; null for no budget. */
+            budget: components["schemas"]["Money"] | null;
+            defaultFinanceBudgetId: string | null;
+            /** @description One of SpreadMethod; checked by the server. */
+            defaultSpread: string;
+            bcpir: boolean;
+            /** @description One of GoalStage; checked by the server. */
+            goalStage: string;
+            goalAmount: string | null;
+            attributes: {
+                [key: string]: components["schemas"]["AttributeValue"];
+            };
+        };
+        /** @description The whole plan form (the year is not part of it) and the version the person started from. */
+        PlanUpdate: {
+            /** @description The version the person started editing from. */
+            version: number;
+            name: string;
+            modelId: string | null;
+            teamIds: string[];
+            ownerId: string | null;
+            aop: boolean;
+            description: string;
+            budget: components["schemas"]["Money"] | null;
+            defaultFinanceBudgetId: string | null;
+            defaultSpread: string;
+            bcpir: boolean;
+            goalStage: string;
+            goalAmount: string | null;
+            attributes: {
+                [key: string]: components["schemas"]["AttributeValue"];
+            };
+        };
+        UnpublishRequest: {
+            /** @description Why the plan is unpublished, 1 to 500 characters after trimming. */
+            reason: string;
+        };
+        NextYearOption: {
+            year: number;
+            available: boolean;
+            /** @description Why the next year can't be chosen; empty when it can. */
+            reason: string;
+        };
+        PlanCopyOptions: {
+            /** @description The suggested name, "<name> (copy)" or the next free "(copy n)", at most 120 characters. */
+            name: string;
+            sameYear: number;
+            nextYear: components["schemas"]["NextYearOption"];
+            contents: components["schemas"]["PlanContents"];
+        };
+        PlanCopyRequest: {
+            name: string;
+            /** @description The source plan's year or the next one. */
+            year: number;
+            /** @description Also copy campaigns, initiatives, activities and line items. */
+            includeContents: boolean;
+        };
+        PlanCopyResult: {
+            plan: components["schemas"]["Plan"];
+            /** @description What the copy changed on purpose, for example a cleared default finance budget. */
+            notes: string[];
+        };
+        PlanChangeEffectsRequest: {
+            modelId: string | null;
+            attributes: {
+                [key: string]: components["schemas"]["AttributeValue"];
+            };
+        };
+        /** @description Shell attributes tied to one business-unit option that a change would hide or show. */
+        AttributeGroupChange: {
+            /** @example Lubricants */
+            unit: string;
+            /** @description Where those attributes are, top-down. */
+            levels: ("plan" | "campaign" | "initiative" | "activity" | "lineItem")[];
+            /** @description Their labels, in display order. */
+            attributes: string[];
+        };
+        PlanChangeEffects: {
+            modelChanged: boolean;
+            /** @description Activities whose type the new model does not allow; they keep it until changed. */
+            disallowedActivities: components["schemas"]["RecordRef"][];
+            /** @description Groups hidden by the new business unit (values kept). */
+            hiddenGroups: components["schemas"]["AttributeGroupChange"][];
+            shownGroups: components["schemas"]["AttributeGroupChange"][];
+        };
+        /** @description The plan a campaign or initiative belongs to, for the breadcrumb and the R4 warning. */
+        PlanRef: {
+            /** @example P-1001 */
+            id: string;
+            /** @example FY2026 Lubricants Europe */
+            name: string;
+            /** @example 2026 */
+            year: number;
+        };
+        /** @description The campaign an initiative belongs to, with its dates (the initiative's allowed range, R3). */
+        CampaignRef: {
+            /** @example C-1001 */
+            id: string;
+            /** @example Helix launch */
+            name: string;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+        };
+        /** @description Budget flowing down and cost rolling up for one campaign or initiative (domain model §4.1–4.2). All USD. */
+        BudgetAndCost: {
+            /** @description Sum of the children's budgets (0.00 when none; always 0.00 for an initiative). */
+            allocatedToChildren: components["schemas"]["Money"];
+            /** @description Budget minus allocatedToChildren; null when the record has no budget. May be negative. */
+            remainingForChildren: components["schemas"]["Money"] | null;
+            /** @description The positive amount by which remainingForChildren is below zero; null otherwise. */
+            overAllocatedBy: components["schemas"]["Money"] | null;
+            /** @description Sum of the planned costs below; null when nothing below has a planned cost. */
+            plannedCost: components["schemas"]["Money"] | null;
+            /** @description plannedCost × 100 ÷ budget rounded half up; null without a budget, with a budget of 0.00 or without a planned cost. */
+            budgetUsedPercent: number | null;
+            /** @description plannedCost is greater than the budget (exact comparison). */
+            overBudget: boolean;
+            /** @description Budget minus planned cost (0.00 when none); null without a budget. Negative when over budget. */
+            leftToPlan: components["schemas"]["Money"] | null;
+        };
+        /** @description Approval progress derived from the activities below (domain model §2.2) with its counts; Approved, In progress and Complete count as approved. */
+        ApprovalSummary: {
+            state: components["schemas"]["ApprovalProgress"];
+            approved: number;
+            total: number;
+        };
+        /** @description The record's own empty needed-to-publish fields and how many records below are incomplete (domain model §2.6). MissingField.field is ownerId, startDate or attributes.<attributeId>. */
+        RecordCompleteness: {
+            missing: components["schemas"]["MissingField"][];
+            itemsBelowNeedingAttention: number;
+        };
+        /** @description Sum of the activities' goals below (domain model §4.5); each null when no activity has that value. */
+        GoalSums: {
+            inq: number | null;
+            mql: number | null;
+            revenue: components["schemas"]["Money"] | null;
+        };
+        CampaignCounts: {
+            initiatives: number;
+            activities: number;
+            /** @description Activities whose status is Approved (shown as Approved, In progress or Complete). */
+            approvedActivities: number;
+            lineItems: number;
+        };
+        InitiativeCounts: {
+            activities: number;
+            approvedActivities: number;
+            lineItems: number;
+        };
+        Initiative: {
+            /** @example I-1001 */
+            id: string;
+            /** @description The plan of its campaign (derived, not stored). */
+            planId: string;
+            campaignId: string;
+            /** @example Digital & social */
+            name: string;
+            description: string;
+            ownerId: string | null;
+            /** @description The owner as people read it (inactive people included, labelled by the web app). */
+            owner: components["schemas"]["PersonRef"] | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            budget: components["schemas"]["Money"] | null;
+            attributes: components["schemas"]["AttributeValues"];
+            plan: components["schemas"]["PlanRef"];
+            campaign: components["schemas"]["CampaignRef"];
+            /** @description The campaign's remaining budget (campaign budget minus all its initiatives' budgets, this one included); null when the campaign has no budget. */
+            parentRemainingBudget: components["schemas"]["Money"] | null;
+            budgetAndCost: components["schemas"]["BudgetAndCost"];
+            approvalProgress: components["schemas"]["ApprovalSummary"];
+            /**
+             * @description Compared with today's date (UTC); null while the record has no dates.
+             * @enum {string|null}
+             */
+            timing: "notStarted" | "running" | "finished" | null;
+            completeness: components["schemas"]["RecordCompleteness"];
+            goals: components["schemas"]["GoalSums"];
+            counts: components["schemas"]["InitiativeCounts"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        Campaign: {
+            /** @example C-1001 */
+            id: string;
+            planId: string;
+            /** @example Helix launch */
+            name: string;
+            description: string;
+            ownerId: string | null;
+            owner: components["schemas"]["PersonRef"] | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            budget: components["schemas"]["Money"] | null;
+            attributes: components["schemas"]["AttributeValues"];
+            plan: components["schemas"]["PlanRef"];
+            /** @description The dates start before 1 January or end after 31 December of the plan's year (R4 warning; never blocks). */
+            outsidePlanYear: boolean;
+            /** @description The plan's remaining budget (plan budget minus all its campaigns' budgets, this one included); null when the plan has no budget. */
+            parentRemainingBudget: components["schemas"]["Money"] | null;
+            budgetAndCost: components["schemas"]["BudgetAndCost"];
+            approvalProgress: components["schemas"]["ApprovalSummary"];
+            /** @enum {string|null} */
+            timing: "notStarted" | "running" | "finished" | null;
+            completeness: components["schemas"]["RecordCompleteness"];
+            goals: components["schemas"]["GoalSums"];
+            counts: components["schemas"]["CampaignCounts"];
+            /** @description Its initiatives, ordered by start date, then name; without dates last. */
+            initiatives: components["schemas"]["Initiative"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        /** @description The plan tree's totals row and the plan's budget position (FR-022, domain model §4.1–4.2). */
+        PlanCampaignTotals: {
+            campaigns: number;
+            initiatives: number;
+            activities: number;
+            /** @description Sum of the campaigns' budgets (0.00 when none). */
+            allocatedToCampaigns: components["schemas"]["Money"];
+            planBudget: components["schemas"]["Money"] | null;
+            /** @description Plan budget minus allocatedToCampaigns; null when the plan has no budget. */
+            remainingPlanBudget: components["schemas"]["Money"] | null;
+            overAllocatedBy: components["schemas"]["Money"] | null;
+            /** @description The plan's planned cost (sum of its campaigns'); null when nothing has a planned cost. */
+            plannedCost: components["schemas"]["Money"] | null;
+        };
+        /** @description Answer of GET /api/plans/{planId}/campaigns. */
+        PlanCampaigns: {
+            plan: components["schemas"]["PlanRef"];
+            /** @description The plan's owner, the default owner of a new campaign (R2). */
+            planOwner: components["schemas"]["PersonRef"] | null;
+            items: components["schemas"]["Campaign"][];
+            /** @description The number of campaigns. */
+            total: number;
+            totals: components["schemas"]["PlanCampaignTotals"];
+        };
+        CampaignCreate: {
+            name: string;
+            description?: string;
+            ownerId?: string | null;
+            /** Format: date */
+            startDate?: string | null;
+            /** Format: date */
+            endDate?: string | null;
+            /** @description USD only; at most 2 decimals; not negative. */
+            budget?: components["schemas"]["Money"] | null;
+            attributes?: components["schemas"]["AttributeValues"];
+        };
+        /** @description The whole form, every field sent; null or "" clears a field. */
+        CampaignUpdate: {
+            name: string;
+            description: string;
+            ownerId: string | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            budget: components["schemas"]["Money"] | null;
+            attributes: components["schemas"]["AttributeValues"];
+            /** @description The version the user started editing from. Missing or below 1 answers validation_failed on version. */
+            version: number;
+        };
+        InitiativeCreate: {
+            name: string;
+            description?: string;
+            ownerId?: string | null;
+            /** Format: date */
+            startDate?: string | null;
+            /** Format: date */
+            endDate?: string | null;
+            budget?: components["schemas"]["Money"] | null;
+            attributes?: components["schemas"]["AttributeValues"];
+        };
+        /** @description The whole form, every field sent; the campaign changes only with Move. */
+        InitiativeUpdate: {
+            name: string;
+            description: string;
+            ownerId: string | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            budget: components["schemas"]["Money"] | null;
+            attributes: components["schemas"]["AttributeValues"];
+            version: number;
+        };
+        CampaignMove: {
+            /** @description The plan to move to (same year). */
+            planId: string;
+            /** @description The version of the campaign the user saw. */
+            version: number;
+        };
+        InitiativeMove: {
+            /** @description The campaign to move to (same plan). */
+            campaignId: string;
+            version: number;
+        };
+        CampaignCopy: {
+            /** @description The plan to copy into (the campaign's own plan or another of the same year). */
+            planId: string;
+            /** @description The copy's name; required, at most 120 characters, unique in the destination plan. */
+            name: string;
+        };
+        InitiativeCopy: {
+            /** @description The campaign to copy into (the initiative's own campaign or another of the same plan). */
+            campaignId: string;
+            name: string;
+        };
+        /** @description An activity whose type the destination plan's model does not allow (R7); it keeps its type. */
+        TypeNotAllowed: {
+            /** @example A-1042 */
+            id: string;
+            /** @example Launch film */
+            name: string;
+            /** @example Event */
+            typeName: string;
+        };
+        /** @description What changes for the records below when a campaign lands in a plan with another model or business unit (FR-024). */
+        MoveConsequences: {
+            /**
+             * @description The destination plan's model.
+             * @example Mobility 1.0
+             */
+            modelName: string;
+            /** @description The destination uses another model; calculated goals will be recalculated with it. */
+            modelChanges: boolean;
+            businessUnitChanges: boolean;
+            typesNotAllowed: components["schemas"]["TypeNotAllowed"][];
+            /** @description Names of attribute groups that will be hidden there (values kept, R9), e.g. Lubricants attributes (activities). */
+            groupsHidden: string[];
+            groupsShown: string[];
+        };
+        /** @description A plan (for a campaign) or a campaign (for an initiative) to move or copy to. */
+        Destination: {
+            id: string;
+            name: string;
+            /** @description The record's own parent (listed only for copies, first, as the default). */
+            current: boolean;
+            available: boolean;
+            /**
+             * @description Why it cannot be chosen and how to fix it; null when available.
+             * @example Dates don't fit (01 Mar – 31 Dec 2026) — change the initiative's dates first
+             */
+            unavailableReason: string | null;
+            /**
+             * @description The plan's status when the destination is a plan; null for campaigns.
+             * @enum {string|null}
+             */
+            planStatus: "draft" | "published" | null;
+            /**
+             * Format: date
+             * @description The campaign's dates when the destination is a campaign; null for plans.
+             */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            /** @description For copies, the first free name "<name> (copy)", "(copy 2)", … in this destination; null for moves. */
+            suggestedName: string | null;
+            /** @description The destination's remaining budget for its children once this record's budget is added there; null when the destination has no budget. */
+            remainingAfter: components["schemas"]["Money"] | null;
+            /** @description Positive amount when remainingAfter is below zero; null otherwise. */
+            overAllocatedBy: components["schemas"]["Money"] | null;
+            /** @description Only for a campaign going to a plan with another model or business unit; null otherwise. */
+            consequences: components["schemas"]["MoveConsequences"] | null;
+        };
+        DestinationList: {
+            items: components["schemas"]["Destination"][];
+            total: number;
+            /**
+             * @description The sentence that explains which destinations are offered.
+             * @example Campaigns move only between plans of the same year
+             */
+            rule: string;
+        };
+        /**
+         * @description The stored status (domain model §2.3).
+         * @enum {string}
+         */
+        ActivityStatus: "created" | "submitted" | "declined" | "approved";
+        /**
+         * @description The status shown — approved activities show inProgress from their start date and complete after their end date (never when ongoing).
+         * @enum {string}
+         */
+        ActivityDisplayStatus: "created" | "submitted" | "declined" | "approved" | "inProgress" | "complete";
+        ActivityTypeRef: {
+            id: string;
+            /** @example Event */
+            name: string;
+            active: boolean;
+            /** @description Whether the plan's model allows this type (R7). */
+            allowed: boolean;
+        };
+        ActivityWorkflowRef: {
+            /** @example WF-1001 */
+            id: string;
+            /** @example Lubricants EU approval */
+            name: string;
+            active: boolean;
+        };
+        /** @description INQ as typed; MQL, deals and revenue calculated from the plan's model unless setLaterStagesMyself is true (then MQL and revenue as typed, deals null). */
+        ActivityGoals: {
+            inq: number | null;
+            setLaterStagesMyself: boolean;
+            mql: number | null;
+            deals: number | null;
+            revenue: components["schemas"]["Money"] | null;
+            /** @description True when MQL and revenue come from the model. */
+            calculated: boolean;
+        };
+        /** @description mql and revenue are used only when setLaterStagesMyself is true. */
+        ActivityGoalsInput: {
+            inq: number | null;
+            setLaterStagesMyself: boolean;
+            mql: number | null;
+            revenue: components["schemas"]["Money"] | null;
+        };
+        /** @description The activity's line items in short (feature 007; zero until it is delivered). */
+        ActivityLineItemTotals: {
+            count: number;
+            plannedCost: components["schemas"]["Money"];
+            /** @description Line items spread Evenly, in the first or in the last month — re-spread when the dates change. */
+            autoSpread: number;
+            /** @description Line items with a custom spread — kept as typed when the dates change. */
+            customSpread: number;
+        };
+        ActivityCompleteness: {
+            /** @description Items of the This activity group of the ready-to-submit check. */
+            missingFields: number;
+            lineItemsNeedingAttention: number;
+        };
+        ActivitySubmitProblem: {
+            /**
+             * @description missingField, splitIncomplete, datesOutsideInitiative, typeNotAllowed, inactiveWorkflow, negativeUnassigned, unassignedRemaining, or a line-item code of feature 007.
+             * @example missingField
+             */
+            code: string;
+            /**
+             * @description The form field that fixes it, for example ownerId or attributes.<attributeId>; lineItems for the unassigned balance.
+             * @example ownerId
+             */
+            field: string;
+            lineItemId: string | null;
+            lineItemName: string | null;
+            /** @example Owner — needed to submit */
+            message: string;
+        };
+        /** @description Everything that stops the activity from being submitted, all at once (FR-023); advice never blocks. */
+        ActivitySubmitCheck: {
+            ready: boolean;
+            problemCount: number;
+            activity: components["schemas"]["ActivitySubmitProblem"][];
+            lineItems: components["schemas"]["ActivitySubmitProblem"][];
+            advice: components["schemas"]["ActivitySubmitProblem"][];
+        };
+        Activity: {
+            /** @example A-1001 */
+            id: string;
+            /** @example Launch film */
+            name: string;
+            /** @description Empty when the activity name is used. */
+            externalName: string;
+            plan: components["schemas"]["RecordRef"];
+            campaign: components["schemas"]["RecordRef"];
+            initiative: components["schemas"]["RecordRef"];
+            activityType: components["schemas"]["ActivityTypeRef"];
+            owner: components["schemas"]["PersonRef"] | null;
+            /** Format: date */
+            startDate: string | null;
+            /**
+             * Format: date
+             * @description Null when not set or when the activity is ongoing.
+             */
+            endDate: string | null;
+            ongoing: boolean;
+            plannedCost: components["schemas"]["Money"] | null;
+            approvalWorkflow: components["schemas"]["ActivityWorkflowRef"] | null;
+            description: string;
+            attributes: components["schemas"]["AttributeValues"];
+            goals: components["schemas"]["ActivityGoals"];
+            status: components["schemas"]["ActivityStatus"];
+            displayStatus: components["schemas"]["ActivityDisplayStatus"];
+            /** @description Planned cost minus the line items' USD planned costs (Sys_Gen_Balance); null when there is neither. */
+            unassignedPlannedCost: components["schemas"]["Money"] | null;
+            lineItems: components["schemas"]["ActivityLineItemTotals"];
+            completeness: components["schemas"]["ActivityCompleteness"];
+            readiness: components["schemas"]["ActivitySubmitCheck"];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        /** @description An activity as a row of the plan tree. */
+        ActivitySummary: {
+            /** @example A-1001 */
+            id: string;
+            name: string;
+            /** @example I-1001 */
+            initiativeId: string;
+            activityType: components["schemas"]["ActivityTypeRef"];
+            owner: components["schemas"]["PersonRef"] | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            ongoing: boolean;
+            plannedCost: components["schemas"]["Money"] | null;
+            unassignedPlannedCost: components["schemas"]["Money"] | null;
+            status: components["schemas"]["ActivityStatus"];
+            displayStatus: components["schemas"]["ActivityDisplayStatus"];
+            completeness: components["schemas"]["ActivityCompleteness"];
+            version: number;
+        };
+        ActivitySummaryPage: {
+            items: components["schemas"]["ActivitySummary"][];
+            total: number;
+        };
+        /** @description A new activity. Only name and activityTypeId are required; the others may be left out or null. */
+        ActivityCreate: {
+            name: string;
+            externalName?: string;
+            activityTypeId: string;
+            ownerId?: string | null;
+            /** @description YYYY-MM-DD; the server checks the value and answers validation_failed when it is not a date. */
+            startDate?: string | null;
+            /** @description YYYY-MM-DD; ignored when ongoing is true. */
+            endDate?: string | null;
+            ongoing?: boolean;
+            plannedCost?: components["schemas"]["Money"] | null;
+            approvalWorkflowId?: string | null;
+            description?: string;
+            attributes?: components["schemas"]["AttributeValues"];
+            goals?: components["schemas"]["ActivityGoalsInput"];
+        };
+        /** @description Every editable field (null clears an optional one), the version the person started from, and whether a change that needs approval again was confirmed. */
+        ActivityUpdate: {
+            name: string;
+            externalName: string;
+            activityTypeId: string;
+            ownerId: string | null;
+            startDate: string | null;
+            endDate: string | null;
+            ongoing: boolean;
+            plannedCost: components["schemas"]["Money"] | null;
+            approvalWorkflowId: string | null;
+            description: string;
+            attributes: components["schemas"]["AttributeValues"];
+            goals: components["schemas"]["ActivityGoalsInput"];
+            /** @description The version the person started editing from. */
+            version: number;
+            /** @description True when the person confirmed "This activity will need approval again". */
+            restartApproval: boolean;
+        };
+        ActivityMove: {
+            /** @description Another initiative of the same plan. */
+            initiativeId: string;
+            version: number;
+        };
+        ActivityCopy: {
+            /** @description The activity's own initiative or another initiative of the same plan. */
+            initiativeId: string;
+        };
+        ActivityDestination: {
+            campaign: components["schemas"]["RecordRef"];
+            initiative: components["schemas"]["RecordRef"];
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            /** @description The activity's own initiative. */
+            current: boolean;
+            /** @description Why the activity can't be moved here (null when it can). */
+            moveProblem: string | null;
+            /** @description Why the activity can't be copied here (null when it can). */
+            copyProblem: string | null;
+        };
+        ActivityDestinationPage: {
+            items: components["schemas"]["ActivityDestination"][];
+            total: number;
+        };
+        ActivityPlanFacts: {
+            /** @example P-1001 */
+            id: string;
+            name: string;
+            /** @example 2026 */
+            year: number;
+            /** @description The plan's status (feature 004), for example draft or published. */
+            status: string;
+        };
+        ActivityInitiativeFacts: {
+            /** @example I-1001 */
+            id: string;
+            name: string;
+            owner: components["schemas"]["PersonRef"] | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+        };
+        ActivityModelFacts: {
+            id: string;
+            /** @example Lubricants 1.0 */
+            name: string;
+            /**
+             * @description Percent with two decimals.
+             * @example 2.00
+             */
+            inqToMqlRate: string;
+            /**
+             * @description Percent with two decimals.
+             * @example 5.00
+             */
+            mqlToDealRate: string;
+            averageDealSize: components["schemas"]["Money"];
+            active: boolean;
+        };
+        ActivityBusinessUnit: {
+            /** @description The option id of the plan-level Business unit attribute. */
+            id: string;
+            /** @example Lubricants */
+            label: string;
+        };
+        ActivityFormContext: {
+            plan: components["schemas"]["ActivityPlanFacts"];
+            campaign: components["schemas"]["RecordRef"];
+            initiative: components["schemas"]["ActivityInitiativeFacts"];
+            model: components["schemas"]["ActivityModelFacts"];
+            /** @description The business units the plan includes (empty when none is set). */
+            businessUnits: components["schemas"]["ActivityBusinessUnit"][];
+            /**
+             * Format: date
+             * @description 31 December of the plan's year + 10 (R5).
+             */
+            latestEndDate: string;
+        };
+        ActivityTypeOption: {
+            id: string;
+            name: string;
+            defaultPlannedCost: components["schemas"]["Money"] | null;
+            active: boolean;
+            allowed: boolean;
+        };
+        ActivityWorkflowLevel: {
+            /** @example Level 1 */
+            name: string;
+            approvers: components["schemas"]["PersonRef"][];
+        };
+        ActivityWorkflowOption: {
+            id: string;
+            name: string;
+            active: boolean;
+            levels: components["schemas"]["ActivityWorkflowLevel"][];
+        };
+        /** @description What a new activity starts with. */
+        ActivityDefaults: {
+            /** @description The initiative's owner, when active. */
+            owner: components["schemas"]["PersonRef"] | null;
+            /** Format: date */
+            startDate: string | null;
+            /** Format: date */
+            endDate: string | null;
+            /** @description Set when exactly one approval workflow is active. */
+            approvalWorkflowId: string | null;
+        };
+        ActivityForm: {
+            context: components["schemas"]["ActivityFormContext"];
+            /** @description The active types the plan's model allows, sorted by name; for an edit also the current type when inactive or not allowed. */
+            activityTypes: components["schemas"]["ActivityTypeOption"][];
+            /** @description The active approval workflows, sorted by name; for an edit also the current one when inactive. */
+            approvalWorkflows: components["schemas"]["ActivityWorkflowOption"][];
+            /** @description The activity-level Shell attributes in section and display order (active ones, plus inactive ones holding a value of this activity). */
+            attributes: components["schemas"]["ShellAttribute"][];
+            /** @description Names of the other activities in the initiative, for the uniqueness check while typing. */
+            existingNames: string[];
+            /** @description Only for a new activity; null for an edit. */
+            defaults: components["schemas"]["ActivityDefaults"] | null;
+        };
+        /**
+         * @description notRequested when Request SWBS code from GSAP is off; waitingForApproval while the activity is not Approved; readyToSend once it is Approved (domain model §2.4).
+         * @enum {string}
+         */
+        SwbsStatus: "notRequested" | "waitingForApproval" | "readyToSend";
+        /** @description A currency as the line-item screens need it. */
+        LineItemCurrency: {
+            /** @example EUR */
+            code: string;
+            /** @example Euro */
+            name: string;
+            /**
+             * @description Empty when none is set.
+             * @example €
+             */
+            symbol: string;
+            /**
+             * @description The current rate in units of this currency per 1 USD, as a decimal string with up to six decimals (USD is 1).
+             * @example 0.92
+             */
+            ratePerUsd: string;
+            /** @description False for an inactive currency, kept on a line item and still converting at its last rate. */
+            active: boolean;
+        };
+        FinanceBudgetItemRef: {
+            id: string;
+            /** @example 2026 */
+            year: number;
+            /** @example 2026 Lubricants Budget */
+            budgetName: string;
+            /** @example Europe – Digital */
+            name: string;
+            /**
+             * @description Empty when the item has no code.
+             * @example LUB-EU-DIG
+             */
+            code: string;
+            active: boolean;
+        };
+        SpreadMonth: {
+            /** @example 2026-03 */
+            month: string;
+            /** @description The month's amount in the line item's currency. */
+            amount: components["schemas"]["Money"];
+            /** @description The month's amount in USD; the rounding cent is in the last month with an amount, so the months add up exactly (D-024). */
+            amountUsd: components["schemas"]["Money"];
+            /** @description True for a custom month outside the activity's dates (allowed, e.g. a deposit). */
+            outsideActivityDates: boolean;
+        };
+        Spread: {
+            method: components["schemas"]["SpreadMethod"];
+            /**
+             * @description notSpread when the method is evenly, firstMonth or lastMonth and the activity has no dates yet (its amount is then in the grid's No dates yet column); spread otherwise.
+             * @enum {string}
+             */
+            state: "spread" | "notSpread";
+            /** @description The month amounts, sorted by month; empty when notSpread. */
+            months: components["schemas"]["SpreadMonth"][];
+            /** @description The sum of the custom month amounts in the line item's currency; null for the other methods. */
+            customTotal: components["schemas"]["Money"] | null;
+            /** @description Always true for evenly, firstMonth and lastMonth; for custom, true when the months add up exactly to the planned cost. */
+            addsUp: boolean;
+        };
+        SpreadMonthInput: {
+            /**
+             * @description YYYY-MM, from January of the plan's year − 1 to December of the plan's year + 10.
+             * @example 2026-02
+             */
+            month: string;
+            /**
+             * @description Decimal amount in the line item's currency, 0 or more.
+             * @example 2000.00
+             */
+            amount: string;
+        };
+        SpreadInput: {
+            method: components["schemas"]["SpreadMethod"];
+            /** @description The custom month amounts; stored only when method is custom (an empty list is stored otherwise). */
+            months: components["schemas"]["SpreadMonthInput"][];
+        };
+        LineItem: {
+            /** @example L-1001 */
+            id: string;
+            /** @example A-1042 */
+            activityId: string;
+            /** @example Agency fee */
+            name: string;
+            owner: components["schemas"]["PersonRef"] | null;
+            description: string;
+            currency: components["schemas"]["LineItemCurrency"];
+            /** @description Planned cost in the line item's currency. */
+            plannedCost: components["schemas"]["Money"];
+            /** @description Planned cost converted to USD at the currency's current rate, rounded half-up to the cent (domain model §4.3). */
+            plannedCostUsd: components["schemas"]["Money"];
+            spread: components["schemas"]["Spread"];
+            attributes: components["schemas"]["AttributeValues"];
+            contractedAmount: components["schemas"]["Money"] | null;
+            requestSwbs: boolean;
+            swbsStatus: components["schemas"]["SwbsStatus"];
+            financeBudgetYear: number | null;
+            financeBudgetItem: components["schemas"]["FinanceBudgetItemRef"] | null;
+            /** @description What still blocks submitting the activity, in order — empty needed-to-submit fields, an inactive finance budget item, a custom spread that doesn't add up (FR-028). Empty when all is filled in. */
+            missing: components["schemas"]["MissingField"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        /** @description What the line-item screens need to know about the activity. */
+        LineItemActivity: {
+            /** @example A-1042 */
+            id: string;
+            /** @example Launch film */
+            name: string;
+            status: components["schemas"]["ActivityStatus"];
+            /** @description True while the activity is Submitted or Approved — adding, duplicating or deleting a line item, or changing its planned cost or currency, then sends it back to Created after confirmation. */
+            restartsApproval: boolean;
+            startDate: string | null;
+            endDate: string | null;
+            ongoing: boolean;
+            /** @description The activity's planned cost in USD; null while it has none. */
+            plannedCost: components["schemas"]["Money"] | null;
+            /** @description The activity's plan, campaign and initiative, top level first (for the breadcrumb). */
+            path: components["schemas"]["RecordRef"][];
+            /** @example 2026 */
+            planYear: number;
+            defaultSpreadMethod: components["schemas"]["SpreadMethod"];
+            /** @description The name of the plan's default finance budget (of the plan's year); null when none is set. */
+            defaultFinanceBudget: string | null;
+        };
+        /** @description Unassigned planned cost (Sys_Gen_Balance) = activity planned cost − sum of its line items' USD planned costs (domain model §4.3). */
+        UnassignedBalance: {
+            /** @description The activity's planned cost (USD); null while it has none. */
+            plannedCost: components["schemas"]["Money"] | null;
+            /** @description Sum of the line items' planned costs in USD. */
+            assigned: components["schemas"]["Money"];
+            /** @description Negative when line items exceed the planned cost; null while the activity has no planned cost. */
+            balance: components["schemas"]["Money"] | null;
+            /** @enum {string} */
+            state: "left" | "allAssigned" | "exceeded" | "noPlannedCost";
+            /** @description True when a few cents (at most 0.05 USD) remain either way and a line item uses another currency than USD. */
+            roundingHint: boolean;
+        };
+        SpreadGridColumn: {
+            /**
+             * @description The month (YYYY-MM) or noDates.
+             * @example 2026-03
+             */
+            key: string;
+            /** @description The month (YYYY-MM); null for the No dates yet column. */
+            month: string | null;
+            outsideActivityDates: boolean;
+        };
+        SpreadGridRow: {
+            lineItemId: string;
+            name: string;
+            /** @description One per column, in USD; null where the line item has nothing. */
+            cells: (components["schemas"]["Money"] | null)[];
+            total: components["schemas"]["Money"];
+        };
+        /** @description The activity's line items by month, in USD (FR-003, FR-020). Quarterly is calculated by the web app. */
+        SpreadGrid: {
+            columns: components["schemas"]["SpreadGridColumn"][];
+            rows: components["schemas"]["SpreadGridRow"][];
+            /** @description The total of each column; null when every cell of the column is empty. */
+            totals: (components["schemas"]["Money"] | null)[];
+            total: components["schemas"]["Money"];
+        };
+        LineItemSection: {
+            activity: components["schemas"]["LineItemActivity"];
+            /** @description The activity's line items in creation order. */
+            items: components["schemas"]["LineItem"][];
+            balance: components["schemas"]["UnassignedBalance"];
+            grid: components["schemas"]["SpreadGrid"];
+        };
+        LineItemDetails: {
+            lineItem: components["schemas"]["LineItem"];
+            activity: components["schemas"]["LineItemActivity"];
+            /** @description The activity's unassigned planned cost now, with this line item included. */
+            balance: components["schemas"]["UnassignedBalance"];
+        };
+        /** @description What a new line item starts with (FR-008). The web app labels each value with its source. */
+        LineItemDefaults: {
+            /** @example Launch film – line item */
+            name: string;
+            /** @description The activity's owner; null when it has none. */
+            owner: components["schemas"]["PersonRef"] | null;
+            /** @example USD */
+            currency: string;
+            /** @description The unassigned planned cost (USD) when it is above 0.00; null otherwise. */
+            plannedCost: components["schemas"]["Money"] | null;
+            /** @enum {string} */
+            plannedCostSource: "unassignedBalance" | "nothingLeftToAssign" | "noActivityPlannedCost";
+            spreadMethod: components["schemas"]["SpreadMethod"];
+            /** @description The plan's year. */
+            financeBudgetYear: number;
+            /** @description The only active item of the plan's default finance budget, when it has exactly one (R12); null otherwise. */
+            financeBudgetItemId: string | null;
+            financeBudgetItemPreselected: boolean;
+            /** @constant */
+            requestSwbs: true;
+        };
+        LineItemFormOptions: {
+            activity: components["schemas"]["LineItemActivity"];
+            balance: components["schemas"]["UnassignedBalance"];
+            defaults: components["schemas"]["LineItemDefaults"];
+            /** @description The active currencies, USD first, then by code. */
+            currencies: components["schemas"]["LineItemCurrency"][];
+            /** @description The plan's year and every year with active finance budget items, ascending. */
+            financeBudgetYears: number[];
+            /** @description The active items of those years — by year, then the plan's default finance budget first (in the plan's year), then by budget name and item name. */
+            financeBudgetItems: components["schemas"]["FinanceBudgetItemRef"][];
+        };
+        LineItemCreate: {
+            name: string;
+            /** @description A person id; null for no owner. */
+            ownerId: string | null;
+            description: string;
+            /**
+             * @description The line item's currency (ISO code); every amount of the request is in it.
+             * @example EUR
+             */
+            currency: string;
+            /**
+             * @description Decimal amount in the currency; null when the field is empty (refused with "Enter the planned cost.").
+             * @example 46000.00
+             */
+            plannedCost: string | null;
+            spread: components["schemas"]["SpreadInput"];
+            attributes: components["schemas"]["AttributeValues"];
+            /** @description Decimal amount in the currency; null when empty. */
+            contractedAmount: string | null;
+            requestSwbs: boolean;
+            financeBudgetYear: number | null;
+            financeBudgetItemId: string | null;
+            /**
+             * @description True when the person confirmed "This activity will need approval again".
+             * @default false
+             */
+            restartApproval: boolean;
+        };
+        LineItemUpdate: {
+            name: string;
+            ownerId: string | null;
+            description: string;
+            currency: string;
+            plannedCost: string | null;
+            spread: components["schemas"]["SpreadInput"];
+            attributes: components["schemas"]["AttributeValues"];
+            contractedAmount: string | null;
+            requestSwbs: boolean;
+            financeBudgetYear: number | null;
+            financeBudgetItemId: string | null;
+            /** @default false */
+            restartApproval: boolean;
+            /** @description The version the person started editing from. */
+            version: number;
+        };
+        LineItemDuplicate: {
+            /** @default false */
+            restartApproval: boolean;
+        };
+        /** @description A designated approver or owner, with the live active flag ("(inactive)"). */
+        ApprovalPerson: {
+            /** @example U-1003 */
+            id: string;
+            /** @example Daniel Okoro */
+            name: string;
+            /** @example DO */
+            initials: string;
+            active: boolean;
+        };
+        WorkflowRef: {
+            /** @example WF-1002 */
+            id: string;
+            /** @example China BC approval workflow */
+            name: string;
+            active: boolean;
+        };
+        ApprovalWorkflowLevel: {
+            number: number;
+            /** @description The stored level name; empty when the level has none. */
+            name: string;
+            /**
+             * @description The name, or "Level <number>" when empty.
+             * @example Level 1
+             */
+            label: string;
+            approvers: components["schemas"]["ApprovalPerson"][];
+        };
+        ApprovalWorkflow: {
+            /** @example WF-1002 */
+            id: string;
+            name: string;
+            description: string;
+            active: boolean;
+            levels: components["schemas"]["ApprovalWorkflowLevel"][];
+            /** @example Level 1 · Carlos Mendes → Level 2 · Alex Morgan */
+            levelsText: string;
+            /** @description Stored activities that have it in their Approval workflow field or have an approval round with it. */
+            usedByCount: number;
+            /** @description Stored activities with an open round of this workflow. */
+            waitingCount: number;
+            /** @description For example "Level 2 has no active approver". */
+            warnings: string[];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ApprovalWorkflowPage: {
+            items: components["schemas"]["ApprovalWorkflow"][];
+            total: number;
+        };
+        ApprovalWorkflowUsage: {
+            activity: components["schemas"]["RecordRef"];
+            /** @description Plan, campaign and initiative of the activity, top level first. */
+            path: components["schemas"]["RecordRef"][];
+            displayStatus: components["schemas"]["ActivityDisplayStatus"];
+            /** @description It has an open round of this workflow. */
+            waiting: boolean;
+        };
+        ApprovalWorkflowDetails: {
+            workflow: components["schemas"]["ApprovalWorkflow"];
+            /** @description The activities counted in usedByCount, sorted by plan, then activity name. */
+            activities: components["schemas"]["ApprovalWorkflowUsage"][];
+        };
+        ApprovalWorkflowLevelInput: {
+            /** @description Optional level name; empty for "Level <n>". */
+            name: string;
+            /**
+             * @example [
+             *       "U-1005"
+             *     ]
+             */
+            approverIds: string[];
+        };
+        ApprovalWorkflowCreate: {
+            name: string;
+            description?: string;
+            /** @description In order; the first is level 1. The server reports an empty list as a field problem. */
+            levels: components["schemas"]["ApprovalWorkflowLevelInput"][];
+        };
+        /** @description Only the fields to change, plus the version the person started editing from. */
+        ApprovalWorkflowUpdate: {
+            name?: string;
+            description?: string;
+            /** @description The complete new list of levels, in order. */
+            levels?: components["schemas"]["ApprovalWorkflowLevelInput"][];
+            version: number;
+        };
+        ApprovalWorkflowStatusChange: {
+            /** @description The version the person saw when confirming. */
+            version: number;
+        };
+        ApprovalDecision: {
+            /** @enum {string} */
+            action: "approved" | "declined";
+            actor: components["schemas"]["ActorRef"];
+            /** @description The level's approvers when the actor is not one of them; empty otherwise. */
+            onBehalfOf: components["schemas"]["ActorRef"][];
+            /** Format: date-time */
+            at: string;
+            comment: string;
+        };
+        ApprovalChainLevel: {
+            number: number;
+            /** @example Level 1 */
+            label: string;
+            /** @description The designated approvers copied at submission, with their live active flag. */
+            approvers: components["schemas"]["ApprovalPerson"][];
+            /**
+             * @description notDecided = the level was waiting when the round was recalled, restarted or cancelled.
+             * @enum {string}
+             */
+            state: "approved" | "declined" | "waiting" | "notReached" | "notDecided";
+            /** @description The decision on this level (approved or declined); null otherwise. */
+            decision: components["schemas"]["ApprovalDecision"] | null;
+        };
+        ApprovalChange: {
+            /** @example Planned cost */
+            label: string;
+            /** @example $50,000.00 */
+            oldText: string;
+            /** @example $65,000.00 */
+            newText: string;
+            /**
+             * @description The sentence shown: "<label> changed from <oldText> to <newText>", "<label> added: <newText>"
+             *     (oldText "Not filled in"), "<label> removed (was <oldText>)" (newText "Not filled in"), or the
+             *     label unchanged when both texts are empty (a ready-made sentence such as a line-item change).
+             * @example Planned cost changed from $50,000.00 to $65,000.00
+             */
+            text: string;
+        };
+        ApprovalHistoryEntry: {
+            /** @example AH-1001 */
+            id: string;
+            roundNumber: number;
+            /** @description 0 for a restart of an approved activity (no level was waiting). */
+            level: number;
+            /** @description "Level 1" or the level name; empty when level is 0. */
+            levelLabel: string;
+            /** @description The level's designated approvers at the time. */
+            approvers: components["schemas"]["ApprovalPerson"][];
+            actor: components["schemas"]["ActorRef"];
+            onBehalfOf: components["schemas"]["ActorRef"][];
+            /** @enum {string} */
+            action: "submitted" | "resubmitted" | "approved" | "declined" | "recalled" | "restarted" | "cancelled";
+            /** Format: date-time */
+            at: string;
+            comment: string;
+            /** @description restarted only — the changed values. */
+            changes: components["schemas"]["ApprovalChange"][];
+        };
+        ApprovalRound: {
+            /** @example AR-1001 */
+            id: string;
+            number: number;
+            /** @enum {string} */
+            outcome: "open" | "approved" | "declined" | "recalled" | "restarted" | "cancelled";
+            /** @description The workflow as it was at submission. */
+            workflow: {
+                id: string;
+                name: string;
+            };
+            /** Format: date-time */
+            submittedAt: string;
+            submittedBy: components["schemas"]["ActorRef"];
+            comment: string;
+            /** Format: date-time */
+            endedAt: string | null;
+            currentLevel: number;
+            levelCount: number;
+            levels: components["schemas"]["ApprovalChainLevel"][];
+            /** @description The round's history entries, newest first. */
+            history: components["schemas"]["ApprovalHistoryEntry"][];
+        };
+        /** @description The latest decline, shown at the top of the Approval section while the activity is Declined. */
+        DeclineNote: {
+            roundNumber: number;
+            level: number;
+            levelLabel: string;
+            actor: components["schemas"]["ActorRef"];
+            onBehalfOf: components["schemas"]["ActorRef"][];
+            /** Format: date-time */
+            at: string;
+            comment: string;
+        };
+        ApprovalActionAvailability: {
+            available: boolean;
+            /** @description Why it is not available, when the screen must say so (for example recall of an Approved activity); empty otherwise. */
+            reason: string;
+        };
+        /** @description The signed-in person's relation to the activity, for the dialogs (FR-017, edge cases). */
+        ApprovalViewer: {
+            isOwner: boolean;
+            /** @description The person is a designated approver of the open round's current level. */
+            isCurrentApprover: boolean;
+            /** @description The current level's approvers when the person is not one of them; empty otherwise. */
+            onBehalfOf: components["schemas"]["ApprovalPerson"][];
+        };
+        ActivityApproval: {
+            /** @example A-1042 */
+            activityId: string;
+            activityName: string;
+            /** @description Send it with Submit. */
+            activityVersion: number;
+            status: components["schemas"]["ActivityStatus"];
+            displayStatus: components["schemas"]["ActivityDisplayStatus"];
+            /** @description Empty when the activity has no owner. */
+            ownerId: string;
+            /** @description The activity's Approval workflow field now; null when empty or the workflow no longer exists. */
+            workflow: components["schemas"]["WorkflowRef"] | null;
+            /** @description The current workflow's levels while the activity has no round yet ("Not submitted yet"); empty otherwise. */
+            upcomingLevels: components["schemas"]["ApprovalWorkflowLevel"][];
+            /** @description Every round, newest first; the first is the chain the section shows (the open round, or the last one). */
+            rounds: components["schemas"]["ApprovalRound"][];
+            latestDecline: components["schemas"]["DeclineNote"] | null;
+            viewer: components["schemas"]["ApprovalViewer"];
+            actions: {
+                submit: components["schemas"]["ApprovalActionAvailability"];
+                resubmit: components["schemas"]["ApprovalActionAvailability"];
+                approve: components["schemas"]["ApprovalActionAvailability"];
+                decline: components["schemas"]["ApprovalActionAvailability"];
+                recall: components["schemas"]["ApprovalActionAvailability"];
+            };
+        };
+        SubmitProblem: {
+            /**
+             * @description The field key of feature 006's Ready to submit panel (lineItems.<id>.<field> for line items).
+             * @example ownerId
+             */
+            field: string;
+            /** @enum {string} */
+            group: "activity" | "lineItem";
+            /** @description The line item (L-…) for the lineItem group; empty otherwise. */
+            lineItemId: string;
+            /** @example Owner — needed to submit */
+            message: string;
+        };
+        ApprovalSubmission: {
+            activityId: string;
+            activityName: string;
+            activityVersion: number;
+            /**
+             * @description resubmit when the activity is Declined.
+             * @enum {string}
+             */
+            kind: "submit" | "resubmit";
+            /** @description false when the activity is neither Created nor Declined. */
+            available: boolean;
+            reason: string;
+            /** @description The number the new round would get. */
+            roundNumber: number;
+            /** @description true when problems is empty. */
+            ready: boolean;
+            problems: components["schemas"]["SubmitProblem"][];
+            workflow: components["schemas"]["WorkflowRef"] | null;
+            /** @description The levels the round would copy (empty when there is no workflow). */
+            levels: components["schemas"]["ApprovalWorkflowLevel"][];
+            /** @description A positive unassigned planned cost, shown as a note; null otherwise. */
+            unassignedPlannedCost: components["schemas"]["Money"] | null;
+        };
+        SubmitRequest: {
+            /** @description The activity version the person saw (activityVersion). */
+            version: number;
+            /** @description Optional, at most 2,000 characters. */
+            comment?: string;
+        };
+        DecisionRequest: {
+            /** @example AR-1003 */
+            roundId: string;
+            /** @description The level the person is deciding (the current level they saw). */
+            level: number;
+            /** @description Optional for approve; required (not blank) for decline; at most 2,000 characters. */
+            comment?: string;
+        };
+        RecallRequest: {
+            roundId: string;
+            /** @description Optional, at most 2,000 characters. */
+            reason?: string;
+        };
+        ApprovalRowRound: {
+            id: string;
+            number: number;
+            /** @enum {string} */
+            outcome: "open" | "approved" | "declined" | "recalled" | "restarted" | "cancelled";
+            currentLevel: number;
+            levelCount: number;
+            levelLabel: string;
+            /** @description The current level's designated approvers. */
+            approvers: components["schemas"]["ApprovalPerson"][];
+        };
+        MyDecision: {
+            /** @enum {string} */
+            action: "approved" | "declined";
+            /** Format: date-time */
+            at: string;
+            roundNumber: number;
+            level: number;
+        };
+        ApprovalRow: {
+            activity: {
+                id: string;
+                name: string;
+                status: components["schemas"]["ActivityStatus"];
+                displayStatus: components["schemas"]["ActivityDisplayStatus"];
+            };
+            /** @description Plan, campaign, initiative. */
+            path: components["schemas"]["RecordRef"][];
+            owner: components["schemas"]["ApprovalPerson"] | null;
+            /** @description USD; the web app shows it in the viewer's display currency. */
+            plannedCost: components["schemas"]["Money"] | null;
+            workflow: components["schemas"]["WorkflowRef"];
+            round: components["schemas"]["ApprovalRowRound"];
+            /** Format: date-time */
+            submittedAt: string;
+            /**
+             * Format: date-time
+             * @description When the open round reached its current level; null when the round has ended.
+             */
+            waitingSince: string | null;
+            /** Format: date */
+            startDate: string | null;
+            /** @description Submitted and the start date is before today. */
+            startDatePassed: boolean;
+            /** @description decided tab only — the signed-in person's latest decision; null in the other tabs. */
+            myDecision: components["schemas"]["MyDecision"] | null;
+        };
+        ApprovalRowPage: {
+            items: components["schemas"]["ApprovalRow"][];
+            total: number;
+        };
+        ApprovalCounts: {
+            waitingForMe: number;
+            allOpen: number;
+            approvedThisMonth: number;
+            declinedThisMonth: number;
+        };
+        MissingFieldRef: {
+            id: string;
+            label: string;
+        };
+        PreviewLineItem: {
+            /** @example L-1003 */
+            id: string;
+            name: string;
+            plannedCost: components["schemas"]["Money"];
+            plannedCostUsd: components["schemas"]["Money"] | null;
+            /** @description Readable label; empty when not filled in. */
+            spendType: string;
+            glCode: string;
+            financeBudgetItem: string;
+        };
+        ApprovalPreview: {
+            activity: {
+                id: string;
+                name: string;
+                status: components["schemas"]["ActivityStatus"];
+                displayStatus: components["schemas"]["ActivityDisplayStatus"];
+                /** @description The activity's completeness — its empty needed-to-submit fields. */
+                missing: components["schemas"]["MissingFieldRef"][];
+                path: components["schemas"]["RecordRef"][];
+                owner: components["schemas"]["ApprovalPerson"] | null;
+                /** Format: date */
+                startDate: string | null;
+                /** Format: date */
+                endDate: string | null;
+                ongoing: boolean;
+                plannedCost: components["schemas"]["Money"] | null;
+                typeName: string;
+                description: string;
+            };
+            lineItems: components["schemas"]["PreviewLineItem"][];
+            unassignedPlannedCost: components["schemas"]["Money"] | null;
+            approval: components["schemas"]["ActivityApproval"];
+        };
+        Notification: {
+            /** @example NT-1001 */
+            id: string;
+            /** @enum {string} */
+            kind: "approvalNeeded" | "levelApproved" | "approved" | "declined" | "recalled" | "restarted";
+            /** @example Approval needed */
+            title: string;
+            /** @example Priya Raman submitted 'Launch film' (A-1042) */
+            text: string;
+            activity: {
+                id: string;
+                /** @description The name at the time. */
+                name: string;
+                /** @description false when the activity is no longer stored (deleted). */
+                exists: boolean;
+            };
+            actor: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            at: string;
+            read: boolean;
+        };
+        NotificationPage: {
+            items: components["schemas"]["Notification"][];
+            /** @description All of the person's notifications (items holds at most 50). */
+            total: number;
+            /** @description All unread notifications of the person. */
+            unread: number;
+        };
+        NotificationReadAll: {
+            /** @description How many were unread and are now read. */
+            marked: number;
+            /** @description Always 0 after the call. */
+            unread: number;
+        };
+        /** @enum {string} */
+        HomeScope: "myTeams" | "everything";
+        HomeSummary: {
+            scope: components["schemas"]["HomeScope"];
+            /**
+             * @description The currency every amount is shown in (the person's display currency, or USD when it is inactive).
+             * @example EUR
+             */
+            displayCurrency: string;
+            /** @description The person's display currency when it has been set inactive (amounts are then in USD); null otherwise. */
+            unavailableCurrency: string | null;
+            /** @description Why the Getting started card is shown; null when it is not shown. */
+            gettingStarted: ("notInTeam" | "noTeamPlans") | null;
+            plans: components["schemas"]["HomePlanCounts"];
+            activitiesOwned: components["schemas"]["HomeActivityCounts"];
+            waitingForMe: components["schemas"]["HomeWaitingCounts"];
+            plannedCost: components["schemas"]["HomePlannedCost"];
+        };
+        /** @description The plans in scope (each plan once). */
+        HomePlanCounts: {
+            count: number;
+            published: number;
+            draft: number;
+        };
+        /** @description The activities the person owns, in every plan. */
+        HomeActivityCounts: {
+            count: number;
+            declined: number;
+            submitted: number;
+        };
+        HomeWaitingCounts: {
+            count: number;
+            /** @description When the longest-waiting activity reached its current level; null when nothing waits. */
+            oldestWaitingSince: string | null;
+        };
+        HomePlannedCost: {
+            planCount: number;
+            plannedCost: components["schemas"]["Money"];
+            /** @description Total plan budget of the plans in scope that have one; null when none has. */
+            planBudget: components["schemas"]["Money"] | null;
+            /** @description Total planned cost x 100 / total plan budget, rounded half up to a whole number; null without a budget. */
+            budgetUsedPercent: number | null;
+            /** @description Total planned cost is more than the total plan budget. */
+            overBudget: boolean;
+            plansWithoutBudget: number;
+        };
+        HomeTeam: {
+            id: string;
+            /** @example Lubricants Europe */
+            name: string;
+            /** @description The signed-in person is a member. */
+            mine: boolean;
+        };
+        HomePlanRow: {
+            /** @example P-1001 */
+            id: string;
+            /** @example FY2026 Lubricants Europe */
+            name: string;
+            /** @example 2026 */
+            year: number;
+            strategicAop: boolean;
+            status: components["schemas"]["PlanStatus"];
+            /** @description The person's own teams first, then by name. */
+            teams: components["schemas"]["HomeTeam"][];
+            campaignCount: number;
+            activityCount: number;
+            /** @description Activities Approved, In progress or Complete. */
+            approvedActivityCount: number;
+            budget: components["schemas"]["Money"] | null;
+            plannedCost: components["schemas"]["Money"];
+            budgetUsedPercent: number | null;
+            overBudget: boolean;
+        };
+        HomePlanPage: {
+            items: components["schemas"]["HomePlanRow"][];
+            /** @description Every plan in scope. */
+            total: number;
+        };
+        /** @description One reason a record needs attention. Fields that do not apply to the kind are null (or empty / 0). */
+        HomeAttentionReason: {
+            /** @enum {string} */
+            kind: "declined" | "negativeBalance" | "overAllocated" | "overBudget" | "missingFields";
+            /** @description negativeBalance, overAllocated and overBudget - the amount over (positive). */
+            amount: components["schemas"]["Money"] | null;
+            declinedBy: components["schemas"]["ActorRef"] | null;
+            declinedAt: string | null;
+            comment: string | null;
+            /** @description missingFields - the record's own empty needed fields. */
+            missing: components["schemas"]["MissingField"][];
+            /** @description missingFields - records below that need attention. */
+            itemsBelow: number;
+        };
+        HomeAttentionItem: {
+            /** @enum {string} */
+            recordType: "plan" | "campaign" | "initiative" | "activity";
+            /** @example activity */
+            recordTypeLabel: string;
+            /** @example A-1042 */
+            id: string;
+            /** @example Launch film */
+            name: string;
+            plan: components["schemas"]["RecordRef"];
+            /** @description The record's ancestors, plan first; empty for a plan. */
+            path: components["schemas"]["RecordRef"][];
+            /** Format: date-time */
+            changedAt: string;
+            reasons: components["schemas"]["HomeAttentionReason"][];
+        };
+        HomeAttentionPage: {
+            items: components["schemas"]["HomeAttentionItem"][];
+            total: number;
+        };
+        WaitingItem: {
+            /** @example A-1042 */
+            id: string;
+            name: string;
+            plan: components["schemas"]["RecordRef"];
+            owner: components["schemas"]["ActorRef"] | null;
+            plannedCost: components["schemas"]["Money"] | null;
+            level: number;
+            levels: number;
+            /**
+             * Format: date-time
+             * @description When the approval round reached its current level.
+             */
+            waitingSince: string;
+        };
+        WaitingPage: {
+            items: components["schemas"]["WaitingItem"][];
+            total: number;
+        };
+        MyActivityRow: {
+            id: string;
+            name: string;
+            plan: components["schemas"]["RecordRef"];
+            campaign: components["schemas"]["RecordRef"];
+            initiative: components["schemas"]["RecordRef"];
+            status: components["schemas"]["ActivityDisplayStatus"];
+            startDate: string | null;
+            endDate: string | null;
+            ongoing: boolean;
+            plannedCost: components["schemas"]["Money"] | null;
+            missing: components["schemas"]["MissingField"][];
+            /** @description Line items that need attention. */
+            itemsBelow: number;
+        };
+        MyActivityGroup: {
+            status: components["schemas"]["ActivityDisplayStatus"];
+            count: number;
+            items: components["schemas"]["MyActivityRow"][];
+        };
+        MyActivitiesPage: {
+            /** @description In the order declined, created, submitted, approved, inProgress, complete; empty groups left out. */
+            groups: components["schemas"]["MyActivityGroup"][];
+            total: number;
+        };
+        RecentChangesPage: {
+            items: components["schemas"]["ActivityLogEntry"][];
+            /** @description How many entries match in all. */
+            total: number;
+        };
+        /** @enum {string} */
+        AllWorkLevel: "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "unassigned";
+        /** @enum {string} */
+        AllWorkTone: "neutral" | "review" | "positive" | "active" | "done" | "problem";
+        /** @description A status chip - the word, its colour family, and an optional detail (e.g. 3 of 5 activities approved). */
+        AllWorkStatus: {
+            /** @example inProgress */
+            value: string;
+            /** @example In progress */
+            label: string;
+            tone: components["schemas"]["AllWorkTone"];
+            /** @example 3 of 5 activities approved */
+            detail?: string;
+        };
+        /** @description One value of the grid. kind says which property holds it; empty means "—" on the column's own level. */
+        AllWorkCell: {
+            /** @enum {string} */
+            kind: "empty" | "text" | "money" | "number" | "percent" | "date" | "dateTime" | "status";
+            /** @description text cells, and the label of status cells. */
+            text?: string;
+            money?: components["schemas"]["Money"];
+            number?: number;
+            /** @description Whole per cent, e.g. "80". */
+            percent?: string;
+            /** Format: date */
+            date?: string;
+            /** Format: date-time */
+            dateTime?: string;
+            tone?: components["schemas"]["AllWorkTone"];
+            /** @description The value is an inactive option, type or person (shown with "(inactive)"). */
+            inactive?: boolean;
+            unfiltered?: components["schemas"]["AllWorkCell"];
+        };
+        AllWorkSearchHit: {
+            fields: ("name" | "id" | "externalName" | "description")[];
+            /** @description About 60 characters around the first hit in the external name or description. */
+            excerpt?: string;
+        };
+        AllWorkOwner: {
+            id: string;
+            name: string;
+            inactive: boolean;
+        };
+        AllWorkRow: {
+            /**
+             * @description Unique row key - the record ID, or <activity ID>:unassigned.
+             * @example A-1001
+             */
+            key: string;
+            parentKey: string | null;
+            level: components["schemas"]["AllWorkLevel"];
+            /** @description The record the row opens (for an unassigned row, its activity). */
+            recordId: string;
+            planId: string;
+            /** @description For line items and unassigned rows, their activity. */
+            activityId?: string;
+            depth: number;
+            name: string;
+            /** @enum {string} */
+            role: "match" | "context";
+            searchHit?: components["schemas"]["AllWorkSearchHit"];
+            /** @description Plans only - Strategic / AOP plan (the AOP tag). */
+            strategic?: boolean;
+            status: components["schemas"]["AllWorkStatus"] | null;
+            timing?: components["schemas"]["AllWorkStatus"];
+            /** Format: date */
+            startDate?: string;
+            /** Format: date */
+            endDate?: string;
+            ongoing?: boolean;
+            owner?: components["schemas"]["AllWorkOwner"];
+            plannedCost?: components["schemas"]["Money"];
+            balance?: components["schemas"]["Money"];
+            budget?: components["schemas"]["Money"];
+            hasChildren: boolean;
+            /** @description Containers only - filters hide some records below. */
+            filtered?: boolean;
+            /** @description One per column of AllWorkResult.columns, in order; null = blank (the column belongs to another level). */
+            cells: (components["schemas"]["AllWorkCell"] | null)[];
+            /** @description Budget & cost only - one amount per AllWorkResult.periods entry; null = "—". */
+            periods?: (components["schemas"]["Money"] | null)[];
+            total?: components["schemas"]["Money"] | null;
+        };
+        AllWorkColumn: {
+            /** @example attr.cluster */
+            key: string;
+            /** @example Cluster */
+            label: string;
+            /** @enum {string} */
+            group: "standard" | "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            /** @enum {string} */
+            kind: "text" | "money" | "number" | "percent" | "date" | "dateTime" | "status";
+            /** @description The levels on which the column has values. */
+            levels: components["schemas"]["AllWorkLevel"][];
+            sortable: boolean;
+            inactive: boolean;
+        };
+        AllWorkColumnGroup: {
+            /** @enum {string} */
+            group: "standard" | "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            /** @example Campaign */
+            label: string;
+            columns: components["schemas"]["AllWorkColumn"][];
+        };
+        AllWorkPeriod: {
+            /** @description 2026-01 … 2026-12, Q1 … Q4, other or noDates. */
+            key: string;
+            /** @example Mar */
+            label: string;
+        };
+        AllWorkSummary: {
+            campaigns: number;
+            initiatives: number;
+            activities: number;
+            plannedCost: components["schemas"]["Money"] | null;
+            planBudget: components["schemas"]["Money"] | null;
+            unassignedPlannedCost: components["schemas"]["Money"] | null;
+            /** @description Matching activities whose line items exceed their planned cost. */
+            negativeBalanceCount: number;
+        };
+        AllWorkCount: {
+            shown: number;
+            total: number;
+            /** @enum {string} */
+            noun: "activities" | "campaigns" | "initiatives";
+        };
+        AllWorkTotals: {
+            activities: number;
+            cells: (components["schemas"]["AllWorkCell"] | null)[];
+            plannedCost: components["schemas"]["Money"] | null;
+            planBudget: components["schemas"]["Money"] | null;
+            periods?: (components["schemas"]["Money"] | null)[];
+            total?: components["schemas"]["Money"] | null;
+        };
+        AllWorkLeftOut: {
+            /** @enum {string} */
+            filter: "plan" | "owner" | "team" | "businessUnit" | "activityType" | "column" | "sort";
+            id: string;
+        };
+        AllWorkResult: {
+            year: number;
+            /**
+             * Format: date
+             * @description The server's date, for the calendar's Today line.
+             */
+            today: string;
+            /** @enum {string} */
+            view: "grid" | "calendar" | "budget";
+            /** @example USD */
+            displayCurrency: string;
+            /**
+             * Format: date-time
+             * @description When the data was read ("Updated at 14:05").
+             */
+            generatedAt: string;
+            /** @description The requested columns that exist, in order (grid only; empty otherwise). */
+            columns: components["schemas"]["AllWorkColumn"][];
+            /** @description Budget & cost only; empty otherwise. */
+            periods: components["schemas"]["AllWorkPeriod"][];
+            rows: components["schemas"]["AllWorkRow"][];
+            summary: components["schemas"]["AllWorkSummary"];
+            count: components["schemas"]["AllWorkCount"];
+            totals: components["schemas"]["AllWorkTotals"];
+            leftOut: components["schemas"]["AllWorkLeftOut"][];
+        };
+        AllWorkOption: {
+            id: string;
+            label: string;
+            inactive: boolean;
+            /** @description Teams only - the signed-in person belongs to it (listed first). */
+            mine?: boolean;
+        };
+        AllWorkPlanOption: {
+            id: string;
+            label: string;
+            /** @enum {string} */
+            status: "draft" | "published";
+            strategic: boolean;
+        };
+        AllWorkOptions: {
+            year: number;
+            currentYear: number;
+            /** @description Years with plans plus the current year, newest first. */
+            years: number[];
+            plans: components["schemas"]["AllWorkPlanOption"][];
+            owners: components["schemas"]["AllWorkOption"][];
+            teams: components["schemas"]["AllWorkOption"][];
+            businessUnits: components["schemas"]["AllWorkOption"][];
+            activityTypes: components["schemas"]["AllWorkOption"][];
+            columnGroups: components["schemas"]["AllWorkColumnGroup"][];
+            defaultColumns: string[];
+        };
+        AllWorkRecordLocation: {
+            recordId: string;
+            /** @enum {string} */
+            level: "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            name: string;
+            planId: string;
+            activityId?: string;
+        };
+        AllWorkSort: {
+            column: string;
+            /** @enum {string} */
+            direction: "asc" | "desc";
+        };
+        AllWorkPreferences: {
+            /** @description Column keys in order (at most 100, no duplicates; Name is always shown). */
+            columns: string[];
+            sort: components["schemas"]["AllWorkSort"] | null;
+        };
+        AllWorkFilterValue: {
+            id: string;
+            /** @description The name when the view was saved, used to name a value that no longer exists. */
+            label: string;
+        };
+        AllWorkFilters: {
+            plans: components["schemas"]["AllWorkFilterValue"][];
+            planStatuses: ("draft" | "published")[];
+            containerStatuses: ("noActivities" | "inProgress" | "allApproved" | "notStarted" | "running" | "finished")[];
+            activityStatuses: ("created" | "submitted" | "declined" | "approved" | "inProgress" | "complete")[];
+            owners: components["schemas"]["AllWorkFilterValue"][];
+            teams: components["schemas"]["AllWorkFilterValue"][];
+            businessUnits: components["schemas"]["AllWorkFilterValue"][];
+            activityTypes: components["schemas"]["AllWorkFilterValue"][];
+            /** @enum {string} */
+            strategic: "include" | "only" | "exclude";
+            /** @enum {string} */
+            showLevels: "everything" | "completeBranches" | "campaignsWithoutInitiatives" | "initiativesWithoutActivities";
+        };
+        AllWorkExpansion: {
+            /** @enum {string} */
+            mode: "default" | "allExpanded" | "allCollapsed";
+            /** @description Row keys opened or closed against the mode. */
+            toggled: string[];
+        };
+        AllWorkViewState: {
+            /** @enum {string} */
+            view: "grid" | "calendar" | "budget";
+            year: number;
+            filters: components["schemas"]["AllWorkFilters"];
+            search: string;
+            columns: string[];
+            sort: components["schemas"]["AllWorkSort"] | null;
+            expansion: components["schemas"]["AllWorkExpansion"];
+            showUnassigned: boolean;
+            /** @enum {string} */
+            period: "month" | "quarter";
+            /** @enum {string} */
+            calendarLayout: "timeline" | "month";
+        };
+        SavedView: {
+            /** @example SV-1001 */
+            id: string;
+            name: string;
+            isDefault: boolean;
+            state: components["schemas"]["AllWorkViewState"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SavedViewPage: {
+            items: components["schemas"]["SavedView"][];
+            total: number;
+        };
+        SavedViewCreate: {
+            name: string;
+            state: components["schemas"]["AllWorkViewState"];
+            /** @default false */
+            isDefault: boolean;
+        };
+        /** @description Only the parts to change. */
+        SavedViewUpdate: {
+            name?: string;
+            state?: components["schemas"]["AllWorkViewState"];
+            isDefault?: boolean;
+        };
+        /**
+         * @description The Action filter values (deletedPermanently also matches emptiedRecycleBin entries).
+         * @enum {string}
+         */
+        ActivityLogActionFilter: "created" | "changed" | "statusChanged" | "moved" | "copied" | "deleted" | "restored" | "deletedPermanently";
+        ActivityLogItem: {
+            recordType: string;
+            recordTypeLabel: string;
+            recordId: string;
+            recordName: string;
+            /** @description What was inside it, for example with 1 activity and 1 line item; empty when nothing. */
+            details: string;
+        };
+        /** @description Where the entry's record is now (computed when the entry is read). */
+        RecordNow: {
+            /** @enum {string} */
+            state: "exists" | "inRecycleBin" | "deletedPermanently" | "none";
+            /** @description The current name (exists) or the name in the recycle bin; empty otherwise. */
+            name: string;
+            /** @description The record's current ancestors when it exists; empty otherwise. */
+            path: components["schemas"]["RecordRef"][];
+            /**
+             * @description The recycle-bin entry holding the record when it is in the bin; empty otherwise.
+             * @example BIN-1001
+             */
+            binEntryId: string;
+        };
+        ActivityLogSummary: {
+            changesToday: number;
+            changesThisWeek: number;
+            peopleActiveThisWeek: number;
+            /** @description Deletes, permanent deletes and emptied recycle bins this week. */
+            deletionsThisWeek: number;
+            total: number;
+            /** @description Everyone with an entry, sorted by name (Person filter). */
+            people: components["schemas"]["ActorRef"][];
+            /** @description The record types present in the log, sorted by label (Record type filter). */
+            recordTypes: components["schemas"]["RecordTypeCount"][];
+            /** @description The plans named in the log with their latest name, sorted by name (Plan filter). */
+            plans: components["schemas"]["RecordRef"][];
+        };
+        RecordTypeCount: {
+            /** @example activity */
+            type: string;
+            /** @example activity */
+            label: string;
+            count: number;
+        };
+        /** @description A record with the mid-sentence name of its type. */
+        LabelledRef: {
+            /** @example initiative */
+            type: string;
+            /** @example initiative */
+            typeLabel: string;
+            /** @example I-1003 */
+            id: string;
+            /** @example Digital & social */
+            name: string;
+        };
+        /** @description One record kept in a recycle-bin entry (without its data). */
+        RecycleBinRecord: {
+            recordType: string;
+            recordTypeLabel: string;
+            recordId: string;
+            recordName: string;
+            /** @description The record's parent ID; empty for top-level records. */
+            parentId: string;
+        };
+        /** @description A recycle-bin entry as the recycle bin page lists it (001's RecycleBinEntry plus restore state and contents). Properties beyond 001's RecycleBinEntry are always sent once feature 011 is built; they stay optional so that 001's answers remain valid (D-191). */
+        RecycleBinListItem: {
+            /** @example BIN-1001 */
+            id: string;
+            recordType: string;
+            /** @example initiative */
+            recordTypeLabel: string;
+            /** @example initiatives */
+            recordTypePlural?: string;
+            recordId: string;
+            recordName: string;
+            /** @description Where the record was when it was deleted, top level first. */
+            path: components["schemas"]["RecordRef"][];
+            /** @description The record it belonged to when it was deleted (null for top-level records). */
+            parent: components["schemas"]["RecordRef"] | null;
+            /** Format: date-time */
+            deletedAt: string;
+            deletedBy: components["schemas"]["ActorRef"];
+            /** @description What was under it, counted by kind. */
+            contents: components["schemas"]["ContentCount"][];
+            /** @enum {string} */
+            restoreState?: "restorable" | "parentInRecycleBin" | "parentDeletedPermanently";
+            /** @description The parent that is in the recycle bin, or the record above it that was deleted permanently; null when restorable. */
+            missingParent?: components["schemas"]["LabelledRef"] | null;
+            /** @description The entries Restore both / Restore all brings back first, top-most first. */
+            parentEntryIds?: string[];
+            /** @description Other entries that can no longer be restored once this one is deleted permanently. */
+            insideEntryIds?: string[];
+            /** @description The record first, then everything inside it, parents before children. */
+            records?: components["schemas"]["RecycleBinRecord"][];
+        };
+        /** @description One changed field of one record in a restore preview. */
+        RestorePreviewChange: {
+            recordType: string;
+            recordTypeLabel: string;
+            recordId: string;
+            recordName: string;
+            /** @description true for a record that comes back; false for an existing record the restore changes. */
+            restored: boolean;
+            /** @example status */
+            field: string;
+            /** @example Status */
+            label: string;
+            /** @example Approved */
+            oldText: string;
+            /** @example Created */
+            newText: string;
+        };
+        RestorePreview: {
+            entry: components["schemas"]["RecycleBinListItem"];
+            /** @description The parent's current path including the parent; empty for top-level records. */
+            destination: components["schemas"]["RecordRef"][];
+            /** @description The entries restored first (Restore both / Restore all), top-most first. */
+            parentEntries: components["schemas"]["RecycleBinListItem"][];
+            changes: components["schemas"]["RestorePreviewChange"][];
+            /** @description Plain sentences from the record types' restore rules. */
+            notes: string[];
+        };
+        PurgeResult: {
+            recordType: string;
+            recordTypeLabel: string;
+            recordId: string;
+            recordName: string;
+        };
+        EmptyRecycleBinRequest: {
+            /** @description The entries the person saw in the confirmation. */
+            entryIds: string[];
+        };
+        EmptyRecycleBinResult: {
+            count: number;
+        };
+        /** @enum {string} */
+        BulkLevel: "campaign" | "initiative" | "activity";
+        /** @enum {string} */
+        BulkActionKind: "changeOwner" | "changeField" | "submit" | "copy" | "move" | "delete";
+        /** @description One of date, optionIds or yesNo, by the field's kind. */
+        BulkFieldValue: {
+            /** Format: date */
+            date?: string;
+            /** @description Option IDs (one for a single choice, the activity type or the approval workflow); chosen values replace the old ones. */
+            optionIds?: string[];
+            yesNo?: boolean;
+        };
+        BulkFieldChange: {
+            /** @example attr.company-code */
+            key: string;
+            /** @description null = Clear the value (not for required fields). */
+            value: components["schemas"]["BulkFieldValue"] | null;
+        };
+        BulkActionRequest: {
+            action: components["schemas"]["BulkActionKind"];
+            /** @description Campaign, initiative and activity IDs; 1 to 1,000 (more is refused with a message). */
+            recordIds: string[];
+            /** @description changeOwner - the new owner (an active person). */
+            ownerId?: string;
+            field?: components["schemas"]["BulkFieldChange"];
+            /** @description copy and move - a plan, campaign or initiative, one level above the selection. */
+            targetId?: string;
+            /**
+             * @description changeField - false leaves Submitted and Approved activities unchanged when the change needs approval again; true changes them and sends them back to Created.
+             * @default false
+             */
+            restartApproval: boolean;
+            /** @description submit - an optional comment for the approvers (at most 2,000 characters). */
+            comment?: string;
+        };
+        BulkRecordRef: {
+            recordId: string;
+            level: components["schemas"]["BulkLevel"];
+            name: string;
+            planId: string;
+            /** @description Activities - the status shown, e.g. Approved. */
+            status?: string;
+        };
+        BulkOutcome: {
+            recordId: string;
+            level: components["schemas"]["BulkLevel"];
+            name: string;
+            planId: string;
+            /** @enum {string} */
+            outcome: "done" | "skipped" | "failed";
+            /** @description Every reason, in plain language (empty when done). */
+            reasons: string[];
+            /** @description copy - the ID of the copy. */
+            newRecordId?: string;
+        };
+        BulkEffect: {
+            /** @enum {string} */
+            kind: "typeNotAllowedSkipped" | "typeNotAllowedKept" | "goalsRecalculated" | "groupsHidden" | "groupsAdded" | "totalsUpdate" | "dependentCleared";
+            count: number;
+            /** @example MQL and revenue recalculated with the model 'Mobility 1.0' for 4 activities */
+            text: string;
+        };
+        BulkLevelCounts: {
+            campaigns: number;
+            initiatives: number;
+            activities: number;
+        };
+        BulkBelowCounts: {
+            campaigns: number;
+            initiatives: number;
+            activities: number;
+            lineItems: number;
+        };
+        BulkDeleteSummary: {
+            selected: components["schemas"]["BulkLevelCounts"];
+            below: components["schemas"]["BulkBelowCounts"];
+            submittedOrApproved: number;
+        };
+        BulkCounts: {
+            done: number;
+            skipped: number;
+            failed: number;
+        };
+        BulkActionResult: {
+            /** @description The bulk action's ID (null for a preview). */
+            id: string | null;
+            preview: boolean;
+            action: components["schemas"]["BulkActionKind"];
+            /** @enum {string} */
+            verb: "changed" | "submitted" | "copied" | "moved" | "deleted";
+            /**
+             * @description The note written into every activity-log entry of the action.
+             * @example Bulk change of 20 activities (BLK-1001)
+             */
+            note: string;
+            selected: components["schemas"]["BulkLevelCounts"];
+            counts: components["schemas"]["BulkCounts"];
+            outcomes: components["schemas"]["BulkOutcome"][];
+            /** @description changeField - Submitted or Approved activities whose change needs approval again. */
+            reapproval: components["schemas"]["BulkRecordRef"][];
+            effects: components["schemas"]["BulkEffect"][];
+            deleteSummary: components["schemas"]["BulkDeleteSummary"] | null;
+            /** @description delete - one entry per top-level deleted record. */
+            recycleBinEntries: components["schemas"]["RecycleBinEntry"][];
+            /** @description delete - until when Undo is accepted. */
+            undoAvailableUntil: string | null;
+        };
+        BulkUndoResult: {
+            bulkActionId: string;
+            restored: components["schemas"]["RestoreResult"][];
+        };
+        BulkFieldOption: {
+            id: string;
+            label: string;
+            /** @description Dependent attributes - the parent options it fits. */
+            parentOptionIds: string[];
+        };
+        BulkField: {
+            /** @example startDate */
+            key: string;
+            label: string;
+            /** @enum {string} */
+            kind: "date" | "singleChoice" | "multipleChoice" | "yesNo";
+            /** @description true = Clear the value is not offered. */
+            required: boolean;
+            options: components["schemas"]["BulkFieldOption"][];
+            /** @description The key of the parent attribute, for dependent options. */
+            dependsOn: string | null;
+            /** @description The business-unit condition in words, e.g. Shown when the plan's business unit includes Lubricants. */
+            condition: string | null;
+        };
+        BulkFieldList: {
+            level: components["schemas"]["BulkLevel"];
+            items: components["schemas"]["BulkField"][];
+            total: number;
+            /** @example Names, IDs, money, calculated fields, Ongoing and % split fields are edited one record at a time. */
+            notOffered: string;
+        };
+        BulkTargetQuery: {
+            /** @enum {string} */
+            action: "copy" | "move";
+            recordIds: string[];
+            search?: string;
+        };
+        BulkTarget: {
+            id: string;
+            /** @enum {string} */
+            level: "plan" | "campaign" | "initiative";
+            name: string;
+            /** @example FY2026 Lubricants Europe › Rimula fleet › Events */
+            path: string;
+            planId: string;
+            year: number;
+            /** Format: date */
+            startDate?: string;
+            /** Format: date */
+            endDate?: string;
+        };
+        BulkTargetPage: {
+            items: components["schemas"]["BulkTarget"][];
+            total: number;
+            /** @description Why there is no target, e.g. Move works within one plan — select records of one plan. */
+            note: string | null;
+        };
+        ImportUpload: {
+            /** @example mobility-china.xlsx */
+            fileName: string;
+            /** @description The file, base64-encoded (at most 5 MB before encoding). */
+            content: string;
+            /** @description Create missing campaigns and initiatives. */
+            createMissing: boolean;
+        };
+        ImportRun: {
+            fileName: string;
+            content: string;
+            createMissing: boolean;
+            /** @description The row numbers the user confirmed (the ready rows of the check). */
+            rows: number[];
+        };
+        ImportProblem: {
+            /** @description The spreadsheet's own row number. */
+            row: number;
+            /** @description The column heading ("" for a problem of the whole row). */
+            column: string;
+            /** @description The value found. */
+            value: string;
+            reason: string;
+            /**
+             * @description Import results only.
+             * @enum {string}
+             */
+            outcome?: "leftOut" | "failed";
+        };
+        ImportNewInitiative: {
+            campaign: string;
+            name: string;
+        };
+        ImportWillCreate: {
+            campaigns: string[];
+            initiatives: components["schemas"]["ImportNewInitiative"][];
+        };
+        ImportCheck: {
+            fileName: string;
+            rows: number;
+            ready: number;
+            withProblems: number;
+            /** @description Row numbers of the ready rows (sent back by Import N activities). */
+            readyRows: number[];
+            problems: components["schemas"]["ImportProblem"][];
+            ignoredColumns: string[];
+            willCreate: components["schemas"]["ImportWillCreate"];
+            /** @description Ready rows whose activity will still miss a needed-to-submit field. */
+            needMoreFields: number;
+        };
+        ImportRecordRef: {
+            id: string;
+            name: string;
+            /** @description false when it has been deleted since. */
+            exists: boolean;
+        };
+        ImportUndoPreview: {
+            activities: number;
+            campaigns: number;
+            initiatives: number;
+            changedSinceImport: number;
+            addedSinceImport: number;
+            alreadyDeleted: number;
+        };
+        ImportSummary: {
+            /** @example IMP-1001 */
+            id: string;
+            planId: string;
+            fileName: string;
+            /** @enum {string} */
+            status: "imported" | "undone";
+            /** Format: date-time */
+            importedAt: string;
+            importedBy: components["schemas"]["ActorRef"];
+            rowsRead: number;
+            activitiesImported: number;
+            campaignsCreated: number;
+            initiativesCreated: number;
+            rowsLeftOut: number;
+            rowsFailed: number;
+            undoneAt: string | null;
+            undoneBy: components["schemas"]["ActorRef"] | null;
+        };
+        ImportDetail: {
+            import: components["schemas"]["ImportSummary"];
+            /** @description Rows left out and rows that failed, with their reasons. */
+            problems: components["schemas"]["ImportProblem"][];
+            activities: components["schemas"]["ImportRecordRef"][];
+            campaigns: components["schemas"]["ImportRecordRef"][];
+            initiatives: components["schemas"]["ImportRecordRef"][];
+            /** @description What Undo import would do; null once undone. */
+            undo: components["schemas"]["ImportUndoPreview"] | null;
+        };
+        PlanImportPage: {
+            items: components["schemas"]["ImportSummary"][];
+            total: number;
+            canImport: boolean;
+            /** @example Add at least one campaign and one initiative to this plan before importing activities */
+            cannotImportReason: string | null;
+        };
     };
     responses: {
         /** @description The request is not valid (validation_failed lists every field problem; bad_request when the body cannot be read). */
@@ -532,7 +6065,7 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description The request conflicts with the current state (version_conflict, restore_parent_first, undo_expired, already_resolved or name_taken). */
+        /** @description The record changed meanwhile (version_conflict), a name is taken (name_taken), the record is in use (in_use), a restore cannot happen (cannot_restore, restore_parent_first, parent_deleted_permanently), the action is not allowed for this person (not_allowed) or needs fields filled first (not_ready, with missing), or an undo or restore is no longer possible (undo_expired, already_resolved). */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -556,6 +6089,86 @@ export interface components {
         EntryId: string;
         /** @example SF-1001 */
         FolderId: string;
+        /** @example MOD-1001 */
+        ModelId: string;
+        /** @example AT-1001 */
+        ActivityTypeId: string;
+        /** @example SA-1001 */
+        AttributeId: string;
+        /** @example SO-1001 */
+        OptionId: string;
+        /**
+         * @description The ISO code, which is the currency's id.
+         * @example EUR
+         */
+        CurrencyCode: string;
+        /** @example FB-1001 */
+        BudgetId: string;
+        /** @example FBI-1001 */
+        ItemId: string;
+        LevelPath: components["schemas"]["AttributeLevel"];
+        /** @example U-1002 */
+        PersonId: string;
+        /** @example T-1001 */
+        TeamId: string;
+        /** @example P-1001 */
+        PlanId: string;
+        /** @example C-1001 */
+        CampaignId: string;
+        /** @example I-1001 */
+        InitiativeId: string;
+        /** @description What the destinations are for. Anything else answers validation_failed on purpose. */
+        Purpose: "move" | "copy";
+        /** @example A-1001 */
+        ActivityId: string;
+        /** @example I-1001 */
+        InitiativeIdPath: string;
+        /** @example L-1001 */
+        LineItemId: string;
+        /** @description True when the person confirmed "This activity will need approval again" (needed only while the activity is Submitted or Approved). */
+        RestartApproval: boolean;
+        /** @example WF-1001 */
+        WorkflowId: string;
+        /** @example NT-1001 */
+        NotificationId: string;
+        /** @description myTeams covers plans with at least one of the person's teams; everything covers all plans. */
+        HomeScope: components["schemas"]["HomeScope"];
+        /** @description The plans' year. Default - the current year. */
+        AllWorkYear: number;
+        /** @description grid (default), calendar or budget (Budget & cost). */
+        AllWorkView: "grid" | "calendar" | "budget";
+        /** @description Plan IDs (repeat the parameter for several). */
+        AllWorkPlan: string[];
+        AllWorkPlanStatus: ("draft" | "published")[];
+        /** @description Campaign and initiative statuses. OR within Approval progress and within Timing; AND between the two. */
+        AllWorkContainerStatus: ("noActivities" | "inProgress" | "allApproved" | "notStarted" | "running" | "finished")[];
+        AllWorkActivityStatus: ("created" | "submitted" | "declined" | "approved" | "inProgress" | "complete")[];
+        /** @description Person IDs; tested on plans, campaigns, initiatives and activities. */
+        AllWorkOwner: string[];
+        /** @description Team IDs; tested on the plan's teams. */
+        AllWorkTeam: string[];
+        /** @description Option IDs of the plan-level Business unit attribute. */
+        AllWorkBusinessUnit: string[];
+        AllWorkActivityType: string[];
+        /** @description Strategic / AOP plans. */
+        AllWorkStrategic: "include" | "only" | "exclude";
+        AllWorkShowLevels: "everything" | "completeBranches" | "campaignsWithoutInitiatives" | "initiativesWithoutActivities";
+        /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
+        AllWorkSearch: string;
+        /** @description Grid columns in display order (repeat the parameter). Name is always shown and is not a column. */
+        AllWorkColumn: string[];
+        /** @description A column key and a direction, e.g. plannedCost:desc. Children are sorted within each parent. */
+        AllWorkSort: string;
+        /** @description Budget & cost columns by month (default) or quarter. */
+        AllWorkPeriod: "month" | "quarter";
+        /** @example A-1001 */
+        AllWorkRecordId: string;
+        /** @example SV-1001 */
+        ViewId: string;
+        /** @example BLK-1001 */
+        BulkActionId: string;
+        /** @example IMP-1001 */
+        ImportId: string;
     };
     requestBodies: never;
     headers: never;
@@ -677,6 +6290,34 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    updateMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description The signed-in person after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUser"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
     updatePreferences: {
         parameters: {
             query?: never;
@@ -707,10 +6348,35 @@ export interface operations {
     listActivityLog: {
         parameters: {
             query?: {
-                /** @description Only entries about this kind of record, for example sampleFolder. */
+                /**
+                 * @description Only entries by this person.
+                 * @example U-1003
+                 */
+                actorId?: string;
+                /** @description Only entries about this kind of record, for example activity. */
                 recordType?: string;
-                /** @description Only entries about this record, for example SF-1001. */
+                /** @description Only entries with one of these actions. deletedPermanently also matches entries that emptied the recycle bin. */
+                action?: components["schemas"]["ActivityLogActionFilter"][];
+                /**
+                 * @description Only entries about this plan and anything that is or was inside it.
+                 * @example P-1001
+                 */
+                planId?: string;
+                /**
+                 * @description Only entries about this record (with includeInside, also about everything that is or was below it).
+                 * @example A-1042
+                 */
                 recordId?: string;
+                /** @description With recordId, also entries about the records that are or were below it. */
+                includeInside?: boolean;
+                /** @description Only entries at or after this moment (the browser sends local midnight in UTC). */
+                from?: string;
+                /** @description Only entries before this moment (exclusive). Must be after from. */
+                to?: string;
+                /** @description Search on record name, record ID or the person's name, ignoring letter case. */
+                q?: string;
+                /** @description Only entries with a smaller seq (Load more). */
+                beforeSeq?: number;
                 /** @description How many entries to return (1 to 200, default 50). */
                 limit?: number;
             };
@@ -720,7 +6386,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The newest matching entries; total counts all matching entries. */
+            /** @description The newest matching entries. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -743,7 +6409,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The recycle-bin entries (without their stored records). */
+            /** @description The unresolved recycle-bin entries whose record types this API knows. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -785,7 +6451,10 @@ export interface operations {
     };
     restoreFromRecycleBin: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Also restore the entries that hold its missing parents, parents first. */
+                withParents?: boolean;
+            };
             header?: never;
             path: {
                 /** @example BIN-1001 */
@@ -804,6 +6473,7 @@ export interface operations {
                     "application/json": components["schemas"]["RestoreResult"];
                 };
             };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
@@ -971,6 +6641,4413 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getSettingsOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active records per section. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOverview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The models with their usage. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelCreate"];
+            };
+        };
+        responses: {
+            /** @description Created, active. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Model"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The model. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Model"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelUpdate"];
+            };
+        };
+        responses: {
+            /** @description The model after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Model"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkModelImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings; an empty list means nothing to confirm. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setModelStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example MOD-1001 */
+                modelId: components["parameters"]["ModelId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The model with its new status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Model"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listActivityTypes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The activity types with their models and usage. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityTypePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createActivityType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityTypeCreate"];
+            };
+        };
+        responses: {
+            /** @description Created, active. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityType"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getActivityType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The activity type. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityType"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteActivityType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateActivityType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityTypeUpdate"];
+            };
+        };
+        responses: {
+            /** @description The activity type after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityType"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkActivityTypeImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityTypeUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings; an empty list means nothing to confirm. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setActivityTypeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example AT-1001 */
+                activityTypeId: components["parameters"]["ActivityTypeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The activity type with its new status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityType"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listShellAttributes: {
+        parameters: {
+            query?: {
+                /** @description Only this level's attributes. Without it, every level in the order plan, campaign, initiative, activity, lineItem. */
+                level?: components["schemas"]["AttributeLevel"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The attributes in display order (sections in the order of their first attribute). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributePage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createShellAttribute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShellAttributeCreate"];
+            };
+        };
+        responses: {
+            /** @description Created, active, last in its section. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttribute"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getShellAttribute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The attribute. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttribute"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteShellAttribute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateShellAttribute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShellAttributeUpdate"];
+            };
+        };
+        responses: {
+            /** @description The attribute after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttribute"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkShellAttributeImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShellAttributeUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings; an empty list means nothing to confirm. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setShellAttributeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The attribute with its new status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttribute"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    moveShellAttribute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttributeMove"];
+            };
+        };
+        responses: {
+            /** @description The level's attributes in their new display order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributePage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listShellAttributeOptions: {
+        parameters: {
+            query?: {
+                /** @description Only options whose label contains this text, ignoring letter case and surrounding spaces. */
+                q?: string;
+                /** @description active, inactive or all (default all). */
+                status?: "active" | "inactive" | "all";
+                /** @description How many options to return (1 to 500, default 100). */
+                limit?: number;
+                /** @description How many matching options to skip (default 0). */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The matching options; total counts every matching option. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributeOptionPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createShellAttributeOption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Created, active. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributeOption"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkShellAttributeOptionImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Every row's outcome. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionImportCheck"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    importShellAttributeOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SA-1001 */
+                attributeId: components["parameters"]["AttributeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionImportRequest"];
+            };
+        };
+        responses: {
+            /** @description What was added and skipped. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptionImportResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteShellAttributeOption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateShellAttributeOption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionUpdate"];
+            };
+        };
+        responses: {
+            /** @description The option after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributeOption"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setShellAttributeOptionStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The option with its new status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributeOption"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    moveShellAttributeOption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SO-1001 */
+                optionId: components["parameters"]["OptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptionMove"];
+            };
+        };
+        responses: {
+            /** @description The moved option. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShellAttributeOption"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getShellAttributeForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                level: components["parameters"]["LevelPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The level's form definition. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttributeForm"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkShellAttributeValues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                level: components["parameters"]["LevelPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttributeCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Problems that would block saving, values that would be cleared, fields still needed, and the values a save would store. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttributeCheckResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listCurrencies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The currencies with their rates and usage. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrencyPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createCurrency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurrencyCreate"];
+            };
+        };
+        responses: {
+            /** @description Created, active. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getCurrency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The currency. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteCurrency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateCurrency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurrencyUpdate"];
+            };
+        };
+        responses: {
+            /** @description The currency after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkCurrencyImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurrencyUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings; an empty list means nothing to confirm. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setCurrencyStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The currency with its new status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listFinanceBudgets: {
+        parameters: {
+            query?: {
+                /** @description The budget year (default the current year). */
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The year's budgets that have items, and the years that can be chosen. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceBudgetPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    renameFinanceBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FB-1001 */
+                budgetId: components["parameters"]["BudgetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinanceBudgetRename"];
+            };
+        };
+        responses: {
+            /** @description The budget after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceBudget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createFinanceBudgetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinanceBudgetItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Created, active. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceBudgetItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getFinanceBudgetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FBI-1001 */
+                itemId: components["parameters"]["ItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceBudgetItem"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteFinanceBudgetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FBI-1001 */
+                itemId: components["parameters"]["ItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateFinanceBudgetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FBI-1001 */
+                itemId: components["parameters"]["ItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinanceBudgetItemUpdate"];
+            };
+        };
+        responses: {
+            /** @description The item after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceBudgetItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setFinanceBudgetItemStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example FBI-1001 */
+                itemId: components["parameters"]["ItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The item with its new status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceBudgetItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPeople: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Everyone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonDetails"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The person. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonDetails"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updatePerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonUpdate"];
+            };
+        };
+        responses: {
+            /** @description The person after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonDetails"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkPersonImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings; an empty list means nothing to confirm. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setPersonStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The person with their status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonDetails"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listTeams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every team. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamUpdate"];
+            };
+        };
+        responses: {
+            /** @description The team after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkTeamImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings; an empty list means nothing to confirm. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setTeamStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example T-1001 */
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description The team with its status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listDisplayCurrencies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisplayCurrencyPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPlanDefaults: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The defaults. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDefaults"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPlans: {
+        parameters: {
+            query?: {
+                /** @description all (default) or myTeams (plans with one of the signed-in person's teams). */
+                scope?: "all" | "myTeams";
+                /** @description Only plans with this status; every status when not sent. */
+                status?: components["schemas"]["PlanStatus"];
+                /**
+                 * @description Only plans of this year; every year when not sent.
+                 * @example 2026
+                 */
+                year?: number;
+                /** @description Part of the name or of the ID, ignoring letter case and surrounding spaces. */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The matching plans and the summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deletePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanUpdate"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    publishPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan (Published). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    unpublishPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnpublishRequest"];
+            };
+        };
+        responses: {
+            /** @description The plan (Draft). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPlanCopyOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The suggested name, the years and the counts of what can be copied. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanCopyOptions"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    copyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanCopyRequest"];
+            };
+        };
+        responses: {
+            /** @description The new plan and notes about what changed. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanCopyResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPlanChangeEffects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanChangeEffectsRequest"];
+            };
+        };
+        responses: {
+            /** @description The effects. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanChangeEffects"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPlanCampaigns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan's campaigns with their initiatives and roll-ups. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanCampaigns"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The campaign. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignUpdate"];
+            };
+        };
+        responses: {
+            /** @description The campaign after the change, with recalculated values. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listCampaignDestinations: {
+        parameters: {
+            query: {
+                /** @description What the destinations are for. Anything else answers validation_failed on purpose. */
+                purpose: components["parameters"]["Purpose"];
+            };
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The destinations, current first, then by name ignoring letter case. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DestinationList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    moveCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignMove"];
+            };
+        };
+        responses: {
+            /** @description The campaign in its new plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    copyCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignCopy"];
+            };
+        };
+        responses: {
+            /** @description The new campaign. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createInitiative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitiativeCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Initiative"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getInitiative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The initiative. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Initiative"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteInitiative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateInitiative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitiativeUpdate"];
+            };
+        };
+        responses: {
+            /** @description The initiative after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Initiative"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listInitiativeDestinations: {
+        parameters: {
+            query: {
+                /** @description What the destinations are for. Anything else answers validation_failed on purpose. */
+                purpose: components["parameters"]["Purpose"];
+            };
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The destinations, current first, then by start date and name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DestinationList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    moveInitiative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitiativeMove"];
+            };
+        };
+        responses: {
+            /** @description The initiative in its new campaign. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Initiative"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    copyInitiative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitiativeCopy"];
+            };
+        };
+        responses: {
+            /** @description The new initiative. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Initiative"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getNewActivityForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The form's context, choices and defaults. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityForm"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activity"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPlanActivities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan's activities. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySummaryPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The activity. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activity"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityUpdate"];
+            };
+        };
+        responses: {
+            /** @description The activity after the save. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activity"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getActivityEditForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The form's context and choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityForm"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listActivityDestinations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every initiative of the plan, grouped by campaign (campaigns, then initiatives, by start date then name). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityDestinationPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    moveActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityMove"];
+            };
+        };
+        responses: {
+            /** @description The activity after the move. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activity"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    copyActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityCopy"];
+            };
+        };
+        responses: {
+            /** @description The copy. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activity"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listActivityLineItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The activity's line items with their summaries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItemSection"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createLineItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LineItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getLineItemFormOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Defaults and choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItemFormOptions"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getLineItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example L-1001 */
+                lineItemId: components["parameters"]["LineItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The line item. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItemDetails"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteLineItem: {
+        parameters: {
+            query?: {
+                /** @description True when the person confirmed "This activity will need approval again" (needed only while the activity is Submitted or Approved). */
+                restartApproval?: components["parameters"]["RestartApproval"];
+            };
+            header?: never;
+            path: {
+                /** @example L-1001 */
+                lineItemId: components["parameters"]["LineItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateLineItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example L-1001 */
+                lineItemId: components["parameters"]["LineItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LineItemUpdate"];
+            };
+        };
+        responses: {
+            /** @description The line item after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    duplicateLineItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example L-1001 */
+                lineItemId: components["parameters"]["LineItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LineItemDuplicate"];
+            };
+        };
+        responses: {
+            /** @description The copy. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listApprovalWorkflows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workflows with their levels, usage and warnings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalWorkflowPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createApprovalWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalWorkflowCreate"];
+            };
+        };
+        responses: {
+            /** @description Created, active. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalWorkflow"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getApprovalWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example WF-1001 */
+                workflowId: components["parameters"]["WorkflowId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workflow and its activities. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalWorkflowDetails"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteApprovalWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example WF-1001 */
+                workflowId: components["parameters"]["WorkflowId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateApprovalWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example WF-1001 */
+                workflowId: components["parameters"]["WorkflowId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalWorkflowUpdate"];
+            };
+        };
+        responses: {
+            /** @description The workflow after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalWorkflow"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deactivateApprovalWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example WF-1001 */
+                workflowId: components["parameters"]["WorkflowId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalWorkflowStatusChange"];
+            };
+        };
+        responses: {
+            /** @description The workflow after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalWorkflow"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    activateApprovalWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example WF-1001 */
+                workflowId: components["parameters"]["WorkflowId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalWorkflowStatusChange"];
+            };
+        };
+        responses: {
+            /** @description The workflow after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalWorkflow"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getActivityApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The approval state of the activity, seen by the signed-in person. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityApproval"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getApprovalSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The ready-to-submit check and the confirmation's content. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalSubmission"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    submitActivityForApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Submitted; the activity's approval state after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    approveActivityLevel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Approved; the activity's approval state after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    declineActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Declined; the activity's approval state after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    recallActivitySubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecallRequest"];
+            };
+        };
+        responses: {
+            /** @description Recalled; the activity's approval state after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityApproval"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listApprovals: {
+        parameters: {
+            query?: {
+                /** @description Which tab (default waiting). */
+                tab?: "waiting" | "open" | "decided";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every row of the tab; total is the number of rows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalRowPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getApprovalSummary: {
+        parameters: {
+            query?: {
+                /** @example 2026-02-28T23:00:00Z */
+                monthStart?: string;
+                /**
+                 * @description The first instant after the month.
+                 * @example 2026-03-31T22:00:00Z
+                 */
+                monthEnd?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The counts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalCounts"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getApprovalPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Key facts, line items, unassigned planned cost and the approval state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalPreview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notifications. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    markNotificationRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example NT-1001 */
+                notificationId: components["parameters"]["NotificationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notification after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    markAllNotificationsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description How many changed; unread is then 0. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationReadAll"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getHomeSummary: {
+        parameters: {
+            query: {
+                /** @description myTeams covers plans with at least one of the person's teams; everything covers all plans. */
+                scope: components["parameters"]["HomeScope"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The summary for the scope. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listHomePlans: {
+        parameters: {
+            query: {
+                /** @description myTeams covers plans with at least one of the person's teams; everything covers all plans. */
+                scope: components["parameters"]["HomeScope"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plans in scope, newest year first, then by name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomePlanPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listHomeAttention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every record with at least one reason, in display order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAttentionPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listHomeWaiting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The activities waiting for the person's decision. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitingPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listHomeMyActivities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The groups in display order; empty groups are left out. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyActivitiesPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listHomeRecentChanges: {
+        parameters: {
+            query: {
+                /** @description myTeams covers plans with at least one of the person's teams; everything covers all plans. */
+                scope: components["parameters"]["HomeScope"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The newest entries about plans, campaigns, initiatives, activities and line items of the plans in scope. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentChangesPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getAllWork: {
+        parameters: {
+            query?: {
+                /** @description The plans' year. Default - the current year. */
+                year?: components["parameters"]["AllWorkYear"];
+                /** @description grid (default), calendar or budget (Budget & cost). */
+                view?: components["parameters"]["AllWorkView"];
+                /** @description Plan IDs (repeat the parameter for several). */
+                plan?: components["parameters"]["AllWorkPlan"];
+                planStatus?: components["parameters"]["AllWorkPlanStatus"];
+                /** @description Campaign and initiative statuses. OR within Approval progress and within Timing; AND between the two. */
+                containerStatus?: components["parameters"]["AllWorkContainerStatus"];
+                activityStatus?: components["parameters"]["AllWorkActivityStatus"];
+                /** @description Person IDs; tested on plans, campaigns, initiatives and activities. */
+                owner?: components["parameters"]["AllWorkOwner"];
+                /** @description Team IDs; tested on the plan's teams. */
+                team?: components["parameters"]["AllWorkTeam"];
+                /** @description Option IDs of the plan-level Business unit attribute. */
+                businessUnit?: components["parameters"]["AllWorkBusinessUnit"];
+                activityType?: components["parameters"]["AllWorkActivityType"];
+                /** @description Strategic / AOP plans. */
+                strategic?: components["parameters"]["AllWorkStrategic"];
+                showLevels?: components["parameters"]["AllWorkShowLevels"];
+                /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
+                search?: components["parameters"]["AllWorkSearch"];
+                /** @description Grid columns in display order (repeat the parameter). Name is always shown and is not a column. */
+                column?: components["parameters"]["AllWorkColumn"];
+                /** @description A column key and a direction, e.g. plannedCost:desc. Children are sorted within each parent. */
+                sort?: components["parameters"]["AllWorkSort"];
+                /** @description Budget & cost columns by month (default) or quarter. */
+                period?: components["parameters"]["AllWorkPeriod"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The view. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllWorkResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getAllWorkOptions: {
+        parameters: {
+            query?: {
+                /** @description The plans' year. Default - the current year. */
+                year?: components["parameters"]["AllWorkYear"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllWorkOptions"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    exportAllWork: {
+        parameters: {
+            query: {
+                format: "xlsx" | "csv";
+                /** @description Include the unassigned planned cost rows (the screen's switch). Default true. */
+                unassigned?: boolean;
+                /** @description The plans' year. Default - the current year. */
+                year?: components["parameters"]["AllWorkYear"];
+                /** @description grid (default), calendar or budget (Budget & cost). */
+                view?: components["parameters"]["AllWorkView"];
+                /** @description Plan IDs (repeat the parameter for several). */
+                plan?: components["parameters"]["AllWorkPlan"];
+                planStatus?: components["parameters"]["AllWorkPlanStatus"];
+                /** @description Campaign and initiative statuses. OR within Approval progress and within Timing; AND between the two. */
+                containerStatus?: components["parameters"]["AllWorkContainerStatus"];
+                activityStatus?: components["parameters"]["AllWorkActivityStatus"];
+                /** @description Person IDs; tested on plans, campaigns, initiatives and activities. */
+                owner?: components["parameters"]["AllWorkOwner"];
+                /** @description Team IDs; tested on the plan's teams. */
+                team?: components["parameters"]["AllWorkTeam"];
+                /** @description Option IDs of the plan-level Business unit attribute. */
+                businessUnit?: components["parameters"]["AllWorkBusinessUnit"];
+                activityType?: components["parameters"]["AllWorkActivityType"];
+                /** @description Strategic / AOP plans. */
+                strategic?: components["parameters"]["AllWorkStrategic"];
+                showLevels?: components["parameters"]["AllWorkShowLevels"];
+                /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
+                search?: components["parameters"]["AllWorkSearch"];
+                /** @description Grid columns in display order (repeat the parameter). Name is always shown and is not a column. */
+                column?: components["parameters"]["AllWorkColumn"];
+                /** @description A column key and a direction, e.g. plannedCost:desc. Children are sorted within each parent. */
+                sort?: components["parameters"]["AllWorkSort"];
+                /** @description Budget & cost columns by month (default) or quarter. */
+                period?: components["parameters"]["AllWorkPeriod"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. Its name is in Content-Disposition, e.g. NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx. */
+            200: {
+                headers: {
+                    /** @description attachment with filename (ASCII) and filename* (UTF-8). */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    "text/csv": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    locateAllWorkRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                recordId: components["parameters"]["AllWorkRecordId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The record exists. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllWorkRecordLocation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getAllWorkPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The preferences. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllWorkPreferences"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateAllWorkPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AllWorkPreferences"];
+            };
+        };
+        responses: {
+            /** @description The preferences after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllWorkPreferences"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listSavedViews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Only the signed-in person's views. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedViewPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedViewCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SV-1001 */
+                viewId: components["parameters"]["ViewId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The deleted view, so that Undo can save it again. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateSavedView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example SV-1001 */
+                viewId: components["parameters"]["ViewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedViewUpdate"];
+            };
+        };
+        responses: {
+            /** @description The view after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getActivityLogSummary: {
+        parameters: {
+            query: {
+                /** @description Midnight today in the person's time zone, as a UTC moment. */
+                todayStart: string;
+                /** @description Midnight of this week's Monday in the person's time zone, as a UTC moment. Not after todayStart. */
+                weekStart: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The counts and the filter choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityLogSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    emptyRecycleBin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyRecycleBinRequest"];
+            };
+        };
+        responses: {
+            /** @description How many entries were deleted permanently (0 when none was left). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmptyRecycleBinResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteRecycleBinEntryPermanently: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example BIN-1001 */
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted permanently. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    previewRestore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example BIN-1001 */
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The preview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestorePreview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listBulkFields: {
+        parameters: {
+            query: {
+                level: components["schemas"]["BulkLevel"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The offered fields. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkFieldList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listBulkTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTargetQuery"];
+            };
+        };
+        responses: {
+            /** @description The first 100 allowed targets, sorted by path, and how many there are. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkTargetPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    previewBulkAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkActionRequest"];
+            };
+        };
+        responses: {
+            /** @description The preview (preview true, id null). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkActionResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    runBulkAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Done. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkActionResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    undoBulkDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example BLK-1001 */
+                bulkActionId: components["parameters"]["BulkActionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Everything restored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkUndoResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPlanImports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The imports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanImportPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    importActivities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRun"];
+            };
+        };
+        responses: {
+            /** @description Imported. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkImportFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportUpload"];
+            };
+        };
+        responses: {
+            /** @description The check. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportCheck"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The template. Its name is in Content-Disposition (NorthStar import template – <plan>.xlsx). */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example IMP-1001 */
+                importId: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The import. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    undoImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example IMP-1001 */
+                importId: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Undone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
         };
     };

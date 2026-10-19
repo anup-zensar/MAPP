@@ -25,6 +25,11 @@ export type ApiErrorKind =
   | 'undoExpired'
   | 'alreadyResolved'
   | 'nameTaken'
+  | 'inUse'
+  | 'cannotRestore'
+  | 'notAllowed'
+  | 'notReady'
+  | 'parentDeletedPermanently'
   | 'unreachable'
   | 'other';
 
@@ -41,6 +46,11 @@ const KIND_BY_CODE: Record<ErrorBody['code'], ApiErrorKind> = {
   undo_expired: 'undoExpired',
   already_resolved: 'alreadyResolved',
   name_taken: 'nameTaken',
+  in_use: 'inUse',
+  cannot_restore: 'cannotRestore',
+  not_allowed: 'notAllowed',
+  not_ready: 'notReady',
+  parent_deleted_permanently: 'parentDeletedPermanently',
   internal_error: 'other',
 };
 

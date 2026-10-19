@@ -242,9 +242,8 @@ filtered, its totals, money in its currency, and a note of every filter used.
 - **FR-009**: Filters MUST apply as soon as they change, without an Apply button, and are kept while
   the user moves around NorthStar in a session. A new visit MUST start from the user's default saved
   view or the standard view (current year, no filters, Grid, default columns).
-- **FR-010**: [NEEDS CLARIFICATION: Should the filter bar also filter by Shell attributes (e.g. Cluster,
-  Country / OU, Spend type, GL code), with a "Not filled in" choice to find missing values, as Hive9's
-  filter panel does? Until this is answered, only the filters in FR-004 are in scope.]
+- **FR-010**: The filter bar MUST offer only the filters of FR-004. Resolved: no Shell-attribute
+  filters and no "Not filled in" choice in this phase (D-207).
 
 **Grid view**
 

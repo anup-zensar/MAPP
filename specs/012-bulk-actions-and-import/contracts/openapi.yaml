@@ -1,0 +1,906 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 012 Bulk actions and import (fragment)
+  version: 0.1.0
+  description: |
+    Fragment merged into backend/api/openapi.yaml. Conventions, error responses and the schemas Error,
+    ActorRef, RecycleBinEntry, RestoreResult and Resolution are feature 001's. The path parameter PlanId
+    is owned by feature 004 (expected name: PlanId, path name planId).
+
+    A bulk action runs up to 1,000 records in one transaction; POST /api/bulk-actions/preview runs the
+    same code and saves nothing. Imports are checked without saving (POST …/imports/check) and saved
+    only by POST …/imports with the rows the user confirmed. Uploaded files travel as base64 in JSON
+    (at most 5 MB of file).
+tags:
+  - name: Bulk actions
+    description: Change, submit, copy, move or delete many campaigns, initiatives and activities at once
+  - name: Imports
+    description: Import activities into a plan from a template
+paths:
+  /api/bulk-actions/fields:
+    get:
+      tags: [Bulk actions]
+      operationId: listBulkFields
+      summary: The fields Change field offers for one level, with their choices
+      parameters:
+        - name: level
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/BulkLevel"
+      responses:
+        "200":
+          description: The offered fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkFieldList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/bulk-actions/targets:
+    post:
+      tags: [Bulk actions]
+      operationId: listBulkTargets
+      summary: Where the selected records may be copied or moved (searchable, with the full path)
+      description: POST because the selection (up to 1,000 IDs) is sent in the body; nothing changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkTargetQuery"
+      responses:
+        "200":
+          description: The first 100 allowed targets, sorted by path, and how many there are.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkTargetPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/bulk-actions/preview:
+    post:
+      tags: [Bulk actions]
+      operationId: previewBulkAction
+      summary: What a bulk action would do - counts, re-approvals, effects and every skip reason - without saving
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkActionRequest"
+      responses:
+        "200":
+          description: The preview (preview true, id null).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/bulk-actions:
+    post:
+      tags: [Bulk actions]
+      operationId: runBulkAction
+      summary: Run a bulk action on the selected records
+      description: Each record is changed, skipped (a rule prevents it) or failed (it no longer exists). Every change is in the activity log with the action's note.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkActionRequest"
+      responses:
+        "201":
+          description: Done.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/bulk-actions/{bulkActionId}/undo:
+    post:
+      tags: [Bulk actions]
+      operationId: undoBulkDelete
+      summary: Undo a bulk delete - every deleted record comes back in one step (within 2 minutes)
+      parameters:
+        - $ref: "#/components/parameters/BulkActionId"
+      responses:
+        "200":
+          description: Everything restored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkUndoResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/imports:
+    get:
+      tags: [Imports]
+      operationId: listPlanImports
+      summary: The plan's imports, newest first, and whether it can take an import now
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: The imports.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanImportPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Imports]
+      operationId: importActivities
+      summary: Import the confirmed rows of a file as Created activities
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportRun"
+      responses:
+        "201":
+          description: Imported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/imports/check:
+    post:
+      tags: [Imports]
+      operationId: checkImportFile
+      summary: Check a filled template - every problem of every row at once; nothing is created
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportUpload"
+      responses:
+        "200":
+          description: The check.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportCheck"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/plans/{planId}/import-template:
+    get:
+      tags: [Imports]
+      operationId: getImportTemplate
+      summary: The import template made for this plan (.xlsx)
+      description: Refused with validation_failed until the plan has a campaign and an initiative.
+      parameters:
+        - $ref: "#/components/parameters/PlanId"
+      responses:
+        "200":
+          description: The template. Its name is in Content-Disposition (NorthStar import template – <plan>.xlsx).
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/imports/{importId}:
+    get:
+      tags: [Imports]
+      operationId: getImport
+      summary: One import with its results and what Undo import would do
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: The import.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/imports/{importId}/undo:
+    post:
+      tags: [Imports]
+      operationId: undoImport
+      summary: Move every record the import created, with anything added under them since, to the recycle bin
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: Undone.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    BulkActionId:
+      name: bulkActionId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: BLK-1001
+    ImportId:
+      name: importId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: IMP-1001
+
+  schemas:
+    BulkLevel:
+      type: string
+      enum: [campaign, initiative, activity]
+
+    BulkActionKind:
+      type: string
+      enum: [changeOwner, changeField, submit, copy, move, delete]
+
+    BulkFieldValue:
+      type: object
+      additionalProperties: false
+      description: One of date, optionIds or yesNo, by the field's kind.
+      properties:
+        date:
+          type: string
+          format: date
+        optionIds:
+          type: array
+          description: Option IDs (one for a single choice, the activity type or the approval workflow); chosen values replace the old ones.
+          items:
+            type: string
+        yesNo:
+          type: boolean
+
+    BulkFieldChange:
+      type: object
+      additionalProperties: false
+      required: [key, value]
+      properties:
+        key:
+          type: string
+          example: attr.company-code
+        value:
+          description: null = Clear the value (not for required fields).
+          oneOf:
+            - $ref: "#/components/schemas/BulkFieldValue"
+            - type: "null"
+
+    BulkActionRequest:
+      type: object
+      additionalProperties: false
+      required: [action, recordIds]
+      properties:
+        action:
+          $ref: "#/components/schemas/BulkActionKind"
+        recordIds:
+          type: array
+          description: Campaign, initiative and activity IDs; 1 to 1,000 (more is refused with a message).
+          items:
+            type: string
+            example: A-1001
+        ownerId:
+          type: string
+          description: changeOwner - the new owner (an active person).
+        field:
+          $ref: "#/components/schemas/BulkFieldChange"
+        targetId:
+          type: string
+          description: copy and move - a plan, campaign or initiative, one level above the selection.
+        restartApproval:
+          type: boolean
+          default: false
+          description: changeField - false leaves Submitted and Approved activities unchanged when the change needs approval again; true changes them and sends them back to Created.
+        comment:
+          type: string
+          description: submit - an optional comment for the approvers (at most 2,000 characters).
+
+    BulkRecordRef:
+      type: object
+      additionalProperties: false
+      required: [recordId, level, name, planId]
+      properties:
+        recordId:
+          type: string
+        level:
+          $ref: "#/components/schemas/BulkLevel"
+        name:
+          type: string
+        planId:
+          type: string
+        status:
+          type: string
+          description: Activities - the status shown, e.g. Approved.
+
+    BulkOutcome:
+      type: object
+      additionalProperties: false
+      required: [recordId, level, name, planId, outcome, reasons]
+      properties:
+        recordId:
+          type: string
+        level:
+          $ref: "#/components/schemas/BulkLevel"
+        name:
+          type: string
+        planId:
+          type: string
+        outcome:
+          type: string
+          enum: [done, skipped, failed]
+        reasons:
+          type: array
+          description: Every reason, in plain language (empty when done).
+          items:
+            type: string
+        newRecordId:
+          type: string
+          description: copy - the ID of the copy.
+
+    BulkEffect:
+      type: object
+      additionalProperties: false
+      required: [kind, count, text]
+      properties:
+        kind:
+          type: string
+          enum: [typeNotAllowedSkipped, typeNotAllowedKept, goalsRecalculated, groupsHidden, groupsAdded, totalsUpdate, dependentCleared]
+        count:
+          type: integer
+        text:
+          type: string
+          example: MQL and revenue recalculated with the model 'Mobility 1.0' for 4 activities
+
+    BulkLevelCounts:
+      type: object
+      additionalProperties: false
+      required: [campaigns, initiatives, activities]
+      properties:
+        campaigns:
+          type: integer
+        initiatives:
+          type: integer
+        activities:
+          type: integer
+
+    BulkBelowCounts:
+      type: object
+      additionalProperties: false
+      required: [campaigns, initiatives, activities, lineItems]
+      properties:
+        campaigns:
+          type: integer
+        initiatives:
+          type: integer
+        activities:
+          type: integer
+        lineItems:
+          type: integer
+
+    BulkDeleteSummary:
+      type: object
+      additionalProperties: false
+      required: [selected, below, submittedOrApproved]
+      properties:
+        selected:
+          $ref: "#/components/schemas/BulkLevelCounts"
+        below:
+          $ref: "#/components/schemas/BulkBelowCounts"
+        submittedOrApproved:
+          type: integer
+
+    BulkCounts:
+      type: object
+      additionalProperties: false
+      required: [done, skipped, failed]
+      properties:
+        done:
+          type: integer
+        skipped:
+          type: integer
+        failed:
+          type: integer
+
+    BulkActionResult:
+      type: object
+      additionalProperties: false
+      required: [id, preview, action, verb, note, selected, counts, outcomes, reapproval, effects, deleteSummary, recycleBinEntries, undoAvailableUntil]
+      properties:
+        id:
+          description: The bulk action's ID (null for a preview).
+          oneOf:
+            - type: string
+            - type: "null"
+        preview:
+          type: boolean
+        action:
+          $ref: "#/components/schemas/BulkActionKind"
+        verb:
+          type: string
+          enum: [changed, submitted, copied, moved, deleted]
+        note:
+          type: string
+          description: The note written into every activity-log entry of the action.
+          example: Bulk change of 20 activities (BLK-1001)
+        selected:
+          $ref: "#/components/schemas/BulkLevelCounts"
+        counts:
+          $ref: "#/components/schemas/BulkCounts"
+        outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkOutcome"
+        reapproval:
+          type: array
+          description: changeField - Submitted or Approved activities whose change needs approval again.
+          items:
+            $ref: "#/components/schemas/BulkRecordRef"
+        effects:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkEffect"
+        deleteSummary:
+          oneOf:
+            - $ref: "#/components/schemas/BulkDeleteSummary"
+            - type: "null"
+        recycleBinEntries:
+          type: array
+          description: delete - one entry per top-level deleted record.
+          items:
+            $ref: "#/components/schemas/RecycleBinEntry"
+        undoAvailableUntil:
+          description: delete - until when Undo is accepted.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+
+    BulkUndoResult:
+      type: object
+      additionalProperties: false
+      required: [bulkActionId, restored]
+      properties:
+        bulkActionId:
+          type: string
+        restored:
+          type: array
+          items:
+            $ref: "#/components/schemas/RestoreResult"
+
+    BulkFieldOption:
+      type: object
+      additionalProperties: false
+      required: [id, label, parentOptionIds]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        parentOptionIds:
+          type: array
+          description: Dependent attributes - the parent options it fits.
+          items:
+            type: string
+
+    BulkField:
+      type: object
+      additionalProperties: false
+      required: [key, label, kind, required, options, dependsOn, condition]
+      properties:
+        key:
+          type: string
+          example: startDate
+        label:
+          type: string
+        kind:
+          type: string
+          enum: [date, singleChoice, multipleChoice, yesNo]
+        required:
+          type: boolean
+          description: true = Clear the value is not offered.
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkFieldOption"
+        dependsOn:
+          description: The key of the parent attribute, for dependent options.
+          oneOf:
+            - type: string
+            - type: "null"
+        condition:
+          description: The business-unit condition in words, e.g. Shown when the plan's business unit includes Lubricants.
+          oneOf:
+            - type: string
+            - type: "null"
+
+    BulkFieldList:
+      type: object
+      additionalProperties: false
+      required: [level, items, total, notOffered]
+      properties:
+        level:
+          $ref: "#/components/schemas/BulkLevel"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkField"
+        total:
+          type: integer
+        notOffered:
+          type: string
+          example: Names, IDs, money, calculated fields, Ongoing and % split fields are edited one record at a time.
+
+    BulkTargetQuery:
+      type: object
+      additionalProperties: false
+      required: [action, recordIds]
+      properties:
+        action:
+          type: string
+          enum: [copy, move]
+        recordIds:
+          type: array
+          items:
+            type: string
+        search:
+          type: string
+
+    BulkTarget:
+      type: object
+      additionalProperties: false
+      required: [id, level, name, path, planId, year]
+      properties:
+        id:
+          type: string
+        level:
+          type: string
+          enum: [plan, campaign, initiative]
+        name:
+          type: string
+        path:
+          type: string
+          example: FY2026 Lubricants Europe › Rimula fleet › Events
+        planId:
+          type: string
+        year:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    BulkTargetPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, note]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkTarget"
+        total:
+          type: integer
+        note:
+          description: Why there is no target, e.g. Move works within one plan — select records of one plan.
+          oneOf:
+            - type: string
+            - type: "null"
+
+    ImportUpload:
+      type: object
+      additionalProperties: false
+      required: [fileName, content, createMissing]
+      properties:
+        fileName:
+          type: string
+          example: mobility-china.xlsx
+        content:
+          type: string
+          contentEncoding: base64
+          description: The file, base64-encoded (at most 5 MB before encoding).
+        createMissing:
+          type: boolean
+          description: Create missing campaigns and initiatives.
+
+    ImportRun:
+      type: object
+      additionalProperties: false
+      required: [fileName, content, createMissing, rows]
+      properties:
+        fileName:
+          type: string
+        content:
+          type: string
+          contentEncoding: base64
+        createMissing:
+          type: boolean
+        rows:
+          type: array
+          description: The row numbers the user confirmed (the ready rows of the check).
+          items:
+            type: integer
+
+    ImportProblem:
+      type: object
+      additionalProperties: false
+      required: [row, column, value, reason]
+      properties:
+        row:
+          type: integer
+          description: The spreadsheet's own row number.
+        column:
+          type: string
+          description: The column heading ("" for a problem of the whole row).
+        value:
+          type: string
+          description: The value found.
+        reason:
+          type: string
+        outcome:
+          type: string
+          enum: [leftOut, failed]
+          description: Import results only.
+
+    ImportNewInitiative:
+      type: object
+      additionalProperties: false
+      required: [campaign, name]
+      properties:
+        campaign:
+          type: string
+        name:
+          type: string
+
+    ImportWillCreate:
+      type: object
+      additionalProperties: false
+      required: [campaigns, initiatives]
+      properties:
+        campaigns:
+          type: array
+          items:
+            type: string
+        initiatives:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportNewInitiative"
+
+    ImportCheck:
+      type: object
+      additionalProperties: false
+      required: [fileName, rows, ready, withProblems, readyRows, problems, ignoredColumns, willCreate, needMoreFields]
+      properties:
+        fileName:
+          type: string
+        rows:
+          type: integer
+        ready:
+          type: integer
+        withProblems:
+          type: integer
+        readyRows:
+          type: array
+          description: Row numbers of the ready rows (sent back by Import N activities).
+          items:
+            type: integer
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportProblem"
+        ignoredColumns:
+          type: array
+          items:
+            type: string
+        willCreate:
+          $ref: "#/components/schemas/ImportWillCreate"
+        needMoreFields:
+          type: integer
+          description: Ready rows whose activity will still miss a needed-to-submit field.
+
+    ImportRecordRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, exists]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        exists:
+          type: boolean
+          description: false when it has been deleted since.
+
+    ImportUndoPreview:
+      type: object
+      additionalProperties: false
+      required: [activities, campaigns, initiatives, changedSinceImport, addedSinceImport, alreadyDeleted]
+      properties:
+        activities:
+          type: integer
+        campaigns:
+          type: integer
+        initiatives:
+          type: integer
+        changedSinceImport:
+          type: integer
+        addedSinceImport:
+          type: integer
+        alreadyDeleted:
+          type: integer
+
+    ImportSummary:
+      type: object
+      additionalProperties: false
+      required: [id, planId, fileName, status, importedAt, importedBy, rowsRead, activitiesImported, campaignsCreated, initiativesCreated, rowsLeftOut, rowsFailed, undoneAt, undoneBy]
+      properties:
+        id:
+          type: string
+          example: IMP-1001
+        planId:
+          type: string
+        fileName:
+          type: string
+        status:
+          type: string
+          enum: [imported, undone]
+        importedAt:
+          type: string
+          format: date-time
+        importedBy:
+          $ref: "#/components/schemas/ActorRef"
+        rowsRead:
+          type: integer
+        activitiesImported:
+          type: integer
+        campaignsCreated:
+          type: integer
+        initiativesCreated:
+          type: integer
+        rowsLeftOut:
+          type: integer
+        rowsFailed:
+          type: integer
+        undoneAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        undoneBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+
+    ImportDetail:
+      type: object
+      additionalProperties: false
+      required: [import, problems, activities, campaigns, initiatives, undo]
+      properties:
+        import:
+          $ref: "#/components/schemas/ImportSummary"
+        problems:
+          type: array
+          description: Rows left out and rows that failed, with their reasons.
+          items:
+            $ref: "#/components/schemas/ImportProblem"
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRecordRef"
+        campaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRecordRef"
+        initiatives:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRecordRef"
+        undo:
+          description: What Undo import would do; null once undone.
+          oneOf:
+            - $ref: "#/components/schemas/ImportUndoPreview"
+            - type: "null"
+
+    PlanImportPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, canImport, cannotImportReason]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportSummary"
+        total:
+          type: integer
+        canImport:
+          type: boolean
+        cannotImportReason:
+          oneOf:
+            - type: string
+            - type: "null"
+          example: Add at least one campaign and one initiative to this plan before importing activities

@@ -1,0 +1,788 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 007 Line items (fragment)
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT. Only the paths, parameters and component schemas that feature 007 adds. The consolidation
+    step merges them into backend/api/openapi.yaml; every $ref below is written as it will read there.
+
+    Components reused from feature 001: responses BadRequest, Unauthorized, NotFound, Conflict, Error;
+    schemas DeleteResult, RecordRef, ActorRef.
+    Components expected from other features (see plan.md, "Dependencies"):
+    - Money (002): {"amount": "1234.50", "currency": "USD"}; amount is a decimal string with two
+      decimals and may be negative (an unassigned balance can be below zero).
+    - AttributeValues (002): a record's Shell attribute values, keyed by attribute id.
+    - PersonRef (003): {id, name, initials, active}.
+    - SpreadMethod (004, the plan's default line-item spread): enum evenly, firstMonth, lastMonth, custom.
+    - MissingField (002, completeness lists): {field, label, reason?}.
+    - ActivityStatus (006): the stored activity statuses created, submitted, declined, approved.
+    - parameter ActivityId (006): path parameter activityId, example A-1042.
+    - The re-approval confirmation of 006 (D-189): restartApproval true in the body (DELETE: query parameter);
+      without it a change that would send a Submitted or Approved activity back for approval answers
+      400 validation_failed with a problem on the field restartApproval.
+
+    Conventions (feature 001 research R9, R10): camelCase; dates YYYY-MM-DD; timestamps UTC; lists answer
+    {"items": [...]} plus the summaries the spec asks for; every update sends the version it started
+    from; deletes answer DeleteResult. Amounts the API returns are Money objects; amounts a client sends
+    are decimal strings in the line item's currency (field currency) with at most two decimals; more
+    decimals answer validation_failed (002's MoneyInput rule, D-190).
+tags:
+  - name: Line items
+    description: The costs of an activity — currency, spread over months, finance coding, finance budget link, SWBS request (feature 007)
+
+paths:
+  /api/activities/{activityId}/line-items:
+    get:
+      tags: [Line items]
+      operationId: listActivityLineItems
+      summary: The Line items section of an activity — its line items, unassigned planned cost and spread grid
+      description: Line items in creation order, each with its USD amount at the current rate, spread, completeness and SWBS request status; the unassigned planned cost (Sys_Gen_Balance); and the month-by-month grid in USD.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: The activity's line items with their summaries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineItemSection"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Line items]
+      operationId: createLineItem
+      summary: Add a line item to an activity
+      description: |
+        Only name, currency and planned cost are required to save (FR-009). On a Submitted or Approved
+        activity the request must confirm that the activity goes back for approval
+        (restartApproval true); otherwise nothing is saved and the answer is 400
+        validation_failed on restartApproval.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LineItemCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activities/{activityId}/line-items/form-options:
+    get:
+      tags: [Line items]
+      operationId: getLineItemFormOptions
+      summary: What a new line item of this activity starts with, and the choices the line-item form offers
+      description: The defaults of FR-008 with their sources, the active currencies, the finance budget years and their active items (FR-015), the activity's context and its current unassigned planned cost. The edit form uses the same choices; a value already on the line item that is no longer offered (an inactive currency or item) comes with the line item itself.
+      parameters:
+        - $ref: "#/components/parameters/ActivityId"
+      responses:
+        "200":
+          description: Defaults and choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineItemFormOptions"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/line-items/{lineItemId}:
+    get:
+      tags: [Line items]
+      operationId: getLineItem
+      summary: One line item with its activity's context and unassigned planned cost
+      parameters:
+        - $ref: "#/components/parameters/LineItemId"
+      responses:
+        "200":
+          description: The line item.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineItemDetails"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Line items]
+      operationId: updateLineItem
+      summary: Save a line item (the whole form and the version it started from)
+      description: |
+        Every editable field is sent, with the version the person started editing from. Changing the
+        planned cost or the currency of a line item of a Submitted or Approved activity needs
+        restartApproval true (400 validation_failed on restartApproval otherwise); other changes never change
+        the activity's status (FR-032). A save that changes nothing creates no new version.
+      parameters:
+        - $ref: "#/components/parameters/LineItemId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LineItemUpdate"
+      responses:
+        "200":
+          description: The line item after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Line items]
+      operationId: deleteLineItem
+      summary: Delete a line item (it goes to the recycle bin)
+      description: On a Submitted or Approved activity the query parameter restartApproval must be true (400 validation_failed on restartApproval otherwise); the activity then returns to Created.
+      parameters:
+        - $ref: "#/components/parameters/LineItemId"
+        - $ref: "#/components/parameters/RestartApproval"
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/line-items/{lineItemId}/duplicate:
+    post:
+      tags: [Line items]
+      operationId: duplicateLineItem
+      summary: Duplicate a line item in the same activity
+      description: The copy has every value, a new ID and the name "<name> (copy)", "(copy 2)", … (FR-029). Counts as adding a line item (restartApproval on a Submitted or Approved activity).
+      parameters:
+        - $ref: "#/components/parameters/LineItemId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LineItemDuplicate"
+      responses:
+        "201":
+          description: The copy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    LineItemId:
+      name: lineItemId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: L-1001
+    RestartApproval:
+      name: restartApproval
+      in: query
+      required: false
+      description: True when the person confirmed "This activity will need approval again" (needed only while the activity is Submitted or Approved).
+      schema:
+        type: boolean
+        default: false
+
+  schemas:
+    SwbsStatus:
+      type: string
+      description: notRequested when Request SWBS code from GSAP is off; waitingForApproval while the activity is not Approved; readyToSend once it is Approved (domain model §2.4).
+      enum: [notRequested, waitingForApproval, readyToSend]
+
+    LineItemCurrency:
+      type: object
+      additionalProperties: false
+      description: A currency as the line-item screens need it.
+      required: [code, name, symbol, ratePerUsd, active]
+      properties:
+        code:
+          type: string
+          example: EUR
+        name:
+          type: string
+          example: Euro
+        symbol:
+          type: string
+          description: Empty when none is set.
+          example: "€"
+        ratePerUsd:
+          type: string
+          description: The current rate in units of this currency per 1 USD, as a decimal string with up to six decimals (USD is 1).
+          example: "0.92"
+        active:
+          type: boolean
+          description: False for an inactive currency, kept on a line item and still converting at its last rate.
+
+    FinanceBudgetItemRef:
+      type: object
+      additionalProperties: false
+      required: [id, year, budgetName, name, code, active]
+      properties:
+        id:
+          type: string
+        year:
+          type: integer
+          example: 2026
+        budgetName:
+          type: string
+          example: 2026 Lubricants Budget
+        name:
+          type: string
+          example: Europe – Digital
+        code:
+          type: string
+          description: Empty when the item has no code.
+          example: LUB-EU-DIG
+        active:
+          type: boolean
+
+    SpreadMonth:
+      type: object
+      additionalProperties: false
+      required: [month, amount, amountUsd, outsideActivityDates]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          example: 2026-03
+        amount:
+          description: The month's amount in the line item's currency.
+          $ref: "#/components/schemas/Money"
+        amountUsd:
+          description: The month's amount in USD; the rounding cent is in the last month with an amount, so the months add up exactly (D-024).
+          $ref: "#/components/schemas/Money"
+        outsideActivityDates:
+          type: boolean
+          description: True for a custom month outside the activity's dates (allowed, e.g. a deposit).
+
+    Spread:
+      type: object
+      additionalProperties: false
+      required: [method, state, months, customTotal, addsUp]
+      properties:
+        method:
+          $ref: "#/components/schemas/SpreadMethod"
+        state:
+          type: string
+          description: notSpread when the method is evenly, firstMonth or lastMonth and the activity has no dates yet (its amount is then in the grid's No dates yet column); spread otherwise.
+          enum: [spread, notSpread]
+        months:
+          type: array
+          description: The month amounts, sorted by month; empty when notSpread.
+          items:
+            $ref: "#/components/schemas/SpreadMonth"
+        customTotal:
+          description: The sum of the custom month amounts in the line item's currency; null for the other methods.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        addsUp:
+          type: boolean
+          description: Always true for evenly, firstMonth and lastMonth; for custom, true when the months add up exactly to the planned cost.
+
+    SpreadMonthInput:
+      type: object
+      additionalProperties: false
+      required: [month, amount]
+      properties:
+        month:
+          type: string
+          description: YYYY-MM, from January of the plan's year − 1 to December of the plan's year + 10.
+          example: 2026-02
+        amount:
+          type: string
+          description: Decimal amount in the line item's currency, 0 or more.
+          example: "2000.00"
+
+    SpreadInput:
+      type: object
+      additionalProperties: false
+      required: [method, months]
+      properties:
+        method:
+          $ref: "#/components/schemas/SpreadMethod"
+        months:
+          type: array
+          description: The custom month amounts; stored only when method is custom (an empty list is stored otherwise).
+          items:
+            $ref: "#/components/schemas/SpreadMonthInput"
+
+    LineItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - activityId
+        - name
+        - owner
+        - description
+        - currency
+        - plannedCost
+        - plannedCostUsd
+        - spread
+        - attributes
+        - contractedAmount
+        - requestSwbs
+        - swbsStatus
+        - financeBudgetYear
+        - financeBudgetItem
+        - missing
+        - version
+        - createdAt
+        - createdBy
+        - updatedAt
+        - updatedBy
+      properties:
+        id:
+          type: string
+          example: L-1001
+        activityId:
+          type: string
+          example: A-1042
+        name:
+          type: string
+          example: Agency fee
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        description:
+          type: string
+        currency:
+          $ref: "#/components/schemas/LineItemCurrency"
+        plannedCost:
+          description: Planned cost in the line item's currency.
+          $ref: "#/components/schemas/Money"
+        plannedCostUsd:
+          description: Planned cost converted to USD at the currency's current rate, rounded half-up to the cent (domain model §4.3).
+          $ref: "#/components/schemas/Money"
+        spread:
+          $ref: "#/components/schemas/Spread"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        contractedAmount:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        requestSwbs:
+          type: boolean
+        swbsStatus:
+          $ref: "#/components/schemas/SwbsStatus"
+        financeBudgetYear:
+          oneOf:
+            - type: integer
+            - type: "null"
+        financeBudgetItem:
+          oneOf:
+            - $ref: "#/components/schemas/FinanceBudgetItemRef"
+            - type: "null"
+        missing:
+          type: array
+          description: What still blocks submitting the activity, in order — empty needed-to-submit fields, an inactive finance budget item, a custom spread that doesn't add up (FR-028). Empty when all is filled in.
+          items:
+            $ref: "#/components/schemas/MissingField"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    LineItemActivity:
+      type: object
+      additionalProperties: false
+      description: What the line-item screens need to know about the activity.
+      required: [id, name, status, restartsApproval, startDate, endDate, ongoing, plannedCost, path, planYear, defaultSpreadMethod, defaultFinanceBudget]
+      properties:
+        id:
+          type: string
+          example: A-1042
+        name:
+          type: string
+          example: Launch film
+        status:
+          $ref: "#/components/schemas/ActivityStatus"
+        restartsApproval:
+          type: boolean
+          description: True while the activity is Submitted or Approved — adding, duplicating or deleting a line item, or changing its planned cost or currency, then sends it back to Created after confirmation.
+        startDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        endDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        ongoing:
+          type: boolean
+        plannedCost:
+          description: The activity's planned cost in USD; null while it has none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        path:
+          type: array
+          description: The activity's plan, campaign and initiative, top level first (for the breadcrumb).
+          items:
+            $ref: "#/components/schemas/RecordRef"
+        planYear:
+          type: integer
+          example: 2026
+        defaultSpreadMethod:
+          $ref: "#/components/schemas/SpreadMethod"
+        defaultFinanceBudget:
+          description: The name of the plan's default finance budget (of the plan's year); null when none is set.
+          oneOf:
+            - type: string
+            - type: "null"
+
+    UnassignedBalance:
+      type: object
+      additionalProperties: false
+      description: Unassigned planned cost (Sys_Gen_Balance) = activity planned cost − sum of its line items' USD planned costs (domain model §4.3).
+      required: [plannedCost, assigned, balance, state, roundingHint]
+      properties:
+        plannedCost:
+          description: The activity's planned cost (USD); null while it has none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        assigned:
+          description: Sum of the line items' planned costs in USD.
+          $ref: "#/components/schemas/Money"
+        balance:
+          description: Negative when line items exceed the planned cost; null while the activity has no planned cost.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        state:
+          type: string
+          enum: [left, allAssigned, exceeded, noPlannedCost]
+        roundingHint:
+          type: boolean
+          description: True when a few cents (at most 0.05 USD) remain either way and a line item uses another currency than USD.
+
+    SpreadGridColumn:
+      type: object
+      additionalProperties: false
+      required: [key, month, outsideActivityDates]
+      properties:
+        key:
+          type: string
+          description: The month (YYYY-MM) or noDates.
+          example: 2026-03
+        month:
+          oneOf:
+            - type: string
+            - type: "null"
+          description: The month (YYYY-MM); null for the No dates yet column.
+        outsideActivityDates:
+          type: boolean
+
+    SpreadGridRow:
+      type: object
+      additionalProperties: false
+      required: [lineItemId, name, cells, total]
+      properties:
+        lineItemId:
+          type: string
+        name:
+          type: string
+        cells:
+          type: array
+          description: One per column, in USD; null where the line item has nothing.
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        total:
+          $ref: "#/components/schemas/Money"
+
+    SpreadGrid:
+      type: object
+      additionalProperties: false
+      description: The activity's line items by month, in USD (FR-003, FR-020). Quarterly is calculated by the web app.
+      required: [columns, rows, totals, total]
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpreadGridColumn"
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpreadGridRow"
+        totals:
+          type: array
+          description: The total of each column; null when every cell of the column is empty.
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        total:
+          $ref: "#/components/schemas/Money"
+
+    LineItemSection:
+      type: object
+      additionalProperties: false
+      required: [activity, items, balance, grid]
+      properties:
+        activity:
+          $ref: "#/components/schemas/LineItemActivity"
+        items:
+          type: array
+          description: The activity's line items in creation order.
+          items:
+            $ref: "#/components/schemas/LineItem"
+        balance:
+          $ref: "#/components/schemas/UnassignedBalance"
+        grid:
+          $ref: "#/components/schemas/SpreadGrid"
+
+    LineItemDetails:
+      type: object
+      additionalProperties: false
+      required: [lineItem, activity, balance]
+      properties:
+        lineItem:
+          $ref: "#/components/schemas/LineItem"
+        activity:
+          $ref: "#/components/schemas/LineItemActivity"
+        balance:
+          description: The activity's unassigned planned cost now, with this line item included.
+          $ref: "#/components/schemas/UnassignedBalance"
+
+    LineItemDefaults:
+      type: object
+      additionalProperties: false
+      description: What a new line item starts with (FR-008). The web app labels each value with its source.
+      required: [name, owner, currency, plannedCost, plannedCostSource, spreadMethod, financeBudgetYear, financeBudgetItemId, financeBudgetItemPreselected, requestSwbs]
+      properties:
+        name:
+          type: string
+          example: Launch film – line item
+        owner:
+          description: The activity's owner; null when it has none.
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        currency:
+          type: string
+          example: USD
+        plannedCost:
+          description: The unassigned planned cost (USD) when it is above 0.00; null otherwise.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCostSource:
+          type: string
+          enum: [unassignedBalance, nothingLeftToAssign, noActivityPlannedCost]
+        spreadMethod:
+          $ref: "#/components/schemas/SpreadMethod"
+        financeBudgetYear:
+          type: integer
+          description: The plan's year.
+        financeBudgetItemId:
+          description: The only active item of the plan's default finance budget, when it has exactly one (R12); null otherwise.
+          oneOf:
+            - type: string
+            - type: "null"
+        financeBudgetItemPreselected:
+          type: boolean
+        requestSwbs:
+          type: boolean
+          const: true
+
+    LineItemFormOptions:
+      type: object
+      additionalProperties: false
+      required: [activity, balance, defaults, currencies, financeBudgetYears, financeBudgetItems]
+      properties:
+        activity:
+          $ref: "#/components/schemas/LineItemActivity"
+        balance:
+          $ref: "#/components/schemas/UnassignedBalance"
+        defaults:
+          $ref: "#/components/schemas/LineItemDefaults"
+        currencies:
+          type: array
+          description: The active currencies, USD first, then by code.
+          items:
+            $ref: "#/components/schemas/LineItemCurrency"
+        financeBudgetYears:
+          type: array
+          description: The plan's year and every year with active finance budget items, ascending.
+          items:
+            type: integer
+        financeBudgetItems:
+          type: array
+          description: The active items of those years — by year, then the plan's default finance budget first (in the plan's year), then by budget name and item name.
+          items:
+            $ref: "#/components/schemas/FinanceBudgetItemRef"
+
+    LineItemCreate:
+      type: object
+      additionalProperties: false
+      required: [name, ownerId, description, currency, plannedCost, spread, attributes, contractedAmount, requestSwbs, financeBudgetYear, financeBudgetItemId]
+      properties:
+        name:
+          type: string
+        ownerId:
+          description: A person id; null for no owner.
+          oneOf:
+            - type: string
+            - type: "null"
+        description:
+          type: string
+        currency:
+          type: string
+          description: The line item's currency (ISO code); every amount of the request is in it.
+          example: EUR
+        plannedCost:
+          description: Decimal amount in the currency; null when the field is empty (refused with "Enter the planned cost.").
+          oneOf:
+            - type: string
+            - type: "null"
+          example: "46000.00"
+        spread:
+          $ref: "#/components/schemas/SpreadInput"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        contractedAmount:
+          description: Decimal amount in the currency; null when empty.
+          oneOf:
+            - type: string
+            - type: "null"
+        requestSwbs:
+          type: boolean
+        financeBudgetYear:
+          oneOf:
+            - type: integer
+            - type: "null"
+        financeBudgetItemId:
+          oneOf:
+            - type: string
+            - type: "null"
+        restartApproval:
+          type: boolean
+          default: false
+          description: True when the person confirmed "This activity will need approval again".
+
+    LineItemUpdate:
+      type: object
+      additionalProperties: false
+      required: [name, ownerId, description, currency, plannedCost, spread, attributes, contractedAmount, requestSwbs, financeBudgetYear, financeBudgetItemId, version]
+      properties:
+        name:
+          type: string
+        ownerId:
+          oneOf:
+            - type: string
+            - type: "null"
+        description:
+          type: string
+        currency:
+          type: string
+        plannedCost:
+          oneOf:
+            - type: string
+            - type: "null"
+        spread:
+          $ref: "#/components/schemas/SpreadInput"
+        attributes:
+          $ref: "#/components/schemas/AttributeValues"
+        contractedAmount:
+          oneOf:
+            - type: string
+            - type: "null"
+        requestSwbs:
+          type: boolean
+        financeBudgetYear:
+          oneOf:
+            - type: integer
+            - type: "null"
+        financeBudgetItemId:
+          oneOf:
+            - type: string
+            - type: "null"
+        restartApproval:
+          type: boolean
+          default: false
+        version:
+          type: integer
+          description: The version the person started editing from.
+
+    LineItemDuplicate:
+      type: object
+      additionalProperties: false
+      properties:
+        restartApproval:
+          type: boolean
+          default: false

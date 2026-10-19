@@ -1,0 +1,2433 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API - feature 002 fragment (Settings and Shell attributes)
+  version: 0.2.0
+  description: |
+    FRAGMENT of backend/api/openapi.yaml: only the paths and component schemas of feature 002. The
+    consolidation step merges it into the one contract. References to #/components/... that are not defined
+    here are feature 001's (Error responses, DeleteResult, ActorRef, RecordRef, FieldError).
+
+    Changes this feature makes to parts owned by feature 001 (plan "Changes to shared parts"):
+    - Error.code enum gains "in_use" (409: a Settings record in use cannot be deleted; set it inactive
+      instead) and "cannot_restore" (409: a restore that cannot happen, with the reason in the message).
+    - The Conflict response description lists in_use and cannot_restore.
+
+    Conventions (feature 001 research R9, R10): JSON with camelCase; lists answer items and total; every
+    update sends the version it started from (409 version_conflict otherwise); deletes answer DeleteResult;
+    money is {"amount": "1234.50", "currency": "USD"} with a decimal string, never a number.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local API (development)
+security:
+  - sessionCookie: []
+tags:
+  - name: Settings
+    description: Settings page overview (feature 002)
+  - name: Models
+    description: Models - the rulebooks plans use (feature 002)
+  - name: Activity types
+    description: Activity types and their default planned cost (feature 002)
+  - name: Shell attributes
+    description: Shell attributes, their options, order, import and form definitions (feature 002)
+  - name: Currencies
+    description: Currencies and exchange rates per 1 USD (feature 002)
+  - name: Finance budgets
+    description: Finance budgets and finance budget items (feature 002)
+
+paths:
+  /api/settings/overview:
+    get:
+      tags: [Settings]
+      operationId: getSettingsOverview
+      summary: Count of active records per Settings section (the Settings page cards)
+      responses:
+        "200":
+          description: Active records per section.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsOverview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- Models
+  /api/models:
+    get:
+      tags: [Models]
+      operationId: listModels
+      summary: Every model (active and inactive), sorted by name ignoring letter case
+      responses:
+        "200":
+          description: The models with their usage.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Models]
+      operationId: createModel
+      summary: Create a model (FR-009)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelCreate"
+      responses:
+        "201":
+          description: Created, active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/models/{modelId}:
+    parameters:
+      - $ref: "#/components/parameters/ModelId"
+    get:
+      tags: [Models]
+      operationId: getModel
+      summary: One model with its usage and the plans using it
+      responses:
+        "200":
+          description: The model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Models]
+      operationId: updateModel
+      summary: Change a model (only the fields sent; FR-009, FR-011, FR-012)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelUpdate"
+      responses:
+        "200":
+          description: The model after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Models]
+      operationId: deleteModel
+      summary: Delete an unused model (it goes to the recycle bin); a model in use answers 409 in_use
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/models/{modelId}/impact:
+    parameters:
+      - $ref: "#/components/parameters/ModelId"
+    post:
+      tags: [Models]
+      operationId: checkModelImpact
+      summary: What a change would affect, before saving it (FR-011, FR-012). Saves nothing.
+      description: Validates the body like PATCH (validation_failed lists every problem) and returns the warnings to confirm. The version is not checked here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelUpdate"
+      responses:
+        "200":
+          description: The warnings; an empty list means nothing to confirm.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/models/{modelId}/status:
+    parameters:
+      - $ref: "#/components/parameters/ModelId"
+    post:
+      tags: [Models]
+      operationId: setModelStatus
+      summary: Set a model inactive or reactivate it (FR-004)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The model with its new status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Model"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- Activity types
+  /api/activity-types:
+    get:
+      tags: [Activity types]
+      operationId: listActivityTypes
+      summary: Every activity type (active and inactive), sorted by name ignoring letter case
+      responses:
+        "200":
+          description: The activity types with their models and usage.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityTypePage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Activity types]
+      operationId: createActivityType
+      summary: Create an activity type, optionally allowed in models (FR-013)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityTypeCreate"
+      responses:
+        "201":
+          description: Created, active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activity-types/{activityTypeId}:
+    parameters:
+      - $ref: "#/components/parameters/ActivityTypeId"
+    get:
+      tags: [Activity types]
+      operationId: getActivityType
+      summary: One activity type with its models and usage
+      responses:
+        "200":
+          description: The activity type.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityType"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Activity types]
+      operationId: updateActivityType
+      summary: Change an activity type and the models allowing it (FR-012, FR-013)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityTypeUpdate"
+      responses:
+        "200":
+          description: The activity type after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Activity types]
+      operationId: deleteActivityType
+      summary: Delete an unused activity type (not used by activities and not allowed in any model)
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activity-types/{activityTypeId}/impact:
+    parameters:
+      - $ref: "#/components/parameters/ActivityTypeId"
+    post:
+      tags: [Activity types]
+      operationId: checkActivityTypeImpact
+      summary: What removing models from the type would affect, before saving (FR-012). Saves nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityTypeUpdate"
+      responses:
+        "200":
+          description: The warnings; an empty list means nothing to confirm.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/activity-types/{activityTypeId}/status:
+    parameters:
+      - $ref: "#/components/parameters/ActivityTypeId"
+    post:
+      tags: [Activity types]
+      operationId: setActivityTypeStatus
+      summary: Set an activity type inactive or reactivate it (FR-004)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The activity type with its new status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- Shell attributes
+  /api/shell-attributes:
+    get:
+      tags: [Shell attributes]
+      operationId: listShellAttributes
+      summary: The Shell attributes of one level (or of every level), in display order
+      parameters:
+        - name: level
+          in: query
+          description: Only this level's attributes. Without it, every level in the order plan, campaign, initiative, activity, lineItem.
+          schema:
+            $ref: "#/components/schemas/AttributeLevel"
+      responses:
+        "200":
+          description: The attributes in display order (sections in the order of their first attribute).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributePage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Shell attributes]
+      operationId: createShellAttribute
+      summary: Create a Shell attribute with its first options (FR-016 - FR-019, FR-022, FR-023)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShellAttributeCreate"
+      responses:
+        "201":
+          description: Created, active, last in its section.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttribute"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attributes/{attributeId}:
+    parameters:
+      - $ref: "#/components/parameters/AttributeId"
+    get:
+      tags: [Shell attributes]
+      operationId: getShellAttribute
+      summary: One Shell attribute with its locks and usage (its options are listed separately)
+      responses:
+        "200":
+          description: The attribute.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttribute"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Shell attributes]
+      operationId: updateShellAttribute
+      summary: Change a Shell attribute (FR-016 - FR-023)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShellAttributeUpdate"
+      responses:
+        "200":
+          description: The attribute after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttribute"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Shell attributes]
+      operationId: deleteShellAttribute
+      summary: Delete an unused Shell attribute and its options (they go to the recycle bin)
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attributes/{attributeId}/impact:
+    parameters:
+      - $ref: "#/components/parameters/AttributeId"
+    post:
+      tags: [Shell attributes]
+      operationId: checkShellAttributeImpact
+      summary: What a change would affect, before saving (FR-021 marking and type). Saves nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShellAttributeUpdate"
+      responses:
+        "200":
+          description: The warnings; an empty list means nothing to confirm.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attributes/{attributeId}/status:
+    parameters:
+      - $ref: "#/components/parameters/AttributeId"
+    post:
+      tags: [Shell attributes]
+      operationId: setShellAttributeStatus
+      summary: Set a Shell attribute inactive or reactivate it (FR-004, FR-023)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The attribute with its new status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttribute"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attributes/{attributeId}/move:
+    parameters:
+      - $ref: "#/components/parameters/AttributeId"
+    post:
+      tags: [Shell attributes]
+      operationId: moveShellAttribute
+      summary: Move the attribute (or its whole section) up or down on its level's form (FR-019)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttributeMove"
+      responses:
+        "200":
+          description: The level's attributes in their new display order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributePage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attributes/{attributeId}/options:
+    parameters:
+      - $ref: "#/components/parameters/AttributeId"
+    get:
+      tags: [Shell attributes]
+      operationId: listShellAttributeOptions
+      summary: The attribute's options in display order, searchable by any part of the label (FR-018, SC-007)
+      parameters:
+        - name: q
+          in: query
+          description: Only options whose label contains this text, ignoring letter case and surrounding spaces.
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: active, inactive or all (default all).
+          schema:
+            type: string
+            enum: [active, inactive, all]
+            default: all
+        - name: limit
+          in: query
+          description: How many options to return (1 to 500, default 100).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+        - name: offset
+          in: query
+          description: How many matching options to skip (default 0).
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: The matching options; total counts every matching option.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributeOptionPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Shell attributes]
+      operationId: createShellAttributeOption
+      summary: Add one option at the end of the list (FR-018, FR-022)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptionCreate"
+      responses:
+        "201":
+          description: Created, active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributeOption"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attributes/{attributeId}/options/import-check:
+    parameters:
+      - $ref: "#/components/parameters/AttributeId"
+    post:
+      tags: [Shell attributes]
+      operationId: checkShellAttributeOptionImport
+      summary: Read a CSV or Excel file and say what importing it would do, row by row (FR-031). Adds nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptionImportRequest"
+      responses:
+        "200":
+          description: Every row's outcome.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionImportCheck"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attributes/{attributeId}/options/import:
+    parameters:
+      - $ref: "#/components/parameters/AttributeId"
+    post:
+      tags: [Shell attributes]
+      operationId: importShellAttributeOptions
+      summary: Add the new valid options of the file (checked again now); never removes, renames or reactivates (FR-031)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptionImportRequest"
+      responses:
+        "200":
+          description: What was added and skipped.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionImportResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attribute-options/{optionId}:
+    parameters:
+      - $ref: "#/components/parameters/OptionId"
+    patch:
+      tags: [Shell attributes]
+      operationId: updateShellAttributeOption
+      summary: Rename an option or change its parent links (FR-018, FR-022)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptionUpdate"
+      responses:
+        "200":
+          description: The option after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributeOption"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Shell attributes]
+      operationId: deleteShellAttributeOption
+      summary: Delete an unused option (it goes to the recycle bin)
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attribute-options/{optionId}/status:
+    parameters:
+      - $ref: "#/components/parameters/OptionId"
+    post:
+      tags: [Shell attributes]
+      operationId: setShellAttributeOptionStatus
+      summary: Set an option inactive or reactivate it (FR-018)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The option with its new status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributeOption"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attribute-options/{optionId}/move:
+    parameters:
+      - $ref: "#/components/parameters/OptionId"
+    post:
+      tags: [Shell attributes]
+      operationId: moveShellAttributeOption
+      summary: Move an option one place up or down in its list (FR-018)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptionMove"
+      responses:
+        "200":
+          description: The moved option.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShellAttributeOption"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attribute-forms/{level}:
+    parameters:
+      - $ref: "#/components/parameters/LevelPath"
+    get:
+      tags: [Shell attributes]
+      operationId: getShellAttributeForm
+      summary: Everything a level's form needs to show its Shell attributes (FR-024 - FR-027; used by the preview and by features 004-007)
+      description: Every attribute of the level, active and inactive (inactive ones are shown only where a record already has a value), with every option, in display order.
+      responses:
+        "200":
+          description: The level's form definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributeForm"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/shell-attribute-forms/{level}/check:
+    parameters:
+      - $ref: "#/components/parameters/LevelPath"
+    post:
+      tags: [Shell attributes]
+      operationId: checkShellAttributeValues
+      summary: Check values exactly as a save of a record of this level would (the preview's Try saving, FR-020). Saves nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttributeCheckRequest"
+      responses:
+        "200":
+          description: Problems that would block saving, values that would be cleared, fields still needed, and the values a save would store.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributeCheckResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- Currencies
+  /api/currencies:
+    get:
+      tags: [Currencies]
+      operationId: listCurrencies
+      summary: Every currency (active and inactive), USD first, then by code
+      responses:
+        "200":
+          description: The currencies with their rates and usage.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrencyPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Currencies]
+      operationId: createCurrency
+      summary: Add a currency with its rate per 1 USD (FR-028)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrencyCreate"
+      responses:
+        "201":
+          description: Created, active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Currency"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/currencies/{code}:
+    parameters:
+      - $ref: "#/components/parameters/CurrencyCode"
+    get:
+      tags: [Currencies]
+      operationId: getCurrency
+      summary: One currency with its usage
+      responses:
+        "200":
+          description: The currency.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Currency"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Currencies]
+      operationId: updateCurrency
+      summary: Change a currency's name, symbol or rate (the code never changes; FR-028 - FR-030)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrencyUpdate"
+      responses:
+        "200":
+          description: The currency after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Currency"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Currencies]
+      operationId: deleteCurrency
+      summary: Delete an unused currency (never USD)
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/currencies/{code}/impact:
+    parameters:
+      - $ref: "#/components/parameters/CurrencyCode"
+    post:
+      tags: [Currencies]
+      operationId: checkCurrencyImpact
+      summary: Line items and activities a rate change would recalculate, with USD totals before and after (FR-030). Saves nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrencyUpdate"
+      responses:
+        "200":
+          description: The warnings; an empty list means nothing to confirm.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/currencies/{code}/status:
+    parameters:
+      - $ref: "#/components/parameters/CurrencyCode"
+    post:
+      tags: [Currencies]
+      operationId: setCurrencyStatus
+      summary: Set a currency inactive or reactivate it (never USD; FR-004, FR-028)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The currency with its new status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Currency"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  # ---------------------------------------------------------------- Finance budgets
+  /api/finance-budgets:
+    get:
+      tags: [Finance budgets]
+      operationId: listFinanceBudgets
+      summary: The finance budgets of one year with their items, sorted by budget name then item name (FR-015)
+      parameters:
+        - name: year
+          in: query
+          description: The budget year (default the current year).
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The year's budgets that have items, and the years that can be chosen.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/finance-budgets/{budgetId}:
+    parameters:
+      - $ref: "#/components/parameters/BudgetId"
+    patch:
+      tags: [Finance budgets]
+      operationId: renameFinanceBudget
+      summary: Rename budget - renames all its items at once; plans using it as their default follow (FR-015)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinanceBudgetRename"
+      responses:
+        "200":
+          description: The budget after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudget"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/finance-budget-items:
+    post:
+      tags: [Finance budgets]
+      operationId: createFinanceBudgetItem
+      summary: Create a finance budget item; its budget is created when the name is new for that year (FR-014)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinanceBudgetItemCreate"
+      responses:
+        "201":
+          description: Created, active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/finance-budget-items/{itemId}:
+    parameters:
+      - $ref: "#/components/parameters/ItemId"
+    get:
+      tags: [Finance budgets]
+      operationId: getFinanceBudgetItem
+      summary: One finance budget item with its usage
+      responses:
+        "200":
+          description: The item.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Finance budgets]
+      operationId: updateFinanceBudgetItem
+      summary: Change an item's name, code or budget (same year; FR-014)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinanceBudgetItemUpdate"
+      responses:
+        "200":
+          description: The item after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Finance budgets]
+      operationId: deleteFinanceBudgetItem
+      summary: Delete an unused finance budget item (it goes to the recycle bin)
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/finance-budget-items/{itemId}/status:
+    parameters:
+      - $ref: "#/components/parameters/ItemId"
+    post:
+      tags: [Finance budgets]
+      operationId: setFinanceBudgetItemStatus
+      summary: Set a finance budget item inactive or reactivate it (FR-004)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: The item with its new status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    ModelId:
+      name: modelId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: MOD-1001
+    ActivityTypeId:
+      name: activityTypeId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: AT-1001
+    AttributeId:
+      name: attributeId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: SA-1001
+    OptionId:
+      name: optionId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: SO-1001
+    CurrencyCode:
+      name: code
+      in: path
+      required: true
+      description: The ISO code, which is the currency's id.
+      schema:
+        type: string
+      example: EUR
+    BudgetId:
+      name: budgetId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: FB-1001
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: FBI-1001
+    LevelPath:
+      name: level
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/AttributeLevel"
+
+  schemas:
+    # ------------------------------------------------------------ money (shared by every feature)
+    Money:
+      type: object
+      additionalProperties: false
+      description: An exact amount with its currency, as the API answers it. The amount always has two decimals.
+      required: [amount, currency]
+      properties:
+        amount:
+          type: string
+          pattern: '^-?[0-9]{1,15}\.[0-9]{2}$'
+          example: "1234.50"
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          example: USD
+
+    MoneyInput:
+      type: object
+      additionalProperties: false
+      description: An amount sent to the API. The amount is a decimal string with at most two decimals ("12500", "12500.5", "12500.50"); the API checks it and answers validation_failed with a message for the field otherwise.
+      required: [amount, currency]
+      properties:
+        amount:
+          type: string
+          example: "12500.00"
+        currency:
+          type: string
+          example: USD
+
+    Percent:
+      type: string
+      description: A percentage with two decimals, as the API answers it ("2.00" means 2.00 %).
+      pattern: '^[0-9]{1,3}\.[0-9]{2}$'
+      example: "2.00"
+
+    ExchangeRate:
+      type: string
+      description: Units of a currency per 1 USD, exact to six decimals, without trailing zeros.
+      pattern: '^[0-9]{1,7}(\.[0-9]{1,6})?$'
+      example: "0.92"
+
+    # ------------------------------------------------------------ shared Settings parts
+    SettingRef:
+      type: object
+      additionalProperties: false
+      description: A Settings record referred to by another one, with its status (inactive ones are labelled "(inactive)").
+      required: [id, name, active]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+
+    UsagePart:
+      type: object
+      additionalProperties: false
+      required: [kind, text, count, inRecycleBin]
+      properties:
+        kind:
+          type: string
+          enum: [plan, campaign, initiative, activity, lineItem, person, model, dependentAttribute, condition, linkedOption]
+          description: What uses the record.
+        text:
+          type: string
+          description: The part as people read it, for example Used by 12 activities (1 in the recycle bin).
+        count:
+          type: integer
+          minimum: 1
+          description: Records using it, those in the recycle bin included.
+        inRecycleBin:
+          type: integer
+          minimum: 0
+
+    Usage:
+      type: object
+      additionalProperties: false
+      description: Where a Settings record is used (FR-003), counting records in the recycle bin.
+      required: [inUse, summary, parts, records]
+      properties:
+        inUse:
+          type: boolean
+          description: True when anything uses it; then it cannot be deleted, only set inactive.
+        summary:
+          type: string
+          description: The parts joined with " · ", or Not used yet.
+          example: Used by 2 plans
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsagePart"
+        records:
+          type: array
+          description: Models and finance budgets only - the plans using it (not in the recycle bin), sorted by name, at most 50. Empty otherwise.
+          items:
+            $ref: "#/components/schemas/RecordRef"
+
+    Lock:
+      type: object
+      additionalProperties: false
+      description: A field or action that cannot be used, and why (design system 6.6).
+      required: [field, reason]
+      properties:
+        field:
+          type: string
+          description: The locked field (type, level, code, rate, year, section, position, condition, parentAttributeId) or action (active, delete).
+          example: type
+        reason:
+          type: string
+          example: Type can't change once records use this attribute — create a new attribute instead.
+
+    ImpactWarning:
+      type: object
+      additionalProperties: false
+      required: [kind, message, count]
+      properties:
+        kind:
+          type: string
+          enum: [goalsRecalculated, activityTypeRemoved, becomesIncomplete, optionsRemoved, amountsRecalculated]
+        message:
+          type: string
+          description: The sentence to show before saving.
+        count:
+          type: integer
+          minimum: 0
+          description: How many records the warning is about.
+
+    ChangeImpact:
+      type: object
+      additionalProperties: false
+      required: [warnings]
+      properties:
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImpactWarning"
+
+    StatusUpdate:
+      type: object
+      additionalProperties: false
+      required: [active, version]
+      properties:
+        active:
+          type: boolean
+          description: false sets the record inactive; true reactivates it.
+        version:
+          type: integer
+          description: The version the user started from.
+
+    SettingsOverview:
+      type: object
+      additionalProperties: false
+      description: The number of active records of each Settings section of feature 002.
+      required: [models, activityTypes, shellAttributes, currencies, financeBudgetItems]
+      properties:
+        models:
+          type: integer
+        activityTypes:
+          type: integer
+        shellAttributes:
+          type: integer
+        currencies:
+          type: integer
+        financeBudgetItems:
+          type: integer
+
+    # ------------------------------------------------------------ models
+    Model:
+      type: object
+      additionalProperties: false
+      required: [id, name, inqToMqlRate, mqlToDealRate, averageDealSize, activityTypes, active, usage, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: MOD-1001
+        name:
+          type: string
+          example: Lubricants 1.0
+        inqToMqlRate:
+          $ref: "#/components/schemas/Percent"
+        mqlToDealRate:
+          $ref: "#/components/schemas/Percent"
+        averageDealSize:
+          $ref: "#/components/schemas/Money"
+        activityTypes:
+          type: array
+          description: The allowed activity types, sorted by name.
+          items:
+            $ref: "#/components/schemas/SettingRef"
+        active:
+          type: boolean
+        usage:
+          $ref: "#/components/schemas/Usage"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    ModelPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Model"
+        total:
+          type: integer
+
+    ModelCreate:
+      type: object
+      additionalProperties: false
+      required: [name, inqToMqlRate, mqlToDealRate, averageDealSize, activityTypeIds]
+      properties:
+        name:
+          type: string
+        inqToMqlRate:
+          type: string
+          description: Percent with at most two decimals, above 0 and at most 100; "" when not filled in.
+          example: "2"
+        mqlToDealRate:
+          type: string
+          example: "5"
+        averageDealSize:
+          description: USD; null when not filled in.
+          oneOf:
+            - $ref: "#/components/schemas/MoneyInput"
+            - type: "null"
+        activityTypeIds:
+          type: array
+          items:
+            type: string
+
+    ModelUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, and the version. Also the body of the impact check.
+      required: [version]
+      properties:
+        name:
+          type: string
+        inqToMqlRate:
+          type: string
+        mqlToDealRate:
+          type: string
+        averageDealSize:
+          oneOf:
+            - $ref: "#/components/schemas/MoneyInput"
+            - type: "null"
+        activityTypeIds:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+
+    # ------------------------------------------------------------ activity types
+    ActivityType:
+      type: object
+      additionalProperties: false
+      required: [id, name, defaultPlannedCost, models, active, usage, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: AT-1002
+        name:
+          type: string
+          example: Event
+        defaultPlannedCost:
+          description: USD, offered when someone picks this type (R7); null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        models:
+          type: array
+          description: The models that allow this type, sorted by name.
+          items:
+            $ref: "#/components/schemas/SettingRef"
+        active:
+          type: boolean
+        usage:
+          $ref: "#/components/schemas/Usage"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    ActivityTypePage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityType"
+        total:
+          type: integer
+
+    ActivityTypeCreate:
+      type: object
+      additionalProperties: false
+      required: [name, defaultPlannedCost, modelIds]
+      properties:
+        name:
+          type: string
+        defaultPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/MoneyInput"
+            - type: "null"
+        modelIds:
+          type: array
+          description: The models that allow the new type (each model's list gains it).
+          items:
+            type: string
+
+    ActivityTypeUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, and the version. defaultPlannedCost null removes the default. modelIds is the complete new list of models allowing the type. Also the body of the impact check.
+      required: [version]
+      properties:
+        name:
+          type: string
+        defaultPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/MoneyInput"
+            - type: "null"
+        modelIds:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+
+    # ------------------------------------------------------------ Shell attributes
+    AttributeLevel:
+      type: string
+      enum: [plan, campaign, initiative, activity, lineItem]
+
+    AttributeType:
+      type: string
+      enum: [singleChoice, multipleChoice, multipleChoiceSplit, yesNo, text, longText, number]
+
+    AttributeMarking:
+      type: string
+      enum: [optional, neededToPublish, neededToSubmit]
+
+    ShellAttribute:
+      type: object
+      additionalProperties: false
+      required: [id, label, helpText, level, type, marking, section, position, parentAttribute, condition, businessUnit, active, optionCount, activeOptionCount, usage, locks, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: SA-1004
+        label:
+          type: string
+          example: Region
+        helpText:
+          type: string
+          description: Empty when none.
+        level:
+          $ref: "#/components/schemas/AttributeLevel"
+        type:
+          $ref: "#/components/schemas/AttributeType"
+        marking:
+          $ref: "#/components/schemas/AttributeMarking"
+        section:
+          type: string
+          example: Shell attributes
+        position:
+          type: integer
+          minimum: 1
+        parentAttribute:
+          description: The attribute whose value limits this one's options (Depends on); null when none.
+          oneOf:
+            - $ref: "#/components/schemas/SettingRef"
+            - type: "null"
+        condition:
+          type: array
+          description: The Business unit options of which the plan must include any for this attribute to be shown; empty when always shown.
+          items:
+            $ref: "#/components/schemas/SettingRef"
+        businessUnit:
+          type: boolean
+          description: True for the plan-level Business unit attribute, which conditions depend on (FR-023).
+        active:
+          type: boolean
+        optionCount:
+          type: integer
+        activeOptionCount:
+          type: integer
+        usage:
+          $ref: "#/components/schemas/Usage"
+        locks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lock"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    ShellAttributePage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          description: In display order.
+          items:
+            $ref: "#/components/schemas/ShellAttribute"
+        total:
+          type: integer
+
+    NewOption:
+      type: object
+      additionalProperties: false
+      required: [label]
+      properties:
+        label:
+          type: string
+        parentOptionIds:
+          type: array
+          description: For a dependent attribute, the parent options it belongs to (at least one).
+          items:
+            type: string
+
+    ShellAttributeCreate:
+      type: object
+      additionalProperties: false
+      required: [label, level, type, marking]
+      properties:
+        label:
+          type: string
+        helpText:
+          type: string
+        level:
+          type: string
+          description: plan, campaign, initiative, activity or lineItem; "" when not chosen.
+        type:
+          type: string
+          description: One of AttributeType; "" when not chosen.
+        marking:
+          type: string
+          description: One of AttributeMarking; "" when not chosen.
+        section:
+          type: string
+          description: Empty means Shell attributes.
+        parentAttributeId:
+          type: string
+          description: Depends on; "" for none.
+        conditionOptionIds:
+          type: array
+          items:
+            type: string
+        options:
+          type: array
+          description: The first options of a choice attribute, in order.
+          items:
+            $ref: "#/components/schemas/NewOption"
+
+    OptionLinks:
+      type: object
+      additionalProperties: false
+      required: [optionId, parentOptionIds]
+      properties:
+        optionId:
+          type: string
+        parentOptionIds:
+          type: array
+          items:
+            type: string
+
+    ShellAttributeUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, and the version. When parentAttributeId changes to an attribute, optionLinks must link every active option. Also the body of the impact check.
+      required: [version]
+      properties:
+        label:
+          type: string
+        helpText:
+          type: string
+        level:
+          type: string
+        type:
+          type: string
+        marking:
+          type: string
+        section:
+          type: string
+        parentAttributeId:
+          type: string
+        conditionOptionIds:
+          type: array
+          items:
+            type: string
+        optionLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionLinks"
+        version:
+          type: integer
+
+    AttributeMove:
+      type: object
+      additionalProperties: false
+      required: [what, direction, version]
+      properties:
+        what:
+          type: string
+          enum: [attribute, section]
+          description: attribute moves it within its section; section moves its whole section.
+        direction:
+          type: string
+          enum: [up, down]
+        version:
+          type: integer
+          description: The version of the attribute the user started from.
+
+    ShellAttributeOption:
+      type: object
+      additionalProperties: false
+      required: [id, attributeId, label, position, parentOptions, active, usage, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: SO-1012
+        attributeId:
+          type: string
+        label:
+          type: string
+          example: RETAIL – CHINA
+        position:
+          type: integer
+          minimum: 1
+        parentOptions:
+          type: array
+          description: The parent options it is linked to (dependent attributes); empty otherwise.
+          items:
+            $ref: "#/components/schemas/SettingRef"
+        active:
+          type: boolean
+        usage:
+          $ref: "#/components/schemas/Usage"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    ShellAttributeOptionPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShellAttributeOption"
+        total:
+          type: integer
+          description: Every matching option, also those beyond limit.
+
+    OptionCreate:
+      type: object
+      additionalProperties: false
+      required: [label]
+      properties:
+        label:
+          type: string
+        parentOptionIds:
+          type: array
+          items:
+            type: string
+
+    OptionUpdate:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        label:
+          type: string
+        parentOptionIds:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+
+    OptionMove:
+      type: object
+      additionalProperties: false
+      required: [direction, version]
+      properties:
+        direction:
+          type: string
+          enum: [up, down]
+        version:
+          type: integer
+
+    OptionImportRequest:
+      type: object
+      additionalProperties: false
+      required: [fileName, content]
+      properties:
+        fileName:
+          type: string
+          example: cost-centres.xlsx
+        content:
+          type: string
+          contentEncoding: base64
+          description: The file (.csv or .xlsx, at most 700 KB) encoded as base64.
+
+    ImportRow:
+      type: object
+      additionalProperties: false
+      required: [row, label, parentLabel, message]
+      properties:
+        row:
+          type: integer
+          description: The row number in the file (the header is row 1).
+        label:
+          type: string
+        parentLabel:
+          type: string
+          description: The Parent option column (dependent attributes); empty otherwise.
+        message:
+          type: string
+          description: Why the row is skipped or has a problem; empty for rows to add.
+
+    OptionImportCheck:
+      type: object
+      additionalProperties: false
+      required: [totalRows, toAdd, alreadyPresent, problems]
+      properties:
+        totalRows:
+          type: integer
+          description: Data rows in the file (without the header).
+        toAdd:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRow"
+        alreadyPresent:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRow"
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRow"
+
+    OptionImportResult:
+      type: object
+      additionalProperties: false
+      required: [added, alreadyPresent, problems]
+      properties:
+        added:
+          type: integer
+        alreadyPresent:
+          type: integer
+        problems:
+          type: integer
+
+    # ------------------------------------------------------------ forms and values (used by 004-007)
+    FormOption:
+      type: object
+      additionalProperties: false
+      required: [id, label, active, parentOptionIds]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        active:
+          type: boolean
+        parentOptionIds:
+          type: array
+          items:
+            type: string
+
+    FormAttribute:
+      type: object
+      additionalProperties: false
+      required: [id, label, helpText, type, marking, active, parentAttributeId, conditionOptionIds, options]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        helpText:
+          type: string
+        type:
+          $ref: "#/components/schemas/AttributeType"
+        marking:
+          $ref: "#/components/schemas/AttributeMarking"
+        active:
+          type: boolean
+        parentAttributeId:
+          oneOf:
+            - type: string
+            - type: "null"
+        conditionOptionIds:
+          type: array
+          items:
+            type: string
+        options:
+          type: array
+          description: Every option in display order, inactive ones included (shown only when a record already has them).
+          items:
+            $ref: "#/components/schemas/FormOption"
+
+    FormSection:
+      type: object
+      additionalProperties: false
+      required: [name, conditional, attributes]
+      properties:
+        name:
+          type: string
+        conditional:
+          type: boolean
+          description: True when every attribute of the section has a business-unit condition.
+        attributes:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormAttribute"
+
+    AttributeForm:
+      type: object
+      additionalProperties: false
+      required: [level, sections, businessUnitAttributeId, businessUnitOptions]
+      properties:
+        level:
+          $ref: "#/components/schemas/AttributeLevel"
+        sections:
+          type: array
+          description: In the order of their first attribute.
+          items:
+            $ref: "#/components/schemas/FormSection"
+        businessUnitAttributeId:
+          description: The plan-level Business unit attribute (null when none exists).
+          oneOf:
+            - type: string
+            - type: "null"
+        businessUnitOptions:
+          type: array
+          description: The Business unit options, for condition notes and the preview.
+          items:
+            $ref: "#/components/schemas/FormOption"
+
+    SplitShare:
+      type: object
+      additionalProperties: false
+      required: [optionId, share]
+      properties:
+        optionId:
+          type: string
+        share:
+          type: string
+          description: Percent with at most two decimals, above 0.
+          example: "60.00"
+
+    AttributeValue:
+      description: "One attribute's value: an option id (single choice) or a text (text, long text); a list of option ids (multiple choice); a list of shares (multiple choice with % split); true or false (yes/no); a whole number (number); null removes the value."
+      anyOf:
+        - type: string
+        - type: boolean
+        - type: integer
+        - type: array
+          items:
+            type: string
+        - type: array
+          items:
+            $ref: "#/components/schemas/SplitShare"
+        - type: "null"
+
+    AttributeValues:
+      type: object
+      description: A record's Shell attribute values (attributes field of plans, campaigns, initiatives, activities and line items), keyed by attribute id.
+      additionalProperties:
+        $ref: "#/components/schemas/AttributeValue"
+
+    AttributeCheckRequest:
+      type: object
+      additionalProperties: false
+      required: [values]
+      properties:
+        values:
+          $ref: "#/components/schemas/AttributeValues"
+        previousValues:
+          $ref: "#/components/schemas/AttributeValues"
+        businessUnitOptionIds:
+          type: array
+          description: The plan's business unit (levels below the plan); ignored at plan level, where the values hold it.
+          items:
+            type: string
+
+    MissingField:
+      type: object
+      additionalProperties: false
+      description: A field that is still needed to publish or submit (the one MissingField of the module, used by 002-012; consolidation 2026-10-19).
+      required: [field, label]
+      properties:
+        field:
+          type: string
+          example: attributes.SA-1003
+        label:
+          type: string
+          example: Cluster
+        reason:
+          type: string
+          description: Absent or empty, or why a filled-in field still counts (for example a split that does not add up to 100 %).
+
+    ClearedValue:
+      type: object
+      additionalProperties: false
+      required: [attributeId, label, optionIds, optionLabels]
+      properties:
+        attributeId:
+          type: string
+        label:
+          type: string
+          example: Region
+        optionIds:
+          type: array
+          items:
+            type: string
+        optionLabels:
+          type: array
+          items:
+            type: string
+
+    AttributeCheckResult:
+      type: object
+      additionalProperties: false
+      required: [problems, missing, cleared, values]
+      properties:
+        problems:
+          type: array
+          description: Problems that block saving, each for field attributes.<attributeId>.
+          items:
+            $ref: "#/components/schemas/FieldError"
+        missing:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingField"
+        cleared:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClearedValue"
+        values:
+          $ref: "#/components/schemas/AttributeValues"
+
+    # ------------------------------------------------------------ currencies
+    Currency:
+      type: object
+      additionalProperties: false
+      required: [code, name, symbol, rate, inverseRate, rateChangedAt, rateChangedBy, active, usage, locks, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        code:
+          type: string
+          example: EUR
+        name:
+          type: string
+          example: Euro
+        symbol:
+          type: string
+          description: Empty when none.
+          example: €
+        rate:
+          $ref: "#/components/schemas/ExchangeRate"
+        inverseRate:
+          $ref: "#/components/schemas/ExchangeRate"
+        rateChangedAt:
+          type: string
+          format: date-time
+        rateChangedBy:
+          $ref: "#/components/schemas/ActorRef"
+        active:
+          type: boolean
+        usage:
+          $ref: "#/components/schemas/Usage"
+        locks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lock"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    CurrencyPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Currency"
+        total:
+          type: integer
+
+    CurrencyCreate:
+      type: object
+      additionalProperties: false
+      required: [code, name, rate]
+      properties:
+        code:
+          type: string
+          example: JPY
+        name:
+          type: string
+          example: Japanese yen
+        symbol:
+          type: string
+          example: ¥
+        rate:
+          type: string
+          description: Units per 1 USD, above 0, at most six decimals; "" when not filled in.
+          example: "150"
+
+    CurrencyUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, and the version. Also the body of the impact check.
+      required: [version]
+      properties:
+        name:
+          type: string
+        symbol:
+          type: string
+        rate:
+          type: string
+        version:
+          type: integer
+
+    # ------------------------------------------------------------ finance budgets
+    FinanceBudgetItem:
+      type: object
+      additionalProperties: false
+      required: [id, budgetId, budgetName, year, name, code, active, usage, locks, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: FBI-1001
+        budgetId:
+          type: string
+          example: FB-1001
+        budgetName:
+          type: string
+          example: 2026 Lubricants Budget
+        year:
+          type: integer
+          example: 2026
+        name:
+          type: string
+          example: Europe – Digital
+        code:
+          type: string
+          description: Empty when none.
+          example: LUB-EU-DIG
+        active:
+          type: boolean
+        usage:
+          $ref: "#/components/schemas/Usage"
+        locks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lock"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    FinanceBudget:
+      type: object
+      additionalProperties: false
+      required: [id, year, name, items, activeItemCount, usage, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: FB-1001
+        year:
+          type: integer
+        name:
+          type: string
+          example: 2026 Lubricants Budget
+        items:
+          type: array
+          description: Its items (active and inactive), sorted by name.
+          items:
+            $ref: "#/components/schemas/FinanceBudgetItem"
+        activeItemCount:
+          type: integer
+        usage:
+          $ref: "#/components/schemas/Usage"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    FinanceBudgetPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, year, years]
+      properties:
+        items:
+          type: array
+          description: The year's budgets that have at least one item, sorted by name.
+          items:
+            $ref: "#/components/schemas/FinanceBudget"
+        total:
+          type: integer
+        year:
+          type: integer
+          description: The year shown.
+        years:
+          type: array
+          description: The years that can be chosen - current year - 1 to + 5, and any other year with items - ascending.
+          items:
+            type: integer
+
+    FinanceBudgetRename:
+      type: object
+      additionalProperties: false
+      required: [name, version]
+      properties:
+        name:
+          type: string
+        version:
+          type: integer
+
+    FinanceBudgetItemCreate:
+      type: object
+      additionalProperties: false
+      required: [year, budgetName, name]
+      properties:
+        year:
+          type: integer
+        budgetName:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+
+    FinanceBudgetItemUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, and the version. A new budgetName moves the item to that budget of the same year (created when new).
+      required: [version]
+      properties:
+        budgetName:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        version:
+          type: integer

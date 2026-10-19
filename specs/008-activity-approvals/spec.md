@@ -192,8 +192,8 @@ own action.
 - **FR-003**: Saving a workflow MUST report every problem at once (missing or duplicate name, no level,
   a level without approvers, a person twice in a level, an inactive person).
 - **FR-004**: Every level MUST apply to every submission, in order; any one approver of a level
-  approves it. [NEEDS CLARIFICATION: Do Shell's real workflows add or skip levels by planned cost
-  (e.g. level 2 only above 50,000 USD)? Assumed no until Q-002 is answered.]
+  approves it. Resolved: no cost thresholds — every level applies to every
+  submission, in order, and any one designated approver of a level approves it (D-205).
 - **FR-005**: The list and details MUST show each workflow's levels with their approvers, its status and
   "Used by N activities (n waiting for approval)"; the details MUST list those activities with links.
 - **FR-006**: A change to a workflow MUST apply only to later submissions; an open round MUST keep the
@@ -219,9 +219,8 @@ own action.
   approvers, any positive unassigned planned cost as a note, and an optional comment. Confirming MUST set
   the activity to **Submitted** and start a round at level 1 holding a copy of the workflow's current
   levels and approvers, with the submitter, time and comment.
-- **FR-012**: Submitting MUST be possible whatever the plan's status. [NEEDS CLARIFICATION: Must an
-  activity's plan be Published before the activity can be submitted? Assumed no — activities of Draft
-  plans can be submitted.]
+- **FR-012**: Submitting MUST be possible whatever the plan's status. Resolved: the plan does not need to be
+  Published; activities of Draft plans can be submitted (D-206).
 - **FR-013**: While a round is open, the activity's Approval workflow field MUST be locked with the
   reason "Recall the activity to choose another workflow."
 
