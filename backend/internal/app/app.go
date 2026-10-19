@@ -35,10 +35,19 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// The services, each on its own repositories, with the store as their Transactor. Sign-in also looks
 	// people up, so it shares the people repository.
 	peopleRepo := people.NewJSONRepository()
-	peopleService := people.NewService(db, peopleRepo)
-	authService := auth.NewService(db, auth.NewJSONRepository(), peopleRepo, cfg.DemoMode(), cfg.DemoPassword, now)
 	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
+	peopleService := people.NewService(db, peopleRepo, generator, historyService, now)
+	authService := auth.NewService(db, auth.NewJSONRepository(), peopleRepo, cfg.DemoMode(), cfg.DemoPassword, now)
 	signedIn := authService.RequireSignIn // wraps every route that needs a signed-in person
+
+	// The kinds of people, teams and team memberships (feature 003), registered before any other business
+	// kind, so that history can log their changes and delete teams with their memberships. A kind that
+	// history refuses stops the API from starting.
+	for _, kind := range peopleService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
 
 	router := web.NewRouter()
 	router.Handle("GET /api/health", health(cfg))

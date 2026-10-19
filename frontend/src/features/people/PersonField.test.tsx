@@ -5,9 +5,9 @@ import { mockApi } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { PersonField } from './PersonField';
-import { TeamField } from './TeamField';
 
 const EUROPE = { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true } as const;
+const CHINA = { id: 'T-1002', name: 'Mobility China', colour: 'teal', active: true } as const;
 const META = {
   version: 1,
   createdAt: '2026-03-01T09:00:00Z',
@@ -15,47 +15,48 @@ const META = {
   updatedAt: '2026-03-01T09:00:00Z',
   updatedBy: { id: 'U-1001', name: 'Alex Morgan' },
 };
+
+function person(id: string, name: string, jobTitle: string, teams = [EUROPE], active = true) {
+  const email = `${name.toLowerCase().replace(' ', '.')}@northstar.demo`;
+  const initials = name
+    .split(' ')
+    .map((part) => part[0])
+    .join('');
+  return { id, name, email, jobTitle, initials, active, teams, ...META };
+}
+
 const PEOPLE = {
   total: 2,
   items: [
-    {
-      id: 'U-1001',
-      name: 'Alex Morgan',
-      email: 'alex.morgan@northstar.demo',
-      jobTitle: 'Head of marketing',
-      initials: 'AM',
-      active: true,
-      teams: [EUROPE],
-      ...META,
-    },
-    {
-      id: 'U-1002',
-      name: 'Priya Raman',
-      email: 'priya.raman@northstar.demo',
-      jobTitle: 'Marketer',
-      initials: 'PR',
-      active: true,
-      teams: [EUROPE],
-      ...META,
-    },
+    person('U-1001', 'Alex Morgan', 'Head of marketing'),
+    person('U-1002', 'Priya Raman', 'Marketer'),
   ],
 };
-const TEAMS = {
-  total: 1,
-  items: [{ ...EUROPE, description: '', members: [], plans: [], ...META }],
-};
 
-function Owner() {
+function Owner({ teamIds }: { teamIds?: string[] }) {
   const [owner, setOwner] = useState('');
-  return <PersonField label="Owner" name="ownerId" value={owner} onChange={setOwner} />;
+  return (
+    <PersonField label="Owner" name="ownerId" teamIds={teamIds} value={owner} onChange={setOwner} />
+  );
 }
 
-function Teams() {
-  const [teams, setTeams] = useState<string[]>([]);
-  return <TeamField label="Teams" name="teamIds" value={teams} onChange={setTeams} />;
+function Members({ start = [] }: { start?: string[] }) {
+  const [members, setMembers] = useState<string[]>(start);
+  return (
+    <>
+      <PersonField
+        label="Members"
+        name="memberIds"
+        multiple
+        value={members}
+        onChange={setMembers}
+      />
+      <p>chosen: {members.join(', ')}</p>
+    </>
+  );
 }
 
-describe('PersonField and TeamField (feature 003, US3)', () => {
+describe('PersonField (feature 003, US3)', () => {
   it('loads the people and offers them, the signed-in person first', async () => {
     mockApi({ 'GET /api/people': { body: PEOPLE } });
     const { user } = renderWithProviders(<Owner />, { user: testUser() });
@@ -82,12 +83,58 @@ describe('PersonField and TeamField (feature 003, US3)', () => {
     expect(await screen.findByRole('combobox', { name: 'Owner' })).toBeInTheDocument();
   });
 
-  it('loads the teams for a teams field', async () => {
-    mockApi({ 'GET /api/teams': { body: TEAMS } });
-    const { user } = renderWithProviders(<Teams />, { user: testUser() });
+  it('lists 300 people, every one reachable, and narrows as the user types (FR-020, SC-005)', async () => {
+    const many = Array.from({ length: 300 }, (_, index) =>
+      person(`U-${2000 + index}`, `Person ${String(index).padStart(3, '0')}`, 'Marketer'),
+    );
+    mockApi({ 'GET /api/people': { body: { items: many, total: many.length } } });
+    const { user } = renderWithProviders(<Owner />, { user: testUser() });
 
-    await user.click(await screen.findByRole('combobox', { name: 'Teams' }));
+    await user.click(await screen.findByRole('combobox', { name: 'Owner' }));
 
-    expect(screen.getByRole('option', { name: 'Lubricants Europe' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('300 people');
+    expect(screen.getAllByRole('option')).toHaveLength(300);
+    await user.type(screen.getByRole('combobox', { name: 'Owner' }), 'Person 29');
+    expect(screen.getByRole('status')).toHaveTextContent('10 people');
+  });
+
+  it('in team mode says when no member of the chosen teams matches (FR-019)', async () => {
+    mockApi({ 'GET /api/people': { body: PEOPLE } });
+    const { user } = renderWithProviders(<Owner teamIds={[CHINA.id]} />, { user: testUser() });
+
+    await user.click(await screen.findByRole('combobox', { name: 'Owner' }));
+
+    expect(
+      screen.getByText(
+        'No members of the selected teams match. Add people to these teams in Settings › Teams.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('chooses several people with the keyboard and removes the last with Backspace (US3-7)', async () => {
+    mockApi({ 'GET /api/people': { body: PEOPLE } });
+    const { user } = renderWithProviders(<Members />, { user: testUser() });
+
+    await user.click(await screen.findByRole('combobox', { name: 'Members' }));
+    await user.keyboard('{Enter}{ArrowDown}{Enter}{Escape}');
+
+    expect(screen.getByText('chosen: U-1002, U-1001')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Alex Morgan' })).toBeInTheDocument();
+
+    await user.keyboard('{Backspace}');
+    expect(screen.getByText('chosen: U-1002')).toBeInTheDocument();
+  });
+
+  it('keeps an inactive person already chosen, labelled (FR-018, SC-003)', async () => {
+    const inactive = {
+      ...PEOPLE,
+      items: [...PEOPLE.items, person('U-1009', 'Old Timer', '', [EUROPE], false)],
+    };
+    mockApi({ 'GET /api/people': { body: inactive } });
+    const { user } = renderWithProviders(<Members start={['U-1009']} />, { user: testUser() });
+
+    expect(await screen.findByText('Old Timer (inactive)')).toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: 'Members' }));
+    expect(screen.queryByRole('option', { name: /Old Timer/ })).not.toBeInTheDocument();
   });
 });

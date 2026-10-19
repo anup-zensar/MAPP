@@ -1,0 +1,134 @@
+/* The People and Teams lists (plan "Pages"): a toolbar over a table inside one card. */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.search {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.count {
+  margin-left: auto;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Wide content scrolls sideways inside its card, never the whole page (design system §2). */
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* The header row on the subtle grey of table headers (design system §3). */
+.table thead th {
+  padding-block: 8px;
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: var(--hover);
+}
+
+/* The name that opens the details: looks like the name, works like a link. */
+.open {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.open:hover {
+  text-decoration: underline;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.secondary {
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* At most two lines of a team's description; the details show all of it. */
+.clamp {
+  display: -webkit-box;
+  min-width: 160px;
+  max-width: 320px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--ink-2);
+}
+
+.members {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.avatars {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avatars li + li {
+  margin-left: -6px;
+}
+
+.avatars li {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* The "⋯" menu sits at the right end of its row. */
+.actionsCell {
+  width: 1%;
+  text-align: right;
+}
