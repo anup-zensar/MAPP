@@ -5,14 +5,20 @@ package app
 import (
 	"net/http"
 
+	"northstar/internal/activities"
+	"northstar/internal/approvals"
 	"northstar/internal/auth"
+	"northstar/internal/campaigns"
 	"northstar/internal/history"
+	"northstar/internal/lineitems"
 	"northstar/internal/people"
+	"northstar/internal/plans"
 	"northstar/internal/platform/clock"
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/store"
 	"northstar/internal/platform/web"
 	"northstar/internal/samples"
+	"northstar/internal/settings"
 )
 
 // App is the NorthStar API, ready to serve.
@@ -57,6 +63,23 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 		samples.NewHandler(samplesService).Routes(router, signedIn)
 	}
+
+	// Activity approvals (008). Approval actions are logged on the activity, so its history kind must be
+	// registered. INTEGRATION with 006: delete the stand-in kind and pass check: activitiesService.SubmitCheck.
+	activitiesRepo := activities.NewJSONRepository()
+	if err := historyService.Register(standInActivityKind(activitiesRepo)); err != nil {
+		return nil, err
+	}
+	approvalsService := approvals.NewService(db, approvals.NewJSONRepository(), peopleRepo, &approvalsActivities{
+		activities: activitiesRepo, lineItems: lineitems.NewJSONRepository(), campaigns: campaigns.NewJSONRepository(),
+		plans: plans.NewJSONRepository(), settings: settings.NewJSONRepository(), check: storedFieldsCheck(activitiesRepo), now: now,
+	}, generator, historyService, now)
+	for _, kind := range approvalsService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	approvals.NewHandler(approvalsService).Routes(router, signedIn)
 
 	// Routes lists the operations only: the catch-all registered next is not an operation of the contract.
 	routes := router.Patterns()
