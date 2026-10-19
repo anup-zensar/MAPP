@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"errors"
+	"maps"
 
 	"northstar/internal/campaigns"
 	"northstar/internal/plans"
@@ -59,8 +59,8 @@ func planFacts(p plans.Plan) campaigns.PlanFacts {
 
 // campaignLevels are the campaign and initiative levels for feature 004's level registry (D-195, 005 plan
 // "Alignment with feature 004 as planned"): they add a plan's campaigns, initiatives, campaign budgets and
-// the campaigns and initiatives that block publishing to its facts. app.New registers them with
-// planService.RegisterLevel; plan copies (Copy, through CopyPlanContents) arrive with US6.
+// the campaigns and initiatives that block publishing to its facts, and copy the campaigns with their
+// initiatives in a plan copy (CopyPlanContents). app.New registers them with planService.RegisterLevel.
 func campaignLevels(svc *campaigns.Service) []plans.Level {
 	addFacts := func(level string) func(ctx context.Context, planIDs []string, facts map[string]*plans.Facts) error {
 		return func(ctx context.Context, planIDs []string, facts map[string]*plans.Facts) error {
@@ -86,9 +86,15 @@ func campaignLevels(svc *campaigns.Service) []plans.Level {
 		}
 	}
 	return []plans.Level{
-		// Plan copies (US6) are not built yet: no plan operation calls Copy until they are.
-		{Name: "campaign", AddFacts: addFacts("campaign"), Copy: func(context.Context, *plans.CopyJob) error {
-			return errors.New("app: copying a plan's campaigns is not built yet (005 US6)")
+		{Name: "campaign", AddFacts: addFacts("campaign"), Copy: func(ctx context.Context, job *plans.CopyJob) error {
+			counts, newIDs, err := svc.CopyPlanContents(ctx, job.Actor, job.SourcePlanID, job.TargetPlanID, job.Years)
+			if err != nil {
+				return err
+			}
+			maps.Copy(job.NewIDs, newIDs)
+			job.Counts["campaign"] += counts.Campaigns
+			job.Counts["initiative"] += counts.Initiatives
+			return nil
 		}},
 		// The campaign level copies the initiatives with their campaigns, so this level's Copy does nothing.
 		{Name: "initiative", AddFacts: addFacts("initiative"), Copy: func(context.Context, *plans.CopyJob) error { return nil }},

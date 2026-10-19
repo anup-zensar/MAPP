@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"northstar/internal/platform/errs"
+	"northstar/internal/platform/record"
 	"northstar/internal/settings"
 )
 
@@ -129,5 +130,53 @@ func TestInitiativeFacts_For006(t *testing.T) {
 	}
 	if empty, err := f.service.InitiativesOfPlan(t.Context(), "P-1003"); err != nil || empty == nil || len(empty) != 0 {
 		t.Errorf("InitiativesOfPlan(P-1003) = %v, %v; want an empty list", empty, err)
+	}
+}
+
+// CopyPlanContents copies a plan's campaigns and initiatives for feature 004's plan copy: the same names
+// and values, every date moved by the year shift (29 February → 28 February), new IDs, the copier as
+// creator and no log entries; it returns the old → new IDs for the levels below.
+func TestCopyPlanContents_ShiftsDatesKeepsNames_For004(t *testing.T) {
+	f := newFixture(t)
+	brand := f.createCampaign(t, priya, "P-1003", CampaignInput{
+		Name: "Brand platform", OwnerID: ptr("U-1001"), StartDate: day("2027-01-01"), EndDate: day("2028-02-29"),
+		Budget: input("300000.00"), Attributes: settings.AttributeValues{clusterID: json.RawMessage(`["SO-1"]`)},
+	})
+	film := f.createInitiative(t, priya, brand.ID, InitiativeInput{
+		Name: "Brand film", OwnerID: ptr("U-1001"), StartDate: day("2027-01-01"), EndDate: day("2027-06-30"), Budget: input("250000.00"),
+	})
+	undated := f.createCampaign(t, priya, "P-1003", CampaignInput{Name: "Undated"})
+	f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "In another plan"})
+	entriesBefore := len(f.log(t, "", ""))
+
+	var counts CopyCounts
+	var newIDs map[string]string
+	err := f.db.Write(t.Context(), func(ctx context.Context) error { // joins the plan copy's Write
+		var err error
+		counts, newIDs, err = f.service.CopyPlanContents(ctx, daniel, "P-1003", "P-1002", 1)
+		return err
+	})
+
+	if err != nil || counts != (CopyCounts{Campaigns: 2, Initiatives: 1}) || len(newIDs) != 3 {
+		t.Fatalf("CopyPlanContents = %+v, %v, %v; want 2 campaigns, 1 initiative and their 3 new IDs", counts, newIDs, err)
+	}
+	brandCopy, _ := f.storedCampaign(t, newIDs[brand.ID])
+	original, _ := f.storedCampaign(t, brand.ID)
+	want := original
+	want.ID, want.PlanID, want.Meta = newIDs[brand.ID], "P-1002", record.NewMeta(daniel, start)
+	want.StartDate, want.EndDate = day("2028-01-01"), day("2029-02-28")
+	if !reflect.DeepEqual(brandCopy, want) {
+		t.Errorf("campaign copy =\n%+v\nwant\n%+v", brandCopy, want)
+	}
+	filmCopy, _ := f.storedInitiative(t, newIDs[film.ID])
+	if filmCopy.Name != "Brand film" || filmCopy.CampaignID != brandCopy.ID || filmCopy.StartDate.String() != "2028-01-01" ||
+		filmCopy.EndDate.String() != "2028-06-30" || amountText(filmCopy.Budget) != "250000.00" || filmCopy.CreatedBy.ID != daniel.ID {
+		t.Errorf("initiative copy = %+v, want Brand film in %s, 2028-01-01 – 2028-06-30, 250000.00, by Daniel", filmCopy, brandCopy.ID)
+	}
+	if undatedCopy, _ := f.storedCampaign(t, newIDs[undated.ID]); undatedCopy.Name != "Undated" || undatedCopy.StartDate != nil {
+		t.Errorf("undated copy = %+v, want Undated without dates", undatedCopy)
+	}
+	if got := len(f.log(t, "", "")); got != entriesBefore {
+		t.Errorf("log entries = %d, want %d: the plan copy writes the one entry", got, entriesBefore)
 	}
 }

@@ -3,14 +3,19 @@ package activities
 import (
 	"cmp"
 	"context"
+	"maps"
 	"slices"
 	"strings"
 
 	"northstar/internal/campaigns"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
+	"northstar/internal/platform/ids"
 	"northstar/internal/platform/money"
+	"northstar/internal/platform/record"
+	"northstar/internal/settings"
 )
 
 // Summaries returns one roll-up summary per activity under the initiatives initiativeIDs (FR-005, D-105):
@@ -164,4 +169,109 @@ func (s *Service) SubmitCheck(ctx context.Context, a actor.Actor, id string) (Su
 		return SubmitCheck{}, err
 	}
 	return view.Readiness, nil
+}
+
+// CopyCounts is how many activities a copy made, and how many line items came with them.
+type CopyCounts struct {
+	Activities, LineItems int
+}
+
+// CopyAll copies every activity of the initiative fromInitiativeID, with its line items, into the
+// initiative toInitiativeID (R13, D-195): the same names and values, every date yearShift years later (29
+// February becomes 28 February; an ongoing activity keeps no end date), new IDs, the status Created and
+// the actor as creator — no approvals, comments, history or GSAP values. It joins the caller's Write and
+// writes no log entries: the copy of the campaign or initiative above writes the one "copied" entry. It is
+// the CopyAll of feature 005's campaigns.Activities.
+func (s *Service) CopyAll(ctx context.Context, a actor.Actor, fromInitiativeID, toInitiativeID string, yearShift int) (CopyCounts, error) {
+	var counts CopyCounts
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
+		newIDs, err := s.copyActivities(ctx, a, map[string]string{fromInitiativeID: toInitiativeID}, yearShift)
+		if err != nil {
+			return err
+		}
+		counts.Activities = len(newIDs)
+		for _, oldID := range slices.Sorted(maps.Keys(newIDs)) {
+			n, err := s.lineItems.CopyAll(ctx, a, oldID, newIDs[oldID], yearShift)
+			if err != nil {
+				return err
+			}
+			counts.LineItems += n
+		}
+		return nil
+	})
+	if err != nil {
+		return CopyCounts{}, err
+	}
+	return counts, nil
+}
+
+// CopyForInitiatives copies the activities of every initiative of newInitiativeIDs (the id of a copied
+// initiative → the id of its copy; other ids match no activity) into that copy, as CopyAll does but without
+// their line items, and returns the old → new ID of every activity it copied. It is the Copy of the
+// activity level of feature 004's plan copy (D-195): the line-item level copies the line items next.
+func (s *Service) CopyForInitiatives(ctx context.Context, a actor.Actor, newInitiativeIDs map[string]string, yearShift int) (map[string]string, error) {
+	var newIDs map[string]string
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
+		var err error
+		newIDs, err = s.copyActivities(ctx, a, newInitiativeIDs, yearShift)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return newIDs, nil
+}
+
+// copyActivities copies the activities of the initiatives of newInitiativeIDs into their copies, inside the
+// caller's Write, and returns the old → new ID of each.
+func (s *Service) copyActivities(ctx context.Context, a actor.Actor, newInitiativeIDs map[string]string, yearShift int) (map[string]string, error) {
+	list, err := s.repo.ListByInitiatives(ctx, slices.Sorted(maps.Keys(newInitiativeIDs)))
+	if err != nil {
+		return nil, err
+	}
+	newIDs := make(map[string]string, len(list))
+	for _, activity := range list { // by id, so the copies get their IDs in the same order
+		dup := copyOf(activity, yearShift)
+		dup.InitiativeID = newInitiativeIDs[activity.InitiativeID]
+		if dup.ID, err = s.ids.Next(ctx, ids.PrefixActivity); err != nil {
+			return nil, err
+		}
+		dup.Status, dup.Meta = StatusCreated, record.NewMeta(a, s.now())
+		if err := s.repo.Put(ctx, dup); err != nil {
+			return nil, err
+		}
+		newIDs[activity.ID] = dup.ID
+	}
+	return newIDs, nil
+}
+
+// copyOf returns a copy of the activity a that shares no pointer or map with it, its dates moved years on.
+func copyOf(a Activity, years int) Activity {
+	dup := a
+	dup.StartDate, dup.EndDate = shiftDate(a.StartDate, years), shiftDate(a.EndDate, years)
+	dup.PlannedCost, dup.Revenue = clonePtr(a.PlannedCost), clonePtr(a.Revenue)
+	dup.INQ, dup.MQL = clonePtr(a.INQ), clonePtr(a.MQL)
+	dup.Attributes = maps.Clone(a.Attributes)
+	if dup.Attributes == nil {
+		dup.Attributes = settings.AttributeValues{}
+	}
+	return dup
+}
+
+// shiftDate returns the date d years later (29 February → 28 February), or nil for no date.
+func shiftDate(d *date.Date, years int) *date.Date {
+	if d == nil {
+		return nil
+	}
+	shifted := d.AddYears(years)
+	return &shifted
+}
+
+// clonePtr returns a pointer to a copy of what p points at, or nil.
+func clonePtr[T any](p *T) *T {
+	if p == nil {
+		return nil
+	}
+	v := *p
+	return &v
 }

@@ -62,4 +62,14 @@ type Settings interface {
 	// DescribeAttribute gives the label and readable text of a field "attributes.<id>" for the activity log;
 	// "" and "" for other fields.
 	DescribeAttribute(ctx context.Context, field string, value any) (label, text string, err error)
+	// Model returns the model with id, and false when there is none (what a move to a plan with another
+	// model changes, FR-024).
+	Model(ctx context.Context, id string) (settings.Model, bool, error)
+	// ActivityType returns the activity type with id, active or not, and false when there is none.
+	ActivityType(ctx context.Context, id string) (settings.ActivityType, bool, error)
+	// Attributes returns the Shell attributes of level, active and inactive, in display order (the attribute
+	// groups a move hides or shows, R9).
+	Attributes(ctx context.Context, level settings.Level) ([]settings.Attribute, error)
+	// Option returns the Shell attribute option with id, active or not, and false when there is none.
+	Option(ctx context.Context, id string) (settings.Option, bool, error)
 }

@@ -19,7 +19,7 @@ func NewHandler(s *Service) *Handler {
 }
 
 // Routes registers the campaign and initiative routes on r, every one wrapped in signedIn: they all need a
-// signed-in person. Move, copy and their destinations (US6) come later.
+// signed-in person.
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("GET /api/plans/{planId}/campaigns", signedIn(h.listPlanCampaigns))
 	r.Handle("POST /api/plans/{planId}/campaigns", signedIn(h.createCampaign))
@@ -30,6 +30,12 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("GET /api/initiatives/{initiativeId}", signedIn(h.getInitiative))
 	r.Handle("PATCH /api/initiatives/{initiativeId}", signedIn(h.updateInitiative))
 	r.Handle("DELETE /api/initiatives/{initiativeId}", signedIn(h.deleteInitiative))
+	r.Handle("GET /api/campaigns/{campaignId}/destinations", signedIn(h.campaignDestinations))
+	r.Handle("POST /api/campaigns/{campaignId}/move", signedIn(h.moveCampaign))
+	r.Handle("POST /api/campaigns/{campaignId}/copy", signedIn(h.copyCampaign))
+	r.Handle("GET /api/initiatives/{initiativeId}/destinations", signedIn(h.initiativeDestinations))
+	r.Handle("POST /api/initiatives/{initiativeId}/move", signedIn(h.moveInitiative))
+	r.Handle("POST /api/initiatives/{initiativeId}/copy", signedIn(h.copyInitiative))
 }
 
 // listPlanCampaigns answers GET /api/plans/{planId}/campaigns: the plan's campaigns with their initiatives
@@ -152,4 +158,92 @@ func (h *Handler) deleteInitiative(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
+}
+
+// campaignDestinations answers GET /api/campaigns/{campaignId}/destinations?purpose=move|copy: the plans
+// the campaign can go to.
+func (h *Handler) campaignDestinations(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context())
+	list, err := h.service.CampaignDestinations(r.Context(), a, r.PathValue("campaignId"), r.URL.Query().Get("purpose"))
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, list)
+}
+
+// moveCampaign answers POST /api/campaigns/{campaignId}/move with the campaign in its new plan.
+func (h *Handler) moveCampaign(w http.ResponseWriter, r *http.Request) {
+	var move CampaignMove
+	if err := web.ReadJSON(w, r, &move); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	campaign, err := h.service.MoveCampaign(r.Context(), a, r.PathValue("campaignId"), move)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, campaign)
+}
+
+// copyCampaign answers POST /api/campaigns/{campaignId}/copy with 201 and the new campaign.
+func (h *Handler) copyCampaign(w http.ResponseWriter, r *http.Request) {
+	var request CampaignCopy
+	if err := web.ReadJSON(w, r, &request); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	campaign, err := h.service.CopyCampaign(r.Context(), a, r.PathValue("campaignId"), request)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusCreated, campaign)
+}
+
+// initiativeDestinations answers GET /api/initiatives/{initiativeId}/destinations?purpose=move|copy: the
+// campaigns of the plan the initiative can go to.
+func (h *Handler) initiativeDestinations(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context())
+	list, err := h.service.InitiativeDestinations(r.Context(), a, r.PathValue("initiativeId"), r.URL.Query().Get("purpose"))
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, list)
+}
+
+// moveInitiative answers POST /api/initiatives/{initiativeId}/move with the initiative in its new campaign.
+func (h *Handler) moveInitiative(w http.ResponseWriter, r *http.Request) {
+	var move InitiativeMove
+	if err := web.ReadJSON(w, r, &move); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	initiative, err := h.service.MoveInitiative(r.Context(), a, r.PathValue("initiativeId"), move)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, initiative)
+}
+
+// copyInitiative answers POST /api/initiatives/{initiativeId}/copy with 201 and the new initiative.
+func (h *Handler) copyInitiative(w http.ResponseWriter, r *http.Request) {
+	var request InitiativeCopy
+	if err := web.ReadJSON(w, r, &request); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	initiative, err := h.service.CopyInitiative(r.Context(), a, r.PathValue("initiativeId"), request)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusCreated, initiative)
 }

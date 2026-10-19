@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"slices"
 	"strings"
@@ -321,10 +322,61 @@ func (s *fakeSettings) DescribeAttribute(_ context.Context, field string, value 
 	return "Label " + id, "", nil
 }
 
+// Model knows Lubricants 1.0 (MOD-1001: Content production and Event) and Mobility 1.0 (MOD-1002: Event and
+// Fleet promotion).
+func (s *fakeSettings) Model(_ context.Context, id string) (settings.Model, bool, error) {
+	models := map[string]settings.Model{
+		"MOD-1001": {ID: "MOD-1001", Name: "Lubricants 1.0", ActivityTypeIDs: []string{"AT-1001", "AT-1002"}, Active: true},
+		"MOD-1002": {ID: "MOD-1002", Name: "Mobility 1.0", ActivityTypeIDs: []string{"AT-1002", "AT-1003"}, Active: true},
+	}
+	m, found := models[id]
+	return m, found, nil
+}
+
+// ActivityType knows the three activity types of the models.
+func (s *fakeSettings) ActivityType(_ context.Context, id string) (settings.ActivityType, bool, error) {
+	names := map[string]string{"AT-1001": "Content production", "AT-1002": "Event", "AT-1003": "Fleet promotion"}
+	name, found := names[id]
+	return settings.ActivityType{ID: id, Name: name, Active: true}, found, nil
+}
+
+// Attributes are the Shell attributes of the levels below a plan that the business unit shows: Brands
+// (activities) and Spend type (line items) with Lubricants (SO-1002), Fleet segment (activities) with
+// Mobility (SO-1001), an inactive Lubricants one, and Cluster and Region, always shown.
+func (s *fakeSettings) Attributes(_ context.Context, level settings.Level) ([]settings.Attribute, error) {
+	all := []settings.Attribute{
+		{ID: clusterID, Label: "Cluster", Level: settings.LevelCampaign, Active: true},
+		{ID: regionID, Label: "Region", Level: settings.LevelCampaign, Active: true},
+		{ID: "SA-1022", Label: "Brands", Level: settings.LevelActivity, Condition: []string{"SO-1002"}, Active: true},
+		{ID: "SA-1023", Label: "Fleet segment", Level: settings.LevelActivity, Condition: []string{"SO-1001"}, Active: true},
+		{ID: "SA-1024", Label: "Old brand code", Level: settings.LevelActivity, Condition: []string{"SO-1002"}, Active: false},
+		{ID: "SA-1031", Label: "Spend type", Level: settings.LevelLineItem, Condition: []string{"SO-1002"}, Active: true},
+	}
+	ofLevel := []settings.Attribute{}
+	for _, a := range all {
+		if a.Level == level {
+			ofLevel = append(ofLevel, a)
+		}
+	}
+	return ofLevel, nil
+}
+
+// Option knows the Business unit options Mobility (SO-1001) and Lubricants (SO-1002), in that order.
+func (s *fakeSettings) Option(_ context.Context, id string) (settings.Option, bool, error) {
+	options := map[string]settings.Option{
+		"SO-1001": {ID: "SO-1001", AttributeID: "SA-1001", Label: "Mobility", Position: 1, Active: true},
+		"SO-1002": {ID: "SO-1002", AttributeID: "SA-1001", Label: "Lubricants", Position: 2, Active: true},
+	}
+	o, found := options[id]
+	return o, found, nil
+}
+
 // fakeActivities holds activity summaries per initiative; tests change them to see the roll-ups follow.
 // Its history kind lets deletes take activities with their initiative.
 type fakeActivities struct {
 	byInitiative map[string][]ActivitySummary
+	copies       []string // the CopyAll calls, "<from> → <to> +<years>"
+	copyErr      error    // what CopyAll answers, when set
 }
 
 func (a *fakeActivities) Summaries(_ context.Context, initiativeIDs []string) ([]ActivitySummary, error) {
@@ -335,8 +387,21 @@ func (a *fakeActivities) Summaries(_ context.Context, initiativeIDs []string) ([
 	return list, nil
 }
 
-func (a *fakeActivities) CopyAll(context.Context, actor.Actor, string, string, int) (ActivityCopyCounts, error) {
-	return ActivityCopyCounts{}, nil
+// CopyAll copies the summaries of fromInitiativeID into toInitiativeID with new IDs "<id>-copy", records the
+// call and counts the copies and their line items; copyErr, when set, makes it fail instead.
+func (a *fakeActivities) CopyAll(_ context.Context, _ actor.Actor, from, to string, years int) (ActivityCopyCounts, error) {
+	if a.copyErr != nil {
+		return ActivityCopyCounts{}, a.copyErr
+	}
+	a.copies = append(a.copies, fmt.Sprintf("%s → %s +%d", from, to, years))
+	var counts ActivityCopyCounts
+	for _, s := range slices.Clone(a.byInitiative[from]) {
+		s.ID, s.InitiativeID = s.ID+"-copy", to
+		a.add(s)
+		counts.Activities++
+		counts.LineItems += s.LineItems
+	}
+	return counts, nil
 }
 
 // add puts activity summaries under their initiatives.

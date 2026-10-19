@@ -32,7 +32,7 @@ var labels = map[string]string{
 	"activityTypeId": "Activity type", "ownerId": "Owner", "startDate": "Start date", "endDate": "End date",
 	"ongoing": "Ongoing (no end date)", "setLaterStagesMyself": "Set later stages myself",
 	"plannedCost": "Planned cost", "revenue": "Revenue", "approvalWorkflowId": "Approval workflow",
-	"inq": "INQ", "mql": "MQL", "status": "Status", "initiativeId": "Initiative",
+	"inq": "INQ", "mql": "MQL", "status": "Status", "initiativeId": "Initiative", "parent": "Initiative",
 }
 
 // Kinds returns the history kind of activities, for internal/app to register after feature 005's
@@ -189,8 +189,29 @@ func (s *Service) describe(ctx context.Context, field string, value any) (string
 		}
 	case "status":
 		return label, statusWords[Status(text)], nil
+	case "parent": // a move: the initiative, as {type, id, name}
+		if ref, ok := value.(map[string]any); ok {
+			id, _ := ref["id"].(string)
+			name, _ := ref["name"].(string)
+			path, err := s.initiativePath(ctx, id, name)
+			return label, path, err
+		}
 	}
 	return label, "", nil
+}
+
+// initiativePath names the initiative id with its campaign, as a move's log entry shows it: "Helix launch ›
+// Digital & social"; name alone when the initiative or its campaign is gone.
+func (s *Service) initiativePath(ctx context.Context, id, name string) (string, error) {
+	initiative, found, err := s.hierarchy.GetInitiative(ctx, id)
+	if err != nil || !found {
+		return name, err
+	}
+	campaign, found, err := s.hierarchy.GetCampaign(ctx, initiative.CampaignID)
+	if err != nil || !found {
+		return initiative.Name, err
+	}
+	return campaign.Name + " › " + initiative.Name, nil
 }
 
 // groupedInt writes a whole number with thousands separators: 250000 → "250,000".

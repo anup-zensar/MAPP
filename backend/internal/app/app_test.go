@@ -313,20 +313,6 @@ var notYetServed = []string{
 	// 003 People and teams
 	"PATCH /api/me",
 	"GET /api/me/display-currencies",
-	// 004 Plans
-	"GET /api/plans/{planId}/copy-options",
-	"POST /api/plans/{planId}/copy",
-	// 005 Campaigns and initiatives
-	"GET /api/campaigns/{campaignId}/destinations",
-	"POST /api/campaigns/{campaignId}/move",
-	"POST /api/campaigns/{campaignId}/copy",
-	"GET /api/initiatives/{initiativeId}/destinations",
-	"POST /api/initiatives/{initiativeId}/move",
-	"POST /api/initiatives/{initiativeId}/copy",
-	// 006 Activities (moving and copying come later)
-	"GET /api/activities/{activityId}/destinations",
-	"POST /api/activities/{activityId}/move",
-	"POST /api/activities/{activityId}/copy",
 	// 008 Activity approvals
 	"POST /api/activities/{activityId}/approval/recall",
 	"GET /api/notifications",

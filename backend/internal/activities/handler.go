@@ -28,6 +28,9 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("PATCH /api/activities/{activityId}", signedIn(h.update))
 	r.Handle("DELETE /api/activities/{activityId}", signedIn(h.delete))
 	r.Handle("GET /api/activities/{activityId}/form", signedIn(h.editForm))
+	r.Handle("GET /api/activities/{activityId}/destinations", signedIn(h.destinations))
+	r.Handle("POST /api/activities/{activityId}/move", signedIn(h.move))
+	r.Handle("POST /api/activities/{activityId}/copy", signedIn(h.copy))
 }
 
 // newForm answers GET /api/initiatives/{initiativeId}/activity-form: the new-activity form with defaults.
@@ -88,6 +91,38 @@ func (h *Handler) editForm(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
 	form, err := h.service.EditForm(r.Context(), a, r.PathValue("activityId"))
 	answer(w, r, http.StatusOK, form, err)
+}
+
+// destinations answers GET /api/activities/{activityId}/destinations: every initiative of the plan, with
+// why the activity can't be moved or copied there.
+func (h *Handler) destinations(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context())
+	destinations, err := h.service.Destinations(r.Context(), a, r.PathValue("activityId"))
+	answer(w, r, http.StatusOK, DestinationPage{Items: destinations, Total: len(destinations)}, err)
+}
+
+// move answers POST /api/activities/{activityId}/move with the activity in its new initiative.
+func (h *Handler) move(w http.ResponseWriter, r *http.Request) {
+	var in MoveInput
+	if err := web.ReadJSON(w, r, &in); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	view, err := h.service.Move(r.Context(), a, r.PathValue("activityId"), in)
+	answer(w, r, http.StatusOK, view, err)
+}
+
+// copy answers POST /api/activities/{activityId}/copy with 201 and the copy.
+func (h *Handler) copy(w http.ResponseWriter, r *http.Request) {
+	var in CopyInput
+	if err := web.ReadJSON(w, r, &in); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	view, err := h.service.Copy(r.Context(), a, r.PathValue("activityId"), in)
+	answer(w, r, http.StatusCreated, view, err)
 }
 
 // answer writes v with status, or the error when there is one.

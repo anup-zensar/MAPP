@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -279,6 +280,7 @@ func (f *fixture) deactivatePerson(t *testing.T, id string) {
 type fakeLineItems struct {
 	facts        map[string]activities.LineItemFacts
 	datesChanged []string // the activities whose dates changed, in order
+	copies       []string // the CopyAll calls, "<from> → <to> +<years>", in order
 }
 
 func (l *fakeLineItems) Facts(_ context.Context, activityIDs []string) (map[string]activities.LineItemFacts, error) {
@@ -291,8 +293,10 @@ func (l *fakeLineItems) Facts(_ context.Context, activityIDs []string) (map[stri
 	return facts, nil
 }
 
-func (l *fakeLineItems) CopyAll(context.Context, actor.Actor, string, string, int) (int, error) {
-	return 0, nil
+// CopyAll records the call and answers the activity's line-item count of facts.
+func (l *fakeLineItems) CopyAll(_ context.Context, _ actor.Actor, from, to string, years int) (int, error) {
+	l.copies = append(l.copies, fmt.Sprintf("%s → %s +%d", from, to, years))
+	return l.facts[from].Count, nil
 }
 
 func (l *fakeLineItems) DatesChanged(_ context.Context, _ actor.Actor, _, after activities.Activity) error {
