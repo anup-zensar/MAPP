@@ -262,6 +262,33 @@ func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
 	}
 }
 
+// Settings exist in every environment, not only where demo sign-in is on, and their kinds are registered
+// with history, so that a deleted Settings record is in the recycle bin and its delete can be undone
+// (FR-006, FR-004).
+func TestSettingsKindsRegistered_FR006(t *testing.T) {
+	for _, env := range []string{"local", "development", "production"} {
+		if !slices.Contains(newApp(t, env).Routes, "DELETE /api/currencies/{code}") {
+			t.Errorf("%s: the Settings routes are not served", env)
+		}
+	}
+
+	server := apitest.New(t)
+	alex := server.SignIn(t, "alex.morgan@northstar.demo")
+	alex.Do(t, http.MethodPost, "/api/currencies", map[string]string{"code": "JPY", "name": "Japanese yen", "symbol": "¥", "rate": "150"})
+	var deleted struct {
+		RecycleBinEntry struct{ ID, RecordType, RecordTypeLabel string }
+	}
+	alex.Do(t, http.MethodDelete, "/api/currencies/JPY", nil).Decode(t, &deleted)
+	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
+
+	if deleted.RecycleBinEntry.RecordType != "currency" || deleted.RecycleBinEntry.RecordTypeLabel != "currency" {
+		t.Errorf("recycle-bin entry = %+v, want a currency", deleted.RecycleBinEntry)
+	}
+	if undone.Status != http.StatusOK {
+		t.Errorf("undo = %d %s, want 200", undone.Status, undone.Body)
+	}
+}
+
 // notYetServed lists the operations of the contract that are designed but not served yet: the operations of
 // the Plan module, features 002-012, merged into backend/api/openapi.yaml before they are built (decision
 // D-192). The routes are written as the tests format them, "METHOD /path" with the contract's path.
@@ -271,50 +298,15 @@ func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
 // cannot go stale. The list must be empty when the Plan module is done; then remove it and its uses.
 var notYetServed = []string{
 	// 002 Settings and Shell attributes
-	"GET /api/settings/overview",
-	"GET /api/models",
-	"POST /api/models",
-	"GET /api/models/{modelId}",
-	"PATCH /api/models/{modelId}",
-	"DELETE /api/models/{modelId}",
-	"POST /api/models/{modelId}/impact",
-	"POST /api/models/{modelId}/status",
-	"GET /api/activity-types",
 	"POST /api/activity-types",
-	"GET /api/activity-types/{activityTypeId}",
 	"PATCH /api/activity-types/{activityTypeId}",
 	"DELETE /api/activity-types/{activityTypeId}",
 	"POST /api/activity-types/{activityTypeId}/impact",
 	"POST /api/activity-types/{activityTypeId}/status",
-	"GET /api/shell-attributes",
-	"POST /api/shell-attributes",
-	"GET /api/shell-attributes/{attributeId}",
-	"PATCH /api/shell-attributes/{attributeId}",
-	"DELETE /api/shell-attributes/{attributeId}",
-	"POST /api/shell-attributes/{attributeId}/impact",
-	"POST /api/shell-attributes/{attributeId}/status",
-	"POST /api/shell-attributes/{attributeId}/move",
-	"GET /api/shell-attributes/{attributeId}/options",
-	"POST /api/shell-attributes/{attributeId}/options",
 	"POST /api/shell-attributes/{attributeId}/options/import-check",
 	"POST /api/shell-attributes/{attributeId}/options/import",
-	"PATCH /api/shell-attribute-options/{optionId}",
-	"DELETE /api/shell-attribute-options/{optionId}",
-	"POST /api/shell-attribute-options/{optionId}/status",
-	"POST /api/shell-attribute-options/{optionId}/move",
-	"GET /api/shell-attribute-forms/{level}",
-	"POST /api/shell-attribute-forms/{level}/check",
-	"GET /api/currencies",
-	"POST /api/currencies",
-	"GET /api/currencies/{code}",
-	"PATCH /api/currencies/{code}",
-	"DELETE /api/currencies/{code}",
-	"POST /api/currencies/{code}/impact",
-	"POST /api/currencies/{code}/status",
-	"GET /api/finance-budgets",
 	"PATCH /api/finance-budgets/{budgetId}",
 	"POST /api/finance-budget-items",
-	"GET /api/finance-budget-items/{itemId}",
 	"PATCH /api/finance-budget-items/{itemId}",
 	"DELETE /api/finance-budget-items/{itemId}",
 	"POST /api/finance-budget-items/{itemId}/status",

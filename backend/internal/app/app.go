@@ -13,6 +13,7 @@ import (
 	"northstar/internal/platform/store"
 	"northstar/internal/platform/web"
 	"northstar/internal/samples"
+	"northstar/internal/settings"
 )
 
 // App is the NorthStar API, ready to serve.
@@ -44,6 +45,18 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
 	history.NewHandler(historyService).Routes(router, signedIn)
+
+	// Settings (feature 002) exist in every environment. Their kinds are registered with history, parents
+	// first, so that their deletes can be undone and restored.
+	settingsService := settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now)
+	for _, kind := range settingsService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	// Features 003–007 tell Settings where its records are used ("Used by", in-use deletes, impact
+	// statements) by adding their sources here: settingsService.AddReferenceSource(…).
+	settings.NewHandler(settingsService).Routes(router, signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API

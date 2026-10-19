@@ -1,8 +1,13 @@
 package settings
 
 import (
+	"bytes"
 	"encoding/json"
+	"maps"
+	"slices"
+	"strings"
 
+	"northstar/internal/history"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
 )
@@ -54,4 +59,123 @@ type ClearedValue struct {
 	Label        string   `json:"label"`
 	OptionIDs    []string `json:"optionIds"`
 	OptionLabels []string `json:"optionLabels"`
+}
+
+// isEmptyValue reports whether a stored value is no value: missing, null, "", [] or {} (data model §9).
+func isEmptyValue(raw json.RawMessage) bool {
+	switch string(bytes.TrimSpace(raw)) {
+	case "", "null", `""`, "[]", "{}":
+		return true
+	}
+	return false
+}
+
+// optionIDsOf returns the option ids in the value raw of the choice attribute a, each once: the option of
+// a single choice, the options of a multiple choice, the options of a % split. A value of another shape
+// has none.
+func optionIDsOf(a Attribute, raw json.RawMessage) []string {
+	if isEmptyValue(raw) {
+		return []string{}
+	}
+	switch a.Type {
+	case TypeSingleChoice:
+		var id string
+		if json.Unmarshal(raw, &id) == nil {
+			return unique([]string{id})
+		}
+	case TypeMultipleChoice:
+		var list []string
+		if json.Unmarshal(raw, &list) == nil {
+			return unique(list)
+		}
+	case TypeMultipleChoiceSplit:
+		var shares []struct {
+			OptionID string `json:"optionId"`
+		}
+		if json.Unmarshal(raw, &shares) == nil {
+			list := make([]string, 0, len(shares))
+			for _, share := range shares {
+				list = append(list, share.OptionID)
+			}
+			return unique(list)
+		}
+	}
+	return []string{}
+}
+
+// Diff compares two versions of a planning record that keeps Shell attribute values in its field
+// "attributes" (D-048) and returns every changed field, sorted by field name, for history.Log (FR-006). It is
+// history.Diff for every field except "attributes", which is compared attribute by attribute: one change
+// per attribute, with the field "attributes.<attributeId>", which DescribeAttribute describes. Empty values
+// (missing, null, "", [] or {}) are all the same.
+func Diff(before, after any) ([]history.Change, error) {
+	oldFields, oldValues, err := splitAttributes(before)
+	if err != nil {
+		return nil, err
+	}
+	newFields, newValues, err := splitAttributes(after)
+	if err != nil {
+		return nil, err
+	}
+	changes, err := history.Diff(oldFields, newFields)
+	if err != nil {
+		return nil, err
+	}
+	ids := map[string]bool{}
+	for id := range oldValues {
+		ids[id] = true
+	}
+	for id := range newValues {
+		ids[id] = true
+	}
+	for _, id := range slices.SortedFunc(maps.Keys(ids), compareIDs) {
+		oldValue, newValue := compactJSON(oldValues[id]), compactJSON(newValues[id])
+		if bytes.Equal(oldValue, newValue) || (isEmptyValue(oldValue) && isEmptyValue(newValue)) {
+			continue
+		}
+		changes = append(changes, history.Change{Field: "attributes." + id, Old: orNull(oldValue), New: orNull(newValue)})
+	}
+	slices.SortStableFunc(changes, func(a, b history.Change) int { return strings.Compare(a.Field, b.Field) })
+	return changes, nil
+}
+
+// splitAttributes encodes record as a JSON object and returns its fields without "attributes", and the
+// attribute values that field held.
+func splitAttributes(record any) (map[string]json.RawMessage, AttributeValues, error) {
+	encoded, err := json.Marshal(record)
+	if err != nil {
+		return nil, nil, err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(encoded, &fields); err != nil {
+		return nil, nil, err
+	}
+	var values AttributeValues
+	if raw, found := fields["attributes"]; found {
+		if err := json.Unmarshal(raw, &values); err != nil {
+			return nil, nil, err
+		}
+		delete(fields, "attributes")
+	}
+	return fields, values, nil
+}
+
+// compactJSON returns raw without spaces, so that equal values compare equal; nil for no value.
+func compactJSON(raw json.RawMessage) json.RawMessage {
+	if raw == nil {
+		return nil
+	}
+	var b bytes.Buffer
+	if err := json.Compact(&b, raw); err != nil {
+		return raw
+	}
+	return b.Bytes()
+}
+
+// orNull returns raw, or JSON null for no value.
+func orNull(raw json.RawMessage) json.RawMessage {
+	if raw == nil {
+		return json.RawMessage("null")
+	}
+	return raw
 }
