@@ -1,0 +1,125 @@
+/* The details and form panels of people and teams (plan "Pages"). */
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-wrap: anywhere;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.facts {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.facts dt {
+  margin-bottom: 2px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.muted {
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+
+.link {
+  color: var(--link);
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.recordLine {
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.colour {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+/* Footer actions that may carry a reason under them (FR-006). */
+.footerActions {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.reasonLine {
+  flex-basis: 100%;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  text-align: right;
+}
+
+.name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.email {
+  color: var(--ink-2);
+  font-size: 13px;
+}

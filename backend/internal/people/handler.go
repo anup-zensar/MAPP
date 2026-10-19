@@ -7,7 +7,7 @@ import (
 	"northstar/internal/platform/web"
 )
 
-// Handler answers the HTTP requests about the signed-in person and their preferences.
+// Handler answers the HTTP requests about people, teams, the signed-in person and their preferences.
 type Handler struct {
 	service *Service
 }
@@ -17,11 +17,27 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// Routes registers the people routes on r. Both need a signed-in person, so both are wrapped in
-// signedIn.
+// Routes registers the people and team routes on r. All of them need a signed-in person, so all are
+// wrapped in signedIn. The handlers of people are in people_handler.go, those of teams in teams_handler.go.
+// There is no DELETE /api/people/{personId}: people are never deleted (FR-008).
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("GET /api/me", signedIn(h.currentUser))
 	r.Handle("PATCH /api/me/preferences", signedIn(h.updatePreferences))
+
+	r.Handle("GET /api/people", signedIn(h.listPeople))
+	r.Handle("POST /api/people", signedIn(h.createPerson))
+	r.Handle("GET /api/people/{personId}", signedIn(h.getPerson))
+	r.Handle("PATCH /api/people/{personId}", signedIn(h.updatePerson))
+	r.Handle("POST /api/people/{personId}/impact", signedIn(h.checkPersonImpact))
+	r.Handle("POST /api/people/{personId}/status", signedIn(h.setPersonStatus))
+
+	r.Handle("GET /api/teams", signedIn(h.listTeams))
+	r.Handle("POST /api/teams", signedIn(h.createTeam))
+	r.Handle("GET /api/teams/{teamId}", signedIn(h.getTeam))
+	r.Handle("PATCH /api/teams/{teamId}", signedIn(h.updateTeam))
+	r.Handle("DELETE /api/teams/{teamId}", signedIn(h.deleteTeam))
+	r.Handle("POST /api/teams/{teamId}/impact", signedIn(h.checkTeamImpact))
+	r.Handle("POST /api/teams/{teamId}/status", signedIn(h.setTeamStatus))
 }
 
 // currentUser answers GET /api/me: who is signed in, with their preferences.
