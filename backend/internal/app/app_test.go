@@ -327,14 +327,6 @@ var notYetServed = []string{
 	"GET /api/activities/{activityId}/destinations",
 	"POST /api/activities/{activityId}/move",
 	"POST /api/activities/{activityId}/copy",
-	// 007 Line items
-	"GET /api/activities/{activityId}/line-items",
-	"POST /api/activities/{activityId}/line-items",
-	"GET /api/activities/{activityId}/line-items/form-options",
-	"GET /api/line-items/{lineItemId}",
-	"PATCH /api/line-items/{lineItemId}",
-	"DELETE /api/line-items/{lineItemId}",
-	"POST /api/line-items/{lineItemId}/duplicate",
 	// 008 Activity approvals
 	"GET /api/approval-workflows",
 	"POST /api/approval-workflows",

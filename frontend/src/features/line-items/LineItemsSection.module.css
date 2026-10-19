@@ -1,0 +1,83 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* The rows scroll sideways inside the card on narrow screens, never the page (design system §2). */
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table thead th {
+  padding-block: 8px;
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.number,
+.table th.number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.name {
+  display: block;
+  color: var(--link);
+  font-weight: 600;
+}
+
+.id {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  width: 1%;
+  text-align: right;
+}
+
+/* The row just created: a blue tint that fades over 3 seconds (none with reduced motion). */
+.highlight {
+  animation: highlight 3s var(--ease-out) both;
+}
+
+@keyframes highlight {
+  from {
+    background: var(--status-active);
+  }
+
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .highlight {
+    animation: none;
+    outline: 2px solid var(--blue);
+    outline-offset: -2px;
+  }
+}

@@ -1,0 +1,109 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+/* Many months scroll sideways inside the card, never the page (edge case "Many months"). */
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+}
+
+.scroll:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table thead th {
+  background: var(--gray-bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: bottom;
+}
+
+.table tfoot th,
+.table tfoot td {
+  border-bottom: 0;
+  font-weight: 600;
+}
+
+/* The line-item names stay in view while the months scroll (design system §2). */
+.sticky {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 200px;
+  overflow: hidden;
+  background: var(--surface);
+  text-overflow: ellipsis;
+}
+
+.table thead .sticky {
+  background: var(--gray-bg);
+}
+
+.number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th.number,
+.table td.number {
+  text-align: right;
+}
+
+.period {
+  display: block;
+}
+
+.outside {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--status-review-text);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.strong {
+  font-weight: 600;
+}

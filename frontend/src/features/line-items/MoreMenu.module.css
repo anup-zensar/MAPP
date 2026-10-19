@@ -1,0 +1,40 @@
+/* The same menu as the shared ActionsMenu, opened by a "More" button. */
+.chevron {
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+}
+
+.menu {
+  z-index: 50;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.item {
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 13.5px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* The tint of the item under the pointer or the arrow keys is also the keyboard focus indicator. */
+.item[data-highlighted] {
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
+}
+
+.danger {
+  color: var(--status-problem-text);
+}
+
+.separator {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--hairline);
+}

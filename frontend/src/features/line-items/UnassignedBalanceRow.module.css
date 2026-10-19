@@ -1,0 +1,66 @@
+/* The system row, set apart from the line items on the subtle grey of table headers. */
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.meter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.meter > :first-child {
+  flex: 1 1 160px;
+  max-width: 320px;
+}
+
+.meterText {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.message {
+  color: var(--ink-2);
+}
+
+/* Line items above the planned cost: red, and said in words too (constitution III). */
+.problem {
+  color: var(--status-problem-text);
+}
+
+.message.problem {
+  font-weight: 600;
+}
+
+.hint {
+  color: var(--ink-2);
+  font-size: 13px;
+}

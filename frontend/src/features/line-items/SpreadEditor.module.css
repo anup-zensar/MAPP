@@ -1,0 +1,120 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.methods {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.methods:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 4px;
+  border-radius: var(--radius-control);
+}
+
+/* The four methods side by side; on narrow screens they wrap. */
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.radio input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.note {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.error {
+  margin-top: 4px;
+  color: var(--status-problem-text);
+  font-size: 13px;
+}
+
+.preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  list-style: none;
+}
+
+.custom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* One cell per month; as many per row as fit, so the page never scrolls sideways. */
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.month {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+/* A month outside the activity's dates: allowed, marked with a dashed border and its note. */
+.outside {
+  border-style: dashed;
+  background: var(--gray-bg);
+}
+
+.monthName {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.addMonths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.total {
+  color: var(--ink);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooMuch {
+  color: var(--status-problem-text);
+}

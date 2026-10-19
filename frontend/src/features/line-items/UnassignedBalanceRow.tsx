@@ -1,0 +1,84 @@
+import { InfoTip, ProgressBar } from '@/components';
+import { cx } from '@/lib/cx';
+import { toCents } from '@/lib/decimal';
+import { amountText, centsInput } from './lineItemMath';
+import type { UnassignedBalance } from './lineItemsApi';
+import {
+  ALL_ASSIGNED,
+  BALANCE_LABEL,
+  BALANCE_TIP,
+  exceededText,
+  leftText,
+  METER_LABEL,
+  meterText,
+  NO_PLANNED_COST,
+  ROUNDING_HINT,
+} from './lineItemText';
+import styles from './UnassignedBalanceRow.module.css';
+
+/**
+ * The system row "Unassigned planned cost (Sys_Gen_Balance)" (FR-002, FR-004): the balance, red
+ * when line items exceed the planned cost, a meter of what is assigned, the state in words and the
+ * rounding hint when a currency rate leaves a few cents (D-145).
+ */
+export function UnassignedBalanceRow({ balance }: { balance: UnassignedBalance }) {
+  const exceeded = balance.state === 'exceeded';
+  return (
+    <div className={styles.row}>
+      <div className={styles.head}>
+        <span className={styles.label}>
+          {BALANCE_LABEL}
+          <InfoTip label="Unassigned planned cost" text={BALANCE_TIP} />
+        </span>
+        {balance.balance && (
+          <span className={cx(styles.amount, exceeded && styles.problem)}>
+            {amountText(balance.balance.amount, balance.balance.currency)}
+          </span>
+        )}
+      </div>
+      {balance.plannedCost && (
+        <div className={styles.meter}>
+          <ProgressBar
+            label={METER_LABEL}
+            value={percent(balance.assigned.amount, balance.plannedCost.amount)}
+            tone={exceeded ? 'problem' : undefined}
+          />
+          <span className={styles.meterText}>
+            {meterText(
+              centsInput(toCents(balance.assigned.amount)),
+              centsInput(toCents(balance.plannedCost.amount)),
+              balance.plannedCost.currency,
+            )}
+          </span>
+        </div>
+      )}
+      <p className={cx(styles.message, exceeded && styles.problem)}>{message(balance)}</p>
+      {balance.roundingHint && <p className={styles.hint}>{ROUNDING_HINT}</p>}
+    </div>
+  );
+}
+
+function message(balance: UnassignedBalance): string {
+  if (balance.state === 'noPlannedCost' || !balance.balance) {
+    return NO_PLANNED_COST;
+  }
+  const cents = toCents(balance.balance.amount);
+  const code = balance.balance.currency;
+  switch (balance.state) {
+    case 'left':
+      return leftText(amountText(cents, code));
+    case 'exceeded':
+      return exceededText(amountText(-cents, code));
+    default:
+      return ALL_ASSIGNED;
+  }
+}
+
+/** The assigned share of the planned cost, in whole percent; null without a planned cost. */
+function percent(assigned: string, plannedCost: string): number | null {
+  const total = toCents(plannedCost);
+  if (total <= 0n) {
+    return null;
+  }
+  return Number((toCents(assigned) * 100n) / total);
+}

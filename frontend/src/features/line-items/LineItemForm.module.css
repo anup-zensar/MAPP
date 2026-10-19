@@ -1,0 +1,143 @@
+/* One column of at most 720 px (007 plan, "Line-item form"). */
+.page {
+  max-width: 720px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* The activity's context stays in view while the form scrolls (FR-006). */
+.summaryBar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.summaryList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+}
+
+.summaryList div {
+  display: flex;
+  gap: 6px;
+}
+
+.summaryList dt {
+  color: var(--ink-2);
+}
+
+.summaryList dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.negative {
+  color: var(--status-problem-text);
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+/* "Calculated  = 10,869.57 USD at 0.92 EUR per USD  ⓘ" under the planned cost (FR-011). */
+.conversion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.calculated {
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--chip);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.readOnlyField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.readOnlyLabel {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.fromFinance {
+  padding: 16px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.fromFinance summary {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fromFinance summary:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.fromFinance .note {
+  margin-top: 8px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 20px;
+  margin: 12px 0 0;
+  font-size: 14px;
+}
+
+.facts dt {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.facts dd {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.gone {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
