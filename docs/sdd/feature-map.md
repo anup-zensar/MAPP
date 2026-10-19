@@ -9,13 +9,13 @@ In progress · Done.
 | # | Folder | Feature | Priority | Depends on | Status |
 |---|---|---|---|---|---|
 | 001 | [001-app-shell-and-sign-in](../../specs/001-app-shell-and-sign-in/spec.md) | Demo sign-in, application shell, navigation, user menu, getting-started home, shared building blocks (activity-log and recycle-bin core) | P1 | — | In progress |
-| 002 | [002-settings-and-shell-attributes](../../specs/002-settings-and-shell-attributes/spec.md) | Settings: models, activity types, Shell attributes and options, currencies and rates, finance budget items | P1 | 001 | Draft |
-| 003 | [003-people-and-teams](../../specs/003-people-and-teams/spec.md) | People directory, teams and memberships, person picker, My profile | P1 | 001 | Draft |
-| 004 | [004-plans](../../specs/004-plans/spec.md) | Plans list and plan page; create, view, edit, copy, publish/unpublish, delete plans; budget, goals, Shell attributes | P1 | 002, 003 | Draft |
-| 005 | [005-campaigns-and-initiatives](../../specs/005-campaigns-and-initiatives/spec.md) | Campaigns and initiatives inside a plan; budgets flow down, costs roll up; move, copy, delete | P1 | 004 | Draft |
-| 006 | [006-activities](../../specs/006-activities/spec.md) | Activities: basics, dates, planned cost, Shell attributes with business-unit groups and % splits, goals, status, completeness | P1 | 005 | Draft |
-| 007 | [007-line-items](../../specs/007-line-items/spec.md) | Line items: currency, spread over months, finance coding, finance budget link, SWBS request flag, unassigned balance | P1 | 006 | Draft |
-| 008 | [008-activity-approvals](../../specs/008-activity-approvals/spec.md) | Approval workflows (Settings), submit / approve / decline / re-submit, approvals inbox, notifications | P1 | 006, 007 | Draft |
+| 002 | [002-settings-and-shell-attributes](../../specs/002-settings-and-shell-attributes/spec.md) | Settings: models, activity types, Shell attributes and options, currencies and rates, finance budget items | P1 | 001 | In progress |
+| 003 | [003-people-and-teams](../../specs/003-people-and-teams/spec.md) | People directory, teams and memberships, person picker, My profile | P1 | 001 | In progress |
+| 004 | [004-plans](../../specs/004-plans/spec.md) | Plans list and plan page; create, view, edit, copy, publish/unpublish, delete plans; budget, goals, Shell attributes | P1 | 002, 003 | In progress |
+| 005 | [005-campaigns-and-initiatives](../../specs/005-campaigns-and-initiatives/spec.md) | Campaigns and initiatives inside a plan; budgets flow down, costs roll up; move, copy, delete | P1 | 004 | In progress |
+| 006 | [006-activities](../../specs/006-activities/spec.md) | Activities: basics, dates, planned cost, Shell attributes with business-unit groups and % splits, goals, status, completeness | P1 | 005 | In progress |
+| 007 | [007-line-items](../../specs/007-line-items/spec.md) | Line items: currency, spread over months, finance coding, finance budget link, SWBS request flag, unassigned balance | P1 | 006 | In progress |
+| 008 | [008-activity-approvals](../../specs/008-activity-approvals/spec.md) | Approval workflows (Settings), submit / approve / decline / re-submit, approvals inbox, notifications | P1 | 006, 007 | In progress |
 | 009 | [009-home-dashboard](../../specs/009-home-dashboard/spec.md) | ZenReach-style home: summary cards, my plans, my activities, waiting for my approval, needs attention | P1 | 004–008 | Draft |
 | 010 | [010-all-work-views](../../specs/010-all-work-views/spec.md) | All work: grid with roll-ups, filters and search, calendar, budget & cost by month, saved views, export | P2 | 004–008 | Draft |
 | 011 | [011-activity-log-and-recycle-bin](../../specs/011-activity-log-and-recycle-bin/spec.md) | Activity log page and record history; recycle bin page with restore and permanent delete | P2 | 001, 004–007 | Draft |
