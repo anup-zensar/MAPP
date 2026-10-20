@@ -68,7 +68,9 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     );
     // The year is one of the less-used filters behind Filters (design system §2.4 A).
     await user.click(screen.getByRole('button', { name: 'Filters' }));
-    await user.selectOptions(screen.getByRole('combobox', { name: 'From' }), '2026');
+    // Until 016's API is merged the list takes one year and knows no plan types.
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Year' }), '2026');
+    expect(screen.queryByRole('group', { name: 'Plan type' })).not.toBeInTheDocument();
     await user.keyboard('{Escape}');
 
     await waitFor(() => expect(cardNames()).toEqual(['FY2026 Mobility China']));
@@ -85,7 +87,10 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
   });
 
   it('filters by a range of years and by plan type (016 FR-033)', async () => {
-    const { api, user, router } = renderPage();
+    const typed = seedList();
+    const { api, user, router } = renderPage('/plans', {
+      body: { ...typed, items: typed.items.map((plan) => ({ ...plan, planType: 'operational' })) },
+    });
 
     await screen.findAllByRole('article');
     await user.click(screen.getByRole('button', { name: 'Filters' }));

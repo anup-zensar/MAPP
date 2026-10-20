@@ -9,6 +9,11 @@ export interface PlansFiltersProps {
   filters: PlanListFilters;
   /** Every year with a plan in the team scope, newest first (PlanList.years). */
   years: number[];
+  /**
+   * The API filters by a range of years and by plan type (016). Until 016's backend is merged it
+   * takes one year only and knows no plan types, so the menu offers one Year and no Plan type.
+   */
+  served016?: boolean;
   onChange: (next: Partial<PlanListFilters>) => void;
 }
 
@@ -41,12 +46,13 @@ function yearChoices(years: number[], filters: PlanListFilters): number[] {
  *
  * **Years** (016 FR-033) is All years or a range from–to among the years with plans: choosing a
  * first year alone gives that one year, and the range never runs backwards (the other end
- * follows). **Plan type** takes several; none ticked means every type.
+ * follows). **Plan type** takes several; none ticked means every type. Both need 016's API; before
+ * it the menu keeps the single Year it had.
  *
  * On phones (below 600 px, UI audit P-06) the button is its icon with the number of filters in
  * use, so the toolbar keeps two rows, and the menu also holds the Cards / Table layout.
  */
-export function PlansFilters({ filters, years, onChange }: PlansFiltersProps) {
+export function PlansFilters({ filters, years, served016 = true, onChange }: PlansFiltersProps) {
   const id = useId();
   const count = filtersInUse(filters);
   const choices = yearChoices(years, filters);
@@ -58,7 +64,8 @@ export function PlansFilters({ filters, years, onChange }: PlansFiltersProps) {
       return;
     }
     const from = Number(text);
-    const to = filters.yearTo === null || filters.yearTo < from ? from : filters.yearTo;
+    const to =
+      !served016 || filters.yearTo === null || filters.yearTo < from ? from : filters.yearTo;
     onChange({ yearFrom: from, yearTo: to });
   }
 
@@ -89,57 +96,80 @@ export function PlansFilters({ filters, years, onChange }: PlansFiltersProps) {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content className={styles.menu} align="start" sideOffset={6} aria-label="Filters">
-          <fieldset className={styles.field}>
-            <legend className={styles.label}>Years</legend>
-            <div className={styles.row}>
-              <label className={styles.sublabel} htmlFor={`${id}-from`}>
-                From
-                <select
-                  id={`${id}-from`}
-                  className={styles.select}
-                  value={allYears ? '' : String(filters.yearFrom)}
-                  onChange={(event) => chooseFrom(event.target.value)}
-                >
-                  <option value="">All years</option>
-                  {choices.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+          {!served016 ? (
+            <div className={styles.field}>
+              <label htmlFor={`${id}-from`} className={styles.label}>
+                Year
               </label>
-              <label className={styles.sublabel} htmlFor={`${id}-to`}>
-                To
-                <select
-                  id={`${id}-to`}
-                  className={styles.select}
-                  value={allYears ? '' : String(filters.yearTo)}
-                  disabled={allYears}
-                  onChange={(event) => chooseTo(event.target.value)}
-                >
-                  {allYears && <option value="">All years</option>}
-                  {choices.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <select
+                id={`${id}-from`}
+                className={styles.select}
+                value={allYears ? '' : String(filters.yearFrom)}
+                onChange={(event) => chooseFrom(event.target.value)}
+              >
+                <option value="">All years</option>
+                {choices.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
-          </fieldset>
-          <fieldset className={styles.field}>
-            <legend className={styles.label}>Plan type</legend>
-            {PLAN_TYPES.map((type) => (
-              <label key={type} className={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={filters.types.includes(type)}
-                  onChange={(event) => toggleType(type, event.target.checked)}
-                />
-                {PLAN_TYPE_LABELS[type]}
-              </label>
-            ))}
-          </fieldset>
+          ) : (
+            <fieldset className={styles.field}>
+              <legend className={styles.label}>Years</legend>
+              <div className={styles.row}>
+                <label className={styles.sublabel} htmlFor={`${id}-from`}>
+                  From
+                  <select
+                    id={`${id}-from`}
+                    className={styles.select}
+                    value={allYears ? '' : String(filters.yearFrom)}
+                    onChange={(event) => chooseFrom(event.target.value)}
+                  >
+                    <option value="">All years</option>
+                    {choices.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.sublabel} htmlFor={`${id}-to`}>
+                  To
+                  <select
+                    id={`${id}-to`}
+                    className={styles.select}
+                    value={allYears ? '' : String(filters.yearTo)}
+                    disabled={allYears}
+                    onChange={(event) => chooseTo(event.target.value)}
+                  >
+                    {allYears && <option value="">All years</option>}
+                    {choices.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </fieldset>
+          )}
+          {served016 && (
+            <fieldset className={styles.field}>
+              <legend className={styles.label}>Plan type</legend>
+              {PLAN_TYPES.map((type) => (
+                <label key={type} className={styles.check}>
+                  <input
+                    type="checkbox"
+                    checked={filters.types.includes(type)}
+                    onChange={(event) => toggleType(type, event.target.checked)}
+                  />
+                  {PLAN_TYPE_LABELS[type]}
+                </label>
+              ))}
+            </fieldset>
+          )}
           <fieldset className={styles.field}>
             <legend className={styles.label}>Show</legend>
             {(

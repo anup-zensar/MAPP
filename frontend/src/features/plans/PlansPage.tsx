@@ -58,6 +58,12 @@ export function PlansPage() {
     q: filters.q,
   });
   const actions = usePlanActions();
+  // 016's API sends every plan's type; until then the list takes one year and no plan types.
+  const [served016, setServed016] = useState(false);
+  const answersTypes = plans.data?.items.some((plan) => plan.planType !== undefined) ?? false;
+  if (answersTypes && !served016) {
+    setServed016(true);
+  }
 
   /** Changes some filters: in the address (replacing it) and in what is remembered. */
   function change(next: Partial<PlanListFilters>) {
@@ -241,7 +247,12 @@ export function PlansPage() {
                 onChange={(status) => change({ status })}
               />
             </div>
-            <PlansFilters filters={filters} years={planYears} onChange={change} />
+            <PlansFilters
+              filters={filters}
+              years={planYears}
+              served016={served016}
+              onChange={change}
+            />
             <div className={styles.end}>
               {data && (
                 <p className={styles.count} aria-live="polite">
