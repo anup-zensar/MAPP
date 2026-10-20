@@ -5,6 +5,8 @@ import type { NavigateFunction } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { PersonLabel, useToast } from '@/components';
 import type { ActionsMenuItem, TreeNode } from '@/components';
+import type { components } from '@/api/schema';
+import { gateItem } from '@/features/plans/gateAction';
 import { useFormatters } from '@/lib/useFormatters';
 import { fetchLatestActivity, usePlanActivities } from './activitiesApi';
 import type { Activity, ActivitySummary } from './activitiesApi';
@@ -17,11 +19,15 @@ import { MoveActivityDialog } from './MoveActivityDialog';
 import { SplitActivityDialog } from './SplitActivityDialog';
 import { SPLIT_ACTIVITY } from './splitText';
 
+type PlanContentAccess = components['schemas']['PlanContentAccess'];
+
 /** What an initiative row or panel tells feature 006 about itself. */
 export interface InitiativeRow {
   id: string;
   name: string;
   planId: string;
+  /** Whether the person may add activities to it (its access's addChild, feature 014). */
+  addActivity?: components['schemas']['ActionAvailability'];
 }
 
 /** The dialogs a row's ⋯ menu opens (FR-029 – FR-031). */
@@ -66,11 +72,18 @@ export function useActivityRows(planId: string): Map<string, TreeNode[]> {
     }
   }
 
-  return activityRowsByInitiative(query.data?.items ?? [], planId, navigate, format, {
-    open,
-    ask: (dialog, activityId) => void ask(dialog, activityId),
-    close: () => setOpen(null),
-  });
+  return activityRowsByInitiative(
+    query.data?.items ?? [],
+    planId,
+    navigate,
+    format,
+    {
+      open,
+      ask: (dialog, activityId) => void ask(dialog, activityId),
+      close: () => setOpen(null),
+    },
+    query.data?.access,
+  );
 }
 
 /** One TreeNode per activity, grouped by initiative id, in the API's order. */
@@ -80,26 +93,43 @@ export function activityRowsByInitiative(
   navigate: NavigateFunction,
   format: DateWriters,
   rowActions?: RowActions,
+  /** What the person may do with the plan's activities (feature 014); missing means everything. */
+  access?: PlanContentAccess,
 ): Map<string, TreeNode[]> {
   const rows = new Map<string, TreeNode[]>();
   for (const activity of activities) {
     const href = activityHref(planId, activity.id);
     const actions: ActionsMenuItem[] = [
       { label: 'View', onSelect: () => void navigate(href) },
-      { label: 'Edit', onSelect: () => void navigate(activityEditHref(planId, activity.id)) },
+      ...gateItem(
+        { label: 'Edit', onSelect: () => void navigate(activityEditHref(planId, activity.id)) },
+        access?.editActivities,
+      ),
     ];
     if (rowActions) {
       actions.push(
-        { label: 'Copy', onSelect: () => rowActions.ask('copy', activity.id) },
-        { label: 'Move', onSelect: () => rowActions.ask('move', activity.id) },
+        ...gateItem(
+          { label: 'Copy', onSelect: () => rowActions.ask('copy', activity.id) },
+          access?.editActivities,
+        ),
+        ...gateItem(
+          { label: 'Move', onSelect: () => rowActions.ask('move', activity.id) },
+          access?.editActivities,
+        ),
         // Split off line items and planned cost into a new activity (016 FR-026).
-        { label: SPLIT_ACTIVITY, onSelect: () => rowActions.ask('split', activity.id) },
-        {
-          label: 'Delete',
-          tone: 'danger',
-          separatorBefore: true,
-          onSelect: () => rowActions.ask('delete', activity.id),
-        },
+        ...gateItem(
+          { label: SPLIT_ACTIVITY, onSelect: () => rowActions.ask('split', activity.id) },
+          access?.editActivities,
+        ),
+        ...gateItem(
+          {
+            label: 'Delete',
+            tone: 'danger',
+            separatorBefore: true,
+            onSelect: () => rowActions.ask('delete', activity.id),
+          },
+          access?.deleteActivities,
+        ),
       );
     }
     const opened = rowActions?.open?.activity.id === activity.id ? rowActions.open : null;
@@ -156,10 +186,11 @@ export function activityActionsForInitiative(
   initiative: InitiativeRow,
   navigate: NavigateFunction,
 ): ActionsMenuItem[] {
-  return [
+  return gateItem(
     {
       label: 'Add activity',
       onSelect: () => void navigate(newActivityHref(initiative.planId, initiative.id)),
     },
-  ];
+    initiative.addActivity,
+  );
 }

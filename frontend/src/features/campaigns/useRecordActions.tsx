@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ActionsMenuItem } from '@/components';
+import { gateItem } from '@/features/plans/gateAction';
 import type { RecordTarget } from './campaignRows';
 import { CopyDialog } from './CopyDialog';
 import { DeleteRecordDialog } from './DeleteRecordDialog';
@@ -16,8 +17,8 @@ export interface RecordActions {
   askMove: (target: RecordTarget) => void;
   /** **Copy** and **Move to…** for a ⋯ menu (US6). */
   copyAndMoveItems: (target: RecordTarget) => ActionsMenuItem[];
-  /** **Delete** for a ⋯ menu: last, after a line, in red (design system §6.1). */
-  deleteItem: (target: RecordTarget) => ActionsMenuItem;
+  /** **Delete** for a ⋯ menu: last, after a line, in red (design system §6.1); none or disabled per access. */
+  deleteItem: (target: RecordTarget) => ActionsMenuItem[];
   /** The dialogs these actions open; render them once, next to the rows or the panel. */
   dialogs: ReactNode;
 }
@@ -38,15 +39,19 @@ export function useRecordActions({ onDeleted }: { onDeleted?: () => void } = {})
     askCopy: setCopying,
     askMove: setMoving,
     copyAndMoveItems: (target) => [
-      { label: COPY, onSelect: () => setCopying(target) },
-      { label: MOVE_TO, onSelect: () => setMoving(target) },
+      ...gateItem({ label: COPY, onSelect: () => setCopying(target) }, target.access?.copy),
+      ...gateItem({ label: MOVE_TO, onSelect: () => setMoving(target) }, target.access?.move),
     ],
-    deleteItem: (target) => ({
-      label: DELETE,
-      tone: 'danger',
-      separatorBefore: true,
-      onSelect: () => setDeleting(target),
-    }),
+    deleteItem: (target) =>
+      gateItem(
+        {
+          label: DELETE,
+          tone: 'danger',
+          separatorBefore: true,
+          onSelect: () => setDeleting(target),
+        },
+        target.access?.delete,
+      ),
     dialogs: (
       <>
         {/* Each opening starts afresh: the dialogs leave the page when they close. */}

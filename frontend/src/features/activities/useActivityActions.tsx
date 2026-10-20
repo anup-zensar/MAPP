@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ActionsMenuItem } from '@/components';
 import { showHistory } from '@/features/activity-log/showHistory';
+import { gateItem } from '@/features/plans/gateAction';
 import type { Activity } from './activitiesApi';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { CopyActivityDialog } from './CopyActivityDialog';
@@ -28,21 +29,26 @@ export function useActivityActions(
 ): ActivityActions {
   const [open, setOpen] = useState<'copy' | 'move' | 'split' | 'delete' | null>(null);
   const close = () => setOpen(null);
+  // What the person may do with the activity (014 FR-011): disabled with the reason, or left out.
+  const access = activity.access;
 
   return {
     items: [
-      { label: 'Copy', onSelect: () => setOpen('copy') },
-      { label: 'Move', onSelect: () => setOpen('move') },
+      ...gateItem({ label: 'Copy', onSelect: () => setOpen('copy') }, access?.copy),
+      ...gateItem({ label: 'Move', onSelect: () => setOpen('move') }, access?.move),
       // Split off line items and planned cost into a new activity (016 FR-026).
-      { label: SPLIT_ACTIVITY, onSelect: () => setOpen('split') },
+      ...gateItem({ label: SPLIT_ACTIVITY, onSelect: () => setOpen('split') }, access?.edit),
       // Brings the page's History into view and focuses it (feature 011, FR-011).
       { label: 'View history', onSelect: onViewHistory },
-      {
-        label: 'Delete',
-        tone: 'danger',
-        separatorBefore: true,
-        onSelect: () => setOpen('delete'),
-      },
+      ...gateItem(
+        {
+          label: 'Delete',
+          tone: 'danger',
+          separatorBefore: true,
+          onSelect: () => setOpen('delete'),
+        },
+        access?.delete,
+      ),
     ],
     dialogs: (
       <>

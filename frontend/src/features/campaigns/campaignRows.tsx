@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router';
 import { PersonLabel, Tooltip } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
 import { AmountPair } from '@/features/plans/AmountPair';
+import { gateItem } from '@/features/plans/gateAction';
 import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
 import { recordHref } from '@/lib/recordLinks';
 import type { Formatters } from '@/lib/useFormatters';
@@ -45,6 +46,8 @@ export interface RecordTarget {
   year: number;
   /** The version the row or panel showed; a move sends it (FR-025). */
   version: number;
+  /** What the signed-in person may do with it (feature 014); missing means everything. */
+  access?: Campaign['access'];
   /** What goes with it (the delete, move and copy dialogs). */
   counts: {
     initiatives?: number;
@@ -78,6 +81,7 @@ export function targetOf(record: Campaign | Initiative): RecordTarget {
     planId: record.planId,
     year: record.plan.year,
     version: record.version,
+    access: record.access,
   };
   return 'initiatives' in record
     ? { ...common, level: 'campaign', counts: record.counts }
@@ -132,11 +136,14 @@ export function campaignRows(data: PlanCampaigns, options: RowOptions): TreeNode
     },
     children: item.initiatives.map((initiative) => initiativeNode(initiative, options)),
     actions: [
-      {
-        label: ADD_INITIATIVE,
-        onSelect: () => void options.navigate(addInitiativeHref(options.planId, item.id)),
-      },
-      ...viewAndEdit('campaign', item.id, options),
+      ...gateItem(
+        {
+          label: ADD_INITIATIVE,
+          onSelect: () => void options.navigate(addInitiativeHref(options.planId, item.id)),
+        },
+        item.access?.addChild,
+      ),
+      ...viewAndEdit('campaign', item, options),
       ...copyAndMove(item, options),
       ...deleteItem(item, options),
     ],
@@ -171,10 +178,15 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
     },
     children: options.rowsBelow?.get(initiative.id) ?? [],
     actions: [
-      ...viewAndEdit('initiative', initiative.id, options),
+      ...viewAndEdit('initiative', initiative, options),
       ...copyAndMove(initiative, options),
       ...initiativeExtraActions(
-        { id: initiative.id, name: initiative.name, planId: options.planId },
+        {
+          id: initiative.id,
+          name: initiative.name,
+          planId: options.planId,
+          addActivity: initiative.access?.addChild,
+        },
         options.navigate,
       ),
       ...deleteItem(initiative, options),
@@ -229,11 +241,18 @@ function commonCells(record: Campaign | Initiative, options: RowOptions) {
   };
 }
 
-function viewAndEdit(level: RecordLevel, id: string, options: RowOptions): ActionsMenuItem[] {
-  const href = recordHref(level, id, options.planId);
+function viewAndEdit(
+  level: RecordLevel,
+  record: Campaign | Initiative,
+  options: RowOptions,
+): ActionsMenuItem[] {
+  const href = recordHref(level, record.id, options.planId);
   return [
     { label: VIEW, onSelect: () => void options.navigate(href) },
-    { label: EDIT, onSelect: () => void options.navigate(`${href}/edit`) },
+    ...gateItem(
+      { label: EDIT, onSelect: () => void options.navigate(`${href}/edit`) },
+      record.access?.edit,
+    ),
   ];
 }
 
@@ -241,8 +260,12 @@ function viewAndEdit(level: RecordLevel, id: string, options: RowOptions): Actio
 function copyAndMove(record: Campaign | Initiative, options: RowOptions): ActionsMenuItem[] {
   const { onCopy, onMove } = options;
   return [
-    ...(onCopy ? [{ label: COPY, onSelect: () => onCopy(targetOf(record)) }] : []),
-    ...(onMove ? [{ label: MOVE_TO, onSelect: () => onMove(targetOf(record)) }] : []),
+    ...(onCopy
+      ? gateItem({ label: COPY, onSelect: () => onCopy(targetOf(record)) }, record.access?.copy)
+      : []),
+    ...(onMove
+      ? gateItem({ label: MOVE_TO, onSelect: () => onMove(targetOf(record)) }, record.access?.move)
+      : []),
   ];
 }
 
@@ -252,14 +275,15 @@ function deleteItem(record: Campaign | Initiative, options: RowOptions): Actions
   if (!onDelete) {
     return [];
   }
-  return [
+  return gateItem(
     {
       label: DELETE,
       tone: 'danger',
       separatorBefore: true,
       onSelect: () => onDelete(targetOf(record)),
     },
-  ];
+    record.access?.delete,
+  );
 }
 
 export function addInitiativeHref(planId: string, campaignId: string): string {

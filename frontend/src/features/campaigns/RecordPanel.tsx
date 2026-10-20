@@ -81,7 +81,7 @@ function DetailsPanel({
       record={record}
       planId={planId}
       recordItems={actions.copyAndMoveItems(target)}
-      moreItems={[actions.deleteItem(target)]}
+      moreItems={actions.deleteItem(target)}
       dialogs={actions.dialogs}
     />
   );

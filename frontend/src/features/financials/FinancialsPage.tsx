@@ -14,6 +14,7 @@ import {
   Tabs,
 } from '@/components';
 import type { FilterChip, TabItem } from '@/components';
+import { useAccess } from '@/lib/access';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useFormatters } from '@/lib/useFormatters';
 import { useFinancialTransactions } from './financialsApi';
@@ -66,6 +67,8 @@ export function FinancialsPage() {
   const transactions = useFinancialTransactions(filters);
   const narrow = useNarrow();
   const [open, setOpen] = useState<'import' | 'history' | null>(null);
+  // 014 FR-011: Import GSAP extract only for a person who may import (finance.import).
+  const canImport = useAccess().has('finance.import');
   const data = transactions.data;
   const forbidden =
     transactions.error instanceof ApiError && transactions.error.kind === 'forbidden';
@@ -85,9 +88,11 @@ export function FinancialsPage() {
             <Button variant="tertiary" icon={<History />} onClick={() => setOpen('history')}>
               Import history
             </Button>
-            <Button icon={<Upload />} onClick={() => setOpen('import')}>
-              Import GSAP extract
-            </Button>
+            {canImport && (
+              <Button icon={<Upload />} onClick={() => setOpen('import')}>
+                Import GSAP extract
+              </Button>
+            )}
           </>
         }
       />

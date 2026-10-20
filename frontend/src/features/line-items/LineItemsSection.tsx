@@ -10,6 +10,8 @@ import {
   LinkButton,
   Skeleton,
 } from '@/components';
+import type { components } from '@/api/schema';
+import { allows, gateItem } from '@/features/plans/gateAction';
 import { cx } from '@/lib/cx';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import { useFinancialRecord } from './gsapFinancials';
@@ -35,6 +37,8 @@ import { SpreadGrid } from './SpreadGrid';
 import { SwbsChip } from './SwbsChip';
 import { useLineItemActions } from './useLineItemActions';
 import { UnassignedBalanceRow } from './UnassignedBalanceRow';
+
+type LineItemAccess = components['schemas']['LineItemAccess'];
 
 export interface LineItemsSectionProps {
   activityId: string;
@@ -65,11 +69,13 @@ export function LineItemsSection({ activityId }: LineItemsSectionProps) {
     }
   }, [highlight, section.data]);
 
-  const addButton = (
+  const access = section.data?.access;
+  // 014 FR-011: Add line item only for a person who may add line items here.
+  const addButton = allows(access?.add) ? (
     <LinkButton to={`/activities/${encodeURIComponent(activityId)}/line-items/new`} icon={<Plus />}>
       {ADD_LINE_ITEM}
     </LinkButton>
-  );
+  ) : undefined;
 
   if (section.isPending) {
     return (
@@ -161,6 +167,7 @@ export function LineItemsSection({ activityId }: LineItemsSectionProps) {
                     onEdit={() => void navigate(`${recordHref('lineItem', item.id)}/edit`)}
                     onDuplicate={() => actions.duplicate(item, activity)}
                     onDelete={() => actions.remove(item, activity)}
+                    access={access}
                   />
                 ))}
               </tbody>
@@ -194,6 +201,8 @@ interface RowProps {
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  /** What the person may do with the activity's line items (feature 014). */
+  access?: LineItemAccess;
 }
 
 function Row({
@@ -206,6 +215,7 @@ function Row({
   onEdit,
   onDuplicate,
   onDelete,
+  access,
 }: RowProps) {
   return (
     <tr id={rowId(item.id)} className={cx(highlighted && styles.highlight)}>
@@ -238,9 +248,12 @@ function Row({
           label={item.name}
           items={[
             { label: VIEW, onSelect: onView },
-            { label: EDIT, onSelect: onEdit },
-            { label: DUPLICATE, onSelect: onDuplicate },
-            { label: DELETE, onSelect: onDelete, tone: 'danger', separatorBefore: true },
+            ...gateItem({ label: EDIT, onSelect: onEdit }, access?.edit),
+            ...gateItem({ label: DUPLICATE, onSelect: onDuplicate }, access?.duplicate),
+            ...gateItem(
+              { label: DELETE, onSelect: onDelete, tone: 'danger', separatorBefore: true },
+              access?.delete,
+            ),
           ]}
         />
       </td>

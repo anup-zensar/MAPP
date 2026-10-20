@@ -15,6 +15,7 @@ import {
 import type { ActionsMenuItem } from '@/components';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
+import { allows, gateItem } from '@/features/plans/gateAction';
 import { RecordFinancials } from '@/features/plans/RecordFinancials';
 import { panelHistoryId, showHistory } from '@/features/activity-log/showHistory';
 import { localDate } from '@/lib/format';
@@ -84,19 +85,23 @@ export function RecordDetails({
 
   const items: ActionsMenuItem[] = [
     ...(isCampaign
-      ? [
+      ? gateItem(
           {
             label: ADD_INITIATIVE,
             onSelect: () => void navigate(addInitiativeHref(planId, record.id)),
           },
-        ]
+          record.access?.addChild,
+        )
       : []),
     ...recordItems,
     // Brings the panel's History part into view and focuses it (feature 011, FR-011).
     { label: VIEW_HISTORY, onSelect: () => showHistory(panelHistoryId(record.id)) },
     ...(isCampaign
       ? []
-      : initiativeExtraActions({ id: record.id, name: record.name, planId }, navigate)),
+      : initiativeExtraActions(
+          { id: record.id, name: record.name, planId, addActivity: record.access?.addChild },
+          navigate,
+        )),
     ...moreItems,
   ];
 
@@ -108,9 +113,11 @@ export function RecordDetails({
         title={record.name}
         footer={
           <>
-            <LinkButton to={`${href}/edit`} variant="primary">
-              {EDIT}
-            </LinkButton>
+            {allows(record.access?.edit) && (
+              <LinkButton to={`${href}/edit`} variant="primary">
+                {EDIT}
+              </LinkButton>
+            )}
             <ActionsMenu label={record.name} items={items} />
           </>
         }
@@ -266,9 +273,11 @@ function CampaignInitiatives({ campaign, planId }: { campaign: Campaign; planId:
       {campaign.initiatives.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles.text}>{NO_INITIATIVES}</p>
-          <LinkButton to={addInitiativeHref(planId, campaign.id)} icon={<Plus />} size="sm">
-            {ADD_INITIATIVE}
-          </LinkButton>
+          {allows(campaign.access?.addChild) && (
+            <LinkButton to={addInitiativeHref(planId, campaign.id)} icon={<Plus />} size="sm">
+              {ADD_INITIATIVE}
+            </LinkButton>
+          )}
         </div>
       ) : (
         <ul className={styles.children}>

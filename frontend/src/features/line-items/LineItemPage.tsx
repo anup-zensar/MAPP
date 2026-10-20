@@ -16,6 +16,7 @@ import {
 } from '@/components';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
+import { allows, gateItem } from '@/features/plans/gateAction';
 import { formatRate, toCents } from '@/lib/decimal';
 import { localDate } from '@/lib/format';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
@@ -83,7 +84,7 @@ export function LineItemPage() {
     return <LineItemLoading title="Line item" />;
   }
 
-  const { lineItem, activity, balance } = details.data;
+  const { lineItem, activity, balance, access } = details.data;
   const href = recordHref('lineItem', lineItem.id);
 
   return (
@@ -113,20 +114,29 @@ export function LineItemPage() {
             <ActionsMenu
               label={lineItem.name}
               items={[
-                { label: DUPLICATE, onSelect: () => actions.duplicate(lineItem, activity) },
+                ...gateItem(
+                  { label: DUPLICATE, onSelect: () => actions.duplicate(lineItem, activity) },
+                  access?.duplicate,
+                ),
                 // Brings the History section below into view and focuses it (feature 011).
                 { label: VIEW_HISTORY, onSelect: () => showHistory() },
-                {
-                  label: DELETE,
-                  tone: 'danger',
-                  separatorBefore: true,
-                  onSelect: () => actions.remove(lineItem, activity),
-                },
+                ...gateItem(
+                  {
+                    label: DELETE,
+                    tone: 'danger',
+                    separatorBefore: true,
+                    onSelect: () => actions.remove(lineItem, activity),
+                  },
+                  access?.delete,
+                ),
               ]}
             />
-            <LinkButton to={`${href}/edit`} variant="primary" icon={<Pencil />}>
-              {EDIT}
-            </LinkButton>
+            {/* 014 FR-011: Edit only for a person who may edit the line item. */}
+            {allows(access?.edit) && (
+              <LinkButton to={`${href}/edit`} variant="primary" icon={<Pencil />}>
+                {EDIT}
+              </LinkButton>
+            )}
           </>
         }
       />

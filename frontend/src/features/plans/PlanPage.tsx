@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useOutlet, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { Button, ErrorState, Skeleton, Tabs } from '@/components';
+import { Button, ErrorState, Skeleton, Tabs, ViewOnlyNote } from '@/components';
 import type { ActionsMenuItem, TabItem } from '@/components';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
 import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
 import { useCampaignTreeContent } from '@/features/campaigns/useCampaignTreeContent';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { allows } from './gateAction';
 import { PlanDetails } from './PlanDetails';
 import { PlanGoals } from './PlanGoals';
 import { PlanHeader } from './PlanHeader';
@@ -47,7 +48,7 @@ export function PlanPage() {
   const { planId = '' } = useParams();
   const navigate = useNavigate();
   const plan = usePlan(planId);
-  const campaigns = useCampaignTreeContent(planId);
+  const campaigns = useCampaignTreeContent(planId, plan.data?.access?.content.addCampaign);
   const panel = useOutlet();
   const [search, setSearch] = useSearchParams();
   const tab = tabOf(search);
@@ -134,18 +135,24 @@ export function PlanPage() {
     }
     const data = plan.data;
     const moreItems: ActionsMenuItem[] = [
-      actions.copyItem(data),
+      ...actions.copyItem(data),
       // Opens the History tab and focuses its heading (feature 011, FR-011).
       { label: 'View history', onSelect: viewHistory },
-      actions.deleteItem(data),
+      ...actions.deleteItem(data),
     ];
+    // 014 FR-011: a person who may change nothing in the plan sees one View only note instead.
+    const viewOnly =
+      data.access !== undefined &&
+      !allows(data.access.edit) &&
+      !allows(data.access.content.editCampaigns) &&
+      !allows(data.access.content.editActivities);
     return (
       <>
         <PlanHeader
           plan={data}
           moreItems={moreItems}
           statusAction={
-            data.status === 'draft' ? (
+            !allows(data.access?.publish) ? undefined : data.status === 'draft' ? (
               <Button onClick={() => void actions.publish(data)}>Publish</Button>
             ) : (
               <Button onClick={() => actions.unpublish(data)}>Unpublish</Button>
@@ -153,6 +160,7 @@ export function PlanPage() {
           }
         />
         <div className={styles.body}>
+          {viewOnly && <ViewOnlyNote area="plan" />}
           <PlanSummaryCards plan={data} />
           {/* D-305: 015's Financials, then 016's Budget by month, both open, above the tabs. */}
           <RecordFinancials recordId={data.id} planId={data.id} variant="page" />

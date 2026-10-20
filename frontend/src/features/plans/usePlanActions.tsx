@@ -6,6 +6,7 @@ import { useToast } from '@/components';
 import type { ActionsMenuItem } from '@/components';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
 import { CopyPlanDialog } from './dialogs/CopyPlanDialog';
+import { gateItem } from './gateAction';
 import type { CopyRefusal } from './dialogs/CopyPlanDialog';
 import { DeletePlanDialog } from './dialogs/DeletePlanDialog';
 import { PublishBlockedDialog } from './dialogs/PublishBlockedDialog';
@@ -21,12 +22,15 @@ import type { PlanCopyRequest } from './plansApi';
 import type { PlanStatus } from './planText';
 
 type ReadinessGroup = components['schemas']['ReadinessGroup'];
+type PlanAccess = components['schemas']['PlanAccess'];
 
 /** What the actions need to know of a plan (a list row or the plan itself). */
 export interface ActionPlan {
   id: string;
   name: string;
   status: PlanStatus;
+  /** What the signed-in person may do with the plan (feature 014); missing means everything. */
+  access?: PlanAccess;
 }
 
 export interface PlanActionsOptions {
@@ -161,14 +165,20 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     }
   }
 
-  /** The ⋯ Delete item: last, after a line, in red (design system §6.1). */
-  function deleteItem(plan: ActionPlan): ActionsMenuItem {
-    return { label: 'Delete', tone: 'danger', separatorBefore: true, onSelect: () => remove(plan) };
+  /**
+   * The ⋯ Delete item: last, after a line, in red (design system §6.1). Disabled with the reason, or
+   * left out, when the person may not delete the plan (014 FR-011): spread it into the menu.
+   */
+  function deleteItem(plan: ActionPlan): ActionsMenuItem[] {
+    return gateItem(
+      { label: 'Delete', tone: 'danger', separatorBefore: true, onSelect: () => remove(plan) },
+      plan.access?.delete,
+    );
   }
 
-  /** The ⋯ Copy item, on the list and the plan page (FR-026). */
-  function copyItem(plan: ActionPlan): ActionsMenuItem {
-    return { label: 'Copy', onSelect: () => copy(plan) };
+  /** The ⋯ Copy item, on the list and the plan page (FR-026), as the person's access allows it. */
+  function copyItem(plan: ActionPlan): ActionsMenuItem[] {
+    return gateItem({ label: 'Copy', onSelect: () => copy(plan) }, plan.access?.copy);
   }
 
   /** The list's ⋯ Actions menu: View, Edit, Copy, Publish or Unpublish, Delete (FR-001). */
@@ -176,12 +186,18 @@ export function usePlanActions({ onDeleted }: PlanActionsOptions = {}) {
     const path = `/plans/${encodeURIComponent(plan.id)}`;
     return [
       { label: 'View', onSelect: () => void navigate(path) },
-      { label: 'Edit', onSelect: () => void navigate(`${path}/edit`) },
-      copyItem(plan),
-      plan.status === 'draft'
-        ? { label: 'Publish', onSelect: () => void publish(plan) }
-        : { label: 'Unpublish', onSelect: () => unpublish(plan) },
-      deleteItem(plan),
+      ...gateItem(
+        { label: 'Edit', onSelect: () => void navigate(`${path}/edit`) },
+        plan.access?.edit,
+      ),
+      ...copyItem(plan),
+      ...gateItem(
+        plan.status === 'draft'
+          ? { label: 'Publish', onSelect: () => void publish(plan) }
+          : { label: 'Unpublish', onSelect: () => unpublish(plan) },
+        plan.access?.publish,
+      ),
+      ...deleteItem(plan),
     ];
   }
 

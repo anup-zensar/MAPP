@@ -13,7 +13,8 @@ import { TransactionPanel } from './TransactionPanel';
 const LIST = 'GET /api/financials/transactions';
 
 function renderPage(route = '/financials', list: MockHandler = { body: transactionPage() }) {
-  const api = mockApi({ [LIST]: list });
+  // A 403 makes the session provider reload the person's access (014 FR-020).
+  const api = mockApi({ [LIST]: list, 'GET /api/me': { body: testUser() } });
   return { ...renderFinancials(route), api };
 }
 

@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { LinkButton } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
+import { allows, gateItem } from '@/features/plans/gateAction';
+import type { Availability } from '@/lib/access';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePlanCampaigns } from './campaignApi';
 import { campaignRows, totalsFooter } from './campaignRows';
@@ -39,7 +41,11 @@ export interface CampaignTreeContent {
  * the initiatives, **Add campaign** for the toolbar, the plan row and the empty tree, and the
  * totals row. Every change refreshes the list (refreshPlanning), so the rows follow at once.
  */
-export function useCampaignTreeContent(planId: string): CampaignTreeContent {
+export function useCampaignTreeContent(
+  planId: string,
+  /** Whether the person may add campaigns to the plan (the plan's access, feature 014). */
+  addCampaignAccess?: Availability,
+): CampaignTreeContent {
   const query = usePlanCampaigns(planId);
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,11 +53,11 @@ export function useCampaignTreeContent(planId: string): CampaignTreeContent {
   const rowsBelow = useRowsBelowInitiatives(planId);
   const actions = useRecordActions();
   const newHref = `/plans/${planId}/campaigns/new`;
-  const addCampaign = (
+  const addCampaign = allows(addCampaignAccess) ? (
     <LinkButton to={newHref} icon={<Plus />}>
       {ADD_CAMPAIGN}
     </LinkButton>
-  );
+  ) : undefined;
 
   return {
     nodes: query.data
@@ -67,7 +73,10 @@ export function useCampaignTreeContent(planId: string): CampaignTreeContent {
         })
       : [],
     toolbarActions: addCampaign,
-    planRowActions: [{ label: ADD_CAMPAIGN, onSelect: () => void navigate(newHref) }],
+    planRowActions: gateItem(
+      { label: ADD_CAMPAIGN, onSelect: () => void navigate(newHref) },
+      addCampaignAccess,
+    ),
     emptyAction: addCampaign,
     footer: query.data ? totalsFooter(query.data, formatters) : undefined,
     dialogs: actions.dialogs,

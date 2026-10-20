@@ -15,6 +15,7 @@ import {
   SummaryCard,
 } from '@/components';
 import type { FilterChip } from '@/components';
+import { useAccess } from '@/lib/access';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import {
@@ -45,6 +46,7 @@ const SEARCH_DELAY_MS = 250;
 export function PlansPage() {
   usePageTitle('Plans');
   const user = useCurrentUser();
+  const canCreate = useAccess().has('plans.create');
   const { money, moneyCompact } = useFormatters();
   const [search, setSearch] = useSearchParams();
   // 016's API sends every plan's type; until then the list takes one year and no plan types, so
@@ -154,9 +156,11 @@ export function PlansPage() {
           text="A plan holds one year of marketing for one business."
           // Secondary: the header already holds the primary New plan (design system §11, rule 1).
           action={
-            <LinkButton to="/plans/new" icon={<Plus />}>
-              Create your first plan
-            </LinkButton>
+            canCreate && (
+              <LinkButton to="/plans/new" icon={<Plus />}>
+                Create your first plan
+              </LinkButton>
+            )
           }
         />
       );
@@ -181,9 +185,12 @@ export function PlansPage() {
         title="Plans"
         description="Every yearly marketing plan, its status, its budget and what's still missing."
         actions={
-          <LinkButton to="/plans/new" variant="primary" icon={<Plus />}>
-            New plan
-          </LinkButton>
+          // 014 FR-011: New plan only for a person who may create plans.
+          canCreate && (
+            <LinkButton to="/plans/new" variant="primary" icon={<Plus />}>
+              New plan
+            </LinkButton>
+          )
         }
       />
       <div className={styles.page}>

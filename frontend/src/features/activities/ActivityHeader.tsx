@@ -16,6 +16,7 @@ import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { DecisionButton } from '@/features/approvals/DecisionButton';
 import { DecisionDialog } from '@/features/approvals/DecisionDialog';
 import { SubmitButton } from '@/features/approvals/SubmitButton';
+import { allows, gateItem } from '@/features/plans/gateAction';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import type { Activity } from './activitiesApi';
@@ -81,11 +82,14 @@ export function ActivityHeader({
     approval.actions.approve.available &&
     approval.viewer.isOwner;
 
-  const edit = (
+  // 014 FR-011: Edit and Submit only for a person who may do them; the server's reason in the menu.
+  const access = activity.access;
+  const mayEdit = allows(access?.edit);
+  const edit = mayEdit ? (
     <LinkButton to={editHref} variant="primary" icon={<Pencil />}>
       Edit
     </LinkButton>
-  );
+  ) : null;
   let actions: ReactNode = edit;
   let more = moreActions;
   if (canDecide && approval) {
@@ -95,15 +99,20 @@ export function ActivityHeader({
         <DecisionButton mode="approve" approval={approval} variant="primary" />
       </>
     );
-    more = [{ label: 'Edit', onSelect: () => void navigate(editHref) }, ...moreActions];
+    more = [
+      ...gateItem({ label: 'Edit', onSelect: () => void navigate(editHref) }, access?.edit),
+      ...moreActions,
+    ];
   } else if (activity.status === 'created' || activity.status === 'declined') {
     actions = (
       <>
-        <SubmitButton
-          activity={approvalActivity}
-          onShowProblems={onShowProblems}
-          variant="secondary"
-        />
+        {allows(access?.submit) && (
+          <SubmitButton
+            activity={approvalActivity}
+            onShowProblems={onShowProblems}
+            variant="secondary"
+          />
+        )}
         {edit}
       </>
     );

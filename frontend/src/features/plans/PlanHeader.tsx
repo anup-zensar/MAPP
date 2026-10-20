@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { LevelTag, LinkButton, PageHeader, PersonLabel, TeamPills } from '@/components';
 import type { ActionsMenuItem } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
+import { allows } from './gateAction';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import styles from './PlanHeader.module.css';
 import type { Plan } from './plansApi';
@@ -37,9 +38,12 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
       actions={
         <>
           {statusAction}
-          <LinkButton to={`/plans/${encodeURIComponent(plan.id)}/edit`} variant="primary">
-            Edit
-          </LinkButton>
+          {/* 014 FR-011: Edit only for a person who may edit the plan. */}
+          {allows(plan.access?.edit) && (
+            <LinkButton to={`/plans/${encodeURIComponent(plan.id)}/edit`} variant="primary">
+              Edit
+            </LinkButton>
+          )}
         </>
       }
       meta={
