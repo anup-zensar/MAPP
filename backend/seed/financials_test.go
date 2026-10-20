@@ -96,8 +96,9 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 
 	var all financials.TransactionPage
 	get("/api/financials/transactions?year=2026", &all)
-	if all.Counts != (financials.TypeCounts{All: 11, PurchaseOrder: 4, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: 1}) ||
-		all.Totals.Committed != usd("47652.17") || all.Totals.Invoiced != usd("33152.17") ||
+	// Priya does not see the not-linked PO: not-linked transactions show only to people who may import (014).
+	if all.Counts != (financials.TypeCounts{All: 10, PurchaseOrder: 3, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: 0}) ||
+		all.Totals.Committed != usd("35652.17") || all.Totals.Invoiced != usd("33152.17") ||
 		all.Totals.Paid != usd("30652.17") || all.Totals.Accrued != usd("2500.00") {
 		t.Errorf("Financials page 2026: counts %+v, totals %+v", all.Counts, all.Totals)
 	}
@@ -110,7 +111,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 	get("/api/financials/overview?scope=myTeams", &overview)
 	o := overview.Figures
 	if o.Committed != usd("35652.17") || o.PlannedCost == nil || *o.PlannedCost != usd("460000.00") || o.CommittedPercent == nil ||
-		*o.CommittedPercent != 8 || overview.ActivitiesAbovePlanned != 1 || overview.NotLinked != 1 {
+		*o.CommittedPercent != 8 || overview.ActivitiesAbovePlanned != 1 || overview.NotLinked != 0 {
 		t.Errorf("Priya's Home card = %+v", overview)
 	}
 }
