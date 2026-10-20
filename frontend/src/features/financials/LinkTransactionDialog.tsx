@@ -17,6 +17,8 @@ export const PREVIEW_DELAY_MS = 300;
 
 export interface LinkTransactionDialogProps {
   transaction: FinancialTransaction;
+  /** After Link, before onClose: the opener moves the focus to what replaced its button. */
+  onLinked?: () => void;
   onClose: () => void;
 }
 
@@ -26,7 +28,11 @@ export interface LinkTransactionDialogProps {
  * then Link. A missing line item or one in the recycle bin is refused at the field; a change made
  * meanwhile by someone else is refused as a version conflict.
  */
-export function LinkTransactionDialog({ transaction, onClose }: LinkTransactionDialogProps) {
+export function LinkTransactionDialog({
+  transaction,
+  onLinked,
+  onClose,
+}: LinkTransactionDialogProps) {
   const { show } = useToast();
   const { dateFormat } = useFormatters();
   const link = useLinkTransaction();
@@ -64,6 +70,7 @@ export function LinkTransactionDialog({ transaction, onClose }: LinkTransactionD
       show({
         message: `'${transaction.name}' linked to '${lineItem ? `${lineItem.name} (${lineItem.id})` : lineItemId}'`,
       });
+      onLinked?.();
       onClose();
     } catch (error) {
       const apiError = error instanceof ApiError ? error : new ApiError('other');

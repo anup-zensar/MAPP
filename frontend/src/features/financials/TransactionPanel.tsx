@@ -1,5 +1,5 @@
 import { ChevronRight, Info } from 'lucide-react';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
@@ -49,19 +49,39 @@ export function TransactionPanel() {
   const [dialog, setDialog] = useState<'link' | 'unlink' | null>(null);
   const data = transaction.data;
   const failure = transaction.error instanceof ApiError ? transaction.error : null;
+  const linkButton = useRef<HTMLButtonElement>(null);
+  const unlinkButton = useRef<HTMLButtonElement>(null);
+  // After Link or Unlink, the button that opened the dialog is gone; the focus goes to the button
+  // that replaced it (Unlink, or Link to a line item) once the panel shows it, never to the page.
+  const [focusNext, setFocusNext] = useState<'link' | 'unlink' | null>(null);
+  const linkState = data?.link.state;
+  const matchedBy = data?.link.matchedBy;
+
+  useEffect(() => {
+    if (dialog !== null || focusNext === null) {
+      return;
+    }
+    const target = focusNext === 'link' ? linkButton.current : unlinkButton.current;
+    if (target) {
+      target.focus();
+      setFocusNext(null);
+    }
+  }, [dialog, focusNext, linkState, matchedBy]);
 
   const close = () => void navigate(`/financials${location.search}`);
 
   const footer = data ? (
     <>
       {data.link.state === 'notLinked' && (
-        <Button variant="primary" onClick={() => setDialog('link')}>
+        <Button ref={linkButton} variant="primary" onClick={() => setDialog('link')}>
           Link to a line item
         </Button>
       )}
       <Button onClick={close}>Close</Button>
       {data.link.matchedBy === 'manual' && (
-        <Button onClick={() => setDialog('unlink')}>Unlink</Button>
+        <Button ref={unlinkButton} onClick={() => setDialog('unlink')}>
+          Unlink
+        </Button>
       )}
     </>
   ) : (
@@ -90,10 +110,18 @@ export function TransactionPanel() {
         )}
       </SidePanel>
       {data && dialog === 'link' && (
-        <LinkTransactionDialog transaction={data} onClose={() => setDialog(null)} />
+        <LinkTransactionDialog
+          transaction={data}
+          onLinked={() => setFocusNext('unlink')}
+          onClose={() => setDialog(null)}
+        />
       )}
       {data && dialog === 'unlink' && (
-        <UnlinkDialog transaction={data} onClose={() => setDialog(null)} />
+        <UnlinkDialog
+          transaction={data}
+          onUnlinked={() => setFocusNext('link')}
+          onClose={() => setDialog(null)}
+        />
       )}
     </>
   );
@@ -227,9 +255,11 @@ function pathHref(record: FinancialRecordRef, planId: string | undefined): strin
 /** "Unlink 'PO 4500001004 / 10' from 'Station signage (L-1007)'?" — then Not linked again. */
 function UnlinkDialog({
   transaction,
+  onUnlinked,
   onClose,
 }: {
   transaction: FinancialTransaction;
+  onUnlinked: () => void;
   onClose: () => void;
 }) {
   const { show } = useToast();
@@ -245,6 +275,7 @@ function UnlinkDialog({
     try {
       await unlink.mutateAsync({ id: transaction.id, version: transaction.version });
       show({ message: `'${transaction.name}' unlinked from '${lineItemText}'` });
+      onUnlinked();
     } catch (error) {
       const failure = error instanceof ApiError ? error : new ApiError('other');
       if (failure.kind !== 'signInRequired' && failure.kind !== 'sessionExpired') {

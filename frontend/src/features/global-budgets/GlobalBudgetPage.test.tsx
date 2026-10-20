@@ -236,7 +236,7 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('deletes a global budget without allocations and goes back to the list', async () => {
-    const { router, user } = renderPage({
+    const { api, router, user } = renderPage({
       [ONE]: { body: globalBudget({ allocations: [], plansWithoutAllocation: [] }) },
       'DELETE /api/global-budgets/GB-1001': {
         body: {
@@ -265,6 +265,9 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
     await user.click(within(confirm).getByRole('button', { name: 'Delete global budget' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/budgets'));
+    // The deleted global budget is not asked for again while its page closes (no "not found").
+    const asked = api.requests.filter((r) => `${r.method} ${r.path}` === ONE);
+    expect(asked).toHaveLength(1);
   });
 
   it('says when the global budget no longer exists', async () => {

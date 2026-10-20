@@ -170,6 +170,55 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
     ]);
   });
 
+  it('gives the focus to Link to a line item after Unlink, as its button is gone (WCAG 2.4.3)', async () => {
+    let unlinked = false;
+    const { user } = renderPanel(
+      'FT-1004',
+      () => ({ body: unlinked ? transactionOf(FT_1004, { version: 3 }) : manuallyLinked() }),
+      {
+        'POST /api/financials/transactions/FT-1004/unlink': () => {
+          unlinked = true;
+          return { body: transactionOf(FT_1004, { version: 3 }) };
+        },
+      },
+    );
+
+    const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
+    await user.click(within(panel).getByRole('button', { name: 'Unlink' }));
+    const confirm = await screen.findByRole('alertdialog');
+    await user.click(within(confirm).getByRole('button', { name: 'Unlink' }));
+
+    const link = await within(panel).findByRole('button', { name: 'Link to a line item' });
+    await waitFor(() => expect(link).toHaveFocus());
+    expect(within(panel).queryByRole('button', { name: 'Unlink' })).toBeNull();
+  });
+
+  it('gives the focus to Unlink after Link (US7 scenario 1)', async () => {
+    let linked = false;
+    const { user } = renderPanel(
+      'FT-1004',
+      () => ({ body: linked ? manuallyLinked() : transactionOf(FT_1004) }),
+      {
+        'GET /api/line-items/L-1007': { body: STATION_SIGNAGE },
+        'POST /api/financials/transactions/FT-1004/link': () => {
+          linked = true;
+          return { body: manuallyLinked() };
+        },
+      },
+    );
+
+    const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
+    await user.click(within(panel).getByRole('button', { name: 'Link to a line item' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: "Link 'PO 4500001004 / 10' to a line item",
+    });
+    await user.type(within(dialog).getByRole('textbox', { name: /Line item ID/ }), 'L-1007');
+    await user.click(within(dialog).getByRole('button', { name: 'Link' }));
+
+    const unlink = await within(panel).findByRole('button', { name: 'Unlink' });
+    await waitFor(() => expect(unlink).toHaveFocus());
+  });
+
   it('says when the transaction does not exist', async () => {
     renderPanel('FT-9999', {
       status: 404,

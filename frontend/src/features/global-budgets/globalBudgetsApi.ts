@@ -85,7 +85,7 @@ export function useUpdateGlobalBudget() {
 
 /** Moves a global budget without allocations to the recycle bin; answers the entry for Undo. */
 export function useDeleteGlobalBudget() {
-  const refresh = useRefresh();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
       call(
@@ -93,8 +93,18 @@ export function useDeleteGlobalBudget() {
           params: { path: { globalBudgetId: id } },
         }),
       ),
-    onSettled: refresh,
+    // Everything is refreshed but the deleted global budget itself: its page is closing, and asking
+    // for it again would only answer "not found". After a refusal it is refreshed too.
+    onSettled: (_result, error, id) =>
+      queryClient.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          queryKey[0] !== 'session' && !(error === null && isGlobalBudgetKey(queryKey, id)),
+      }),
   });
+}
+
+function isGlobalBudgetKey(queryKey: readonly unknown[], id: string): boolean {
+  return queryKey[0] === GLOBAL_BUDGETS_KEY[0] && queryKey[1] === 'one' && queryKey[2] === id;
 }
 
 /** Allocates part of the global budget to a plan; the plan's budget becomes the amount. */
