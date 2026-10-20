@@ -224,7 +224,9 @@ function Allocations({ budget, onAllocate, onChange, onRemove }: AllocationsProp
                 <th scope="col" className={styles.numeric}>
                   Left to plan
                 </th>
-                <th scope="col">Budget used</th>
+                <th scope="col" className={styles.numeric}>
+                  Budget used
+                </th>
                 <th scope="col">
                   <span className="visually-hidden">Actions</span>
                 </th>
@@ -254,7 +256,7 @@ function Allocations({ budget, onAllocate, onChange, onRemove }: AllocationsProp
                   >
                     {money(row.leftToPlan)}
                   </td>
-                  <td>
+                  <td className={styles.numeric}>
                     <BudgetUsed percent={row.budgetUsedPercent} />
                   </td>
                   <td className={styles.actions}>

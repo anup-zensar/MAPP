@@ -17,14 +17,27 @@
   gap: var(--space-2);
 }
 
+/* The same select look as Year and Plan above the table: no native arrow, the drawn chevron. */
 .select {
   height: var(--control-sm);
-  padding: 0 var(--space-6) 0 var(--space-2);
+  padding: 0 var(--space-8) 0 var(--space-3);
   border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
+  appearance: none;
   background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
   color: var(--ink);
   font-size: var(--text-sm);
+  cursor: pointer;
 }
 
 .range {
