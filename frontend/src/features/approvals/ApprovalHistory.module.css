@@ -34,6 +34,15 @@
   overflow-wrap: break-word;
 }
 
+/* "Rules applied to: planned cost $50,000.00 · Event · Lubricants" under the round heading. */
+.facts {
+  margin-bottom: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  overflow-wrap: break-word;
+}
+
 /* The entries on a thin line, like a timeline. */
 .entries {
   display: flex;

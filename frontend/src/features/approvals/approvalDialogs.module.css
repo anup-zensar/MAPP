@@ -25,3 +25,21 @@
   background: color-mix(in srgb, var(--status-review) 12%, transparent);
   color: var(--status-review-text);
 }
+
+/* A sentence that changes what happens ("This activity will be approved automatically."). */
+.strong {
+  font-weight: var(--weight-bold);
+}
+
+/* One level of a submission: what it will do, with its notes under it. */
+.outcome {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.outcomeNote {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
