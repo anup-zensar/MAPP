@@ -32,8 +32,10 @@ describe('Sidebar', () => {
     expect(links.map((link) => link.textContent?.trim())).toEqual([
       'Home',
       'Plans',
+      'Global budgets',
       'Approvals',
       'All work',
+      'Financials',
       'Settings',
       'Recycle bin',
       'Activity log',

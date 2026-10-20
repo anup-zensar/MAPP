@@ -135,8 +135,17 @@ function renamed(entry: ActivityLogEntry): string {
   return name && name !== entry.recordName ? ` — now '${name}'` : '';
 }
 
-/** The page of a planning record; undefined for other records or when its plan is unknown. */
+/** The pages of records outside the plan tree: global budgets (014) and GSAP transactions (015). */
+const OTHER_PAGES: Record<string, (id: string) => string> = {
+  globalBudget: (id) => `/budgets/${encodeURIComponent(id)}`,
+  financialTransaction: (id) => `/financials/transactions/${encodeURIComponent(id)}`,
+};
+
+/** The page of a record; undefined for records without one or when its plan is unknown. */
 function pageOf(type: string, id: string, path: RecordRef[]): string | undefined {
+  if (Object.hasOwn(OTHER_PAGES, type)) {
+    return OTHER_PAGES[type](id);
+  }
   if (!isPlanningType(type)) {
     return undefined;
   }
@@ -193,13 +202,11 @@ export function entriesText(count: number): string {
 }
 
 /**
- * The count line above the list (FR-003): "Showing 12 of 1,204 entries" while a filter is in use,
- * otherwise "1,204 entries".
+ * The count at the end of the toolbar (FR-003), written as every list writes it (design system
+ * §11, rule 14): "12 of 1,204 entries", and "1,204 of 1,204 entries" when no filter is in use.
  */
-export function countLine(total: number, unfilteredTotal: number, filtered: boolean): string {
-  return filtered
-    ? `Showing ${formatWhole(total)} of ${entriesText(unfilteredTotal)}`
-    : entriesText(total);
+export function countLine(total: number, unfilteredTotal: number): string {
+  return `${formatWhole(total)} of ${entriesText(unfilteredTotal)}`;
 }
 
 /** "Showing the last 50 of 1,204" under the list while more entries can be loaded (FR-009). */

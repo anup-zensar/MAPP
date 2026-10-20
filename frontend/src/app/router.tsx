@@ -12,6 +12,10 @@ import { InitiativePanel } from '@/features/campaigns/InitiativePanel';
 import { NewCampaignPanel } from '@/features/campaigns/NewCampaignPanel';
 import { NewInitiativePanel } from '@/features/campaigns/NewInitiativePanel';
 import { ComponentGalleryPage } from '@/features/dev/ComponentGalleryPage';
+import { GlobalBudgetPage } from '@/features/global-budgets/GlobalBudgetPage';
+import { GlobalBudgetsPage } from '@/features/global-budgets/GlobalBudgetsPage';
+import { FinancialsPage } from '@/features/financials/FinancialsPage';
+import { TransactionPanel } from '@/features/financials/TransactionPanel';
 import { SampleRecordsPage } from '@/features/dev/SampleRecordsPage';
 import { HomePage } from '@/features/home/HomePage';
 import { LineItemCreatePage } from '@/features/line-items/LineItemCreatePage';
@@ -163,6 +167,26 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   },
   // 010 All work
   { path: '/all-work', element: <AllWorkPage />, ...titled('All work') },
+  // 014 Global budgets (US6)
+  { path: '/budgets', element: <GlobalBudgetsPage />, ...titled('Global budgets') },
+  {
+    path: '/budgets/:globalBudgetId',
+    element: <GlobalBudgetPage />,
+    ...titled('Global budget'),
+  },
+  // 015 Financials; a transaction's details panel opens over the list (child route)
+  {
+    path: '/financials',
+    element: <FinancialsPage />,
+    ...titled('Financials'),
+    children: [
+      {
+        path: 'transactions/:transactionId',
+        element: <TransactionPanel />,
+        ...titled('Financials'),
+      },
+    ],
+  },
   // 011 Activity log and Recycle bin (under MORE in the sidebar)
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },

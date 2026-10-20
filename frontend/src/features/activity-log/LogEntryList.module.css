@@ -1,25 +1,26 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
   /* Entries adapt to the width they get (a side panel is narrower than the page), see LogEntry. */
   container-type: inline-size;
 }
 
-/* A day's heading on the subtle grey of table headers, with its count in grey. */
+/* A day's heading on the grey of table headers, with its count in grey (§5.4 header row). */
 .heading {
-  margin: 0 0 4px;
-  padding: 6px 10px;
-  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-chip);
   background: var(--gray-bg);
   color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
 }
 
 .count {
   color: var(--ink-2);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 
 .entries {
@@ -34,13 +35,12 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .loaded {
-  margin: 0;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-sm);
 }
 
 .spinner {

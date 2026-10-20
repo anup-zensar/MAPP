@@ -70,8 +70,12 @@ describe('SignInPage', () => {
     mockApi({ 'GET /api/auth/demo-people': { body: DEMO_PEOPLE } });
     renderSignInPage();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeInTheDocument();
-    expect(screen.getByText('Sign in to plan your marketing work.')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Sign in to NorthStar' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Plan your marketing work, from plan to line item.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Demo sign-in — Shell single sign-on comes later')).toBeInTheDocument();
     expect(
       await screen.findByText(

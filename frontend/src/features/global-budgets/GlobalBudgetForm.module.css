@@ -1,0 +1,26 @@
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* A value that can't change, shown in place of its field with its lock (design system §6.6). */
+.readOnly {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.readOnlyLabel {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+}
+
+.readOnlyValue {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-sm);
+}

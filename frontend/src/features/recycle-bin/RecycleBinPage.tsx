@@ -12,7 +12,14 @@ import {
 } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { BinRow } from './BinRow';
-import { binCountLine, holdsRecord, matchSearch, showingLine, typePills } from './binText';
+import {
+  BIN_DESCRIPTION,
+  EMPTY_BIN_TEXT,
+  holdsRecord,
+  matchSearch,
+  showingLine,
+  typePills,
+} from './binText';
 import type { BinItem } from './binText';
 import { EmptyBinDialog } from './EmptyBinDialog';
 import { PurgeDialog } from './PurgeDialog';
@@ -45,20 +52,19 @@ export function RecycleBinPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Recycle bin"
-        title="Deleted,"
-        highlight="not gone."
-        description={bin.data ? binCountLine(items.length) : undefined}
-        actions={
-          items.length > 0 ? (
-            <Button
-              variant="danger"
-              icon={<Trash2 />}
-              onClick={() => setDialog({ kind: 'empty', items })}
-            >
-              Empty recycle bin
-            </Button>
-          ) : undefined
+        title="Recycle bin"
+        description={BIN_DESCRIPTION}
+        // Destructive and rare: in More, never a red button on the page (design system §5.1).
+        moreActions={
+          items.length > 0
+            ? [
+                {
+                  label: 'Empty recycle bin',
+                  tone: 'danger',
+                  onSelect: () => setDialog({ kind: 'empty', items }),
+                },
+              ]
+            : undefined
         }
       />
       {bin.error ? (
@@ -73,10 +79,7 @@ export function RecycleBinPage() {
         </div>
       ) : items.length === 0 ? (
         <div className={styles.panel}>
-          <EmptyState
-            icon={<Trash2 />}
-            title="Nothing in the recycle bin — when you delete a plan, campaign, initiative, activity or line item, it comes here so you can bring it back."
-          />
+          <EmptyState icon={<Trash2 />} title="Nothing in the recycle bin" text={EMPTY_BIN_TEXT} />
         </div>
       ) : (
         <BinList
@@ -131,7 +134,6 @@ function BinList({
     .filter((item) => type === 'all' || item.recordType === type)
     .map((item) => ({ item, match: matchSearch(item, search) }))
     .filter(({ match }) => match.matches);
-  const filtered = type !== 'all' || search.trim() !== '';
   const highlighted = highlight ? items.find((item) => holdsRecord(item, highlight)) : undefined;
 
   return (
@@ -151,11 +153,9 @@ function BinList({
           value={type}
           onChange={onType}
         />
-        {filtered && (
-          <p className={styles.count} aria-live="polite">
-            {showingLine(shown.length, items.length)}
-          </p>
-        )}
+        <p className={styles.count} aria-live="polite">
+          {showingLine(shown.length, items.length)}
+        </p>
       </div>
       {highlight && !highlighted && (
         <p className={styles.notice} role="status">
@@ -166,6 +166,7 @@ function BinList({
         <EmptyState
           icon={<SearchX />}
           title="Nothing matches these filters"
+          text="Remove a filter or search for something else."
           action={
             <Button
               onClick={() => {

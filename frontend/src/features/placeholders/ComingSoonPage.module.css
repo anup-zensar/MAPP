@@ -1,0 +1,10 @@
+/* "Coming soon" as a neutral tag between the two sentences. */
+.soon {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-chip);
+  background: var(--chip);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+}

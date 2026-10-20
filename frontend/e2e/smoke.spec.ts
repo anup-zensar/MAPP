@@ -10,7 +10,7 @@ test('US1: a visitor is sent to sign in and comes back after choosing a demo per
 
   await expect(page).toHaveURL(/\/sign-in\?next=%2Fplans$/);
   await expect(page).toHaveTitle('Sign in · NorthStar');
-  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to NorthStar' })).toBeVisible();
   await expect(
     page.getByText('Demo environment — sign-in and data are for demonstration only'),
   ).toBeVisible();
@@ -59,15 +59,17 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   const main = page.getByRole('main');
 
   // Every section is built: Plans, Approvals, Settings (features 002–008), Home (009), All work (010),
-  // Recycle bin and Activity log (011, whose headings are the messages table's "Deleted, not gone." and
-  // "Every change, on the record."). No page shows "Coming soon" any more.
+  // Recycle bin and Activity log (011), Global budgets (014), Financials (015). No page shows
+  // "Coming soon" any more.
   const pages: { item: string; heading: string }[] = [
     { item: 'Plans', heading: 'Plans' },
+    { item: 'Global budgets', heading: 'Global budgets' },
     { item: 'Approvals', heading: 'Approvals' },
     { item: 'All work', heading: 'All work' },
     { item: 'Settings', heading: 'Settings' },
-    { item: 'Recycle bin', heading: 'Deleted, not gone.' },
-    { item: 'Activity log', heading: 'Every change, on the record.' },
+    { item: 'Financials', heading: 'Financials' },
+    { item: 'Recycle bin', heading: 'Recycle bin' },
+    { item: 'Activity log', heading: 'Activity log' },
     { item: 'Home', heading: 'Welcome back, Daniel.' },
   ];
   for (const { item, heading } of pages) {
@@ -145,7 +147,7 @@ test('US5: create, rename, delete and Undo a sample folder; the activity log rec
 
 test('SC-006: the sign-in page and Home pass the automated WCAG 2.1 AA check', async ({ page }) => {
   await page.goto('/sign-in');
-  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to NorthStar' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sign in as/ }).first()).toBeVisible();
   await expectNoAxeViolations(page);
 

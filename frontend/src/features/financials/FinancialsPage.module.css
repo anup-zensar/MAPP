@@ -1,0 +1,151 @@
+/* The source line, the summary cards, then the tabs over the list card (design system §2.4 A). */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
+}
+
+/* "GSAP data as of …": right under the header's description, so it reads as part of it. */
+.source {
+  margin-top: calc(var(--space-4) * -1);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+/* Four cards in a row on desktops, two per row below 960 px (design system §5.3). */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+.cardSkeleton {
+  min-height: 104px;
+  padding: var(--space-5);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+/* The table card: the toolbar across its width, a hairline, then the table edge to edge. */
+.panel {
+  min-width: 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.body {
+  padding: var(--card-padding);
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--card-padding);
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* Controls side by side, bottoms aligned (labels sit above the selects); they wrap when narrow. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.search {
+  flex: 1 1 360px;
+  min-width: 0;
+  max-width: 480px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+}
+
+/* The toolbar's selects: 40 px, 8 px corners, a 3:1 border (design system §5.5). */
+.control {
+  width: 220px;
+  max-width: 100%;
+  height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background-color: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-sm);
+}
+
+.control:hover {
+  border-color: var(--control-border-hover);
+}
+
+.year {
+  width: 110px;
+}
+
+.select {
+  padding-right: var(--space-9);
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+/* "4 of 11 transactions", pushed to the end of the row, on the controls' centre line. */
+.count {
+  margin-left: auto;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--control-md);
+  white-space: nowrap;
+}
+
+@media (max-width: 959px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  .search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .field {
+    flex: 1 1 120px;
+  }
+
+  .control,
+  .year {
+    width: 100%;
+  }
+
+  .count {
+    margin-left: 0;
+  }
+}

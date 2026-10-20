@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/api/errors';
 import {
   alreadyResolvedText,
-  binCountLine,
   blockedText,
   changeSentence,
   contentsText,
@@ -22,6 +21,7 @@ import {
   restoredHref,
   restoredMessage,
   rowContentsText,
+  showingLine,
   typePills,
   wasInText,
 } from './binText';
@@ -31,13 +31,10 @@ import { PLAN_REF, binItem, lineItemEntry, restorePreview } from './testData';
 const PARENT = { type: 'initiative', typeLabel: 'initiative', id: 'I-1009', name: 'Trade shows' };
 
 describe('rows (FR-014, FR-015, FR-017)', () => {
-  it('counts the items in the header, singular for one', () => {
-    expect(binCountLine(3)).toBe(
-      '3 items in the recycle bin · Items stay here until you restore or delete them',
-    );
-    expect(binCountLine(1)).toBe(
-      '1 item in the recycle bin · Items stay here until you restore or delete them',
-    );
+  it('counts the items shown of all, singular for one (FR-016)', () => {
+    expect(showingLine(3, 12)).toBe('3 of 12 items');
+    expect(showingLine(1, 1)).toBe('1 of 1 item');
+    expect(showingLine(1250, 1250)).toBe('1,250 of 1,250 items');
   });
 
   it('says what was inside, or Nothing inside', () => {
@@ -204,6 +201,7 @@ describe('restore dialog (FR-018 – FR-024, FR-026)', () => {
     expect(restoredHref('plan', 'P-1001', [])).toBe('/plans/P-1001');
     expect(restoredHref('campaign', 'C-1', [])).toBeUndefined();
     expect(restoredHref('currency', 'EUR', [])).toBeUndefined();
+    expect(restoredHref('globalBudget', 'GB-1001', [])).toBe('/budgets/GB-1001');
   });
 });
 

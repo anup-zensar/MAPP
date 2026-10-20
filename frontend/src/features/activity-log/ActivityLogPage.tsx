@@ -68,9 +68,7 @@ export function ActivityLogPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Activity log"
-        title="Every change,"
-        highlight="on the record."
+        title="Activity log"
         description="See who changed what, and when. Entries can't be edited or removed."
       />
       <div className={styles.sections}>
@@ -104,21 +102,41 @@ export function ActivityLogPage() {
           </div>
         )}
 
-        <div className={styles.panel}>
-          <LogFilterBar
-            filters={filters}
-            onChange={changeFilters}
-            summary={summary.data}
-            record={log.firstPage?.record ?? null}
-          />
-          <LogBody log={log} filtered={filtered} onClear={() => changeFilters(NO_FILTERS)} />
-        </div>
+        {/* The list template (design system §2.4 A): the toolbar inside the card, across its width. */}
+        <section className={styles.panel} aria-label="Entries">
+          <div className={styles.toolbar}>
+            <LogFilterBar
+              filters={filters}
+              onChange={changeFilters}
+              summary={summary.data}
+              record={log.firstPage?.record ?? null}
+              count={<LogCount log={log} filtered={filtered} />}
+            />
+          </div>
+          <div className={styles.body}>
+            <LogBody log={log} filtered={filtered} onClear={() => changeFilters(NO_FILTERS)} />
+          </div>
+        </section>
       </div>
     </>
   );
 }
 
-/** The count line and the list, or the state the list is in. */
+/** "12 of 1,204 entries" at the end of the toolbar, once the first page has arrived (§5.2). */
+function LogCount({ log, filtered }: { log: ReturnType<typeof useLogEntries>; filtered: boolean }) {
+  const page = log.firstPage;
+  const unfiltered = page?.unfilteredTotal ?? page?.total ?? 0;
+  if (!page || log.error || unfiltered === 0 || (!filtered && page.total === 0)) {
+    return null;
+  }
+  return (
+    <p className={styles.count} aria-live="polite">
+      {countLine(page.total, unfiltered)}
+    </p>
+  );
+}
+
+/** The list, or the state the list is in. */
 function LogBody({
   log,
   filtered,
@@ -156,26 +174,20 @@ function LogBody({
     );
   }
 
-  return (
-    <>
-      <p className={styles.count} aria-live="polite">
-        {countLine(page.total, unfiltered, filtered)}
-      </p>
-      {page.total === 0 ? (
-        <EmptyState
-          icon={<SearchX />}
-          title="Nothing matches these filters"
-          action={<Button onClick={onClear}>Clear filters</Button>}
-        />
-      ) : (
-        <LogEntryList
-          entries={log.entries}
-          total={page.total}
-          hasMore={log.hasMore}
-          onLoadMore={log.loadMore}
-          isLoadingMore={log.isLoadingMore}
-        />
-      )}
-    </>
+  return page.total === 0 ? (
+    <EmptyState
+      icon={<SearchX />}
+      title="Nothing matches these filters"
+      text="Remove a filter or search for something else."
+      action={<Button onClick={onClear}>Clear filters</Button>}
+    />
+  ) : (
+    <LogEntryList
+      entries={log.entries}
+      total={page.total}
+      hasMore={log.hasMore}
+      onLoadMore={log.loadMore}
+      isLoadingMore={log.isLoadingMore}
+    />
   );
 }

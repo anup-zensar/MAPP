@@ -1,0 +1,36 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--row-divider);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.item:first-child {
+  padding-top: 0;
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.name {
+  font-weight: var(--weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.meta,
+.muted {
+  color: var(--ink-2);
+}

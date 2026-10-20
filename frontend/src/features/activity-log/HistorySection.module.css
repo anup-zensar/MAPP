@@ -1,45 +1,46 @@
 /* View history scrolls the section to the top of the screen, below the sticky top bar. */
 .history {
-  scroll-margin-top: 80px;
+  scroll-margin-top: calc(var(--topbar) + var(--space-6));
 }
 
 /* In a side panel the panel's body scrolls; it has no top bar to clear. */
 .history.inPanel {
-  scroll-margin-top: 16px;
+  scroll-margin-top: var(--space-4);
 }
 
 .body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
-/* In a side panel: drawn like the panel's other parts (a hairline above, an h3 title). */
+/* In a side panel: a part like the panel's others, 32 px apart, with an h3 (§5.5 FormSection). */
 .panelPart {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
+  gap: var(--space-4);
+  padding-top: var(--space-8);
   border-top: 1px solid var(--hairline);
 }
 
 .panelHeader {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 8px 12px;
+  gap: var(--space-2) var(--space-3);
 }
 
 .panelTitle {
-  margin: 0;
   color: var(--ink);
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
 }
 
 .panelSubtitle {
-  margin: 2px 0 0;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }

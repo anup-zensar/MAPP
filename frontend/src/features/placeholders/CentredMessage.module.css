@@ -1,0 +1,55 @@
+/* Centred in the content column, no card (UI audit M-02). */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 480px;
+  margin: var(--space-16) auto 0;
+  text-align: center;
+}
+
+/* A 48 px outline icon in grey, as in the empty and error states (design system §5.6). */
+.icon {
+  margin-bottom: var(--space-4);
+  color: var(--ink-2);
+}
+
+.icon svg {
+  display: block;
+  width: 48px;
+  height: 48px;
+  stroke-width: 1.5;
+}
+
+.title {
+  color: var(--ink);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-2xl);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.action {
+  margin-top: var(--space-6);
+}
+
+@media (max-width: 599px) {
+  .page {
+    margin-top: var(--space-10);
+  }
+
+  .title {
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+  }
+}

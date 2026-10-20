@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert, Info } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router';
@@ -38,9 +38,10 @@ const NOTICES: Record<SessionEnd, string> = {
 };
 
 /**
- * The one sign-in page (US1, FR-001 – FR-004, FR-009, FR-028), in the style of ZenReach's sign-in
- * card: type a demo e-mail and the demo password, or choose a demo person. Afterwards people go
- * on to the page they asked for (the `next` address), or Home.
+ * The one sign-in page (US1, FR-001 – FR-004, FR-009, FR-028): one white card on the grey page
+ * (design system §5.8) — type a demo e-mail and the demo password, or choose a demo person.
+ * Afterwards people go on to the page they asked for (the `next` address), or Home. The brand is
+ * shown once, in the bar above the card (UI audit S-01).
  */
 export function SignInPage() {
   usePageTitle('Sign in');
@@ -57,32 +58,14 @@ export function SignInPage() {
   return (
     <PublicLayout>
       <div className={styles.card}>
-        <BrandHeader />
-        <div className={styles.body}>
-          <Notice />
-          <SignInChoices />
+        <div className={styles.heading}>
+          <h1 className={styles.title}>Sign in to NorthStar</h1>
+          <p className={styles.subtitle}>Plan your marketing work, from plan to line item.</p>
         </div>
+        <Notice />
+        <SignInChoices />
       </div>
     </PublicLayout>
-  );
-}
-
-/** The card's header on the brand gradient: the NorthStar mark and name, and the welcome. */
-function BrandHeader() {
-  return (
-    <div className={styles.brand}>
-      <p className={styles.brandName}>
-        {/* The NorthStar mark of the Logo component, here white on a 15 % white tile. */}
-        <span className={styles.brandTile} aria-hidden="true">
-          <svg viewBox="0 0 32 32">
-            <path d="M16 5.5 18.6 13.4 26.5 16 18.6 18.6 16 26.5 13.4 18.6 5.5 16 13.4 13.4Z" />
-          </svg>
-        </span>
-        NorthStar
-      </p>
-      <h1 className={styles.title}>Welcome back</h1>
-      <p className={styles.subtitle}>Sign in to plan your marketing work.</p>
-    </div>
   );
 }
 
@@ -163,13 +146,16 @@ function SignInChoices() {
 
   return (
     <>
-      <div className={styles.demoNotice}>
-        <p className={styles.strong}>Demo sign-in — Shell single sign-on comes later</p>
-        {demoPeople.data && (
-          <p>
-            All demo people share the password <code>{demoPeople.data.password}</code>.
-          </p>
-        )}
+      <div className={styles.demoNotice} role="note">
+        <Info aria-hidden="true" />
+        <div>
+          <p className={styles.strong}>Demo sign-in — Shell single sign-on comes later</p>
+          {demoPeople.data && (
+            <p>
+              All demo people share the password <code>{demoPeople.data.password}</code>.
+            </p>
+          )}
+        </div>
       </div>
       {failure && (
         <p role="alert" className={styles.failure}>

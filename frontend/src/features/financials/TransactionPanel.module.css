@@ -1,0 +1,108 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.heading {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
+}
+
+/* The one key–value layout (design system §5.4): a 200 px label column, the value after it. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.item dt {
+  color: var(--ink-2);
+}
+
+.item dd {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.warning {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--warning-text);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+/* Plan › campaign › initiative › activity › line item: links that wrap between levels. */
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.path a {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-2);
+}
+
+/* "Linked by GSAP data (HX key HX1006) — correct it in GSAP." */
+.note {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--info);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+}
+
+.note svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--info-text);
+}
+
+@media (max-width: 599px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+}
