@@ -154,9 +154,10 @@ built with 012.
 - [x] T035 [US6] `backend/internal/budgets`: `AllocationOptions`, `Allocate`, `UpdateAllocation` (messages 28–29,
   `planVersion` conflict), `RemoveAllocation`; `backend/internal/plans`: `SetBudgetFromAllocation` (write budget,
   `Touch`, log with comment); tests US6 scenarios 2, 6 and the log rows of data-model §3 (FR-030, FR-034, FR-037).
-- [ ] T036 [P] [US6] `backend/internal/plans`: `Allocations` hook + `UseAllocations` (default none); `Plan.allocation`;
+- [x] T036 [P] [US6] `backend/internal/plans`: `Allocations` hook + `UseAllocations` (default none); `Plan.allocation`;
   `Update` refuses a changed budget on an allocated plan (409 `not_allowed`, message 23); `PlanAccess.editBudget`;
-  `Copy` does not copy the allocation; tests US6 scenario 3 (FR-031, FR-035).
+  `Copy` does not copy the allocation; tests US6 scenario 3 (FR-031, FR-035). (`PlanAccess` itself comes with
+  T020: its `editBudget` is `plans.edit` in scope, then unavailable with `(*Service).budgetLock`, message 23.)
 - [x] T037 [US6] `backend/internal/budgets/handler.go` (9 operations), `backend/internal/app/budgets_adapter.go`
   (`Plans`, `People`, `Managers`), wiring in `app.go` (kinds registered after the plan kind), `backend/seed/budgets.go`
   (`addGlobalBudgets` after `addPlans`); contract-validated handler tests; remove from `notYetServed`; seed test
