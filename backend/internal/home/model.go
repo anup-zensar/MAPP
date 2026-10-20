@@ -1,5 +1,5 @@
 // Package home is the Home dashboard (feature 009): the summary cards, Plans at a glance, Needs your
-// attention, Waiting for my approval and My activities. It is read-only and stores nothing (009 plan,
+// attention, Waiting for my approval, My activities and Recent changes. It is read-only and stores nothing (009 plan,
 // D-171): it reads the plans, campaigns, initiatives, activities and approvals of features 003–008
 // through Sources and calculates every figure on the server, so each equals the one on the record's own
 // page (FR-017). Each card has its own endpoint, so one failing card never hides the others (FR-022).
@@ -191,4 +191,11 @@ type MyActivityGroup struct {
 type MyActivitiesView struct {
 	Groups []MyActivityGroup `json:"groups"`
 	Total  int               `json:"total"`
+}
+
+// RecentChangesPage is Recent changes (RecentChangesPage, FR-015): the newest activity-log entries about the
+// plans in scope, each as 011's ActivityLogEntry, and how many match in all.
+type RecentChangesPage struct {
+	Items []any `json:"items"` // at most 10
+	Total int   `json:"total"`
 }

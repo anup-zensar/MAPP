@@ -34,6 +34,10 @@ const (
 	CodeCannotRestore = "cannot_restore" // a record cannot come back from the recycle bin, with the reason (002)
 	CodeNotAllowed    = "not_allowed"    // the person may not do this, such as deactivate themselves (003)
 	CodeNotReady      = "not_ready"      // needed fields are missing for publish or submit; Missing lists them (004)
+
+	// CodeParentDeletedPermanently refuses a restore whose parent, or a record above it, was deleted
+	// permanently; Parent names that record (011, D-182).
+	CodeParentDeletedPermanently = "parent_deleted_permanently"
 )
 
 // Error is an API failure. Status is the HTTP status and is not part of the JSON.
@@ -194,6 +198,17 @@ func NotAllowed(message string) *Error {
 func NotReady(message string, missing []ReadinessGroup) *Error {
 	e := newError(http.StatusConflict, CodeNotReady, message)
 	e.Missing = missing
+	return e
+}
+
+// ParentDeletedPermanently refuses to restore a record of the kind level ("activity") whose parent, or a
+// record above it, was deleted permanently: parent is that record and parentLevel its kind ("initiative").
+// Nothing can bring it back, so the record cannot be restored (011 FR-024).
+func ParentDeletedPermanently(level string, parent RecordRef, parentLevel string) *Error {
+	message := fmt.Sprintf("This %s can't be restored because its %s '%s' was permanently deleted.",
+		level, parentLevel, parent.Name)
+	e := newError(http.StatusConflict, CodeParentDeletedPermanently, message)
+	e.Parent = &parent
 	return e
 }
 

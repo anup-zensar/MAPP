@@ -227,7 +227,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     await user.click(screen.getByRole('menuitem', { name: 'View history' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?recordType=campaign&recordId=C-1001');
+    expect(router.state.location.search).toBe('?record=C-1001');
   });
 
   it('deletes from More, closes the panel and offers Undo (US5, FR-028, FR-029)', async () => {

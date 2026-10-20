@@ -1,51 +1,47 @@
 import { screen } from '@testing-library/react';
+import { Sparkles } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import { COMING_SOON_SECTIONS } from '@/app/navigation';
+import type { ComingSoonSection } from '@/app/navigation';
 import { renderWithProviders } from '@/test/render';
 import { ComingSoonPage } from './ComingSoonPage';
 
-function section(label: string) {
-  const found = COMING_SOON_SECTIONS.find((item) => item.label === label);
-  if (!found) {
-    throw new Error(`There is no section called ${label}.`);
-  }
-  return found;
-}
+/**
+ * Every section of the Plan module has its page since 011 built Recycle bin and Activity log, so
+ * the page is shown here with a made-up section: it stays for a section a later module adds.
+ */
+const LATER: ComingSoonSection = {
+  label: 'Later section',
+  path: '/later-section',
+  icon: Sparkles,
+  comingSoon: 'Do something useful that is not built yet.',
+};
 
 describe('ComingSoonPage', () => {
-  // The sentences of the plan's "Coming soon" table (FR-015), word for word, for the sections
-  // that later features build (011); Plans, Approvals, All work, Settings and My profile have pages.
-  it.each([
-    [
-      'Recycle bin',
-      'Bring back anything that was deleted, together with everything that was under it.',
-    ],
-    ['Activity log', 'See who changed what, and when, in every plan and setting.'],
-  ])('says in one sentence what %s will do (FR-015, US2 scenario 2)', (label, sentence) => {
-    renderWithProviders(<ComingSoonPage section={section(label)} />);
+  it('says in one sentence what the section will do (FR-015, US2 scenario 2)', () => {
+    renderWithProviders(<ComingSoonPage section={LATER} />);
 
-    expect(screen.getByRole('heading', { level: 1, name: label })).toBeInTheDocument();
-    expect(screen.getByText(sentence)).toBeInTheDocument();
-    expect(document.title).toBe(`${label} · NorthStar`);
+    expect(screen.getByRole('heading', { level: 1, name: 'Later section' })).toBeInTheDocument();
+    expect(screen.getByText('Do something useful that is not built yet.')).toBeInTheDocument();
+    expect(document.title).toBe('Later section · NorthStar');
   });
 
-  it('is only for the sections still to come (Plan-module foundation)', () => {
-    expect(COMING_SOON_SECTIONS.map((item) => item.label)).toEqual(['Recycle bin', 'Activity log']);
+  it('is for no section of the Plan module any more: 011 built the last two (FR-001, FR-014)', () => {
+    expect(COMING_SOON_SECTIONS).toEqual([]);
   });
 
   it('says that the section is coming soon, with the section name as the eyebrow (FR-015)', () => {
-    renderWithProviders(<ComingSoonPage section={section('Recycle bin')} />);
+    renderWithProviders(<ComingSoonPage section={LATER} />);
 
-    expect(screen.getAllByText('Recycle bin')).toHaveLength(2);
+    expect(screen.getAllByText('Later section')).toHaveLength(2);
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
     expect(screen.getByText("This part of NorthStar isn't built yet.")).toBeInTheDocument();
   });
 
   it('offers a way back to Home (FR-015)', async () => {
-    const { user, router } = renderWithProviders(
-      <ComingSoonPage section={section('Recycle bin')} />,
-      { route: '/recycle-bin' },
-    );
+    const { user, router } = renderWithProviders(<ComingSoonPage section={LATER} />, {
+      route: '/later-section',
+    });
 
     await user.click(screen.getByRole('link', { name: 'Go to Home' }));
 

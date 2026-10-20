@@ -15,6 +15,7 @@ import {
   Skeleton,
 } from '@/components';
 import type { ActionsMenuItem } from '@/components';
+import { historyHref } from '@/features/activity-log/showHistory';
 import { localDate } from '@/lib/format';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
@@ -88,10 +89,7 @@ export function RecordDetails({
     ...recordItems,
     {
       label: VIEW_HISTORY,
-      onSelect: () =>
-        void navigate(
-          `/activity-log?${new URLSearchParams({ recordType: level, recordId: record.id })}`,
-        ),
+      onSelect: () => void navigate(historyHref(record.id)),
     },
     ...(isCampaign
       ? []

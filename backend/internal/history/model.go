@@ -1,7 +1,9 @@
 // Package history is NorthStar's activity log and recycle bin core (FR-022 – FR-027, research R8,
 // ADR-0007). It writes one activity-log entry for every business change, and turns every delete into a
 // move to the recycle bin: the record and everything under it are kept there, and Undo or Restore brings
-// them back. Feature 011 adds the screens.
+// them back. Feature 011 adds what the screens need: the activity-log query and summary (query.go), and the
+// recycle-bin list with restore states, the restore preview, Restore with its parents, Delete permanently
+// and Empty recycle bin (bin.go).
 //
 // Every business package registers a Kind for each record type it owns (in internal/app), logs its changes
 // with Service.Log inside the Write that makes the change, and deletes with Service.MoveToBin.
@@ -26,7 +28,7 @@ type Resolution = errs.Resolution
 // Action is the kind of change an activity-log entry records. Feature 011 filters and colours entries by it.
 type Action string
 
-// The actions of feature 001. Feature 011 adds "deletedPermanently" and "emptiedRecycleBin".
+// The actions of feature 001, and the two of feature 011.
 const (
 	ActionCreated       Action = "created"
 	ActionChanged       Action = "changed"
@@ -35,11 +37,14 @@ const (
 	ActionCopied        Action = "copied"
 	ActionDeleted       Action = "deleted"
 	ActionRestored      Action = "restored"
+
+	ActionDeletedPermanently Action = "deletedPermanently" // one entry per Delete permanently (011 FR-030)
+	ActionEmptiedRecycleBin  Action = "emptiedRecycleBin"  // one entry per Empty recycle bin (011 FR-030)
 )
 
 // Entry is one activity-log entry (data model §5), stored in the append-only table "activity_log". Entries
-// are only ever added, never changed or removed (FR-023). The API returns them exactly as they are stored
-// (ActivityLogEntry), so there is no separate API type.
+// are only ever added, never changed or removed (FR-023). The API returns them as they are stored, with
+// where the record is now (EntryView, ActivityLogEntry).
 type Entry struct {
 	ID              string      `json:"id"`              // "LOG-1001", …
 	Seq             int         `json:"seq"`             // the number of the id: orders entries, also within one millisecond
@@ -55,6 +60,18 @@ type Entry struct {
 	Changes         []Change    `json:"changes"`         // every changed field; empty when the action changes no field
 	Comment         string      `json:"comment"`         // a reason the person gave; empty when there is none
 	Details         string      `json:"details"`         // plain text such as "with 2 sample notes"; empty when there is nothing to add
+	// Items lists the entries an Empty recycle bin deleted permanently (011 data model §1). Every other
+	// entry has none and stores none; the API answers them with an empty list.
+	Items []LogItem `json:"items,omitempty"`
+}
+
+// LogItem is one recycle-bin entry deleted permanently by an Empty recycle bin, as its log entry lists it.
+type LogItem struct {
+	RecordType      string `json:"recordType"`
+	RecordTypeLabel string `json:"recordTypeLabel"`
+	RecordID        string `json:"recordId"`
+	RecordName      string `json:"recordName"`
+	Details         string `json:"details"` // what was inside it: "with 1 activity and 1 line item"; "" when nothing
 }
 
 // Change is one changed field of a record (data model §5). Old and New are the stored JSON values, kept
@@ -87,6 +104,22 @@ type LogFilter struct {
 	RecordType string // only entries about this kind of record; "" for every kind
 	RecordID   string // only entries about this record; "" for every record
 	Limit      int    // at most this many entries: 1 to 200
+}
+
+// LogQuery chooses the activity-log entries QueryLog returns (011 FR-003, FR-009, FR-012). Every filter
+// applies to the whole log, and all of them together: an entry must match each one that is set.
+type LogQuery struct {
+	ActorIDs      []string   // only entries by these people; empty = anyone
+	RecordTypes   []string   // only entries about these kinds; empty = every kind
+	Actions       []string   // the Action filter values (ActionFilters); empty = every action
+	PlanIDs       []string   // only entries about these plans and anything that is or was inside them; empty = any plan
+	RecordID      string     // only entries about this record; "" = any record
+	IncludeInside bool       // with RecordID: also the entries of every record that is or was below it
+	From          *time.Time // only entries at or after this moment; nil = no start
+	To            *time.Time // only entries before this moment (exclusive); nil = no end
+	Search        string     // part of the record's name, the record's ID or the person's name, ignoring letter case
+	BeforeSeq     int        // only entries with a smaller seq (Load more); 0 = from the newest
+	Limit         int        // at most this many entries: 1 to 200
 }
 
 // Snapshot is one deleted record as the recycle bin keeps it (data model §6).
@@ -157,18 +190,147 @@ type RestoreResult struct {
 	Details         string `json:"details"`    // the restore's notes, such as "Renamed to … because the name was taken."; "" when none
 }
 
-// LogPage is the answer of GET /api/activity-log (ActivityLogPage): the newest matching entries, and how
-// many entries match in all.
+// LogPage is the answer of GET /api/activity-log (ActivityLogPage): the newest matching entries, how many
+// entries match in all, how many the whole log holds, and the record the query names.
 type LogPage struct {
-	Items []Entry `json:"items"`
-	Total int     `json:"total"`
+	Items           []EntryView `json:"items"`
+	Total           int         `json:"total"`           // the matching entries, ignoring BeforeSeq and Limit
+	UnfilteredTotal int         `json:"unfilteredTotal"` // every entry of the log ("Showing N of M entries")
+	Record          *RecordRef  `json:"record"`          // the record of LogQuery.RecordID; null without one or when unknown
+}
+
+// EntryView is an activity-log entry as the API returns it (ActivityLogEntry): the stored entry, always with
+// its list of items, and where its record is now (011 FR-008).
+type EntryView struct {
+	Entry
+	Items     []LogItem `json:"items"` // the entry's items; [] instead of nothing (it hides Entry.Items in the JSON)
+	RecordNow RecordNow `json:"recordNow"`
+}
+
+// RecordState says where the record of an activity-log entry is now (011 data model §4).
+type RecordState string
+
+// The record states.
+const (
+	RecordExists             RecordState = "exists"             // stored: the name links to the record
+	RecordInRecycleBin       RecordState = "inRecycleBin"       // in an entry of the recycle bin
+	RecordDeletedPermanently RecordState = "deletedPermanently" // gone for good
+	RecordNone               RecordState = "none"               // no record: an emptied recycle bin, or a kind this API does not know
+)
+
+// RecordNow is where the record of an activity-log entry is now (011 FR-008), worked out when the entry is
+// read.
+type RecordNow struct {
+	State      RecordState `json:"state"`
+	Name       string      `json:"name"`       // the current name (exists) or the name in the recycle bin; "" otherwise
+	Path       []RecordRef `json:"path"`       // the current ancestors, top level first, when it exists; [] otherwise
+	BinEntryID string      `json:"binEntryId"` // the recycle-bin entry holding it; "" otherwise
+}
+
+// LogSummary is the answer of GET /api/activity-log/summary (ActivityLogSummary): the summary cards of the
+// activity log, counted over the whole log (011 FR-002), and the choices of its filters (FR-003).
+type LogSummary struct {
+	ChangesToday         int               `json:"changesToday"`
+	ChangesThisWeek      int               `json:"changesThisWeek"`
+	PeopleActiveThisWeek int               `json:"peopleActiveThisWeek"`
+	DeletionsThisWeek    int               `json:"deletionsThisWeek"` // deletes, permanent deletes and emptied recycle bins
+	Total                int               `json:"total"`
+	People               []actor.Actor     `json:"people"`      // everyone with an entry, sorted by name
+	RecordTypes          []RecordTypeCount `json:"recordTypes"` // the kinds in the log, sorted by label
+	Plans                []RecordRef       `json:"plans"`       // the plans named in the log with their latest name, sorted by name
+}
+
+// RecordTypeCount is one record type of the log, with how many entries are about it.
+type RecordTypeCount struct {
+	Type  string `json:"type"`
+	Label string `json:"label"` // the kind's latest mid-sentence name in the log
+	Count int    `json:"count"`
 }
 
 // BinPage is the answer of GET /api/recycle-bin (RecycleBinPage): everything in the recycle bin, newest
 // first.
 type BinPage struct {
-	Items []BinEntryView `json:"items"`
-	Total int            `json:"total"`
+	Items []BinListItem `json:"items"`
+	Total int           `json:"total"`
+}
+
+// The restore states of a recycle-bin entry (011 data model §5).
+const (
+	Restorable               = "restorable"               // no parent, or the parent is stored
+	ParentInRecycleBin       = "parentInRecycleBin"       // the parent is in another entry: Restore both / all N
+	ParentDeletedPermanently = "parentDeletedPermanently" // the parent, or a record above it, is gone for good
+)
+
+// BinListItem is a recycle-bin entry as the recycle bin page lists it (RecycleBinListItem): the entry, its
+// restore state and the records it holds (011 FR-015 – FR-017).
+type BinListItem struct {
+	BinEntryView
+	RecordTypePlural string       `json:"recordTypePlural"` // the kind's plural, for the type pills
+	RestoreState     string       `json:"restoreState"`     // Restorable, ParentInRecycleBin or ParentDeletedPermanently
+	MissingParent    *LabelledRef `json:"missingParent"`    // the parent in the bin, or the record gone for good; null when restorable
+	ParentEntryIDs   []string     `json:"parentEntryIds"`   // the entries Restore both / all N brings back first, top-most first
+	InsideEntryIDs   []string     `json:"insideEntryIds"`   // the other entries that can't be restored once this one is purged
+	Records          []BinRecord  `json:"records"`          // the record, then everything inside it, parents before children
+}
+
+// LabelledRef is a record with the mid-sentence name of its kind.
+type LabelledRef struct {
+	Type      string `json:"type"`
+	TypeLabel string `json:"typeLabel"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+}
+
+// BinRecord is one record a recycle-bin entry holds, without its data (RecycleBinRecord).
+type BinRecord struct {
+	RecordType      string `json:"recordType"`
+	RecordTypeLabel string `json:"recordTypeLabel"`
+	RecordID        string `json:"recordId"`
+	RecordName      string `json:"recordName"`
+	ParentID        string `json:"parentId"` // "" for top-level records
+}
+
+// RestorePreview is the answer of GET /api/recycle-bin/{entryId}/restore-preview: what a restore would do,
+// worked out by doing it and throwing the result away (011 FR-018, D-177).
+type RestorePreview struct {
+	Entry         BinListItem    `json:"entry"`
+	Destination   []RecordRef    `json:"destination"`   // the parent's current path, the parent last; [] for top-level records
+	ParentEntries []BinListItem  `json:"parentEntries"` // the entries restored first, top-most first
+	Changes       []RecordChange `json:"changes"`       // every changed field of every record, in restore order
+	Notes         []string       `json:"notes"`         // the notes of the kinds' restore rules, in order
+}
+
+// RecordChange is one changed field of one record in a restore preview (RestorePreviewChange).
+type RecordChange struct {
+	RecordType      string `json:"recordType"`
+	RecordTypeLabel string `json:"recordTypeLabel"`
+	RecordID        string `json:"recordId"`
+	RecordName      string `json:"recordName"`
+	Restored        bool   `json:"restored"` // true: the record comes back; false: a stored record the restore changes
+	Field           string `json:"field"`
+	Label           string `json:"label"`
+	OldText         string `json:"oldText"`
+	NewText         string `json:"newText"`
+}
+
+// PurgeResult is the answer of DELETE /api/recycle-bin/{entryId}: the record deleted permanently.
+type PurgeResult struct {
+	RecordType      string `json:"recordType"`
+	RecordTypeLabel string `json:"recordTypeLabel"`
+	RecordID        string `json:"recordId"`
+	RecordName      string `json:"recordName"`
+}
+
+// EmptyRequest is the body of POST /api/recycle-bin/empty (EmptyRecycleBinRequest): the entries the person
+// saw in the confirmation (D-180).
+type EmptyRequest struct {
+	EntryIDs []string `json:"entryIds"`
+}
+
+// EmptyResult is the answer of POST /api/recycle-bin/empty (EmptyRecycleBinResult): how many entries were
+// deleted permanently.
+type EmptyResult struct {
+	Count int `json:"count"`
 }
 
 // View returns the entry as the API returns it. Every delete answers it, in a DeleteResult, so the web app

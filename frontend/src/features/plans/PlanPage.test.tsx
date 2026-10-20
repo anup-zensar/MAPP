@@ -370,7 +370,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?recordType=plan&recordId=P-1001');
+    expect(router.state.location.search).toBe('?record=P-1001');
   });
 
   it('shows grey shapes while loading, then an error with Try again', async () => {

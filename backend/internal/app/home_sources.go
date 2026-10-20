@@ -6,6 +6,7 @@ import (
 	"northstar/internal/activities"
 	"northstar/internal/approvals"
 	"northstar/internal/campaigns"
+	"northstar/internal/history"
 	"northstar/internal/home"
 	"northstar/internal/people"
 	"northstar/internal/plans"
@@ -14,13 +15,17 @@ import (
 	"northstar/internal/platform/money"
 )
 
-// homeSources builds the Sources of feature 009's Home over the services of features 003–008 (009 plan
-// "Inputs", D-171, D-196): what Home reads is what those features calculate for their own pages, so every
-// figure on Home equals the one there (FR-017). The names of those packages appear only here. Every
-// function joins the read transaction of the Home service.
+// homeSources builds the Sources of feature 009's Home over the services of features 003–008 and 011's
+// activity log (009 plan "Inputs", D-171, D-196): what Home reads is what those features calculate for their
+// own pages, so every figure on Home equals the one there (FR-017). The names of those packages appear only
+// here. Every function joins the read transaction of the Home service.
 func homeSources(peopleService *people.Service, plansRepo plans.Repository, planService *plans.Service,
-	campaignsService *campaigns.Service, activitiesService *activities.Service, approvalsService *approvals.Service) home.Sources {
+	campaignsService *campaigns.Service, activitiesService *activities.Service, approvalsService *approvals.Service,
+	historyService *history.Service) home.Sources {
 	return home.Sources{
+		RecentChanges: func(ctx context.Context, a actor.Actor, planIDs []string, limit int) (home.RecentChangesPage, error) {
+			return recentChanges(ctx, historyService, a, planIDs, limit)
+		},
 		MyTeams: func(ctx context.Context, a actor.Actor) ([]home.Team, error) {
 			return myTeams(ctx, peopleService, a)
 		},
@@ -196,4 +201,23 @@ func amountOf(m *money.Money) *money.Amount {
 	}
 	amount := m.Amount
 	return &amount
+}
+
+// planningKinds are the history kinds of the planning records, top-down: what Home's Recent changes shows
+// (009 FR-015).
+var planningKinds = []string{"plan", "campaign", "initiative", "activity", "lineItem"}
+
+// recentChanges returns the newest activity-log entries about the planning records of the plans planIDs
+// (nil: every plan), at most limit, as 011's activity log shows them (QueryLog), for Home's Recent changes.
+func recentChanges(ctx context.Context, historyService *history.Service, a actor.Actor, planIDs []string,
+	limit int) (home.RecentChangesPage, error) {
+	page, err := historyService.QueryLog(ctx, a, history.LogQuery{RecordTypes: planningKinds, PlanIDs: planIDs, Limit: limit})
+	if err != nil {
+		return home.RecentChangesPage{}, err
+	}
+	items := make([]any, 0, len(page.Items))
+	for _, item := range page.Items {
+		items = append(items, item)
+	}
+	return home.RecentChangesPage{Items: items, Total: page.Total}, nil
 }

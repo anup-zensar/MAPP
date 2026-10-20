@@ -3,6 +3,7 @@ import type { RouteObject } from 'react-router';
 import { ActivityFormPage } from '@/features/activities/ActivityFormPage';
 import { ActivityPage } from '@/features/activities/ActivityPage';
 import { ActivityShortLink } from '@/features/activities/ActivityShortLink';
+import { ActivityLogPage } from '@/features/activity-log/ActivityLogPage';
 import { AllWorkPage } from '@/features/all-work/AllWorkPage';
 import { ApprovalWorkflowsPage } from '@/features/approval-workflows/ApprovalWorkflowsPage';
 import { ApprovalsPage } from '@/features/approvals/ApprovalsPage';
@@ -24,6 +25,7 @@ import { PlanCreatePage } from '@/features/plans/PlanCreatePage';
 import { PlanEditPage } from '@/features/plans/PlanEditPage';
 import { PlanPage } from '@/features/plans/PlanPage';
 import { PlansPage } from '@/features/plans/PlansPage';
+import { RecycleBinPage } from '@/features/recycle-bin/RecycleBinPage';
 import { ActivityTypesPage } from '@/features/settings/activity-types/ActivityTypesPage';
 import { CurrenciesPage } from '@/features/settings/currencies/CurrenciesPage';
 import { FinanceBudgetItemsPage } from '@/features/settings/finance-budget-items/FinanceBudgetItemsPage';
@@ -161,6 +163,9 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   },
   // 010 All work
   { path: '/all-work', element: <AllWorkPage />, ...titled('All work') },
+  // 011 Activity log and Recycle bin (under MORE in the sidebar)
+  { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
+  { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
 ];
 
 /**

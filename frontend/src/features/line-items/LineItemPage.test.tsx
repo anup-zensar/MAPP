@@ -92,7 +92,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     await user.click(screen.getByRole('menuitem', { name: 'View history' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?recordType=lineItem&recordId=L-1001');
+    expect(router.state.location.search).toBe('?record=L-1001');
   });
 
   it('duplicates and opens the copy (scenario 4, FR-029)', async () => {

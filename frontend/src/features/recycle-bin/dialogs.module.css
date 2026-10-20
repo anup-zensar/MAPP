@@ -1,0 +1,16 @@
+/* The sentences of a recycle-bin dialog, one under the other. */
+.sentences {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.failure {
+  margin-top: 8px;
+  color: var(--status-problem-text);
+}

@@ -33,6 +33,11 @@ type Sources struct {
 	// DisplayCurrency returns a's display currency with its current rate (003, rates of 002). A display
 	// currency set inactive stays in use with its rate (D-201, D-063).
 	DisplayCurrency func(ctx context.Context, a actor.Actor) (Currency, error)
+	// RecentChanges returns the newest activity-log entries about plans, campaigns, initiatives, activities
+	// and line items, at most limit, newest first, each as the activity log shows it with where its record
+	// is now, and how many match (011's QueryLog). With planIDs, only the entries about those plans and
+	// whatever is or was inside them; nil means every plan.
+	RecentChanges func(ctx context.Context, a actor.Actor, planIDs []string, limit int) (RecentChangesPage, error)
 }
 
 // MissingField is a field still needed to publish or submit (contract MissingField).

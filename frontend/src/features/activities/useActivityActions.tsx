@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import type { ActionsMenuItem } from '@/components';
+import { historyHref } from '@/features/activity-log/showHistory';
 import type { Activity } from './activitiesApi';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { CopyActivityDialog } from './CopyActivityDialog';
@@ -30,10 +31,7 @@ export function useActivityActions(activity: Activity): ActivityActions {
       { label: 'Move', onSelect: () => setOpen('move') },
       {
         label: 'View history',
-        onSelect: () =>
-          void navigate(
-            `/activity-log?${new URLSearchParams({ recordType: 'activity', recordId: activity.id })}`,
-          ),
+        onSelect: () => void navigate(historyHref(activity.id)),
       },
       {
         label: 'Delete',

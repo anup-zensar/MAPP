@@ -13,6 +13,7 @@ import {
   ShellAttributeValues,
   Skeleton,
 } from '@/components';
+import { historyHref } from '@/features/activity-log/showHistory';
 import { formatRate, toCents } from '@/lib/decimal';
 import { localDate } from '@/lib/format';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
@@ -98,10 +99,7 @@ export function LineItemPage() {
                 { label: DUPLICATE, onSelect: () => actions.duplicate(lineItem, activity) },
                 {
                   label: VIEW_HISTORY,
-                  onSelect: () =>
-                    void navigate(
-                      `/activity-log?${new URLSearchParams({ recordType: 'lineItem', recordId: lineItem.id })}`,
-                    ),
+                  onSelect: () => void navigate(historyHref(lineItem.id)),
                 },
                 {
                   label: DELETE,

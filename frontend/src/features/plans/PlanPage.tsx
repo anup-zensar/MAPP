@@ -2,6 +2,7 @@ import { useNavigate, useOutlet, useParams } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { Button, ErrorState, Skeleton } from '@/components';
 import type { ActionsMenuItem } from '@/components';
+import { historyHref } from '@/features/activity-log/showHistory';
 import { useCampaignTreeContent } from '@/features/campaigns/useCampaignTreeContent';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { PlanDetails } from './PlanDetails';
@@ -44,10 +45,7 @@ export function PlanPage() {
       actions.copyItem(data),
       {
         label: 'View history',
-        onSelect: () =>
-          void navigate(
-            `/activity-log?${new URLSearchParams({ recordType: 'plan', recordId: data.id })}`,
-          ),
+        onSelect: () => void navigate(historyHref(data.id)),
       },
       actions.deleteItem(data),
     ];

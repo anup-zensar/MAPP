@@ -160,6 +160,6 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?recordType=activity&recordId=A-1042');
+    expect(router.state.location.search).toBe('?record=A-1042');
   });
 });

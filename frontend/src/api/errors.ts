@@ -142,7 +142,12 @@ export function resolvedMessage(error: ApiError, name: string, dateFormat?: Date
     return error.message;
   }
   const { how, by, at } = error.resolution;
-  const what = how === 'undone' ? 'undid the delete' : 'restored it';
+  const what =
+    how === 'undone'
+      ? 'undid the delete'
+      : how === 'deletedPermanently'
+        ? 'deleted it permanently' // feature 011 (FR-032)
+        : 'restored it';
   return `'${name}' is no longer in the recycle bin — ${by.name} ${what} ${when(at, dateFormat)}`;
 }
 
