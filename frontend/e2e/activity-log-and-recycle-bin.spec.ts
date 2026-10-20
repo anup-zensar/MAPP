@@ -68,6 +68,17 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await changeActivityPlannedCost(page, records.activityId, '21000.00');
   const name = records.activityName;
   const place = `${records.planName} › ${records.campaignName} › ${records.initiativeName}`;
+  // Mei's recycle bin lists only entries of plans she can see (014 FR-007) — the demo's "Trade shows" is
+  // in Lubricants Europe — so an initiative of her own waits there too, and the bin is not empty once the
+  // activity is restored.
+  const binned = await createInitiative(
+    page,
+    records.campaignId,
+    'Life other',
+    records.year,
+    '1000.00',
+  );
+  await callApi(page, 'DELETE', `/api/initiatives/${binned.id}`);
 
   // Delete it from its page.
   await page.goto(records.activityPath);
