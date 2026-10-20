@@ -168,6 +168,30 @@ describe('record link (FR-008)', () => {
     expect(recordLink(entry)).toEqual({ kind: 'text', suffix: ' (permanently deleted)' });
   });
 
+  it('links global budgets (014) and GSAP transactions (015) to their pages', () => {
+    const exists = { state: 'exists' as const, name: '', path: [], binEntryId: '' };
+    expect(
+      recordLink(
+        logEntry({
+          recordType: 'globalBudget',
+          recordId: 'GB-1001',
+          recordName: 'FY2026 Global marketing budget',
+          recordNow: { ...exists, name: 'FY2026 Global marketing budget' },
+        }),
+      ),
+    ).toEqual({ kind: 'record', href: '/budgets/GB-1001', now: '' });
+    expect(
+      recordLink(
+        logEntry({
+          recordType: 'financialTransaction',
+          recordId: 'FT-1004',
+          recordName: 'PO 4500001004 / 10',
+          recordNow: { ...exists, name: 'PO 4500001004 / 10' },
+        }),
+      ),
+    ).toEqual({ kind: 'record', href: '/financials/transactions/FT-1004', now: '' });
+  });
+
   it('shows records without a page, or without a known state, as plain text', () => {
     expect(
       recordLink(

@@ -135,8 +135,17 @@ function renamed(entry: ActivityLogEntry): string {
   return name && name !== entry.recordName ? ` — now '${name}'` : '';
 }
 
-/** The page of a planning record; undefined for other records or when its plan is unknown. */
+/** The pages of records outside the plan tree: global budgets (014) and GSAP transactions (015). */
+const OTHER_PAGES: Record<string, (id: string) => string> = {
+  globalBudget: (id) => `/budgets/${encodeURIComponent(id)}`,
+  financialTransaction: (id) => `/financials/transactions/${encodeURIComponent(id)}`,
+};
+
+/** The page of a record; undefined for records without one or when its plan is unknown. */
 function pageOf(type: string, id: string, path: RecordRef[]): string | undefined {
+  if (Object.hasOwn(OTHER_PAGES, type)) {
+    return OTHER_PAGES[type](id);
+  }
   if (!isPlanningType(type)) {
     return undefined;
   }
