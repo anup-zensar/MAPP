@@ -312,7 +312,7 @@ describe('campaignRows (feature 005, US4)', () => {
       within(totals).getByText('3 campaigns · 2 initiatives · 1 activity'),
     ).toBeInTheDocument();
     expect(within(totals).getByText('$320,000.00')).toBeInTheDocument();
-    expect(within(totals).getByText('Allocated to campaigns')).toBeInTheDocument();
+    expect(within(totals).getByText('Allocated')).toBeInTheDocument();
     expect(within(totals).getByText('$150,000.00')).toBeInTheDocument();
 
     const one = totalsFooter(

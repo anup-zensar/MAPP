@@ -15,7 +15,7 @@ import {
   activitiesCount,
   ADD_INITIATIVE,
   addInitiativeTo,
-  ALLOCATED_TO_CAMPAIGNS,
+  ALLOCATED,
   COPY,
   DELETE,
   EDIT,
@@ -264,7 +264,7 @@ export function addInitiativeHref(planId: string, campaignId: string): string {
 
 /**
  * The totals row (FR-022): "Total · 2 campaigns · 4 initiatives · 7 activities", the sum of the
- * campaign budgets ("Allocated to campaigns") and the plan's planned cost.
+ * campaign budgets ("Allocated") and the plan's planned cost.
  */
 export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeTableFooter {
   // Amounts in the plan currency, the reader's display currency beneath when it differs (016
@@ -286,7 +286,7 @@ export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeT
           primary={totals.allocatedToCampaigns}
           secondary={displayTotals.allocatedToCampaigns}
         />
-        <span className={styles.left}>{ALLOCATED_TO_CAMPAIGNS}</span>
+        <span className={styles.left}>{ALLOCATED}</span>
       </span>
     ),
     plannedCost: totals.plannedCost ? (

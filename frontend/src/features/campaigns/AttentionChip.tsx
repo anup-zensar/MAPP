@@ -74,7 +74,9 @@ export function AttentionChip({
         ) : (
           summary
         )}
-        <ChevronDown aria-hidden="true" />
+        {/* Tree and table rows leave the chevron out, so the Status column stays narrow enough
+            for the whole tree to fit a 1,440 px screen; the red chip is still the button. */}
+        {!compact && <ChevronDown aria-hidden="true" />}
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content

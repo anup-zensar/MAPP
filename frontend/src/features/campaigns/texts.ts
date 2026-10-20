@@ -50,7 +50,8 @@ export function lineItemsCount(count: number): string {
 export function totalsText(campaigns: number, initiatives: number, activities: number): string {
   return `${campaignsCount(campaigns)} · ${initiativesCount(initiatives)} · ${activitiesCount(activities)}`;
 }
-export const ALLOCATED_TO_CAMPAIGNS = 'Allocated to campaigns';
+/** Under the Total row's budget: the campaign budgets added up (short, so the tree fits 1,440 px). */
+export const ALLOCATED = 'Allocated';
 
 // Budget
 /** Under a planned cost in the plan tree: "38% of budget". */
