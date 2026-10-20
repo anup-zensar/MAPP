@@ -12,6 +12,11 @@ export interface PlansFiltersProps {
   onChange: (next: Partial<PlanListFilters>) => void;
 }
 
+const LAYOUTS = [
+  ['cards', 'Cards'],
+  ['table', 'Table'],
+] as const;
+
 /** How many of the menu's filters differ from their defaults: the "(n)" of **Filters (n)**. */
 function filtersInUse(filters: PlanListFilters): number {
   return (
@@ -37,6 +42,9 @@ function yearChoices(years: number[], filters: PlanListFilters): number[] {
  * **Years** (016 FR-033) is All years or a range from–to among the years with plans: choosing a
  * first year alone gives that one year, and the range never runs backwards (the other end
  * follows). **Plan type** takes several; none ticked means every type.
+ *
+ * On phones (below 600 px, UI audit P-06) the button is its icon with the number of filters in
+ * use, so the toolbar keeps two rows, and the menu also holds the Cards / Table layout.
  */
 export function PlansFilters({ filters, years, onChange }: PlansFiltersProps) {
   const id = useId();
@@ -71,8 +79,13 @@ export function PlansFilters({ filters, years, onChange }: PlansFiltersProps) {
     <Popover.Root>
       <Popover.Trigger className={styles.trigger}>
         <SlidersHorizontal aria-hidden="true" />
-        {count > 0 ? `Filters (${count})` : 'Filters'}
-        <ChevronDown aria-hidden="true" />
+        <span className={styles.word}>{count > 0 ? `Filters (${count})` : 'Filters'}</span>
+        {count > 0 && (
+          <span className={styles.badge} aria-hidden="true">
+            {count}
+          </span>
+        )}
+        <ChevronDown aria-hidden="true" className={styles.chevron} />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content className={styles.menu} align="start" sideOffset={6} aria-label="Filters">
@@ -142,6 +155,22 @@ export function PlansFilters({ filters, years, onChange }: PlansFiltersProps) {
                   value={value}
                   checked={filters.scope === value}
                   onChange={() => onChange({ scope: value })}
+                />
+                {label}
+              </label>
+            ))}
+          </fieldset>
+          {/* Phones only: the toolbar has no room for the layout switch. */}
+          <fieldset className={`${styles.field} ${styles.phoneOnly}`}>
+            <legend className={styles.label}>Layout</legend>
+            {LAYOUTS.map(([value, label]) => (
+              <label key={value} className={styles.radio}>
+                <input
+                  type="radio"
+                  name={`${id}-layout`}
+                  value={value}
+                  checked={filters.layout === value}
+                  onChange={() => onChange({ layout: value })}
                 />
                 {label}
               </label>

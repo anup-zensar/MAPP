@@ -248,15 +248,17 @@ export function PlansPage() {
                   {data.items.length} of {data.total} {data.total === 1 ? 'plan' : 'plans'}
                 </p>
               )}
-              <SegmentedFilter
-                label="Layout"
-                options={[
-                  { value: 'cards', label: 'Cards' },
-                  { value: 'table', label: 'Table' },
-                ]}
-                value={filters.layout}
-                onChange={(layout) => change({ layout })}
-              />
+              <div className={styles.layout}>
+                <SegmentedFilter
+                  label="Layout"
+                  options={[
+                    { value: 'cards', label: 'Cards' },
+                    { value: 'table', label: 'Table' },
+                  ]}
+                  value={filters.layout}
+                  onChange={(layout) => change({ layout })}
+                />
+              </div>
             </div>
           </div>
           {(chips.length > 0 || filters.scope === 'myTeams') && (

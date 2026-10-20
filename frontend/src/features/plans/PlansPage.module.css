@@ -5,8 +5,9 @@
   min-width: 0;
 }
 
-/* Three summary cards in a row from 960 px (design system §2.2: 3 per row), two per row below,
-   the odd last one across the row on phones. */
+/* Three summary cards in a row from 960 px (design system §2.2: 3 per row), two per row below;
+   on phones an odd first card (Plans) takes the whole first row, so no card is left over at the
+   end (UI audit P-06). */
 .summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -20,7 +21,7 @@
 }
 
 @media (max-width: 599px) {
-  .summary > :last-child:nth-child(odd) {
+  .summary > :first-child:nth-last-child(odd) {
     grid-column: 1 / -1;
   }
 }
@@ -127,14 +128,25 @@
   }
 }
 
-/* Phones: the search takes the first row; the rest share the second (design system §2.4 A). */
+/* Phones (UI audit P-06): two rows before the first plan — the search, then the status and the
+   Filters icon button. The layout moves into the Filters menu; the count stays for screen
+   readers (the status buttons and the summary show the numbers). */
 @media (max-width: 599px) {
   .search {
     flex-basis: 100%;
     max-width: none;
   }
 
+  .layout {
+    display: none;
+  }
+
   .end {
-    margin-left: 0;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

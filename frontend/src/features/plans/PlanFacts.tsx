@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router';
 import type { components } from '@/api/schema';
 import { StatusChip } from '@/components';
 import { AttentionChip } from '@/features/campaigns/AttentionChip';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
+import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
+import { recordHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
 import styles from './PlanFacts.module.css';
 import { fieldsNeededText, groupLabel, STATUS } from './planText';
@@ -35,7 +36,7 @@ export function PlanCompleteness({
   return (
     <AttentionChip
       missing={completeness.missing.map((field) => ({ id: field.field, label: field.label }))}
-      onSelectField={(field) => void navigate(fieldHref('plan', planId, field))}
+      onSelectField={(field) => void navigate(completenessFieldHref('plan', planId, field, planId))}
       itemsBelow={completeness.itemsBelow.map(({ record, missing }) => ({
         id: `${record.type}:${record.id}`,
         label: `${groupLabel(record)} — ${fieldsNeededText(missing.length)}`,

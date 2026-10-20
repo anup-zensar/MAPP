@@ -18,7 +18,8 @@ import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
 import { RecordFinancials } from '@/features/plans/RecordFinancials';
 import { panelHistoryId, showHistory } from '@/features/activity-log/showHistory';
 import { localDate } from '@/lib/format';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
+import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
+import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { AttentionChip } from './AttentionChip';
 import { BudgetCostSection, GoalsSection } from './BudgetCost';
@@ -127,7 +128,9 @@ export function RecordDetails({
                   id: field.field,
                   label: field.label,
                 }))}
-                onSelectField={(field) => void navigate(fieldHref(level, record.id, field, planId))}
+                onSelectField={(field) =>
+                  void navigate(completenessFieldHref(level, record.id, field, planId))
+                }
                 itemsBelow={record.completeness.itemsBelowNeedingAttention}
                 onItemsBelowSelect={() =>
                   void navigate(planHref, { state: { highlight: record.id } })

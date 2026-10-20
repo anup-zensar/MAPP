@@ -1,5 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useLocation } from 'react-router';
 import { Button, ErrorState, SegmentedFilter, Skeleton } from '@/components';
 import { formatAmount, toCents } from '@/lib/decimal';
 import styles from './BudgetByMonth.module.css';
@@ -7,6 +8,7 @@ import { useBudgetByMonth } from './phasingApi';
 import type { BudgetByMonthPeriods, BudgetPhasing, PhasingLevel } from './phasingApi';
 import { amountText, MONTH_NAMES, overBy } from './phasingMath';
 import { PhasingEditor } from './PhasingEditor';
+import { phasingAnchor } from './phasingLinks';
 
 type Money = { amount: string; currency: string };
 
@@ -57,6 +59,21 @@ export function BudgetByMonthCard({
     variant === 'panel' ? 'quarters' : 'months',
   );
   const [editing, setEditing] = useState(false);
+  const section = useRef<HTMLElement>(null);
+  const anchor = phasingAnchor(record.id);
+  // A completeness link ("Budget by month" needed to publish) leads here with #budget-by-month-…:
+  // the card comes into view and takes the focus, after the page or panel has placed its own.
+  const arrived = useLocation().hash === `#${anchor}` && phasing !== undefined;
+  useEffect(() => {
+    if (!arrived) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      section.current?.scrollIntoView?.({ block: 'start' });
+      section.current?.focus({ preventScroll: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [arrived]);
   if (!phasing) {
     return null;
   }
@@ -136,9 +153,11 @@ export function BudgetByMonthCard({
 
   return (
     <section
+      ref={section}
       aria-labelledby={headingId}
       className={variant === 'page' ? styles.card : styles.section}
-      id={`budget-by-month-${record.id}`}
+      id={anchor}
+      tabIndex={-1}
     >
       <div className={styles.header}>
         <div>

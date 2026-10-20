@@ -3,7 +3,8 @@ import type { NavigateFunction } from 'react-router';
 import { PersonLabel, Tooltip } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
 import { AmountPair } from '@/features/plans/AmountPair';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
+import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
+import { recordHref } from '@/lib/recordLinks';
 import type { Formatters } from '@/lib/useFormatters';
 import { AttentionChip } from './AttentionChip';
 import { BudgetCell, CampaignBudgetCell, PlannedCostCell } from './BudgetCost';
@@ -204,7 +205,7 @@ function commonCells(record: Campaign | Initiative, options: RowOptions) {
             label: field.label,
           }))}
           onSelectField={(field) =>
-            void options.navigate(fieldHref(level, record.id, field, options.planId))
+            void options.navigate(completenessFieldHref(level, record.id, field, options.planId))
           }
           itemsBelow={record.completeness.itemsBelowNeedingAttention}
           onItemsBelowSelect={() =>

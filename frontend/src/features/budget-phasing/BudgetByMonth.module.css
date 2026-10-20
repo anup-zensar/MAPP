@@ -15,6 +15,18 @@
   margin-inline: var(--card-padding);
 }
 
+/* Reached by a completeness link: the ring shows where the focus went (keyboard only). */
+.card:focus,
+.section:focus {
+  outline: none;
+}
+
+.card:focus-visible,
+.section:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 /* In a side panel: a section like the panel's others. */
 .section {
   display: flex;

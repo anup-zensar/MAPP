@@ -209,4 +209,22 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
     expect(within(dialog).getByRole('textbox', { name: 'Jan 2027' })).toHaveValue('40,000.00');
     expect(within(dialog).getByText('Left out: 5,000.00 GBP in other years.')).toBeInTheDocument();
   });
+
+  it('comes into view with the focus when a completeness link leads to it (T053)', async () => {
+    mockApi({ 'GET /api/plans/P-1004/budget-by-month': { body: budgetByMonth() } });
+    renderWithProviders(
+      <BudgetByMonthCard
+        level="plan"
+        planId="P-1004"
+        record={{ ...PLAN, budgetPhasing: phasing() }}
+        year={2027}
+        currency="GBP"
+      />,
+      { user: testUser(), route: '/plans/P-1004#budget-by-month-P-1004', path: '/plans/:planId' },
+    );
+
+    const card = screen.getByRole('region', { name: 'Budget by month' });
+    expect(card).toHaveAttribute('id', 'budget-by-month-P-1004');
+    await waitFor(() => expect(card).toHaveFocus());
+  });
 });
