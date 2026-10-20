@@ -5,8 +5,8 @@
 // Load writes the steps in the order of decision D-202, one file per feature: people (this file), Settings
 // (settings.go, 002), teams (teams.go, 003), plans (plans.go, 004), campaigns and initiatives
 // (campaigns.go, 005), approval workflows and activities (activities.go, 006), line items (lineitems.go,
-// 007), approval rounds and notifications (approvals.go, 008); then saved views (allwork.go, 010), personal
-// settings rather than records. Every step writes through its feature's
+// 007), approval rounds and notifications (approvals.go, 008), the demo GSAP transactions (financials.go,
+// 015); then saved views (allwork.go, 010), personal settings rather than records. Every step writes through its feature's
 // repository with IDs from the generator, looks up earlier records by name, and writes no activity-log
 // entries (feature 011's step will add the demo history).
 package seed
@@ -63,6 +63,7 @@ func Load(ctx context.Context, db *store.DB, now clock.Clock) error {
 		steps := []func(context.Context) error{
 			d.addPeople, d.addSettings, d.addTeams, d.addPlans, d.addCampaigns, d.addActivities,
 			d.addLineItems, d.addApprovals,
+			d.addFinancials, // 015's demo GSAP data (financials.go), after approvals (D-306)
 			d.addSavedViews, // 010's personal settings (allwork.go)
 		}
 		for _, step := range steps {

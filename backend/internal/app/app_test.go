@@ -339,17 +339,6 @@ var notYetServed = []string{
 	"POST /api/global-budgets/{globalBudgetId}/allocations",
 	"PATCH /api/budget-allocations/{allocationId}",
 	"DELETE /api/budget-allocations/{allocationId}",
-	// 015 Financial transactions
-	"GET /api/financials/records/{recordId}",
-	"GET /api/financials/transactions",
-	"GET /api/financials/transactions/{transactionId}",
-	"POST /api/financials/transactions/{transactionId}/link",
-	"POST /api/financials/transactions/{transactionId}/unlink",
-	"GET /api/financials/overview",
-	"GET /api/financials/imports",
-	"POST /api/financials/imports",
-	"POST /api/financials/imports/check",
-	"GET /api/financials/imports/template",
 	// 016 Planning and currency extensions
 	"GET /api/currencies/{code}/rates",
 	"POST /api/currencies/{code}/rates",

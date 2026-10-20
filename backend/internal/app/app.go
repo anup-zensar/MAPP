@@ -11,6 +11,7 @@ import (
 	"northstar/internal/approvals"
 	"northstar/internal/auth"
 	"northstar/internal/campaigns"
+	"northstar/internal/financials"
 	"northstar/internal/history"
 	"northstar/internal/home"
 	"northstar/internal/lineitems"
@@ -164,6 +165,23 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	activitiesService.UseApprovalHooks(activityApprovalHooks{svc: approvalsService})
 	approvalsService.UseDisplayRates(peopleService) // amounts on the Approvals page (D-213)
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
+
+	// Financial transactions (015): GSAP's POs, invoices, payments and accruals, read-only, from the
+	// simulated GSAP extract and the demo data, with figures over the planning tree (financials.go). Its two
+	// history kinds are top level, so their order is free.
+	financialsService := financials.NewService(db, financials.NewJSONRepository(), generator, historyService, financials.Deps{
+		Planning: financialPlanning{
+			plans: plansRepo, campaigns: campaignsService, activities: activitiesService, lineItems: lineItemsRepo,
+			settings: settingsService, people: peopleService, history: historyService,
+		},
+		Rates: settingsService, Displays: financialDisplays{people: peopleService}, Access: financialAccess{},
+	}, now)
+	for _, kind := range financialsService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	financials.NewHandler(financialsService).Routes(router, signedIn)
 
 	// Home (009): a read-only dashboard over the services of 003–008 (home_sources.go).
 	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
