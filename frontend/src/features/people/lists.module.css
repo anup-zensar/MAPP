@@ -1,4 +1,5 @@
-/* What only the Teams list needs besides the shared Settings list look (SettingsTable.module.css). */
+/* What only the People and Teams lists need besides the shared Settings list look
+   (SettingsTable.module.css). */
 
 /* At most two lines of a team's description; the details show all of it. */
 .clamp {
@@ -35,4 +36,11 @@
 .avatars li {
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* A person's teams stay on one line, so every row of the list has the same height; a narrow
+   screen scrolls the table sideways instead. */
+.teamsCell ul {
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }

@@ -255,7 +255,13 @@ function OutcomeGroup({ outcome, rows }: { outcome: RateImportOutcome; rows: Rat
     <details className={styles.group} open={OPEN_AT_FIRST.includes(outcome)}>
       <summary>{`${OUTCOME_WORDS[outcome]} (${formatWhole(rows.length)})`}</summary>
       <div className={styles.groupBody}>
-        <div className={settingsStyles.tableScroll}>
+        {/* Nothing in the table takes the focus: the scrolling area does, for the keyboard. */}
+        <div
+          className={settingsStyles.tableScroll}
+          role="region"
+          aria-label={`${OUTCOME_WORDS[outcome]}: rows`}
+          tabIndex={0}
+        >
           <table className={settingsStyles.table}>
             <thead>
               <tr>

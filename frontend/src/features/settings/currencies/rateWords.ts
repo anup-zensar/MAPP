@@ -26,6 +26,11 @@ export function rateOfLine(
   return source ? `${of} · ${SOURCE_WORDS[source]}` : of;
 }
 
+/** "GSAP import · gsap_rates_2026-10-19.csv", or "Entered by hand" (FR-007). */
+export function sourceOf(source: RateSource, importFileName: string | null): string {
+  return importFileName ? `${SOURCE_WORDS[source]} · ${importFileName}` : SOURCE_WORDS[source];
+}
+
 /** The outcomes of a reviewed rate file, in the order the review lists them (FR-006). */
 export const OUTCOMES: RateImportOutcome[] = ['problem', 'notUsed', 'replace', 'add', 'present'];
 

@@ -12,7 +12,7 @@ import styles from './rates.module.css';
  */
 export function RecentImports() {
   const imports = useRateImports();
-  const { dateTime, dateRange } = useFormatters();
+  const { date, dateTime, dateRange } = useFormatters();
 
   return (
     <Card title="Recent imports" subtitle={`The last ${RECENT_IMPORTS} GSAP rate files imported`}>
@@ -25,7 +25,13 @@ export function RecentImports() {
       ) : imports.data.items.length === 0 ? (
         <p className={styles.cardNote}>No GSAP rate file has been imported yet.</p>
       ) : (
-        <div className={settingsStyles.tableScroll}>
+        // Nothing in the table takes the focus: the scrolling area does, for the keyboard.
+        <div
+          className={settingsStyles.tableScroll}
+          role="region"
+          aria-label="Recent imports"
+          tabIndex={0}
+        >
           <table className={settingsStyles.table}>
             <thead>
               <tr>
@@ -51,7 +57,12 @@ export function RecentImports() {
             </thead>
             <tbody>
               {imports.data.items.map((item) => (
-                <ImportRow key={item.id} item={item} when={dateTime} range={dateRange} />
+                <ImportRow
+                  key={item.id}
+                  item={item}
+                  when={dateTime}
+                  range={(first, last) => (first === last ? date(first) : dateRange(first, last))}
+                />
               ))}
             </tbody>
           </table>
@@ -64,7 +75,8 @@ export function RecentImports() {
 interface ImportRowProps {
   item: RateImport;
   when: (timestamp: string) => string;
-  range: (start: string | null, end: string | null) => string;
+  /** "21 Sep – 20 Oct 2026", or one date when the file had rates of one day. */
+  range: (start: string, end: string) => string;
 }
 
 function ImportRow({ item, when, range }: ImportRowProps) {
@@ -78,7 +90,9 @@ function ImportRow({ item, when, range }: ImportRowProps) {
         <span className={settingsStyles.secondLine}>{when(item.importedAt)}</span>
       </td>
       <td className={settingsStyles.nowrap}>
-        {item.firstDate ? range(item.firstDate, item.lastDate) : 'No rates changed'}
+        {item.firstDate && item.lastDate
+          ? range(item.firstDate, item.lastDate)
+          : 'No rates changed'}
       </td>
       <td className={settingsStyles.number}>{formatWhole(item.added)}</td>
       <td className={settingsStyles.number}>{formatWhole(item.replaced)}</td>

@@ -23,13 +23,16 @@
   line-height: var(--leading-md);
 }
 
-/* "Current" and "From 01 Jan 2027" sit under the date, never beside it on a narrow panel. */
+/* The date with "Current" beside it, then the source and who recorded it, each on one line. */
 .dateCell {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-1);
   white-space: nowrap;
+}
+
+.dateLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
 }
 
 /* The date field of the rate dialog: the same frame as the other fields (label, control, note). */

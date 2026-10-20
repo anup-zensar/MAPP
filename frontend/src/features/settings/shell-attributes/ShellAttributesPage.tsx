@@ -437,8 +437,8 @@ function AttributeList({ filters }: { filters: Filters }) {
                             )}
                           </span>
                         </th>
-                        <td>{TYPE_WORDS[attribute.type]}</td>
-                        <td>{MARKING_WORDS[attribute.marking]}</td>
+                        <td className={styles.nowrap}>{TYPE_WORDS[attribute.type]}</td>
+                        <td className={styles.nowrap}>{MARKING_WORDS[attribute.marking]}</td>
                         <td className={styles.number}>
                           {isChoiceType(attribute.type) ? formatWhole(attribute.optionCount) : '—'}
                         </td>

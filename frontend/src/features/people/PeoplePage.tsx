@@ -18,6 +18,7 @@ import {
 } from '@/components';
 import { ListToolbar } from '@/features/settings/shared/ListToolbar';
 import styles from '@/features/settings/shared/SettingsTable.module.css';
+import lists from './lists.module.css';
 import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
 import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
 import { usePageTitle } from '@/lib/usePageTitle';
@@ -236,8 +237,8 @@ function PersonRow({ person, isYou, onOpen, actions }: PersonRowProps) {
         </Link>
       </th>
       <td className={`${styles.muted} ${styles.nowrap}`}>{person.email}</td>
-      <td>{person.jobTitle || '—'}</td>
-      <td>
+      <td className={styles.nowrap}>{person.jobTitle || '—'}</td>
+      <td className={lists.teamsCell}>
         {person.teams.length > 0 ? (
           <TeamPills teams={person.teams} />
         ) : (

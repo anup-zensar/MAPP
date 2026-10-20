@@ -10,7 +10,7 @@ import { inverseLine } from './currencyActions';
 import { RateDialog } from './RateDialog';
 import { RATE_LISTS, useDeleteRate, useRateHistory } from './ratesApi';
 import type { ExchangeRateRecord } from './ratesApi';
-import { lastRateReason, SOURCE_WORDS } from './rateWords';
+import { lastRateReason, sourceOf } from './rateWords';
 import styles from './rates.module.css';
 
 export interface RateHistorySectionProps {
@@ -23,7 +23,8 @@ type OpenDialog = { kind: 'add' } | { kind: 'edit'; rate: ExchangeRateRecord };
 
 /**
  * A currency's **Rate history** in its details (016 FR-001, FR-003): newest first, each rate with
- * its date, the rate both ways, its source and who recorded it when; "Current" on the rate
+ * its date, its source (with the file of an import) and who recorded it when, and the rate both
+ * ways — three columns, so it fits the side panel without wrapping a name; "Current" on the rate
  * conversions use today and "From <date>" on future rates. **Add rate**, and per row **Edit** (the
  * rate only) and **Delete** (to the recycle bin, with Undo). The last rate dated today or earlier
  * can't be deleted, and the menu says why.
@@ -71,11 +72,10 @@ export function RateHistorySection({ code }: RateHistorySectionProps) {
           <table className={settingsStyles.table}>
             <thead>
               <tr>
-                <th scope="col">Date</th>
+                <th scope="col">Date and source</th>
                 <th scope="col" className={settingsStyles.number}>
                   Rate per 1 USD
                 </th>
-                <th scope="col">Source</th>
                 <th scope="col">
                   <span className="visually-hidden">Actions</span>
                 </th>
@@ -87,26 +87,23 @@ export function RateHistorySection({ code }: RateHistorySectionProps) {
                   !rate.future && inForce.length === 1 ? lastRateReason(code) : undefined;
                 return (
                   <tr key={rate.id}>
-                    <th scope="row">
+                    <th scope="row" className={styles.dateCell}>
                       {/* A future rate counts from its date; the current one is marked. */}
-                      <span className={styles.dateCell}>
+                      <span className={styles.dateLine}>
                         {rate.future ? `From ${date(rate.date)}` : date(rate.date)}
                         {rate.current && <StatusChip tone="positive">Current</StatusChip>}
+                      </span>
+                      <span className={settingsStyles.secondLine}>
+                        {sourceOf(rate.source, rate.importFileName)}
+                      </span>
+                      <span className={settingsStyles.secondLine}>
+                        {`${rate.updatedBy.name}, ${dateTime(rate.updatedAt)}`}
                       </span>
                     </th>
                     <td className={settingsStyles.number}>
                       {formatRate(rate.rate)}
                       <span className={settingsStyles.secondLine}>
                         {inverseLine(code, rate.inverseRate)}
-                      </span>
-                    </td>
-                    <td>
-                      {SOURCE_WORDS[rate.source]}
-                      {rate.importFileName && (
-                        <span className={settingsStyles.secondLine}>{rate.importFileName}</span>
-                      )}
-                      <span className={settingsStyles.secondLine}>
-                        {`${rate.updatedBy.name}, ${dateTime(rate.updatedAt)}`}
                       </span>
                     </td>
                     <td className={settingsStyles.actionsCell}>
