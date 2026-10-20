@@ -1,19 +1,23 @@
-/* "Currency [USD — US dollar ▾]" on the right of the header, as on the ZenReach home. */
+/*
+ * "Currency [USD — US dollar ▾]" in Home's header actions, next to the My teams / Everything
+ * switch and as high as it (32 px; design system §3.6: controls side by side share one size). The
+ * select is drawn like every select (§5.5): the input's border, radius and padding, a chevron.
+ */
 .picker {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .label {
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--weight-bold);
 }
 
 .select {
   max-width: 220px;
-  height: var(--control-md);
+  height: var(--control-sm);
   padding: 0 var(--space-8) 0 var(--space-3);
   border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
@@ -31,5 +35,17 @@
 }
 
 .select:hover {
-  border-color: var(--ink-2);
+  border-color: var(--control-border-hover);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* 16 px text on phones, so choosing does not zoom the page (design system §3.2). */
+@media (max-width: 599px) {
+  .select {
+    font-size: var(--text-md);
+  }
 }

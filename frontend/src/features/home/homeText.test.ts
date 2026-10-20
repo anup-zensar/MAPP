@@ -6,14 +6,17 @@ import {
   approvedText,
   changedFieldsText,
   datesText,
+  greetingText,
+  isZero,
+  percentText,
   initialsOf,
   lineItemsNeedAttentionText,
   recentSentence,
   levelText,
   missingFieldsText,
   reasonLinkName,
+  reasonLinkOf,
   reasonText,
-  showAllText,
   viewAllText,
   waitingText,
   ofPlanBudgetText,
@@ -24,6 +27,14 @@ import {
   viewAllPlansText,
 } from './homeText';
 import { logEntryOf, reasonOf, usd } from './testData';
+
+describe('homeText — the greeting (design system §2.3)', () => {
+  it('greets by the time of day', () => {
+    expect(greetingText('Priya', new Date(2026, 2, 12, 8, 30))).toBe('Good morning, Priya');
+    expect(greetingText('Priya', new Date(2026, 2, 12, 12, 0))).toBe('Good afternoon, Priya');
+    expect(greetingText('Priya', new Date(2026, 2, 12, 18, 0))).toBe('Good evening, Priya');
+  });
+});
 
 describe('homeText — summary cards (FR-005, FR-006, FR-007)', () => {
   it('counts plans and activities with their statuses', () => {
@@ -42,7 +53,11 @@ describe('homeText — summary cards (FR-005, FR-006, FR-007)', () => {
 
   it('writes the budget lines of the planned-cost card', () => {
     expect(ofPlanBudgetText('$1.2M')).toBe('of $1.2M plan budget');
-    expect(percentUsedText(84)).toBe('84 % used');
+    expect(percentUsedText(84)).toBe('84% used');
+    expect(percentText(125)).toBe('125%');
+    expect(isZero(usd('0.00'))).toBe(true);
+    expect(isZero(null)).toBe(true);
+    expect(isZero(usd('0.01'))).toBe(false);
     expect(plansWithoutBudgetText(1)).toBe('Includes 1 plan with no budget');
     expect(plansWithoutBudgetText(2)).toBe('Includes 2 plans with no budget');
   });
@@ -108,6 +123,35 @@ describe('homeText — needs your attention (FR-011, FR-012)', () => {
     expect(missingFieldsText(0, 1)).toBe('1 item below needs attention');
   });
 
+  it("calls an activity's items below its line items, as My activities does (functional review X-07)", () => {
+    expect(missingFieldsText(3, 1, 'activity')).toBe(
+      '3 fields needed · 1 line item needs attention',
+    );
+    expect(missingFieldsText(0, 2, 'activity')).toBe('2 line items need attention');
+    expect(missingFieldsText(0, 2, 'campaign')).toBe('2 items below need attention');
+  });
+
+  it('offers "Show fields" only where fields are missing (functional review X-07)', () => {
+    const fields = reasonOf('missingFields', {
+      missing: [{ field: 'gl', label: 'GL code' }],
+      itemsBelow: 1,
+    });
+    const below = reasonOf('missingFields', { missing: [], itemsBelow: 2 });
+
+    expect(reasonLinkOf(fields, 'campaign')).toEqual({
+      label: 'Show fields',
+      hash: '#completeness',
+    });
+    expect(reasonLinkOf(below, 'activity')).toEqual({
+      label: 'Open line items',
+      hash: '#line-items',
+    });
+    expect(reasonLinkOf(below, 'campaign')).toEqual({
+      label: 'Show items below',
+      hash: '#completeness',
+    });
+  });
+
   it("names a reason's link with its record", () => {
     expect(reasonLinkName('Open approval', 'activity', 'Launch film')).toBe(
       "Open approval for activity 'Launch film'",
@@ -115,8 +159,7 @@ describe('homeText — needs your attention (FR-011, FR-012)', () => {
   });
 
   it('offers the rest of a list', () => {
-    expect(showAllText(12)).toBe('Show all 12');
-    expect(viewAllText(7)).toBe('View all 7');
+    expect(viewAllText(7)).toBe('View all (7)');
   });
 });
 

@@ -5,20 +5,21 @@ import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { useHomeWaiting } from './homeApi';
 import { waitingForMeHref } from './homeLinks';
-import { NOTHING_WAITING, levelText, viewAllText, waitingText } from './homeText';
+import { NOTHING_WAITING, WAITING_SUBTITLE, levelText, viewAllText, waitingText } from './homeText';
 import { SectionError } from './SectionError';
 import styles from './WaitingCard.module.css';
 
 /**
  * Waiting for my approval (FR-013): the activities of 008's Waiting for me tab, oldest first, at
- * most 5, each with Review, which opens the Approvals page with its preview (SC-003: one step).
+ * most 5, each with Review, which opens the Approvals page with its preview (SC-003: one step),
+ * and "View all (n)" opening that tab.
  */
 export function WaitingCard() {
   const waiting = useHomeWaiting();
   const { money } = useFormatters();
 
   return (
-    <Card title="Waiting for my approval">
+    <Card title="Waiting for my approval" subtitle={WAITING_SUBTITLE}>
       {waiting.isPending ? (
         <Skeleton lines={4} height="18px" />
       ) : waiting.isError ? (

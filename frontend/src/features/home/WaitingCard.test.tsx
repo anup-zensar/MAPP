@@ -61,7 +61,7 @@ describe('WaitingCard', () => {
     );
     renderCard(page(items, 7));
 
-    expect(await within(card()).findByRole('link', { name: 'View all 7' })).toHaveAttribute(
+    expect(await within(card()).findByRole('link', { name: 'View all (7)' })).toHaveAttribute(
       'href',
       '/approvals?tab=waiting',
     );

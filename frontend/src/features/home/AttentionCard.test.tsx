@@ -148,22 +148,22 @@ describe('AttentionCard', () => {
     ]);
   });
 
-  it('shows 8 items, then all of them on "Show all <n>" and fewer again (FR-012)', async () => {
+  it('shows 5 items, as the card beside it, then all of them on "View all (n)" and fewer again (FR-012, design system §2.4 E)', async () => {
     const items = Array.from({ length: 10 }, (_, index) =>
       attentionItemOf({ id: `A-20${index}`, name: `Activity ${index + 1}` }),
     );
     const { user } = renderCard(page(items));
 
-    await within(card()).findByRole('link', { name: 'Activity 1' });
-    expect(within(card()).queryByRole('link', { name: 'Activity 9' })).not.toBeInTheDocument();
+    await within(card()).findByRole('link', { name: 'Activity 5' });
+    expect(within(card()).queryByRole('link', { name: 'Activity 6' })).not.toBeInTheDocument();
 
-    const more = within(card()).getByRole('button', { name: 'Show all 10' });
+    const more = within(card()).getByRole('button', { name: 'View all (10)' });
     expect(more).toHaveAttribute('aria-expanded', 'false');
     await user.click(more);
 
     expect(within(card()).getByRole('link', { name: 'Activity 10' })).toBeInTheDocument();
     await user.click(within(card()).getByRole('button', { name: 'Show fewer' }));
-    expect(within(card()).queryByRole('link', { name: 'Activity 9' })).not.toBeInTheDocument();
+    expect(within(card()).queryByRole('link', { name: 'Activity 6' })).not.toBeInTheDocument();
   });
 
   it('says so in one sentence when nothing needs attention (US3 scenario 6)', async () => {

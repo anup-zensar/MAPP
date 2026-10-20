@@ -21,8 +21,8 @@ function renderCards(
 }
 
 function cardOf(link: HTMLElement): HTMLElement {
-  // The link is the value; its card holds the label, the value and the lines under it.
-  return link.closest('div') as HTMLElement;
+  // The link lies over its card, which holds the label, the value and the lines under it.
+  return link.parentElement as HTMLElement;
 }
 
 const plannedCost = (overrides: Partial<HomeSummary['plannedCost']>) =>
@@ -48,14 +48,14 @@ describe('SummaryCards', () => {
     });
     expect(waiting).toHaveAttribute('href', '/approvals?tab=waiting');
     expect(cardOf(waiting)).toHaveTextContent('Nothing waiting');
-    expect(cardOf(waiting).className).not.toMatch(/review/);
+    expect(within(cardOf(waiting)).getByText('0').className).not.toMatch(/review/);
 
     const cost = screen.getByRole('link', {
       name: 'Planned cost vs plan budget: $1M ($1,003,000.00) — open the Plans list',
     });
     expect(cost).toHaveAttribute('href', '/plans?scope=myTeams');
     expect(cardOf(cost)).toHaveTextContent('of $1.2M plan budget');
-    expect(cardOf(cost)).toHaveTextContent('84 % used');
+    expect(cardOf(cost)).toHaveTextContent('84% used');
     expect(within(cardOf(cost)).getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuenow',
       '84',
@@ -103,7 +103,7 @@ describe('SummaryCards', () => {
     const waiting = await screen.findByRole('link', {
       name: 'Waiting for my approval: 2 — open Approvals',
     });
-    expect(waiting.parentElement?.className).toMatch(/review/);
+    expect(within(cardOf(waiting)).getByText('2').className).toMatch(/review/);
     expect(cardOf(waiting)).toHaveTextContent('oldest waiting 3 days');
   });
 
@@ -116,7 +116,7 @@ describe('SummaryCards', () => {
       }),
     });
 
-    const used = await screen.findByText('125 % used');
+    const used = await screen.findByText('125% used');
     expect(used.className).toMatch(/problem/);
     expect(screen.getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuetext',
@@ -163,6 +163,38 @@ describe('SummaryCards', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText('No plans in scope')).toBeInTheDocument();
+  });
+
+  it('shows "—" with "Nothing planned yet", never "$0.00", when the plans have nothing planned (functional review X-08)', async () => {
+    renderCards('everything', {
+      body: plannedCost({
+        planCount: 1,
+        plannedCost: usd('0.00'),
+        planBudget: usd('500000.00'),
+        budgetUsedPercent: 0,
+      }),
+    });
+
+    const cost = await screen.findByRole('link', {
+      name: 'Planned cost vs plan budget: — — open the Plans list',
+    });
+    expect(cardOf(cost)).toHaveTextContent('Nothing planned yet');
+    expect(cardOf(cost)).toHaveTextContent('of $500K plan budget');
+    expect(cardOf(cost)).not.toHaveTextContent('$0.00');
+    expect(within(cardOf(cost)).queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('draws the cards like every other summary card: no icon tiles, the ⓘ after the label (UI audit H-03, D-01)', async () => {
+    renderCards();
+
+    const plans = await screen.findByRole('link', { name: /^My teams' plans/ });
+    // The link lies over the card; the card itself is the shared SummaryCard, with nothing but a
+    // decorative chevron beside it.
+    expect(plans).toBeEmptyDOMElement();
+    expect(cardOf(plans).querySelectorAll('svg[aria-hidden="true"]').length).toBeGreaterThan(0);
+    expect(within(cardOf(plans)).getByText("My teams' plans")).toContainElement(
+      within(cardOf(plans)).getByRole('button', { name: "About My teams' plans" }),
+    );
   });
 
   it('shows every amount in the display currency, labelled (US1 scenario 4, FR-018)', async () => {

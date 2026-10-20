@@ -33,17 +33,17 @@ function requestsTo(api: ReturnType<typeof mockApi>, path: string) {
 }
 
 describe('HomePage', () => {
-  it('greets the person in the ZenReach header with the Currency picker (FR-001, US1 scenario 1)', async () => {
+  it('greets the person, with the scope switch and the Currency picker in the header (FR-001, US1 scenario 1, design system §2.4 E)', async () => {
     renderHome();
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Welcome back, Priya.' }),
+      screen.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), Priya$/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(
-      screen.getByText('Your plans, your activities and what needs you today.'),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Currency' })).toHaveValue('USD');
+    const header = screen.getByRole('banner');
+    expect(within(header).getByRole('group', { name: 'Scope' })).toBeInTheDocument();
+    expect(within(header).getByRole('combobox', { name: 'Currency' })).toHaveValue('USD');
+    // Home has no create action: no primary button (design system §2.4 E).
+    expect(header.querySelector('[class*="primary"]')).toBeNull();
     expect(
       await screen.findByRole('link', { name: "My teams' plans: 0 — open the Plans list" }),
     ).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe('HomePage', () => {
       "This section couldn't load",
     );
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Welcome back, Priya.' }),
+      screen.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), Priya$/ }),
     ).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Currency' })).toBeInTheDocument();
     // The other cards still show (FR-022).

@@ -36,13 +36,13 @@
   background: var(--ink);
   color: var(--surface);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 /* A standalone link: underlined on hover (global.css). */
 .link {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .text {

@@ -113,7 +113,7 @@ describe('MyActivitiesCard', () => {
     expect(router.state.location.search).toBe('?field=region');
   });
 
-  it('shows five activities of a group, then all of them on "Show all <n>" (US4 scenario 2)', async () => {
+  it('shows five activities of a group, then all of them on "View all (n)" (US4 scenario 2)', async () => {
     const many = Array.from({ length: 7 }, (_, index) =>
       myActivityOf({ id: `A-20${index}`, name: `Activity ${index + 1}` }),
     );
@@ -122,7 +122,7 @@ describe('MyActivitiesCard', () => {
     await within(card()).findByRole('link', { name: 'Activity 5' });
     expect(within(card()).queryByRole('link', { name: 'Activity 6' })).not.toBeInTheDocument();
 
-    await user.click(within(card()).getByRole('button', { name: 'Show all 7' }));
+    await user.click(within(card()).getByRole('button', { name: 'View all (7)' }));
     expect(within(card()).getByRole('link', { name: 'Activity 7' })).toBeInTheDocument();
 
     await user.click(within(card()).getByRole('button', { name: 'Show fewer' }));

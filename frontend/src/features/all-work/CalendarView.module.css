@@ -10,7 +10,7 @@
 .legendTitle {
   color: var(--ink-2);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .legendList {
@@ -39,7 +39,7 @@
   display: grid;
   color: var(--ink-2);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .months span {
@@ -74,7 +74,7 @@
   background: var(--ink);
   color: var(--surface);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
   transform: translateX(-50%);
 }
 
@@ -149,7 +149,7 @@
 
 .barName {
   overflow: hidden;
-  font-weight: 600;
+  font-weight: var(--weight-bold);
   text-overflow: ellipsis;
 }
 
@@ -167,7 +167,7 @@
 }
 
 .tipTitle {
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .undated {
@@ -178,7 +178,7 @@
 .undatedTitle {
   margin: 0 0 var(--space-2);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .undatedList {
@@ -199,5 +199,5 @@
 
 .undatedLink {
   color: var(--link);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }

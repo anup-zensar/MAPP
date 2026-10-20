@@ -1,0 +1,52 @@
+/*
+ * A summary card that is one link (design system §5.3): the card lifts on hover without moving,
+ * and the keyboard focus ring goes round the whole card. The card fills its grid cell, so cards in
+ * one row have the same height.
+ */
+.card {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  border-radius: var(--radius-card);
+  transition: box-shadow var(--dur) var(--ease-out);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lift);
+}
+
+/* The link covers the whole card. */
+.link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The ⓘ and the full-value button inside the card stay above the link. */
+.card button {
+  position: relative;
+  z-index: 2;
+}
+
+/* The chevron at the top end says the card opens something. */
+.chevron {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-4);
+  width: 16px;
+  height: 16px;
+  color: var(--ink-2);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

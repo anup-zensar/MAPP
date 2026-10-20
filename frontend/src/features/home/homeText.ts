@@ -7,14 +7,23 @@ import { joinWithAnd, midSentence } from '@/lib/text';
 import { formatWaitingTime, localDate } from '@/lib/format';
 import type {
   ActivityLogEntry,
+  HomeAttentionItem,
   HomeAttentionReason,
   HomeScope,
   Money,
   MyActivityRow,
 } from './homeApi';
 
-/** The one line under "Welcome back, <first name>." (FR-001). */
-export const HOME_DESCRIPTION = 'Your plans, your activities and what needs you today.';
+/**
+ * Home's title (design system §2.3: Home is the only page whose title greets): "Good morning,
+ * Priya" before noon, "Good afternoon, Priya" until 18:00, "Good evening, Priya" after, by the
+ * person's own clock.
+ */
+export function greetingText(firstName: string, now: Date = new Date()): string {
+  const hour = now.getHours();
+  const part = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  return `Good ${part}, ${firstName}`;
+}
 
 /** Shown inside a card whose data could not be loaded (FR-022). */
 export const SECTION_FAILED = "This section couldn't load";
@@ -51,10 +60,23 @@ export function ofPlanBudgetText(budget: string): string {
   return `of ${budget} plan budget`;
 }
 
-/** "84 % used" (card 4). */
-export function percentUsedText(percent: number): string {
-  return `${formatWhole(percent)} % used`;
+/** "84%": a whole percentage, without a space (design system §4.4). */
+export function percentText(percent: number): string {
+  return `${formatWhole(percent)}%`;
 }
+
+/** "84% used" (card 4). */
+export function percentUsedText(percent: number): string {
+  return `${percentText(percent)} used`;
+}
+
+/** Whether an amount is zero ("0.00"): nothing is planned, which Home shows as "—" (§4.4). */
+export function isZero(money: Money | null | undefined): boolean {
+  return !money || /^-?0*(\.0*)?$/.test(money.amount);
+}
+
+/** Shown after "—" when no planned cost exists yet (design system §4.4, functional review X-08). */
+export const NOTHING_PLANNED = 'Nothing planned yet';
 
 /** "Includes 1 plan with no budget" / "Includes 2 plans with no budget" (card 4, FR-006). */
 export function plansWithoutBudgetText(count: number): string {
@@ -95,14 +117,19 @@ export function viewAllPlansText(total: number): string {
   return `View all ${formatWhole(total)} plans`;
 }
 
-/** "Show all 12" / "View all 12": the rest of a card's list (FR-012 – FR-014). */
-export function showAllText(total: number): string {
-  return `Show all ${formatWhole(total)}`;
+/** Waiting for my approval: what the card lists (§2.4 E: both list cards have a subtitle). */
+export const WAITING_SUBTITLE = 'Activities waiting at a level you approve';
+
+/** Needs your attention: what the card lists. */
+export const ATTENTION_SUBTITLE = 'Things you own that have a problem';
+
+/** "View all (12)": the rest of a card's list, on the card or on its page (§2.4 E). */
+export function viewAllText(total: number): string {
+  return `View all (${formatWhole(total)})`;
 }
 
-export function viewAllText(total: number): string {
-  return `View all ${formatWhole(total)}`;
-}
+/** Folds a list opened with View all again. */
+export const SHOW_FEWER = 'Show fewer';
 
 /** How a reason's sentence shows amounts and dates: the signed-in person's formatters. */
 export interface ReasonFormatters {
@@ -113,26 +140,37 @@ export interface ReasonFormatters {
 }
 
 /**
- * "3 fields needed · 1 item below needs attention": what is missing on a record and below it
- * (FR-011 e); only the parts that apply.
+ * "3 fields needed · 1 line item needs attention": what is missing on a record and below it
+ * (FR-011 e); only the parts that apply. An activity's items below are its line items, so it says
+ * so — the same words My activities uses for the same activity (functional review X-07).
  */
-export function missingFieldsText(missing: number, itemsBelow: number): string {
+export function missingFieldsText(
+  missing: number,
+  itemsBelow: number,
+  recordType: HomeAttentionItem['recordType'] = 'plan',
+): string {
   const parts: string[] = [];
   if (missing > 0) {
     parts.push(missing === 1 ? '1 field needed' : `${formatWhole(missing)} fields needed`);
   }
   if (itemsBelow > 0) {
     parts.push(
-      itemsBelow === 1
-        ? '1 item below needs attention'
-        : `${formatWhole(itemsBelow)} items below need attention`,
+      recordType === 'activity'
+        ? lineItemsNeedAttentionText(itemsBelow)
+        : itemsBelow === 1
+          ? '1 item below needs attention'
+          : `${formatWhole(itemsBelow)} items below need attention`,
     );
   }
   return parts.join(' · ');
 }
 
 /** The sentence of one reason a record needs attention (FR-011). */
-export function reasonText(reason: HomeAttentionReason, format: ReasonFormatters): string {
+export function reasonText(
+  reason: HomeAttentionReason,
+  format: ReasonFormatters,
+  recordType: HomeAttentionItem['recordType'] = 'plan',
+): string {
   switch (reason.kind) {
     case 'declined': {
       const by = reason.declinedBy ? ` by ${reason.declinedBy.name}` : '';
@@ -147,18 +185,41 @@ export function reasonText(reason: HomeAttentionReason, format: ReasonFormatters
     case 'overBudget':
       return `Planned cost is ${format.money(reason.amount)} over budget`;
     case 'missingFields':
-      return missingFieldsText(reason.missing.length, reason.itemsBelow);
+      return missingFieldsText(reason.missing.length, reason.itemsBelow, recordType);
   }
 }
 
+/** A link to where a reason is fixed: its words and the section of the record's page. */
+export interface ReasonLink {
+  label: string;
+  hash: string;
+}
+
 /** Where each reason is fixed: the link's words and the section of the record's page (FR-012). */
-export const REASON_LINK: Record<HomeAttentionReason['kind'], { label: string; hash: string }> = {
+export const REASON_LINK: Record<HomeAttentionReason['kind'], ReasonLink> = {
   declined: { label: 'Open approval', hash: '#approval' },
   negativeBalance: { label: 'Open line items', hash: '#line-items' },
   overAllocated: { label: 'Open budget', hash: '#budget' },
   overBudget: { label: 'Open budget', hash: '#budget' },
   missingFields: { label: 'Show fields', hash: '#completeness' },
 };
+
+/**
+ * The link of a reason. "Show fields" only where fields are missing: when only items below need
+ * attention, an activity opens its line items and other records show what is needed below them
+ * (functional review X-07).
+ */
+export function reasonLinkOf(
+  reason: HomeAttentionReason,
+  recordType: HomeAttentionItem['recordType'],
+): ReasonLink {
+  if (reason.kind === 'missingFields' && reason.missing.length === 0) {
+    return recordType === 'activity'
+      ? REASON_LINK.negativeBalance
+      : { label: 'Show items below', hash: '#completeness' };
+  }
+  return REASON_LINK[reason.kind];
+}
 
 /** "Open approval for activity 'Launch film'": a reason link's name names its record. */
 export function reasonLinkName(label: string, typeLabel: string, name: string): string {
