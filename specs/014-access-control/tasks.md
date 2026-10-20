@@ -180,7 +180,9 @@ built with 012.
 - [ ] T042 `frontend/src/app/RequirePermission.tsx`; `frontend/src/app/navigation.ts` (`NavItem.permission`,
   `GLOBAL_BUDGETS` after Plans), `Sidebar.tsx`, `NavDrawer.tsx` filtering; `frontend/src/features/settings/sections.ts`
   (`SettingsSection.permission`, `ACCESS_SETTINGS_SECTIONS`); router entries for the 6 new routes with stub pages;
-  tests (FR-012, FR-036).
+  tests (FR-012, FR-036). *Build state (lane 014 core):* `RequirePermission`, `NavItem.permission`,
+  `SettingsSection.permission` and `itemsFor` (Sidebar, so also NavDrawer, and the Settings cards) are done with
+  tests; `GLOBAL_BUDGETS`, `ACCESS_SETTINGS_SECTIONS` and the routes come with the pages' lanes (T052, T057).
 
 ## Phase 5: Frontend by user story
 
