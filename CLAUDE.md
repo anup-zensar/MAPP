@@ -22,18 +22,24 @@ and recycle bin. Spec-driven development with GitHub Spec Kit.
    relational in shape.
 5. **Contract first:** endpoints are described in `backend/api/openapi.yaml`; the web app's API types
    are generated from it.
-6. **Demo sign-in, no roles** (D-004): every signed-in user can do everything; still pass the actor to
-   every service call and write the activity log.
+6. **Demo sign-in, role- and team-based access** (D-004, D-223, ADR-0008): sign-in stays a demo until
+   single sign-on; every action needs its permission (014 Table A) in the plan's scope, enforced by the
+   API through the route table (fail closed, 403 `forbidden`) and scoped service checks. Give every new
+   operation its route rule. Still pass the actor to every service call and write the activity log.
 7. **Tests:** unit tests for every rule and calculation, a test for every acceptance scenario, an
    end-to-end test for every P1 story, contract tests for every endpoint. Deterministic (fixed clock and
    seed).
 8. **Money** = exact decimal + currency (base USD). Dates are calendar dates; timestamps in UTC.
 9. **Shell vocabulary** on screen: Plan → Campaign → Initiative → Activity → Line item. Never Program or
    Tactic; never Hive9 interface terms (see `docs/product/design-system.md` §8).
-10. **ZenReach design, beginner-friendly:** follow `docs/product/design-system.md` — the standard CRUD
-    pattern, status and completeness chips on every record, all validation errors at once, delete to the
-    recycle bin with Undo, nothing greyed out without a reason.
-11. **Out of scope:** Finance, Measure, GSAP integration, e-mail, real sign-in, AI. Do not build them.
+10. **Shell enterprise design, beginner-friendly:** follow `docs/product/design-system.md` (version 2;
+    D-310–D-314) — light grey page with white cards, at most one Shell-yellow primary button per page or
+    dialog, red only for danger and errors, Jost headings and Arial body, no Shell pecten, WCAG 2.2 AA; the
+    standard CRUD pattern, status and completeness chips on every record, all validation errors at once,
+    delete to the recycle bin with Undo, nothing greyed out without a reason.
+11. **Out of scope:** the Finance budgets module, purchase requests, accrual calculation, Measure, live
+    GSAP integration, e-mail, real sign-in (SSO), AI. Do not build them. GSAP rates and transactions come
+    only from simulated feeds behind adapters (ADR-0009).
 12. **Local only:** servers listen on `127.0.0.1`; no cloud services; no secrets in the repository.
 
 ## Key documents

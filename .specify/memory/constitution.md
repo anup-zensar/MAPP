@@ -1,13 +1,32 @@
 <!--
 Sync Impact Report
-- Version change: (template) → 1.0.0
-- Principles defined: I Spec first · II Shell business, plain language · III Simple, friendly experience ·
-  IV Simple layered architecture · V Tested business rules · VI Safe by default (even with demo sign-in) ·
-  VII Keep it small
-- Added sections: Current Phase & Scope, Technology Choices, Development Workflow, Governance
+- Version change: 1.0.0 → 1.1.0 (MINOR: four principles materially expanded; none removed or redefined)
+- Modified principles (titles unchanged):
+  - II Shell Business, Plain Language — ZenReach stays the layout and interaction reference, the visual
+    reference is Shell's (III); live GSAP integration stays out of scope, GSAP data comes from simulated
+    feeds (D-242, D-259, D-308)
+  - III Simple, Friendly Experience — Shell's enterprise design language replaces "ZenReach style … one
+    blue primary action" (D-310–D-312, D-314); WCAG 2.2 AA replaces WCAG 2.1 AA basics (D-313)
+  - IV Simple, Layered Architecture — Shell's systems are reached through adapter interfaces; simulated
+    adapters now, real feeds later (ADR-0009)
+  - VI Safe by Default (Even With Demo Sign-in) — role- and team-based access control, enforced by the
+    server and failing closed, replaces "no roles — every signed-in user can do everything" (feature 014,
+    D-223, D-228, ADR-0008); demo sign-in stays until single sign-on
+- Unchanged principles: I Spec First, V Tested Business Rules, VII Keep It Small and Readable
+- Modified sections: Current Phase & Scope (features 014–017 in scope; out-of-scope list), Technology
+  Choices (sign-in row; new rows for Shell integrations and visual design), Governance (amendment history)
+- Added sections: Governance › Amendment History
+- Removed sections: none
 - Templates reviewed: plan-template.md (Constitution Check reads this file — OK), spec-template.md (OK),
-  tasks-template.md (tests are required by Principle V — OK), checklist-template.md (OK)
-- Follow-up TODOs: none
+  tasks-template.md (OK), checklist-template.md (OK); no template change needed
+- Documents updated with this amendment: CLAUDE.md (non-negotiables 6, 10, 11); ADR-0008 (supersedes
+  ADR-0005's "no roles"); ADR-0009; ADR-0005 and ADR-0006 status lines; decision log D-310–D-315;
+  design system v2 and the UX design recommendations (decision numbers)
+- Follow-up TODOs (deferred, not blocking): specs and plans of 001–017 still name "WCAG 2.1 AA" in their
+  constraints, and docs/README.md and docs/product/vision-and-scope.md still describe the ZenReach look;
+  this constitution and design system v2 win, and each is corrected when it is next edited. The
+  Complexity Tracking exceptions of 014, 015 and 016 for roles and simulated GSAP feeds are resolved by
+  this amendment; no re-plan is needed.
 -->
 
 # NorthStar Constitution
@@ -37,25 +56,31 @@ unrequested work.
 - NorthStar uses Shell's planning vocabulary on every screen: **Plan → Campaign → Initiative → Activity →
   Line item**. Hive9 product words (Program, Tactic, Inspection Window, Honeycomb, HUD) are never shown
   to users. `docs/product/glossary.md` is the authoritative list of terms.
-- **Shell's process is the functional reference; ZenReach is the design reference.** When sources
-  disagree on behaviour, follow the precedence in `docs/reference/README.md` (Shell's own documents
-  first). Every simplification of Hive9 behaviour is recorded in `docs/sdd/decision-log.md`.
+- **Shell's process is the functional reference; ZenReach is the layout and interaction reference;
+  Shell's enterprise design language is the visual reference (Principle III).** When sources disagree on
+  behaviour, follow the precedence in `docs/reference/README.md` (Shell's own documents first). Every
+  simplification of Hive9 behaviour is recorded in `docs/sdd/decision-log.md`.
 - The data each level holds, its statuses and its calculations are defined once in
   `docs/product/domain-model.md` and `docs/product/field-catalogue.md`; specs reference them instead of
   redefining them.
 - Business configuration is data, not code: models, activity types, custom attributes and their option
-  lists, currencies and exchange rates, and finance budget items are managed on Settings screens, never
-  hard-coded.
+  lists, currencies and exchange rates, finance budget items and roles are managed on Settings screens,
+  never hard-coded.
 - **NorthStar owns plans; GSAP owns the money.** NorthStar never creates SWBS codes, purchase orders or
-  invoices. GSAP integration is out of scope for the current phase.
+  invoices, and shows GSAP's financial transactions read-only. Live GSAP integration is out of scope for
+  the current phase: GSAP data (daily exchange rates; purchase-order lines, invoices, payments and
+  accruals) is loaded through **simulated feeds** behind adapter interfaces (Principle IV, ADR-0009).
 
 Rationale: users already know Shell's words and process; they must not have to learn Hive9's screens.
 
 ### III. Simple, Friendly Experience
 
 - A first-time user must understand every screen without training. The visual language follows
-  `docs/product/design-system.md` (ZenReach style: clean white layout, left sidebar, compact page
-  header, summary cards, rounded cards, one blue primary action, plain words).
+  `docs/product/design-system.md` (version 2), which applies **Shell's enterprise design language**: a
+  light grey page (`#F5F5F5`) with white cards and panels, a left sidebar, a compact page header, summary
+  cards and plain words; **Shell yellow (`#FFC800`, dark text) only for the one primary action per page
+  or dialog and for "you are here"**; red only for danger and errors; Jost (open licence) headings and
+  Arial body text. No Shell pecten, logo or typeface until Shell consents (D-310–D-314).
 - **Obvious CRUD.** Every record is created, viewed, edited and deleted with the same pattern: a clearly
   named create button, a searchable list, a details view with an **Edit** action, and a delete that says
   what will be removed and sends it to the recycle bin.
@@ -65,11 +90,12 @@ Rationale: users already know Shell's words and process; they must not have to l
 - Validation shows **all** problems at once, next to the fields, in plain language. Nothing is greyed
   out without saying why and what to do instead.
 - Unsaved changes are protected; destructive actions are confirmed; deletes can be undone.
-- Screens meet WCAG 2.1 AA basics: keyboard use, visible focus, labelled controls, sufficient contrast,
-  colour never the only signal.
+- Screens meet **WCAG 2.2 AA**: keyboard use, visible focus that is never hidden by sticky bars or
+  messages, labelled controls, sufficient contrast, colour never the only signal, targets of at least
+  24 × 24 px (D-313).
 
 Rationale: Hive9 is described by Shell users as too complex; NorthStar's value is that anyone can plan
-in it.
+in it, in a tool that looks like the rest of Shell.
 
 ### IV. Simple, Layered Architecture
 
@@ -86,9 +112,13 @@ in it.
 - All storage goes through repository interfaces. **Now:** a local JSON file store. **Later:**
   PostgreSQL, by adding a new repository implementation — no change to services or the web app. The
   data model is therefore kept relational in shape (ids, foreign keys, no nested ownership tricks).
+- **Shell's systems are reached only through adapter interfaces** owned by the package that needs them
+  (for example the transaction feed of financial data and the rate feed of Settings). **Now:** simulated
+  adapters — a file-import endpoint (check, then import) and demo seed data. **Later:** the real feed
+  implements the same interface, with no change to services' rules or the web app (ADR-0009).
 
 Rationale: a small, predictable structure is easy for new developers and AI agents to follow, and keeps
-the move to PostgreSQL and Azure cheap.
+the move to PostgreSQL, Azure and Shell's live systems cheap.
 
 ### V. Tested Business Rules (NON-NEGOTIABLE)
 
@@ -103,18 +133,29 @@ Rationale: planning money must be trustworthy; calculations cannot be checked by
 
 ### VI. Safe by Default (Even With Demo Sign-in)
 
-- Sign-in is a **demo sign-in** for now (decision D-004): a user picks or types a seeded demo account.
-  There are no roles or permissions yet — every signed-in user can do everything.
+- Sign-in is a **demo sign-in** until Shell's single sign-on (Microsoft Entra ID) is available (decision
+  D-004): a user picks or types a seeded demo account. Demo sign-in is enabled only in local and
+  development environments.
+- **Role- and team-based access control** (feature 014, ADR-0008): permissions are a fixed list in code;
+  roles are data that administrators change in Settings; every role assignment has a scope (All
+  markets, My teams or Chosen teams — a market is a team). A person sees and changes only what their
+  roles allow, in the plans their scopes cover.
+- **The server enforces access and fails closed.** Every API operation has a declared access rule in one
+  route table, and an operation without a rule is refused; scoped checks run in the service; lists show
+  only what the person may see. A refusal answers 403 `forbidden` and reveals nothing of a record the
+  person may not see. The web app hides or explains actions from the server's decisions and is never the
+  only line of defence.
 - The seam for real security exists from day one: every request carries the signed-in user (the
   "actor"); every service operation receives it; every change is written to the activity log with who,
-  what and when. Demo sign-in is enabled only in local and development environments.
+  what and when.
 - Input is validated by the API; no secrets, passwords or keys are committed; personal data is kept to
   name, e-mail and job title and never written to technical logs.
 - Money is an exact decimal with a currency code — never a binary floating-point number. Dates are
   calendar dates; timestamps are stored in UTC.
 - Deletes of business records go to the recycle bin and can be restored (parents first).
 
-Rationale: adding real sign-in, roles and a database later must not require rewriting features.
+Rationale: Shell's markets must see and change only their own plans, and adding real sign-in and a
+database later must not require rewriting features.
 
 ### VII. Keep It Small and Readable
 
@@ -132,11 +173,14 @@ Rationale: the user asked for an application that is industry-standard but not c
 
 - **Scope:** the **Plan module** and what it needs to work — demo sign-in, application shell, home
   dashboard, settings lists and custom attributes, people and teams, plans, campaigns, initiatives,
-  activities, line items, activity approvals, planning views, activity log and recycle bin. The feature
-  list and build order are in `docs/sdd/feature-map.md`.
-- **Out of scope for now:** Finance (finance budgets, transactions, purchase requests, accruals),
-  Measure reporting, GSAP integration, real sign-in and role-based access control, e-mail, AI features.
-  Specs may mention these only as future integration points.
+  activities, line items, activity approvals, planning views, activity log and recycle bin — and the
+  features that close the MVP gaps of Shell's requirements: roles, access and global budgets (014),
+  read-only financial transactions from a simulated GSAP feed (015), exchange-rate history with a
+  simulated GSAP daily-rate import, plan currency and planning extensions (016), and approval rules
+  (017). The feature list and build order are in `docs/sdd/feature-map.md`.
+- **Out of scope for now:** the Finance budgets module, purchase requests, accrual calculation, Measure
+  reporting, live GSAP integration, real sign-in (Microsoft Entra ID single sign-on), e-mail, AI
+  features. Specs may mention these only as future integration points.
 - **Running locally:** everything runs on a developer laptop with no cloud services: the Go API with the
   local JSON file store, and the web app's development server. Servers listen on `127.0.0.1` only.
 - **Demo data:** a clearly labelled, fictitious seed dataset is loaded by an explicit command; it never
@@ -149,7 +193,9 @@ Rationale: the user asked for an application that is industry-standard but not c
 | Web app | React + TypeScript (strict), built with Vite | Same, served as static files |
 | API | Go (current stable), standard-library HTTP server, REST + JSON, OpenAPI contract | Same |
 | Storage | Local JSON file store behind repository interfaces | PostgreSQL (Azure Database for PostgreSQL) |
-| Sign-in | Demo sign-in with seeded users, no roles | Microsoft Entra ID single sign-on and role-based access |
+| Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in NorthStar (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
+| Shell integrations | Simulated GSAP feeds behind adapters: file imports and demo data for daily rates, purchase orders, invoices, payments and accruals (ADR-0009) | Live GSAP feeds implementing the same adapters |
+| Visual design | Design system v2: Shell enterprise look, Jost (self-hosted, open licence) and Arial, NorthStar's own mark | Shell's typeface, pecten and official colour values once Shell supplies them and consents |
 | Hosting | Local laptop | Azure Container Apps behind Azure Front Door (see `docs/reference/README.md`) |
 | Source control | Git, one branch per feature | GitHub with pull requests and CI |
 
@@ -183,4 +229,11 @@ shared ones are fixed by feature 001.
   expanded, PATCH for wording.
 - Runtime guidance for AI agents is in `CLAUDE.md`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-18
+### Amendment History
+
+| Version | Date | Change | Decisions |
+|---|---|---|---|
+| 1.0.0 | 2026-10-18 | Ratified: principles I–VII, Current Phase & Scope, Technology Choices, Development Workflow, Governance | D-001–D-008 |
+| 1.1.0 | 2026-10-20 | II: ZenReach is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
+
+**Version**: 1.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-20

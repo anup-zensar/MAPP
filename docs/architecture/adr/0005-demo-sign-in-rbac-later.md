@@ -1,6 +1,8 @@
 # ADR-0005: Demo sign-in now, Entra ID and roles later
 
-**Status:** Accepted · **Date:** 2026-10-18
+**Status:** Superseded in part by [ADR-0008](0008-role-based-access-with-team-scopes.md) (roles and
+access control replace "every signed-in user may do everything"; the demo sign-in stays) ·
+**Date:** 2026-10-18
 
 ## Context
 The product owner asked to postpone authentication and role-based access control, while keeping a single
