@@ -120,9 +120,12 @@ export function campaignRows(data: PlanCampaigns, options: RowOptions): TreeNode
         <span className={styles.dates}>
           <span className={styles.nowrap}>
             {options.formatters.dateRange(item.startDate, item.endDate)}
+          </span>
+          {/* The R4 warning beside the timing, so a range over two years stays one line wide. */}
+          <span className={styles.timingLine}>
+            <TimingNote timing={item.timing} />
             {item.outsidePlanYear && <OutsideYearNote year={item.plan.year} compact />}
           </span>
-          <TimingNote timing={item.timing} />
         </span>
       ),
       budget: <CampaignBudgetCell campaign={item} />,

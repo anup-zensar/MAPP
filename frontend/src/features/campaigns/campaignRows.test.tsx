@@ -138,10 +138,12 @@ describe('campaignRows (feature 005, US4)', () => {
     // The timing is a word under the dates, not a third chip.
     expect(within(row).getByText('Running')).toBeInTheDocument();
     expect(within(row).getByText('$120,000.00')).toBeInTheDocument();
-    expect(within(row).getByText('Over-allocated by $30,000.00')).toBeInTheDocument();
+    // On screen the short form keeps the Budget column narrow; screen readers hear the whole word.
+    expect(within(row).getByText('Over by $30,000.00')).toHaveAttribute('aria-hidden', 'true');
+    expect(within(row).getByText('Over-allocated by $30,000.00')).toHaveClass('visually-hidden');
     expect(within(row).getByText('$150,000.00')).toBeInTheDocument();
     // The budget used is the planned cost's second line (one column fewer, nothing clipped).
-    expect(within(row).getByText('125% of budget').className).toMatch(/negative/);
+    expect(within(row).getByText('125% used').className).toMatch(/negative/);
     expect(
       within(row).getByRole('button', { name: 'Add initiative to Helix launch' }),
     ).toBeInTheDocument();

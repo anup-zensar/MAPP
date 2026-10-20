@@ -102,7 +102,7 @@ export function PlanTable({ plans, actionsFor }: PlanTableProps) {
                     />
                     {used !== null && figures.plannedCost && (
                       <span className={figures.overBudget ? styles.problem : styles.detail}>
-                        {used}% of budget
+                        {used}% used
                       </span>
                     )}
                   </span>

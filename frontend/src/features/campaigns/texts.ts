@@ -54,9 +54,9 @@ export function totalsText(campaigns: number, initiatives: number, activities: n
 export const ALLOCATED = 'Allocated';
 
 // Budget
-/** Under a planned cost in the plan tree: "38% of budget". */
+/** Under a planned cost in the plan tree: "38% used", as on the plan cards (short, so the tree fits 1,440 px). */
 export function percentOfBudget(percent: number): string {
-  return `${percent}% of budget`;
+  return `${percent}% used`;
 }
 /** Under a budget in the plan tree: what its children may still be given (PL-03, one wording). */
 export function remainingText(amount: string): string {
@@ -64,6 +64,10 @@ export function remainingText(amount: string): string {
 }
 export function overAllocatedBy(amount: string): string {
   return `Over-allocated by ${amount}`;
+}
+/** The tree row's short form of "Over-allocated by …", under the budget (FR-019). */
+export function overBy(amount: string): string {
+  return `Over by ${amount}`;
 }
 export const REMAINING_PLAN_BUDGET = 'Remaining plan budget';
 export const REMAINING_CAMPAIGN_BUDGET = 'Remaining campaign budget';

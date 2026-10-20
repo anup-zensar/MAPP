@@ -66,6 +66,13 @@
   gap: 2px;
 }
 
+.timingLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
 .money {
   display: inline-flex;
   flex-direction: column;

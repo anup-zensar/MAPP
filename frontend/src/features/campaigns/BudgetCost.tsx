@@ -25,6 +25,7 @@ import {
   NO_BUDGET_TO_ALLOCATE_FROM,
   NO_PLANNED_COST,
   overAllocatedBy,
+  overBy,
   percentOfBudget,
   PLANNED_COST,
   PLANNED_COST_TIP,
@@ -237,7 +238,8 @@ export function GoalsSection({ goals }: { goals: GoalSums }) {
 /**
  * A tree row's budget (FR-019, UI audit PL-03): the amount in the plan currency with the display
  * currency beneath when it differs (016 FR-013), then "Remaining <amount>" for what its children
- * may still be given, or red "Over-allocated by <amount>"; "—" without a budget.
+ * may still be given, or red "Over by <amount>" (read out as "Over-allocated by <amount>"); "—"
+ * without a budget.
  */
 export function BudgetCell({
   budget,
@@ -261,8 +263,12 @@ export function BudgetCell({
       <AmountPair primary={budget} secondary={displayBudget} />
       {remaining &&
         (isNegative(remaining) ? (
+          // "Over by …" on screen keeps the column narrow; screen readers hear the whole word.
           <span className={styles.negativeDetail}>
-            {overAllocatedBy(money(withoutSign(remaining)))}
+            <span aria-hidden="true">{overBy(money(withoutSign(remaining)))}</span>
+            <span className="visually-hidden">
+              {overAllocatedBy(money(withoutSign(remaining)))}
+            </span>
           </span>
         ) : (
           <span className={styles.detail}>{remainingText(money(remaining))}</span>
@@ -284,7 +290,7 @@ export function CampaignBudgetCell({ campaign }: { campaign: Campaign }) {
 
 /**
  * A tree row's planned cost (FR-011, FR-013) in the plan currency, the display currency beneath
- * when it differs, and how much of the budget it uses ("38% of budget", red above 100 %) — one
+ * when it differs, and how much of the budget it uses ("38% used", red above 100 %) — one
  * column instead of a separate Budget used column, so the tree fits a 1,440 px screen without
  * clipping its last column.
  */

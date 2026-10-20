@@ -38,7 +38,7 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
     expect(europe).toHaveTextContent('Priya Raman');
     expect(europe).not.toHaveTextContent('Owner:');
     expect(europe).toHaveTextContent('$1,200,000.00');
-    expect(europe).toHaveTextContent('$960,000.0080% of budget');
+    expect(europe).toHaveTextContent('$960,000.0080% used');
     expect(europe).toHaveTextContent('4 of 7');
   });
 
@@ -55,7 +55,7 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
   it('says over budget in words and "—" without a budget', () => {
     renderTable();
 
-    expect(within(row('FY2025 Lubricants Europe')).getByText('108% of budget').className).toMatch(
+    expect(within(row('FY2025 Lubricants Europe')).getByText('108% used').className).toMatch(
       /problem/,
     );
     const china = within(row('FY2026 Mobility China')).getAllByRole('cell');
