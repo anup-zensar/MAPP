@@ -11,6 +11,7 @@ import { CampaignPanel } from '@/features/campaigns/CampaignPanel';
 import { InitiativePanel } from '@/features/campaigns/InitiativePanel';
 import { NewCampaignPanel } from '@/features/campaigns/NewCampaignPanel';
 import { NewInitiativePanel } from '@/features/campaigns/NewInitiativePanel';
+import { ACCESS_ROUTES } from '@/features/access/accessRoutes';
 import { ComponentGalleryPage } from '@/features/dev/ComponentGalleryPage';
 import { GlobalBudgetPage } from '@/features/global-budgets/GlobalBudgetPage';
 import { GlobalBudgetsPage } from '@/features/global-budgets/GlobalBudgetsPage';
@@ -33,6 +34,8 @@ import { RecycleBinPage } from '@/features/recycle-bin/RecycleBinPage';
 import { ActivityTypesPage } from '@/features/settings/activity-types/ActivityTypesPage';
 import { CurrenciesPage } from '@/features/settings/currencies/CurrenciesPage';
 import { FinanceBudgetItemsPage } from '@/features/settings/finance-budget-items/FinanceBudgetItemsPage';
+import { FieldHelpPage } from '@/features/settings/field-help/FieldHelpPage';
+import { FIELD_HELP_PATH } from '@/features/settings/field-help/settingsSections';
 import { ModelsPage } from '@/features/settings/models/ModelsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { ShellAttributeEditorPage } from '@/features/settings/shell-attributes/ShellAttributeEditorPage';
@@ -42,6 +45,7 @@ import { SignInPage } from '@/features/sign-in/SignInPage';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
+import { RequirePermission } from './RequirePermission';
 import { RequireSignIn } from './RequireSignIn';
 import type { PageHandle } from './RequireSignIn';
 import { RootLayout } from './RootLayout';
@@ -190,6 +194,13 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 011 Activity log and Recycle bin (under MORE in the sidebar)
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
+  // 016 Settings › Field help
+  { path: FIELD_HELP_PATH, element: <FieldHelpPage />, ...titled('Field help') },
+  // 014 Settings › Roles and access, for people whose role includes access.manage (FR-012)
+  ...ACCESS_ROUTES.map((route) => ({
+    ...route,
+    element: <RequirePermission permission="access.manage">{route.element}</RequirePermission>,
+  })),
 ];
 
 /**
