@@ -4,8 +4,6 @@ import { Link, useNavigate } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
 import {
   ActionsMenu,
-  Breadcrumb,
-  CompletenessChip,
   ErrorState,
   LevelTag,
   LinkButton,
@@ -16,10 +14,14 @@ import {
 } from '@/components';
 import type { ActionsMenuItem } from '@/components';
 import { HistorySection } from '@/features/activity-log/HistorySection';
+import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
+import { RecordFinancials } from '@/features/plans/RecordFinancials';
 import { panelHistoryId, showHistory } from '@/features/activity-log/showHistory';
 import { localDate } from '@/lib/format';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
+import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
+import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
+import { AttentionChip } from './AttentionChip';
 import { BudgetCostSection, GoalsSection } from './BudgetCost';
 import { usePlan } from './campaignApi';
 import type { Campaign, Initiative } from './campaignApi';
@@ -27,7 +29,7 @@ import { addInitiativeHref } from './campaignRows';
 import { InitiativeActivitiesSection, initiativeExtraActions } from './extensions';
 import { Fact, Facts, PanelSection } from './PanelSection';
 import styles from './RecordDetails.module.css';
-import { ApprovalProgressChip, OutsideYearNote, TimingChip } from './StatusChips';
+import { ApprovalProgressChip, OutsideYearNote } from './StatusChips';
 import {
   activitiesLine,
   ADD_INITIATIVE,
@@ -41,6 +43,8 @@ import {
   NO_ACTIVITIES_YET,
   NO_INITIATIVES,
   OWNER,
+  PLAN,
+  TIMING_WORD,
   VIEW_HISTORY,
 } from './texts';
 import type { RecordLevel } from './texts';
@@ -112,33 +116,21 @@ export function RecordDetails({
         }
       >
         <div className={styles.details}>
-          <Breadcrumb
-            items={[
-              { label: 'Plans', to: '/plans' },
-              { label: record.plan.name, to: planHref },
-              ...(initiative
-                ? [
-                    {
-                      label: initiative.campaign.name,
-                      to: recordHref('campaign', initiative.campaign.id, planId),
-                    },
-                  ]
-                : []),
-              { label: record.name },
-            ]}
-          />
+          {/* The level tag, the status and one completeness chip (design system §4.1). The page
+              under the panel has the breadcrumb; the panel names its parents as values (C-02). */}
           <div className={styles.chips}>
             <LevelTag level={level} />
             <ApprovalProgressChip progress={record.approvalProgress} />
-            <TimingChip timing={record.timing} />
             {/* #completeness: where Home's "Show fields" leads (feature 009). */}
             <span id="completeness">
-              <CompletenessChip
+              <AttentionChip
                 missing={record.completeness.missing.map((field) => ({
                   id: field.field,
                   label: field.label,
                 }))}
-                onSelectField={(field) => void navigate(fieldHref(level, record.id, field, planId))}
+                onSelectField={(field) =>
+                  void navigate(completenessFieldHref(level, record.id, field, planId))
+                }
                 itemsBelow={record.completeness.itemsBelowNeedingAttention}
                 onItemsBelowSelect={() =>
                   void navigate(planHref, { state: { highlight: record.id } })
@@ -151,6 +143,9 @@ export function RecordDetails({
           )}
           <Facts>
             <Fact label={ID}>{record.id}</Fact>
+            <Fact label={PLAN}>
+              <Link to={planHref}>{record.plan.name}</Link>
+            </Fact>
             {initiative && (
               <Fact label={CAMPAIGN}>
                 <Link to={recordHref('campaign', initiative.campaign.id, planId)}>
@@ -159,7 +154,10 @@ export function RecordDetails({
               </Fact>
             )}
             <Fact label={OWNER}>{record.owner ? <PersonLabel person={record.owner} /> : '—'}</Fact>
-            <Fact label={DATES}>{dateRange(record.startDate, record.endDate)}</Fact>
+            <Fact label={DATES}>
+              {dateRange(record.startDate, record.endDate)}
+              {record.timing && ` · ${TIMING_WORD[record.timing]}`}
+            </Fact>
           </Facts>
           <p className={styles.created}>
             {createdLine(
@@ -169,13 +167,28 @@ export function RecordDetails({
               date(localDate(record.updatedAt)),
             )}
           </p>
-          {/* Amounts in the reader's display currency (D-220). */}
+          {/* Amounts in the plan currency, the reader's display currency beneath when it
+              differs (016 FR-013; before 016 both are the same). */}
           <BudgetCostSection
             level={level}
-            budget={record.display.budget}
-            budgetAndCost={record.display.budgetAndCost}
-            parentRemainingBudget={record.display.parentRemainingBudget}
+            budget={record.budget}
+            budgetAndCost={record.budgetAndCost}
+            parentRemainingBudget={record.parentRemainingBudget}
+            display={{
+              budget: record.display.budget,
+              plannedCost: record.display.budgetAndCost.plannedCost,
+            }}
           />
+          {/* D-305: 016's Budget by month, then 015's Financials, both open. */}
+          <BudgetByMonthCard
+            level={level}
+            planId={planId}
+            record={record}
+            year={record.plan.year}
+            currency={record.budget?.currency ?? 'USD'}
+            variant="panel"
+          />
+          <RecordFinancials recordId={record.id} planId={planId} variant="panel" />
           <GoalsSection goals={record.display.goals} />
           <PanelSection title={DESCRIPTION}>
             <p className={styles.text}>{record.description || '—'}</p>

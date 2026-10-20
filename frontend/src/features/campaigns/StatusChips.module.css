@@ -1,8 +1,8 @@
-.noTiming {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
+.timing {
   color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
 }
 
 /* R4: amber icon, the text in ink (a warning that never blocks). */

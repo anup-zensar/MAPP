@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
-import { FORM_ANSWERS, plan, planDefaults, seedList } from './testData';
+import { financialsNotServed, FORM_ANSWERS, plan, planDefaults, seedList } from './testData';
 
 // Feature 005 fills the plan tree; its own tests cover that, so it never breaks these.
 vi.mock('@/features/campaigns/useCampaignTreeContent', () => ({
@@ -23,6 +23,7 @@ vi.mock('@/features/campaigns/useCampaignTreeContent', () => ({
 const ANSWERS = {
   ...FORM_ANSWERS,
   ...HISTORY_ANSWERS,
+  ...financialsNotServed('P-1001'),
   'GET /api/plans': { body: seedList() },
   'GET /api/plan-defaults': { body: planDefaults() },
   'GET /api/plans/P-1001': { body: plan() },

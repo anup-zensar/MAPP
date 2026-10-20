@@ -1,36 +1,51 @@
 import { Link } from 'react-router';
-import { ActionsMenu, ProgressBar, StatusChip, TeamPills } from '@/components';
-import type { ActionsMenuItem } from '@/components';
-import { BusinessUnitText, PlanCompleteness, PlanOwner, PlanStatusChip } from './PlanFacts';
+import { ActionsMenu, PersonLabel, TeamPill, Tooltip } from '@/components';
+import type { ActionsMenuItem, TeamRef } from '@/components';
+import { AmountPair } from './AmountPair';
+import { PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import type { PlanSummary } from './plansApi';
 import styles from './PlanTable.module.css';
-import { activitiesApprovedText } from './planText';
+import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanTableProps {
   plans: PlanSummary[];
   actionsFor: (plan: PlanSummary) => ActionsMenuItem[];
 }
 
+/** Teams shown before "+n" in a table cell (design system §5.4: more than 2 show "+n"). */
+const TEAMS_SHOWN = 2;
+
 /**
- * The Plans list as a table (FR-002): the same facts as the cards, one row per plan. On narrow
- * screens the table scrolls sideways inside its card, never the page.
+ * The Plans list as a table (FR-002) on the data table standard (design system §5.4): the name
+ * with its ID, year and type; at most two status chips; the owner and teams on one line; money
+ * right-aligned under its header in the plan currency, the display currency beside when it differs
+ * (016 FR-014); no cell repeats its column's label (UI audit P-02). On narrow screens the table
+ * scrolls sideways inside its card, never the page.
  */
 export function PlanTable({ plans, actionsFor }: PlanTableProps) {
   return (
     <div className={styles.scroll}>
-      <table className={styles.table}>
+      <table className={styles.table} aria-label="Plans">
         <thead>
           <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Year</th>
+            <th scope="col" className={styles.nameColumn}>
+              Name
+            </th>
             <th scope="col">Status</th>
-            <th scope="col">Completeness</th>
-            <th scope="col">Owner</th>
+            <th scope="col" className={styles.personColumn}>
+              Owner
+            </th>
             <th scope="col">Teams</th>
-            <th scope="col">Business unit</th>
-            <th scope="col">Budget used</th>
-            <th scope="col">Activities approved</th>
-            <th scope="col">
+            <th scope="col" className={styles.number}>
+              Plan budget
+            </th>
+            <th scope="col" className={styles.number}>
+              Planned cost
+            </th>
+            <th scope="col" className={styles.number}>
+              Approved
+            </th>
+            <th scope="col" className={styles.actions}>
               <span className="visually-hidden">Actions</span>
             </th>
           </tr>
@@ -38,51 +53,70 @@ export function PlanTable({ plans, actionsFor }: PlanTableProps) {
         <tbody>
           {plans.map((plan) => {
             const { figures } = plan;
+            const used = figures.budgetUsedPercent;
             return (
               <tr key={plan.id}>
-                <th scope="row">
+                <th scope="row" className={styles.nameColumn}>
                   <Link to={`/plans/${encodeURIComponent(plan.id)}`} className={styles.name}>
                     {plan.name}
                   </Link>
-                  <span className={styles.id}>{plan.id}</span>
+                  <span className={styles.sub}>
+                    <span>
+                      {plan.id} · {plan.year}
+                      {plan.aop && ' · AOP'}
+                    </span>
+                    <PlanTypeTag plan={plan} />
+                  </span>
                 </th>
-                <td className={styles.number}>{plan.year}</td>
                 <td>
                   <span className={styles.chips}>
                     <PlanStatusChip status={plan.status} />
-                    {plan.aop && <StatusChip tone="active">AOP</StatusChip>}
+                    <PlanCompleteness planId={plan.id} completeness={plan.completeness} compact />
                   </span>
                 </td>
-                <td>
-                  <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
-                </td>
-                <td>
-                  <PlanOwner owner={plan.owner} />
-                </td>
-                <td>{plan.teams.length > 0 ? <TeamPills teams={plan.teams} /> : '—'}</td>
-                <td>
-                  <BusinessUnitText units={plan.businessUnit} />
-                </td>
-                <td>
-                  {figures.budget ? (
-                    <span className={styles.used}>
-                      <ProgressBar
-                        value={figures.budgetUsedPercent}
-                        label="Budget used"
-                        tone={figures.overBudget ? 'problem' : undefined}
-                      />
-                      <span className={figures.overBudget ? styles.problem : undefined}>
-                        {figures.budgetUsedPercent === null
-                          ? '—'
-                          : `${figures.budgetUsedPercent} %`}
-                      </span>
-                    </span>
+                <td className={styles.personColumn}>
+                  {plan.owner ? (
+                    <PersonLabel person={plan.owner} />
                   ) : (
-                    <span className={styles.muted}>No budget set</span>
+                    <span className={styles.muted}>No owner yet</span>
                   )}
                 </td>
-                <td>{activitiesApprovedText(figures.activitiesApproved, figures.activities)}</td>
                 <td>
+                  <Teams teams={plan.teams} />
+                </td>
+                <td className={styles.number}>
+                  {figures.budget ? (
+                    <AmountPair
+                      primary={plan.planBudget ?? figures.budget}
+                      secondary={figures.budget}
+                    />
+                  ) : (
+                    <span className={styles.muted}>—</span>
+                  )}
+                </td>
+                <td className={styles.number}>
+                  <span className={styles.stack}>
+                    <AmountPair
+                      primary={plan.planPlannedCost ?? figures.plannedCost}
+                      secondary={figures.plannedCost}
+                    />
+                    {used !== null && figures.plannedCost && (
+                      <span className={figures.overBudget ? styles.problem : styles.detail}>
+                        {used}% used
+                      </span>
+                    )}
+                  </span>
+                </td>
+                <td className={styles.number}>
+                  {figures.activities === 0 ? (
+                    <span className={styles.muted}>—</span>
+                  ) : (
+                    <span>
+                      {figures.activitiesApproved} of {figures.activities}
+                    </span>
+                  )}
+                </td>
+                <td className={styles.actions}>
                   <ActionsMenu label={plan.name} items={actionsFor(plan)} />
                 </td>
               </tr>
@@ -91,5 +125,32 @@ export function PlanTable({ plans, actionsFor }: PlanTableProps) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** At most two team tags on one line, then "+n" with the other names in a tooltip. */
+function Teams({ teams }: { teams: TeamRef[] }) {
+  if (teams.length === 0) {
+    return <span className={styles.muted}>—</span>;
+  }
+  const shown = teams.slice(0, TEAMS_SHOWN);
+  const rest = teams.slice(TEAMS_SHOWN);
+  return (
+    <span className={styles.teams}>
+      {shown.map((team) => (
+        <TeamPill key={team.id} team={team} />
+      ))}
+      {rest.length > 0 && (
+        <Tooltip content={rest.map((team) => team.name).join(', ')}>
+          <button
+            type="button"
+            className={styles.more}
+            aria-label={`+${rest.length} more: ${rest.map((team) => team.name).join(', ')}`}
+          >
+            +{rest.length}
+          </button>
+        </Tooltip>
+      )}
+    </span>
   );
 }

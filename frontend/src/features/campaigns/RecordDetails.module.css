@@ -69,7 +69,7 @@
 
 .childMain a {
   color: var(--link);
-  font-weight: 500;
+  font-weight: var(--weight-regular);
   overflow-wrap: break-word;
 }
 

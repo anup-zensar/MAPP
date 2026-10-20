@@ -46,18 +46,28 @@ export function lineItemsCount(count: number): string {
   return plural(count, 'line item');
 }
 
-/** The totals row: "Total · 2 campaigns · 4 initiatives · 7 activities". */
+/** Under "Total" in the totals row: "2 campaigns · 4 initiatives · 7 activities". */
 export function totalsText(campaigns: number, initiatives: number, activities: number): string {
-  return `Total · ${campaignsCount(campaigns)} · ${initiativesCount(initiatives)} · ${activitiesCount(activities)}`;
+  return `${campaignsCount(campaigns)} · ${initiativesCount(initiatives)} · ${activitiesCount(activities)}`;
 }
-export const ALLOCATED_TO_CAMPAIGNS = 'Allocated to campaigns';
+/** Under the Total row's budget: the campaign budgets added up (short, so the tree fits 1,440 px). */
+export const ALLOCATED = 'Allocated';
 
 // Budget
-export function leftText(amount: string): string {
-  return `${amount} left`;
+/** Under a planned cost in the plan tree: "38% used", as on the plan cards (short, so the tree fits 1,440 px). */
+export function percentOfBudget(percent: number): string {
+  return `${percent}% used`;
+}
+/** Under a budget in the plan tree: what its children may still be given (PL-03, one wording). */
+export function remainingText(amount: string): string {
+  return `Remaining ${amount}`;
 }
 export function overAllocatedBy(amount: string): string {
   return `Over-allocated by ${amount}`;
+}
+/** The tree row's short form of "Over-allocated by …", under the budget (FR-019). */
+export function overBy(amount: string): string {
+  return `Over by ${amount}`;
 }
 export const REMAINING_PLAN_BUDGET = 'Remaining plan budget';
 export const REMAINING_CAMPAIGN_BUDGET = 'Remaining campaign budget';
@@ -74,10 +84,15 @@ export function outsidePlanYear(year: number): string {
 
 // Status chips
 export const NO_ACTIVITIES = 'No activities';
-export const IN_PROGRESS = 'In progress';
+/** The roll-up while some activities below wait (design system §4.1; never "In progress"). */
+export const PARTLY_APPROVED = 'Partly approved';
 export const ALL_APPROVED = 'All approved';
-/** "3 of 5 activities approved", "0 of 1 activity approved". */
+/** "3 of 5 approved": the roll-up chip of a row or panel (functional review A-02). */
 export function approvedOf(approved: number, total: number): string {
+  return `${approved} of ${total} approved`;
+}
+/** "3 of 5 activities approved", "0 of 1 activity approved": the chip's full meaning. */
+export function activitiesApprovedOf(approved: number, total: number): string {
   return `${approved} of ${total} ${total === 1 ? 'activity' : 'activities'} approved`;
 }
 export const TIMING_WORD = {
@@ -85,7 +100,6 @@ export const TIMING_WORD = {
   running: 'Running',
   finished: 'Finished',
 } as const;
-export const TIMING_TIP = 'Timing appears once dates are set';
 
 // Panels
 export const NEW_CAMPAIGN = 'New campaign';
@@ -110,6 +124,7 @@ export const BUDGET_LABEL: Record<RecordLevel, string> = {
   campaign: 'Campaign budget',
   initiative: 'Initiative budget',
 };
+export const PLAN = 'Plan';
 export const CAMPAIGN = 'Campaign';
 export const OWNER = 'Owner';
 export const DATES = 'Dates';

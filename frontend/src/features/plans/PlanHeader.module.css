@@ -1,0 +1,38 @@
+/* The meta row (design system §2.3): items 8 px apart on one line that wraps, 14 px grey. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.fact {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A part of the page that an address's #hash leads to (Home's links, feature 009). */
+.anchor {
+  scroll-margin-top: 80px;
+}
+
+/* The R1 problem: icon and words in the problem colour, never in a tooltip only. */
+.ownerProblem {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  color: var(--status-problem-text);
+}
+
+.ownerProblem svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}

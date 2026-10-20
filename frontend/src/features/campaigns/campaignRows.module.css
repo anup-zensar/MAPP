@@ -4,10 +4,35 @@
   gap: var(--space-1);
 }
 
-/* The row's quick action: faded until the row is hovered or has the focus, never hidden. */
+/* The row's quick action: a 24 px icon button, faded until the row is hovered or has the focus,
+   never hidden. */
 .quickAction {
-  opacity: 0.45;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  opacity: 0.55;
   transition: opacity var(--dur) var(--ease-out);
+}
+
+.quickAction svg {
+  width: 16px;
+  height: 16px;
+}
+
+.quickAction:hover {
+  background: var(--hover);
+}
+
+.quickAction:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 0;
 }
 
 :global(tr):hover .quickAction,
@@ -22,14 +47,29 @@
   }
 }
 
+/* At most two chips, side by side, never wrapping (design system §4.1). */
 .chips {
   display: inline-flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  white-space: nowrap;
 }
 
 .nowrap {
+  white-space: nowrap;
+}
+
+/* The dates on the first line, the timing ("Running") under them. */
+.dates {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timingLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   white-space: nowrap;
 }
 
@@ -38,9 +78,22 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
+  white-space: nowrap;
 }
 
 .left {
   color: var(--ink-2);
   font-size: var(--text-xs);
+}
+
+/* The totals row's first cell: "Total", then the counts on one line. */
+.total {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.total .left {
+  font-weight: var(--weight-regular);
+  white-space: nowrap;
 }

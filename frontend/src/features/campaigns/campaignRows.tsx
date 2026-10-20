@@ -1,19 +1,22 @@
 import { Plus } from 'lucide-react';
 import type { NavigateFunction } from 'react-router';
-import { Button, CompletenessChip, PersonLabel, Tooltip } from '@/components';
+import { PersonLabel, Tooltip } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
+import { AmountPair } from '@/features/plans/AmountPair';
+import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
+import { recordHref } from '@/lib/recordLinks';
 import type { Formatters } from '@/lib/useFormatters';
-import { BudgetUsed, CampaignBudgetCell } from './BudgetCost';
+import { AttentionChip } from './AttentionChip';
+import { BudgetCell, CampaignBudgetCell, PlannedCostCell } from './BudgetCost';
 import styles from './campaignRows.module.css';
 import type { Campaign, Initiative, PlanCampaigns } from './campaignApi';
 import { initiativeExtraActions } from './extensions';
-import { ApprovalProgressChip, OutsideYearNote, TimingChip } from './StatusChips';
+import { ApprovalProgressChip, OutsideYearNote, TimingNote } from './StatusChips';
 import {
   activitiesCount,
   ADD_INITIATIVE,
   addInitiativeTo,
-  ALLOCATED_TO_CAMPAIGNS,
+  ALLOCATED,
   COPY,
   DELETE,
   EDIT,
@@ -26,18 +29,11 @@ import type { RecordLevel } from './texts';
 
 /**
  * The plan tree's cells, by column key (feature 004's PlanTree columns Name, Owner, Dates, Status,
- * Budget, Planned cost, Budget used): `name` (shown after the name: ID, child count and the quick
- * action), `owner`, `dates`, `status`, `budget`, `plannedCost`, `budgetUsed`.
+ * Budget, Planned cost): `name` (shown after the name: ID, child count and the quick action),
+ * `owner`, `dates`, `status`, `budget` (with what remains beneath) and `plannedCost` (with the
+ * share of the budget it uses beneath).
  */
-export const CELL_KEYS = [
-  'name',
-  'owner',
-  'dates',
-  'status',
-  'budget',
-  'plannedCost',
-  'budgetUsed',
-] as const;
+export const CELL_KEYS = ['name', 'owner', 'dates', 'status', 'budget', 'plannedCost'] as const;
 
 /** A campaign or initiative a row action is about. */
 export interface RecordTarget {
@@ -107,22 +103,29 @@ export function campaignRows(data: PlanCampaigns, options: RowOptions): TreeNode
           <span>
             {item.id} · {initiativesCount(item.counts.initiatives)}
           </span>
+          {/* A 24 px target (WCAG 2.5.8) on the ID line, so the row keeps its 2-line height. */}
           <Tooltip content={addInitiativeTo(item.name)}>
-            <Button
-              variant="tertiary"
-              size="sm"
-              icon={<Plus />}
+            <button
+              type="button"
               aria-label={addInitiativeTo(item.name)}
               className={styles.quickAction}
               onClick={() => void options.navigate(addInitiativeHref(options.planId, item.id))}
-            />
+            >
+              <Plus aria-hidden="true" />
+            </button>
           </Tooltip>
         </span>
       ),
       dates: (
-        <span className={styles.nowrap}>
-          {options.formatters.dateRange(item.startDate, item.endDate)}
-          {item.outsidePlanYear && <OutsideYearNote year={item.plan.year} compact />}
+        <span className={styles.dates}>
+          <span className={styles.nowrap}>
+            {options.formatters.dateRange(item.startDate, item.endDate)}
+          </span>
+          {/* The R4 warning beside the timing, so a range over two years stays one line wide. */}
+          <span className={styles.timingLine}>
+            <TimingNote timing={item.timing} />
+            {item.outsidePlanYear && <OutsideYearNote year={item.plan.year} compact />}
+          </span>
         </span>
       ),
       budget: <CampaignBudgetCell campaign={item} />,
@@ -150,8 +153,21 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
     cells: {
       ...commonCells(initiative, options),
       name: `${initiative.id} · ${activitiesCount(initiative.counts.activities)}`,
-      dates: options.formatters.dateRange(initiative.startDate, initiative.endDate),
-      budget: options.formatters.money(initiative.display.budget),
+      dates: (
+        <span className={styles.dates}>
+          <span className={styles.nowrap}>
+            {options.formatters.dateRange(initiative.startDate, initiative.endDate)}
+          </span>
+          <TimingNote timing={initiative.timing} />
+        </span>
+      ),
+      budget: (
+        <BudgetCell
+          budget={initiative.budget}
+          displayBudget={initiative.display.budget}
+          remaining={null}
+        />
+      ),
     },
     children: options.rowsBelow?.get(initiative.id) ?? [],
     actions: [
@@ -166,35 +182,49 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
   };
 }
 
-/** The cells both levels show the same way. */
+/**
+ * The cells both levels show the same way. The Status column holds at most two chips (design
+ * system §4.1): the approval roll-up and one completeness chip whose list holds the rest.
+ */
 function commonCells(record: Campaign | Initiative, options: RowOptions) {
   const level = 'initiatives' in record ? 'campaign' : 'initiative';
-  // Amounts in the reader's display currency (D-220).
-  const { budgetAndCost } = record.display;
+  // Amounts in the plan currency, the reader's display currency beneath when it differs (016
+  // FR-013; before 016 both are the same).
+  const { budgetAndCost } = record;
   return {
-    owner: record.owner ? <PersonLabel person={record.owner} /> : '—',
+    owner: record.owner ? (
+      <span className={styles.nowrap}>
+        <PersonLabel person={record.owner} />
+      </span>
+    ) : (
+      '—'
+    ),
     status: (
       <span className={styles.chips}>
         <ApprovalProgressChip progress={record.approvalProgress} />
-        <TimingChip timing={record.timing} />
-        <CompletenessChip
+        <AttentionChip
           missing={record.completeness.missing.map((field) => ({
             id: field.field,
             label: field.label,
           }))}
           onSelectField={(field) =>
-            void options.navigate(fieldHref(level, record.id, field, options.planId))
+            void options.navigate(completenessFieldHref(level, record.id, field, options.planId))
           }
           itemsBelow={record.completeness.itemsBelowNeedingAttention}
           onItemsBelowSelect={() =>
             void options.navigate(recordHref(level, record.id, options.planId))
           }
+          compact
         />
       </span>
     ),
-    plannedCost: options.formatters.money(budgetAndCost.plannedCost),
-    budgetUsed: (
-      <BudgetUsed percent={budgetAndCost.budgetUsedPercent} overBudget={budgetAndCost.overBudget} />
+    plannedCost: (
+      <PlannedCostCell
+        cost={budgetAndCost.plannedCost}
+        displayCost={record.display.budgetAndCost.plannedCost}
+        percent={budgetAndCost.budgetUsedPercent}
+        overBudget={budgetAndCost.overBudget}
+      />
     ),
   };
 }
@@ -238,19 +268,35 @@ export function addInitiativeHref(planId: string, campaignId: string): string {
 
 /**
  * The totals row (FR-022): "Total · 2 campaigns · 4 initiatives · 7 activities", the sum of the
- * campaign budgets ("Allocated to campaigns") and the plan's planned cost.
+ * campaign budgets ("Allocated") and the plan's planned cost.
  */
 export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeTableFooter {
-  // Amounts in the reader's display currency (D-220).
-  const totals = data.displayTotals;
+  // Amounts in the plan currency, the reader's display currency beneath when it differs (016
+  // FR-013).
+  const { totals, displayTotals } = data;
   return {
-    name: totalsText(totals.campaigns, totals.initiatives, totals.activities),
-    budget: (
-      <span className={styles.money}>
-        <span>{formatters.money(totals.allocatedToCampaigns)}</span>
-        <span className={styles.left}>{ALLOCATED_TO_CAMPAIGNS}</span>
+    // "Total" on the first line, the counts in one line beneath (UI audit PL-05: never wrapping).
+    name: (
+      <span className={styles.total}>
+        <span>Total</span>
+        <span className={styles.left}>
+          {totalsText(totals.campaigns, totals.initiatives, totals.activities)}
+        </span>
       </span>
     ),
-    plannedCost: formatters.money(totals.plannedCost),
+    budget: (
+      <span className={styles.money}>
+        <AmountPair
+          primary={totals.allocatedToCampaigns}
+          secondary={displayTotals.allocatedToCampaigns}
+        />
+        <span className={styles.left}>{ALLOCATED}</span>
+      </span>
+    ),
+    plannedCost: totals.plannedCost ? (
+      <AmountPair primary={totals.plannedCost} secondary={displayTotals.plannedCost} />
+    ) : (
+      formatters.money(null)
+    ),
   };
 }

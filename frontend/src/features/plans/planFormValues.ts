@@ -5,6 +5,8 @@
  */
 import type { AttributeValues } from '@/components';
 import { formatAmount, formatWhole, parseDecimalInput, parseMoneyInput } from '@/lib/decimal';
+import { planCurrencyOf, planTypeOf } from './planCurrency';
+import type { PlanType } from './planCurrency';
 import type { Plan, PlanCreate, PlanDefaults, PlanUpdate } from './plansApi';
 import type { GoalStage, SpreadMethod } from './planText';
 
@@ -17,7 +19,11 @@ export interface PlanFormValues {
   ownerId: string;
   aop: boolean;
   description: string;
-  /** The plan budget in USD as typed ("1,200,000.00"); "" for none. */
+  /** Operational (default), Strategic or Cross-market (016 FR-032). */
+  planType: PlanType;
+  /** The plan currency (016 FR-011): the budget and every amount of the plan are kept in it. */
+  currency: string;
+  /** The plan budget in the plan currency as typed ("1,200,000.00"); "" for none. */
   budget: string;
   /** "" for no default. */
   defaultFinanceBudgetId: string;
@@ -39,6 +45,8 @@ export function valuesFromDefaults(defaults: PlanDefaults): PlanFormValues {
     ownerId: defaults.ownerId ?? '',
     aop: defaults.aop,
     description: '',
+    planType: planTypeOf(defaults),
+    currency: planCurrencyOf(defaults),
     budget: '',
     defaultFinanceBudgetId: '',
     defaultSpread: defaults.defaultSpread,
@@ -59,6 +67,8 @@ export function valuesFromPlan(plan: Plan): PlanFormValues {
     ownerId: plan.owner?.id ?? '',
     aop: plan.aop,
     description: plan.description,
+    planType: planTypeOf(plan),
+    currency: plan.budget?.currency ?? planCurrencyOf(plan),
     budget: plan.budget ? formatAmount(plan.budget.amount) : '',
     defaultFinanceBudgetId: plan.defaultFinanceBudget?.id ?? '',
     defaultSpread: plan.defaultSpread,
@@ -76,13 +86,13 @@ function goalAmountText(stage: GoalStage, amount: string | null): string {
   return stage === 'revenue' ? formatAmount(amount) : formatWhole(amount);
 }
 
-/** What the API gets for the plan budget: USD with two decimals, null when empty. */
-function budgetOf(text: string): PlanCreate['budget'] {
+/** What the API gets for the plan budget: the plan currency with two decimals, null when empty. */
+function budgetOf(text: string, currency: string): PlanCreate['budget'] {
   const typed = text.trim();
   if (typed === '') {
     return null;
   }
-  return { amount: parseMoneyInput(typed)?.amount ?? typed, currency: 'USD' };
+  return { amount: parseMoneyInput(typed)?.amount ?? typed, currency };
 }
 
 function goalAmountOf(stage: GoalStage, text: string): string | null {
@@ -94,15 +104,20 @@ function goalAmountOf(stage: GoalStage, text: string): string | null {
   return read ?? typed;
 }
 
-function common(values: PlanFormValues) {
+/**
+ * The body's fields. The plan type and currency (016) go only to an API that answers them
+ * (`with016`): until 016's backend is merged, the API refuses fields it does not know.
+ */
+function common(values: PlanFormValues, with016: boolean) {
   return {
+    ...(with016 && { planType: values.planType, currency: values.currency }),
     name: values.name,
     modelId: values.modelId || null,
     teamIds: values.teamIds,
     ownerId: values.ownerId || null,
     aop: values.aop,
     description: values.description,
-    budget: budgetOf(values.budget),
+    budget: budgetOf(values.budget, with016 ? values.currency : 'USD'),
     defaultFinanceBudgetId: values.defaultFinanceBudgetId || null,
     defaultSpread: values.defaultSpread,
     bcpir: values.bcpir,
@@ -112,13 +127,18 @@ function common(values: PlanFormValues) {
   };
 }
 
-export function toCreateBody(values: PlanFormValues): PlanCreate {
+export function toCreateBody(values: PlanFormValues, with016 = false): PlanCreate {
   const year = Number(values.year);
-  return { ...common(values), year: values.year && Number.isInteger(year) ? year : null };
+  return { ...common(values, with016), year: values.year && Number.isInteger(year) ? year : null };
 }
 
-export function toUpdateBody(values: PlanFormValues, version: number): PlanUpdate {
-  return { version, ...common(values) };
+export function toUpdateBody(values: PlanFormValues, version: number, with016 = false): PlanUpdate {
+  return { version, ...common(values, with016) };
+}
+
+/** Whether the API answers 016's plan type and currency (it sends them on every plan and default). */
+export function answers016(source: { planType?: unknown } | undefined): boolean {
+  return source?.planType !== undefined;
 }
 
 /** Whether two forms hold the same values (the unsaved-changes guard). */

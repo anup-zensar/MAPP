@@ -3,6 +3,7 @@ import { Outlet } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionProvider } from '@/app/SessionProvider';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { financialsNotServed } from '@/features/plans/testData';
 import { campaignForm } from '@/test/attributeForms';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -32,6 +33,7 @@ const DETAILS = '/plans/P-1001/initiatives/I-1001';
 function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
+    ...financialsNotServed('I-1001'),
     'GET /api/initiatives/I-1001': { body: initiative() },
     'GET /api/plans/P-1001': { body: planAnswer() },
     'GET /api/shell-attribute-forms/initiative': {
@@ -87,13 +89,13 @@ describe('InitiativePanel (feature 005, US3)', () => {
     const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
 
     expect(within(panel).getByText('INITIATIVE')).toBeInTheDocument();
-    const breadcrumb = within(panel).getByRole('navigation', { name: /breadcrumb/i });
-    expect(within(breadcrumb).getByRole('link', { name: 'Helix launch' })).toHaveAttribute(
+    // Its plan and campaign are values with links, not a second breadcrumb (UI audit C-02).
+    expect(within(panel).queryByRole('navigation', { name: /breadcrumb/i })).toBeNull();
+    expect(within(panel).getByRole('link', { name: 'Helix launch' })).toHaveAttribute(
       'href',
       '/plans/P-1001/campaigns/C-1001',
     );
-    expect(within(panel).getAllByRole('link', { name: 'Helix launch' })).toHaveLength(2);
-    expect(within(panel).getByText('01 Feb – 30 Nov 2026')).toBeInTheDocument();
+    expect(within(panel).getByText('01 Feb – 30 Nov 2026 · Running')).toBeInTheDocument();
     const money = within(panel).getByRole('region', { name: 'Budget and cost' });
     expect(within(money).getByText('Remaining campaign budget')).toBeInTheDocument();
     expect(within(money).getByText('Over-allocated by $50,000.00')).toBeInTheDocument();

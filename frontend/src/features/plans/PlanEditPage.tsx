@@ -8,7 +8,7 @@ import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { ChangeEffectsDialog } from './dialogs/ChangeEffectsDialog';
 import { PlanForm, PlanFormSkeleton } from './PlanForm';
-import { toUpdateBody, valuesFromPlan } from './planFormValues';
+import { answers016, toUpdateBody, valuesFromPlan } from './planFormValues';
 import type { PlanFormValues } from './planFormValues';
 import { PlanNotFound } from './PlanNotFound';
 import { fetchLatestPlan, useChangeEffects, usePlan, useUpdatePlan } from './plansApi';
@@ -39,9 +39,7 @@ export function PlanEditPage() {
           { label: plan.data?.name ?? planId, to: `/plans/${encodeURIComponent(planId)}` },
           { label: 'Edit' },
         ]}
-        eyebrow="Plans"
         title="Edit plan"
-        description={plan.data?.name}
       />
       {plan.isError ? (
         <ErrorState error={plan.error} onRetry={() => void plan.refetch()} />
@@ -110,7 +108,7 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
       if (!(await confirmEffects(values))) {
         return null;
       }
-      const saved = await updatePlan.mutateAsync(toUpdateBody(values, version));
+      const saved = await updatePlan.mutateAsync(toUpdateBody(values, version, answers016(plan)));
       show({ message: `Plan '${saved.name}' saved` });
       return `/plans/${encodeURIComponent(saved.id)}`;
     } catch (error) {

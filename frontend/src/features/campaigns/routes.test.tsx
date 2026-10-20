@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { financialsNotServed } from '@/features/plans/testData';
 import { campaignForm } from '@/test/attributeForms';
 import { renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
@@ -25,6 +26,7 @@ vi.mock('@/features/activities/InitiativeActivities', () => ({
 
 const ANSWERS: Record<string, MockHandler> = {
   ...HISTORY_ANSWERS,
+  ...financialsNotServed('P-1001', 'C-1001', 'I-1001'),
   'GET /api/plans/P-1001/campaigns': { body: planCampaigns() },
   'GET /api/plans/P-1001': { body: planAnswer() },
   'GET /api/campaigns/C-1001': { body: campaign() },

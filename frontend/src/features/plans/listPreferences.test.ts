@@ -20,7 +20,9 @@ describe('listPreferences (FR-003)', () => {
   it('remembers filters and layout per person, never the search', () => {
     remember('U-1002', {
       status: 'draft',
-      year: 2026,
+      yearFrom: 2025,
+      yearTo: 2026,
+      types: ['strategic'],
       scope: 'myTeams',
       q: 'china',
       layout: 'table',
@@ -28,7 +30,9 @@ describe('listPreferences (FR-003)', () => {
 
     expect(readFilters(new URLSearchParams(), 'U-1002')).toEqual({
       status: 'draft',
-      year: 2026,
+      yearFrom: 2025,
+      yearTo: 2026,
+      types: ['strategic'],
       scope: 'myTeams',
       q: '',
       layout: 'table',
@@ -41,8 +45,32 @@ describe('listPreferences (FR-003)', () => {
 
     expect(readFilters(new URLSearchParams('year=2025&q=p-1003'), 'U-1002')).toEqual({
       ...DEFAULT_FILTERS,
-      year: 2025,
+      yearFrom: 2025,
+      yearTo: 2025,
       q: 'p-1003',
+    });
+  });
+
+  it('reads a single year, remembered before 016, as a one-year range (D-269)', () => {
+    window.localStorage.setItem(
+      'northstar.plans.list.U-1002',
+      JSON.stringify({ status: 'all', year: 2026, scope: 'all', layout: 'cards' }),
+    );
+
+    expect(readRemembered('U-1002')).toEqual({ ...DEFAULT_FILTERS, yearFrom: 2026, yearTo: 2026 });
+  });
+
+  it('keeps a range in order and drops unknown plan types', () => {
+    expect(
+      readFilters(
+        new URLSearchParams('yearFrom=2027&yearTo=2025&type=strategic&type=global'),
+        'U-1002',
+      ),
+    ).toEqual({ ...DEFAULT_FILTERS, yearFrom: 2025, yearTo: 2027, types: ['strategic'] });
+    expect(readFilters(new URLSearchParams('yearTo=2026'), 'U-1002')).toEqual({
+      ...DEFAULT_FILTERS,
+      yearFrom: 2026,
+      yearTo: 2026,
     });
   });
 
@@ -71,11 +99,15 @@ describe('listPreferences (FR-003)', () => {
     expect(
       toSearchParams({
         status: 'published',
-        year: 2026,
+        yearFrom: 2025,
+        yearTo: 2026,
+        types: ['operational', 'crossMarket'],
         scope: 'myTeams',
         q: 'x',
         layout: 'table',
       }).toString(),
-    ).toBe('status=published&year=2026&scope=myTeams&q=x&layout=table');
+    ).toBe(
+      'status=published&yearFrom=2025&yearTo=2026&type=operational&type=crossMarket&scope=myTeams&q=x&layout=table',
+    );
   });
 });

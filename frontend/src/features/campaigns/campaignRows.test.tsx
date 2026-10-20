@@ -130,14 +130,20 @@ describe('campaignRows (feature 005, US4)', () => {
     expect(
       within(row).getByRole('img', { name: "This campaign runs outside 2026, the plan's year" }),
     ).toBeInTheDocument();
-    expect(within(row).getByText('In progress · 3 of 5 activities approved')).toBeInTheDocument();
-    expect(within(row).getByText('Running')).toBeInTheDocument();
+    // At most two chips: the approval roll-up and one completeness chip (design system §4.1).
+    expect(within(row).getByText('3 of 5 approved')).toBeInTheDocument();
+    expect(within(row).getByText('3 of 5 activities approved')).toBeInTheDocument();
+    expect(row).not.toHaveTextContent('In progress');
     expect(within(row).getByText('All filled in')).toBeInTheDocument();
+    // The timing is a word under the dates, not a third chip.
+    expect(within(row).getByText('Running')).toBeInTheDocument();
     expect(within(row).getByText('$120,000.00')).toBeInTheDocument();
-    expect(within(row).getByText('Over-allocated by $30,000.00')).toBeInTheDocument();
+    // On screen the short form keeps the Budget column narrow; screen readers hear the whole word.
+    expect(within(row).getByText('Over by $30,000.00')).toHaveAttribute('aria-hidden', 'true');
+    expect(within(row).getByText('Over-allocated by $30,000.00')).toHaveClass('visually-hidden');
     expect(within(row).getByText('$150,000.00')).toBeInTheDocument();
-    expect(within(row).getByRole('progressbar', { name: 'Budget used' })).toBeInTheDocument();
-    expect(within(row).getByText('125 %')).toBeInTheDocument();
+    // The budget used is the planned cost's second line (one column fewer, nothing clipped).
+    expect(within(row).getByText('125% used').className).toMatch(/negative/);
     expect(
       within(row).getByRole('button', { name: 'Add initiative to Helix launch' }),
     ).toBeInTheDocument();
@@ -148,13 +154,15 @@ describe('campaignRows (feature 005, US4)', () => {
 
     const rimula = rowOf(tree, 'Rimula fleet');
     expect(rimula).toHaveTextContent('C-1002 · 0 initiatives');
-    expect(within(rimula).getByText('$200,000.00 left')).toBeInTheDocument();
+    // One wording with the plan row: "Remaining …" (UI audit PL-03).
+    expect(within(rimula).getByText('Remaining $200,000.00')).toBeInTheDocument();
     expect(rimula).not.toHaveTextContent('runs outside');
 
     const sponsorships = rowOf(tree, 'Sponsorships');
-    expect(sponsorships).not.toHaveTextContent('left');
+    expect(sponsorships).not.toHaveTextContent('Remaining');
     expect(sponsorships).not.toHaveTextContent('Over-allocated');
-    expect(within(sponsorships).getByRole('button', { name: 'About Timing' })).toBeInTheDocument();
+    // Without dates there is no timing word.
+    expect(sponsorships).not.toHaveTextContent(/Running|Not started|Finished/);
   });
 
   it('shows every cell of an initiative row, inactive owners labelled (FR-019)', () => {
@@ -165,7 +173,7 @@ describe('campaignRows (feature 005, US4)', () => {
     expect(within(digital).getByText('Sam Lee (inactive)')).toBeInTheDocument();
     expect(digital).toHaveTextContent('01 Feb – 30 Nov 2026');
     expect(within(digital).getByText('$300,000.00')).toBeInTheDocument();
-    expect(digital).not.toHaveTextContent('left');
+    expect(digital).not.toHaveTextContent('Remaining');
 
     const events = rowOf(tree, 'Events');
     expect(events).toHaveTextContent('I-1002 · 0 activities');
@@ -240,10 +248,17 @@ describe('campaignRows (feature 005, US4)', () => {
     ]);
   });
 
-  it('shows the amounts in the reader’s display currency, not the USD ones the forms use (D-220)', () => {
+  it('shows the plan currency with the reader’s display currency beneath (016 FR-013, D-220)', () => {
     const euros = (amount: string) => ({ amount, currency: 'EUR' });
     const noGoals = { inq: null, mql: null, revenue: null };
     const helix = campaign({
+      budget: usd('400000.00'),
+      budgetAndCost: budgetAndCost({
+        allocatedToChildren: usd('300000.00'),
+        remainingForChildren: usd('100000.00'),
+        plannedCost: usd('50000.00'),
+        budgetUsedPercent: 13,
+      }),
       display: {
         budget: euros('368000.00'),
         parentRemainingBudget: euros('184000.00'),
@@ -257,6 +272,7 @@ describe('campaignRows (feature 005, US4)', () => {
       },
       initiatives: [
         initiative({
+          budget: usd('300000.00'),
           display: {
             budget: euros('276000.00'),
             parentRemainingBudget: euros('92000.00'),
@@ -269,19 +285,22 @@ describe('campaignRows (feature 005, US4)', () => {
     const tree = renderRows(
       planCampaigns(
         [helix],
-        {},
+        { allocatedToCampaigns: usd('400000.00'), plannedCost: usd('50000.00') },
         { allocatedToCampaigns: euros('368000.00'), plannedCost: euros('46000.00') },
       ),
     );
 
     const row = rowOf(tree, 'Helix launch');
-    expect(row).toHaveTextContent('368,000.00 EUR');
-    expect(row).toHaveTextContent('92,000.00 EUR left');
-    expect(row).toHaveTextContent('46,000.00 EUR');
+    // Two currencies on the screen: both in the code form (design system §4.4).
+    expect(row).toHaveTextContent('400,000.00 USD≈ about 368,000.00 EUR');
+    expect(row).toHaveTextContent('Remaining 100,000.00 USD');
+    expect(row).toHaveTextContent('50,000.00 USD≈ about 46,000.00 EUR');
     expect(row).not.toHaveTextContent('$');
-    expect(rowOf(tree, 'Digital & social')).toHaveTextContent('276,000.00 EUR');
+    expect(rowOf(tree, 'Digital & social')).toHaveTextContent(
+      '300,000.00 USD≈ about 276,000.00 EUR',
+    );
     const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;
-    expect(totals).toHaveTextContent('368,000.00 EUR');
+    expect(totals).toHaveTextContent('400,000.00 USD≈ about 368,000.00 EUR');
     expect(totals).not.toHaveTextContent('$');
   });
 
@@ -289,16 +308,23 @@ describe('campaignRows (feature 005, US4)', () => {
     const tree = renderRows(DATA);
     const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;
 
-    expect(totals).toHaveTextContent('Total · 3 campaigns · 2 initiatives · 1 activity');
+    // "Total" and its counts on two short lines, never wrapping (UI audit PL-05).
+    expect(within(totals).getByText('Total')).toBeInTheDocument();
+    expect(
+      within(totals).getByText('3 campaigns · 2 initiatives · 1 activity'),
+    ).toBeInTheDocument();
     expect(within(totals).getByText('$320,000.00')).toBeInTheDocument();
-    expect(within(totals).getByText('Allocated to campaigns')).toBeInTheDocument();
+    expect(within(totals).getByText('Allocated')).toBeInTheDocument();
     expect(within(totals).getByText('$150,000.00')).toBeInTheDocument();
 
     const one = totalsFooter(
       planCampaigns([RIMULA], { campaigns: 1, initiatives: 1, activities: 0, plannedCost: null }),
       formatters,
     );
-    expect(one.name).toBe('Total · 1 campaign · 1 initiative · 0 activities');
+    renderWithProviders(<div data-testid="one">{one.name}</div>);
+    expect(screen.getByTestId('one')).toHaveTextContent(
+      'Total1 campaign · 1 initiative · 0 activities',
+    );
     expect(one.plannedCost).toBe('—');
   });
 });

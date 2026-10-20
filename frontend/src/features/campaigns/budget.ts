@@ -8,7 +8,10 @@ import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/lib/decim
 type Money = components['schemas']['Money'];
 type MoneyInput = components['schemas']['MoneyInput'];
 
-/** Budgets are in US dollars (data model §1). */
+/**
+ * Budgets are in the plan currency (016 FR-011); US dollars, the default, while a plan does not
+ * name one (data model §1).
+ */
 export const BUDGET_CURRENCY = 'USD';
 
 /**
@@ -43,15 +46,16 @@ export function withoutSign(money: Money): Money {
 }
 
 /**
- * The budget as the API takes it: null when empty; the amount rounded to the cent (D-190); text
- * that is not an amount is sent as typed, so the API reports it with every other problem.
+ * The budget as the API takes it, in the plan currency: null when empty; the amount rounded to the
+ * cent (D-190); text that is not an amount is sent as typed, so the API reports it with every
+ * other problem.
  */
-export function budgetInput(typed: string): MoneyInput | null {
+export function budgetInput(typed: string, currency = BUDGET_CURRENCY): MoneyInput | null {
   const text = typed.trim();
   if (text === '') {
     return null;
   }
-  return { amount: parseMoneyInput(text)?.amount ?? text, currency: BUDGET_CURRENCY };
+  return { amount: parseMoneyInput(text)?.amount ?? text, currency };
 }
 
 /** A stored budget as the money field shows it: "1,200,000.00"; "" without one. */

@@ -3,7 +3,7 @@
  * and where each problem is shown.
  */
 import type { AttributeForm, AttributeValues, FieldProblem } from '@/components';
-import { budgetInput, budgetText } from './budget';
+import { BUDGET_CURRENCY, budgetInput, budgetText } from './budget';
 import type { Campaign, CampaignCreate, Initiative } from './campaignApi';
 import type { RecordLevel } from './texts';
 
@@ -36,16 +36,17 @@ export function valuesOf(record: Campaign | Initiative): RecordFormValues {
 
 /**
  * The request body: the API stores exactly what it receives (Decision D); empty fields are sent
- * as null or "", and the name as typed (the API trims and checks it).
+ * as null or "", and the name as typed (the API trims and checks it). The budget is in the plan
+ * currency (016 FR-011).
  */
-export function bodyOf(values: RecordFormValues): RecordBody {
+export function bodyOf(values: RecordFormValues, currency = BUDGET_CURRENCY): RecordBody {
   return {
     name: values.name,
     description: values.description,
     ownerId: values.ownerId || null,
     startDate: values.startDate || null,
     endDate: values.endDate || null,
-    budget: budgetInput(values.budget),
+    budget: budgetInput(values.budget, currency),
     attributes: values.attributes,
   };
 }

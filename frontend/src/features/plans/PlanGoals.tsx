@@ -2,7 +2,7 @@ import { Card, InfoTip } from '@/components';
 import { formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { goalRows } from './goalWaterfall';
-import styles from './PlanPage.module.css';
+import styles from './PlanGoals.module.css';
 import type { Plan } from './plansApi';
 import { STAGE_WORDS } from './planText';
 import type { GoalStage } from './planText';
@@ -30,15 +30,24 @@ export function PlanGoals({ plan }: { plan: Plan }) {
     const reason = goals.plan.reasons[stage];
     return (
       <>
-        <span className={styles.number}>{shown}</span>
+        <span>{shown}</span>
         {value === null && reason && <span className={styles.subtle}>{reason}</span>}
-        {stage !== goals.stage && value !== null && (
+      </>
+    );
+  }
+
+  /** The stage's name, and "Calculated" with its formula under it for the stages worked out. */
+  function stageName(stage: GoalStage) {
+    return (
+      <span className={styles.stage}>
+        <span>{STAGE_WORDS[stage]}</span>
+        {stage !== goals.stage && goals.plan[stage] !== null && (
           <span className={styles.calculated}>
             Calculated
             <InfoTip label={`${STAGE_WORDS[stage]} goal`} text={formulas.get(stage) ?? ''} />
           </span>
         )}
-      </>
+      </span>
     );
   }
 
@@ -54,15 +63,19 @@ export function PlanGoals({ plan }: { plan: Plan }) {
         <thead>
           <tr>
             <th scope="col">Stage</th>
-            <th scope="col">Plan goal</th>
-            <th scope="col">Planned in activities</th>
+            <th scope="col" className={styles.number}>
+              Plan goal
+            </th>
+            <th scope="col" className={styles.number}>
+              In activities
+            </th>
           </tr>
         </thead>
         <tbody>
           {STAGES.map((stage) => (
             <tr key={stage}>
-              <th scope="row">{STAGE_WORDS[stage]}</th>
-              <td>
+              <th scope="row">{stageName(stage)}</th>
+              <td className={styles.number}>
                 <span className={styles.goalCell}>{planGoal(stage)}</span>
               </td>
               <td className={styles.number}>{planned[stage]}</td>
@@ -74,7 +87,7 @@ export function PlanGoals({ plan }: { plan: Plan }) {
         {plan.goalAmount === null
           ? 'No goal set yet — set a goal amount in Edit.'
           : goals.plannedPercent !== null &&
-            `${goals.plannedPercent} % of the ${STAGE_WORDS[goals.stage]} goal planned`}
+            `${goals.plannedPercent}% of the ${STAGE_WORDS[goals.stage]} goal planned`}
       </p>
     </Card>
   );
