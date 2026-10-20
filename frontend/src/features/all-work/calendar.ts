@@ -16,9 +16,10 @@ function dateOf(day: number): string {
   return new Date(day * DAY_MS).toISOString().slice(0, 10);
 }
 
-function yearSpan(year: number): { first: number; last: number; days: number } {
-  const first = dayNumber(`${year}-01-01`);
-  const last = dayNumber(`${year}-12-31`);
+/** The days from 1 January of `from` to 31 December of `to` (one year, or a range of up to 5). */
+function rangeSpan(from: number, to: number = from): { first: number; last: number; days: number } {
+  const first = dayNumber(`${from}-01-01`);
+  const last = dayNumber(`${to}-12-31`);
   return { first, last, days: last - first + 1 };
 }
 
@@ -29,30 +30,49 @@ export function monthDays(year: number): number[] {
   );
 }
 
-/** A record's bar on the year's timeline, in per cent of the year's width. */
+/**
+ * The days of each year of a range, for the year bands of a timeline over several years (016
+ * FR-036).
+ */
+export function yearDays(from: number, to: number): number[] {
+  return Array.from({ length: to - from + 1 }, (_, index) => {
+    const year = from + index;
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 366 : 365;
+  });
+}
+
+/** The days of each quarter of a year, for the quarter columns of a timeline over several years. */
+export function quarterDays(year: number): number[] {
+  const months = monthDays(year);
+  return [0, 3, 6, 9].map((first) => months[first] + months[first + 1] + months[first + 2]);
+}
+
+/** A record's bar on the timeline, in per cent of the timeline's width. */
 export interface Bar {
   left: number;
   width: number;
-  /** It starts before the year ("Continues from <year − 1>"). */
+  /** It starts before the timeline ("Continues from <first year − 1>"). */
   continuesFrom: boolean;
-  /** It ends after the year ("Continues into <year + 1>"). */
+  /** It ends after the timeline ("Continues into <last year + 1>"). */
   continuesInto: boolean;
-  /** It has no end: the bar runs to the end of the year with an open end ("Ongoing"). */
+  /** It has no end: the bar runs to the end of the timeline with an open end ("Ongoing"). */
   ongoing: boolean;
 }
 
 /**
  * The bar of a campaign, initiative or activity from its start to its end date, cut at the
- * year's edges (FR-025, FR-026). Plans have no bar (D-124); records without dates have none.
+ * timeline's edges (FR-025, FR-026): one year, or the years `year` to `yearTo` (016 FR-036). Plans
+ * have no bar (D-124); records without dates have none.
  */
 export function barOf(
   row: Pick<AllWorkRow, 'level' | 'startDate' | 'endDate' | 'ongoing'>,
   year: number,
+  yearTo: number = year,
 ): Bar | null {
   if (row.level === 'plan' || !row.startDate || (!row.endDate && !row.ongoing)) {
     return null;
   }
-  const { first, last, days } = yearSpan(year);
+  const { first, last, days } = rangeSpan(year, yearTo);
   const start = dayNumber(row.startDate);
   const end = row.ongoing ? last : dayNumber(row.endDate as string);
   if (end < first || start > last) {
@@ -77,13 +97,17 @@ export function hasNoDates(row: Pick<AllWorkRow, 'level' | 'startDate' | 'endDat
   );
 }
 
-/** The Today line in per cent of the year's width (the middle of the day); null outside the year. */
-export function todayOffset(today: string, year: number): number | null {
-  if (!today.startsWith(`${year}-`)) {
+/**
+ * The Today line in per cent of the timeline's width (the middle of the day); null outside the
+ * year or range.
+ */
+export function todayOffset(today: string, year: number, yearTo: number = year): number | null {
+  const { first, last, days } = rangeSpan(year, yearTo);
+  const day = dayNumber(today);
+  if (day < first || day > last) {
     return null;
   }
-  const { first, days } = yearSpan(year);
-  return ((dayNumber(today) - first + 0.5) / days) * 100;
+  return ((day - first + 0.5) / days) * 100;
 }
 
 /**

@@ -29,10 +29,8 @@ import {
 import { logEntryOf, reasonOf, usd } from './testData';
 
 describe('homeText — the greeting (design system §2.3)', () => {
-  it('greets by the time of day', () => {
-    expect(greetingText('Priya', new Date(2026, 2, 12, 8, 30))).toBe('Good morning, Priya');
-    expect(greetingText('Priya', new Date(2026, 2, 12, 12, 0))).toBe('Good afternoon, Priya');
-    expect(greetingText('Priya', new Date(2026, 2, 12, 18, 0))).toBe('Good evening, Priya');
+  it('greets the person by first name (FR-001)', () => {
+    expect(greetingText('Priya')).toBe('Welcome back, Priya.');
   });
 });
 

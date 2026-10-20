@@ -16,9 +16,11 @@ export interface ViewToolbarProps {
 }
 
 /**
- * The toolbar above a view (plan "Page layout"): Expand all and Collapse all, the Unassigned
- * planned cost switch (FR-012), Columns (Grid), Monthly · Quarterly (Budget & cost, FR-022) or
- * Timeline · Month (Calendar, FR-028), and Refresh with "Updated at …".
+ * The toolbar at the top of a view's card (plan "Page layout"), in one order in every view: the
+ * view's layout (Calendar: Timeline · Month; Budget & cost: Monthly · Quarterly), Expand all and
+ * Collapse all, the Unassigned planned cost switch (FR-012); then, at the end, Columns (Grid),
+ * "Updated at …" and Refresh. Below 600 px the buttons show their icons only (their names stay),
+ * so the toolbar takes two rows and the data starts higher (UI audit PH-04).
  */
 export function ViewToolbar({
   state,
@@ -27,65 +29,74 @@ export function ViewToolbar({
   onColumns,
   onRefresh,
 }: ViewToolbarProps) {
+  const tree = state.view !== 'calendar';
+
   return (
     <div className={styles.toolbar}>
-      {state.view === 'calendar' ? (
-        <SegmentedFilter
-          label="Calendar layout"
-          options={[
-            { value: 'timeline', label: 'Timeline' },
-            { value: 'month', label: 'Month' },
-          ]}
-          value={state.calendarLayout}
-          onChange={(calendarLayout) => onChange({ ...state, calendarLayout })}
-        />
-      ) : (
-        <>
-          <Button
-            size="sm"
-            icon={<ChevronsUpDown />}
-            onClick={() => onChange({ ...state, expansion: { mode: 'allExpanded', toggled: [] } })}
-          >
-            Expand all
-          </Button>
-          <Button
-            size="sm"
-            icon={<ChevronsDownUp />}
-            onClick={() => onChange({ ...state, expansion: { mode: 'allCollapsed', toggled: [] } })}
-          >
-            Collapse all
-          </Button>
-          <Switch
-            label="Unassigned planned cost"
-            checked={state.showUnassigned}
-            onChange={(showUnassigned) => onChange({ ...state, showUnassigned })}
+      <div className={styles.group}>
+        {state.view === 'calendar' && (
+          <SegmentedFilter
+            label="Calendar layout"
+            options={[
+              { value: 'timeline', label: 'Timeline' },
+              { value: 'month', label: 'Month' },
+            ]}
+            value={state.calendarLayout}
+            onChange={(calendarLayout) => onChange({ ...state, calendarLayout })}
           />
-        </>
-      )}
-      {state.view === 'grid' && (
-        <Button size="sm" icon={<Columns3 />} onClick={onColumns}>
-          Columns
-        </Button>
-      )}
-      {state.view === 'budget' && (
-        <SegmentedFilter
-          label="Period"
-          options={[
-            { value: 'month', label: 'Monthly' },
-            { value: 'quarter', label: 'Quarterly' },
-          ]}
-          value={state.period}
-          onChange={(period) => onChange({ ...state, period })}
-        />
-      )}
-      <span className={styles.refresh}>
+        )}
+        {state.view === 'budget' && (
+          <SegmentedFilter
+            label="Period"
+            options={[
+              { value: 'month', label: 'Monthly' },
+              { value: 'quarter', label: 'Quarterly' },
+            ]}
+            value={state.period}
+            onChange={(period) => onChange({ ...state, period })}
+          />
+        )}
+        {tree && (
+          <>
+            <Button
+              size="sm"
+              icon={<ChevronsUpDown />}
+              onClick={() =>
+                onChange({ ...state, expansion: { mode: 'allExpanded', toggled: [] } })
+              }
+            >
+              <span className={styles.label}>Expand all</span>
+            </Button>
+            <Button
+              size="sm"
+              icon={<ChevronsDownUp />}
+              onClick={() =>
+                onChange({ ...state, expansion: { mode: 'allCollapsed', toggled: [] } })
+              }
+            >
+              <span className={styles.label}>Collapse all</span>
+            </Button>
+            <Switch
+              label="Unassigned planned cost"
+              checked={state.showUnassigned}
+              onChange={(showUnassigned) => onChange({ ...state, showUnassigned })}
+            />
+          </>
+        )}
+      </div>
+      <div className={styles.end}>
+        {state.view === 'grid' && (
+          <Button size="sm" icon={<Columns3 />} onClick={onColumns}>
+            <span className={styles.label}>Columns</span>
+          </Button>
+        )}
         {generatedAt && (
           <span className={styles.updated}>Updated at {formatTime(generatedAt)}</span>
         )}
         <Button size="sm" icon={<RotateCw />} onClick={onRefresh}>
-          Refresh
+          <span className={styles.label}>Refresh</span>
         </Button>
-      </span>
+      </div>
     </div>
   );
 }

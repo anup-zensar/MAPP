@@ -34,6 +34,18 @@
   z-index: 2;
 }
 
+/*
+ * The label ends before the chevron, so a label of two lines never puts its ⓘ under it; the ⓘ
+ * keeps its 24 × 24 target when the label wraps (WCAG 2.5.8).
+ */
+.card p:first-child {
+  padding-right: var(--space-5);
+}
+
+.card p:first-child > button {
+  flex: none;
+}
+
 /* The chevron at the top end says the card opens something. */
 .chevron {
   position: absolute;

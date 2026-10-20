@@ -543,18 +543,16 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await signInAs(page, PRIYA);
   // The demo plans' year, named in the address (D-122), so the journey holds in any year.
   await page.goto(`/all-work?year=${SEED_YEAR}`);
-  await expect(
-    page.getByRole('heading', { name: 'See all planned work across plans', level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'All work', level: 1 })).toBeVisible();
   await expect(
     page.getByText(
-      'Filter, compare and export every campaign, initiative, activity and line item of a year.',
+      'Every campaign, initiative, activity and line item of your plans: filter, compare and export.',
     ),
   ).toBeVisible();
   const filters = page.getByRole('group', { name: 'Filters' });
   await expect(filters.getByRole('button', { name: `Year · ${SEED_YEAR}` })).toBeVisible();
-  const count = page.getByText(/^Showing \d+ of \d+ activit(y|ies)$/);
-  await expect(count).toHaveText(/^Showing (\d+) of \1 activities$/);
+  const count = page.getByText(/^\d+ of \d+ activit(y|ies)$/);
+  await expect(count).toHaveText(/^(\d+) of \1 activities$/);
   const grid = page.getByRole('table', { name: 'All work grid' });
   const gridRow = (name: string) => grid.getByRole('row').filter({ hasText: name });
   await expect(gridRow('Fleet roadshow')).toBeVisible();
@@ -573,10 +571,10 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await expect(filters.getByRole('button', { name: 'Activity status · 1' })).toBeVisible();
   await expect(gridRow('Fleet roadshow')).toContainText('Declined');
   await expect(gridRow('Launch film')).toHaveCount(0);
-  await expect(count).not.toHaveText(/^Showing (\d+) of \1 activities$/);
+  await expect(count).not.toHaveText(/^(\d+) of \1 activities$/);
   await page.getByRole('button', { name: 'Clear all' }).click();
   await expect(page.getByRole('button', { name: /^Remove filter: / })).toHaveCount(0);
-  await expect(count).toHaveText(/^Showing (\d+) of \1 activities$/);
+  await expect(count).toHaveText(/^(\d+) of \1 activities$/);
 
   // Search (FR-006) and a filter together: one Complete activity.
   await filters.getByRole('button', { name: 'Activity status' }).click();
@@ -586,7 +584,7 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
     .check();
   await page.keyboard.press('Escape');
   await page.getByRole('searchbox', { name: 'Search' }).fill('Billboard');
-  await expect(count).toHaveText(/^Showing 1 of \d+ activities$/);
+  await expect(count).toHaveText(/^1 of \d+ activities$/);
   const billboard = gridRow('Billboard winter wave').filter({ hasText: 'A-1003' });
   await expect(billboard).toContainText('Complete');
   await expect(billboard).toContainText(`05 Jan ${SEED_YEAR}`);
@@ -653,7 +651,7 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await page.getByRole('button', { name: 'Clear all' }).click();
   await page.getByRole('tab', { name: 'Grid' }).click();
   await expect(page.getByRole('searchbox', { name: 'Search' })).toHaveValue('');
-  await expect(count).toHaveText(/^Showing (\d+) of \1 activities$/);
+  await expect(count).toHaveText(/^(\d+) of \1 activities$/);
 
   await page.getByRole('button', { name: `View: ${viewName}` }).click();
   await page.getByRole('menuitemcheckbox', { name: viewName }).click();
@@ -665,7 +663,7 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
     'aria-selected',
     'true',
   );
-  await expect(count).toHaveText(/^Showing 1 of \d+ activities$/);
+  await expect(count).toHaveText(/^1 of \d+ activities$/);
 
   // Export the grid to CSV (FR-032 – FR-034): the notes about the export, then the rows.
   await page.getByRole('tab', { name: 'Grid' }).click();

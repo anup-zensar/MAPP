@@ -15,14 +15,23 @@ import type {
 } from './homeApi';
 
 /**
- * Home's title (design system §2.3: Home is the only page whose title greets): "Good morning,
- * Priya" before noon, "Good afternoon, Priya" until 18:00, "Good evening, Priya" after, by the
- * person's own clock.
+ * Home's title (FR-001; design system §2.3: Home is the only page whose title greets), one
+ * phrase without a grey highlight: "Welcome back, Priya."
  */
-export function greetingText(firstName: string, now: Date = new Date()): string {
-  const hour = now.getHours();
-  const part = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-  return `Good ${part}, ${firstName}`;
+export function greetingText(firstName: string): string {
+  return `Welcome back, ${firstName}.`;
+}
+
+/** The no-role state of Home (014 edge case "No role"): its heading. */
+export const NO_ROLE_TITLE = 'No access to plans yet';
+
+/**
+ * "You don't have access to any plans yet. Ask an administrator (Alex Morgan) to give you a
+ * role." (014 text 36); without any administrator the brackets go.
+ */
+export function noRoleText(administrators: string[]): string {
+  const who = administrators.length > 0 ? ` (${joinWithAnd(administrators)})` : '';
+  return `You don't have access to any plans yet. Ask an administrator${who} to give you a role.`;
 }
 
 /** Shown inside a card whose data could not be loaded (FR-022). */

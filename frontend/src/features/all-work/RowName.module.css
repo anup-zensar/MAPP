@@ -1,3 +1,8 @@
+/*
+ * A row's name on one line (UI audit AW-04): the expand button, the level tag, the name and its
+ * chips never wrap under each other, so every row is 40 px high; a long name ends with an ellipsis
+ * and shows in full in a tip. A search excerpt or a note adds a second, smaller line.
+ */
 .name {
   display: flex;
   align-items: flex-start;
@@ -41,28 +46,36 @@
 .text {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 2px;
   min-width: 0;
-  padding-top: 2px;
+  min-height: 24px;
 }
 
 .line {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: var(--space-2) var(--space-2);
+  gap: var(--space-2);
   min-width: 0;
+  white-space: nowrap;
 }
 
-/* The name: one line, cut with an ellipsis (the full name is in the tip). */
-.link {
+.line > * {
+  flex: none;
+}
+
+/*
+ * The name keeps its full width up to 320 px, so the column is as wide as the names need; longer
+ * names end with an ellipsis (the full name is in the tip).
+ */
+.line > .link {
   max-width: 320px;
   overflow: hidden;
   color: var(--link);
   font-weight: var(--weight-bold);
   text-decoration: none;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .link:hover {
@@ -76,12 +89,13 @@
 }
 
 .aop {
-  padding: 1px var(--space-2);
-  border: 1px solid var(--hairline);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-chip);
   color: var(--ink-2);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
 }
 
 .context {
@@ -90,6 +104,7 @@
   gap: 2px;
   color: var(--ink-2);
   font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 
 .excerpt {
@@ -97,6 +112,7 @@
   overflow: hidden;
   color: var(--ink-2);
   font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

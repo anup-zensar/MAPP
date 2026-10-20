@@ -29,10 +29,13 @@ export const PLAN_STATUS_LABELS: Record<Filters['planStatuses'][number], string>
   published: 'Published',
 };
 
-/** Approval progress first, then Timing (domain model §2.2); the two groups of one filter. */
+/**
+ * Approval progress first, then Timing (domain model §2.2); the two groups of one filter. The
+ * roll-up "inProgress" reads "Partly approved": "In progress" is a running activity (statusWords).
+ */
 export const CONTAINER_STATUS_LABELS: Record<Filters['containerStatuses'][number], string> = {
   noActivities: 'No activities',
-  inProgress: 'In progress',
+  inProgress: 'Partly approved',
   allApproved: 'All approved',
   notStarted: 'Not started',
   running: 'Running',
@@ -61,12 +64,25 @@ export const SHOW_LEVELS_LABELS: Record<Filters['showLevels'], string> = {
   initiativesWithoutActivities: 'Initiatives without activities',
 };
 
-/** The three views, as the pill tabs name them (FR-001). */
+/** The one sentence under the title "All work" (design system §2.3: the title is the menu name). */
+export const ALL_WORK_DESCRIPTION =
+  'Every campaign, initiative, activity and line item of your plans: filter, compare and export.';
+
+/** The three views, as the tabs name them (FR-001). */
 export const VIEW_LABELS = {
   grid: 'Grid',
   calendar: 'Calendar',
   budget: 'Budget & cost',
 } as const;
+
+/**
+ * Tips on Grid headings whose sums need explaining. Unassigned planned cost adds positive balances
+ * only, so Planned cost − Line items can differ from it (functional review X-02).
+ */
+export const COLUMN_TIPS: Partial<Record<string, string>> = {
+  unassigned:
+    'Planned cost not yet split into line items. Only positive balances are added: an activity whose line items are above its planned cost counts as zero here.',
+};
 
 /** The name of an unassigned planned cost row (FR-012). */
 export const UNASSIGNED_ROW_NAME = 'Unassigned planned cost (Sys_Gen_Balance)';
@@ -75,10 +91,13 @@ export const CONTEXT_LABEL = 'Shown for context';
 export const CONTEXT_TIP =
   "This row doesn't match the filters; it's shown so you can see where the matching rows are.";
 
-/** "Showing 12 of 40 activities" (FR-008); "activity" when there is only one of them. */
+/**
+ * "12 of 40 activities" (FR-008), written like every list's count (design system §11 rule 14);
+ * "activity" when there is only one of them.
+ */
 export function countText(shown: number, total: number, noun: string): string {
   const singular = noun === 'activities' ? 'activity' : noun.replace(/s$/, '');
-  return `Showing ${formatWhole(shown)} of ${plural(total, singular, noun)}`;
+  return `${formatWhole(shown)} of ${plural(total, singular, noun)}`;
 }
 
 /** "Total · 12 activities" (FR-014). */

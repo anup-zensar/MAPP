@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { FilterChips, SearchField } from '@/components';
+import { SlidersHorizontal } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Button, FilterChips, SearchField } from '@/components';
+import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';
 import styles from './FilterBar.module.css';
 import {
@@ -42,11 +44,15 @@ export interface FilterBarProps {
 }
 
 /**
- * The one filter bar of the three views (US2, FR-004 – FR-010): the search box, exactly the
- * filters of FR-004 — no Shell-attribute filters (FR-010, D-207) — which apply as soon as they
- * change, a removable chip per value with Clear all, and the count.
+ * The one filter bar of the three views (US2, FR-004 – FR-010): the search box with the count at
+ * the row's end, exactly the filters of FR-004 — no Shell-attribute filters (FR-010, D-207) —
+ * which apply as soon as they change, and a removable chip per value with Clear all. Below 600 px
+ * the filter buttons fold into a Filters (n) drawer, so the data starts higher (UI audit AW-03,
+ * PH-04).
  */
 export function FilterBar({ state, options, count, updating, onChange }: FilterBarProps) {
+  const menusId = useId();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [typed, setTyped] = useState(state.search);
   const [searchShown, setSearchShown] = useState(state.search);
   const timer = useRef<number | undefined>(undefined);
@@ -180,36 +186,55 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
     onChange(clearAll);
   }
 
+  const chips = chipsOf(state, options);
+
   return (
     <div className={styles.bar}>
-      <div className={styles.search}>
-        <SearchField
-          label="Search"
-          placeholder="Search name, ID, external name or description"
-          value={typed}
-          onChange={typeSearch}
-        />
-      </div>
-      <div className={styles.menus} role="group" aria-label="Filters">
-        {menus.map((menu) => (
-          <FilterMenu key={menu.label} {...menu} />
-        ))}
-      </div>
-      <div className={styles.results}>
-        <FilterChips
-          chips={chipsOf(state, options)}
-          onRemove={(key) => onChange((current) => removeChip(current, key))}
-        />
-        {hasFilters(state) && (
-          <button type="button" className={styles.clearAll} onClick={clear}>
-            Clear all
-          </button>
-        )}
+      <div className={styles.top}>
+        <div className={styles.search}>
+          <SearchField
+            label="Search"
+            placeholder="Search name, ID, external name or description"
+            value={typed}
+            onChange={typeSearch}
+          />
+        </div>
+        <Button
+          size="md"
+          icon={<SlidersHorizontal />}
+          className={styles.drawerButton}
+          aria-expanded={drawerOpen}
+          aria-controls={menusId}
+          onClick={() => setDrawerOpen(!drawerOpen)}
+        >
+          {chips.length > 0 ? `Filters (${formatWhole(chips.length)})` : 'Filters'}
+        </Button>
         <p className={styles.count} aria-live="polite">
           {count && countText(count.shown, count.total, count.noun)}
           {updating && <span className={styles.updating}> Updating…</span>}
         </p>
       </div>
+      <div
+        id={menusId}
+        className={cx(styles.menus, drawerOpen && styles.open)}
+        role="group"
+        aria-label="Filters"
+      >
+        {menus.map((menu) => (
+          <FilterMenu key={menu.label} {...menu} />
+        ))}
+      </div>
+      {hasFilters(state) && (
+        <div className={styles.results}>
+          <FilterChips
+            chips={chips}
+            onRemove={(key) => onChange((current) => removeChip(current, key))}
+          />
+          <button type="button" className={styles.clearAll} onClick={clear}>
+            Clear all
+          </button>
+        </div>
+      )}
     </div>
   );
 }

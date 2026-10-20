@@ -1,6 +1,7 @@
 import { formatWhole } from '@/lib/decimal';
 import type { Formatters } from '@/lib/useFormatters';
 import type { AllWorkCell, AllWorkColumn } from './allWorkTypes';
+import { statusWord } from './statusWords';
 
 /** Shown for an empty value on the column's own level (FR-020). */
 export const NOTHING = '—';
@@ -22,14 +23,15 @@ export function cellText(
     case 'number':
       return cell.number === undefined ? NOTHING : formatWhole(cell.number);
     case 'percent':
-      return cell.percent === undefined ? NOTHING : `${cell.percent} %`;
+      return cell.percent === undefined ? NOTHING : `${cell.percent}%`;
     case 'date':
       return cell.date ? formatters.date(cell.date) : NOTHING;
     case 'dateTime':
       return cell.dateTime ? formatters.dateTime(cell.dateTime) : NOTHING;
     case 'text':
-    case 'status':
       return `${cell.text ?? NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
+    case 'status':
+      return `${cell.text ? statusWord(cell.text, cell.tone) : NOTHING}${cell.inactive ? ' (inactive)' : ''}`;
     default:
       return NOTHING;
   }

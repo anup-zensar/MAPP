@@ -37,7 +37,7 @@ describe('HomePage', () => {
     renderHome();
 
     expect(
-      screen.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), Priya$/ }),
+      screen.getByRole('heading', { level: 1, name: 'Welcome back, Priya.' }),
     ).toBeInTheDocument();
     const header = screen.getByRole('banner');
     expect(within(header).getByRole('group', { name: 'Scope' })).toBeInTheDocument();
@@ -47,6 +47,31 @@ describe('HomePage', () => {
     expect(
       await screen.findByRole('link', { name: "My teams' plans: 0 — open the Plans list" }),
     ).toBeInTheDocument();
+  });
+
+  it('tells a person without any role whom to ask, instead of empty cards (014 edge case "No role")', () => {
+    renderHome(
+      {},
+      testUser({
+        access: {
+          roles: [],
+          permissions: [],
+          administrators: [
+            { id: 'U-1001', name: 'Alex Morgan', initials: 'AM', jobTitle: 'Admin', active: true },
+          ],
+          noSelfApproval: true,
+        },
+      }),
+    );
+
+    expect(screen.getByText('No access to plans yet')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "You don't have access to any plans yet. Ask an administrator (Alex Morgan) to give you a role.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Summary' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Scope' })).not.toBeInTheDocument();
   });
 
   it('names the page "Home · NorthStar" in the browser tab', () => {
@@ -110,7 +135,7 @@ describe('HomePage', () => {
       "This section couldn't load",
     );
     expect(
-      screen.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), Priya$/ }),
+      screen.getByRole('heading', { level: 1, name: 'Welcome back, Priya.' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Currency' })).toBeInTheDocument();
     // The other cards still show (FR-022).

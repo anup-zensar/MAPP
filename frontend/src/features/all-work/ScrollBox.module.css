@@ -1,0 +1,47 @@
+/*
+ * A wide table scrolls sideways in here, never the page. A soft shadow lies over each edge that
+ * hides columns (design system §5.4, UI audit AW-05); on the left it falls from the name column,
+ * which stays in place on wider screens.
+ */
+.frame {
+  position: relative;
+  min-width: 0;
+}
+
+.scroll {
+  position: relative;
+  overflow-x: auto;
+}
+
+.scroll:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  background: linear-gradient(to left, var(--scroll-shadow), transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease-out);
+}
+
+.cueEnd::after {
+  opacity: 1;
+}
+
+/* Scrolled: the sticky name column casts the shadow over the columns that slid under it. */
+.cueStart tr > :first-child {
+  box-shadow: 8px 0 8px -8px var(--scroll-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame::after {
+    transition: none;
+  }
+}

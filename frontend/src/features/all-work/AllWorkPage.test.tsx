@@ -66,12 +66,10 @@ describe('AllWorkPage (US1)', () => {
   it('shows the header, the six cards and the Grid of the current year (FR-001, FR-003, FR-009)', async () => {
     const { api } = renderPage();
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'See all planned work across plans' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'All work' })).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Filter, compare and export every campaign, initiative, activity and line item of a year.',
+        'Every campaign, initiative, activity and line item of your plans: filter, compare and export.',
       ),
     ).toBeInTheDocument();
     expect(document.title).toBe('All work · NorthStar');
@@ -338,7 +336,7 @@ describe('AllWorkPage filters and search (US2)', () => {
           ? { body: declinedOnly() }
           : { body: gridResult() },
     });
-    expect(await screen.findByText('Showing 3 of 3 activities')).toBeInTheDocument();
+    expect(await screen.findByText('3 of 3 activities')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Activity status' }));
     await user.click(
@@ -348,7 +346,7 @@ describe('AllWorkPage filters and search (US2)', () => {
     );
     await user.keyboard('{Escape}');
 
-    expect(await screen.findByText('Showing 1 of 3 activities')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 3 activities')).toBeInTheDocument();
     expect(viewQueries(api).at(-1)?.getAll('activityStatus')).toEqual(['declined']);
     expect(
       screen.getByRole('button', { name: 'Remove filter: Activity status: Declined' }),
@@ -380,11 +378,11 @@ describe('AllWorkPage filters and search (US2)', () => {
           ? { body: found }
           : { body: gridResult() },
     });
-    await screen.findByText('Showing 3 of 3 activities');
+    await screen.findByText('3 of 3 activities');
 
     await user.type(screen.getByRole('searchbox', { name: 'Search' }), 'A-1002');
 
-    expect(await screen.findByText('Showing 1 of 3 activities')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 3 activities')).toBeInTheDocument();
     expect(viewQueries(api).map((query) => query.get('search'))).not.toContain('A');
     // The path to the hit is open; the activity itself stays closed.
     expect(rowNames()).toEqual([
@@ -409,18 +407,18 @@ describe('AllWorkPage filters and search (US2)', () => {
           ? { body: declinedOnly() }
           : { body: gridResult() },
     });
-    await screen.findByText('Showing 3 of 3 activities');
+    await screen.findByText('3 of 3 activities');
     await user.click(screen.getByRole('button', { name: 'Activity status' }));
     await user.click(
       within(await screen.findByRole('dialog')).getByRole('checkbox', { name: 'Declined' }),
     );
-    await screen.findByText('Showing 1 of 3 activities');
+    await screen.findByText('1 of 3 activities');
 
     await router.navigate('/plans');
     await screen.findByText('Another page');
     await router.navigate('/all-work');
 
-    expect(await screen.findByText('Showing 1 of 3 activities')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 3 activities')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Remove filter: Activity status: Declined' }),
     ).toBeInTheDocument();
@@ -437,7 +435,7 @@ describe('AllWorkPage filters and search (US2)', () => {
       '/all-work?showLevels=initiativesWithoutActivities',
     );
 
-    expect(await screen.findByText('Showing 1 of 2 initiatives')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 2 initiatives')).toBeInTheDocument();
     expect(
       screen.getByRole('button', {
         name: 'Remove filter: Show levels: Initiatives without activities',
@@ -728,7 +726,7 @@ describe('AllWorkPage saved views (US6)', () => {
     expect(
       screen.queryByRole('button', { name: 'Remove filter: Activity status: Declined' }),
     ).not.toBeInTheDocument();
-    expect(await screen.findByText('Showing 3 of 3 activities')).toBeInTheDocument();
+    expect(await screen.findByText('3 of 3 activities')).toBeInTheDocument();
     expect(viewQueries(api)).toHaveLength(2);
   });
 });

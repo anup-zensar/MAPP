@@ -133,6 +133,11 @@
   text-align: right;
 }
 
+/* The chips under the amount end on its right edge, also when they wrap (UI audit H-01). */
+.side > :last-child {
+  justify-content: flex-end;
+}
+
 .money {
   color: var(--ink);
   font-size: var(--text-sm);

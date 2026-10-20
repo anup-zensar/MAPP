@@ -227,6 +227,24 @@ describe('AllWorkGrid (US1)', () => {
     expect(within(row).getByText('$3,000.00')).toBeInTheDocument();
   });
 
+  it('explains that Unassigned planned cost adds positive balances only (functional review X-02)', async () => {
+    const { user } = renderGrid();
+
+    const heading = screen.getByRole('columnheader', { name: /Unassigned planned cost/ });
+    await user.click(
+      within(heading).getByRole('button', { name: 'About Unassigned planned cost' }),
+    );
+    expect(await screen.findByText(/Only positive balances are added/)).toBeInTheDocument();
+  });
+
+  it('writes the approval roll-up as "Partly approved", "In progress" only for running activities (functional review A-02)', () => {
+    renderGrid();
+
+    const campaign = bodyRow('Helix launch$');
+    expect(within(campaign).getByText('Partly approved')).toBeInTheDocument();
+    expect(within(campaign).queryByText('In progress')).not.toBeInTheDocument();
+  });
+
   it('opens a row’s record from a click on the row or its name, not from its controls (FR-016)', async () => {
     const { user, onOpen, router } = renderGrid();
 

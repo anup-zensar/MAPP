@@ -1,8 +1,36 @@
-/* Six cards side by side on wide screens; on narrow screens they wrap onto more rows. */
+/*
+ * Six cards side by side on wide screens (they wrap onto more rows when narrower). Below 600 px
+ * they form one row of smaller cards that scrolls sideways, so the data starts within the first
+ * screen (UI audit PH-04); the ⓘ buttons inside bring each card into view for keyboard users.
+ */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--space-3);
+}
+
+@media (max-width: 599px) {
+  /* Positioned, so it also clips the cards' visually hidden texts (absolute) when scrolled. */
+  .cards {
+    position: relative;
+    display: flex;
+    gap: var(--space-2);
+    padding-bottom: var(--space-1);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .cards > * {
+    flex: 0 0 152px;
+    min-height: 0;
+    padding: var(--space-3) var(--space-4);
+    scroll-snap-align: start;
+  }
+
+  .cards > * > p:nth-child(2) {
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+  }
 }
 
 .skeleton {

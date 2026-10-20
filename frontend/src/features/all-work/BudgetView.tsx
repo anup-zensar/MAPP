@@ -7,6 +7,7 @@ import type { AllWorkResult, AllWorkRow, Money } from './allWorkTypes';
 import styles from './BudgetView.module.css';
 import { isControl, NOTHING } from './cellText';
 import { RowName } from './RowName';
+import { ScrollBox } from './ScrollBox';
 import type { VisibleRow } from './viewState';
 
 export interface BudgetViewProps {
@@ -32,7 +33,7 @@ export function BudgetView({ result, rows, continued, search, onToggle, onOpen }
     <div className={gridStyles.grid}>
       <p className={styles.note}>To change how a cost is spread, open its line item</p>
       {continued && <p className={gridStyles.continued}>Continued: {continued}</p>}
-      <div className={gridStyles.scroll}>
+      <ScrollBox label="Budget & cost">
         <table className={gridStyles.table}>
           <caption className="visually-hidden">Budget & cost</caption>
           <thead>
@@ -84,7 +85,7 @@ export function BudgetView({ result, rows, continued, search, onToggle, onOpen }
             </tr>
           </tfoot>
         </table>
-      </div>
+      </ScrollBox>
     </div>
   );
 }

@@ -125,7 +125,7 @@ describe('FilterBar (US2)', () => {
     const menu = await screen.findByRole('dialog', { name: 'Campaign / initiative status' });
 
     expect(menu).toHaveTextContent(
-      'Approval progressNo activitiesIn progressAll approvedTimingNot startedRunningFinished',
+      'Approval progressNo activitiesPartly approvedAll approvedTimingNot startedRunningFinished',
     );
   });
 
@@ -214,11 +214,11 @@ describe('FilterBar (US2)', () => {
   });
 
   it.each([
-    [{ shown: 3, total: 3, noun: 'activities' as const }, 'Showing 3 of 3 activities'],
-    [{ shown: 1, total: 40, noun: 'activities' as const }, 'Showing 1 of 40 activities'],
-    [{ shown: 1, total: 1, noun: 'activities' as const }, 'Showing 1 of 1 activity'],
-    [{ shown: 2, total: 5, noun: 'initiatives' as const }, 'Showing 2 of 5 initiatives'],
-    [{ shown: 0, total: 1240, noun: 'campaigns' as const }, 'Showing 0 of 1,240 campaigns'],
+    [{ shown: 3, total: 3, noun: 'activities' as const }, '3 of 3 activities'],
+    [{ shown: 1, total: 40, noun: 'activities' as const }, '1 of 40 activities'],
+    [{ shown: 1, total: 1, noun: 'activities' as const }, '1 of 1 activity'],
+    [{ shown: 2, total: 5, noun: 'initiatives' as const }, '2 of 5 initiatives'],
+    [{ shown: 0, total: 1240, noun: 'campaigns' as const }, '0 of 1,240 campaigns'],
   ])('counts what is shown: %o (FR-008)', (count, text) => {
     renderBar({ count });
 
@@ -228,8 +228,6 @@ describe('FilterBar (US2)', () => {
   it('says "Updating…" next to the count while a new answer loads', () => {
     renderBar({ updating: true });
 
-    expect(screen.getByText('Showing 3 of 3 activities')).toHaveTextContent(
-      'Showing 3 of 3 activities Updating…',
-    );
+    expect(screen.getByText('3 of 3 activities')).toHaveTextContent('3 of 3 activities Updating…');
   });
 });

@@ -1,16 +1,18 @@
+/* The legend: each status word once, as the chip the bars use (FR-025, UI audit X-14). */
 .legend {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--hairline);
 }
 
 .legendTitle {
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
 }
 
 .legendList {
@@ -22,29 +24,53 @@
   list-style: none;
 }
 
-/* The timeline is at least wide enough for every month's name; it scrolls inside its card. */
+/*
+ * The timeline is at least wide enough for every month's name (one year) or every quarter's (a
+ * range of years, --track-min); it scrolls inside its card.
+ */
 .calendar .trackHead,
 .calendar .trackCell {
-  width: 100%;
-  min-width: 720px;
+  min-width: var(--track-min, 720px);
   padding-inline: 0;
+}
+
+/* The names take what they need; the timeline takes the rest of the card. */
+.calendar tr > th:first-child {
+  width: 1px;
+}
+
+.calendar .trackHead:last-child,
+.calendar .trackCell:last-child {
+  padding-right: 0;
 }
 
 .track {
   position: relative;
-  min-height: 28px;
+  min-height: 24px;
 }
 
+.years,
 .months {
   display: grid;
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+}
+
+.years {
+  margin-bottom: var(--space-1);
+}
+
+.years span {
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--hairline);
 }
 
 .months span {
   padding-left: var(--space-2);
   border-left: 1px solid var(--hairline);
+  color: var(--ink-2);
 }
 
 .lines {
@@ -54,7 +80,7 @@
 }
 
 .lines span {
-  border-left: 1px solid color-mix(in srgb, var(--hairline) 60%, transparent);
+  border-left: 1px solid var(--row-divider);
 }
 
 /* The Today line crosses every row at the same place (FR-026). */
@@ -75,19 +101,18 @@
   color: var(--surface);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
   transform: translateX(-50%);
 }
 
 /* A bar: its status colour, the name and the status word (never colour alone). */
 .bar {
   position: absolute;
-  top: 2px;
-  bottom: 2px;
+  top: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
   min-width: 6px;
-  overflow: hidden;
   padding: 0 var(--space-2);
   border: 1px solid var(--bar-colour);
   border-left-width: 3px;
@@ -95,6 +120,7 @@
   background: color-mix(in srgb, var(--bar-colour) 16%, var(--surface));
   color: var(--ink);
   font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -103,10 +129,37 @@
   background: color-mix(in srgb, var(--bar-colour) 26%, var(--surface));
 }
 
+.bar:hover .barName {
+  text-decoration: underline;
+}
+
 .bar:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
   z-index: 2;
+}
+
+.words {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Too short for its words: they stand beside the bar, on the row's own background. */
+.wordsAfter .words,
+.wordsBefore .words {
+  position: absolute;
+  overflow: visible;
+}
+
+.wordsAfter .words {
+  left: calc(100% + var(--space-2));
+}
+
+.wordsBefore .words {
+  right: calc(100% + var(--space-2));
 }
 
 .neutral {
@@ -133,14 +186,14 @@
   --bar-colour: var(--status-problem);
 }
 
-/* Cut by the start of the year: a straight, dashed left edge. */
+/* Cut by the start of the timeline: a straight, dashed left edge. */
 .cutStart {
   border-left-style: dashed;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
 
-/* Ongoing or cut by the end of the year: an open, dashed right edge. */
+/* Ongoing or cut by the end of the timeline: an open, dashed right edge. */
 .openEnd {
   border-right-style: dashed;
   border-top-right-radius: 0;
@@ -156,6 +209,7 @@
 /* The status word and the edge notes sit on the bar's tint, where --ink-2 is too faint (WCAG 1.4.3). */
 .barStatus,
 .edge {
+  flex: none;
   color: var(--ink);
 }
 
@@ -171,7 +225,7 @@
 }
 
 .undated {
-  padding: var(--space-3);
+  padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--hairline);
 }
 
@@ -179,6 +233,7 @@
   margin: 0 0 var(--space-2);
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
 }
 
 .undatedList {
@@ -194,10 +249,18 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-2);
+  gap: var(--space-2);
 }
 
 .undatedLink {
   color: var(--link);
   font-weight: var(--weight-bold);
+}
+
+/* Phones: 16 px from the card's edges, like the toolbar. */
+@media (max-width: 599px) {
+  .legend,
+  .undated {
+    padding-inline: var(--space-4);
+  }
 }
