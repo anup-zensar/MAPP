@@ -29,9 +29,8 @@ export function ProfilePage() {
   return (
     <>
       <PageHeader
-        eyebrow="My profile"
-        title="Your profile"
-        description="Your details and teams, and how NorthStar shows dates and money to you."
+        title="My profile"
+        description="Your details, teams and access, and how NorthStar shows dates and money to you."
       />
       <div className={styles.cards}>
         <DetailsCard user={user} onEdit={() => setOpen('details')} />
@@ -137,7 +136,7 @@ function TeamsCard({ teams }: { teams: TeamRef[] }) {
       ) : (
         <div className={styles.teams}>
           <TeamPills teams={teams} linked />
-          <Link to="/settings/teams" className={styles.link}>
+          <Link to="/settings/teams" className={styles.ownLink}>
             Manage teams in Settings › Teams
           </Link>
         </div>

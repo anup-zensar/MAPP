@@ -1,10 +1,19 @@
-/* My profile (plan "Pages"): three cards, two side by side where there is room. */
+/*
+ * My profile (plan "Pages"): the cards two side by side from 960 px (6 + 6), one under the other
+ * below. Cards in a row stretch to the same height (UI audit PR-01).
+ */
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
-  align-items: start;
-  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--grid-gap);
+}
+
+@media (min-width: 960px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* The avatar beside the facts; on a narrow screen it sits above them. */
@@ -28,8 +37,7 @@
 .facts dt {
   margin-bottom: 2px;
   color: var(--ink-2);
-  font-size: var(--text-xs);
-  font-weight: 600;
+  font-size: var(--text-sm);
 }
 
 .facts dd {
@@ -63,8 +71,19 @@
   font-size: var(--text-sm);
 }
 
-/* Underlined, so the link stands out from the grey text by more than its colour. */
+/* A link in a sentence is underlined, so it stands out by more than its colour (WCAG 1.4.1). */
 .link {
   color: var(--link);
+  text-decoration: underline;
+}
+
+/* A link on its own line looks like every other such link: underlined on hover and focus only. */
+.ownLink {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.ownLink:hover,
+.ownLink:focus-visible {
   text-decoration: underline;
 }

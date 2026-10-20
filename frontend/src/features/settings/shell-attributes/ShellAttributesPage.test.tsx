@@ -100,13 +100,13 @@ describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
     const notes = screen.getByRole('row', { name: /Old notes/ });
     expect(within(notes).getByText('—')).toBeInTheDocument();
     expect(within(notes).getByText('Inactive')).toBeInTheDocument();
-    expect(screen.getByText('4 of 4')).toBeInTheDocument();
+    expect(screen.getByText('4 of 4 Shell attributes')).toBeInTheDocument();
   });
 
   it('searches label or section and filters by status, keeping both in the address', async () => {
     const { user, router } = renderPage('/settings/shell-attributes?level=activity');
 
-    expect(await screen.findByText('3 of 4')).toBeInTheDocument();
+    expect(await screen.findByText('3 of 4 Shell attributes')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Old notes' })).not.toBeInTheDocument();
 
     await user.type(screen.getByRole('searchbox', { name: 'Search label or section' }), 'lubri');
@@ -123,7 +123,7 @@ describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
     expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
 
-    expect(screen.getByText('4 of 4')).toBeInTheDocument();
+    expect(screen.getByText('4 of 4 Shell attributes')).toBeInTheDocument();
   });
 
   it('invites to create the first attribute of an empty level', async () => {

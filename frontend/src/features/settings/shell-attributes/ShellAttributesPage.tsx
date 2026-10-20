@@ -9,7 +9,6 @@ import {
   ErrorState,
   LinkButton,
   PageHeader,
-  SearchField,
   SegmentedFilter,
   Skeleton,
   StatusChip,
@@ -17,6 +16,7 @@ import {
 } from '@/components';
 import { formatWhole } from '@/lib/decimal';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { ListToolbar } from '../shared/ListToolbar';
 import {
   dependsOnText,
   isChoiceType,
@@ -38,11 +38,7 @@ import { useFailureToast } from './useStatusChange';
 
 type StatusFilter = 'active' | 'inactive' | 'all';
 
-const STATUS_WORDS: Record<StatusFilter, string> = {
-  active: 'Active',
-  inactive: 'Inactive',
-  all: 'All',
-};
+const ATTRIBUTE_NOUN = { one: 'Shell attribute', many: 'Shell attributes' };
 
 const FILTERED_REASON = 'Clear the search and filters to change the order.';
 
@@ -133,7 +129,6 @@ export function ShellAttributesPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Shell attributes' }]}
-        eyebrow="Settings"
         title="Shell attributes"
         description="Shell's own fields on each level's form. Changes apply to every form straight away."
         actions={
@@ -244,41 +239,34 @@ function AttributeList({ filters }: { filters: Filters }) {
     count: all.filter((attribute) => attribute.level === each && hasStatus(attribute, status))
       .length,
   }));
-  const statusOptions = (['active', 'inactive', 'all'] as const).map((value) => ({
-    value,
-    label: STATUS_WORDS[value],
-    count: ofLevel.filter((attribute) => hasStatus(attribute, value)).length,
-  }));
+  const statusCounts = {
+    active: ofLevel.filter((attribute) => hasStatus(attribute, 'active')).length,
+    inactive: ofLevel.filter((attribute) => hasStatus(attribute, 'inactive')).length,
+    all: ofLevel.length,
+  };
 
   return (
     <div className={styles.stack}>
-      <div className={styles.toolbar}>
-        <SegmentedFilter
-          label="Level"
-          options={levelCounts}
-          value={level}
-          onChange={filters.setLevel}
-        />
-        <div className={styles.toolbarRow}>
-          <SearchField
-            label="Search label or section"
-            placeholder="Search label or section"
-            value={q}
-            onChange={filters.setQ}
-          />
+      {/* The list toolbar sits inside the list's card, as on every Settings list (§2.4 A). */}
+      <Card>
+        <div className={styles.levels}>
           <SegmentedFilter
-            label="Status"
-            options={statusOptions}
-            value={status}
-            onChange={filters.setStatus}
+            label="Level"
+            options={levelCounts}
+            value={level}
+            onChange={filters.setLevel}
           />
-          <p className={styles.count}>
-            {`${formatWhole(shown.length)} of ${formatWhole(ofLevel.length)}`}
-          </p>
         </div>
-      </div>
-
-      <Card title={`${LEVEL_WORDS[level]} form`}>
+        <ListToolbar
+          search={{
+            label: 'Search label or section',
+            placeholder: 'Search label or section',
+            value: q,
+            onChange: filters.setQ,
+          }}
+          status={{ value: status, onChange: filters.setStatus, counts: statusCounts }}
+          count={{ shown: shown.length, total: ofLevel.length, noun: ATTRIBUTE_NOUN }}
+        />
         {ofLevel.length === 0 ? (
           <EmptyState
             icon={<ListChecks />}
@@ -303,7 +291,9 @@ function AttributeList({ filters }: { filters: Filters }) {
                   <th scope="col">Label</th>
                   <th scope="col">Type</th>
                   <th scope="col">Marking</th>
-                  <th scope="col">Options</th>
+                  <th scope="col" className={styles.number}>
+                    Options
+                  </th>
                   <th scope="col">Depends on / shown when</th>
                   <th scope="col">Used by</th>
                   <th scope="col">Status</th>
@@ -360,7 +350,7 @@ function AttributeList({ filters }: { filters: Filters }) {
                             />
                           ))}
                         </td>
-                        <th scope="row">
+                        <th scope="row" className={styles.nameCell}>
                           <Link
                             to={`/settings/shell-attributes/${attribute.id}`}
                             className={styles.name}
@@ -380,7 +370,7 @@ function AttributeList({ filters }: { filters: Filters }) {
                           <span className={styles.line}>{shownWhenText(attribute)}</span>
                         </td>
                         <td>{attribute.usage.summary}</td>
-                        <td>
+                        <td className={styles.nowrap}>
                           <StatusChip tone={attribute.active ? 'positive' : 'neutral'}>
                             {attribute.active ? 'Active' : 'Inactive'}
                           </StatusChip>

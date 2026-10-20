@@ -8,13 +8,12 @@ import {
   EmptyState,
   ErrorState,
   PageHeader,
-  SearchField,
-  SegmentedFilter,
   Skeleton,
   StatusChip,
 } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { ListToolbar } from '../shared/ListToolbar';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import styles from '../shared/SettingsTable.module.css';
 import { filterRecords, useListFilters } from '../shared/useListFilters';
@@ -30,6 +29,8 @@ import {
   useDeleteActivityType,
 } from './activityTypesApi';
 import type { ActivityType } from './activityTypesApi';
+
+const TYPE_NOUN = { one: 'activity type', many: 'activity types' };
 
 /** The side-panel form that is open: a new activity type, or one being changed. */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; type: ActivityType };
@@ -47,7 +48,7 @@ export function ActivityTypesPage() {
   const deleteType = useDeleteActivityType();
   const [form, setForm] = useState<OpenForm | null>(null);
   const [deleting, setDeleting] = useState<ActivityType | null>(null);
-  const changeStatus = useSettingStatus({
+  const status = useSettingStatus({
     kind: 'activityType',
     request: setActivityTypeStatus,
     invalidate: ACTIVITY_TYPE_LISTS,
@@ -56,7 +57,7 @@ export function ActivityTypesPage() {
   const actions: ActivityTypeActions = {
     view: (type) => filters.setOpenId(type.id),
     edit: (type) => setForm({ kind: 'edit', type }),
-    setActive: (type, active) => void changeStatus(type, active),
+    setActive: (type, active) => (active ? status.reactivate(type) : status.setInactive(type)),
     remove: (type) => setDeleting(type),
   };
   const newType = () => setForm({ kind: 'new' });
@@ -70,7 +71,6 @@ export function ActivityTypesPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Activity types' }]}
-        eyebrow="Settings"
         title="Activity types"
         description="The kinds of work activities can be."
         actions={
@@ -101,7 +101,7 @@ export function ActivityTypesPage() {
           usage={deleting.usage}
           active={deleting.active}
           remove={() => deleteType.mutateAsync(deleting.id)}
-          setInactive={() => changeStatus(deleting, false)}
+          setInactive={() => status.applyInactive(deleting)}
           invalidate={ACTIVITY_TYPE_LISTS}
           onDeleted={() => {
             if (filters.openId === deleting.id) {
@@ -111,6 +111,7 @@ export function ActivityTypesPage() {
           onClose={() => setDeleting(null)}
         />
       )}
+      {status.dialog}
     </>
   );
 }
@@ -157,27 +158,16 @@ function ActivityTypesCard({ types, filters, actions, onNew }: ActivityTypesCard
 
   return (
     <Card>
-      <div className={styles.toolbar}>
-        <SearchField
-          label="Search activity types"
-          placeholder="Search name"
-          value={filters.q}
-          onChange={filters.setQ}
-        />
-        <SegmentedFilter
-          label="Status"
-          options={[
-            { value: 'active', label: 'Active', count: counts.active },
-            { value: 'inactive', label: 'Inactive', count: counts.inactive },
-            { value: 'all', label: 'All', count: counts.all },
-          ]}
-          value={filters.status}
-          onChange={filters.setStatus}
-        />
-        <p className={styles.resultCount} aria-live="polite">
-          {`${shown.length} of ${all.length}`}
-        </p>
-      </div>
+      <ListToolbar
+        search={{
+          label: 'Search activity types',
+          placeholder: 'Search name',
+          value: filters.q,
+          onChange: filters.setQ,
+        }}
+        status={{ value: filters.status, onChange: filters.setStatus, counts }}
+        count={{ shown: shown.length, total: all.length, noun: TYPE_NOUN }}
+      />
       {shown.length === 0 ? (
         <div className={styles.noMatch}>
           <p>Nothing matches these filters</p>
@@ -189,7 +179,9 @@ function ActivityTypesCard({ types, filters, actions, onNew }: ActivityTypesCard
             <thead>
               <tr>
                 <th scope="col">Name</th>
-                <th scope="col">Default planned cost</th>
+                <th scope="col" className={styles.number}>
+                  Default planned cost
+                </th>
                 <th scope="col">Allowed in</th>
                 <th scope="col">Used by</th>
                 <th scope="col">Status</th>
@@ -214,17 +206,17 @@ function ActivityTypeRow({ type, actions }: { type: ActivityType; actions: Activ
   const { money } = useFormatters();
   return (
     <tr>
-      <th scope="row">
+      <th scope="row" className={styles.nameCell}>
         <button type="button" className={styles.nameButton} onClick={() => actions.view(type)}>
           {type.name}
         </button>
       </th>
-      <td className={styles.numeric}>
+      <td className={styles.number}>
         {type.defaultPlannedCost ? money(type.defaultPlannedCost) : '—'}
       </td>
       <td>{modelNames(type)}</td>
       <td>{type.usage.summary}</td>
-      <td>
+      <td className={styles.nowrap}>
         <StatusChip tone={type.active ? 'positive' : 'neutral'}>
           {type.active ? 'Active' : 'Inactive'}
         </StatusChip>

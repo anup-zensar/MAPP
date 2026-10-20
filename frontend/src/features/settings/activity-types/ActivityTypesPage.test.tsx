@@ -112,7 +112,7 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
     expect(within(event).getByText('Active')).toBeInTheDocument();
     expect(row('Podcast')).toHaveTextContent('Not used yet');
     expect(within(table()).queryByText('Print advert')).not.toBeInTheDocument();
-    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('2 of 3 activity types')).toBeInTheDocument();
   });
 
   it('filters by status and searches by name, keeping both in the address', async () => {

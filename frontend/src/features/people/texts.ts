@@ -52,6 +52,21 @@ export function usageText(usage: UsageCount[]): string {
     .join(' · ');
 }
 
+/** True when the person owns or approves anything: deactivating them asks first (FR-005). */
+export function isInUse(usage: UsageCount[]): boolean {
+  return usage.some((use) => use.count > 0);
+}
+
+/** What a person owns, in their details: "2 plans and 5 activities", or "Nothing yet". */
+export function ownsText(usage: UsageCount[]): string {
+  return usageLists(usage).owner || 'Nothing yet';
+}
+
+/** The approval workflows a person approves in: "1 approval workflow", or "None". */
+export function approvesInText(usage: UsageCount[]): string {
+  return usageLists(usage).approver || 'No approval workflows';
+}
+
 /** What the deactivate dialog says about a person, sentence by sentence (FR-005). */
 export function deactivateSentences(person: { name: string; usage: UsageCount[] }): string[] {
   const first = firstName(person.name);

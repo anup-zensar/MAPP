@@ -156,7 +156,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
       'aria-pressed',
       'true',
     );
-    expect(screen.getByText('3 of 4')).toBeInTheDocument();
+    expect(screen.getByText('3 of 4 finance budget items')).toBeInTheDocument();
   });
 
   it('switches the budget year, keeping it in the address', async () => {
@@ -190,7 +190,7 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
       screen.queryByRole('region', { name: '2026 Lubricants Budget' }),
     ).not.toBeInTheDocument();
     expect(within(budgetCard('2026 Mobility Budget')).getByText('Fleet')).toBeInTheDocument();
-    expect(screen.getByText('1 of 4')).toBeInTheDocument();
+    expect(screen.getByText('1 of 4 finance budget items')).toBeInTheDocument();
   });
 
   it('says when nothing matches the filters, and clears them', async () => {

@@ -64,7 +64,7 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
     expect(panel).toHaveTextContent('Alex Morgan (inactive)');
   });
 
-  it('for an inactive, unused workflow: says so and offers Set active', async () => {
+  it('for an inactive, unused workflow: says so and offers Reactivate', async () => {
     const { user, actions } = renderPanel({
       body: { workflow: CHINA_WORKFLOW, activities: [] },
     });
@@ -75,17 +75,28 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
       'Inactive — not offered on activities. Activities that use it keep it.',
     );
     expect(panel).toHaveTextContent('No activities use it yet.');
-    await user.click(within(panel).getByRole('button', { name: 'Set active' }));
+    await user.click(
+      within(panel).getByRole('button', { name: 'Actions for China BC approval workflow' }),
+    );
+    await user.click(await screen.findByRole('menuitem', { name: 'Reactivate' }));
     expect(actions.setActive).toHaveBeenCalledWith(CHINA_WORKFLOW);
   });
 
-  it('offers Edit, Set inactive and Delete at the bottom', async () => {
+  it('offers Edit, then Set inactive and Delete in the panel footer menu', async () => {
     const { user, actions } = renderPanel({ body: detailsOf() });
 
     const panel = await screen.findByRole('dialog', { name: 'Lubricants EU approval' });
     await user.click(within(panel).getByRole('button', { name: 'Edit' }));
-    await user.click(within(panel).getByRole('button', { name: 'Set inactive' }));
-    await user.click(within(panel).getByRole('button', { name: 'Delete' }));
+    const more = within(panel).getByRole('button', { name: 'Actions for Lubricants EU approval' });
+    await user.click(more);
+    expect(
+      within(screen.getByRole('menu'))
+        .getAllByRole('menuitem')
+        .map((item) => item.firstChild?.textContent),
+    ).toEqual(['Set inactive', 'Delete']);
+    await user.click(screen.getByRole('menuitem', { name: 'Set inactive' }));
+    await user.click(more);
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
 
     expect(actions.edit).toHaveBeenCalled();
     expect(actions.setInactive).toHaveBeenCalled();

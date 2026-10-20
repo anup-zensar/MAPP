@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -10,38 +11,34 @@ import {
   ErrorState,
   PageHeader,
   PersonLabel,
-  SearchField,
-  SegmentedFilter,
   Skeleton,
   StatusChip,
   TeamPills,
   useToast,
 } from '@/components';
-import type { ActionsMenuItem } from '@/components';
+import { ListToolbar } from '@/features/settings/shared/ListToolbar';
+import styles from '@/features/settings/shared/SettingsTable.module.css';
+import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
+import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useShowFailure } from './feedback';
-import { usePeople, useSetPersonStatus } from './peopleApi';
+import { fetchLatestPerson, usePeople, useSetPersonStatus } from './peopleApi';
 import type { Person, PersonDetails } from './peopleApi';
-import { DeactivateDialog, PersonDetailsPanel, PersonFormPanel } from './PersonPanels';
-import type { PersonActions } from './PersonPanels';
-import { DEACTIVATE_TIP, peopleCountText, SELF_DEACTIVATION } from './texts';
-import styles from './lists.module.css';
+import { personStatusItem } from './personActions';
+import type { PersonActions } from './personActions';
+import { PersonDetailsPanel, PersonFormPanel } from './PersonPanels';
+import { deactivateSentences, isInUse, SELF_DEACTIVATION } from './texts';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-];
+const PERSON_NOUN = { one: 'person', many: 'people' };
 
 /** The form panel that is open. */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; person: Person | PersonDetails };
 
 /**
  * Settings › People (feature 003, US1, FR-001 – FR-009): everyone who can sign in, with e-mail, job
- * title, teams and status; search, status filter, the details panel at /settings/people/:personId,
- * New person, Edit, Deactivate and Reactivate. People are never deleted (FR-008).
+ * title, teams and status; the Settings list toolbar (search, Active · Inactive · All, "6 of 6
+ * people"), the details panel at /settings/people/:personId, New person, Edit, Deactivate and
+ * Reactivate. People are never deleted (FR-008).
  */
 export function PeoplePage() {
   usePageTitle('People');
@@ -49,40 +46,20 @@ export function PeoplePage() {
   const navigate = useNavigate();
   const user = useCurrentUser();
   const { show } = useToast();
-  const showFailure = useShowFailure('person');
-  const setPersonStatus = useSetPersonStatus();
+  const status = usePersonStatus();
   const [form, setForm] = useState<OpenForm | null>(null);
-  const [deactivating, setDeactivating] = useState<Person | PersonDetails | null>(null);
-
-  async function setStatus(person: Person | PersonDetails, active: boolean) {
-    // One status change at a time; another click meanwhile is ignored.
-    if (setPersonStatus.isPending) {
-      return;
-    }
-    try {
-      const saved = await setPersonStatus.mutateAsync({
-        id: person.id,
-        active,
-        version: person.version,
-      });
-      show({ message: `Person '${saved.name}' ${active ? 'reactivated' : 'deactivated'}` });
-    } catch (error) {
-      showFailure(error);
-    }
-  }
 
   const actions: PersonActions = {
     edit: (person) => setForm({ kind: 'edit', person }),
     deactivate: (person) =>
-      person.id === user.id ? show({ message: SELF_DEACTIVATION }) : setDeactivating(person),
-    reactivate: (person) => void setStatus(person, true),
+      person.id === user.id ? show({ message: SELF_DEACTIVATION }) : status.setInactive(person),
+    reactivate: (person) => status.reactivate(person),
   };
 
   return (
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'People' }]}
-        eyebrow="Settings"
         title="People"
         description="Everyone who can sign in to NorthStar, with their job title and teams."
         actions={
@@ -102,7 +79,6 @@ export function PeoplePage() {
         <PersonDetailsPanel
           personId={personId}
           actions={actions}
-          statusBusy={setPersonStatus.isPending}
           onClose={() => void navigate('/settings/people')}
         />
       )}
@@ -112,15 +88,34 @@ export function PeoplePage() {
           onClose={() => setForm(null)}
         />
       )}
-      {deactivating && (
-        <DeactivateDialog
-          person={deactivating}
-          deactivate={(person) => setStatus(person, false)}
-          onClose={() => setDeactivating(null)}
-        />
-      )}
+      {status.dialog}
     </>
   );
+}
+
+/**
+ * Deactivate and Reactivate with the one set-inactive behaviour (design system §6.7): a person who
+ * owns or approves something is asked about first, with what they own and approve (FR-005);
+ * anyone else is deactivated at once. Both offer Undo.
+ */
+function usePersonStatus() {
+  const queryClient = useQueryClient();
+  const setPersonStatus = useSetPersonStatus();
+  const showFailure = useShowFailure('person');
+
+  return useStatusFlow<Person | PersonDetails>({
+    words: { title: 'Person', noun: 'person', person: true },
+    usage: async (person) => {
+      // What they own and approve, as stored now.
+      const details = await fetchLatestPerson(queryClient, person.id);
+      const usage = details?.usage ?? [];
+      return isInUse(usage) ? deactivateSentences({ name: person.name, usage }) : [];
+    },
+    effect: () => [],
+    request: (person, active, version) =>
+      setPersonStatus.mutateAsync({ id: person.id, active, version }),
+    onFailure: showFailure,
+  });
 }
 
 interface PeopleCardProps {
@@ -133,44 +128,24 @@ interface PeopleCardProps {
 /** The toolbar and the table, with the list's loading, empty, no-match and error states. */
 function PeopleCard({ currentUserId, onNew, onOpen, actions }: PeopleCardProps) {
   const people = usePeople();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
+  const filters = useListFilters();
 
-  const all = people.data?.items ?? [];
-  const query = search.trim().toLowerCase();
-  const shown = all.filter(
-    (person) =>
-      (status === 'all' || person.active === (status === 'active')) &&
-      `${person.name} ${person.email} ${person.jobTitle}`.toLowerCase().includes(query),
-  );
-  const clearFilters = () => {
-    setSearch('');
-    setStatus('all');
-  };
+  if (!people.data) {
+    return (
+      <Card>
+        {people.isError ? (
+          <ErrorState error={people.error} onRetry={() => void people.refetch()} />
+        ) : (
+          <Skeleton lines={5} height="28px" />
+        )}
+      </Card>
+    );
+  }
 
-  return (
-    <Card>
-      <div className={styles.toolbar}>
-        <div className={styles.search}>
-          <SearchField
-            label="Search name, e-mail or job title"
-            placeholder="Search name, e-mail or job title"
-            value={search}
-            onChange={setSearch}
-          />
-        </div>
-        <SegmentedFilter
-          label="Status"
-          options={STATUS_OPTIONS}
-          value={status}
-          onChange={setStatus}
-        />
-        {people.data && <p className={styles.count}>{peopleCountText(shown.length, all.length)}</p>}
-      </div>
-
-      {people.isPending && <Skeleton lines={5} height="28px" />}
-      {people.isError && <ErrorState error={people.error} onRetry={() => void people.refetch()} />}
-      {people.data && all.length === 0 && (
+  const all = people.data.items;
+  if (all.length === 0) {
+    return (
+      <Card>
         <EmptyState
           icon={<Users />}
           title="No people yet — add the first person"
@@ -181,14 +156,34 @@ function PeopleCard({ currentUserId, onNew, onOpen, actions }: PeopleCardProps) 
             </Button>
           }
         />
-      )}
-      {people.data && all.length > 0 && shown.length === 0 && (
-        <EmptyState
-          title="Nothing matches these filters"
-          action={<Button onClick={clearFilters}>Clear filters</Button>}
-        />
-      )}
-      {shown.length > 0 && (
+      </Card>
+    );
+  }
+
+  const { shown, counts } = filterRecords(
+    all,
+    filters,
+    (person) => `${person.name} ${person.email} ${person.jobTitle}`,
+  );
+
+  return (
+    <Card>
+      <ListToolbar
+        search={{
+          label: 'Search name, e-mail or job title',
+          placeholder: 'Search name, e-mail or job title',
+          value: filters.q,
+          onChange: filters.setQ,
+        }}
+        status={{ value: filters.status, onChange: filters.setStatus, counts }}
+        count={{ shown: shown.length, total: all.length, noun: PERSON_NOUN }}
+      />
+      {shown.length === 0 ? (
+        <div className={styles.noMatch}>
+          <p>Nothing matches these filters</p>
+          <Button onClick={filters.clear}>Clear filters</Button>
+        </div>
+      ) : (
         // On narrow screens the table scrolls sideways inside its card (design system §2).
         <div className={styles.tableScroll}>
           <table className={styles.table}>
@@ -230,33 +225,26 @@ interface PersonRowProps {
 }
 
 function PersonRow({ person, isYou, onOpen, actions }: PersonRowProps) {
-  // There is no Delete: Deactivate sits in its place with the reason (FR-008).
-  const statusItem: ActionsMenuItem = person.active
-    ? {
-        label: 'Deactivate',
-        hint: isYou ? SELF_DEACTIVATION : DEACTIVATE_TIP,
-        separatorBefore: true,
-        onSelect: () => actions.deactivate(person),
-      }
-    : { label: 'Reactivate', separatorBefore: true, onSelect: () => actions.reactivate(person) };
-
   return (
     <tr>
-      <th scope="row">
-        <Link className={styles.open} to={`/settings/people/${encodeURIComponent(person.id)}`}>
+      <th scope="row" className={`${styles.nameCell} ${styles.nowrap}`}>
+        <Link
+          className={styles.personLink}
+          to={`/settings/people/${encodeURIComponent(person.id)}`}
+        >
           <PersonLabel person={person} you={isYou} />
         </Link>
       </th>
-      <td className={styles.secondary}>{person.email}</td>
+      <td className={`${styles.muted} ${styles.nowrap}`}>{person.email}</td>
       <td>{person.jobTitle || '—'}</td>
       <td>
         {person.teams.length > 0 ? (
           <TeamPills teams={person.teams} />
         ) : (
-          <span className={styles.secondary}>No team</span>
+          <span className={styles.muted}>No team</span>
         )}
       </td>
-      <td>
+      <td className={styles.nowrap}>
         <StatusChip tone={person.active ? 'positive' : 'neutral'}>
           {person.active ? 'Active' : 'Inactive'}
         </StatusChip>
@@ -267,7 +255,7 @@ function PersonRow({ person, isYou, onOpen, actions }: PersonRowProps) {
           items={[
             { label: 'View', onSelect: () => onOpen(person) },
             { label: 'Edit', onSelect: () => actions.edit(person) },
-            statusItem,
+            personStatusItem(person, isYou, actions),
           ]}
         />
       </td>

@@ -120,9 +120,10 @@ function rowOf(name: string) {
 
 describe('TeamsPage (feature 003, US2)', () => {
   it('lists every team with members, plans and status (FR-010)', async () => {
-    renderTeams();
+    renderTeams({}, '/settings/teams?status=all');
 
-    expect(await screen.findByText('3 teams')).toBeInTheDocument();
+    expect(await screen.findByText('3 of 3 teams')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All 3' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('heading', { level: 1, name: 'Teams' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Settings');
     const europe = rowOf('Lubricants Europe');
@@ -130,15 +131,18 @@ describe('TeamsPage (feature 003, US2)', () => {
       'href',
       '/settings/teams/T-1001',
     );
-    expect(europe).toHaveTextContent('Lubricants marketing for Europe');
-    expect(europe).toHaveTextContent('3 members');
-    expect(europe).toHaveTextContent('2 plans');
-    expect(europe).toHaveTextContent('Active');
+    // Description, Members, Plans (counts, right-aligned under their headers), Status.
+    const [description, members, plans, status] = within(europe).getAllByRole('cell');
+    expect(description).toHaveTextContent('Lubricants marketing for Europe');
+    expect(members).toHaveTextContent(/3$/);
+    expect(plans).toHaveTextContent(/^2$/);
+    expect(status).toHaveTextContent('Active');
     const old = rowOf('Old Markets');
     expect(old).toHaveTextContent('Old Markets (inactive)');
-    expect(old).toHaveTextContent('No members');
-    expect(old).toHaveTextContent('Not used');
-    expect(old).toHaveTextContent('Inactive');
+    const [, oldMembers, oldPlans, oldStatus] = within(old).getAllByRole('cell');
+    expect(oldMembers).toHaveTextContent(/^0$/);
+    expect(oldPlans).toHaveTextContent(/^0$/);
+    expect(oldStatus).toHaveTextContent('Inactive');
   });
 
   it('searches names and descriptions, filters by status, and clears the filters', async () => {
@@ -157,8 +161,8 @@ describe('TeamsPage (feature 003, US2)', () => {
     expect(screen.getByText('1 of 3 teams')).toBeInTheDocument();
 
     await user.clear(search);
-    await user.click(screen.getByRole('button', { name: 'Inactive' }));
-    expect(screen.getByRole('button', { name: 'Inactive' })).toHaveAttribute(
+    await user.click(screen.getByRole('button', { name: /^Inactive/ }));
+    expect(screen.getByRole('button', { name: /^Inactive/ })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
@@ -168,7 +172,7 @@ describe('TeamsPage (feature 003, US2)', () => {
     await user.type(search, 'china');
     expect(screen.getByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
-    expect(screen.getByText('3 teams')).toBeInTheDocument();
+    expect(screen.getByText('3 of 3 teams')).toBeInTheDocument();
     expect(search).toHaveValue('');
   });
 
@@ -193,7 +197,7 @@ describe('TeamsPage (feature 003, US2)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByText('3 teams')).toBeInTheDocument();
+    expect(await screen.findByText('2 of 3 teams')).toBeInTheDocument();
   });
 
   it('creates a team with two members picked with the person picker (US2-1)', async () => {
@@ -469,10 +473,55 @@ describe('TeamsPage (feature 003, US2)', () => {
     expect(dialog).toHaveTextContent('It is used by 1 plan: FY2026 Mobility China.');
   });
 
-  it('reactivates an inactive team', async () => {
+  it('sets an unused team inactive at once, with Undo (design system §6.7)', async () => {
+    let posts = 0;
     const { api, user } = renderTeams({
-      'POST /api/teams/T-1003/status': { body: { ...OLD_MARKETS, active: true, version: 2 } },
+      'POST /api/teams/T-1002/status': () => {
+        posts += 1;
+        return { body: { ...CHINA, active: posts !== 1, version: posts + 1 } };
+      },
     });
+
+    await chooseAction(user, 'Mobility China', 'Set team inactive');
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    const messages = await findMessages();
+    expect(
+      await within(messages).findByText("Team 'Mobility China' set inactive"),
+    ).toBeInTheDocument();
+    await user.click(within(messages).getByRole('button', { name: 'Undo' }));
+
+    expect(await screen.findByText("Team 'Mobility China' reactivated")).toBeInTheDocument();
+    expect(api.bodiesOf('POST /api/teams/T-1002/status')).toEqual([
+      { active: false, version: 1 },
+      { active: true, version: 2 },
+    ]);
+  });
+
+  it('asks before setting a team that plans use inactive, naming the plans', async () => {
+    const { api, user } = renderTeams({
+      'POST /api/teams/T-1001/status': { body: { ...EUROPE, active: false, version: 2 } },
+    });
+
+    await chooseAction(user, 'Lubricants Europe', 'Set team inactive');
+    const dialog = await screen.findByRole('alertdialog', {
+      name: "Set team 'Lubricants Europe' inactive?",
+    });
+    expect(dialog).toHaveTextContent(
+      'Used by 2 plans: FY2026 Lubricants Europe, FY2025 Lubricants Europe.',
+    );
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    await user.click(within(dialog).getByRole('button', { name: 'Set inactive' }));
+
+    expect(await screen.findByText("Team 'Lubricants Europe' set inactive")).toBeInTheDocument();
+    expect(api.bodiesOf('POST /api/teams/T-1001/status')).toEqual([{ active: false, version: 1 }]);
+  });
+
+  it('reactivates an inactive team', async () => {
+    const { api, user } = renderTeams(
+      { 'POST /api/teams/T-1003/status': { body: { ...OLD_MARKETS, active: true, version: 2 } } },
+      '/settings/teams?status=inactive',
+    );
 
     await chooseAction(user, 'Old Markets', 'Reactivate');
 

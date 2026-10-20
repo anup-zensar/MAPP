@@ -87,8 +87,8 @@ export function CurrencyDetails({ currency, actions, onClose }: CurrencyDetailsP
               <span className={styles.secondLine}>
                 {`Rate last changed by ${currency.rateChangedBy.name} on ${date(localDate(currency.rateChangedAt))}`}
               </span>
+              {rateLock && <LockedNote>{rateLock}</LockedNote>}
             </dd>
-            {rateLock && <LockedNote>{rateLock}</LockedNote>}
           </div>
           <div>
             <dt>Used by</dt>

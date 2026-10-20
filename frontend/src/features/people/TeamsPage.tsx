@@ -9,48 +9,47 @@ import {
   EmptyState,
   ErrorState,
   PageHeader,
-  SearchField,
-  SegmentedFilter,
   Skeleton,
   StatusChip,
   TeamPill,
-  useToast,
 } from '@/components';
+import { ListToolbar } from '@/features/settings/shared/ListToolbar';
+import styles from '@/features/settings/shared/SettingsTable.module.css';
+import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
+import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
+import { formatWhole } from '@/lib/decimal';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useShowFailure } from './feedback';
 import { useSetTeamStatus, useTeams } from './peopleApi';
 import type { Team } from './peopleApi';
+import { teamMoreItems } from './teamActions';
+import type { TeamActions } from './teamActions';
 import { DeleteTeamDialog, TeamDetailsPanel, TeamFormPanel } from './TeamPanels';
-import type { TeamActions } from './TeamPanels';
-import { membersText, plansText, teamsCountText } from './texts';
-import styles from './lists.module.css';
+import { usedByText } from './texts';
+import page from './lists.module.css';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-];
+const TEAM_NOUN = { one: 'team', many: 'teams' };
 
 /** How many member avatars a row shows before the count. */
 const AVATARS_SHOWN = 5;
+
+/** What setting a team inactive does, said before it applies. */
+const TEAM_INACTIVE_EFFECT =
+  "New plans can't choose an inactive team; plans using it keep it, shown as '(inactive)'.";
 
 /** The form panel that is open. */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; team: Team };
 
 /**
  * Settings › Teams (feature 003, US2, FR-010 – FR-015): every team with its description, members,
- * the plans using it and its status; search, status filter, the details panel at
+ * the plans using it and its status; the Settings list toolbar, the details panel at
  * /settings/teams/:teamId, New team, Edit, Set team inactive / Reactivate and Delete with Undo.
  */
 export function TeamsPage() {
   usePageTitle('Teams');
   const { teamId } = useParams();
   const navigate = useNavigate();
-  const { show } = useToast();
-  const showFailure = useShowFailure('team');
-  const setTeamStatus = useSetTeamStatus();
+  const status = useTeamStatus();
   const [form, setForm] = useState<OpenForm | null>(null);
   const [deleting, setDeleting] = useState<Team | null>(null);
 
@@ -58,22 +57,9 @@ export function TeamsPage() {
     void navigate(`/settings/teams/${encodeURIComponent(team.id)}`);
   const closeDetails = () => void navigate('/settings/teams');
 
-  async function setStatus(team: Team, active: boolean) {
-    // One status change at a time; another click meanwhile is ignored.
-    if (setTeamStatus.isPending) {
-      return;
-    }
-    try {
-      const saved = await setTeamStatus.mutateAsync({ id: team.id, active, version: team.version });
-      show({ message: `Team '${saved.name}' ${active ? 'reactivated' : 'set inactive'}` });
-    } catch (error) {
-      showFailure(error);
-    }
-  }
-
   const actions: TeamActions = {
     edit: (team) => setForm({ kind: 'edit', team }),
-    setStatus: (team, active) => void setStatus(team, active),
+    setStatus: (team, active) => (active ? status.reactivate(team) : status.setInactive(team)),
     remove: setDeleting,
   };
 
@@ -81,7 +67,6 @@ export function TeamsPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Teams' }]}
-        eyebrow="Settings"
         title="Teams"
         description="Groups of people that plans are assigned to. A plan's owner must belong to one of its teams."
         actions={
@@ -93,12 +78,7 @@ export function TeamsPage() {
       <TeamsCard onNew={() => setForm({ kind: 'new' })} onOpen={openDetails} actions={actions} />
 
       {teamId && !form && (
-        <TeamDetailsPanel
-          teamId={teamId}
-          actions={actions}
-          statusBusy={setTeamStatus.isPending}
-          onClose={closeDetails}
-        />
+        <TeamDetailsPanel teamId={teamId} actions={actions} onClose={closeDetails} />
       )}
       {form && (
         <TeamFormPanel
@@ -109,7 +89,7 @@ export function TeamsPage() {
       {deleting && (
         <DeleteTeamDialog
           team={deleting}
-          setInactive={(team) => setStatus(team, false)}
+          setInactive={(team) => status.applyInactive(team).then(() => undefined)}
           onDeleted={(team) => {
             if (team.id === teamId) {
               closeDetails();
@@ -118,8 +98,30 @@ export function TeamsPage() {
           onClose={() => setDeleting(null)}
         />
       )}
+      {status.dialog}
     </>
   );
+}
+
+/**
+ * Set team inactive and Reactivate with the one set-inactive behaviour (design system §6.7): a
+ * team that plans use asks first and says which; an unused one is set inactive at once. Both offer
+ * Undo.
+ */
+function useTeamStatus() {
+  const setTeamStatus = useSetTeamStatus();
+  const showFailure = useShowFailure('team');
+
+  return useStatusFlow<Team>({
+    words: { title: 'Team', noun: 'team' },
+    usage: (team) =>
+      team.plans.length > 0
+        ? [`${usedByText(team.plans.length)}: ${team.plans.map((plan) => plan.name).join(', ')}.`]
+        : [],
+    effect: () => [TEAM_INACTIVE_EFFECT],
+    request: (team, active, version) => setTeamStatus.mutateAsync({ id: team.id, active, version }),
+    onFailure: showFailure,
+  });
 }
 
 interface TeamsCardProps {
@@ -131,44 +133,24 @@ interface TeamsCardProps {
 /** The toolbar and the table, with the list's loading, empty, no-match and error states. */
 function TeamsCard({ onNew, onOpen, actions }: TeamsCardProps) {
   const teams = useTeams();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
+  const filters = useListFilters();
 
-  const all = teams.data?.items ?? [];
-  const query = search.trim().toLowerCase();
-  const shown = all.filter(
-    (team) =>
-      (status === 'all' || team.active === (status === 'active')) &&
-      `${team.name} ${team.description}`.toLowerCase().includes(query),
-  );
-  const clearFilters = () => {
-    setSearch('');
-    setStatus('all');
-  };
+  if (!teams.data) {
+    return (
+      <Card>
+        {teams.isError ? (
+          <ErrorState error={teams.error} onRetry={() => void teams.refetch()} />
+        ) : (
+          <Skeleton lines={5} height="28px" />
+        )}
+      </Card>
+    );
+  }
 
-  return (
-    <Card>
-      <div className={styles.toolbar}>
-        <div className={styles.search}>
-          <SearchField
-            label="Search team name or description"
-            placeholder="Search team name or description"
-            value={search}
-            onChange={setSearch}
-          />
-        </div>
-        <SegmentedFilter
-          label="Status"
-          options={STATUS_OPTIONS}
-          value={status}
-          onChange={setStatus}
-        />
-        {teams.data && <p className={styles.count}>{teamsCountText(shown.length, all.length)}</p>}
-      </div>
-
-      {teams.isPending && <Skeleton lines={5} height="28px" />}
-      {teams.isError && <ErrorState error={teams.error} onRetry={() => void teams.refetch()} />}
-      {teams.data && all.length === 0 && (
+  const all = teams.data.items;
+  if (all.length === 0) {
+    return (
+      <Card>
         <EmptyState
           icon={<UsersRound />}
           title="No teams yet — create your first team"
@@ -179,14 +161,34 @@ function TeamsCard({ onNew, onOpen, actions }: TeamsCardProps) {
             </Button>
           }
         />
-      )}
-      {teams.data && all.length > 0 && shown.length === 0 && (
-        <EmptyState
-          title="Nothing matches these filters"
-          action={<Button onClick={clearFilters}>Clear filters</Button>}
-        />
-      )}
-      {shown.length > 0 && (
+      </Card>
+    );
+  }
+
+  const { shown, counts } = filterRecords(
+    all,
+    filters,
+    (team) => `${team.name} ${team.description}`,
+  );
+
+  return (
+    <Card>
+      <ListToolbar
+        search={{
+          label: 'Search team name or description',
+          placeholder: 'Search team name or description',
+          value: filters.q,
+          onChange: filters.setQ,
+        }}
+        status={{ value: filters.status, onChange: filters.setStatus, counts }}
+        count={{ shown: shown.length, total: all.length, noun: TEAM_NOUN }}
+      />
+      {shown.length === 0 ? (
+        <div className={styles.noMatch}>
+          <p>Nothing matches these filters</p>
+          <Button onClick={filters.clear}>Clear filters</Button>
+        </div>
+      ) : (
         // On narrow screens the table scrolls sideways inside its card (design system §2).
         <div className={styles.tableScroll}>
           <table className={styles.table}>
@@ -194,8 +196,12 @@ function TeamsCard({ onNew, onOpen, actions }: TeamsCardProps) {
               <tr>
                 <th scope="col">Team</th>
                 <th scope="col">Description</th>
-                <th scope="col">Members</th>
-                <th scope="col">Used by</th>
+                <th scope="col" className={styles.number}>
+                  Members
+                </th>
+                <th scope="col" className={styles.number}>
+                  Plans
+                </th>
                 <th scope="col">Status</th>
                 <th scope="col">
                   <span className="visually-hidden">Actions</span>
@@ -223,16 +229,16 @@ interface TeamRowProps {
 function TeamRow({ team, onOpen, actions }: TeamRowProps) {
   return (
     <tr>
-      <th scope="row">
+      <th scope="row" className={`${styles.nameCell} ${styles.nowrap}`}>
         <TeamPill team={team} to={`/settings/teams/${encodeURIComponent(team.id)}`} />
       </th>
       <td>
-        <span className={styles.clamp}>{team.description || '—'}</span>
+        <span className={page.clamp}>{team.description || '—'}</span>
       </td>
-      <td>
-        <span className={styles.members}>
+      <td className={styles.number}>
+        <span className={page.members}>
           {team.members.length > 0 && (
-            <ul className={styles.avatars} aria-hidden="true">
+            <ul className={page.avatars} aria-hidden="true">
               {team.members.slice(0, AVATARS_SHOWN).map((member) => (
                 <li key={member.id}>
                   <Avatar initials={member.initials} size="sm" />
@@ -240,11 +246,11 @@ function TeamRow({ team, onOpen, actions }: TeamRowProps) {
               ))}
             </ul>
           )}
-          {membersText(team.members.length)}
+          {formatWhole(team.members.length)}
         </span>
       </td>
-      <td className={styles.nowrap}>{plansText(team.plans.length)}</td>
-      <td>
+      <td className={styles.number}>{formatWhole(team.plans.length)}</td>
+      <td className={styles.nowrap}>
         <StatusChip tone={team.active ? 'positive' : 'neutral'}>
           {team.active ? 'Active' : 'Inactive'}
         </StatusChip>
@@ -255,16 +261,7 @@ function TeamRow({ team, onOpen, actions }: TeamRowProps) {
           items={[
             { label: 'View', onSelect: () => onOpen(team) },
             { label: 'Edit', onSelect: () => actions.edit(team) },
-            {
-              label: team.active ? 'Set team inactive' : 'Reactivate',
-              onSelect: () => actions.setStatus(team, !team.active),
-            },
-            {
-              label: 'Delete',
-              tone: 'danger',
-              separatorBefore: true,
-              onSelect: () => actions.remove(team),
-            },
+            ...teamMoreItems(team, actions),
           ]}
         />
       </td>

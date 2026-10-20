@@ -1,8 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
 import {
+  ActionsMenu,
   Button,
   ChoiceField,
   ConfirmDialog,
@@ -34,8 +36,11 @@ import {
 } from './peopleApi';
 import type { ImpactWarning, Team, TeamColour, TeamUpdate } from './peopleApi';
 import { RecordLine } from './RecordLine';
+import { teamMoreItems } from './teamActions';
+import type { TeamActions } from './teamActions';
 import { removedIds } from './removedIds';
 import { deleteTeamText, teamInUseText, usedByText } from './texts';
+import list from '@/features/settings/shared/SettingsTable.module.css';
 import styles from './panels.module.css';
 
 /** The team palette (D-025), in the order of the Colour field. */
@@ -56,32 +61,19 @@ const SEARCH_ABOVE = 10;
 /** The lists Undo of a team delete refreshes: the team and its memberships are back. */
 const UNDO_OPTIONS = { invalidate: [['teams'], ['people'], ['session']] };
 
-/** What the details panel lets people do with the team. */
-export interface TeamActions {
-  edit: (team: Team) => void;
-  setStatus: (team: Team, active: boolean) => void;
-  remove: (team: Team) => void;
-}
-
 export interface TeamDetailsPanelProps {
   teamId: string;
   actions: TeamActions;
-  /** A status change is on its way: its button shows it. */
-  statusBusy: boolean;
   onClose: () => void;
 }
 
 /**
  * A team's details (US2-3): colour, status, description, members, the plans using it and who
- * created and last changed it; Edit, Set team inactive or Reactivate, and Delete.
+ * created and last changed it. The one panel footer of Settings: **Edit** (primary) and ⋯ with Set
+ * team inactive or Reactivate, and Delete.
  */
-export function TeamDetailsPanel({ teamId, actions, statusBusy, onClose }: TeamDetailsPanelProps) {
+export function TeamDetailsPanel({ teamId, actions, onClose }: TeamDetailsPanelProps) {
   const team = useTeam(teamId);
-  const close = (
-    <Button variant="primary" onClick={onClose}>
-      Close
-    </Button>
-  );
 
   if (team.data) {
     const data = team.data;
@@ -92,16 +84,10 @@ export function TeamDetailsPanel({ teamId, actions, statusBusy, onClose }: TeamD
         title={data.name}
         footer={
           <>
-            <Button variant="primary" onClick={() => actions.edit(data)}>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(data)}>
               Edit
             </Button>
-            <Button
-              aria-busy={statusBusy || undefined}
-              onClick={() => actions.setStatus(data, !data.active)}
-            >
-              {data.active ? 'Set team inactive' : 'Reactivate'}
-            </Button>
-            <Button onClick={() => actions.remove(data)}>Delete</Button>
+            <ActionsMenu label={data.name} items={teamMoreItems(data, actions)} />
           </>
         }
       >
@@ -112,9 +98,14 @@ export function TeamDetailsPanel({ teamId, actions, statusBusy, onClose }: TeamD
 
   const notFound = team.error instanceof ApiError && team.error.kind === 'notFound';
   return (
-    <SidePanel open onOpenChange={(open) => !open && onClose()} title="Team" footer={close}>
+    <SidePanel
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title="Team"
+      footer={<Button onClick={onClose}>Back to Teams</Button>}
+    >
       {team.isPending && <Skeleton lines={6} height="18px" />}
-      {notFound && <p className={styles.notFound}>{team.error?.message}</p>}
+      {notFound && <p className={list.gone}>{team.error?.message}</p>}
       {team.isError && !notFound && (
         <ErrorState error={team.error} onRetry={() => void team.refetch()} />
       )}
@@ -131,13 +122,13 @@ function TeamDetails({ team }: { team: Team }) {
   );
 
   return (
-    <div className={styles.details}>
-      <div className={styles.top}>
+    <div className={list.details}>
+      <div className={list.statusRow}>
         <StatusChip tone={team.active ? 'positive' : 'neutral'}>
           {team.active ? 'Active' : 'Inactive'}
         </StatusChip>
       </div>
-      <dl className={styles.facts}>
+      <dl className={list.facts}>
         <div>
           <dt>Description</dt>
           <dd>{team.description || '—'}</dd>
@@ -156,7 +147,7 @@ function TeamDetails({ team }: { team: Team }) {
       </dl>
 
       <section className={styles.section} aria-labelledby="team-members">
-        <h3 id="team-members" className={styles.sectionTitle}>
+        <h3 id="team-members" className={list.sectionTitle}>
           {`Members (${team.members.length})`}
         </h3>
         {team.members.length > SEARCH_ABOVE && (
@@ -168,7 +159,7 @@ function TeamDetails({ team }: { team: Team }) {
           />
         )}
         {team.members.length === 0 ? (
-          <p className={styles.muted}>
+          <p className={list.muted}>
             No members yet. Add people so they can own this team's plans.
           </p>
         ) : (
@@ -183,21 +174,21 @@ function TeamDetails({ team }: { team: Team }) {
       </section>
 
       <section className={styles.section} aria-labelledby="team-plans">
-        <h3 id="team-plans" className={styles.sectionTitle}>
+        <h3 id="team-plans" className={list.sectionTitle}>
           Used by
         </h3>
         {team.plans.length === 0 ? (
-          <p className={styles.muted}>Not used by any plan yet.</p>
+          <p className={list.muted}>Not used by any plan yet.</p>
         ) : (
           <>
-            <p className={styles.muted}>{usedByText(team.plans.length)}</p>
+            <p className={list.muted}>{usedByText(team.plans.length)}</p>
             <ul role="list" className={styles.list}>
               {team.plans.map((plan) => (
                 <li key={plan.id}>
                   {plan.inRecycleBin ? (
                     `${plan.name} (in the recycle bin)`
                   ) : (
-                    <Link className={styles.link} to={`/plans/${encodeURIComponent(plan.id)}`}>
+                    <Link className={list.inlineLink} to={`/plans/${encodeURIComponent(plan.id)}`}>
                       {plan.name}
                     </Link>
                   )}

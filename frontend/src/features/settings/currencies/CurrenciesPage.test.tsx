@@ -52,7 +52,7 @@ describe('CurrenciesPage: the list (FR-002, FR-028)', () => {
     expect(within(eur).getByText('Active')).toBeInTheDocument();
     // JPY is inactive.
     expect(screen.queryByRole('rowheader', { name: 'JPY' })).not.toBeInTheDocument();
-    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('2 of 3 currencies')).toBeInTheDocument();
   });
 
   it('searches code or name', async () => {

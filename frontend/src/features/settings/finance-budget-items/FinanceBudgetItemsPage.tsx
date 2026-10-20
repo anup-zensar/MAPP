@@ -8,13 +8,13 @@ import {
   EmptyState,
   ErrorState,
   PageHeader,
-  SearchField,
   SegmentedFilter,
   Skeleton,
   StatusChip,
 } from '@/components';
 import { plural } from '@/lib/text';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { ListToolbar } from '../shared/ListToolbar';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import styles from '../shared/SettingsTable.module.css';
 import { filterRecords, useListFilters } from '../shared/useListFilters';
@@ -33,6 +33,8 @@ import type { FinanceBudget, FinanceBudgetItem, FinanceBudgetPage } from './fina
 import { moreActions } from './financeItemActions';
 import type { FinanceItemActions } from './financeItemActions';
 import { RenameBudgetDialog } from './RenameBudgetDialog';
+
+const ITEM_NOUN = { one: 'finance budget item', many: 'finance budget items' };
 
 /** The side-panel form that is open: a new item, or one being changed. */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; item: FinanceBudgetItem };
@@ -60,7 +62,7 @@ export function FinanceBudgetItemsPage() {
   const [form, setForm] = useState<OpenForm | null>(null);
   const [renaming, setRenaming] = useState<FinanceBudget | null>(null);
   const [deleting, setDeleting] = useState<FinanceBudgetItem | null>(null);
-  const changeStatus = useSettingStatus({
+  const status = useSettingStatus({
     kind: 'financeBudgetItem',
     request: setFinanceBudgetItemStatus,
     invalidate: FINANCE_LISTS,
@@ -69,7 +71,7 @@ export function FinanceBudgetItemsPage() {
   const actions: FinanceItemActions = {
     view: (item) => filters.setOpenId(item.id),
     edit: (item) => setForm({ kind: 'edit', item }),
-    setActive: (item, active) => void changeStatus(item, active),
+    setActive: (item, active) => (active ? status.reactivate(item) : status.setInactive(item)),
     remove: (item) => setDeleting(item),
   };
   const newItem = () => setForm({ kind: 'new' });
@@ -103,7 +105,6 @@ export function FinanceBudgetItemsPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Finance budget items' }]}
-        eyebrow="Settings"
         title="Finance budget items"
         description="The finance budget items line items link to. A simple list until the Finance module arrives."
         actions={
@@ -157,7 +158,7 @@ export function FinanceBudgetItemsPage() {
           usage={deleting.usage}
           active={deleting.active}
           remove={() => deleteItem.mutateAsync(deleting.id)}
-          setInactive={() => changeStatus(deleting, false)}
+          setInactive={() => status.applyInactive(deleting)}
           invalidate={FINANCE_LISTS}
           onDeleted={() => {
             if (filters.openId === deleting.id) {
@@ -167,6 +168,7 @@ export function FinanceBudgetItemsPage() {
           onClose={() => setDeleting(null)}
         />
       )}
+      {status.dialog}
     </>
   );
 }
@@ -212,27 +214,16 @@ function BudgetCards({
             value={String(year)}
             onChange={onYear}
           />
-          <div className={page.toolbar}>
-            <SearchField
-              label="Search finance budget items"
-              placeholder="Search item, budget or code"
-              value={filters.q}
-              onChange={filters.setQ}
-            />
-            <SegmentedFilter
-              label="Status"
-              options={[
-                { value: 'active', label: 'Active', count: counts.active },
-                { value: 'inactive', label: 'Inactive', count: counts.inactive },
-                { value: 'all', label: 'All', count: counts.all },
-              ]}
-              value={filters.status}
-              onChange={filters.setStatus}
-            />
-            <p className={styles.resultCount} aria-live="polite">
-              {`${shownCount} of ${all.length}`}
-            </p>
-          </div>
+          <ListToolbar
+            search={{
+              label: 'Search finance budget items',
+              placeholder: 'Search item, budget or code',
+              value: filters.q,
+              onChange: filters.setQ,
+            }}
+            status={{ value: filters.status, onChange: filters.setStatus, counts }}
+            count={{ shown: shownCount, total: all.length, noun: ITEM_NOUN }}
+          />
         </div>
       </Card>
       {loading ? (
@@ -299,7 +290,15 @@ function BudgetCard({ budget, items, actions, onRename }: BudgetCardProps) {
       }
     >
       <div className={styles.tableScroll}>
-        <table className={styles.table}>
+        {/* Fixed column widths, so the columns of every budget's table line up (UI audit ST-04). */}
+        <table className={`${styles.table} ${styles.fixed}`}>
+          <colgroup>
+            <col className={page.itemColumn} />
+            <col className={page.codeColumn} />
+            <col />
+            <col className={page.statusColumn} />
+            <col className={page.actionsColumn} />
+          </colgroup>
           <thead>
             <tr>
               <th scope="col">Item</th>
@@ -323,9 +322,9 @@ function BudgetCard({ budget, items, actions, onRename }: BudgetCardProps) {
                     {item.name}
                   </button>
                 </th>
-                <td>{item.code || '—'}</td>
+                <td className={styles.nowrap}>{item.code || '—'}</td>
                 <td>{item.usage.summary}</td>
-                <td>
+                <td className={styles.nowrap}>
                   <StatusChip tone={item.active ? 'positive' : 'neutral'}>
                     {item.active ? 'Active' : 'Inactive'}
                   </StatusChip>

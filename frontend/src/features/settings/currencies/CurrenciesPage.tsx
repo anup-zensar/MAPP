@@ -7,8 +7,6 @@ import {
   Card,
   ErrorState,
   PageHeader,
-  SearchField,
-  SegmentedFilter,
   Skeleton,
   StatusChip,
   useToast,
@@ -16,6 +14,7 @@ import {
 import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { ListToolbar } from '../shared/ListToolbar';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import styles from '../shared/SettingsTable.module.css';
 import { filterRecords, useListFilters } from '../shared/useListFilters';
@@ -27,6 +26,8 @@ import { inverseLine, moreActions, rateLine } from './currencyActions';
 import type { CurrencyActions } from './currencyActions';
 import { CurrencyDetails } from './CurrencyDetails';
 import { CurrencyForm } from './CurrencyForm';
+
+const CURRENCY_NOUN = { one: 'currency', many: 'currencies' };
 
 /** The side-panel form that is open: a new currency, or one being changed. */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; currency: Currency };
@@ -46,7 +47,7 @@ export function CurrenciesPage() {
   const { show } = useToast();
   const [form, setForm] = useState<OpenForm | null>(null);
   const [deleting, setDeleting] = useState<Currency | null>(null);
-  const changeStatus = useSettingStatus({
+  const status = useSettingStatus({
     kind: 'currency',
     request: setCurrencyStatus,
     invalidate: CURRENCY_LISTS,
@@ -56,11 +57,13 @@ export function CurrenciesPage() {
     id: currency.code,
     name: currency.name,
     version: currency.version,
+    usage: currency.usage,
   });
   const actions: CurrencyActions = {
     view: (currency) => filters.setOpenId(currency.code),
     edit: (currency) => setForm({ kind: 'edit', currency }),
-    setActive: (currency, active) => void changeStatus(target(currency), active),
+    setActive: (currency, active) =>
+      active ? status.reactivate(target(currency)) : status.setInactive(target(currency)),
     remove: (currency) => setDeleting(currency),
     explainLock: (reason) => show({ message: reason }),
   };
@@ -75,7 +78,6 @@ export function CurrenciesPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Currencies' }]}
-        eyebrow="Settings"
         title="Currencies"
         description="Currencies for line items and display, with their rate per 1 USD."
         actions={
@@ -106,7 +108,7 @@ export function CurrenciesPage() {
           usage={deleting.usage}
           active={deleting.active}
           remove={() => deleteCurrency.mutateAsync(deleting.code)}
-          setInactive={() => changeStatus(target(deleting), false)}
+          setInactive={() => status.applyInactive(target(deleting))}
           invalidate={CURRENCY_LISTS}
           onDeleted={() => {
             if (filters.openId === deleting.code) {
@@ -116,6 +118,7 @@ export function CurrenciesPage() {
           onClose={() => setDeleting(null)}
         />
       )}
+      {status.dialog}
     </>
   );
 }
@@ -150,27 +153,16 @@ function CurrenciesCard({ currencies, filters, actions }: CurrenciesCardProps) {
 
   return (
     <Card>
-      <div className={styles.toolbar}>
-        <SearchField
-          label="Search currencies"
-          placeholder="Search code or name"
-          value={filters.q}
-          onChange={filters.setQ}
-        />
-        <SegmentedFilter
-          label="Status"
-          options={[
-            { value: 'active', label: 'Active', count: counts.active },
-            { value: 'inactive', label: 'Inactive', count: counts.inactive },
-            { value: 'all', label: 'All', count: counts.all },
-          ]}
-          value={filters.status}
-          onChange={filters.setStatus}
-        />
-        <p className={styles.resultCount} aria-live="polite">
-          {`${shown.length} of ${all.length}`}
-        </p>
-      </div>
+      <ListToolbar
+        search={{
+          label: 'Search currencies',
+          placeholder: 'Search code or name',
+          value: filters.q,
+          onChange: filters.setQ,
+        }}
+        status={{ value: filters.status, onChange: filters.setStatus, counts }}
+        count={{ shown: shown.length, total: all.length, noun: CURRENCY_NOUN }}
+      />
       {shown.length === 0 ? (
         <div className={styles.noMatch}>
           <p>Nothing matches these filters</p>
@@ -184,7 +176,9 @@ function CurrenciesCard({ currencies, filters, actions }: CurrenciesCardProps) {
                 <th scope="col">Code</th>
                 <th scope="col">Name</th>
                 <th scope="col">Symbol</th>
-                <th scope="col">Rate</th>
+                <th scope="col" className={styles.number}>
+                  Rate
+                </th>
                 <th scope="col">Used by</th>
                 <th scope="col">Rate last changed</th>
                 <th scope="col">Status</th>
@@ -214,17 +208,17 @@ function CurrencyRow({ currency, actions }: { currency: Currency; actions: Curre
           {currency.code}
         </button>
       </th>
-      <td>{currency.name}</td>
+      <td className={styles.nowrap}>{currency.name}</td>
       <td>{currency.symbol || '—'}</td>
-      <td className={styles.numeric}>
+      <td className={styles.number}>
         {rateLine(currency.code, currency.rate)}
         <span className={styles.secondLine}>
           {inverseLine(currency.code, currency.inverseRate)}
         </span>
       </td>
       <td>{currency.usage.summary}</td>
-      <td className={styles.numeric}>{date(localDate(currency.rateChangedAt))}</td>
-      <td>
+      <td className={styles.nowrap}>{date(localDate(currency.rateChangedAt))}</td>
+      <td className={styles.nowrap}>
         <StatusChip tone={currency.active ? 'positive' : 'neutral'}>
           {currency.active ? 'Active' : 'Inactive'}
         </StatusChip>
