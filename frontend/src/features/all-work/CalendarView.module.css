@@ -153,9 +153,10 @@
   text-overflow: ellipsis;
 }
 
+/* The status word and the edge notes sit on the bar's tint, where --ink-2 is too faint (WCAG 1.4.3). */
 .barStatus,
 .edge {
-  color: var(--ink-2);
+  color: var(--ink);
 }
 
 .tip {

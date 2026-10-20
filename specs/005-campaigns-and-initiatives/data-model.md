@@ -104,6 +104,14 @@ cent arithmetic: `shown = parentRemainingBudget + savedOwnBudget − typedBudget
 | Over budget | `budgetAndCost.overBudget` | `plannedCost > budget` compared **exactly** (both present; budget 0.00 with planned cost > 0.00 is over budget). Drives the red bar, so 100.4 % shows "100 %" in red |
 | Left to plan | `budgetAndCost.leftToPlan` | `budget − (plannedCost or 0.00)`; null when the budget is null; negative when over budget |
 
+**Currency of the answers (D-061, D-220).** Everything above is worked out and answered in USD, which the
+forms use. Each campaign and initiative also carries `display` (`ContainerDisplay`: `budget`,
+`parentRemainingBudget`, `budgetAndCost`, `goals`) and the tree carries `displayTotals`: the same amounts
+converted once into the reader's display currency, half up to the cent (`budgetUsedPercent` and `overBudget`
+stay as worked out in USD). The plan tree's rows, the totals row and the details panels show these. A move or
+copy destination's `remainingAfter` and `overAllocatedBy` are only shown, so they are answered in the display
+currency.
+
 ### 4.3 Statuses (domain model §2.2, FR-013, FR-015)
 
 | Value | JSON | Rule |

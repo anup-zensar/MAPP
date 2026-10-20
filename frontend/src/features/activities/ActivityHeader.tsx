@@ -30,7 +30,8 @@ export function ActivityHeader({ activity, actions, onOpenReady }: ActivityHeade
   const { date, money } = format;
   const { plan, campaign, initiative } = activity;
   const banner = activityBannerText(activity.displayStatus);
-  const unassigned = activity.unassignedPlannedCost;
+  // Amounts in the reader's display currency (D-220).
+  const { plannedCost, unassignedPlannedCost: unassigned } = activity.display;
   const overspent = unassigned?.amount.startsWith('-') ?? false;
 
   return (
@@ -80,7 +81,7 @@ export function ActivityHeader({ activity, actions, onOpenReady }: ActivityHeade
           </div>
           <div className={styles.fact}>
             <dt>Planned cost</dt>
-            <dd className={styles.money}>{money(activity.plannedCost)}</dd>
+            <dd className={styles.money}>{money(plannedCost)}</dd>
           </div>
           <div className={styles.fact}>
             <dt className={styles.withTip}>

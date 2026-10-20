@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@/components';
@@ -110,6 +111,48 @@ describe('PlanTree (FR-013, FR-014)', () => {
     expect(screen.getAllByRole('row')).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Expand FY2026 Lubricants Europe' }));
     expect(screen.getByText('Retail growth')).toBeInTheDocument();
+  });
+
+  it('keeps rows open that get rows below them after Expand all (activities load after campaigns)', async () => {
+    const [retail, fleet] = CAMPAIGNS;
+    const withActivity: TreeNode[] = [
+      {
+        ...retail,
+        children: [
+          {
+            ...retail.children[0],
+            children: [
+              { id: 'A-1001', level: 'activity', name: 'Launch film', cells: {}, children: [] },
+            ],
+          },
+        ],
+      },
+      fleet,
+    ];
+    function LateActivities() {
+      const [loaded, setLoaded] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setLoaded(true)}>
+            Load activities
+          </button>
+          <PlanTree plan={plan()} childNodes={loaded ? withActivity : CAMPAIGNS} />
+        </>
+      );
+    }
+    const { user } = renderWithProviders(<LateActivities />, {
+      user: testUser(),
+      route: '/plans/P-1001',
+      path: '/plans/:planId',
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Expand all' }));
+    await user.click(screen.getByRole('button', { name: 'Load activities' }));
+    expect(screen.getByText('Launch film')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Collapse Digital & social' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Collapse all' }));
+    expect(screen.getAllByRole('row')).toHaveLength(2);
   });
 
   it('searches name or ID, keeping the path to each match open', async () => {

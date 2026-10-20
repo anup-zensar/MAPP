@@ -85,8 +85,8 @@ type CampaignRef struct {
 	EndDate   *date.Date `json:"endDate"`
 }
 
-// BudgetAndCost is budget flowing down and cost rolling up for one campaign or initiative, all USD
-// (BudgetAndCost).
+// BudgetAndCost is budget flowing down and cost rolling up for one campaign or initiative (BudgetAndCost):
+// in USD, or in the reader's display currency inside DisplayAmounts (D-220).
 type BudgetAndCost struct {
 	AllocatedToChildren  money.Money  `json:"allocatedToChildren"`
 	RemainingForChildren *money.Money `json:"remainingForChildren"` // null without a budget; may be negative
@@ -150,6 +150,7 @@ type InitiativeView struct {
 	Campaign              CampaignRef              `json:"campaign"`
 	ParentRemainingBudget *money.Money             `json:"parentRemainingBudget"` // the campaign's remaining budget
 	BudgetAndCost         BudgetAndCost            `json:"budgetAndCost"`
+	Display               DisplayAmounts           `json:"display"` // the amounts above in the reader's display currency (D-220)
 	ApprovalProgress      ApprovalSummary          `json:"approvalProgress"`
 	Timing                *string                  `json:"timing"` // null without dates
 	Completeness          RecordCompleteness       `json:"completeness"`
@@ -174,6 +175,7 @@ type CampaignView struct {
 	OutsidePlanYear       bool                     `json:"outsidePlanYear"`       // R4 warning; never blocks
 	ParentRemainingBudget *money.Money             `json:"parentRemainingBudget"` // the plan's remaining budget
 	BudgetAndCost         BudgetAndCost            `json:"budgetAndCost"`
+	Display               DisplayAmounts           `json:"display"` // the amounts above in the reader's display currency (D-220)
 	ApprovalProgress      ApprovalSummary          `json:"approvalProgress"`
 	Timing                *string                  `json:"timing"`
 	Completeness          RecordCompleteness       `json:"completeness"`
@@ -197,11 +199,12 @@ type PlanCampaignTotals struct {
 
 // PlanCampaigns is the answer of GET /api/plans/{planId}/campaigns (PlanCampaigns).
 type PlanCampaigns struct {
-	Plan      PlanRef            `json:"plan"`
-	PlanOwner *people.PersonRef  `json:"planOwner"` // the default owner of a new campaign (R2)
-	Items     []CampaignView     `json:"items"`
-	Total     int                `json:"total"`
-	Totals    PlanCampaignTotals `json:"totals"`
+	Plan          PlanRef            `json:"plan"`
+	PlanOwner     *people.PersonRef  `json:"planOwner"` // the default owner of a new campaign (R2)
+	Items         []CampaignView     `json:"items"`
+	Total         int                `json:"total"`
+	Totals        PlanCampaignTotals `json:"totals"`
+	DisplayTotals PlanCampaignTotals `json:"displayTotals"` // Totals in the reader's display currency (D-220)
 }
 
 // CampaignInput is the body of POST /api/plans/{planId}/campaigns (CampaignCreate).

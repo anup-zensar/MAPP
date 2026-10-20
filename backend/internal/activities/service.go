@@ -72,6 +72,8 @@ type Service struct {
 	workflows Workflows
 	lineItems LineItems
 	hooks     ApprovalHooks
+	// displayRates reads the reader's display currency (UseDisplayRates, D-220); nil shows USD.
+	displayRates DisplayRates
 }
 
 // NewService returns the activities service. It keeps activities in repo, gives them readable IDs with
@@ -180,7 +182,7 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, initiativeID string
 	if err != nil {
 		return View{}, err
 	}
-	return view, nil
+	return s.shown(ctx, a, view)
 }
 
 // Get returns the activity id with everything derived from it (FR-019 – FR-024).
@@ -197,7 +199,7 @@ func (s *Service) Get(ctx context.Context, a actor.Actor, id string) (View, erro
 	if err != nil {
 		return View{}, err
 	}
-	return view, nil
+	return s.shown(ctx, a, view)
 }
 
 // load reads the activity id and its plan context, or answers not found.
@@ -245,12 +247,12 @@ func (s *Service) ListForPlan(ctx context.Context, a actor.Actor, planID string)
 			if err != nil {
 				return err
 			}
-			summaries = append(summaries, Summary{
+			summaries = append(summaries, displaySummary(money.DisplayUSD, Summary{
 				ID: activity.ID, Name: activity.Name, InitiativeID: activity.InitiativeID, ActivityType: d.activityType,
 				Owner: d.owner, StartDate: activity.StartDate, EndDate: activity.EndDate, Ongoing: activity.Ongoing,
 				PlannedCost: activity.PlannedCost, UnassignedPlannedCost: d.unassigned, Status: activity.Status,
 				DisplayStatus: d.displayStatus, Completeness: d.completeness, Version: activity.Version,
-			})
+			}))
 		}
 		return nil
 	})
@@ -263,7 +265,7 @@ func (s *Service) ListForPlan(ctx context.Context, a actor.Actor, planID string)
 		}
 		return strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name))
 	})
-	return summaries, nil
+	return s.shownSummaries(ctx, a, summaries)
 }
 
 // planActivities are every activity of a plan, with the plan's facts and each activity's initiative and
@@ -392,7 +394,7 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update U
 	if err != nil {
 		return View{}, err
 	}
-	return view, nil
+	return s.shown(ctx, a, view)
 }
 
 // RestartApproval sends the Submitted or Approved activity activityID back to Created (FR-027, D-196), for

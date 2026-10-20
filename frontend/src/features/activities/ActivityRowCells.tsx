@@ -47,7 +47,8 @@ export function ActivityRowCost({ row }: { row: ActivitySummary }) {
   const overspent = row.unassignedPlannedCost?.amount.startsWith('-') ?? false;
   return (
     <span className={overspent ? styles.overspent : undefined}>
-      {money(row.plannedCost)}
+      {/* In the reader's display currency (D-220). */}
+      {money(row.display.plannedCost)}
       {overspent && (
         <>
           {' '}

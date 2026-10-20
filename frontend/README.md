@@ -51,7 +51,9 @@ src/
   styles/       tokens.css (every colour and size, light and dark) and global.css
   test/         test helpers: setup.ts, mockApi.ts, render.tsx, users.ts (testUser()) and
                 attributeForms.ts (Shell attribute forms)
-e2e/            Playwright end-to-end tests (*.spec.ts) and their helpers (fixtures.ts)
+e2e/            Playwright end-to-end tests: smoke.spec.ts (001), core-flow.spec.ts (002–008 core),
+                module-rest.spec.ts (the rest of the module, D-221); helpers fixtures.ts and
+                planning.ts (records prepared through the API)
 ```
 
 Import from `src` with the `@/` alias: `import { Button, PageHeader } from '@/components';`. Tests sit

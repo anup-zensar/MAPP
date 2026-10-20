@@ -1,6 +1,9 @@
-/* The searched text, on a light tint of the selection blue (readable in both themes). */
+/*
+ * The searched text, on a light tint of the selection blue, in the page's ink: inside a link the link
+ * blue on the tint is too faint (WCAG 1.4.3), so the matched words read in ink in both themes.
+ */
 .mark {
   border-radius: 3px;
-  background: color-mix(in srgb, var(--blue) 22%, transparent);
-  color: inherit;
+  background: color-mix(in srgb, var(--blue) 16%, transparent);
+  color: var(--ink);
 }

@@ -175,7 +175,7 @@ func (s *Service) Move(ctx context.Context, a actor.Actor, id string, in MoveInp
 	if err != nil {
 		return View{}, err
 	}
-	return view, nil
+	return s.shown(ctx, a, view)
 }
 
 // Copy copies the activity id, with its line items, into its own initiative or another of its plan whose
@@ -232,7 +232,7 @@ func (s *Service) Copy(ctx context.Context, a actor.Actor, id string, in CopyInp
 	if err != nil {
 		return View{}, err
 	}
-	return view, nil
+	return s.shown(ctx, a, view)
 }
 
 // datesDontFit is the refusal of an initiative whose dates do not contain the activity's: "'Launch film'

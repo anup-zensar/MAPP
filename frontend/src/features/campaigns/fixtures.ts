@@ -58,8 +58,23 @@ export function budgetAndCost(overrides: Partial<BudgetAndCost> = {}): BudgetAnd
   };
 }
 
-export function initiative(overrides: Partial<Initiative> = {}): Initiative {
+/**
+ * A record's amounts as the API answers them to a reader whose display currency is USD: the same
+ * amounts again (D-220). Tests of another display currency pass `display` themselves.
+ */
+function inUsd(
+  record: Pick<Initiative, 'budget' | 'parentRemainingBudget' | 'budgetAndCost' | 'goals'>,
+) {
   return {
+    budget: record.budget,
+    parentRemainingBudget: record.parentRemainingBudget,
+    budgetAndCost: record.budgetAndCost,
+    goals: record.goals,
+  };
+}
+
+export function initiative(overrides: Partial<Initiative> = {}): Initiative {
+  const record: Omit<Initiative, 'display'> = {
     id: 'I-1001',
     planId: PLAN_ID,
     campaignId: 'C-1001',
@@ -88,10 +103,11 @@ export function initiative(overrides: Partial<Initiative> = {}): Initiative {
     ...META,
     ...overrides,
   };
+  return { ...record, display: overrides.display ?? inUsd(record) };
 }
 
 export function campaign(overrides: Partial<Campaign> = {}): Campaign {
-  return {
+  const record: Omit<Campaign, 'display'> = {
     id: 'C-1001',
     planId: PLAN_ID,
     name: 'Helix launch',
@@ -119,28 +135,33 @@ export function campaign(overrides: Partial<Campaign> = {}): Campaign {
     ...META,
     ...overrides,
   };
+  return { ...record, display: overrides.display ?? inUsd(record) };
 }
 
 export function planCampaigns(
   items: Campaign[] = [campaign()],
   totals: Partial<PlanCampaigns['totals']> = {},
+  displayTotals?: Partial<PlanCampaigns['totals']>,
 ): PlanCampaigns {
+  const usdTotals = {
+    campaigns: items.length,
+    initiatives: items.reduce((sum, item) => sum + item.initiatives.length, 0),
+    activities: 0,
+    allocatedToCampaigns: usd('400000.00'),
+    planBudget: usd('600000.00'),
+    remainingPlanBudget: usd('200000.00'),
+    overAllocatedBy: null,
+    plannedCost: null,
+    ...totals,
+  };
   return {
     plan: { id: PLAN_ID, name: PLAN_NAME, year: 2026 },
     planOwner: PRIYA,
     items,
     total: items.length,
-    totals: {
-      campaigns: items.length,
-      initiatives: items.reduce((sum, item) => sum + item.initiatives.length, 0),
-      activities: 0,
-      allocatedToCampaigns: usd('400000.00'),
-      planBudget: usd('600000.00'),
-      remainingPlanBudget: usd('200000.00'),
-      overAllocatedBy: null,
-      plannedCost: null,
-      ...totals,
-    },
+    totals: usdTotals,
+    // A reader in USD gets the same totals again (D-220).
+    displayTotals: { ...usdTotals, ...displayTotals },
   };
 }
 

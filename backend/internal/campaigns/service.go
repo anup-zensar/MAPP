@@ -29,6 +29,8 @@ type Service struct {
 	history *history.Service
 	now     clock.Clock
 	deps    Deps
+	// displayRates reads the reader's display currency (UseDisplayRates, D-220); nil shows USD.
+	displayRates DisplayRates
 }
 
 // NewService returns the campaigns service. It keeps the records in repo, gives them readable IDs with
@@ -56,7 +58,7 @@ func (s *Service) ListPlanCampaigns(ctx context.Context, a actor.Actor, planID s
 	if err != nil {
 		return PlanCampaigns{}, err
 	}
-	return result, nil
+	return s.shownTree(ctx, a, result)
 }
 
 // GetCampaign returns the campaign id with its initiatives and every derived value (FR-016).
@@ -70,7 +72,7 @@ func (s *Service) GetCampaign(ctx context.Context, a actor.Actor, id string) (Ca
 	if err != nil {
 		return CampaignView{}, err
 	}
-	return view, nil
+	return s.shownCampaign(ctx, a, view)
 }
 
 // GetInitiative returns the initiative id with every derived value (FR-016).
@@ -84,7 +86,7 @@ func (s *Service) GetInitiative(ctx context.Context, a actor.Actor, id string) (
 	if err != nil {
 		return InitiativeView{}, err
 	}
-	return view, nil
+	return s.shownInitiative(ctx, a, view)
 }
 
 // CreateCampaign adds a campaign to the plan planID (FR-001 – FR-005). Only the name is required; the API
@@ -143,7 +145,7 @@ func (s *Service) CreateCampaign(ctx context.Context, a actor.Actor, planID stri
 	if err != nil {
 		return CampaignView{}, err
 	}
-	return view, nil
+	return s.shownCampaign(ctx, a, view)
 }
 
 // UpdateCampaign saves the campaign form of the campaign id (FR-018), whatever the plan's status. The
@@ -228,7 +230,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, a actor.Actor, id string, 
 	if err != nil {
 		return CampaignView{}, err
 	}
-	return view, nil
+	return s.shownCampaign(ctx, a, view)
 }
 
 // DeleteCampaign moves the campaign id, with its initiatives and everything below them, to the recycle bin
@@ -314,7 +316,7 @@ func (s *Service) CreateInitiative(ctx context.Context, a actor.Actor, campaignI
 	if err != nil {
 		return InitiativeView{}, err
 	}
-	return view, nil
+	return s.shownInitiative(ctx, a, view)
 }
 
 // UpdateInitiative saves the initiative form of the initiative id (FR-018). When the dates change (D-095)
@@ -402,7 +404,7 @@ func (s *Service) UpdateInitiative(ctx context.Context, a actor.Actor, id string
 	if err != nil {
 		return InitiativeView{}, err
 	}
-	return view, nil
+	return s.shownInitiative(ctx, a, view)
 }
 
 // DeleteInitiative moves the initiative id, with its activities and line items, to the recycle bin

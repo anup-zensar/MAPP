@@ -3941,7 +3941,7 @@ export interface components {
             /** Format: date */
             endDate: string | null;
         };
-        /** @description Budget flowing down and cost rolling up for one campaign or initiative (domain model §4.1–4.2). All USD. */
+        /** @description Budget flowing down and cost rolling up for one campaign or initiative (domain model §4.1–4.2): in USD as budgetAndCost, and in the reader's display currency inside display (ContainerDisplay, D-220). */
         BudgetAndCost: {
             /** @description Sum of the children's budgets (0.00 when none; always 0.00 for an initiative). */
             allocatedToChildren: components["schemas"]["Money"];
@@ -4010,6 +4010,7 @@ export interface components {
             /** @description The campaign's remaining budget (campaign budget minus all its initiatives' budgets, this one included); null when the campaign has no budget. */
             parentRemainingBudget: components["schemas"]["Money"] | null;
             budgetAndCost: components["schemas"]["BudgetAndCost"];
+            display: components["schemas"]["ContainerDisplay"];
             approvalProgress: components["schemas"]["ApprovalSummary"];
             /**
              * @description Compared with today's date (UTC); null while the record has no dates.
@@ -4048,6 +4049,7 @@ export interface components {
             /** @description The plan's remaining budget (plan budget minus all its campaigns' budgets, this one included); null when the plan has no budget. */
             parentRemainingBudget: components["schemas"]["Money"] | null;
             budgetAndCost: components["schemas"]["BudgetAndCost"];
+            display: components["schemas"]["ContainerDisplay"];
             approvalProgress: components["schemas"]["ApprovalSummary"];
             /** @enum {string|null} */
             timing: "notStarted" | "running" | "finished" | null;
@@ -4064,7 +4066,14 @@ export interface components {
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
         };
-        /** @description The plan tree's totals row and the plan's budget position (FR-022, domain model §4.1–4.2). */
+        /** @description A campaign's or an initiative's amounts in the reader's display currency (D-061, D-220), for showing: each worked out in USD and converted once at today's rate, half up to the cent. The USD fields beside it (budget, parentRemainingBudget, budgetAndCost, goals) stay as they are, because the forms type and compare budgets in USD and the web app never converts. */
+        ContainerDisplay: {
+            budget: components["schemas"]["Money"] | null;
+            parentRemainingBudget: components["schemas"]["Money"] | null;
+            budgetAndCost: components["schemas"]["BudgetAndCost"];
+            goals: components["schemas"]["GoalSums"];
+        };
+        /** @description The plan tree's totals row and the plan's budget position (FR-022, domain model §4.1–4.2): in USD as totals, in the reader's display currency as displayTotals (D-220). */
         PlanCampaignTotals: {
             campaigns: number;
             initiatives: number;
@@ -4087,6 +4096,8 @@ export interface components {
             /** @description The number of campaigns. */
             total: number;
             totals: components["schemas"]["PlanCampaignTotals"];
+            /** @description The totals' amounts in the reader's display currency (D-220); the counts as in totals. */
+            displayTotals: components["schemas"]["PlanCampaignTotals"];
         };
         CampaignCreate: {
             name: string;
@@ -4210,7 +4221,7 @@ export interface components {
             endDate: string | null;
             /** @description For copies, the first free name "<name> (copy)", "(copy 2)", … in this destination; null for moves. */
             suggestedName: string | null;
-            /** @description The destination's remaining budget for its children once this record's budget is added there; null when the destination has no budget. */
+            /** @description The destination's remaining budget for its children once this record's budget is added there, in the reader's display currency (D-220); null when the destination has no budget. */
             remainingAfter: components["schemas"]["Money"] | null;
             /** @description Positive amount when remainingAfter is below zero; null otherwise. */
             overAllocatedBy: components["schemas"]["Money"] | null;
@@ -4335,6 +4346,7 @@ export interface components {
             displayStatus: components["schemas"]["ActivityDisplayStatus"];
             /** @description Planned cost minus the line items' USD planned costs (Sys_Gen_Balance); null when there is neither. */
             unassignedPlannedCost: components["schemas"]["Money"] | null;
+            display: components["schemas"]["ActivityDisplay"];
             lineItems: components["schemas"]["ActivityLineItemTotals"];
             completeness: components["schemas"]["ActivityCompleteness"];
             readiness: components["schemas"]["ActivitySubmitCheck"];
@@ -4362,10 +4374,18 @@ export interface components {
             ongoing: boolean;
             plannedCost: components["schemas"]["Money"] | null;
             unassignedPlannedCost: components["schemas"]["Money"] | null;
+            display: components["schemas"]["ActivityDisplay"];
             status: components["schemas"]["ActivityStatus"];
             displayStatus: components["schemas"]["ActivityDisplayStatus"];
             completeness: components["schemas"]["ActivityCompleteness"];
             version: number;
+        };
+        /** @description An activity's amounts in the reader's display currency (D-061, D-220), for showing: each converted once from USD at today's rate, half up to the cent. plannedCost, unassignedPlannedCost and goals.revenue beside it stay in USD, because the activity form types the planned cost in USD and compares it with the saved one. */
+        ActivityDisplay: {
+            plannedCost: components["schemas"]["Money"] | null;
+            unassignedPlannedCost: components["schemas"]["Money"] | null;
+            /** @description The revenue goal (typed or calculated); always null on a plan-tree row (ActivitySummary). */
+            revenue: components["schemas"]["Money"] | null;
         };
         ActivitySummaryPage: {
             items: components["schemas"]["ActivitySummary"][];

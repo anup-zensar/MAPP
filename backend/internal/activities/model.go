@@ -168,6 +168,7 @@ type View struct {
 	Status                Status                   `json:"status"`
 	DisplayStatus         DisplayStatus            `json:"displayStatus"`
 	UnassignedPlannedCost *money.Money             `json:"unassignedPlannedCost"` // null when there is neither a planned cost nor a line item
+	Display               Display                  `json:"display"`               // the amounts above in the reader's display currency (D-220)
 	LineItems             LineItemTotals           `json:"lineItems"`
 	Completeness          Completeness             `json:"completeness"`
 	Readiness             SubmitCheck              `json:"readiness"`
@@ -186,6 +187,7 @@ type Summary struct {
 	Ongoing               bool              `json:"ongoing"`
 	PlannedCost           *money.Money      `json:"plannedCost"`
 	UnassignedPlannedCost *money.Money      `json:"unassignedPlannedCost"`
+	Display               Display           `json:"display"` // the amounts above in the reader's display currency (D-220)
 	Status                Status            `json:"status"`
 	DisplayStatus         DisplayStatus     `json:"displayStatus"`
 	Completeness          Completeness      `json:"completeness"`

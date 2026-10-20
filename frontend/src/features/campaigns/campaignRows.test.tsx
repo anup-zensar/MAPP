@@ -240,6 +240,51 @@ describe('campaignRows (feature 005, US4)', () => {
     ]);
   });
 
+  it('shows the amounts in the reader’s display currency, not the USD ones the forms use (D-220)', () => {
+    const euros = (amount: string) => ({ amount, currency: 'EUR' });
+    const noGoals = { inq: null, mql: null, revenue: null };
+    const helix = campaign({
+      display: {
+        budget: euros('368000.00'),
+        parentRemainingBudget: euros('184000.00'),
+        budgetAndCost: budgetAndCost({
+          allocatedToChildren: euros('276000.00'),
+          remainingForChildren: euros('92000.00'),
+          plannedCost: euros('46000.00'),
+          budgetUsedPercent: 13,
+        }),
+        goals: noGoals,
+      },
+      initiatives: [
+        initiative({
+          display: {
+            budget: euros('276000.00'),
+            parentRemainingBudget: euros('92000.00'),
+            budgetAndCost: budgetAndCost({ plannedCost: euros('46000.00') }),
+            goals: noGoals,
+          },
+        }),
+      ],
+    });
+    const tree = renderRows(
+      planCampaigns(
+        [helix],
+        {},
+        { allocatedToCampaigns: euros('368000.00'), plannedCost: euros('46000.00') },
+      ),
+    );
+
+    const row = rowOf(tree, 'Helix launch');
+    expect(row).toHaveTextContent('368,000.00 EUR');
+    expect(row).toHaveTextContent('92,000.00 EUR left');
+    expect(row).toHaveTextContent('46,000.00 EUR');
+    expect(row).not.toHaveTextContent('$');
+    expect(rowOf(tree, 'Digital & social')).toHaveTextContent('276,000.00 EUR');
+    const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;
+    expect(totals).toHaveTextContent('368,000.00 EUR');
+    expect(totals).not.toHaveTextContent('$');
+  });
+
   it('sums the plan in the totals row, with singular forms (FR-022)', () => {
     const tree = renderRows(DATA);
     const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;

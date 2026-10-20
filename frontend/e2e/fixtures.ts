@@ -6,7 +6,8 @@ export const DEMO_PASSWORD = 'northstar';
 
 /**
  * Signs `email` in through the API (the browser keeps the session cookie) and resets that person's
- * preferences, so every test starts from the same screen (research R19).
+ * preferences — theme, sidebar, display currency (003), date format (003) and Home's scope (009) — so
+ * every test starts from the same screen (research R19).
  */
 export async function signInAs(page: Page, email: string): Promise<void> {
   const signIn = await page.request.post('/api/auth/sign-in', {
@@ -14,7 +15,13 @@ export async function signInAs(page: Page, email: string): Promise<void> {
   });
   expect(signIn.ok()).toBe(true);
   const reset = await page.request.patch('/api/me/preferences', {
-    data: { theme: 'system', sidebarCollapsed: false },
+    data: {
+      theme: 'system',
+      sidebarCollapsed: false,
+      displayCurrency: 'USD',
+      dateFormat: 'DD MMM YYYY',
+      homeScope: 'myTeams',
+    },
   });
   expect(reset.ok()).toBe(true);
 }

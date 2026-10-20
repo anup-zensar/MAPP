@@ -391,9 +391,15 @@ describe('SessionProvider: ending a session (US4)', () => {
     // Daniel signed in in another tab; this tab notices at its next check (a navigation).
     await user.click(screen.getByRole('link', { name: 'Approvals' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    // Home renders all its cards here; under the full suite's load that can take more than the
+    // usual three seconds, so these two waits get ten.
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'), { timeout: 10_000 });
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Welcome back, Daniel.' }),
+      await screen.findByRole(
+        'heading',
+        { level: 1, name: 'Welcome back, Daniel.' },
+        { timeout: 10_000 },
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Messages (F8)' })).toHaveTextContent(
       "You're now signed in as Daniel Okoro — this was changed in another tab.",

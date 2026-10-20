@@ -88,6 +88,9 @@ export function PlanTree({
   // What someone opened or closed, by row id; the other rows follow openAtFirst, so rows that load
   // later (campaigns) start the way 005 FR-020 says.
   const [toggled, setToggled] = useState<ReadonlyMap<string, boolean>>(() => new Map());
+  // After Expand all or Collapse all, every row not toggled since follows that choice, also rows whose
+  // children load afterwards (activities arrive in a query of their own, after the campaigns).
+  const [everyRow, setEveryRow] = useState<boolean | null>(null);
   const { figures } = plan;
 
   const planNode: TreeNode = {
@@ -142,7 +145,7 @@ export function PlanTree({
   const filtered = filterTree([planNode], query);
   const openFirst = new Set(openAtFirst([planNode]));
   const expandedIds = new Set(
-    allIds([planNode]).filter((id) => toggled.get(id) ?? openFirst.has(id)),
+    allIds([planNode]).filter((id) => toggled.get(id) ?? everyRow ?? openFirst.has(id)),
   );
 
   /** Sets every row in ids open or closed. */
@@ -154,6 +157,12 @@ export function PlanTree({
       }
       return next;
     });
+  }
+
+  /** Opens or closes every row, now and when more rows load (Expand all, Collapse all). */
+  function setAllOpen(open: boolean) {
+    setToggled(new Map());
+    setEveryRow(open);
   }
 
   /** Filters the rows and opens the path to every match. */
@@ -177,10 +186,10 @@ export function PlanTree({
               onChange={search}
             />
           </div>
-          <Button size="sm" onClick={() => setOpen(allIds([planNode]), true)}>
+          <Button size="sm" onClick={() => setAllOpen(true)}>
             Expand all
           </Button>
-          <Button size="sm" onClick={() => setOpen(allIds([planNode]), false)}>
+          <Button size="sm" onClick={() => setAllOpen(false)}>
             Collapse all
           </Button>
           {toolbarActions}

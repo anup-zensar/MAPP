@@ -72,6 +72,24 @@ describe('ActivityPage (feature 006, US2)', () => {
     expect(screen.getByRole('button', { name: 'Actions for Launch film' })).toBeVisible();
   });
 
+  it('shows the planned and unassigned cost in the reader’s display currency (D-220)', async () => {
+    openPage({
+      body: launchFilm({
+        display: {
+          plannedCost: { amount: '110400.00', currency: 'EUR' },
+          unassignedPlannedCost: { amount: '18400.00', currency: 'EUR' },
+          revenue: null,
+        },
+      }),
+    });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Launch film' })).toBeVisible();
+    const facts = screen.getByText('Unassigned planned cost').closest('dl') as HTMLElement;
+    expect(within(facts).getByText('110,400.00 EUR')).toBeVisible();
+    expect(within(facts).getByText('18,400.00 EUR')).toBeVisible();
+    expect(within(facts).queryByText('$120,000.00')).not.toBeInTheDocument();
+  });
+
   it('marks an unassigned planned cost below zero in red words', async () => {
     openPage({
       body: launchFilm({ unassignedPlannedCost: { amount: '-500.00', currency: 'USD' } }),

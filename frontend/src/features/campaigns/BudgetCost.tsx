@@ -218,13 +218,15 @@ export function GoalsSection({ goals }: { goals: GoalSums }) {
  */
 export function CampaignBudgetCell({ campaign }: { campaign: Campaign }) {
   const { money } = useFormatters();
-  const remaining = campaign.budgetAndCost.remainingForChildren;
-  if (!campaign.budget) {
+  // Amounts in the reader's display currency (D-220).
+  const { budget } = campaign.display;
+  const remaining = campaign.display.budgetAndCost.remainingForChildren;
+  if (!budget) {
     return <span>—</span>;
   }
   return (
     <span className={styles.cell}>
-      <span>{money(campaign.budget)}</span>
+      <span>{money(budget)}</span>
       {remaining &&
         (isNegative(remaining) ? (
           <span className={styles.negativeDetail}>

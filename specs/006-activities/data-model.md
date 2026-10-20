@@ -186,6 +186,7 @@ Stored record and API answers are separate types (001 research R10):
 |---|---|---|
 | `Activity` | stored record + derived values | `plan`, `campaign`, `initiative` (`RecordRef`); `activityType`, `approvalWorkflow` (`{id, name, active}`, type also `allowed`); `owner` (`PersonRef`, 003); dates `null` when not set; `goals` (`ActivityGoals`); `status`, `displayStatus`; `unassignedPlannedCost`; `lineItems` (`ActivityLineItemTotals`); `completeness`; `readiness` (`ActivitySubmitCheck`); bookkeeping |
 | `ActivitySummary` | stored record + derived values | Plan-tree row: no attributes, goals or readiness list |
+| `ActivityDisplay` (`display` on both) | `plannedCost`, `unassignedPlannedCost`, `goals.revenue` | The same amounts converted once from USD into the reader's display currency, half up (D-061, D-220); `revenue` is null on a plan-tree row. The page, the plan tree and the delete dialog show these; the form keeps the USD fields |
 | `ActivityForm` | plan context + options (+ defaults for a new activity) | `existingNames` lets the web app repeat the uniqueness check |
 | `ActivityDestination` | initiatives of the same plan | `moveProblem`, `copyProblem` (null = allowed) |
 | `ActivityCreate` / `ActivityUpdate` | request bodies | Update = every editable field + `version` + `restartApproval` (plan, D-107) |

@@ -85,7 +85,7 @@ func (s *Service) planCampaigns(ctx context.Context, plan PlanFacts) (PlanCampai
 	if err != nil {
 		return PlanCampaigns{}, err
 	}
-	return PlanCampaigns{
+	tree := PlanCampaigns{
 		Plan:      PlanRef{ID: plan.ID, Name: plan.Name, Year: plan.Year},
 		PlanOwner: planOwner,
 		Items:     views,
@@ -100,7 +100,9 @@ func (s *Service) planCampaigns(ctx context.Context, plan PlanFacts) (PlanCampai
 			OverAllocatedBy:      rollup.OverBy(planRemaining),
 			PlannedCost:          rollup.Sum(plannedCosts),
 		},
-	}, nil
+	}
+	tree.DisplayTotals = tree.Totals // in USD until the service converts it for the reader (display.go)
+	return tree, nil
 }
 
 // viewBuilder holds what every view of one plan's tree shares, read once.
@@ -155,7 +157,7 @@ func (b *viewBuilder) campaign(c Campaign, initiatives []Initiative, activitiesO
 		return CampaignView{}, err
 	}
 	sum := rollup.AddGoals(goals)
-	return CampaignView{
+	view := CampaignView{
 		ID:                    c.ID,
 		PlanID:                c.PlanID,
 		Name:                  c.Name,
@@ -177,7 +179,10 @@ func (b *viewBuilder) campaign(c Campaign, initiatives []Initiative, activitiesO
 		Counts:                counts,
 		Initiatives:           views,
 		Meta:                  c.Meta,
-	}, nil
+	}
+	// In USD until the service converts it for the reader (display.go).
+	view.Display = displayAmounts(money.DisplayUSD, view.Budget, view.ParentRemainingBudget, view.BudgetAndCost, view.Goals)
+	return view, nil
 }
 
 // initiative builds the view of initiative i of campaign with its activities; campaignRemaining is the
@@ -210,7 +215,7 @@ func (b *viewBuilder) initiative(i Initiative, campaign CampaignRef, activities 
 		return InitiativeView{}, err
 	}
 	sum := rollup.AddGoals(goals)
-	return InitiativeView{
+	view := InitiativeView{
 		ID:                    i.ID,
 		PlanID:                b.plan.ID,
 		CampaignID:            i.CampaignID,
@@ -232,7 +237,10 @@ func (b *viewBuilder) initiative(i Initiative, campaign CampaignRef, activities 
 		Goals:                 GoalSums{INQ: sum.INQ, MQL: sum.MQL, Revenue: sum.Revenue},
 		Counts:                counts,
 		Meta:                  i.Meta,
-	}, nil
+	}
+	// In USD until the service converts it for the reader (display.go).
+	view.Display = displayAmounts(money.DisplayUSD, view.Budget, view.ParentRemainingBudget, view.BudgetAndCost, view.Goals)
+	return view, nil
 }
 
 // owner returns the person id as records show them, or nil without an owner. An inactive owner is kept

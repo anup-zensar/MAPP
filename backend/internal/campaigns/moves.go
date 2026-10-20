@@ -127,7 +127,7 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 	if err != nil {
 		return DestinationList{}, err
 	}
-	return list, nil
+	return s.shownDestinations(ctx, a, list)
 }
 
 // InitiativeDestinations returns the campaigns of its plan the initiative id can be moved or copied to
@@ -210,7 +210,7 @@ func (s *Service) InitiativeDestinations(ctx context.Context, a actor.Actor, id,
 	if err != nil {
 		return DestinationList{}, err
 	}
-	return list, nil
+	return s.shownDestinations(ctx, a, list)
 }
 
 // MoveCampaign moves the campaign id, with everything below it, to another plan of the same year (FR-023,
@@ -273,7 +273,7 @@ func (s *Service) MoveCampaign(ctx context.Context, a actor.Actor, id string, in
 	if err != nil {
 		return CampaignView{}, err
 	}
-	return view, nil
+	return s.shownCampaign(ctx, a, view)
 }
 
 // MoveInitiative moves the initiative id, with its activities and line items, to another campaign of the
@@ -349,7 +349,7 @@ func (s *Service) MoveInitiative(ctx context.Context, a actor.Actor, id string, 
 	if err != nil {
 		return InitiativeView{}, err
 	}
-	return view, nil
+	return s.shownInitiative(ctx, a, view)
 }
 
 // CopyCampaign copies the campaign id, with its initiatives and everything below them, into its own plan or
@@ -422,7 +422,7 @@ func (s *Service) CopyCampaign(ctx context.Context, a actor.Actor, id string, in
 	if err != nil {
 		return CampaignView{}, err
 	}
-	return view, nil
+	return s.shownCampaign(ctx, a, view)
 }
 
 // CopyInitiative copies the initiative id, with its activities and line items, into its own campaign or
@@ -497,7 +497,7 @@ func (s *Service) CopyInitiative(ctx context.Context, a actor.Actor, id string, 
 	if err != nil {
 		return InitiativeView{}, err
 	}
-	return view, nil
+	return s.shownInitiative(ctx, a, view)
 }
 
 // CopyCounts is how many campaigns and initiatives a plan copy made.

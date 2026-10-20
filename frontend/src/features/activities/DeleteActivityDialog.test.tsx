@@ -38,12 +38,29 @@ describe('DeleteActivityDialog (feature 006, FR-031)', () => {
     expect(screen.getByRole('button', { name: 'Delete activity' })).toBeVisible();
   });
 
+  it("names the amount in the reader's display currency (D-220)", () => {
+    const dialog = ask({
+      display: {
+        plannedCost: { amount: '110400.00', currency: 'EUR' },
+        unassignedPlannedCost: { amount: '18400.00', currency: 'EUR' },
+        revenue: null,
+      },
+    });
+
+    expect(dialog).toHaveTextContent(
+      'The initiative, campaign and plan planned costs go down by 110,400.00 EUR.',
+    );
+  });
+
   it('says one line item goes, and nothing about line items or costs when there are none', () => {
     expect(ask({ lineItems: LINE_ITEMS(1) })).toHaveTextContent('1 line item goes with it.');
   });
 
   it('leaves out the line items and planned cost sentences when there are none', () => {
-    const dialog = ask({ lineItems: LINE_ITEMS(0), plannedCost: null });
+    const dialog = ask({
+      lineItems: LINE_ITEMS(0),
+      display: { plannedCost: null, unassignedPlannedCost: null, revenue: null },
+    });
 
     expect(dialog).not.toHaveTextContent('go with it');
     expect(dialog).not.toHaveTextContent('planned costs go down');

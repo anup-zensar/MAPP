@@ -73,7 +73,7 @@ func (s *Service) viewOf(ctx context.Context, a Activity, pc planContext) (View,
 		attributes = settings.AttributeValues{}
 	}
 	li := facts[a.ID]
-	return View{
+	view := View{
 		ID: a.ID, Name: a.Name, ExternalName: a.ExternalName,
 		Plan:         errs.RecordRef{Type: "plan", ID: pc.plan.ID, Name: pc.plan.Name},
 		Campaign:     errs.RecordRef{Type: "campaign", ID: pc.campaign.ID, Name: pc.campaign.Name},
@@ -85,7 +85,8 @@ func (s *Service) viewOf(ctx context.Context, a Activity, pc planContext) (View,
 			Count: li.Count, PlannedCost: money.USD(li.PlannedCostUSD), AutoSpread: li.AutoSpread, CustomSpread: li.CustomSpread,
 		},
 		Completeness: d.completeness, Readiness: d.readiness, Meta: a.Meta,
-	}, nil
+	}
+	return displayView(money.DisplayUSD, view), nil // in USD until the service converts it for the reader
 }
 
 // lineItemFacts asks feature 007 once for the line items of every activity of list.

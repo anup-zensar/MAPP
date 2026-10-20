@@ -118,7 +118,7 @@ const NO_PROBLEMS = { ready: true, problemCount: 0, activity: [], lineItems: [],
 
 /** "Launch film" (A-1042), Created, in "Digital & social"; pass what a test needs to differ. */
 export function launchFilm(overrides: Partial<Activity> = {}): Activity {
-  return {
+  const activity: Omit<Activity, 'display'> = {
     id: 'A-1042',
     name: 'Launch film',
     externalName: '',
@@ -160,6 +160,13 @@ export function launchFilm(overrides: Partial<Activity> = {}): Activity {
     updatedBy: { id: 'U-1002', name: 'Priya Raman' },
     ...overrides,
   };
+  // A reader in USD gets the same amounts again (D-220); tests of another currency pass `display`.
+  const display = overrides.display ?? {
+    plannedCost: activity.plannedCost,
+    unassignedPlannedCost: activity.unassignedPlannedCost,
+    revenue: activity.goals.revenue,
+  };
+  return { ...activity, display };
 }
 
 function problem(
@@ -220,7 +227,7 @@ export function incompleteLaunchFilm(overrides: Partial<Activity> = {}): Activit
 /** "Launch film" as a plan-tree row. */
 export function launchFilmRow(overrides: Partial<ActivitySummary> = {}): ActivitySummary {
   const activity = launchFilm();
-  return {
+  const row: Omit<ActivitySummary, 'display'> = {
     id: activity.id,
     name: activity.name,
     initiativeId: 'I-1001',
@@ -236,6 +243,15 @@ export function launchFilmRow(overrides: Partial<ActivitySummary> = {}): Activit
     completeness: activity.completeness,
     version: activity.version,
     ...overrides,
+  };
+  // A reader in USD gets the same amounts again (D-220); tests of another currency pass `display`.
+  return {
+    ...row,
+    display: overrides.display ?? {
+      plannedCost: row.plannedCost,
+      unassignedPlannedCost: row.unassignedPlannedCost,
+      revenue: null,
+    },
   };
 }
 

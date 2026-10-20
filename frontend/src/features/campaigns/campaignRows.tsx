@@ -151,7 +151,7 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
       ...commonCells(initiative, options),
       name: `${initiative.id} · ${activitiesCount(initiative.counts.activities)}`,
       dates: options.formatters.dateRange(initiative.startDate, initiative.endDate),
-      budget: options.formatters.money(initiative.budget),
+      budget: options.formatters.money(initiative.display.budget),
     },
     children: options.rowsBelow?.get(initiative.id) ?? [],
     actions: [
@@ -169,7 +169,8 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
 /** The cells both levels show the same way. */
 function commonCells(record: Campaign | Initiative, options: RowOptions) {
   const level = 'initiatives' in record ? 'campaign' : 'initiative';
-  const { budgetAndCost } = record;
+  // Amounts in the reader's display currency (D-220).
+  const { budgetAndCost } = record.display;
   return {
     owner: record.owner ? <PersonLabel person={record.owner} /> : '—',
     status: (
@@ -240,7 +241,8 @@ export function addInitiativeHref(planId: string, campaignId: string): string {
  * campaign budgets ("Allocated to campaigns") and the plan's planned cost.
  */
 export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeTableFooter {
-  const { totals } = data;
+  // Amounts in the reader's display currency (D-220).
+  const totals = data.displayTotals;
   return {
     name: totalsText(totals.campaigns, totals.initiatives, totals.activities),
     budget: (

@@ -53,7 +53,8 @@ export function ActivityDetails({ activity }: { activity: Activity }) {
               ? date(activity.endDate)
               : EMPTY}
         </Pair>
-        <Pair label="Planned cost">{money(activity.plannedCost)}</Pair>
+        {/* In the reader's display currency (D-220). */}
+        <Pair label="Planned cost">{money(activity.display.plannedCost)}</Pair>
         <Pair label="Approval workflow">
           {workflow ? `${workflow.name}${workflow.active ? '' : ' (inactive)'}` : EMPTY}
         </Pair>
@@ -140,11 +141,11 @@ export function ActivityGoals({ activity, model }: { activity: Activity; model?:
           )}
         </Pair>
         <Pair label="Revenue">
-          {goals.revenue === null ? (
+          {activity.display.revenue === null ? (
             EMPTY
           ) : (
             <>
-              {money(goals.revenue)} {origin('Revenue')}
+              {money(activity.display.revenue)} {origin('Revenue')}
             </>
           )}
         </Pair>

@@ -107,6 +107,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		lineItemDeps(settingsService, settingsRepo, activitiesService, activitiesRepo, campaignsRepo, plansRepo, peopleRepo,
 			peopleService), now)
 	activitiesService.UseLineItems(lineItemsForActivities{svc: lineItemsService})
+	activitiesService.UseDisplayRates(peopleService) // amounts of activities and plan-tree rows (D-220)
 
 	// Feature 005: campaigns and initiatives, with their history kinds under the plan kind (parents first).
 	campaignsService := campaigns.NewService(db, campaignsRepo, generator, historyService, now, campaigns.Deps{
@@ -115,6 +116,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		Settings:   settingsService,
 		Activities: activitiesForCampaigns{svc: activitiesService},
 	})
+	campaignsService.UseDisplayRates(peopleService) // amounts of campaigns, initiatives and the tree (D-220)
 	// The history kinds, parents first: campaign and initiative (005), activity (006), line item (007).
 	for _, kind := range slices.Concat(campaignsService.Kinds(), activitiesService.Kinds(), lineItemsService.Kinds()) {
 		if err := historyService.Register(kind); err != nil {

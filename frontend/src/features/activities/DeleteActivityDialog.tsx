@@ -5,7 +5,7 @@ import styles from './DeleteActivityDialog.module.css';
 import { lineItemsText } from './activityText';
 
 /** What the question needs of the activity. */
-export type DeletedActivity = Pick<Activity, 'name' | 'status' | 'plannedCost' | 'lineItems'>;
+export type DeletedActivity = Pick<Activity, 'name' | 'status' | 'display' | 'lineItems'>;
 
 export interface DeleteActivityDialogProps {
   open: boolean;
@@ -28,7 +28,8 @@ export function DeleteActivityDialog({
   busy,
 }: DeleteActivityDialogProps) {
   const { count } = activity.lineItems;
-  const cost = activity.plannedCost;
+  // In the reader's display currency (D-220).
+  const cost = activity.display.plannedCost;
   const lines = [
     count === 1
       ? '1 line item goes with it.'

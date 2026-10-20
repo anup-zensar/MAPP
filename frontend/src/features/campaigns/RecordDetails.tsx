@@ -172,13 +172,14 @@ export function RecordDetails({
               date(localDate(record.updatedAt)),
             )}
           </p>
+          {/* Amounts in the reader's display currency (D-220). */}
           <BudgetCostSection
             level={level}
-            budget={record.budget}
-            budgetAndCost={record.budgetAndCost}
-            parentRemainingBudget={record.parentRemainingBudget}
+            budget={record.display.budget}
+            budgetAndCost={record.display.budgetAndCost}
+            parentRemainingBudget={record.display.parentRemainingBudget}
           />
-          <GoalsSection goals={record.goals} />
+          <GoalsSection goals={record.display.goals} />
           <PanelSection title={DESCRIPTION}>
             <p className={styles.text}>{record.description || '—'}</p>
           </PanelSection>
@@ -261,7 +262,7 @@ function CampaignInitiatives({ campaign, planId }: { campaign: Campaign; planId:
               </div>
               <div className={styles.childSide}>
                 <ApprovalProgressChip progress={item.approvalProgress} />
-                <span>{money(item.budget)}</span>
+                <span>{money(item.display.budget)}</span>
               </div>
             </li>
           ))}
