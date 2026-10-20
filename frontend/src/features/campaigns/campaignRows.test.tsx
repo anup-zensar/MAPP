@@ -140,10 +140,8 @@ describe('campaignRows (feature 005, US4)', () => {
     expect(within(row).getByText('$120,000.00')).toBeInTheDocument();
     expect(within(row).getByText('Over-allocated by $30,000.00')).toBeInTheDocument();
     expect(within(row).getByText('$150,000.00')).toBeInTheDocument();
-    expect(
-      within(row).getByRole('progressbar', { name: 'Budget used of Helix launch' }),
-    ).toBeInTheDocument();
-    expect(within(row).getByText('125%')).toBeInTheDocument();
+    // The budget used is the planned cost's second line (one column fewer, nothing clipped).
+    expect(within(row).getByText('125% of budget').className).toMatch(/negative/);
     expect(
       within(row).getByRole('button', { name: 'Add initiative to Helix launch' }),
     ).toBeInTheDocument();
@@ -248,10 +246,17 @@ describe('campaignRows (feature 005, US4)', () => {
     ]);
   });
 
-  it('shows the amounts in the reader’s display currency, not the USD ones the forms use (D-220)', () => {
+  it('shows the plan currency with the reader’s display currency beneath (016 FR-013, D-220)', () => {
     const euros = (amount: string) => ({ amount, currency: 'EUR' });
     const noGoals = { inq: null, mql: null, revenue: null };
     const helix = campaign({
+      budget: usd('400000.00'),
+      budgetAndCost: budgetAndCost({
+        allocatedToChildren: usd('300000.00'),
+        remainingForChildren: usd('100000.00'),
+        plannedCost: usd('50000.00'),
+        budgetUsedPercent: 13,
+      }),
       display: {
         budget: euros('368000.00'),
         parentRemainingBudget: euros('184000.00'),
@@ -265,6 +270,7 @@ describe('campaignRows (feature 005, US4)', () => {
       },
       initiatives: [
         initiative({
+          budget: usd('300000.00'),
           display: {
             budget: euros('276000.00'),
             parentRemainingBudget: euros('92000.00'),
@@ -277,19 +283,22 @@ describe('campaignRows (feature 005, US4)', () => {
     const tree = renderRows(
       planCampaigns(
         [helix],
-        {},
+        { allocatedToCampaigns: usd('400000.00'), plannedCost: usd('50000.00') },
         { allocatedToCampaigns: euros('368000.00'), plannedCost: euros('46000.00') },
       ),
     );
 
     const row = rowOf(tree, 'Helix launch');
-    expect(row).toHaveTextContent('368,000.00 EUR');
-    expect(row).toHaveTextContent('Remaining 92,000.00 EUR');
-    expect(row).toHaveTextContent('46,000.00 EUR');
+    // Two currencies on the screen: both in the code form (design system §4.4).
+    expect(row).toHaveTextContent('400,000.00 USD≈ about 368,000.00 EUR');
+    expect(row).toHaveTextContent('Remaining 100,000.00 USD');
+    expect(row).toHaveTextContent('50,000.00 USD≈ about 46,000.00 EUR');
     expect(row).not.toHaveTextContent('$');
-    expect(rowOf(tree, 'Digital & social')).toHaveTextContent('276,000.00 EUR');
+    expect(rowOf(tree, 'Digital & social')).toHaveTextContent(
+      '300,000.00 USD≈ about 276,000.00 EUR',
+    );
     const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;
-    expect(totals).toHaveTextContent('368,000.00 EUR');
+    expect(totals).toHaveTextContent('400,000.00 USD≈ about 368,000.00 EUR');
     expect(totals).not.toHaveTextContent('$');
   });
 

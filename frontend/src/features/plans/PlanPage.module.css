@@ -12,18 +12,24 @@
   min-width: 0;
 }
 
-/* Details and Goals: 8 + 4 from 1280 px, stacked below; both cards stretch to the same height
-   (UI audit PL-07, X-12). */
+/* Details and Goals: 8 + 4 from 1280 px, stacked below. Goals keeps its own height and stays in
+   view beside the long Details card, instead of a stretched card with a blank block in it (UI
+   audit PL-07, X-12). */
 .columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--grid-gap);
-  align-items: stretch;
+  align-items: start;
 }
 
 @media (min-width: 1280px) {
   .columns {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+
+  .columns > :last-child {
+    position: sticky;
+    top: calc(var(--topbar) + var(--space-6));
   }
 }
 

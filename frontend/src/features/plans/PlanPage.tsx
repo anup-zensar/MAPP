@@ -5,6 +5,7 @@ import { Button, ErrorState, Skeleton, Tabs } from '@/components';
 import type { ActionsMenuItem, TabItem } from '@/components';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
+import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
 import { useCampaignTreeContent } from '@/features/campaigns/useCampaignTreeContent';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { PlanDetails } from './PlanDetails';
@@ -14,7 +15,9 @@ import { PlanNotFound } from './PlanNotFound';
 import styles from './PlanPage.module.css';
 import { usePlan } from './plansApi';
 import type { Plan } from './plansApi';
+import { planCurrencyOf } from './planCurrency';
 import { PlanSummaryCards } from './PlanSummaryCards';
+import { RecordFinancials } from './RecordFinancials';
 import { PlanTree } from './tree/PlanTree';
 import { usePlanActions } from './usePlanActions';
 
@@ -35,8 +38,8 @@ function tabOf(search: URLSearchParams): PlanTab {
 
 /**
  * A plan's page (US3, FR-011 – FR-017), the layout route of /plans/:planId, on the record template
- * (design system §2.4 B): the header, four summary cards, then the tabs **Plan tree · Details ·
- * History** with the chosen one in the address. Feature 005 fills the tree through
+ * (design system §2.4 B): the header, four summary cards, 015's Financials and 016's Budget by
+ * month (D-305), then the tabs **Plan tree · Details · History** with the chosen one in the address. Feature 005 fills the tree through
  * `useCampaignTreeContent` and shows its side panels in the `<Outlet />` (child routes); the
  * browser tab names the plan unless a panel on top names itself.
  */
@@ -151,6 +154,15 @@ export function PlanPage() {
         />
         <div className={styles.body}>
           <PlanSummaryCards plan={data} />
+          {/* D-305: 015's Financials, then 016's Budget by month, both open, above the tabs. */}
+          <RecordFinancials recordId={data.id} planId={data.id} variant="page" />
+          <BudgetByMonthCard
+            level="plan"
+            planId={data.id}
+            record={data}
+            year={data.year}
+            currency={planCurrencyOf(data)}
+          />
           <Tabs label="Plan" tabs={TABS} value={tab} onChange={chooseTab}>
             {tabContent(data)}
           </Tabs>

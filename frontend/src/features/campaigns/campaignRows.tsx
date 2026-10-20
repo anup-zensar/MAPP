@@ -2,10 +2,11 @@ import { Plus } from 'lucide-react';
 import type { NavigateFunction } from 'react-router';
 import { PersonLabel, Tooltip } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
+import { AmountPair } from '@/features/plans/AmountPair';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import type { Formatters } from '@/lib/useFormatters';
 import { AttentionChip } from './AttentionChip';
-import { BudgetUsed, CampaignBudgetCell } from './BudgetCost';
+import { BudgetCell, CampaignBudgetCell, PlannedCostCell } from './BudgetCost';
 import styles from './campaignRows.module.css';
 import type { Campaign, Initiative, PlanCampaigns } from './campaignApi';
 import { initiativeExtraActions } from './extensions';
@@ -27,18 +28,11 @@ import type { RecordLevel } from './texts';
 
 /**
  * The plan tree's cells, by column key (feature 004's PlanTree columns Name, Owner, Dates, Status,
- * Budget, Planned cost, Budget used): `name` (shown after the name: ID, child count and the quick
- * action), `owner`, `dates`, `status`, `budget`, `plannedCost`, `budgetUsed`.
+ * Budget, Planned cost): `name` (shown after the name: ID, child count and the quick action),
+ * `owner`, `dates`, `status`, `budget` (with what remains beneath) and `plannedCost` (with the
+ * share of the budget it uses beneath).
  */
-export const CELL_KEYS = [
-  'name',
-  'owner',
-  'dates',
-  'status',
-  'budget',
-  'plannedCost',
-  'budgetUsed',
-] as const;
+export const CELL_KEYS = ['name', 'owner', 'dates', 'status', 'budget', 'plannedCost'] as const;
 
 /** A campaign or initiative a row action is about. */
 export interface RecordTarget {
@@ -163,7 +157,13 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
           <TimingNote timing={initiative.timing} />
         </span>
       ),
-      budget: options.formatters.money(initiative.display.budget),
+      budget: (
+        <BudgetCell
+          budget={initiative.budget}
+          displayBudget={initiative.display.budget}
+          remaining={null}
+        />
+      ),
     },
     children: options.rowsBelow?.get(initiative.id) ?? [],
     actions: [
@@ -184,8 +184,9 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
  */
 function commonCells(record: Campaign | Initiative, options: RowOptions) {
   const level = 'initiatives' in record ? 'campaign' : 'initiative';
-  // Amounts in the reader's display currency (D-220).
-  const { budgetAndCost } = record.display;
+  // Amounts in the plan currency, the reader's display currency beneath when it differs (016
+  // FR-013; before 016 both are the same).
+  const { budgetAndCost } = record;
   return {
     owner: record.owner ? (
       <span className={styles.nowrap}>
@@ -213,13 +214,12 @@ function commonCells(record: Campaign | Initiative, options: RowOptions) {
         />
       </span>
     ),
-    plannedCost: options.formatters.money(budgetAndCost.plannedCost),
-    budgetUsed: (
-      <BudgetUsed
+    plannedCost: (
+      <PlannedCostCell
+        cost={budgetAndCost.plannedCost}
+        displayCost={record.display.budgetAndCost.plannedCost}
         percent={budgetAndCost.budgetUsedPercent}
         overBudget={budgetAndCost.overBudget}
-        label={`Budget used of ${record.name}`}
-        compact
       />
     ),
   };
@@ -267,8 +267,9 @@ export function addInitiativeHref(planId: string, campaignId: string): string {
  * campaign budgets ("Allocated to campaigns") and the plan's planned cost.
  */
 export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeTableFooter {
-  // Amounts in the reader's display currency (D-220).
-  const totals = data.displayTotals;
+  // Amounts in the plan currency, the reader's display currency beneath when it differs (016
+  // FR-013).
+  const { totals, displayTotals } = data;
   return {
     // "Total" on the first line, the counts in one line beneath (UI audit PL-05: never wrapping).
     name: (
@@ -281,10 +282,17 @@ export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeT
     ),
     budget: (
       <span className={styles.money}>
-        <span>{formatters.money(totals.allocatedToCampaigns)}</span>
+        <AmountPair
+          primary={totals.allocatedToCampaigns}
+          secondary={displayTotals.allocatedToCampaigns}
+        />
         <span className={styles.left}>{ALLOCATED_TO_CAMPAIGNS}</span>
       </span>
     ),
-    plannedCost: formatters.money(totals.plannedCost),
+    plannedCost: totals.plannedCost ? (
+      <AmountPair primary={totals.plannedCost} secondary={displayTotals.plannedCost} />
+    ) : (
+      formatters.money(null)
+    ),
   };
 }

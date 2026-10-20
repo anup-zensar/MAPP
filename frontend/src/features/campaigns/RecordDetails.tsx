@@ -14,6 +14,8 @@ import {
 } from '@/components';
 import type { ActionsMenuItem } from '@/components';
 import { HistorySection } from '@/features/activity-log/HistorySection';
+import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
+import { RecordFinancials } from '@/features/plans/RecordFinancials';
 import { panelHistoryId, showHistory } from '@/features/activity-log/showHistory';
 import { localDate } from '@/lib/format';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
@@ -162,13 +164,28 @@ export function RecordDetails({
               date(localDate(record.updatedAt)),
             )}
           </p>
-          {/* Amounts in the reader's display currency (D-220). */}
+          {/* Amounts in the plan currency, the reader's display currency beneath when it
+              differs (016 FR-013; before 016 both are the same). */}
           <BudgetCostSection
             level={level}
-            budget={record.display.budget}
-            budgetAndCost={record.display.budgetAndCost}
-            parentRemainingBudget={record.display.parentRemainingBudget}
+            budget={record.budget}
+            budgetAndCost={record.budgetAndCost}
+            parentRemainingBudget={record.parentRemainingBudget}
+            display={{
+              budget: record.display.budget,
+              plannedCost: record.display.budgetAndCost.plannedCost,
+            }}
           />
+          {/* D-305: 016's Budget by month, then 015's Financials, both open. */}
+          <BudgetByMonthCard
+            level={level}
+            planId={planId}
+            record={record}
+            year={record.plan.year}
+            currency={record.budget?.currency ?? 'USD'}
+            variant="panel"
+          />
+          <RecordFinancials recordId={record.id} planId={planId} variant="panel" />
           <GoalsSection goals={record.display.goals} />
           <PanelSection title={DESCRIPTION}>
             <p className={styles.text}>{record.description || '—'}</p>

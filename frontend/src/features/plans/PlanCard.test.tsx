@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
@@ -15,6 +15,11 @@ function renderCard(plan = europe) {
   });
 }
 
+/** The value beside a label of the card's money list ("Planned cost", "Plan budget"). */
+function moneyLine(label: string) {
+  return screen.getByText(label).nextElementSibling as HTMLElement;
+}
+
 describe('PlanCard (FR-002)', () => {
   it('shows every fact of the plan', () => {
     renderCard();
@@ -23,16 +28,16 @@ describe('PlanCard (FR-002)', () => {
       'href',
       '/plans/P-1001',
     );
-    expect(screen.getByText('P-1001 · 2026')).toBeInTheDocument();
+    expect(screen.getByText('P-1001 · 2026 · AOP')).toBeInTheDocument();
+    // The plan type (016 FR-032): Operational until the API sends another.
+    expect(screen.getByText('Operational')).toBeInTheDocument();
     expect(screen.getByText('Draft')).toBeInTheDocument();
     expect(screen.getByText('All filled in')).toBeInTheDocument();
-    expect(screen.getByText('AOP')).toBeInTheDocument();
-    expect(screen.getByText('Owner: Priya Raman')).toBeInTheDocument();
+    expect(screen.getByText('Priya Raman')).toBeInTheDocument();
     expect(screen.getByText('Lubricants Europe')).toBeInTheDocument();
     expect(screen.getByText('Business unit: Lubricants')).toBeInTheDocument();
-    expect(
-      screen.getByText('Planned cost $960,000.00 · Budget $1,200,000.00 · 80% used'),
-    ).toBeInTheDocument();
+    expect(moneyLine('Planned cost')).toHaveTextContent('$960,000.00');
+    expect(moneyLine('Plan budget')).toHaveTextContent('$1,200,000.00 80% used');
     expect(screen.getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuenow',
       '80',
@@ -40,25 +45,46 @@ describe('PlanCard (FR-002)', () => {
     expect(screen.getByText('4 of 7 activities approved')).toBeInTheDocument();
   });
 
-  it('turns the budget bar red above 100 %', () => {
+  it('turns the budget bar and its words red above 100 %', () => {
     renderCard(lastYear);
 
     expect(screen.getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuetext',
       '108 %',
     );
-    expect(
-      screen.getByText('Planned cost $1,300,000.00 · Budget $1,200,000.00 · 108% used'),
-    ).toBeInTheDocument();
+    expect(moneyLine('Planned cost')).toHaveTextContent('$1,300,000.00');
+    expect(within(moneyLine('Plan budget')).getByText('108% used').className).toMatch(/problem/);
   });
 
   it('says what is missing: no budget, no owner, no business unit', () => {
     renderCard(china);
 
-    expect(screen.getByText('Planned cost — · No budget set')).toBeInTheDocument();
+    expect(screen.getByText('No plan budget set')).toBeInTheDocument();
+    expect(moneyLine('Plan budget')).toHaveTextContent('—');
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     expect(screen.getByText('No owner yet')).toBeInTheDocument();
     expect(screen.getByText('No business unit yet')).toBeInTheDocument();
+  });
+
+  it('shows a plan in its own currency with the display currency beside (016 FR-014)', () => {
+    renderCard({
+      ...europe,
+      planType: 'crossMarket',
+      currency: 'GBP',
+      planBudget: { amount: '600000.00', currency: 'GBP' },
+      planPlannedCost: { amount: '480000.00', currency: 'GBP' },
+    });
+
+    expect(screen.getByText('Cross-market')).toBeInTheDocument();
+    expect(moneyLine('Plan budget')).toHaveTextContent('600,000.00 GBP');
+    expect(moneyLine('Plan budget')).toHaveTextContent('1,200,000.00 USD');
+    expect(moneyLine('Planned cost')).toHaveTextContent('480,000.00 GBP≈ about 960,000.00 USD');
+  });
+
+  it('says "No activities yet" rather than "0 of 0" (functional review X-08)', () => {
+    renderCard({ ...china, figures: { ...china.figures, activities: 0, activitiesApproved: 0 } });
+
+    expect(screen.getByText('No activities yet')).toBeInTheDocument();
   });
 
   it('opens the edit form on a missing field from the completeness chip (FR-017)', async () => {

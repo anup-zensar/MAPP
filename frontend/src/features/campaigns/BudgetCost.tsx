@@ -1,7 +1,9 @@
 import { InfoTip, ProgressBar } from '@/components';
 import type { components } from '@/api/schema';
-import { formatWhole } from '@/lib/decimal';
+import { formatMoneyText, formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
+import { AmountPair } from '@/features/plans/AmountPair';
+import { differentCurrency } from '@/features/plans/planCurrency';
 import { isNegative, remainingWhileTyping, withoutSign } from './budget';
 import styles from './BudgetCost.module.css';
 import type { Campaign } from './campaignApi';
@@ -23,6 +25,7 @@ import {
   NO_BUDGET_TO_ALLOCATE_FROM,
   NO_PLANNED_COST,
   overAllocatedBy,
+  percentOfBudget,
   PLANNED_COST,
   PLANNED_COST_TIP,
   REMAINING_CAMPAIGN_BUDGET,
@@ -111,6 +114,11 @@ export interface BudgetCostSectionProps {
   budgetAndCost: BudgetAndCost;
   /** The parent's remaining budget (an initiative shows its campaign's). */
   parentRemainingBudget: Money | null;
+  /**
+   * The same budget and planned cost in the reader's display currency, shown beneath when it
+   * differs from the plan currency (016 FR-013).
+   */
+  display?: { budget: Money | null; plannedCost: Money | null };
 }
 
 /**
@@ -123,6 +131,7 @@ export function BudgetCostSection({
   budget,
   budgetAndCost,
   parentRemainingBudget,
+  display,
 }: BudgetCostSectionProps) {
   const { money } = useFormatters();
   const { plannedCost, budgetUsedPercent, overBudget, leftToPlan } = budgetAndCost;
@@ -130,7 +139,11 @@ export function BudgetCostSection({
     <PanelSection id="budget" title={BUDGET_AND_COST}>
       <Facts>
         <Fact label={BUDGET}>
-          <RemainingAmount value={budget} none={NO_BUDGET_SET} />
+          {budget && display?.budget ? (
+            <AmountPair primary={budget} secondary={display.budget} />
+          ) : (
+            <RemainingAmount value={budget} none={NO_BUDGET_SET} />
+          )}
         </Fact>
         {level === 'campaign' ? (
           <>
@@ -146,7 +159,7 @@ export function BudgetCostSection({
         )}
         <Fact label={<CalculatedLabel label={PLANNED_COST} tip={PLANNED_COST_TIP[level]} />}>
           {plannedCost ? (
-            money(plannedCost)
+            <AmountPair primary={plannedCost} secondary={display?.plannedCost} />
           ) : (
             <span className={styles.stack}>
               <span>—</span>
@@ -222,20 +235,30 @@ export function GoalsSection({ goals }: { goals: GoalSums }) {
 }
 
 /**
- * A campaign row's budget with what remains for its initiatives beneath (FR-019): "<amount> left",
- * or red "Over-allocated by <amount>"; nothing beneath without a budget.
+ * A tree row's budget (FR-019, UI audit PL-03): the amount in the plan currency with the display
+ * currency beneath when it differs (016 FR-013), then "Remaining <amount>" for what its children
+ * may still be given, or red "Over-allocated by <amount>"; "—" without a budget.
  */
-export function CampaignBudgetCell({ campaign }: { campaign: Campaign }) {
-  const { money } = useFormatters();
-  // Amounts in the reader's display currency (D-220).
-  const { budget } = campaign.display;
-  const remaining = campaign.display.budgetAndCost.remainingForChildren;
+export function BudgetCell({
+  budget,
+  displayBudget,
+  remaining,
+}: {
+  budget: Money | null;
+  displayBudget?: Money | null;
+  /** What remains for the children, in the plan currency; null when not shown. */
+  remaining: Money | null;
+}) {
+  const { money: symbolForm } = useFormatters();
   if (!budget) {
     return <span>—</span>;
   }
+  // Two currencies in the cell: every amount in it uses the code form (design system §4.4).
+  const money = (value: Money) =>
+    differentCurrency(budget, displayBudget) ? formatMoneyText(value) : symbolForm(value);
   return (
     <span className={styles.cell}>
-      <span>{money(budget)}</span>
+      <AmountPair primary={budget} secondary={displayBudget} />
       {remaining &&
         (isNegative(remaining) ? (
           <span className={styles.negativeDetail}>
@@ -244,6 +267,46 @@ export function CampaignBudgetCell({ campaign }: { campaign: Campaign }) {
         ) : (
           <span className={styles.detail}>{remainingText(money(remaining))}</span>
         ))}
+    </span>
+  );
+}
+
+/** A campaign row's budget: its own, and what remains for its initiatives. */
+export function CampaignBudgetCell({ campaign }: { campaign: Campaign }) {
+  return (
+    <BudgetCell
+      budget={campaign.budget}
+      displayBudget={campaign.display.budget}
+      remaining={campaign.budgetAndCost.remainingForChildren}
+    />
+  );
+}
+
+/**
+ * A tree row's planned cost (FR-011, FR-013) in the plan currency, the display currency beneath
+ * when it differs, and how much of the budget it uses ("38% of budget", red above 100 %) — one
+ * column instead of a separate Budget used column, so the tree fits a 1,440 px screen without
+ * clipping its last column.
+ */
+export function PlannedCostCell({
+  cost,
+  displayCost,
+  percent,
+  overBudget,
+}: {
+  cost: Money | null;
+  displayCost?: Money | null;
+  percent: number | null;
+  overBudget: boolean;
+}) {
+  return (
+    <span className={styles.cell}>
+      <AmountPair primary={cost} secondary={displayCost} />
+      {percent !== null && (
+        <span className={overBudget ? styles.negativeDetail : styles.detail}>
+          {percentOfBudget(percent)}
+        </span>
+      )}
     </span>
   );
 }

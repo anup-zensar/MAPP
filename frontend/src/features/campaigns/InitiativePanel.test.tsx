@@ -3,6 +3,7 @@ import { Outlet } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionProvider } from '@/app/SessionProvider';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { financialsNotServed } from '@/features/plans/testData';
 import { campaignForm } from '@/test/attributeForms';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -32,6 +33,7 @@ const DETAILS = '/plans/P-1001/initiatives/I-1001';
 function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
+    ...financialsNotServed('I-1001'),
     'GET /api/initiatives/I-1001': { body: initiative() },
     'GET /api/plans/P-1001': { body: planAnswer() },
     'GET /api/shell-attribute-forms/initiative': {

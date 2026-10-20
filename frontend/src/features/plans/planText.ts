@@ -78,8 +78,12 @@ export function yearDates(year: number, dateRange: (start: string, end: string) 
 }
 
 /** "<n> of <m> activities approved" on cards and rows. */
+/** "4 of 7 activities approved"; "No activities yet" rather than "0 of 0" (functional review X-08). */
 export function activitiesApprovedText(approved: number, activities: number): string {
-  return `${approved} of ${activities} activities approved`;
+  if (activities === 0) {
+    return 'No activities yet';
+  }
+  return `${approved} of ${activities} ${activities === 1 ? 'activity' : 'activities'} approved`;
 }
 
 /**
@@ -128,3 +132,25 @@ export const MY_TEAMS_HINT =
 /** Under the plan row while the plan has no campaigns (FR-014). */
 export const NO_CAMPAIGNS =
   'No campaigns yet — a campaign is a theme that runs for most of the year.';
+
+type PlanAllocation = components['schemas']['PlanAllocation'];
+
+/** "Allocated from 'FY2026 Global marketing budget'": the plan budget card's note (014 FR-031). */
+export function allocatedFromText(allocation: PlanAllocation): string {
+  return `Allocated from '${allocation.globalBudget.name}'`;
+}
+
+/**
+ * Why an allocated plan's budget can't change (014 FR-031, message 23): the API's reason when it
+ * sends one, else "Allocated from '<global budget>' — ask <owner> to change it."
+ */
+export function allocationLockText(allocation: PlanAllocation, reason: string | undefined): string {
+  if (reason) {
+    return reason;
+  }
+  const whom = allocation.owner ? allocation.owner.name : "the global budget's owner";
+  return `${allocatedFromText(allocation)} — ask ${whom} to change it.`;
+}
+
+/** Under a cleared budget that was phased (016 FR-022). */
+export const PHASING_REMOVED = 'Budget by month will be removed when you save.';

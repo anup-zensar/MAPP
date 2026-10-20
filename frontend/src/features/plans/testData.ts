@@ -275,4 +275,17 @@ export const FORM_ANSWERS: Record<string, MockHandler> = {
   'GET /api/finance-budgets': { body: FINANCE_BUDGETS },
 };
 
+/**
+ * 015's Financials of these records as an API that does not serve 015 yet answers them (404), so
+ * the Financials section shows nothing and tests of the other sections need not mock it.
+ */
+export function financialsNotServed(...recordIds: string[]): Record<string, MockHandler> {
+  return Object.fromEntries(
+    recordIds.map((id) => [
+      `GET /api/financials/records/${id}`,
+      { status: 404, body: { code: 'not_found', message: 'Not found', fields: [] } },
+    ]),
+  );
+}
+
 export { LUBRICANTS, MOBILITY };

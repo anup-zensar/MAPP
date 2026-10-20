@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
 import { Button, Card, PersonLabel, ShellAttributeValues, Skeleton, TeamPills } from '@/components';
 import { formatAmount, formatPercent } from '@/lib/decimal';
 import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
+import { AmountPair } from './AmountPair';
+import { PLAN_TYPE_LABELS } from './planCurrency';
 import styles from './PlanDetails.module.css';
 import type { Plan } from './plansApi';
 import { SPREAD_LABELS } from './planText';
@@ -39,12 +42,12 @@ export interface PlanDetailsProps {
  * who created and last changed the plan (design system §6.3).
  */
 export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: PlanDetailsProps) {
-  const { money, date } = useFormatters();
+  const { date } = useFormatters();
   const attributeForm = useAttributeForm('plan');
   const { model } = plan;
 
   return (
-    <Card title="Details" subtitle={`Amounts in ${plan.figures.currency}`}>
+    <Card title="Details" subtitle={`Amounts in ${plan.currency ?? plan.figures.currency}`}>
       <div className={styles.groups}>
         <section aria-labelledby="details-basics">
           <h3 id="details-basics" className={styles.groupTitle}>
@@ -68,6 +71,7 @@ export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: Pla
             <Field label="Owner">
               {plan.owner ? <PersonLabel person={plan.owner} /> : NOTHING}
             </Field>
+            {plan.planType && <Field label="Plan type">{PLAN_TYPE_LABELS[plan.planType]}</Field>}
             {basicsExtra}
             <Field label="Strategic / AOP plan">{plan.aop ? 'Yes' : 'No'}</Field>
             <Field label="Description">{plan.description || NOTHING}</Field>
@@ -78,8 +82,38 @@ export function PlanDetails({ plan, basicsExtra, budgetExtra, budgetValue }: Pla
             Budget
           </h3>
           <dl className={styles.fields}>
+            {plan.currency && (
+              <Field label="Plan currency">
+                {plan.currency}
+                {plan.currencyLock && <span className={styles.subtle}>{plan.currencyLock}</span>}
+              </Field>
+            )}
             {budgetExtra}
-            <Field label="Plan budget">{budgetValue ?? money(plan.figures.budget)}</Field>
+            <Field label="Plan budget">
+              {budgetValue ?? (
+                <AmountPair
+                  primary={plan.budget ?? plan.figures.budget}
+                  secondary={plan.figures.budget}
+                  inline
+                />
+              )}
+            </Field>
+            {plan.allocation && (
+              <Field label="Allocated from">
+                {plan.allocation.canOpen ? (
+                  <Link
+                    to={`/global-budgets/${encodeURIComponent(plan.allocation.globalBudget.id)}`}
+                  >
+                    {plan.allocation.globalBudget.name}
+                  </Link>
+                ) : (
+                  plan.allocation.globalBudget.name
+                )}
+                {plan.allocation.owner && (
+                  <span className={styles.subtle}>Owner: {plan.allocation.owner.name}</span>
+                )}
+              </Field>
+            )}
             <Field label="Default finance budget">
               {plan.defaultFinanceBudget?.name ?? NOTHING}
             </Field>

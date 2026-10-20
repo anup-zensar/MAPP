@@ -8,7 +8,7 @@ import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { PlanPage } from './PlanPage';
 import type { Plan } from './plansApi';
-import { plan } from './testData';
+import { financialsNotServed, plan } from './testData';
 
 // Feature 005 fills the plan tree; its own tests cover that.
 vi.mock('@/features/campaigns/useCampaignTreeContent', () => ({
@@ -32,6 +32,7 @@ function renderPage(
 ) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
+    ...financialsNotServed('P-1001', 'P-1004'),
     'GET /api/plans/P-1001': answer,
     'GET /api/shell-attribute-forms/plan': { body: planForm() },
     ...more,
@@ -171,7 +172,8 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     expect(card('Plan budget')).toHaveTextContent('—No plan budget set');
     expect(card('Budget used')).toHaveTextContent('—No plan budget set');
     expect(card('Planned cost')).toHaveTextContent('Nothing planned yet');
-    expect(card('Activities approved')).toHaveTextContent('0 of 0No activities yet');
+    // "Nothing" is "—" with the reason under it (functional review FR·X-08).
+    expect(card('Activities approved')).toHaveTextContent('—No activities yet');
   });
 
   it('links the missing field and the items below that need attention (US3#4, FR-017)', async () => {

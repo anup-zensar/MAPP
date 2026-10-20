@@ -53,6 +53,10 @@ export function totalsText(campaigns: number, initiatives: number, activities: n
 export const ALLOCATED_TO_CAMPAIGNS = 'Allocated to campaigns';
 
 // Budget
+/** Under a planned cost in the plan tree: "38% of budget". */
+export function percentOfBudget(percent: number): string {
+  return `${percent}% of budget`;
+}
 /** Under a budget in the plan tree: what its children may still be given (PL-03, one wording). */
 export function remainingText(amount: string): string {
   return `Remaining ${amount}`;

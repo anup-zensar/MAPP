@@ -4,7 +4,7 @@ import { ErrorState, PageHeader, useToast } from '@/components';
 import type { FieldProblem, SaveFailure } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { PlanForm, PlanFormSkeleton } from './PlanForm';
-import { toCreateBody, valuesFromDefaults } from './planFormValues';
+import { answers016, toCreateBody, valuesFromDefaults } from './planFormValues';
 import type { PlanFormValues } from './planFormValues';
 import { useCreatePlan, usePlanDefaults } from './plansApi';
 
@@ -22,7 +22,7 @@ export function PlanCreatePage() {
 
   async function save(values: PlanFormValues): Promise<string | null> {
     try {
-      const plan = await createPlan.mutateAsync(toCreateBody(values));
+      const plan = await createPlan.mutateAsync(toCreateBody(values, answers016(defaults.data)));
       show({ message: `Plan '${plan.name}' created — add campaigns next.` });
       return `/plans/${encodeURIComponent(plan.id)}`;
     } catch (error) {
@@ -35,10 +35,11 @@ export function PlanCreatePage() {
 
   return (
     <>
+      {/* Form template (design system §2.4 C): the breadcrumb names where the plan goes; the form
+          says how far it is in its rail. */}
       <PageHeader
-        eyebrow="Plans"
+        breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: 'New plan' }]}
         title="New plan"
-        description="A name, a model and a business unit are enough to start — everything else can follow."
       />
       {defaults.isError ? (
         <ErrorState error={defaults.error} onRetry={() => void defaults.refetch()} />

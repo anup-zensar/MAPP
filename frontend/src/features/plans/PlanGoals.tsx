@@ -30,15 +30,24 @@ export function PlanGoals({ plan }: { plan: Plan }) {
     const reason = goals.plan.reasons[stage];
     return (
       <>
-        {stage !== goals.stage && value !== null && (
+        <span>{shown}</span>
+        {value === null && reason && <span className={styles.subtle}>{reason}</span>}
+      </>
+    );
+  }
+
+  /** The stage's name, and "Calculated" with its formula under it for the stages worked out. */
+  function stageName(stage: GoalStage) {
+    return (
+      <span className={styles.stage}>
+        <span>{STAGE_WORDS[stage]}</span>
+        {stage !== goals.stage && goals.plan[stage] !== null && (
           <span className={styles.calculated}>
             Calculated
             <InfoTip label={`${STAGE_WORDS[stage]} goal`} text={formulas.get(stage) ?? ''} />
           </span>
         )}
-        <span>{shown}</span>
-        {value === null && reason && <span className={styles.subtle}>{reason}</span>}
-      </>
+      </span>
     );
   }
 
@@ -58,14 +67,14 @@ export function PlanGoals({ plan }: { plan: Plan }) {
               Plan goal
             </th>
             <th scope="col" className={styles.number}>
-              Planned in activities
+              In activities
             </th>
           </tr>
         </thead>
         <tbody>
           {STAGES.map((stage) => (
             <tr key={stage}>
-              <th scope="row">{STAGE_WORDS[stage]}</th>
+              <th scope="row">{stageName(stage)}</th>
               <td className={styles.number}>
                 <span className={styles.goalCell}>{planGoal(stage)}</span>
               </td>

@@ -7,6 +7,7 @@ import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts'
 import styles from './PlanHeader.module.css';
 import type { Plan } from './plansApi';
 import { yearDates } from './planText';
+import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanHeaderProps {
   plan: Plan;
@@ -14,7 +15,7 @@ export interface PlanHeaderProps {
   statusAction?: ReactNode;
   /** The ⋯ More menu: Copy, View history, Delete. */
   moreItems: ActionsMenuItem[];
-  /** Facts added by later features (016: the plan type and currency tags), after the dates. */
+  /** Facts added by later features, after the plan type and currency. */
   extraFacts?: ReactNode;
 }
 
@@ -60,6 +61,11 @@ export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHe
             )}
           </span>
           <span className={styles.fact}>{yearDates(plan.year, dateRange)}</span>
+          {/* 016 FR-032, FR-013: the plan type, and the plan currency when it is not USD. */}
+          <PlanTypeTag plan={plan} />
+          {plan.currency && plan.currency !== 'USD' && (
+            <span className={styles.fact}>Planned in {plan.currency}</span>
+          )}
           {plan.aop && <span className={styles.fact}>AOP plan</span>}
           {extraFacts}
           {plan.teams.length > 0 && <TeamPills teams={plan.teams} linked />}

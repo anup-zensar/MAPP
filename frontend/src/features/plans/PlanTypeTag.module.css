@@ -1,0 +1,17 @@
+/* An outlined tag (20 px, 12 px bold): a fact about the plan, not a status. */
+.tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+}

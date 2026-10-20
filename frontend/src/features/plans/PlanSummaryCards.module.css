@@ -22,3 +22,12 @@
 .problem {
   color: var(--status-problem-text);
 }
+
+.beside {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.allocation {
+  color: var(--ink-2);
+}

@@ -10,7 +10,7 @@ import {
   TreeTable,
 } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableColumn, TreeTableFooter } from '@/components';
-import { BudgetUsed } from '@/features/campaigns/BudgetCost';
+import { BudgetCell, PlannedCostCell } from '@/features/campaigns/BudgetCost';
 import { useFormatters } from '@/lib/useFormatters';
 import { PlanCompleteness, PlanStatusChip } from '../PlanFacts';
 import type { Plan } from '../plansApi';
@@ -18,17 +18,18 @@ import { NO_CAMPAIGNS, yearDates } from '../planText';
 import styles from './PlanTree.module.css';
 
 /**
- * The tree's columns (FR-013, design system §5.4): people never squeeze below 160 px and never
- * wrap, the dates and the two chips stay on one line, and money is right-aligned under its header.
+ * The tree's columns (FR-013, design system §5.4): the name at least 260 px (functional review
+ * X-01), people never squeeze below 160 px and never wrap, the dates and the two chips stay on one
+ * line, and money is right-aligned under its header. The budget used is the second line of the
+ * planned cost, so the tree fits a 1,440 px screen without clipping its last column.
  */
 const COLUMNS: TreeTableColumn[] = [
-  { key: 'name', header: 'Name', minWidth: '300px' },
-  { key: 'owner', header: 'Owner', minWidth: '160px' },
-  { key: 'dates', header: 'Dates', minWidth: '150px' },
+  { key: 'name', header: 'Name', minWidth: '240px' },
+  { key: 'owner', header: 'Owner' },
+  { key: 'dates', header: 'Dates' },
   { key: 'status', header: 'Status' },
   { key: 'budget', header: 'Budget', align: 'end' },
   { key: 'plannedCost', header: 'Planned cost', align: 'end' },
-  { key: 'budgetUsed', header: 'Budget used' },
 ];
 
 /** Every row that has rows under it: what Expand all opens. */
@@ -87,7 +88,7 @@ export function PlanTree({
   error,
   onRetry,
 }: PlanTreeProps) {
-  const { money, dateRange } = useFormatters();
+  const { dateRange } = useFormatters();
   const [query, setQuery] = useState('');
   // What someone opened or closed, by row id; the other rows follow openAtFirst, so rows that load
   // later (campaigns) start the way 005 FR-020 says.
@@ -96,6 +97,8 @@ export function PlanTree({
   // children load afterwards (activities arrive in a query of their own, after the campaigns).
   const [everyRow, setEveryRow] = useState<boolean | null>(null);
   const { figures } = plan;
+  // The plan currency's figures (016 FR-013); the display currency's until 016's API sends them.
+  const planFigures = plan.planFigures ?? figures;
 
   const planNode: TreeNode = {
     id: plan.id,
@@ -121,26 +124,20 @@ export function PlanTree({
         </span>
       ),
       budget: figures.budget ? (
-        <span className={styles.money}>
-          {money(figures.budget)}
-          {figures.overAllocatedBy ? (
-            <span className={styles.problem}>
-              Over-allocated by {money(figures.overAllocatedBy)}
-            </span>
-          ) : (
-            <span className={styles.muted}>Remaining {money(figures.remainingBudget)}</span>
-          )}
-        </span>
+        <BudgetCell
+          budget={planFigures.budget}
+          displayBudget={figures.budget}
+          remaining={planFigures.remainingBudget}
+        />
       ) : (
         <span className={styles.muted}>No budget set</span>
       ),
-      plannedCost: money(figures.plannedCost),
-      budgetUsed: (
-        <BudgetUsed
+      plannedCost: (
+        <PlannedCostCell
+          cost={planFigures.plannedCost}
+          displayCost={figures.plannedCost}
           percent={figures.budgetUsedPercent}
           overBudget={figures.overBudget}
-          label={`Budget used of ${plan.name}`}
-          compact
         />
       ),
     },

@@ -36,17 +36,24 @@
   white-space: nowrap;
 }
 
-/* The value at the right edge; "Calculated" before it, so values line up (UI audit PL-06). */
+/* The value at the right edge, a reason for "—" beneath it (UI audit PL-06). */
 .goalCell {
   display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-1) var(--space-2);
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+/* The stage, with "Calculated" under it, so the numbers stay one narrow, aligned column. */
+.stage {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .subtle {
-  flex-basis: 100%;
+  max-width: 200px;
   color: var(--ink-2);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);

@@ -107,7 +107,8 @@
   padding: var(--space-4) var(--card-padding);
 }
 
-/* Plan cards: one column on phones, two on tablets, three from 1280 px. */
+/* Plan cards: one column on phones, two on tablets, three from 1280 px. Each card spans seven
+   rows of this grid (PlanCard, subgrid), so its rows line up with the cards beside it. */
 .cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
