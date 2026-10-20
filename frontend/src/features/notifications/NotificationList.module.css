@@ -61,12 +61,15 @@
 }
 
 /* The icon's colour follows what happened: needs action, went well, went wrong. */
-.approvalNeeded {
+.approvalNeeded,
+.reminder,
+.escalated {
   color: var(--status-review-text);
 }
 
 .levelApproved,
-.approved {
+.approved,
+.autoApproved {
   color: var(--status-positive-text);
 }
 

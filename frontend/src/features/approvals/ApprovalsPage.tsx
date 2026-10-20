@@ -1,5 +1,5 @@
-import { CircleCheckBig, SearchX } from 'lucide-react';
-import { useState } from 'react';
+import { CircleCheckBig, SearchX, UserRoundCog } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   Button,
@@ -31,12 +31,20 @@ import { useApprovalRows } from './approvalsApi';
 import type { ApprovalRow, ApprovalTab } from './approvalsApi';
 import { ApprovalsFilters } from './ApprovalsFilters';
 import { ApprovalsTable } from './ApprovalsTable';
+import { DelegationBanner } from './DelegationBanner';
+import { DelegationPanel } from './DelegationPanel';
+import { activitiesCount } from './messages';
+import { MonitoringView } from './MonitoringView';
 import { useApprovalSummary } from './useApprovalSummary';
+import { useChosenTabInView } from './useChosenTabInView';
 import styles from './ApprovalsPage.module.css';
 
 type ApprovalCounts = components['schemas']['ApprovalCounts'];
 
-const TAB_VALUES: ApprovalTab[] = ['waiting', 'open', 'decided'];
+/** The page's views: the three lists, and Monitoring (017 US6). */
+type PageTab = ApprovalTab | 'monitoring';
+
+const TAB_VALUES: PageTab[] = ['waiting', 'open', 'decided', 'monitoring'];
 
 /** What an empty tab says (plan, "User-visible messages"). */
 const EMPTY_TAB: Record<ApprovalTab, string> = {
@@ -46,23 +54,39 @@ const EMPTY_TAB: Record<ApprovalTab, string> = {
 };
 
 /**
- * Approvals (US3, FR-027 – FR-032), at /approvals: the four summary cards, the tabs Waiting for me ·
- * All open · Decided by me (?tab=), search and filters with chips and a count, and the rows; a row
- * opens the preview (?activity=), where the approver decides without leaving the page.
+ * Approvals (008 US3, FR-027 – FR-032; 017 US4, US6), at /approvals: the delegations in force for
+ * the person, the four summary cards, the tabs Waiting for me · All open · Decided by me ·
+ * Monitoring (?tab=), search and filters with chips and a count, and the rows; a row opens the
+ * preview (?activity=), where the approver decides without leaving the page. **Delegate my
+ * approvals** opens the delegation panel (?panel=delegations). Monitoring has no search or filters.
+ *
+ * Without a chosen tab the page opens the first view that has something in it: Waiting for me
+ * when anything waits for the person, otherwise All open (UI audit AP-03), so someone who only
+ * sends activities never lands on a view that is always empty.
  */
 export function ApprovalsPage() {
   usePageTitle('Approvals');
   const [params, setParams] = useSearchParams();
-  const tabParam = params.get('tab') as ApprovalTab | null;
-  const tab: ApprovalTab = tabParam && TAB_VALUES.includes(tabParam) ? tabParam : 'waiting';
+  const tabParam = params.get('tab') as PageTab | null;
+  const chosenTab = tabParam && TAB_VALUES.includes(tabParam) ? tabParam : null;
   const previewId = params.get('activity');
+  const delegationsOpen = params.get('panel') === 'delegations';
   // Search and filters stay when the tab changes (plan, "Approvals page").
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<ApprovalFilterValues>(NO_FILTERS);
   const summary = useApprovalSummary();
-  const rows = useApprovalRows(tab);
+  const landingTab = landingTabOf(summary.data, summary.isError);
+  const tab: PageTab = chosenTab ?? landingTab ?? 'waiting';
+  const listTab: ApprovalTab = tab === 'monitoring' ? 'open' : tab;
+  // The rows wait for the counts when no tab is chosen, so the first view is the right one.
+  const rows = useApprovalRows(
+    listTab,
+    tab !== 'monitoring' && (chosenTab !== null || landingTab !== null),
+  );
   const allRows = rows.data?.items ?? [];
   const visible = applyFilters(allRows, search, filters);
+  const tabsArea = useRef<HTMLDivElement>(null);
+  useChosenTabInView(tabsArea, tab);
 
   function changeParams(change: Record<string, string | null>, replace = false) {
     const next = new URLSearchParams(params);
@@ -85,95 +109,101 @@ export function ApprovalsPage() {
   }
 
   const counts = summary.data;
-  const tabs: TabItem<ApprovalTab>[] = [
+  // Waiting for me is something to act on (a badge); All open is only counted (design system §5.2).
+  const tabs: TabItem<PageTab>[] = [
     {
       value: 'waiting',
       label: 'Waiting for me',
       badge: counts && <CountBadge count={counts.waitingForMe} label="activities" />,
     },
-    {
-      value: 'open',
-      label: 'All open',
-      badge: counts && <CountBadge count={counts.allOpen} label="activities" />,
-    },
+    { value: 'open', label: counts ? `All open (${counts.allOpen})` : 'All open' },
     { value: 'decided', label: 'Decided by me' },
+    { value: 'monitoring', label: 'Monitoring' },
   ];
+  const openPreview = (id: string) => changeParams({ activity: id });
 
   return (
     <>
       <PageHeader
-        eyebrow="Approvals"
         title="Approvals"
         description="Approve or decline the activities waiting for you, and follow the ones you sent."
+        actions={
+          <Button icon={<UserRoundCog />} onClick={() => changeParams({ panel: 'delegations' })}>
+            Delegate my approvals
+          </Button>
+        }
       />
       <div className={styles.sections}>
+        <DelegationBanner />
         <SummaryCards counts={counts} failed={summary.isError} />
 
-        <Tabs
-          label="Approvals"
-          tabs={tabs}
-          value={tab}
-          onChange={(value) => changeParams({ tab: value })}
-        >
-          <Card>
-            <div className={styles.toolbar}>
-              <div className={styles.search}>
-                <SearchField
-                  label="Search activity name or ID"
-                  placeholder="Search activity name or ID"
-                  value={search}
-                  onChange={setSearch}
-                />
-              </div>
-              <ApprovalsFilters
-                filters={filters}
-                options={filterOptions(allRows)}
-                onChange={setFilters}
-              />
-              {rows.data && (
-                <p className={styles.count} aria-live="polite">
-                  {`${visible.length} of ${allRows.length}`}
-                </p>
-              )}
-            </div>
-            <Chips
-              filters={filters}
-              rows={allRows}
-              onChange={setFilters}
-              onClearAll={() => setFilters(NO_FILTERS)}
-            />
-            {rows.data ? (
-              visible.length > 0 ? (
-                <ApprovalsTable
-                  rows={visible}
-                  tab={tab}
-                  onOpen={(id) => changeParams({ activity: id })}
-                />
-              ) : allRows.length > 0 ? (
-                <EmptyState
-                  icon={<SearchX />}
-                  title="Nothing matches these filters"
-                  action={
-                    <Button
-                      onClick={() => {
-                        setSearch('');
-                        setFilters(NO_FILTERS);
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  }
-                />
-              ) : (
-                <EmptyState icon={<CircleCheckBig />} title={EMPTY_TAB[tab]} />
-              )
-            ) : rows.isError ? (
-              <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />
+        <div ref={tabsArea}>
+          <Tabs
+            label="Approvals"
+            tabs={tabs}
+            value={tab}
+            onChange={(value) => changeParams({ tab: value })}
+          >
+            {tab === 'monitoring' ? (
+              <MonitoringView onOpen={openPreview} />
             ) : (
-              <Skeleton lines={6} height="18px" />
+              <Card>
+                <div className={styles.toolbar}>
+                  <div className={styles.search}>
+                    <SearchField
+                      label="Search activity name or ID"
+                      placeholder="Search activity name or ID"
+                      value={search}
+                      onChange={setSearch}
+                    />
+                  </div>
+                  <ApprovalsFilters
+                    filters={filters}
+                    options={filterOptions(allRows)}
+                    onChange={setFilters}
+                  />
+                  {rows.data && (
+                    <p className={styles.count} aria-live="polite">
+                      {`${visible.length} of ${activitiesCount(allRows.length)}`}
+                    </p>
+                  )}
+                </div>
+                <Chips
+                  filters={filters}
+                  rows={allRows}
+                  onChange={setFilters}
+                  onClearAll={() => setFilters(NO_FILTERS)}
+                />
+                {rows.data ? (
+                  visible.length > 0 ? (
+                    <ApprovalsTable rows={visible} tab={listTab} onOpen={openPreview} />
+                  ) : allRows.length > 0 ? (
+                    <EmptyState
+                      icon={<SearchX />}
+                      title="Nothing matches these filters"
+                      action={
+                        <Button
+                          onClick={() => {
+                            setSearch('');
+                            setFilters(NO_FILTERS);
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <EmptyState icon={<CircleCheckBig />} title={EMPTY_TAB[listTab]} />
+                  )
+                ) : rows.isError ? (
+                  <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />
+                ) : (
+                  <Skeleton lines={6} height="18px" />
+                )}
+              </Card>
             )}
-          </Card>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
 
       {previewId && (
@@ -183,8 +213,20 @@ export function ApprovalsPage() {
           onDecided={() => moveOn(previewId, visible)}
         />
       )}
+      {delegationsOpen && <DelegationPanel onClose={() => changeParams({ panel: null })} />}
     </>
   );
+}
+
+/**
+ * The view to open when the address names none: Waiting for me when something waits for the
+ * person, otherwise All open; null while the counts are still on their way.
+ */
+function landingTabOf(counts: ApprovalCounts | undefined, failed: boolean): ApprovalTab | null {
+  if (counts) {
+    return counts.waitingForMe > 0 ? 'waiting' : 'open';
+  }
+  return failed ? 'waiting' : null;
 }
 
 interface SummaryCardsProps {
@@ -198,7 +240,7 @@ function SummaryCards({ counts, failed }: SummaryCardsProps) {
     return (
       <div className={styles.summary}>
         {[1, 2, 3, 4].map((key) => (
-          <Skeleton key={key} height="88px" />
+          <Skeleton key={key} height="104px" />
         ))}
       </div>
     );

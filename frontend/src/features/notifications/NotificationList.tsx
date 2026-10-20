@@ -1,12 +1,13 @@
 import {
-  ArrowUpRight,
   Bell,
-  BellRing,
+  CircleArrowUp,
   CircleCheckBig,
   CircleX,
+  Clock,
   RotateCcw,
   RotateCw,
   Undo2,
+  Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -19,7 +20,10 @@ import { useMarkAllRead, useMarkRead, useNotifications } from './notificationsAp
 import type { AppNotification } from './notificationsApi';
 import styles from './NotificationList.module.css';
 
-/** The icon of each kind of notification (008 plan, "Notification bell"). */
+/**
+ * The icon of each kind of notification (008 plan, "Notification bell"; 017 plan, "Notifications":
+ * approved automatically, a reminder, an escalation).
+ */
 const KIND_ICONS: Record<AppNotification['kind'], LucideIcon> = {
   approvalNeeded: Bell,
   levelApproved: CircleCheckBig,
@@ -27,9 +31,9 @@ const KIND_ICONS: Record<AppNotification['kind'], LucideIcon> = {
   declined: CircleX,
   recalled: Undo2,
   restarted: RotateCcw,
-  autoApproved: CircleCheckBig,
-  escalated: ArrowUpRight,
-  reminder: BellRing,
+  autoApproved: Zap,
+  escalated: CircleArrowUp,
+  reminder: Clock,
 };
 
 export interface NotificationListProps {

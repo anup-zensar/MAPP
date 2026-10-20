@@ -226,11 +226,17 @@ function WorkflowList({ all, filters, onNew, actions }: WorkflowListProps) {
           <table className={list.table}>
             <thead>
               <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Levels</th>
-                <th scope="col">Used by</th>
+                <th scope="col" className={styles.nameCol}>
+                  Name
+                </th>
+                <th scope="col" className={styles.levelsCol}>
+                  Levels
+                </th>
+                <th scope="col" className={styles.usedByCol}>
+                  Used by
+                </th>
                 <th scope="col">Status</th>
-                <th scope="col">
+                <th scope="col" className={styles.actionsCell}>
                   <span className="visually-hidden">Actions</span>
                 </th>
               </tr>

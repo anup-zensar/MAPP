@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useCurrentUser } from '@/app/useSession';
 import { ConfirmDialog, TextAreaField, useToast } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import { useDecide } from './approvalsApi';
@@ -7,6 +8,7 @@ import {
   alreadyDecidedMessage,
   approvedToast,
   asApiError,
+  capacitySentence,
   isSessionLost,
   levelOf,
   names,
@@ -27,23 +29,38 @@ export interface DecisionDialogProps {
 }
 
 /**
- * Approve or decline the current level (US2, FR-014 – FR-018): the level and its approvers, the
- * next level or "the last level", "You own this activity.", the on-behalf sentence when the person
- * is not an approver of the level, and the comment — optional to approve, required to decline
- * (checked before anything is sent). A decision someone else made first is explained with its time.
+ * Approve or decline the current level (008 US2, FR-014 – FR-018; 017 FR-015, FR-019): the level
+ * and its approvers, the next level or "the last level", the capacity the person decides in ("You
+ * approve as delegate of …", "… as backup approver of level 2", or the on-behalf sentence), on a
+ * level where all must approve how many approved and whether this approval completes it, "You own
+ * this activity." while the rules still let the owner decide, and the comment — optional to
+ * approve, required to decline (checked before anything is sent). A decision someone else made
+ * first is explained with its time.
  */
 export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionDialogProps) {
   const { show } = useToast();
   const { dateFormat } = useFormatters();
+  const user = useCurrentUser();
   const decide = useDecide();
   const [comment, setComment] = useState('');
   const [commentError, setCommentError] = useState<string>();
   const round = approval.rounds[0];
   const levelNumber = round?.currentLevel ?? 0;
   const level = round?.levels.find((each) => each.number === levelNumber);
-  const next = round?.levels.find((each) => each.number === levelNumber + 1);
+  // The next level that will wait: levels not needed or approved automatically are passed (017).
+  const next = round?.levels.find(
+    (each) => each.number > levelNumber && each.state === 'notReached',
+  );
   const name = approval.activityName;
   const approve = mode === 'approve';
+  const { viewer } = approval;
+  const capacity = viewer.capacity ?? null;
+  const capacityText = capacitySentence(capacity, viewer.asDelegateOf ?? [], levelNumber);
+  const onBehalf = capacity
+    ? capacity === 'onBehalf'
+    : !viewer.isCurrentApprover && viewer.onBehalfOf.length > 0;
+  const allLevel = level ? allLevelLines(level, capacity, viewer, user.id) : null;
+  const completes = !allLevel || allLevel.completes;
 
   async function confirm() {
     if (!round || decide.isPending) {
@@ -112,18 +129,29 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
             {`${levelOf(levelNumber, round.levelCount)} · ${names(level.approvers)}`}
           </p>
         )}
+        {approve && allLevel && (
+          <p>
+            {allLevel.approved} {allLevel.after}
+          </p>
+        )}
         {approve &&
           round &&
+          completes &&
           (next ? (
-            <p>{`Next: level ${next.number} · ${names(next.approvers)}.`}</p>
+            <p>
+              {next.approvers.length > 0
+                ? `Next: level ${next.number} · ${names(next.approvers)}.`
+                : `Next: level ${next.number}.`}
+            </p>
           ) : (
             <p>This is the last level — the activity becomes Approved.</p>
           ))}
         {!approve && <GoesBackTo owner={approval.owner} />}
-        {approval.viewer.isOwner && <p>You own this activity.</p>}
-        {!approval.viewer.isCurrentApprover && approval.viewer.onBehalfOf.length > 0 && (
+        {viewer.isOwner && <p>You own this activity.</p>}
+        {capacityText && <p className={styles.note}>{capacityText}</p>}
+        {onBehalf && viewer.onBehalfOf.length > 0 && (
           <p className={styles.note}>
-            {`You are not an approver of level ${levelNumber}. Your decision will be recorded as made on behalf of ${names(approval.viewer.onBehalfOf)}.`}
+            {`You are not an approver of level ${levelNumber}. Your decision will be recorded as made on behalf of ${names(viewer.onBehalfOf)}.`}
           </p>
         )}
         {approve ? (
@@ -168,4 +196,48 @@ function GoesBackTo({ owner }: { owner: ActivityApproval['owner'] }) {
         : 'The activity goes back to its owner, who can fix it and re-submit.'}
     </p>
   );
+}
+
+type ChainLevel = ActivityApproval['rounds'][number]['levels'][number];
+
+/**
+ * On a level where all must approve (017 FR-015): "1 of 3 already approved." and what this
+ * approval does — "Level 2 is complete after this approval." or "Still waiting for … after this
+ * approval." An approval counts for the approver, or for the approver a delegate acts for; a
+ * backup's or an on-behalf approval completes the level. Null on other levels.
+ */
+function allLevelLines(
+  level: ChainLevel,
+  capacity: string | null,
+  viewer: ActivityApproval['viewer'],
+  userId: string,
+): { approved: string; after: string; completes: boolean } | null {
+  const required = level.requiredCount ?? 0;
+  if (level.mode !== 'all' || required < 2) {
+    return null;
+  }
+  const approvedIds = new Set(
+    (level.decisions ?? [])
+      .filter((decision) => decision.action === 'approved')
+      .map((decision) =>
+        decision.capacity === 'delegate' && decision.asDelegateOf
+          ? decision.asDelegateOf.id
+          : decision.actor.id,
+      ),
+  );
+  const countsFor =
+    capacity === 'delegate' ? (viewer.asDelegateOf ?? [])[0]?.id : capacity ? null : userId;
+  const completesAll = capacity === 'backup' || capacity === 'onBehalf';
+  const stillWaiting = level.approvers.filter(
+    (person) => !approvedIds.has(person.id) && person.id !== countsFor,
+  );
+  const completes = completesAll || stillWaiting.length === 0;
+  const approvedCount = level.approvedCount ?? approvedIds.size;
+  return {
+    approved: `${approvedCount} of ${required} already approved.`,
+    after: completes
+      ? `Level ${level.number} is complete after this approval.`
+      : `Still waiting for ${names(stillWaiting)} after this approval.`,
+    completes,
+  };
 }

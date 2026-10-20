@@ -15,6 +15,10 @@ export type ApprovalWorkflowDetails = components['schemas']['ApprovalWorkflowDet
 export type WorkflowLevelInput = components['schemas']['ApprovalWorkflowLevelInput'];
 export type WorkflowCreate = components['schemas']['ApprovalWorkflowCreate'];
 export type WorkflowUpdate = components['schemas']['ApprovalWorkflowUpdate'];
+export type ApprovalWorkflowLevel = components['schemas']['ApprovalWorkflowLevel'];
+export type ApprovalCondition = components['schemas']['ApprovalCondition'];
+export type ApprovalConditionInput = components['schemas']['ApprovalConditionInput'];
+export type ApprovalRuleOptions = components['schemas']['ApprovalRuleOptions'];
 
 export const WORKFLOWS_KEY = ['approval-workflows'];
 
@@ -31,6 +35,20 @@ export function useWorkflowDetails(workflowId: string) {
   return useQuery({
     queryKey: [...WORKFLOWS_KEY, workflowId],
     queryFn: () => fetchDetails(workflowId),
+  });
+}
+
+/**
+ * What a level's rules may name (017 FR-001, FR-005): the activity types, the business units and
+ * the roles that approve. They change rarely, so they are kept for five minutes; `enabled` false
+ * waits until a level needs them.
+ */
+export function useRuleOptions(enabled = true) {
+  return useQuery({
+    queryKey: ['approval-rule-options'],
+    queryFn: () => call(api.GET('/api/approval-rule-options')),
+    staleTime: 5 * 60_000,
+    enabled,
   });
 }
 

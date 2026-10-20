@@ -4,7 +4,7 @@ import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import type { ApprovalTab } from './approvalsApi';
 import { ApprovalsTable } from './ApprovalsTable';
-import { rowOf } from './testData';
+import { ALEX, CARLOS, DANIEL, rowOf } from './testData';
 
 function renderTable(rows = [rowOf()], tab: ApprovalTab = 'waiting') {
   const onOpen = vi.fn();
@@ -43,8 +43,8 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(row).toHaveTextContent('Priya Raman');
     expect(row).toHaveTextContent('$50,000.00');
     expect(row).toHaveTextContent('Lubricants EU approval');
-    expect(row).toHaveTextContent('Level 1 of 2 · Carlos Mendes');
-    expect(row).toHaveTextContent('10 Mar 2026waiting 3 days');
+    expect(row).toHaveTextContent('Level 1 of 2 Carlos Mendes');
+    expect(row).toHaveTextContent('10 Mar 2026 waiting 3 days');
     expect(row).not.toHaveTextContent('Start date passed');
   });
 
@@ -82,7 +82,7 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(headers()).toContain('My decision');
     expect(headers()).toContain('Status');
     const row = screen.getByRole('row', { name: /Launch film/ });
-    expect(row).toHaveTextContent('Approved · 12 Mar 2026');
+    expect(row).toHaveTextContent('Approved 12 Mar 2026');
     expect(row).toHaveTextContent('In progress');
     expect(row).not.toHaveTextContent('Level 1 of 2');
     expect(row).not.toHaveTextContent('waiting');
@@ -107,7 +107,7 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     );
 
     const row = screen.getByRole('row', { name: /Launch film/ });
-    expect(row).toHaveTextContent('Approved · 11 Mar 2026');
+    expect(row).toHaveTextContent('Approved 11 Mar 2026');
     expect(row).toHaveTextContent('Created');
     expect(row).not.toHaveTextContent('Level 2 of 2');
     expect(row).not.toHaveTextContent('waiting');
@@ -119,5 +119,87 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     await user.click(screen.getByRole('button', { name: 'Launch film' }));
 
     expect(onOpen).toHaveBeenCalledWith('A-1042');
+  });
+
+  it('shows every row as a stacked card on a phone (design system §5.4, UI audit AP-01)', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(max-width: 599px)',
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    renderTable();
+
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    const card = screen.getByRole('listitem');
+    expect(within(card).getByRole('button', { name: 'Launch film' })).toBeInTheDocument();
+    const facts = within(card)
+      .getAllByRole('term')
+      .map((term) => `${term.textContent}: ${visibleText(term.nextElementSibling)}`);
+    expect(facts).toEqual([
+      'Plan › campaign: FY2026 Lubricants Europe › Spring launch',
+      'Owner: Priya Raman',
+      'Planned cost: $50,000.00',
+      'Workflow: Lubricants EU approval',
+      'Level: Level 1 of 2 Carlos Mendes',
+      'Submitted: 10 Mar 2026 waiting 3 days',
+    ]);
+  });
+});
+
+/** The text a screen reader reads: the element's text without its decorative (aria-hidden) parts. */
+function visibleText(element: Element | null): string {
+  if (!element) {
+    return '';
+  }
+  const copy = element.cloneNode(true) as Element;
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
+  return copy.textContent ?? '';
+}
+
+describe('ApprovalsTable rules (feature 017, US4 and US6)', () => {
+  it('marks overdue, escalated, delegated and approver-less rows, and the progress of all levels (FR-031)', () => {
+    renderTable([
+      rowOf({
+        overdue: true,
+        escalatedTo: ALEX,
+        asDelegateOf: [CARLOS],
+        round: {
+          ...rowOf().round,
+          approvers: [CARLOS, DANIEL],
+          mode: 'all',
+          approvedCount: 1,
+          requiredCount: 2,
+        },
+      }),
+      rowOf({
+        activity: { id: 'A-1050', name: 'Booth', status: 'submitted', displayStatus: 'submitted' },
+        noApprover: true,
+        round: { ...rowOf().round, approvers: [] },
+      }),
+    ]);
+
+    const first = screen.getByRole('row', { name: /Launch film/ });
+    expect(first).toHaveTextContent('Overdue');
+    expect(first).toHaveTextContent('Escalated to Alex Morgan');
+    expect(first).toHaveTextContent('as delegate of Carlos Mendes');
+    expect(first).toHaveTextContent('Level 1 of 2 Carlos Mendes, Daniel Okoro 1 of 2 approved');
+    const second = screen.getByRole('row', { name: /Booth/ });
+    expect(second).toHaveTextContent('No approver');
+    expect(second).not.toHaveTextContent('Overdue');
+  });
+
+  it('shows at most two chips: one problem chip with every problem, and the escalation (design system §4.1)', () => {
+    renderTable([
+      rowOf({ overdue: true, startDatePassed: true, escalatedTo: ALEX, asDelegateOf: [CARLOS] }),
+    ]);
+
+    const name = screen.getByRole('rowheader', { name: /Launch film/ });
+    const chips = [...(name.querySelector('[class*="chips"]')?.children ?? [])].map(
+      (chip) => chip.textContent,
+    );
+    expect(chips).toEqual(['Overdue · Start date passed', 'Escalated to Alex Morgan']);
+    // Who decides is a note under the ID, not a chip.
+    expect(within(name).getByText('as delegate of Carlos Mendes').className).toMatch(/delegate/);
   });
 });

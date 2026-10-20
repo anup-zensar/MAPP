@@ -9,6 +9,17 @@ import { WorkflowFormPanel } from './WorkflowFormPanel';
 import type { ApprovalWorkflow } from './workflowsApi';
 
 const CREATE = 'POST /api/approval-workflows';
+
+/** A level as the form sends it (017): named people, any one approves, no rules. */
+const sentLevel = (name: string, approverIds: string[]) => ({
+  name,
+  approverType: 'people',
+  approverIds,
+  mode: 'any',
+  appliesWhen: null,
+  autoApproveWhen: null,
+  backupApproverId: '',
+});
 const UPDATE = 'PATCH /api/approval-workflows/WF-1001';
 
 function renderPanel(workflow?: ApprovalWorkflow, answers: Record<string, MockHandler> = {}) {
@@ -44,10 +55,9 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
       {
         name: 'Lubricants Asia',
         description: '',
-        levels: [
-          { name: '', approverIds: ['U-1005'] },
-          { name: 'Global', approverIds: [] },
-        ],
+        levels: [sentLevel('', ['U-1005']), sentLevel('Global', [])],
+        reminderDays: 3,
+        escalationDays: 5,
       },
     ]);
     expect(onClose).toHaveBeenCalled();
@@ -125,10 +135,7 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
     expect(api.bodiesOf(UPDATE)).toEqual([
       {
         version: 4,
-        levels: [
-          { name: 'Global brand', approverIds: ['U-1001'] },
-          { name: '', approverIds: ['U-1005'] },
-        ],
+        levels: [sentLevel('Global brand', ['U-1001']), sentLevel('', ['U-1005'])],
       },
     ]);
   });
@@ -176,5 +183,97 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
 
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('starts a new workflow with a reminder after 3 days and escalation after 5 (017 FR-007)', async () => {
+    renderPanel();
+    const section = screen.getByRole('region', { name: 'Reminders and escalation' });
+
+    expect(section).toHaveTextContent('Days are calendar days.');
+    expect(within(section).getByRole('checkbox', { name: 'Send a reminder' })).toBeChecked();
+    expect(within(section).getByRole('textbox', { name: /Remind after/ })).toHaveValue('3');
+    expect(
+      within(section).getByRole('checkbox', { name: 'Escalate to the backup approver' }),
+    ).toBeChecked();
+    expect(within(section).getByRole('textbox', { name: /Escalate after/ })).toHaveValue('5');
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      'Levels are checked in order. A level can be needed only sometimes, approved automatically, or need every approver. Nobody approves an activity they own or submitted.',
+    );
+    await screen.findByRole('combobox', { name: /Approvers/ });
+  });
+
+  it('turns reminders on for a workflow without them and sends only that (017 FR-007)', async () => {
+    const { user, api } = renderPanel(workflowOf({ reminderDays: null, escalationDays: null }), {
+      [UPDATE]: { body: workflowOf() },
+    });
+    const reminder = screen.getByRole('checkbox', { name: 'Send a reminder' });
+    expect(reminder).not.toBeChecked();
+    expect(screen.queryByRole('textbox', { name: /Remind after/ })).not.toBeInTheDocument();
+
+    await user.click(reminder);
+    const days = screen.getByRole('textbox', { name: /Remind after/ });
+    await user.clear(days);
+    await user.type(days, '2');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await screen.findByText("Approval workflow 'Lubricants EU approval' saved");
+    expect(api.bodiesOf(UPDATE)).toEqual([{ version: 4, reminderDays: 2 }]);
+  });
+
+  it('says at once when the days are no whole number, without asking the API (017 FR-007)', async () => {
+    const { user, api } = renderPanel(workflowOf({ reminderDays: 3, escalationDays: 5 }));
+
+    const days = screen.getByRole('textbox', { name: /Escalate after/ });
+    await user.clear(days);
+    await user.type(days, '2.5');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(
+      await screen.findByRole('link', {
+        name: 'Escalate after: enter a whole number of days from 1 to 90.',
+      }),
+    ).toHaveAttribute('href', '#escalationDays');
+    expect(api.bodiesOf(UPDATE)).toEqual([]);
+  });
+
+  it('links every rules problem of the API to its field (017 FR-008)', async () => {
+    const { user } = renderPanel(undefined, {
+      [CREATE]: {
+        status: 400,
+        body: {
+          code: 'validation_failed',
+          message: 'Fix the problems.',
+          fields: [
+            { field: 'levels.1.approverType', message: 'Level 1: choose who approves.' },
+            {
+              field: 'levels.1.backupApproverId',
+              message: 'Level 1: choose a backup approver, or turn escalation off.',
+            },
+            {
+              field: 'escalationDays',
+              message: 'Escalate after must be more days than Remind after.',
+            },
+          ],
+        },
+      },
+    });
+    await screen.findByRole('combobox', { name: /Approvers/ });
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(
+      await screen.findByRole('link', { name: 'Level 1: choose who approves.' }),
+    ).toHaveAttribute('href', '#levels.1.approverType');
+    expect(screen.getByRole('group', { name: 'Who approves' })).toHaveAccessibleDescription(
+      'Level 1: choose who approves.',
+    );
+    expect(
+      screen.getByRole('link', {
+        name: 'Level 1: choose a backup approver, or turn escalation off.',
+      }),
+    ).toHaveAttribute('href', '#levels.1.backupApproverId');
+    expect(screen.getByRole('textbox', { name: /Escalate after/ })).toHaveAccessibleDescription(
+      expect.stringContaining('Escalate after must be more days than Remind after.'),
+    );
   });
 });

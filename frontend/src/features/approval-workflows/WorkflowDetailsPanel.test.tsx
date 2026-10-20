@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ALEX } from '@/features/approvals/testData';
+import { ALEX, DANIEL } from '@/features/approvals/testData';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
@@ -86,6 +86,7 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
     const { user, actions } = renderPanel({ body: detailsOf() });
 
     const panel = await screen.findByRole('dialog', { name: 'Lubricants EU approval' });
+    expect(within(panel).queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
     await user.click(within(panel).getByRole('button', { name: 'Edit' }));
     const more = within(panel).getByRole('button', { name: 'Actions for Lubricants EU approval' });
     await user.click(more);
@@ -110,5 +111,74 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
     });
 
     expect(await screen.findByText(WORKFLOW_GONE)).toBeInTheDocument();
+  });
+
+  it('writes each level rule and the timings in words (017 FR-009)', async () => {
+    const workflow = workflowOf({
+      levels: [
+        {
+          number: 1,
+          name: '',
+          label: 'Level 1',
+          approvers: [],
+          approverType: 'manager',
+          role: null,
+          mode: 'any',
+          appliesWhen: null,
+          autoApproveWhen: {
+            plannedCostAtLeast: null,
+            plannedCostBelow: { amount: '10000.00', currency: 'USD' },
+            businessUnits: [],
+            activityTypes: [],
+            text: 'planned cost is below $10,000.00',
+          },
+          backupApprover: ALEX,
+        },
+        {
+          number: 2,
+          name: 'Global brand',
+          label: 'Global brand',
+          approvers: [],
+          approverType: 'role',
+          role: { id: 'RL-1005', name: 'Approver', builtIn: 'approver' },
+          mode: 'all',
+          appliesWhen: {
+            plannedCostAtLeast: { amount: '100000.00', currency: 'USD' },
+            plannedCostBelow: null,
+            businessUnits: [],
+            activityTypes: [],
+            text: 'planned cost is at least $100,000.00',
+          },
+          autoApproveWhen: null,
+          backupApprover: { ...DANIEL, active: false },
+        },
+      ],
+      reminderDays: 3,
+      escalationDays: 5,
+    });
+    renderPanel({ body: detailsOf(workflow) });
+
+    const levels = await screen.findByRole('region', { name: 'Levels' });
+    const items = within(levels)
+      .getAllByRole('listitem')
+      .filter((item) => item.closest('ol'));
+    const first = items.find((item) => item.textContent?.startsWith('L1')) as HTMLElement;
+    expect(first).toHaveTextContent("The owner's line manager");
+    expect(first).toHaveTextContent('Approved automatically when planned cost is below $10,000.00');
+    expect(first).toHaveTextContent('Backup approver: Alex Morgan');
+    const second = items.find((item) => item.textContent?.startsWith('L2')) as HTMLElement;
+    expect(second).toHaveTextContent('Role: Approver');
+    expect(second).toHaveTextContent('All must approve');
+    expect(second).toHaveTextContent('Only needed when planned cost is at least $100,000.00');
+    expect(second).toHaveTextContent('Backup approver: Daniel Okoro (inactive)');
+    expect(levels).toHaveTextContent('Reminder after 3 days · escalation after 5 days');
+  });
+
+  it('says when a workflow sends no reminders (017 FR-009)', async () => {
+    renderPanel({ body: detailsOf(workflowOf({ reminderDays: null, escalationDays: null })) });
+
+    expect(await screen.findByRole('region', { name: 'Levels' })).toHaveTextContent(
+      'No reminders or escalation',
+    );
   });
 });

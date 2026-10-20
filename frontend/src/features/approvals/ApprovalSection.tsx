@@ -1,11 +1,15 @@
 import { Card, ErrorState, Skeleton } from '@/components';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
+import { useFormatters } from '@/lib/useFormatters';
+import { ApprovalAlert } from './ApprovalAlert';
 import { ApprovalChain } from './ApprovalChain';
 import { ApprovalHistory } from './ApprovalHistory';
 import { useActivityApproval } from './approvalsApi';
 import type { ActivityApproval } from './approvalsApi';
 import type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';
-import { DecisionButton } from './DecisionButton';
+import { DecisionButtons, OwnerDecisionMenu } from './DecisionActions';
+import { decisionRole } from './decisionRole';
+import { declineBoxText } from './messages';
 import { RecallButton } from './RecallButton';
 import { SubmitButton } from './SubmitButton';
 import styles from './ApprovalSection.module.css';
@@ -59,7 +63,13 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
     name: approval.activityName,
     status: approval.status,
   };
-  const recallReason = !actions.recall.available ? actions.recall.reason : '';
+  const role = decisionRole(approval);
+  // Why an action is not offered, when the API says so; an empty reason hides it (014 FR-025).
+  const reasons = [
+    !actions.approve.available && approval.status === 'submitted' ? actions.approve.reason : '',
+    !actions.recall.available ? actions.recall.reason : '',
+  ].filter((reason, index, all) => reason !== '' && all.indexOf(reason) === index);
+  const canSubmit = actions.submit.available || actions.resubmit.available;
 
   return (
     <div className={styles.body}>
@@ -83,25 +93,45 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
         </div>
       )}
 
-      {(actions.submit.available ||
-        actions.resubmit.available ||
-        actions.approve.available ||
-        actions.decline.available ||
-        actions.recall.available) && (
+      {(canSubmit || role !== 'none' || actions.recall.available) && (
         <div className={styles.actions}>
-          {(actions.submit.available || actions.resubmit.available) && (
+          {canSubmit && (
             <SubmitButton activity={current} onShowProblems={onShowProblems} variant="secondary" />
           )}
-          {actions.approve.available && (
-            <DecisionButton mode="approve" approval={approval} variant="secondary" />
-          )}
-          {actions.decline.available && <DecisionButton mode="decline" approval={approval} />}
+          {role === 'decide' && <DecisionButtons approval={approval} />}
           {actions.recall.available && <RecallButton approval={approval} />}
+          {role === 'owner' && <OwnerDecisionMenu approval={approval} />}
         </div>
       )}
-      {recallReason && <p className={styles.reason}>{recallReason}</p>}
+      {reasons.map((reason) => (
+        <p key={reason} className={styles.reason}>
+          {reason}
+        </p>
+      ))}
 
       <ApprovalHistory rounds={approval.rounds} />
     </div>
+  );
+}
+
+/**
+ * The approval notice of an activity that was declined: who declined it, when, and why (design
+ * system §2.4 B: an InlineAlert, never buried). Shows nothing for other statuses.
+ */
+export function ApprovalNotice({ activityId }: { activityId: string }) {
+  const approval = useActivityApproval(activityId);
+  return approval.data ? <ApprovalNoticeOf approval={approval.data} /> : null;
+}
+
+function ApprovalNoticeOf({ approval }: { approval: ActivityApproval }) {
+  const { dateFormat } = useFormatters();
+  const decline = approval.latestDecline;
+  if (approval.status !== 'declined' || !decline) {
+    return null;
+  }
+  return (
+    <ApprovalAlert tone="danger" title={declineBoxText(decline, dateFormat)}>
+      {decline.comment && <p className={styles.comment}>{decline.comment}</p>}
+    </ApprovalAlert>
   );
 }

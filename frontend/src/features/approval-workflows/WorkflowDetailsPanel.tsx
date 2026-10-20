@@ -2,8 +2,10 @@ import { Link } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { Pencil } from 'lucide-react';
 import { ActionsMenu, Button, ErrorState, SidePanel, Skeleton, StatusChip } from '@/components';
+import { ApprovalAlert } from '@/features/approvals/ApprovalAlert';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { ApprovalChain } from '@/features/approvals/ApprovalChain';
+import { timingsText } from '@/features/approvals/messages';
 import { localDate } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
@@ -43,6 +45,8 @@ export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowD
       description={workflow ? usedByText(workflow.usedByCount, workflow.waitingCount) : undefined}
       footer={
         workflow ? (
+          // The one panel footer (design system §5.3): listed primary first, as the footer lines
+          // its buttons up from the right — Edit, Close, then ⋯ with Set inactive and Delete.
           <>
             <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(workflow)}>
               Edit
@@ -89,21 +93,19 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
       {workflow.description && <p className={styles.description}>{workflow.description}</p>}
 
       {workflow.warnings.length > 0 && (
-        <div className={styles.warnings}>
-          {workflow.warnings.map((warning) => (
-            <p key={warning} className={styles.warning}>
-              {warning}
-            </p>
-          ))}
+        <ApprovalAlert tone="warning" title={workflow.warnings.join(' · ')}>
           <p>
             Anyone can still decide on their behalf. Edit the workflow to choose an active approver.
           </p>
-        </div>
+        </ApprovalAlert>
       )}
 
       <section className={styles.section} aria-label="Levels">
         <h3 className={styles.heading}>Levels</h3>
         <ApprovalChain upcomingLevels={workflow.levels} />
+        <p className={styles.muted}>
+          {timingsText(workflow.reminderDays, workflow.escalationDays)}
+        </p>
       </section>
 
       <section className={styles.section} aria-label="Activities using it">

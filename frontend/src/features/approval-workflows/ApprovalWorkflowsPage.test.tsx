@@ -169,6 +169,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     const { user, api } = renderPage('/settings/approval-workflows?status=inactive', {
       'POST /api/approval-workflows/WF-1002/activate': { body: CHINA_WORKFLOW },
     });
+    await user.click(await screen.findByRole('button', { name: /^All/ }));
     await screen.findByRole('row', { name: /China BC/ });
 
     await user.click(
@@ -210,6 +211,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
         },
       },
     });
+    await user.click(await screen.findByRole('button', { name: /^All/ }));
     await screen.findByRole('row', { name: /China BC/ });
 
     await user.click(
@@ -245,6 +247,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
         },
       },
     });
+    await user.click(await screen.findByRole('button', { name: /^All/ }));
     await screen.findByRole('row', { name: /China BC/ });
 
     await user.click(
@@ -285,6 +288,33 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     const panel = await screen.findByRole('dialog', { name: 'Edit approval workflow' });
     expect(within(panel).getByRole('textbox', { name: /^Name/ })).toHaveValue(
       'Lubricants EU approval',
+    );
+  });
+
+  it('sets an unused workflow inactive at once, with Undo (design system §6.7)', async () => {
+    const unused = workflowOf({ usedByCount: 0, waitingCount: 0 });
+    const { user, api } = renderPage('/settings/approval-workflows', {
+      [LIST]: list([unused]),
+      'POST /api/approval-workflows/WF-1001/deactivate': {
+        body: workflowOf({ active: false, usedByCount: 0, waitingCount: 0, version: 5 }),
+      },
+      'POST /api/approval-workflows/WF-1001/activate': { body: unused },
+    });
+    await screen.findByRole('row', { name: /Lubricants EU approval/ });
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Lubricants EU approval' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Set inactive' }));
+
+    expect(
+      await screen.findByText("Approval workflow 'Lubricants EU approval' set inactive"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    const messages = await findMessages();
+    await user.click(within(messages).getByRole('button', { name: 'Undo' }));
+    await waitFor(() =>
+      expect(api.bodiesOf('POST /api/approval-workflows/WF-1001/activate')).toEqual([
+        { version: 5 },
+      ]),
     );
   });
 });

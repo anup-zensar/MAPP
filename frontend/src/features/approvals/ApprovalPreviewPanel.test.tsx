@@ -57,6 +57,33 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
     );
   });
 
+  it('shows each line item as a stacked card on a phone, so nothing scrolls sideways (design system §5.4)', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(max-width: 599px)',
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    renderPanel({ [PREVIEW]: { body: previewOf() } });
+
+    const panel = await screen.findByRole('dialog', { name: 'Launch film' });
+    const lineItems = within(panel).getByRole('region', { name: 'Line items' });
+    expect(within(lineItems).queryByRole('table')).not.toBeInTheDocument();
+    const card = within(lineItems)
+      .getAllByRole('listitem')
+      .find((item) => item.textContent?.includes('Agency fee')) as HTMLElement;
+    const facts = within(card)
+      .getAllByRole('term')
+      .map((term) => `${term.textContent}: ${term.nextElementSibling?.textContent}`);
+    expect(facts).toEqual([
+      'Planned cost: 40,000.00 EUR',
+      'Planned cost (USD): $43,200.00',
+      expect.stringMatching(/^Spend type: /),
+      expect.stringMatching(/^GL code: /),
+      expect.stringMatching(/^Finance budget item: /),
+    ]);
+  });
+
   it('shows a negative unassigned amount in red, an ongoing activity, and no line items', async () => {
     const preview = previewOf();
     renderPanel({

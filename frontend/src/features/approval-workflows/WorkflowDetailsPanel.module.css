@@ -1,7 +1,8 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
+  line-height: var(--leading-sm);
   color: var(--ink);
   font-size: var(--text-sm);
 }
@@ -22,31 +23,17 @@
   overflow-wrap: break-word;
 }
 
-/* "Level 2 has no active approver": needs attention, blocks nothing. */
-.warnings {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--status-review);
-  border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--status-review) 12%, transparent);
-}
-
-.warning {
-  color: var(--status-review-text);
-  font-weight: 600;
-}
-
 .section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
+/* Sections inside a side panel: an h3, 16/24 bold (design system §5.5). */
 .heading {
-  font-size: var(--text-sm);
-  font-weight: 600;
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
 }
 
 .activities {
@@ -83,7 +70,6 @@
 
 .activityMain a {
   color: var(--link);
-  font-weight: 600;
 }
 
 .chips {
@@ -95,4 +81,5 @@
 .secondary {
   color: var(--ink-2);
   font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }

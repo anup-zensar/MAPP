@@ -1,9 +1,15 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   color: var(--ink);
   font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+/* The decline reason keeps the line breaks the approver typed. */
+.comment {
+  white-space: pre-line;
 }
 
 .status {
@@ -22,13 +28,16 @@
 
 .subheading {
   color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
 }
 
+/* Submit, Decline · Approve, Recall, and the owner's ⋯: one row, controls of one height. */
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
 }
 

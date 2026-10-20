@@ -68,9 +68,19 @@ export function SubmitButton({ activity, onShowProblems, variant = 'primary' }: 
       return;
     }
     try {
-      await submit.mutateAsync({ activityId: activity.id, version: activity.version, comment });
+      const result = await submit.mutateAsync({
+        activityId: activity.id,
+        version: activity.version,
+        comment,
+      });
       const verb = submission.kind === 'resubmit' ? 're-submitted' : 'submitted';
-      show({ message: `Activity '${submission.activityName}' ${verb} for approval` });
+      // No level needed a decision: the rules approved it at once (017 FR-014).
+      const automatic = submission.approvedAutomatically || result.status === 'approved';
+      show({
+        message: automatic
+          ? `Activity '${submission.activityName}' approved automatically`
+          : `Activity '${submission.activityName}' ${verb} for approval`,
+      });
       setSubmission(null);
     } catch (error) {
       const failure = asApiError(error);

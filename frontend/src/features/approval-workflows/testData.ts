@@ -96,3 +96,23 @@ export const PEOPLE = {
     ],
   },
 };
+
+/** GET /api/approval-rule-options (017): the seeded activity types, business units and the roles that approve. */
+export const RULE_OPTIONS = {
+  body: {
+    activityTypes: [
+      { id: 'AT-1001', name: 'Event', active: true },
+      { id: 'AT-1002', name: 'Sponsorship', active: true },
+      { id: 'AT-1009', name: 'Print advert', active: false },
+    ],
+    businessUnits: [
+      { id: 'OP-1001', label: 'Lubricants', active: true },
+      { id: 'OP-1002', label: 'Mobility', active: true },
+      { id: 'OP-1003', label: 'Retail', active: false },
+    ],
+    roles: [
+      { id: 'RL-1002', name: 'Administrator', builtIn: 'administrator' as const },
+      { id: 'RL-1005', name: 'Approver', builtIn: 'approver' as const },
+    ],
+  },
+};

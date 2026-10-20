@@ -6,7 +6,18 @@ import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import type { ApprovalRow } from './approvalsApi';
 import { ApprovalsPage } from './ApprovalsPage';
-import { DANIEL, approvalOf, previewOf, roundOf, rowOf } from './testData';
+import {
+  CARLOS,
+  DANIEL,
+  NO_DELEGATIONS,
+  PRIYA,
+  approvalOf,
+  delegationOf,
+  monitoringOf,
+  previewOf,
+  roundOf,
+  rowOf,
+} from './testData';
 
 const SUMMARY = {
   body: { waitingForMe: 3, allOpen: 5, approvedThisMonth: 2, declinedThisMonth: 1 },
@@ -44,6 +55,7 @@ function renderPage(route = '/approvals', answers: Record<string, MockHandler> =
   const api = mockApi({
     'GET /api/approvals/summary': SUMMARY,
     'GET /api/approvals': page(ROWS),
+    'GET /api/approval-delegations': NO_DELEGATIONS,
     ...answers,
   });
   const rendered = renderWithProviders(<ApprovalsPage />, {
@@ -73,14 +85,14 @@ describe('ApprovalsPage (feature 008, US3)', () => {
       'aria-selected',
       'true',
     );
-    expect(screen.getByRole('tab', { name: 'All open 5 activities' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'All open (5)' })).toBeInTheDocument();
   });
 
   it('lists the rows of the tab with a count (FR-029, FR-030)', async () => {
     const { api } = renderPage();
 
     expect(await screen.findByRole('button', { name: 'Launch film' })).toBeInTheDocument();
-    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('3 of 3 activities')).toBeInTheDocument();
     expect(api.requests.find((request) => request.path === '/api/approvals')?.search).toBe(
       '?tab=waiting',
     );
@@ -100,7 +112,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
     await waitFor(() => expect(router.state.location.search).toBe('?tab=open'));
     expect(await screen.findByRole('button', { name: 'Spring radio' })).toBeInTheDocument();
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
     expect(api.requests.some((request) => request.search === '?tab=open')).toBe(true);
   });
 
@@ -120,7 +132,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     await screen.findByRole('button', { name: 'Launch film' });
 
     await user.type(search, 'a-1044');
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Trade show' })).toBeInTheDocument();
 
     await user.clear(search);
@@ -138,7 +150,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     await user.selectOptions(within(filters).getByRole('combobox', { name: 'Owner' }), 'U-1003');
     await user.keyboard('{Escape}');
 
-    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('2 of 3 activities')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
     await user.selectOptions(
@@ -149,15 +161,15 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     );
     await user.keyboard('{Escape}');
 
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Remove filter: Owner: Daniel Okoro' }));
     expect(
       screen.getByRole('button', { name: 'Remove filter: Plan: FY2026 Mobility China' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
-    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('3 of 3 activities')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument();
   });
 
@@ -216,5 +228,90 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
     expect(await screen.findByRole('button', { name: 'Launch film' })).toBeInTheDocument();
+  });
+
+  it('opens All open when nothing waits for the person (UI audit AP-03)', async () => {
+    const { api } = renderPage('/approvals', {
+      'GET /api/approvals/summary': {
+        body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
+      },
+    });
+
+    expect(await screen.findByRole('tab', { name: 'All open (3)' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await screen.findByRole('button', { name: 'Launch film' });
+    expect(api.requests.filter((request) => request.path === '/api/approvals')).toEqual([
+      expect.objectContaining({ search: '?tab=open' }),
+    ]);
+  });
+
+  it('keeps the tab the address names, even when nothing waits (UI audit AP-03)', async () => {
+    renderPage('/approvals?tab=waiting', {
+      'GET /api/approvals/summary': {
+        body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
+      },
+      'GET /api/approvals': page([]),
+    });
+
+    expect(
+      await screen.findByText("Nothing is waiting for you. You're all caught up."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^Waiting for me/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+});
+
+describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
+  it('opens Monitoring as the fourth tab, without search or filters (FR-030)', async () => {
+    const { user, api } = renderPage('/approvals?tab=waiting', {
+      'GET /api/approvals/monitoring': { body: monitoringOf() },
+    });
+    await screen.findByRole('row', { name: /Launch film/ });
+
+    await user.click(screen.getByRole('tab', { name: 'Monitoring' }));
+
+    expect(await screen.findByText('Average time to decision')).toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Filters/ })).not.toBeInTheDocument();
+    expect(api.requests.some((r) => r.path === '/api/approvals/monitoring')).toBe(true);
+  });
+
+  it('opens the delegation panel from Delegate my approvals, through the address (FR-024)', async () => {
+    const { user } = renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Delegate my approvals' }));
+
+    const panel = await screen.findByRole('dialog', { name: 'Approval delegation' });
+    const closes = within(panel).getAllByRole('button', { name: 'Close' });
+    await user.click(closes[closes.length - 1]);
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Approval delegation' })).not.toBeInTheDocument(),
+    );
+  });
+
+  it('says above the cards who approves for whom today (FR-024)', async () => {
+    renderPage('/approvals', {
+      'GET /api/approval-delegations': {
+        body: {
+          items: [
+            delegationOf({ person: PRIYA, delegate: CARLOS, state: 'current' }),
+            delegationOf({ id: 'DLG-1002', person: DANIEL, delegate: PRIYA, state: 'current' }),
+          ],
+          total: 2,
+          canManageOthers: false,
+        },
+      },
+    });
+
+    expect(
+      await screen.findByText('Carlos Mendes approves for you until 14 Nov 2026.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('You are approving for Daniel Okoro until 14 Nov 2026.'),
+    ).toBeInTheDocument();
   });
 });

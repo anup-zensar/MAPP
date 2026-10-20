@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { conflictMessage } from '@/api/errors';
 import {
+  CheckboxField,
+  DecimalField,
   FormPanel,
   FormSection,
   problemOf,
@@ -13,6 +15,7 @@ import {
 } from '@/components';
 import type { FieldProblem, SaveFailure } from '@/components';
 import { asApiError, isSessionLost } from '@/features/approvals/messages';
+import { parseWholeInput } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { toDrafts, toInputs } from './levelDrafts';
 import type { LevelDraft } from './levelDrafts';
@@ -25,7 +28,30 @@ import styles from './WorkflowFormPanel.module.css';
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
 const LEVELS_HINT =
-  'Every level applies to every submission, in order. Any one approver of a level approves it.';
+  'Levels are checked in order. A level can be needed only sometimes, approved automatically, or need every approver. Nobody approves an activity they own or submitted.';
+
+/** New workflows start with a reminder after 3 days and escalation after 5 (017 FR-007). */
+const NEW_REMINDER_DAYS = 3;
+const NEW_ESCALATION_DAYS = 5;
+
+/** The days of a reminder or an escalation as the form holds them: ticked, and the days as typed. */
+interface TimingDraft {
+  on: boolean;
+  days: string;
+}
+
+function timingDraft(days: number | null | undefined, fallback: number): TimingDraft {
+  return days ? { on: true, days: String(days) } : { on: false, days: String(fallback) };
+}
+
+/** The days for the API: null when unticked; undefined when the typed text is no whole number. */
+function timingValue(timing: TimingDraft): number | null | undefined {
+  if (!timing.on) {
+    return null;
+  }
+  const days = parseWholeInput(timing.days);
+  return days === null ? undefined : Number(days);
+}
 
 export interface WorkflowFormPanelProps {
   /** The workflow to edit; without one, the panel creates a new workflow. */
@@ -51,19 +77,60 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
     name: workflow?.name ?? '',
     description: workflow?.description ?? '',
     levels: toDrafts(workflow),
+    reminder: workflow
+      ? timingDraft(workflow.reminderDays, NEW_REMINDER_DAYS)
+      : { on: true, days: String(NEW_REMINDER_DAYS) },
+    escalation: workflow
+      ? timingDraft(workflow.escalationDays, NEW_ESCALATION_DAYS)
+      : { on: true, days: String(NEW_ESCALATION_DAYS) },
   }));
   const [name, setName] = useState(start.name);
   const [description, setDescription] = useState(start.description);
   const [levels, setLevels] = useState<LevelDraft[]>(start.levels);
+  const [reminder, setReminder] = useState<TimingDraft>(start.reminder);
+  const [escalation, setEscalation] = useState<TimingDraft>(start.escalation);
   const [version, setVersion] = useState(workflow?.version ?? 0);
   const [saving, setSaving] = useState(false);
   const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
 
   const levelsChanged = JSON.stringify(toInputs(levels)) !== JSON.stringify(toInputs(start.levels));
-  const isDirty = name !== start.name || description !== start.description || levelsChanged;
+  const reminderDays = timingValue(reminder);
+  const escalationDays = timingValue(escalation);
+  const isDirty =
+    name !== start.name ||
+    description !== start.description ||
+    levelsChanged ||
+    reminder.on !== start.reminder.on ||
+    reminder.days !== start.reminder.days ||
+    escalation.on !== start.escalation.on ||
+    escalation.days !== start.escalation.days;
+
+  /** Days that are no whole number can't be sent: said at once, in the API's words. */
+  function timingProblems(): FieldProblem[] {
+    const found: FieldProblem[] = [];
+    if (reminderDays === undefined) {
+      found.push({
+        field: 'reminderDays',
+        message: 'Remind after: enter a whole number of days from 1 to 60.',
+      });
+    }
+    if (escalationDays === undefined) {
+      found.push({
+        field: 'escalationDays',
+        message: 'Escalate after: enter a whole number of days from 1 to 90.',
+      });
+    }
+    return found;
+  }
 
   async function save() {
+    const typed = timingProblems();
+    if (typed.length > 0) {
+      setProblems(typed);
+      setFailure(null);
+      return;
+    }
     setSaving(true);
     try {
       if (workflow) {
@@ -77,6 +144,12 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
         if (levelsChanged) {
           changes.levels = toInputs(levels);
         }
+        if (reminderDays !== timingValue(start.reminder)) {
+          changes.reminderDays = reminderDays ?? null;
+        }
+        if (escalationDays !== timingValue(start.escalation)) {
+          changes.escalationDays = escalationDays ?? null;
+        }
         const saved = await updateWorkflow.mutateAsync({ id: workflow.id, changes });
         show({ message: `Approval workflow '${saved.name}' saved` });
       } else {
@@ -84,6 +157,8 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
           name,
           description,
           levels: toInputs(levels),
+          reminderDays: reminderDays ?? null,
+          escalationDays: escalationDays ?? null,
         });
         show({
           message: `Approval workflow '${created.name}' created`,
@@ -172,6 +247,73 @@ export function WorkflowFormPanel({ workflow, onClose }: WorkflowFormPanelProps)
         )}
         <LevelsEditor levels={levels} onChange={setLevels} problems={problems} />
       </FormSection>
+      <FormSection title="Reminders and escalation" description="Days are calendar days.">
+        <TimingFields
+          checkLabel="Send a reminder"
+          checkName="sendReminder"
+          daysLabel="Remind after"
+          daysName="reminderDays"
+          value={reminder}
+          onChange={setReminder}
+          error={problemOf(problems, 'reminderDays')}
+        />
+        <TimingFields
+          checkLabel="Escalate to the backup approver"
+          checkName="escalate"
+          daysLabel="Escalate after"
+          daysName="escalationDays"
+          value={escalation}
+          onChange={setEscalation}
+          error={problemOf(problems, 'escalationDays')}
+        />
+      </FormSection>
     </FormPanel>
+  );
+}
+
+interface TimingFieldsProps {
+  checkLabel: string;
+  checkName: string;
+  daysLabel: string;
+  /** The API's key of the days ("reminderDays"), also the input's id. */
+  daysName: string;
+  value: TimingDraft;
+  onChange: (value: TimingDraft) => void;
+  error?: string;
+}
+
+/** A check box and, while ticked, its days ("Remind after 3 days waiting"). */
+function TimingFields({
+  checkLabel,
+  checkName,
+  daysLabel,
+  daysName,
+  value,
+  onChange,
+  error,
+}: TimingFieldsProps) {
+  return (
+    <div className={styles.timing}>
+      <CheckboxField
+        label={checkLabel}
+        name={checkName}
+        checked={value.on}
+        onChange={(on) => onChange({ ...value, on })}
+      />
+      {value.on && (
+        <div className={styles.days}>
+          <DecimalField
+            label={daysLabel}
+            name={daysName}
+            decimals={0}
+            suffix="days waiting"
+            compact
+            value={value.days}
+            onChange={(days) => onChange({ ...value, days })}
+            error={error}
+          />
+        </div>
+      )}
+    </div>
   );
 }

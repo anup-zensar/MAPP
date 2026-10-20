@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { SubmitDialog } from './SubmitDialog';
-import { submissionOf } from './testData';
+import { ALEX, CARLOS, DANIEL, PRIYA, submissionOf } from './testData';
 
 function renderDialog(submission = submissionOf(), commentError?: string) {
   const onConfirm = vi.fn();
@@ -78,5 +78,96 @@ describe('SubmitDialog (feature 008, US1)', () => {
 
     expect(onCancel).toHaveBeenCalled();
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+});
+
+const outcome = (overrides: Record<string, unknown>) => ({
+  number: 1,
+  label: 'Level 1',
+  outcome: 'decide' as const,
+  approvers: [CARLOS],
+  source: '',
+  mode: 'any' as const,
+  ruleText: '',
+  excluded: [],
+  backupUsed: false,
+  noApprover: false,
+  advice: '',
+  ...overrides,
+});
+
+describe('SubmitDialog rules (feature 017, US1)', () => {
+  it('says what each level will do, who is left out and the backup (FR-011, FR-013)', () => {
+    renderDialog(
+      submissionOf({
+        outcomes: [
+          outcome({ approvers: [DANIEL], source: 'line manager of Priya Raman' }),
+          outcome({
+            number: 2,
+            label: 'Level 2',
+            outcome: 'skipped',
+            approvers: [],
+            ruleText: 'only when planned cost is at least $100,000.00',
+          }),
+          outcome({
+            number: 3,
+            label: 'Level 3',
+            approvers: [ALEX],
+            backupUsed: true,
+            excluded: [
+              { person: PRIYA, reason: 'owner' },
+              { person: CARLOS, reason: 'cannotApprove' },
+            ],
+          }),
+          outcome({
+            number: 4,
+            label: 'Level 4',
+            approvers: [],
+            noApprover: true,
+            advice:
+              'Nobody else can approve level 4. Someone allowed to decide on behalf, such as an administrator, will have to approve it.',
+          }),
+        ],
+      }),
+    );
+
+    const levels = screen.getAllByRole('listitem');
+    expect(levels[0]).toHaveTextContent('Level 1 · Daniel Okoro (line manager of Priya Raman)');
+    expect(levels[1]).toHaveTextContent(
+      'Level 2 · Not needed — only when planned cost is at least $100,000.00',
+    );
+    expect(levels[2]).toHaveTextContent('Level 3 · Alex Morgan');
+    expect(levels[2]).toHaveTextContent('Priya Raman is left out: owns this activity.');
+    expect(levels[2]).toHaveTextContent(
+      "Carlos Mendes is left out: can't approve — no approving role.",
+    );
+    expect(levels[2]).toHaveTextContent('The backup approver Alex Morgan approves this level.');
+    expect(levels[3]).toHaveTextContent('Level 4 · No approver');
+    expect(levels[3]).toHaveTextContent('Nobody else can approve level 4.');
+    expect(screen.getByRole('alertdialog')).not.toHaveTextContent(
+      'This activity will be approved automatically.',
+    );
+  });
+
+  it('says when the rules approve the activity at once (FR-014)', () => {
+    renderDialog(
+      submissionOf({
+        outcomes: [
+          outcome({
+            outcome: 'autoApproved',
+            approvers: [],
+            ruleText: 'planned cost is below $10,000.00',
+          }),
+        ],
+        approvedAutomatically: true,
+      }),
+    );
+
+    const dialog = screen.getByRole('alertdialog');
+    expect(screen.getByRole('listitem')).toHaveTextContent(
+      'Level 1 · Approved automatically — planned cost is below $10,000.00',
+    );
+    expect(dialog).toHaveTextContent('This activity will be approved automatically.');
+    expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
   });
 });

@@ -36,6 +36,7 @@ describe('ApprovalSection (feature 008, US2)', () => {
   it('shows the round, the status, the workflow and the chain with each state (FR-024)', async () => {
     renderSection({
       body: approvalOf({
+        viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] },
         rounds: [
           roundOf({
             levels: [
@@ -58,8 +59,45 @@ describe('ApprovalSection (feature 008, US2)', () => {
     expect(levels[0]).toHaveTextContent('Waiting');
     expect(card()).toHaveTextContent('Alex Morgan (inactive)');
     expect(card()).toHaveTextContent('Not reached yet');
-    expect(within(card()).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
-    expect(within(card()).getByRole('button', { name: 'Decline' })).toBeInTheDocument();
+    // Decline then Approve, side by side (UI audit AC-03).
+    const buttons = within(card())
+      .getAllByRole('button')
+      .map((button) => button.textContent);
+    expect(buttons.indexOf('Approve')).toBe(buttons.indexOf('Decline') + 1);
+  });
+
+  it('never offers the owner Approve as a button; it waits in ⋯ with a warning (functional review A-01)', async () => {
+    const { user } = renderSection({ body: approvalOf() });
+
+    await screen.findByText('Round 1 · Lubricants EU approval');
+    expect(within(card()).queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
+    expect(within(card()).queryByRole('button', { name: 'Decline' })).not.toBeInTheDocument();
+    await user.click(
+      within(card()).getByRole('button', { name: 'Actions for approval of Launch film' }),
+    );
+    const approve = await screen.findByRole('menuitem', { name: /^Approve/ });
+    expect(approve).toHaveTextContent('You own this activity.');
+    await user.click(approve);
+    const dialog = await screen.findByRole('alertdialog', { name: "Approve 'Launch film'?" });
+    expect(dialog).toHaveTextContent('You own this activity.');
+  });
+
+  it('says why the person cannot decide when the API gives a reason (014 FR-025)', async () => {
+    const reason = 'You own this activity, so someone else must approve it.';
+    renderSection({
+      body: approvalOf({
+        actions: {
+          ...approvalOf().actions,
+          approve: { available: false, reason },
+          decline: { available: false, reason },
+        },
+      }),
+    });
+
+    expect(await within(card()).findByText(reason)).toBeInTheDocument();
+    expect(
+      within(card()).queryByRole('button', { name: 'Actions for approval of Launch film' }),
+    ).not.toBeInTheDocument();
   });
 
   it('offers Re-submit after a decline and leaves the reason to the page notice (FR-016, UI audit AC-02)', async () => {
@@ -299,9 +337,8 @@ describe('ApprovalSection when approval ends early (feature 008, US5)', () => {
 
     expect(await screen.findByText("Submission of 'Launch film' recalled")).toBeInTheDocument();
     expect(api.bodiesOf(RECALL)).toEqual([{ roundId: 'AR-1001', reason: 'Wrong workflow' }]);
-    expect(
-      await within(card()).findByText('Not decided — submission recalled'),
-    ).toBeInTheDocument();
+    expect(await within(card()).findByText('— submission recalled')).toBeInTheDocument();
+    expect(card()).toHaveTextContent('Not decided — submission recalled');
     const history = screen.getByRole('region', { name: 'Approval history' });
     expect(history).toHaveTextContent('Round 1 · Recalled · Lubricants EU approval');
     expect(history).toHaveTextContent('Recalled · Level 1 · 12 Mar 2026, 10:00');
@@ -435,7 +472,8 @@ describe('ApprovalSection when approval ends early (feature 008, US5)', () => {
       }),
     });
 
-    expect(await within(card()).findByText('Not decided — activity deleted')).toBeInTheDocument();
+    expect(await within(card()).findByText('— activity deleted')).toBeInTheDocument();
+    expect(card()).toHaveTextContent('Not decided — activity deleted');
     const history = screen.getByRole('region', { name: 'Approval history' });
     expect(history).toHaveTextContent(
       'Round 1 · Cancelled — activity deleted · Lubricants EU approval',
