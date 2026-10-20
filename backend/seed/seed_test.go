@@ -69,7 +69,7 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixShellAttribute: "SA-1036", ids.PrefixShellOption: "SO-1111", ids.PrefixFinanceBudget: "FB-1003",
 		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1009",
 		ids.PrefixPlan: "P-1005", ids.PrefixCampaign: "C-1006", ids.PrefixInitiative: "I-1012", ids.PrefixActivity: "A-1014",
-		ids.PrefixLineItem: "L-1012", ids.PrefixLogEntry: "LOG-1047", ids.PrefixBinEntry: "BIN-1002",
+		ids.PrefixLineItem: "L-1012", ids.PrefixLogEntry: "LOG-1055", ids.PrefixBinEntry: "BIN-1002",
 		ids.PrefixApprovalWorkflow: "WF-1004", ids.PrefixApprovalRound: "AR-1009",
 		ids.PrefixExchangeRate: "XR-1125", ids.PrefixRateImport: "RI-1002",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",

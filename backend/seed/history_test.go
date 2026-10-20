@@ -79,10 +79,10 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 	wantContents := []history.ContentCount{
 		{RecordType: "activity", Label: "activity", Count: 1}, {RecordType: "lineItem", Label: "line item", Count: 1},
 	}
-	if b.ID != "BIN-1001" || b.RecordType != "initiative" || b.RecordTypeLabel != "initiative" || b.RecordID != "I-1009" ||
+	if b.ID != "BIN-1001" || b.RecordType != "initiative" || b.RecordTypeLabel != "initiative" || b.RecordID != "I-1011" ||
 		b.RecordName != "Trade shows" || b.Resolution != nil || b.DeletedBy.Name != "Priya Raman" ||
 		!b.DeletedAt.Equal(loadedAt.Add(-2*day)) || !slices.Equal(b.Contents, wantContents) {
-		t.Errorf("recycle-bin entry = %+v\nwant BIN-1001, initiative I-1009 'Trade shows', unresolved, deleted by Priya Raman "+
+		t.Errorf("recycle-bin entry = %+v\nwant BIN-1001, initiative I-1011 'Trade shows', unresolved, deleted by Priya Raman "+
 			"2 days before with 1 activity and 1 line item", b)
 	}
 	wantPath := []history.RecordRef{{Type: "plan", ID: "P-1001", Name: "FY2026 Lubricants Europe"},
@@ -94,21 +94,21 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 	for _, s := range b.Snapshots {
 		snapshots = append(snapshots, fmt.Sprintf("%s %s %s < %s", s.Kind, s.ID, s.Name, s.ParentID))
 	}
-	wantSnapshots := []string{"initiative I-1009 Trade shows < C-1002", "activity A-1011 Fleet expo stand < I-1009",
-		"lineItem L-1009 Stand build < A-1011"}
+	wantSnapshots := []string{"initiative I-1011 Trade shows < C-1002", "activity A-1013 Fleet expo stand < I-1011",
+		"lineItem L-1011 Stand build < A-1013"}
 	if !slices.Equal(snapshots, wantSnapshots) {
 		t.Errorf("snapshots = %q, want %q", snapshots, wantSnapshots)
 	}
 	read(t, db, func(ctx context.Context) error {
-		_, initiativeStored, err := campaigns.NewJSONRepository().GetInitiative(ctx, "I-1009")
+		_, initiativeStored, err := campaigns.NewJSONRepository().GetInitiative(ctx, "I-1011")
 		if err != nil {
 			return err
 		}
-		_, activityStored, err := activities.NewJSONRepository().Get(ctx, "A-1011")
+		_, activityStored, err := activities.NewJSONRepository().Get(ctx, "A-1013")
 		if err != nil {
 			return err
 		}
-		_, lineItemStored, err := lineitems.NewJSONRepository().Get(ctx, "L-1009")
+		_, lineItemStored, err := lineitems.NewJSONRepository().Get(ctx, "L-1011")
 		if err != nil {
 			return err
 		}
@@ -120,7 +120,7 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 	})
 
 	deletes := slices.DeleteFunc(slices.Clone(entries), func(e history.Entry) bool { return e.Action != history.ActionDeleted })
-	if len(deletes) != 1 || deletes[0].RecordID != "I-1009" || deletes[0].Details != "with 1 activity and 1 line item" ||
+	if len(deletes) != 1 || deletes[0].RecordID != "I-1011" || deletes[0].Details != "with 1 activity and 1 line item" ||
 		deletes[0].Actor.Name != "Priya Raman" || !deletes[0].At.Equal(b.DeletedAt) || !slices.Equal(deletes[0].Path, wantPath) {
 		t.Errorf("deleted entries = %+v, want one: Priya Raman deleted initiative 'Trade shows' with 1 activity and 1 line item", deletes)
 	}
@@ -205,7 +205,7 @@ func TestSeed_History_CreatedEntries_011(t *testing.T) {
 			t.Errorf("%s is not between 14 and 10 days before the seed time", entryText(e))
 		}
 	}
-	for _, id := range []string{"I-1009", "A-1011", "L-1009"} {
+	for _, id := range []string{"I-1011", "A-1013", "L-1011"} {
 		e, found := created[id]
 		if !found || e.Actor.Name != "Priya Raman" || e.At.Sub(loadedAt.Add(-12*day)) > 2*time.Minute || e.At.Before(loadedAt.Add(-12*day)) {
 			t.Errorf("created entry of %s = %+v, want Priya Raman 12 days before", id, e)
@@ -316,7 +316,7 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 	server.GrantRole(t, "priya.raman@northstar.demo", "viewer", "all")
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
 
-	response := priya.Do(t, http.MethodGet, "/api/activity-log?recordId=I-1009&limit=10", nil)
+	response := priya.Do(t, http.MethodGet, "/api/activity-log?recordId=I-1011&limit=10", nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET /api/activity-log = %d %s", response.Status, response.Body)
 	}
@@ -324,7 +324,7 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 	response.Decode(t, &log)
 	if log.Total != 2 || len(log.Items) != 2 || log.Items[0].Action != history.ActionDeleted ||
 		log.Items[0].RecordNow.State != history.RecordInRecycleBin || log.Items[0].RecordNow.BinEntryID != "BIN-1001" {
-		t.Errorf("entries of I-1009 = %+v, want deleted and created, in the recycle bin BIN-1001", log)
+		t.Errorf("entries of I-1011 = %+v, want deleted and created, in the recycle bin BIN-1001", log)
 	}
 
 	week := loadedAt.Add(-7 * day).Format(time.RFC3339)
@@ -348,7 +348,7 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 		Total int                 `json:"total"`
 	}
 	response.Decode(t, &recent)
-	if len(recent.Items) == 0 || recent.Items[0].RecordID != "I-1009" || recent.Items[0].Action != history.ActionDeleted {
+	if len(recent.Items) == 0 || recent.Items[0].RecordID != "I-1011" || recent.Items[0].Action != history.ActionDeleted {
 		t.Errorf("Priya's recent changes = %+v, want the deleted initiative first", recent)
 	}
 }
@@ -375,7 +375,7 @@ func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
 		t.Fatalf("restore = %d %s", response.Status, response.Body)
 	}
 	for path, want := range map[string]string{
-		"/api/initiatives/I-1009": "Trade shows", "/api/activities/A-1011": "Fleet expo stand", "/api/line-items/L-1009": "Stand build",
+		"/api/initiatives/I-1011": "Trade shows", "/api/activities/A-1013": "Fleet expo stand", "/api/line-items/L-1011": "Stand build",
 	} {
 		response := priya.Do(t, http.MethodGet, path, nil)
 		var got struct {
@@ -425,8 +425,8 @@ func TestLoad_WithoutHistory_011(t *testing.T) {
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	err := db.Write(t.Context(), func(ctx context.Context) error {
-		for prefix, want := range map[string]string{ids.PrefixInitiative: "I-1009", ids.PrefixActivity: "A-1011",
-			ids.PrefixLineItem: "L-1009", ids.PrefixLogEntry: "LOG-1001", ids.PrefixBinEntry: "BIN-1001"} {
+		for prefix, want := range map[string]string{ids.PrefixInitiative: "I-1011", ids.PrefixActivity: "A-1013",
+			ids.PrefixLineItem: "L-1011", ids.PrefixLogEntry: "LOG-1001", ids.PrefixBinEntry: "BIN-1001"} {
 			if next, err := generator.Next(ctx, prefix); err != nil || next != want {
 				t.Errorf("next %s ID = %s (%v), want %s", prefix, next, err, want)
 			}
