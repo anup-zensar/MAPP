@@ -1,7 +1,7 @@
+/* The form page (design system §2.4 C): the sticky footer spans the whole content column under
+   the form column and the rail. */
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  max-width: 720px;
   min-width: 0;
 }

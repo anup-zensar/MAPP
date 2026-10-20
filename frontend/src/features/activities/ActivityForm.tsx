@@ -3,13 +3,11 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import type { components } from '@/api/schema';
 import {
-  Card,
   CheckboxField,
   ErrorState,
   ChoiceField,
   ConfirmDialog,
   DateRangeField,
-  FormSection,
   LockedNote,
   MoneyField,
   problemOf,
@@ -28,6 +26,8 @@ import type { ActivityFormData, ActivityTypeOption, Money } from './activitiesAp
 import { fieldId, usdOf } from './activityFormState';
 import type { FormState } from './activityFormState';
 import styles from './ActivityForm.module.css';
+import { ACTIVITY_SECTION } from './activityFormProgress';
+import { FormCard, FormCardFrame } from './FormRail';
 import { GoalsFields } from './GoalsFields';
 
 type ActivityStatus = components['schemas']['ActivityStatus'];
@@ -150,7 +150,7 @@ export function ActivityForm({
     <div className={styles.form}>
       {noTypes && <NoTypesNotice model={context.model.name} />}
 
-      <FormSection title="Basics">
+      <FormCard id={ACTIVITY_SECTION.basics} title="Basics">
         <TextField
           label="Activity name"
           name={fieldId('name')}
@@ -225,9 +225,9 @@ export function ActivityForm({
           note={form.approvalWorkflows.length === 0 ? NO_WORKFLOW : undefined}
           error={error('approvalWorkflowId')}
         />
-      </FormSection>
+      </FormCard>
 
-      <FormSection title="Dates & cost">
+      <FormCard id={ACTIVITY_SECTION.dates} title="Dates & cost">
         <DateRangeField
           label="Start and end dates"
           idPrefix="field"
@@ -288,11 +288,18 @@ export function ActivityForm({
           note={costFromType ? 'From the activity type' : undefined}
           error={error('plannedCost')}
         />
-      </FormSection>
+      </FormCard>
 
-      <FormSection title="Shell attributes">
+      {/* The attribute groups' own names are the card's headings ("Shell attributes",
+          "Lubricants attributes"), so no heading repeats its parent (UI audit AF-02, X-09). */}
+      <FormCardFrame
+        id={ACTIVITY_SECTION.attributes}
+        label="Shell attributes"
+        className={styles.attributes}
+      >
         {attributeForm.data ? (
           <ShellAttributeFields
+            sectionHeading="h2"
             form={attributeForm.data}
             values={value.attributes}
             onChange={(attributes) => set({ attributes })}
@@ -304,22 +311,27 @@ export function ActivityForm({
         ) : attributeForm.error ? (
           <ErrorState error={attributeForm.error} onRetry={attributeForm.refetch} />
         ) : (
-          <Skeleton lines={4} height="36px" />
+          <>
+            <h2>Shell attributes</h2>
+            <Skeleton lines={4} height="36px" />
+          </>
         )}
-      </FormSection>
+      </FormCardFrame>
 
-      <GoalsFields
-        value={value.goals}
-        onChange={(goals) => set({ goals })}
-        model={context.model}
-        errors={{
-          inq: error('goals.inq'),
-          mql: error('goals.mql'),
-          revenue: error('goals.revenue'),
-        }}
-      />
+      <FormCardFrame id={ACTIVITY_SECTION.goals}>
+        <GoalsFields
+          value={value.goals}
+          onChange={(goals) => set({ goals })}
+          model={context.model}
+          errors={{
+            inq: error('goals.inq'),
+            mql: error('goals.mql'),
+            revenue: error('goals.revenue'),
+          }}
+        />
+      </FormCardFrame>
 
-      <FormSection title="More details">
+      <FormCard id={ACTIVITY_SECTION.more} title="More details">
         <TextAreaField
           label="Description"
           name={fieldId('description')}
@@ -328,13 +340,8 @@ export function ActivityForm({
           onChange={(description) => set({ description })}
           error={error('description')}
         />
-      </FormSection>
-
-      {!stored && (
-        <Card title="Line items">
-          <p className={styles.muted}>Save the activity to add its line items</p>
-        </Card>
-      )}
+        {!stored && <p className={styles.muted}>Save the activity to add its line items</p>}
+      </FormCard>
 
       <ConfirmDialog
         open={question !== null}

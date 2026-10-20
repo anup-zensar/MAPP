@@ -14,6 +14,7 @@ import {
   formAnswers,
   lineItem,
   notFound,
+  currentRates,
 } from './testData';
 
 const GET = 'GET /api/line-items/L-1001';
@@ -24,6 +25,7 @@ function renderPage(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
     ...formAnswers(),
+    'GET /api/exchange-rates/current': { body: currentRates() },
     [GET]: { body: details() },
     ...answers,
   });
@@ -38,7 +40,7 @@ function renderPage(answers: Record<string, MockHandler> = {}) {
 }
 
 async function openMore(user: ReturnType<typeof renderPage>['user'], item: string) {
-  await user.click(screen.getByRole('button', { name: 'More' }));
+  await user.click(screen.getByRole('button', { name: 'Actions for Agency fee' }));
   await user.click(await screen.findByRole('menuitem', { name: item }));
 }
 
@@ -71,8 +73,9 @@ describe('LineItemPage (US4, FR-026)', () => {
       'href',
       '/line-items/L-1001/edit',
     );
-    expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
-    expect(screen.getByText('Mar 2026 · 16,666.66 USD')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actions for Agency fee' })).toBeInTheDocument();
+    const march = screen.getByRole('cell', { name: 'Mar 2026' }).closest('tr') as HTMLElement;
+    expect(within(march).getAllByRole('cell')[1]).toHaveTextContent('16,666.66 USD');
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
     expect(screen.getByText('Filled by GSAP later')).toBeInTheDocument();
     expect(screen.getByText('From finance (coming later)').closest('details')).not.toHaveAttribute(
@@ -83,16 +86,17 @@ describe('LineItemPage (US4, FR-026)', () => {
   it('shows a planned cost in another currency with its USD amount', async () => {
     renderPage({ [GET]: { body: details({ lineItem: { ...filmProduction(), id: 'L-1001' } }) } });
 
-    expect(
-      (await screen.findAllByText('46,000.00 EUR = 50,000.00 USD at 0.92 EUR per USD')).length,
-    ).toBeGreaterThan(0);
+    // The summary card: the amount in its currency, the USD amount and the rate used under it.
+    const summary = await screen.findByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText('46,000.00 EUR')).toBeInTheDocument();
+    expect(within(summary).getByText('= 50,000.00 USD at 0.92 EUR per USD')).toBeInTheDocument();
   });
 
   it('offers Duplicate, View history and Delete under More', async () => {
     const { user, router } = renderPage();
     await screen.findByRole('heading', { level: 1, name: 'Agency fee' });
 
-    await user.click(screen.getByRole('button', { name: 'More' }));
+    await user.click(screen.getByRole('button', { name: 'Actions for Agency fee' }));
     const items = (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
     expect(items).toEqual(['Duplicate', 'View history', 'Delete']);
     await user.click(screen.getByRole('menuitem', { name: 'View history' }));

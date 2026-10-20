@@ -108,11 +108,7 @@ describe('ActivityPage (feature 006, US2)', () => {
     const summary = screen.getByRole('region', { name: 'Summary' });
     expect(within(summary).getByText('120,000.00 USD')).toBeVisible();
     expect(within(summary).getByText('20,000.00 USD')).toBeVisible();
-    expect(
-      screen.getByText(
-        'Created by Alex Morgan on 01 Mar 2026, last changed by Priya Raman on 12 Mar 2026',
-      ),
-    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Edit' })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Edit' })).toHaveAttribute(
       'href',
       '/plans/P-1001/activities/A-1042/edit',
@@ -177,30 +173,68 @@ describe('ActivityPage (feature 006, US2)', () => {
     await waitFor(() => expect(panel).toHaveFocus());
   });
 
-  it('shows the sections in order: Ready to submit, details, line items, approval, from finance, history (FR-020, 011 FR-011)', async () => {
-    openPage({ body: launchFilm({ externalName: '' }) });
+  it('shows the summary, then the tabs Overview · Details · Approval · History (design system §2.4 B, FR-020)', async () => {
+    const { user, router } = openPage({ body: launchFilm({ externalName: '' }) });
 
     await screen.findByRole('heading', { level: 1, name: 'Launch film' });
-    const names = [
-      screen.getByRole('region', { name: 'Ready to submit' }),
-      screen.getByRole('region', { name: 'Details' }),
-      screen.getByRole('region', { name: 'Line items' }),
-      screen.getByRole('region', { name: 'Approval' }),
-      screen.getByRole('region', { name: 'From finance (coming later)' }),
-      screen.getByRole('region', { name: 'History' }),
-    ];
-    for (let index = 1; index < names.length; index += 1) {
-      expect(
-        names[index - 1].compareDocumentPosition(names[index]) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-    }
+    const tabs = screen.getByRole('tablist', { name: 'Activity' });
     expect(
-      screen.getByRole('region', { name: 'Line items' }).closest('#line-items'),
+      within(tabs)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual(['Overview', 'Details', 'Approval', 'History']);
+    // Overview: Ready to submit, then the line items in #line-items.
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+    const ready = screen.getByRole('region', { name: 'Ready to submit' });
+    const lineItems = screen.getByRole('region', { name: 'Line items' });
+    expect(
+      screen.getByRole('region', { name: 'Summary' }).compareDocumentPosition(ready) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      ready.compareDocumentPosition(lineItems) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(lineItems.closest('#line-items')).not.toBeNull();
+    expect(screen.queryByRole('region', { name: 'Details' })).not.toBeInTheDocument();
+
+    // Details: details, Shell attributes and goals; the tab is kept in the address.
+    await user.click(screen.getByRole('tab', { name: 'Details' }));
+    expect(await screen.findByRole('region', { name: 'Details' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Shell attributes' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Goals' })).toBeVisible();
+    expect(router.state.location.search).toBe('?tab=details');
+
+    await user.click(screen.getByRole('tab', { name: 'Approval' }));
+    expect(
+      (await screen.findByRole('region', { name: 'Approval' })).closest('#approval'),
     ).not.toBeNull();
-    expect(screen.getByRole('region', { name: 'Approval' }).closest('#approval')).not.toBeNull();
-    expect(screen.getByRole('region', { name: 'History' }).closest('#history')).not.toBeNull();
+
+    await user.click(screen.getByRole('tab', { name: 'History' }));
+    const history = await screen.findByRole('region', { name: 'History' });
+    expect(history.closest('#history')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Include line items' })).not.toBeChecked();
-    expect(screen.getByText('Total actuals')).not.toBeVisible();
+
+    await user.click(screen.getByRole('tab', { name: 'Overview' }));
+    await waitFor(() => expect(router.state.location.search).toBe(''));
+  });
+
+  it('opens the tab of a #part: #approval from Home and the notifications', async () => {
+    openPage({ body: launchFilm() }, '/plans/P-1001/activities/A-1042#approval');
+
+    expect(await screen.findByRole('region', { name: 'Approval' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Approval' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('opens the History tab and focuses its heading for View history', async () => {
+    const { user, router } = openPage({ body: launchFilm() });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
+
+    await waitFor(() => expect(router.state.location.search).toBe('?tab=history'));
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
+    );
   });
 
   it('replaces an address with another plan by the right one', async () => {

@@ -19,7 +19,11 @@ export interface ActivityActions {
  * and **Delete**, which asks first, moves the activity and its line items to the recycle bin,
  * opens the plan page and offers **Undo** for 10 seconds.
  */
-export function useActivityActions(activity: Activity): ActivityActions {
+export function useActivityActions(
+  activity: Activity,
+  /** What View history does; by default it brings the History section into view. */
+  onViewHistory: () => void = () => showHistory(),
+): ActivityActions {
   const [open, setOpen] = useState<'copy' | 'move' | 'delete' | null>(null);
   const close = () => setOpen(null);
 
@@ -27,8 +31,8 @@ export function useActivityActions(activity: Activity): ActivityActions {
     items: [
       { label: 'Copy', onSelect: () => setOpen('copy') },
       { label: 'Move', onSelect: () => setOpen('move') },
-      // Brings the page's History section into view and focuses it (feature 011, FR-011).
-      { label: 'View history', onSelect: () => showHistory() },
+      // Brings the page's History into view and focuses it (feature 011, FR-011).
+      { label: 'View history', onSelect: onViewHistory },
       {
         label: 'Delete',
         tone: 'danger',

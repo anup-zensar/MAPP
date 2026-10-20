@@ -27,7 +27,7 @@ export interface NoticeProps {
 export function Notice({ tone, title, children, role = 'status', id }: NoticeProps) {
   const Icon = ICONS[tone];
   return (
-    <div id={id} role={role} className={cx(styles.notice, styles[tone])}>
+    <div id={id} role={role} data-notice={tone} className={cx(styles.notice, styles[tone])}>
       <Icon aria-hidden="true" className={styles.icon} />
       <div className={styles.text}>
         {title && <p className={styles.title}>{title}</p>}

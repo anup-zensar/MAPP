@@ -32,6 +32,11 @@ export function usdColumn(code: string): string {
   return `Planned cost (${code})`;
 }
 
+/** "In plan currency (GBP)": the plan-currency column of the Line items section (016 FR-015). */
+export function planCurrencyColumn(code: string): string {
+  return `In plan currency (${code})`;
+}
+
 /** "100,000.00 of 120,000.00 USD assigned". */
 export function meterText(assigned: string, plannedCost: string, code: string): string {
   return `${assigned} of ${plannedCost} ${code} assigned`;
@@ -171,10 +176,8 @@ export function inActivity(name: string, id: string): string {
   return `In activity '${name}' (${id})`;
 }
 
-/** "Edit 'Agency fee'". */
-export function editTitle(name: string): string {
-  return `Edit '${name}'`;
-}
+/** The edit form's title (design system §2.3): the line item's name is in the breadcrumb. */
+export const EDIT_TITLE = 'Edit line item';
 
 // Summary bar
 export const SUMMARY_NO_COST =

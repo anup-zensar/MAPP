@@ -1,10 +1,25 @@
-/* One column, at most 720 px wide (design system §7). */
+/* One column of section cards, 20 px apart, at most 720 px wide (design system §2.4 C, §7). */
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  max-width: 720px;
+  gap: var(--grid-gap);
+  max-width: var(--form-max);
   min-width: 0;
+}
+
+/* The Shell attributes card: its groups' names are drawn as card titles, 24 px apart. */
+.attributes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.attributes h2 {
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
 }
 
 .readOnly {

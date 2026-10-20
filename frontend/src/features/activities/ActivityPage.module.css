@@ -1,4 +1,6 @@
-/* The record template (design system §2.4 B): one column of cards, 20 px apart. */
+/* The record template (design system §2.4 B): the notices, the summary cards and the tabs, one
+   column 20 px apart; inside a tab, one column of cards 20 px apart. */
+.page,
 .sections {
   display: flex;
   flex-direction: column;

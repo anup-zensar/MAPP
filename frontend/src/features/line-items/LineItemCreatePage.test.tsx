@@ -51,7 +51,11 @@ describe('LineItemCreatePage (US2)', () => {
     expect(await findForm()).toHaveValue('Launch film – line item');
     expect(document.title).toBe('New line item · NorthStar');
     expect(screen.getByRole('heading', { level: 1, name: 'New line item' })).toBeInTheDocument();
-    expect(screen.getByText("In activity 'Launch film' (A-1001)")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', {
+        name: 'Launch film',
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText("From the activity's name")).toBeInTheDocument();
     expect(screen.getByLabelText('Currency')).toHaveValue('USD');
     expect(screen.getByLabelText('Planned cost')).toHaveValue('20,000.00');
@@ -82,7 +86,7 @@ describe('LineItemCreatePage (US2)', () => {
     expect(within(breadcrumb).getByText('New line item')).toHaveAttribute('aria-current', 'page');
   });
 
-  it('shows the sections in order, From finance closed (FR-007, FR-025)', async () => {
+  it('shows the sections in order, each a card, without a finance section (FR-007, 015 FR-017)', async () => {
     renderPage();
     await findForm();
 
@@ -95,12 +99,9 @@ describe('LineItemCreatePage (US2)', () => {
       'Link to finance budget',
       'GSAP request',
     ]);
-    const fromFinance = screen.getByText('From finance (coming later)').closest('details');
-    expect(fromFinance).not.toHaveAttribute('open');
-    expect(within(fromFinance!).getByText('Total actuals')).toBeInTheDocument();
-    expect(
-      within(fromFinance!).getByText('Filled when the Finance module and GSAP are connected'),
-    ).toBeInTheDocument();
+    expect(screen.queryByText('From finance (coming later)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total actuals')).not.toBeInTheDocument();
+    expect(screen.getByText(/of \d+ needed fields? filled$/)).toBeInTheDocument();
   });
 
   it('converts the balance when the currency changes and shows the USD amount live (scenario 2, FR-011, FR-012)', async () => {

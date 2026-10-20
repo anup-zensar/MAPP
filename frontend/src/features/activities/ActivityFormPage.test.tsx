@@ -38,11 +38,8 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
     expect(await nameField()).toHaveAccessibleDescription('Required');
     expect(screen.getByRole('heading', { level: 1, name: 'New activity' })).toBeVisible();
-    expect(
-      screen.getByText(
-        "In initiative 'Digital & social' of campaign 'Helix launch' · FY2026 Lubricants Europe",
-      ),
-    ).toBeVisible();
+    // The breadcrumb says where it lives; the count line says how far the form is (P-04).
+    expect(screen.getByText(/of \d+ needed fields filled$/)).toBeVisible();
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(within(breadcrumb).getByRole('link', { name: 'Digital & social' })).toHaveAttribute(
       'href',

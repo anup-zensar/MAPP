@@ -377,3 +377,37 @@ export function deleteResult(name = 'Agency fee', id = 'L-1001') {
     },
   };
 }
+
+/** Today's rates (GET /api/exchange-rates/current), for the ⓘ that names the rates used (016 FR-009). */
+export function currentRates() {
+  return {
+    today: '2026-03-12',
+    total: 3,
+    items: [
+      {
+        currency: 'USD',
+        rate: '1',
+        inverseRate: '1',
+        rateDate: null,
+        source: null,
+        importFileName: null,
+      },
+      {
+        currency: 'EUR',
+        rate: '0.92',
+        inverseRate: '1.086957',
+        rateDate: '2026-03-01',
+        source: 'settings' as const,
+        importFileName: null,
+      },
+      {
+        currency: 'GBP',
+        rate: '0.79',
+        inverseRate: '1.265823',
+        rateDate: '2026-03-01',
+        source: 'gsapImport' as const,
+        importFileName: 'rates-2026-03-01.csv',
+      },
+    ],
+  };
+}

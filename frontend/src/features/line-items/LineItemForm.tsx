@@ -8,7 +8,6 @@ import {
   FailureMessage,
   FormErrorSummary,
   FormFooter,
-  FormSection,
   LinkButton,
   MoneyField,
   PageHeader,
@@ -19,6 +18,7 @@ import {
   valuesToClear,
 } from '@/components';
 import type { AttributeForm, FieldProblem, SaveFailure } from '@/components';
+import { FormCard, FormCardFrame, FormLayout } from '@/features/activities/FormRail';
 import { PersonField } from '@/features/people';
 import { toCents } from '@/lib/decimal';
 import { recordHref } from '@/lib/recordLinks';
@@ -26,7 +26,6 @@ import { useFormatters } from '@/lib/useFormatters';
 import { useUnsavedChanges } from '@/lib/useUnsavedChanges';
 import { CostFields } from './CostFields';
 import { FinanceBudgetFields } from './FinanceBudgetFields';
-import { FromFinanceSection } from './FromFinanceSection';
 import styles from './LineItemForm.module.css';
 import {
   addCustomMonth,
@@ -43,16 +42,15 @@ import {
   withField,
 } from './lineItemFormState';
 import type { LineItemFormState } from './lineItemFormState';
+import { LINE_ITEM_SECTION, lineItemRailSections } from './lineItemFormProgress';
 import { parseAmount, toUsd } from './lineItemMath';
 import { activityBreadcrumb } from './lineItemLinks';
 import type { LineItem, LineItemCreate, LineItemFormOptions } from './lineItemsApi';
 import {
   ACTIVITY_GONE,
   CANCEL,
-  EYEBROW,
   GO_TO_BIN,
   GO_TO_PLANS,
-  inActivity,
   LABEL,
   SAVE,
   SAVE_AND_ADD,
@@ -253,136 +251,148 @@ export function LineItemForm({
       .map((problem) => [problem.field, problem.message]),
   );
 
+  const railSections = lineItemRailSections(state, attributeForm, businessUnit);
+
   return (
     <div className={styles.page}>
+      {/* The breadcrumb names the activity, so no eyebrow or description repeats it (X-03). */}
       <PageHeader
         breadcrumb={[...activityBreadcrumb(activity), { label: breadcrumbEnd }]}
-        eyebrow={EYEBROW}
         title={title}
-        description={inActivity(activity.name, activity.id)}
       />
-      <LineItemSummaryBar balance={options.balance} change={change} />
-      <div className={styles.stack}>
-        {failure && <FailureMessage failure={failure} />}
-        {failure?.gone && (
-          <div>
-            {failure.gone === 'activity' ? (
-              <LinkButton to="/recycle-bin">{GO_TO_BIN}</LinkButton>
-            ) : (
-              <LinkButton to="/plans">{GO_TO_PLANS}</LinkButton>
-            )}
-          </div>
-        )}
-        <FormErrorSummary errors={problems} />
-      </div>
       <form noValidate aria-busy={saving} className={styles.form} onSubmit={onSubmit}>
-        <FormSection title={SECTION_BASICS}>
-          <TextField
-            label={LABEL.name}
-            name="name"
-            marking="Required"
-            maxLength={120}
-            value={state.name}
-            onChange={(value) => update((s) => withField(s, 'name', value))}
-            hint={state.sources.name}
-            error={problemOf(problems, 'name')}
-          />
-          <PersonField
-            label={LABEL.owner}
-            name="ownerId"
-            marking="Needed to submit"
-            value={state.ownerId}
-            onChange={(value) => update((s) => withField(s, 'ownerId', value))}
-            hint={state.sources.ownerId}
-            error={problemOf(problems, 'ownerId')}
-          />
-          <TextAreaField
-            label={LABEL.description}
-            name="description"
-            maxLength={2000}
-            value={state.description}
-            onChange={(value) => update((s) => withField(s, 'description', value))}
-            error={problemOf(problems, 'description')}
-          />
-        </FormSection>
+        <FormLayout
+          sections={railSections}
+          railExtra={<LineItemSummaryBar balance={options.balance} change={change} layout="rail" />}
+          narrowExtra={<LineItemSummaryBar balance={options.balance} change={change} />}
+        >
+          {(failure || problems.length > 0) && (
+            <div className={styles.stack}>
+              {failure && <FailureMessage failure={failure} />}
+              {failure?.gone && (
+                <div>
+                  {failure.gone === 'activity' ? (
+                    <LinkButton to="/recycle-bin">{GO_TO_BIN}</LinkButton>
+                  ) : (
+                    <LinkButton to="/plans">{GO_TO_PLANS}</LinkButton>
+                  )}
+                </div>
+              )}
+              <FormErrorSummary errors={problems} />
+            </div>
+          )}
+          <FormCard id={LINE_ITEM_SECTION.basics} title={SECTION_BASICS}>
+            <TextField
+              label={LABEL.name}
+              name="name"
+              marking="Required"
+              maxLength={120}
+              value={state.name}
+              onChange={(value) => update((s) => withField(s, 'name', value))}
+              hint={state.sources.name}
+              error={problemOf(problems, 'name')}
+            />
+            <PersonField
+              label={LABEL.owner}
+              name="ownerId"
+              marking="Needed to submit"
+              value={state.ownerId}
+              onChange={(value) => update((s) => withField(s, 'ownerId', value))}
+              hint={state.sources.ownerId}
+              error={problemOf(problems, 'ownerId')}
+            />
+            <TextAreaField
+              label={LABEL.description}
+              name="description"
+              maxLength={2000}
+              value={state.description}
+              onChange={(value) => update((s) => withField(s, 'description', value))}
+              error={problemOf(problems, 'description')}
+            />
+          </FormCard>
 
-        <FormSection title={SECTION_COST}>
-          <CostFields
-            state={state}
-            currencies={currencies}
-            problems={problems}
-            onCurrencyChange={(code) => update((s) => changeCurrency(s, code, currencies))}
-            onPlannedCostChange={(text) => update((s) => changePlannedCost(s, text))}
-          />
-        </FormSection>
+          <FormCard id={LINE_ITEM_SECTION.cost} title={SECTION_COST}>
+            <CostFields
+              state={state}
+              currencies={currencies}
+              problems={problems}
+              onCurrencyChange={(code) => update((s) => changeCurrency(s, code, currencies))}
+              onPlannedCostChange={(text) => update((s) => changePlannedCost(s, text))}
+            />
+          </FormCard>
 
-        <FormSection title={SECTION_SPREAD}>
-          <SpreadEditor
-            method={state.spreadMethod}
-            plannedCost={state.plannedCost}
-            currency={state.currency}
-            dates={dates}
-            customMonths={state.customMonths}
-            customTyped={state.customTyped}
-            source={state.sources.spread}
-            problems={problems}
-            onMethodChange={(method) =>
-              update((s) => changeSpreadMethod(s, method, dates, activity.planYear))
-            }
-            onMonthChange={(month, amount) => update((s) => changeCustomMonth(s, month, amount))}
-            onAddMonth={(month) => update((s) => addCustomMonth(s, month))}
-            onUseTotal={(amount) => update((s) => changePlannedCost(s, amount))}
-          />
-        </FormSection>
+          <FormCard id={LINE_ITEM_SECTION.spread} title={SECTION_SPREAD}>
+            <SpreadEditor
+              method={state.spreadMethod}
+              plannedCost={state.plannedCost}
+              currency={state.currency}
+              dates={dates}
+              customMonths={state.customMonths}
+              customTyped={state.customTyped}
+              source={state.sources.spread}
+              problems={problems}
+              onMethodChange={(method) =>
+                update((s) => changeSpreadMethod(s, method, dates, activity.planYear))
+              }
+              onMonthChange={(month, amount) => update((s) => changeCustomMonth(s, month, amount))}
+              onAddMonth={(month) => update((s) => addCustomMonth(s, month))}
+              onUseTotal={(amount) => update((s) => changePlannedCost(s, amount))}
+            />
+          </FormCard>
 
-        <FormSection title={SECTION_FINANCE_CODING}>
-          <ShellAttributeFields
-            form={attributeForm}
-            values={state.attributes}
-            onChange={(values) => update((s) => withField(s, 'attributes', values))}
-            businessUnit={businessUnit}
-            previousValues={stored?.attributes ?? {}}
-            errors={attributeErrors}
-            planLink={recordHref('plan', activity.path[0]?.id ?? '')}
-          />
-          <MoneyField
-            label={LABEL.contractedAmount}
-            name="contractedAmount"
-            currency={state.currency}
-            value={state.contractedAmount}
-            onChange={(value) => update((s) => withField(s, 'contractedAmount', value))}
-            error={problemOf(problems, 'contractedAmount')}
-          />
-        </FormSection>
+          {/* The attribute group's own name is the card's heading (UI audit LI-03, X-09). */}
+          <FormCardFrame
+            id={LINE_ITEM_SECTION.coding}
+            label={SECTION_FINANCE_CODING}
+            className={styles.codingCard}
+          >
+            <ShellAttributeFields
+              sectionHeading="h2"
+              form={attributeForm}
+              values={state.attributes}
+              onChange={(values) => update((s) => withField(s, 'attributes', values))}
+              businessUnit={businessUnit}
+              previousValues={stored?.attributes ?? {}}
+              errors={attributeErrors}
+              planLink={recordHref('plan', activity.path[0]?.id ?? '')}
+            />
+            <MoneyField
+              label={LABEL.contractedAmount}
+              name="contractedAmount"
+              currency={state.currency}
+              value={state.contractedAmount}
+              onChange={(value) => update((s) => withField(s, 'contractedAmount', value))}
+              error={problemOf(problems, 'contractedAmount')}
+            />
+          </FormCardFrame>
 
-        <FormSection title={SECTION_BUDGET}>
-          <FinanceBudgetFields
-            state={state}
-            activity={activity}
-            years={options.financeBudgetYears}
-            items={budgetItems}
-            problems={problems}
-            onYearChange={(year) => update((s) => changeBudgetYear(s, year, budgetItems))}
-            onItemChange={(id) => update((s) => withField(s, 'financeBudgetItemId', id))}
-          />
-        </FormSection>
+          <FormCard id={LINE_ITEM_SECTION.budget} title={SECTION_BUDGET}>
+            <FinanceBudgetFields
+              state={state}
+              activity={activity}
+              years={options.financeBudgetYears}
+              items={budgetItems}
+              problems={problems}
+              onYearChange={(year) => update((s) => changeBudgetYear(s, year, budgetItems))}
+              onItemChange={(id) => update((s) => withField(s, 'financeBudgetItemId', id))}
+            />
+          </FormCard>
 
-        <FormSection title={SECTION_GSAP}>
-          <CheckboxField
-            label={LABEL.requestSwbs}
-            name="requestSwbs"
-            checked={state.requestSwbs}
-            onChange={(checked) => update((s) => withField(s, 'requestSwbs', checked))}
-            hint={[SWBS_HELP, state.sources.requestSwbs].filter(Boolean).join(' ')}
-            error={problemOf(problems, 'requestSwbs')}
-          />
-          <div className={styles.readOnlyField}>
-            <span className={styles.readOnlyLabel}>{LABEL.swbsCode}</span>
-            <span className={styles.note}>{SWBS_LATER}</span>
-          </div>
-        </FormSection>
-
-        <FromFinanceSection />
+          <FormCard id={LINE_ITEM_SECTION.gsap} title={SECTION_GSAP}>
+            <CheckboxField
+              label={LABEL.requestSwbs}
+              name="requestSwbs"
+              checked={state.requestSwbs}
+              onChange={(checked) => update((s) => withField(s, 'requestSwbs', checked))}
+              hint={[SWBS_HELP, state.sources.requestSwbs].filter(Boolean).join(' ')}
+              error={problemOf(problems, 'requestSwbs')}
+            />
+            <div className={styles.readOnlyField}>
+              <span className={styles.readOnlyLabel}>{LABEL.swbsCode}</span>
+              <span className={styles.note}>{SWBS_LATER}</span>
+            </div>
+          </FormCard>
+        </FormLayout>
 
         <FormFooter>
           <Button type="submit" variant="primary" aria-busy={saving || undefined}>

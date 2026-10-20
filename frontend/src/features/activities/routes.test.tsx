@@ -55,7 +55,7 @@ describe('Activity routes (feature 006)', () => {
   it.each([
     ['/plans/P-1001/initiatives/I-1001/activities/new', 'New activity', 'New activity'],
     ['/plans/P-1001/activities/A-1001', 'Launch film', 'Launch film'],
-    ['/plans/P-1001/activities/A-1001/edit', "Edit activity 'Launch film'", 'Edit Launch film'],
+    ['/plans/P-1001/activities/A-1001/edit', 'Edit activity', 'Edit Launch film'],
   ])('opens %s: "%s", with Plans current in the sidebar', async (path, heading, tab) => {
     renderApp(path, ANSWERS);
 
@@ -75,12 +75,13 @@ describe('Activity routes (feature 006)', () => {
   });
 
   it('places the line items (007) and the approval (008) on the activity page', async () => {
-    renderApp('/plans/P-1001/activities/A-1001', ANSWERS);
+    const { user } = renderApp('/plans/P-1001/activities/A-1001', ANSWERS);
 
     const lineItems = await screen.findByRole('region', { name: 'Line items' });
     expect(lineItems).toHaveTextContent('Line items of A-1001');
     expect(lineItems.closest('#line-items')).not.toBeNull();
-    const approval = screen.getByRole('region', { name: 'Approval' });
+    await user.click(screen.getByRole('tab', { name: 'Approval' }));
+    const approval = await screen.findByRole('region', { name: 'Approval' });
     expect(approval).toHaveTextContent('Approval of A-1001');
     expect(approval.closest('#approval')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
