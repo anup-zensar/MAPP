@@ -1,0 +1,926 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 017 Approval rules (fragment)
+  version: 0.17.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT: the paths and schemas feature 017 adds to backend/api/openapi.yaml, and the changes it
+    makes to schemas and operations of features 003 and 008. Conventions of feature 001 (camelCase JSON,
+    UTC timestamps, YYYY-MM-DD dates, lists answer items and total, every failure answers the shared
+    Error object, updates send the version they started from).
+
+    How to merge:
+    - Paths and schemas without x-merge are NEW: add them as they are.
+    - A path operation or schema with "x-merge: extend" CHANGES the existing one of the same name: add
+      its properties to the existing properties, its "required" entries to the existing required list,
+      its responses to the existing responses, and its "x-add-enum" values to the named enum. Keep
+      everything else. Remove the x-merge and x-add-enum keys after merging.
+    - New request properties are optional (defaults in data-model §10); new response properties are
+      always sent (D-191).
+
+    Reused from backend/api/openapi.yaml: responses BadRequest, Unauthorized, NotFound, Conflict, Error
+    and Forbidden (feature 014); schemas ActorRef, RecordRef, Money, OptionRef, SettingRef, PersonRef,
+    ApprovalPerson, ApprovalRow, ApprovalDecision, RoleRef (feature 014).
+
+    Requires feature 014 merged first. Refusals because of who the person is answer 403 forbidden
+    (014): segregation of duties, not allowed to decide, permissions for others' delegations and for
+    running escalations. Refusals because of a record's state (an ended or cancelled delegation) answer
+    409 not_allowed (plan 017-P13). Messages: data-model §6 – §7 and plan "User-visible messages".
+    The access rules of the new operations (014 Table C) are in plan "Access rules for the new
+    operations".
+tags:
+  - name: Approval workflows
+    description: Settings › Approval workflows (features 008, 017)
+  - name: Approvals
+    description: Submitting and deciding; the approvals page and its Monitoring tab (features 008, 017)
+  - name: Approval delegations
+    description: Delegation of approval authority for a date range (feature 017)
+
+paths:
+  /api/approval-rule-options:
+    get:
+      tags: [Approval workflows]
+      operationId: getApprovalRuleOptions
+      summary: What a level's rule may name — activity types, business units and roles (FR-001, FR-005)
+      description: Roles are feature 014's roles that include approvals.decide.
+      responses:
+        "200":
+          description: The choices.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRuleOptions"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approval-delegations:
+    get:
+      tags: [Approval delegations]
+      operationId: listApprovalDelegations
+      summary: Delegations of the signed-in person (as delegating person or delegate), or everyone's (scope=all needs workflows.manage, else 403) (FR-024)
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [mine, all]
+            default: mine
+      responses:
+        "200":
+          description: Current and planned first (by first day), then ended and cancelled (latest last day first).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalDelegationPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Approval delegations]
+      operationId: createApprovalDelegation
+      summary: Delegate approvals for a date range (FR-022)
+      description: personId defaults to the signed-in person; another person needs workflows.manage (403 forbidden). Every field problem at once (400 validation_failed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalDelegationCreate"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalDelegation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approval-delegations/{delegationId}:
+    patch:
+      tags: [Approval delegations]
+      operationId: updateApprovalDelegation
+      summary: Change a planned or current delegation (FR-024)
+      description: Only the fields to change plus the version (D-203). The delegating person, or someone holding workflows.manage (else 403 forbidden); ended and cancelled ones answer 409 not_allowed.
+      parameters:
+        - $ref: "#/components/parameters/DelegationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalDelegationUpdate"
+      responses:
+        "200":
+          description: The delegation after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalDelegation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approval-delegations/{delegationId}/cancel:
+    post:
+      tags: [Approval delegations]
+      operationId: cancelApprovalDelegation
+      summary: Cancel a planned or current delegation; it is kept for the audit trail (FR-024)
+      parameters:
+        - $ref: "#/components/parameters/DelegationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalDelegationCancel"
+      responses:
+        "200":
+          description: The cancelled delegation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalDelegation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approvals/monitoring:
+    get:
+      tags: [Approvals]
+      operationId: getApprovalMonitoring
+      summary: The Monitoring tab — cards, ageing, waiting by level, overdue rows (FR-029, FR-030)
+      description: Computed over the rows of the All open tab. monthStart / monthEnd as in getApprovalSummary (both or neither; default the current UTC month).
+      parameters:
+        - name: monthStart
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: monthEnd
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: The monitoring figures.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalMonitoring"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/approvals/escalations/run:
+    post:
+      tags: [Approvals]
+      operationId: runApprovalEscalations
+      summary: Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
+      description: Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by NorthStar.
+      responses:
+        "200":
+          description: What was sent, and what could not be escalated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EscalationRunResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    DelegationId:
+      name: delegationId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: DLG-1001
+
+  schemas:
+    # ---------------- NEW ----------------
+    ApprovalConditionInput:
+      type: object
+      additionalProperties: false
+      description: A level condition as sent. At least one part is set; all set parts must match (FR-005). Amounts are USD decimal strings with at most two decimals.
+      properties:
+        plannedCostAtLeast:
+          type: [string, "null"]
+          example: "100000.00"
+        plannedCostBelow:
+          type: [string, "null"]
+          example: "10000.00"
+        businessUnitIds:
+          type: array
+          description: Options of the plan-level Business unit attribute; empty when not part of the condition.
+          items:
+            type: string
+        activityTypeIds:
+          type: array
+          items:
+            type: string
+
+    ApprovalCondition:
+      type: object
+      additionalProperties: false
+      description: A level condition as answered, with its text (data-model §2).
+      required: [plannedCostAtLeast, plannedCostBelow, businessUnits, activityTypes, text]
+      properties:
+        plannedCostAtLeast:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        plannedCostBelow:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        businessUnits:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionRef"
+        activityTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SettingRef"
+        text:
+          type: string
+          example: planned cost is below $10,000.00
+
+    ApprovalRuleOptions:
+      type: object
+      additionalProperties: false
+      required: [activityTypes, businessUnits, roles]
+      properties:
+        activityTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SettingRef"
+        businessUnits:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionRef"
+        roles:
+          type: array
+          description: Feature 014's roles that include approvals.decide, sorted by name.
+          items:
+            $ref: "#/components/schemas/RoleRef"
+
+    ApprovalExcludedPerson:
+      type: object
+      additionalProperties: false
+      description: A person left out of a level when it was resolved (FR-011).
+      required: [person, reason]
+      properties:
+        person:
+          $ref: "#/components/schemas/ApprovalPerson"
+        reason:
+          type: string
+          enum: [inactive, cannotApprove, owner, submitter]
+
+    ApprovalSubmissionLevel:
+      type: object
+      additionalProperties: false
+      description: What a submission would do with one level (FR-013).
+      required: [number, label, outcome, approvers, source, mode, ruleText, excluded, backupUsed, noApprover, advice]
+      properties:
+        number:
+          type: integer
+          minimum: 1
+        label:
+          type: string
+        outcome:
+          type: string
+          enum: [decide, skipped, autoApproved]
+        approvers:
+          type: array
+          description: The resolved approvers (decide only; empty otherwise or when a problem is listed).
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+        source:
+          type: string
+          description: Empty for named people; "line manager of Priya Raman"; "role Approver".
+        mode:
+          type: string
+          enum: [any, all]
+        ruleText:
+          type: string
+          description: The reason for skipped and autoApproved; empty for decide.
+          example: planned cost is below $10,000.00
+        excluded:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalExcludedPerson"
+        backupUsed:
+          type: boolean
+        noApprover:
+          type: boolean
+          description: Nobody resolved and no usable backup; someone deciding on behalf must decide (does not block).
+        advice:
+          type: string
+          description: The no-approver advice of data-model §3; empty otherwise.
+
+    ApprovalRuleFacts:
+      type: object
+      additionalProperties: false
+      description: The values the rules used at submission (FR-010).
+      required: [plannedCost, activityType, businessUnits]
+      properties:
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        activityType:
+          oneOf:
+            - $ref: "#/components/schemas/RecordRef"
+            - type: "null"
+        businessUnits:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionRef"
+
+    ApprovalDelegation:
+      type: object
+      additionalProperties: false
+      required: [id, person, delegate, startDate, endDate, note, state, canChange, cancelledAt, cancelledBy, version, createdAt, createdBy, updatedAt, updatedBy]
+      properties:
+        id:
+          type: string
+          example: DLG-1001
+        person:
+          $ref: "#/components/schemas/ApprovalPerson"
+        delegate:
+          $ref: "#/components/schemas/ApprovalPerson"
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        note:
+          type: string
+        state:
+          type: string
+          enum: [planned, current, ended, cancelled]
+        canChange:
+          type: boolean
+          description: The signed-in person may edit and cancel it (the delegating person or someone holding workflows.manage, and planned or current).
+        cancelledAt:
+          type: [string, "null"]
+          format: date-time
+        cancelledBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+
+    ApprovalDelegationPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, canManageOthers]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalDelegation"
+        total:
+          type: integer
+        canManageOthers:
+          type: boolean
+          description: The signed-in person holds workflows.manage (may list, create and change anyone's delegations).
+
+    ApprovalDelegationCreate:
+      type: object
+      additionalProperties: false
+      required: [delegateId, startDate, endDate]
+      properties:
+        personId:
+          type: string
+          description: Defaults to the signed-in person.
+        delegateId:
+          type: string
+        startDate:
+          type: string
+          description: YYYY-MM-DD; checked by the API.
+        endDate:
+          type: string
+        note:
+          type: string
+
+    ApprovalDelegationUpdate:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        delegateId:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        note:
+          type: string
+        version:
+          type: integer
+
+    ApprovalDelegationCancel:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+
+    ApprovalAgeingBucket:
+      type: object
+      additionalProperties: false
+      required: [bucket, label, count]
+      properties:
+        bucket:
+          type: string
+          enum: [under1, days1to2, days3to5, days6to10, over10]
+        label:
+          type: string
+          example: 3–5 days
+        count:
+          type: integer
+          minimum: 0
+
+    ApprovalLevelWaiting:
+      type: object
+      additionalProperties: false
+      required: [workflow, level, levelLabel, waiting, overdue, oldestWaitingSince]
+      properties:
+        workflow:
+          type: object
+          additionalProperties: false
+          required: [id, name]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+              description: The name at submission of the oldest round in the group.
+        level:
+          type: integer
+          minimum: 1
+        levelLabel:
+          type: string
+        waiting:
+          type: integer
+          minimum: 1
+        overdue:
+          type: integer
+          minimum: 0
+        oldestWaitingSince:
+          type: string
+          format: date-time
+
+    ApprovalMonitoring:
+      type: object
+      additionalProperties: false
+      required: [cards, ageing, byLevel, overdue, canRunEscalations]
+      properties:
+        cards:
+          type: object
+          additionalProperties: false
+          required: [overdue, escalated, averageDecisionDays, decidedThisMonth, autoApprovedThisMonth]
+          properties:
+            overdue:
+              type: integer
+            escalated:
+              type: integer
+            averageDecisionDays:
+              type: [string, "null"]
+              description: One decimal ("2.4"); null when nothing was decided in the month.
+              example: "2.4"
+            decidedThisMonth:
+              type: integer
+            autoApprovedThisMonth:
+              type: integer
+        ageing:
+          type: array
+          description: Always the five buckets, in order.
+          minItems: 5
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/ApprovalAgeingBucket"
+        byLevel:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalLevelWaiting"
+        overdue:
+          type: array
+          description: Rows of All open that are overdue, oldest waiting first.
+          items:
+            $ref: "#/components/schemas/ApprovalRow"
+        canRunEscalations:
+          type: boolean
+          description: The signed-in person holds workflows.manage.
+
+    EscalationEvent:
+      type: object
+      additionalProperties: false
+      required: [activity, roundNumber, level, action, to, waitedDays]
+      properties:
+        activity:
+          $ref: "#/components/schemas/RecordRef"
+        roundNumber:
+          type: integer
+        level:
+          type: integer
+        action:
+          type: string
+          enum: [reminded, escalated, notEscalated]
+        to:
+          type: array
+          description: Who was notified (reminded), the backup approver (escalated); empty for notEscalated.
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+        waitedDays:
+          type: integer
+
+    EscalationRunResult:
+      type: object
+      additionalProperties: false
+      required: [reminded, escalated, events, notEscalated]
+      properties:
+        reminded:
+          type: integer
+        escalated:
+          type: integer
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/EscalationEvent"
+        notEscalated:
+          type: array
+          description: Levels due for escalation that no backup approver could take.
+          items:
+            $ref: "#/components/schemas/EscalationEvent"
+
+    # ---------------- CHANGED (x-merge: extend) ----------------
+    ApprovalWorkflowLevelInput:
+      x-merge: extend
+      properties:
+        approverType:
+          type: string
+          description: Default people. Unknown values are a field problem.
+        roleId:
+          type: string
+        mode:
+          type: string
+          description: any (default) or all; manager levels are stored any.
+        appliesWhen:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalConditionInput"
+            - type: "null"
+        autoApproveWhen:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalConditionInput"
+            - type: "null"
+        backupApproverId:
+          type: string
+          description: Empty for none.
+
+    ApprovalWorkflowLevel:
+      x-merge: extend
+      required: [approverType, role, mode, appliesWhen, autoApproveWhen, backupApprover, summary]
+      properties:
+        approverType:
+          type: string
+          enum: [people, manager, role]
+        role:
+          description: The 014 role of a role level (RoleRef, consolidation D-300); null for other levels.
+          oneOf:
+            - $ref: "#/components/schemas/RoleRef"
+            - type: "null"
+        mode:
+          type: string
+          enum: [any, all]
+        appliesWhen:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalCondition"
+            - type: "null"
+        autoApproveWhen:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalCondition"
+            - type: "null"
+        backupApprover:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        summary:
+          type: string
+          description: This level's part of levelsText.
+          example: Level 1 · Line manager · automatic when planned cost is below $10,000.00
+
+    ApprovalWorkflow:
+      x-merge: extend
+      required: [reminderDays, escalationDays]
+      properties:
+        reminderDays:
+          type: [integer, "null"]
+        escalationDays:
+          type: [integer, "null"]
+
+    ApprovalWorkflowCreate:
+      x-merge: extend
+      properties:
+        reminderDays:
+          type: [integer, "null"]
+          description: Omitted or null = no reminders.
+        escalationDays:
+          type: [integer, "null"]
+
+    ApprovalWorkflowUpdate:
+      x-merge: extend
+      properties:
+        reminderDays:
+          type: [integer, "null"]
+          description: Sent only to change it; null turns reminders off.
+        escalationDays:
+          type: [integer, "null"]
+
+    ApprovalDecision:
+      x-merge: extend
+      required: [capacity, asDelegateOf]
+      properties:
+        capacity:
+          type: string
+          enum: [approver, delegate, backup, onBehalf, ""]
+          description: Empty for decisions recorded before feature 017.
+        asDelegateOf:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+
+    ApprovalChainLevel:
+      x-merge: extend
+      x-add-enum:
+        state: [skipped, autoApproved]
+      required: [mode, source, ruleText, decisions, approvedCount, requiredCount, excluded, backup, backupUsed, waitingSince, remindedAt, escalatedAt, escalatedTo, noApprover, advice]
+      properties:
+        mode:
+          type: string
+          enum: [any, all]
+        source:
+          type: string
+        ruleText:
+          type: string
+        decisions:
+          type: array
+          description: Every decision on the level, oldest first (several on "all" levels).
+          items:
+            $ref: "#/components/schemas/ApprovalDecision"
+        approvedCount:
+          type: integer
+        requiredCount:
+          type: integer
+          description: 1 for "any" levels; the number of resolved approvers for "all" levels.
+        excluded:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalExcludedPerson"
+        backup:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        backupUsed:
+          type: boolean
+        waitingSince:
+          type: [string, "null"]
+          format: date-time
+        remindedAt:
+          type: [string, "null"]
+          format: date-time
+        escalatedAt:
+          type: [string, "null"]
+          format: date-time
+        escalatedTo:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        noApprover:
+          type: boolean
+          description: Nobody waiting can act (resolved with no approver, or every waiting approver inactive or without an approving role).
+        advice:
+          type: string
+          description: The no-approver advice (data-model §3); empty otherwise.
+
+    ApprovalHistoryEntry:
+      x-merge: extend
+      x-add-enum:
+        action: [autoApproved, skipped, reminded, escalated]
+      required: [capacity, asDelegateOf, rule, escalatedTo, waitedDays]
+      properties:
+        capacity:
+          type: string
+          enum: [approver, delegate, backup, onBehalf, ""]
+        asDelegateOf:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+        rule:
+          type: string
+        escalatedTo:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+        waitedDays:
+          type: integer
+
+    DeclineNote:
+      x-merge: extend
+      required: [capacity, asDelegateOf]
+      properties:
+        capacity:
+          type: string
+          enum: [approver, delegate, backup, onBehalf, ""]
+        asDelegateOf:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+
+    ApprovalRound:
+      x-merge: extend
+      required: [facts, reminderDays, escalationDays, autoApproved]
+      properties:
+        facts:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalRuleFacts"
+            - type: "null"
+        reminderDays:
+          type: [integer, "null"]
+        escalationDays:
+          type: [integer, "null"]
+        autoApproved:
+          type: boolean
+
+    ApprovalViewer:
+      x-merge: extend
+      required: [canDecide, capacity, asDelegateOf, cannotDecideReason, isSubmitter]
+      properties:
+        canDecide:
+          type: boolean
+        capacity:
+          type: [string, "null"]
+          enum: [approver, delegate, backup, onBehalf, null]
+        asDelegateOf:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+        cannotDecideReason:
+          type: string
+          description: Empty when canDecide, and empty when the person simply is not allowed (buttons hidden, 014); otherwise the step 3e or step 4 message of data-model §6.
+        isSubmitter:
+          type: boolean
+
+    ApprovalSubmission:
+      x-merge: extend
+      required: [outcomes, approvedAutomatically]
+      properties:
+        outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalSubmissionLevel"
+        approvedAutomatically:
+          type: boolean
+          description: No level needs a decision; confirming approves the activity.
+
+    ApprovalRowRound:
+      x-merge: extend
+      required: [mode, approvedCount, requiredCount]
+      properties:
+        mode:
+          type: string
+          enum: [any, all]
+        approvedCount:
+          type: integer
+        requiredCount:
+          type: integer
+
+    ApprovalRow:
+      x-merge: extend
+      required: [asDelegateOf, escalatedTo, overdue, waitingDays, noApprover]
+      properties:
+        asDelegateOf:
+          type: array
+          description: In the Waiting for me tab, the approvers the signed-in person acts for as delegate; empty elsewhere.
+          items:
+            $ref: "#/components/schemas/ApprovalPerson"
+        escalatedTo:
+          oneOf:
+            - $ref: "#/components/schemas/ApprovalPerson"
+            - type: "null"
+        overdue:
+          type: boolean
+        waitingDays:
+          type: [integer, "null"]
+          description: Whole days the current level has waited; null for rows without an open round.
+        noApprover:
+          type: boolean
+          description: As ApprovalChainLevel.noApprover for the current level.
+
+    Notification:
+      x-merge: extend
+      x-add-enum:
+        kind: [autoApproved, reminder, escalated]
+
+    # ---- feature 003 (line manager, FR-016) ----
+    Person:
+      x-merge: extend
+      required: [manager, reportCount]
+      properties:
+        manager:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        reportCount:
+          type: integer
+          minimum: 0
+          description: People whose line manager this person is.
+
+    PersonCreate:
+      x-merge: extend
+      properties:
+        managerId:
+          type: string
+          description: Empty or left out for none.
+
+    PersonUpdate:
+      x-merge: extend
+      properties:
+        managerId:
+          type: string
+          description: Sent only to change it; empty clears it.
+
+    UsageCount:
+      x-merge: extend
+      x-add-enum:
+        role: [manager]

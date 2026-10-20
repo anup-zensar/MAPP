@@ -1,6 +1,8 @@
 # Feature Map — NorthStar (Plan module phase)
 
-Every feature of this phase, one Spec Kit folder each under `specs/`. **Numbers are the build order.**
+Every feature of this phase, one Spec Kit folder each under `specs/`. **Numbers are the build order** for 001–013;
+014–017 close the MVP gaps of Shell's BRD and are built in the order of D-307
+([brd-gap-closure-plan.md](../reports/brd-gap-closure-plan.md)).
 The map sets scope boundaries so no requirement is specified twice and none is missed.
 
 **Status values:** Draft (spec written, waiting for product-owner review) · Clarifying · Planned ·
@@ -21,6 +23,10 @@ In progress · Done.
 | 011 | [011-activity-log-and-recycle-bin](../../specs/011-activity-log-and-recycle-bin/spec.md) | Activity log page and record history; recycle bin page with restore and permanent delete | P2 | 001, 004–007 | Draft |
 | 012 | [012-bulk-actions-and-import](../../specs/012-bulk-actions-and-import/spec.md) | Select many rows: change owner/status fields, copy, move, delete; import activities from a template | P3 | 010 | Draft |
 | 013 | [013-bcpir-and-spa](../../specs/013-bcpir-and-spa/spec.md) | Shell's BCPIR and SP&A plan views (meaning to be clarified with Shell) | P3 | 004–008 | Draft |
+| 014 | [014-access-control](../../specs/014-access-control/spec.md) | Roles and access: fixed permissions, five default roles, team scopes, view-only vs edit enforced by the API, segregation of duties; global budgets allocated to market plans (BUS.ADM.020, BUS.BUD.040) | P1 | 001–011 | Planned |
+| 015 | [015-financial-transactions](../../specs/015-financial-transactions/spec.md) | Read-only GSAP purchase orders, invoices, payments and accruals from a simulated GSAP extract, shown on the activity, line item, plan, campaign, initiative, All work, Home and a Financials page (BUS.FIN.080) | P1 | 004–010, 014 | Planned |
+| 016 | [016-planning-and-currency-extensions](../../specs/016-planning-and-currency-extensions/spec.md) | Dated exchange rates and a simulated GSAP rate import, plan currency, budget by month, split activity, plan type and multi-year views, Shell-attribute filters and Breakdown, field help (BUS.BUD.050, BUS.PLN.020, BUS.PLN.040, BUS.BUD.020, BUS.UX.020) | P1 | 002, 004–007, 010, 014 | Planned |
+| 017 | [017-approval-rules](../../specs/017-approval-rules/spec.md) | Approval rules: approver sources (named people, line manager, role), any or all, conditional and automatic levels, backup approvers, delegation, reminders and escalation, Monitoring (BUS.WFL.010) | P1 | 003, 008, 014 | Planned |
 
 ## Scope boundaries
 
@@ -42,6 +48,10 @@ In progress · Done.
 | Activity log page, History tab, recycle bin page | 011 | — |
 | Bulk actions, import | 012 | Single-record copy/move (004–006) |
 | BCPIR / SP&A views | 013 | The BCPIR flag field itself (004) |
+| Permissions, roles, scopes, access rules, who may decide an approval; global budgets and allocations | 014 | Approval rules (017) |
+| GSAP transactions, their simulated import and matching, financial figures | 015 | Creating POs or invoices (GSAP owns them) |
+| Exchange-rate history and rate import, plan currency, budget phasing, split activity, plan type, multi-year views, attribute filters and Breakdown, field help | 016 | A line item's own currency (007) |
+| Approval rules, delegation, reminders and escalation, Monitoring | 017 | The check order of who may decide (014, extended by 017) |
 
 ## Cross-cutting rules every spec follows
 
@@ -50,15 +60,17 @@ In progress · Done.
    specs reference them by section instead of copying.
 3. **Screens** follow `docs/product/design-system.md`: the standard CRUD pattern, status chips,
    completeness chips, all errors at once, delete to the recycle bin with Undo.
-4. **No permissions in this phase:** every signed-in user can do everything; specs describe "the user".
-   Where Shell has a permission rule, the spec states the rule and notes it is enforced when roles arrive.
+4. **Permissions (014, D-223):** every action needs its permission of 014 Table A, enforced by the API (fail
+   closed). Specs 001–013 describe "the user"; 014's Table C gives the rule of each of their operations, and
+   specs 015–017 name the permission each action needs.
 5. **Every change is logged** with the actor (mechanism from 001).
-6. **Out of scope:** Finance, Measure, GSAP integration, e-mail, real sign-in, AI. Mention only as future
-   integration points.
+6. **Out of scope:** Finance budgets module, purchase requests, accrual calculation, Measure, live GSAP
+   integration, e-mail, real sign-in (SSO), AI. GSAP transactions and daily rates come from simulated feeds
+   behind adapters (015, 016; D-242, D-259, D-308). Mention the rest only as future integration points.
 
 ## Later (not in this phase)
 
-Finance module (finance budgets, transactions, purchase requests, accruals), Measure dashboards, GSAP
-integration (SWBS request/response, PR/PO/invoice sync), Microsoft Entra ID sign-in and role-based access,
+Finance module (finance budgets, purchase requests, accrual calculation), Measure dashboards, live GSAP
+integration (SWBS request/response, PR/PO/invoice sync, rate feed), Microsoft Entra ID sign-in (roles from Entra),
 PostgreSQL and Azure hosting, templates, snapshots, related plans/activities, multi-year activity linking,
 custom goals, latest estimates, media codes, calendar feeds, AI assistant.

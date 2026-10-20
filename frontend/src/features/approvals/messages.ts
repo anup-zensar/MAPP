@@ -86,6 +86,10 @@ export function historyActionText(action: ApprovalHistoryEntry['action']): strin
     recalled: 'Recalled',
     restarted: 'Approval restarted',
     cancelled: 'Cancelled — activity deleted',
+    autoApproved: 'Approved automatically',
+    skipped: 'Skipped',
+    reminded: 'Reminder sent',
+    escalated: 'Escalated',
   };
   return texts[action];
 }
@@ -113,6 +117,10 @@ export function chainStateText(
       return 'Waiting';
     case 'notReached':
       return 'Not reached yet';
+    case 'autoApproved':
+      return 'Approved automatically';
+    case 'skipped':
+      return 'Skipped — its rule did not apply';
     case 'notDecided':
       if (outcome === 'recalled') {
         return 'Not decided — submission recalled';

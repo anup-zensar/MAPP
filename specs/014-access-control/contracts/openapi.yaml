@@ -1,0 +1,1466 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 014 Access Control and Global Budgets (fragment)
+  version: 0.14.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT to be merged into backend/api/openapi.yaml. It holds feature 014's paths and component schemas, in the
+    conventions of features 001-003 (Settings-style PATCH with only the changed fields plus version, D-203). Every $ref
+    that is not defined here points at a component of the merged file:
+    - 001: responses BadRequest, Unauthorized, NotFound, Conflict, Error; schemas ActorRef, DeleteResult,
+      ActivityLogPage, Lock;
+    - 002: schemas Money, MoneyInput, ChangeImpact;
+    - 003: schemas PersonRef, TeamRef; parameter PersonId;
+    - 004: schema PlanStatus.
+
+    Changes to other features' components when merging (all added properties are optional in the schema and always
+    sent once 014 is built, D-191):
+    - Error.code gains `forbidden`. The new response `Forbidden` (403) is added to EVERY operation of the merged file
+      except getHealth, getDemoPeople, signIn and signOut.
+    - CurrentUser gains `access` ($ref MyAccess).
+    - Plan and PlanSummary gain `access` ($ref PlanAccess); Plan gains `allocation` (oneOf PlanAllocation, null).
+    - PlanCampaigns and ActivitySummaryPage gain `access` ($ref PlanContentAccess).
+    - Campaign and Initiative gain `access` ($ref ContainerAccess).
+    - Activity gains `access` ($ref ActivityAccess).
+    - LineItemSection and LineItemDetails gain `access` ($ref LineItemAccess).
+    - ApprovalPerson gains `canApprove` (boolean): false when the person holds no role that approves (FR-028).
+    - RecycleBinListItem gains `access` ($ref BinEntryAccess).
+    - ImpactWarning.kind gains `approverCannotApprove` and `removesOwnAdministration`.
+    - PlanUpdate: a `budget` different from an allocated plan's budget answers 409 not_allowed (no schema change).
+    - Tags "Roles and access" and "Global budgets" are added.
+tags:
+  - name: Roles and access
+    description: Roles, people's roles and scopes, access rules (feature 014)
+  - name: Global budgets
+    description: Global budgets and their allocations to plans (feature 014)
+paths:
+  /api/access/permissions:
+    get:
+      tags: [Roles and access]
+      operationId: listPermissions
+      summary: The fixed list of permissions, grouped as the role page shows them (spec Table A)
+      responses:
+        "200":
+          description: Every permission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionCatalogue"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/access/people:
+    get:
+      tags: [Roles and access]
+      operationId: listPeopleAccess
+      summary: Everyone with their roles and scopes (People tab), active people first, then by name
+      responses:
+        "200":
+          description: Everyone.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeopleAccessPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/access/changes:
+    get:
+      tags: [Roles and access]
+      operationId: listAccessChanges
+      summary: The latest 20 activity-log entries about roles, people's roles and the access rules, newest first
+      responses:
+        "200":
+          description: The entries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLogPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/roles:
+    get:
+      tags: [Roles and access]
+      operationId: listRoles
+      summary: Every role, Administrator first, then by name ignoring letter case
+      responses:
+        "200":
+          description: The roles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RolePage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Roles and access]
+      operationId: createRole
+      summary: Create a role (the web app fills the form from another role for "Copy of …")
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleCreate"
+      responses:
+        "201":
+          description: The new role.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/roles/{roleId}:
+    parameters:
+      - $ref: "#/components/parameters/RoleId"
+    get:
+      tags: [Roles and access]
+      operationId: getRole
+      summary: One role with its permissions and the people who hold it
+      responses:
+        "200":
+          description: The role.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Roles and access]
+      operationId: updateRole
+      summary: Change a role's name, description, permissions or default scope
+      description: >-
+        Only the fields to change, plus the version (D-203). The Administrator role refuses every change with 409
+        not_allowed ("The Administrator role always has every permission and can't be changed.").
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUpdate"
+      responses:
+        "200":
+          description: The role after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Roles and access]
+      operationId: deleteRole
+      summary: Delete a role nobody holds (it goes to the recycle bin)
+      description: >-
+        409 in_use while people hold the role ("'Viewer' is given to 1 person. Take it away from them first."); 409
+        not_allowed for the Administrator role.
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/people/{personId}/roles:
+    parameters:
+      - $ref: "#/components/parameters/PersonId"
+    get:
+      tags: [Roles and access]
+      operationId: getPersonRoles
+      summary: A person's roles and scopes, with the plain-language summary of what they allow
+      responses:
+        "200":
+          description: The person's roles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonRoles"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Roles and access]
+      operationId: setPersonRoles
+      summary: Replace a person's roles and scopes with the complete list sent
+      description: >-
+        roles is the complete list after the change; version is the PERSON's version (the person's version goes up by
+        one and one "Roles" change is logged on the person, D-057 style). 409 not_allowed when no active
+        administrator would be left; 409 version_conflict when the person changed meanwhile.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonRolesUpdate"
+      responses:
+        "200":
+          description: The person's roles after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonRoles"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/people/{personId}/roles/impact:
+    parameters:
+      - $ref: "#/components/parameters/PersonId"
+    post:
+      tags: [Roles and access]
+      operationId: checkPersonRolesImpact
+      summary: Say what saving these roles would cause, without saving (FR-022)
+      description: >-
+        Warnings of kinds approverCannotApprove (the person is an approver in active workflows and would no longer
+        hold approvals.decide) and removesOwnAdministration (the signed-in administrator removes their own
+        Administrator role). An empty list means nothing to confirm.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonRolesUpdate"
+      responses:
+        "200":
+          description: The warnings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/access-rules:
+    get:
+      tags: [Roles and access]
+      operationId: getAccessRules
+      summary: The access rules (segregation of duties, role for new people)
+      responses:
+        "200":
+          description: The rules.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessRules"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Roles and access]
+      operationId: updateAccessRules
+      summary: Change the access rules (only the fields to change, plus the version)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessRulesUpdate"
+      responses:
+        "200":
+          description: The rules after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessRules"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/global-budgets:
+    get:
+      tags: [Global budgets]
+      operationId: listGlobalBudgets
+      summary: The global budgets of a year, by name
+      parameters:
+        - name: year
+          in: query
+          required: false
+          description: The year; every year when left out.
+          schema:
+            type: integer
+            example: 2026
+      responses:
+        "200":
+          description: The global budgets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalBudgetPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Global budgets]
+      operationId: createGlobalBudget
+      summary: Create a global budget (needs globalBudgets.manage for All markets)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlobalBudgetCreate"
+      responses:
+        "201":
+          description: The new global budget.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalBudget"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/global-budgets/{globalBudgetId}:
+    parameters:
+      - $ref: "#/components/parameters/GlobalBudgetId"
+    get:
+      tags: [Global budgets]
+      operationId: getGlobalBudget
+      summary: One global budget with its figures and the allocations the viewer may see (FR-032, FR-033)
+      responses:
+        "200":
+          description: The global budget.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalBudget"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Global budgets]
+      operationId: updateGlobalBudget
+      summary: Change a global budget's name, amount, owner or description (the year never changes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlobalBudgetUpdate"
+      responses:
+        "200":
+          description: The global budget after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalBudget"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Global budgets]
+      operationId: deleteGlobalBudget
+      summary: Delete a global budget without allocations (it goes to the recycle bin); 409 in_use otherwise
+      responses:
+        "200":
+          description: Moved to the recycle bin.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/global-budgets/{globalBudgetId}/allocation-options:
+    parameters:
+      - $ref: "#/components/parameters/GlobalBudgetId"
+    get:
+      tags: [Global budgets]
+      operationId: listAllocationOptions
+      summary: Plans of the budget's year without an allocation that the person may allocate to, by name
+      responses:
+        "200":
+          description: The plans.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllocationOptionPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/global-budgets/{globalBudgetId}/allocations:
+    parameters:
+      - $ref: "#/components/parameters/GlobalBudgetId"
+    post:
+      tags: [Global budgets]
+      operationId: createBudgetAllocation
+      summary: Allocate part of the global budget to a plan; the plan's budget becomes the amount (FR-030)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetAllocationCreate"
+      responses:
+        "201":
+          description: The global budget after the allocation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalBudget"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/budget-allocations/{allocationId}:
+    parameters:
+      - $ref: "#/components/parameters/AllocationId"
+    patch:
+      tags: [Global budgets]
+      operationId: updateBudgetAllocation
+      summary: Change an allocation's amount; the plan's budget follows in the same save
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetAllocationUpdate"
+      responses:
+        "200":
+          description: The global budget after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalBudget"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Global budgets]
+      operationId: removeBudgetAllocation
+      summary: Remove an allocation; the plan keeps its budget, which becomes editable again (FR-034)
+      responses:
+        "200":
+          description: The global budget after the removal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalBudget"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+components:
+  parameters:
+    RoleId:
+      name: roleId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: RL-1003
+    GlobalBudgetId:
+      name: globalBudgetId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: GB-1001
+    AllocationId:
+      name: allocationId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: BA-1001
+  responses:
+    Forbidden:
+      description: >-
+        The signed-in person's roles do not allow this (forbidden), or the record is outside their access. The message
+        says so in plain language and names nothing of a record they cannot see. Nothing was changed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    PermissionKey:
+      type: string
+      description: A permission of spec Table A.
+      enum:
+        - plans.view
+        - plans.create
+        - plans.edit
+        - plans.publish
+        - plans.delete
+        - campaigns.edit
+        - campaigns.delete
+        - activities.edit
+        - activities.delete
+        - activities.submit
+        - data.export
+        - finance.view
+        - finance.link
+        - finance.import
+        - approvals.decide
+        - approvals.decideOnBehalf
+        - globalBudgets.view
+        - globalBudgets.manage
+        - settings.manage
+        - exchangeRates.manage
+        - workflows.manage
+        - people.manage
+        - access.manage
+        - activityLog.viewAll
+        - recycleBin.purge
+    PermissionInfo:
+      type: object
+      additionalProperties: false
+      required: [key, label, scoped]
+      properties:
+        key:
+          $ref: "#/components/schemas/PermissionKey"
+        label:
+          type: string
+          example: Edit plan details
+        scoped:
+          type: boolean
+          description: true when the permission applies only to plans in the role's scope.
+    PermissionGroup:
+      type: object
+      additionalProperties: false
+      required: [name, permissions]
+      properties:
+        name:
+          type: string
+          enum: [Plans and planning, Financial data, Approvals, Global budgets, Administration]
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PermissionInfo"
+    PermissionCatalogue:
+      type: object
+      additionalProperties: false
+      required: [groups]
+      properties:
+        groups:
+          type: array
+          description: The five groups in Table A order.
+          items:
+            $ref: "#/components/schemas/PermissionGroup"
+    AccessScopeType:
+      type: string
+      enum: [all, myTeams, teams]
+      description: all = All markets; myTeams = the teams the person belongs to now; teams = the chosen teams.
+    AccessScope:
+      type: object
+      additionalProperties: false
+      required: [type, teams, text]
+      properties:
+        type:
+          $ref: "#/components/schemas/AccessScopeType"
+        teams:
+          type: array
+          description: >-
+            The teams the scope covers now, sorted by name: the person's teams for myTeams, the chosen teams for teams;
+            empty for all.
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        text:
+          type: string
+          description: As screens show it.
+          example: My teams
+    AccessScopeInput:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          $ref: "#/components/schemas/AccessScopeType"
+        teamIds:
+          type: array
+          description: Required (1 or more) when type is teams; ignored otherwise.
+          items:
+            type: string
+    RoleBuiltIn:
+      type: string
+      enum: ["", administrator, globalPlanner, planner, approver, viewer]
+      description: Which seeded role this is; empty for roles made in Settings.
+    RoleRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, builtIn]
+      properties:
+        id:
+          type: string
+          example: RL-1003
+        name:
+          type: string
+          example: Planner
+        builtIn:
+          $ref: "#/components/schemas/RoleBuiltIn"
+    Role:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - description
+        - builtIn
+        - permissions
+        - defaultScope
+        - people
+        - locks
+        - version
+        - createdAt
+        - createdBy
+        - updatedAt
+        - updatedBy
+      properties:
+        id:
+          type: string
+          example: RL-1003
+        name:
+          type: string
+        description:
+          type: string
+        builtIn:
+          $ref: "#/components/schemas/RoleBuiltIn"
+        permissions:
+          type: array
+          description: In Table A order; every permission for the Administrator role.
+          items:
+            $ref: "#/components/schemas/PermissionKey"
+        defaultScope:
+          type: string
+          enum: [all, myTeams]
+        people:
+          type: array
+          description: The people who hold the role, active or not, sorted by name.
+          items:
+            $ref: "#/components/schemas/PersonRef"
+        locks:
+          type: array
+          description: >-
+            Fields and actions that cannot be used, with why (Administrator role: name, description, permissions,
+            defaultScope, delete; a role people hold: delete).
+          items:
+            $ref: "#/components/schemas/Lock"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+    RolePage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        total:
+          type: integer
+    RoleCreate:
+      type: object
+      additionalProperties: false
+      required: [name, permissions, defaultScope]
+      properties:
+        name:
+          type: string
+          description: 1-60 characters, unique among roles ignoring letter case.
+        description:
+          type: string
+          description: 0-300 characters; empty when left out.
+        permissions:
+          type: array
+          description: At least one.
+          items:
+            $ref: "#/components/schemas/PermissionKey"
+        defaultScope:
+          type: string
+          enum: [all, myTeams]
+    RoleUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, and the version (D-203); a field left out keeps its value.
+      required: [version]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          description: The complete list after the change.
+          items:
+            $ref: "#/components/schemas/PermissionKey"
+        defaultScope:
+          type: string
+          enum: [all, myTeams]
+        version:
+          type: integer
+    RoleAssignment:
+      type: object
+      additionalProperties: false
+      required: [id, role, scope, scopeEmpty]
+      properties:
+        id:
+          type: string
+          example: RA-1001
+        role:
+          $ref: "#/components/schemas/RoleRef"
+        scope:
+          $ref: "#/components/schemas/AccessScope"
+        scopeEmpty:
+          type: boolean
+          description: true when the scope covers no team (chosen teams all deleted, or myTeams for a person without a team).
+    RoleAssignmentInput:
+      type: object
+      additionalProperties: false
+      required: [roleId, scope]
+      properties:
+        roleId:
+          type: string
+        scope:
+          $ref: "#/components/schemas/AccessScopeInput"
+    PersonRoles:
+      type: object
+      additionalProperties: false
+      required: [person, teams, roles, permissions, version]
+      properties:
+        person:
+          $ref: "#/components/schemas/PersonRef"
+        teams:
+          type: array
+          description: The person's teams, active or not, sorted by name.
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        roles:
+          type: array
+          description: Sorted by role name; empty for a person without a role.
+          items:
+            $ref: "#/components/schemas/RoleAssignment"
+        permissions:
+          type: array
+          description: >-
+            What the roles allow together (merged as authz.Grants does), in Table A order; the web app writes the
+            plain-language summary from it (plan, summariseAccess).
+          items:
+            $ref: "#/components/schemas/MyPermission"
+        version:
+          type: integer
+          minimum: 1
+          description: The person's version; send it back with PUT.
+    PersonRolesUpdate:
+      type: object
+      additionalProperties: false
+      required: [roles, version]
+      properties:
+        roles:
+          type: array
+          description: >-
+            The complete list after the change, one entry per role (a role twice answers validation_failed). Field
+            problems are keyed roles.<i>.roleId, roles.<i>.scope and roles.<i>.teamIds, i counted from 0.
+          items:
+            $ref: "#/components/schemas/RoleAssignmentInput"
+        version:
+          type: integer
+          description: The person's version the administrator started from.
+    PeopleAccessPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonRoles"
+        total:
+          type: integer
+    AccessRules:
+      type: object
+      additionalProperties: false
+      required: [noSelfApproval, newPersonRole, version, updatedAt, updatedBy]
+      properties:
+        noSelfApproval:
+          type: boolean
+          description: Nobody approves an activity they own or submitted (FR-026).
+        newPersonRole:
+          description: The role a person added in Settings › People receives with scope My teams; null for no role.
+          oneOf:
+            - $ref: "#/components/schemas/RoleRef"
+            - type: "null"
+        version:
+          type: integer
+          minimum: 0
+          description: 0 while the defaults have never been saved (the first PATCH creates the record).
+        updatedAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        updatedBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+    AccessRulesUpdate:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        noSelfApproval:
+          type: boolean
+        newPersonRoleId:
+          type: string
+          description: A role that is not Administrator; "" for no role.
+        version:
+          type: integer
+    MyPermission:
+      type: object
+      additionalProperties: false
+      required: [key, all, teams]
+      properties:
+        key:
+          $ref: "#/components/schemas/PermissionKey"
+        all:
+          type: boolean
+          description: Granted for All markets (always true for permissions that are not scoped).
+        teams:
+          type: array
+          description: The teams it is granted for, when all is false, sorted by name.
+          items:
+            $ref: "#/components/schemas/TeamRef"
+    MyAccess:
+      type: object
+      additionalProperties: false
+      description: >-
+        The signed-in person's access, for navigation, page-level gates, the View only note and My profile. Per-record
+        decisions come from the records' own access objects, never from this.
+      required: [roles, permissions, administrators, noSelfApproval]
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleAssignment"
+        permissions:
+          type: array
+          description: Every permission the person holds, in Table A order; permissions not held are left out.
+          items:
+            $ref: "#/components/schemas/MyPermission"
+        administrators:
+          type: array
+          description: The active people who hold the Administrator role, sorted by name ("Ask …").
+          items:
+            $ref: "#/components/schemas/PersonRef"
+        noSelfApproval:
+          type: boolean
+    ActionAvailability:
+      type: object
+      additionalProperties: false
+      description: >-
+        Whether the signed-in person may take one action on this record now, and why not. The one availability
+        shape of the contract: 008's ApprovalActionAvailability is an alias of it (consolidation D-300). reason is
+        empty when available; otherwise the exact message the API would answer, or empty when the screen hides the
+        action instead of explaining it (008's approve and decline for people who may not decide, 014 FR-025).
+      required: [available, reason]
+      properties:
+        available:
+          type: boolean
+        reason:
+          type: string
+    PlanContentAccess:
+      type: object
+      additionalProperties: false
+      description: What the person may do with the records inside one plan (tree rows, add buttons, row menus).
+      required:
+        - addCampaign
+        - editCampaigns
+        - deleteCampaigns
+        - addActivity
+        - editActivities
+        - deleteActivities
+        - submitActivities
+      properties:
+        addCampaign:
+          $ref: "#/components/schemas/ActionAvailability"
+        editCampaigns:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: Add initiatives, edit, move and copy campaigns and initiatives.
+        deleteCampaigns:
+          $ref: "#/components/schemas/ActionAvailability"
+        addActivity:
+          $ref: "#/components/schemas/ActionAvailability"
+        editActivities:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: Edit, move and copy activities; add, edit and duplicate line items.
+        deleteActivities:
+          $ref: "#/components/schemas/ActionAvailability"
+        submitActivities:
+          $ref: "#/components/schemas/ActionAvailability"
+    PlanAccess:
+      type: object
+      additionalProperties: false
+      required: [edit, editBudget, delete, publish, copy, content]
+      properties:
+        edit:
+          $ref: "#/components/schemas/ActionAvailability"
+        editBudget:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: Not available for an allocated plan (reason "Allocated from '…' — ask … to change it.").
+        delete:
+          $ref: "#/components/schemas/ActionAvailability"
+        publish:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: Publish and Unpublish (the plan's own readiness rules still apply).
+        copy:
+          $ref: "#/components/schemas/ActionAvailability"
+        content:
+          $ref: "#/components/schemas/PlanContentAccess"
+    ContainerAccess:
+      type: object
+      additionalProperties: false
+      description: A campaign's or an initiative's actions; addChild is Add initiative or Add activity.
+      required: [edit, delete, move, copy, addChild]
+      properties:
+        edit:
+          $ref: "#/components/schemas/ActionAvailability"
+        delete:
+          $ref: "#/components/schemas/ActionAvailability"
+        move:
+          $ref: "#/components/schemas/ActionAvailability"
+        copy:
+          $ref: "#/components/schemas/ActionAvailability"
+        addChild:
+          $ref: "#/components/schemas/ActionAvailability"
+    ActivityAccess:
+      type: object
+      additionalProperties: false
+      required: [edit, delete, move, copy, addLineItem, editLineItems, deleteLineItems, submit, seeFinance]
+      properties:
+        edit:
+          $ref: "#/components/schemas/ActionAvailability"
+        delete:
+          $ref: "#/components/schemas/ActionAvailability"
+        move:
+          $ref: "#/components/schemas/ActionAvailability"
+        copy:
+          $ref: "#/components/schemas/ActionAvailability"
+        addLineItem:
+          $ref: "#/components/schemas/ActionAvailability"
+        editLineItems:
+          $ref: "#/components/schemas/ActionAvailability"
+        deleteLineItems:
+          $ref: "#/components/schemas/ActionAvailability"
+        submit:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: Permission only; 008's actions.submit adds the activity's own state rules.
+        seeFinance:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: Show the "From finance" section (FR-015).
+    LineItemAccess:
+      type: object
+      additionalProperties: false
+      required: [add, edit, delete, duplicate, seeFinance]
+      properties:
+        add:
+          $ref: "#/components/schemas/ActionAvailability"
+        edit:
+          $ref: "#/components/schemas/ActionAvailability"
+        delete:
+          $ref: "#/components/schemas/ActionAvailability"
+        duplicate:
+          $ref: "#/components/schemas/ActionAvailability"
+        seeFinance:
+          $ref: "#/components/schemas/ActionAvailability"
+    BinEntryAccess:
+      type: object
+      additionalProperties: false
+      required: [restore, deletePermanently]
+      properties:
+        restore:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: Also Undo and the restore preview.
+        deletePermanently:
+          $ref: "#/components/schemas/ActionAvailability"
+    GlobalBudgetRef:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          example: GB-1001
+        name:
+          type: string
+          example: FY2026 Global marketing budget
+    PlanAllocation:
+      type: object
+      additionalProperties: false
+      description: The allocation that sets a plan's budget (Plan.allocation, FR-031, FR-033).
+      required: [allocationId, globalBudget, amount, owner, canOpen]
+      properties:
+        allocationId:
+          type: string
+          example: BA-1001
+        globalBudget:
+          $ref: "#/components/schemas/GlobalBudgetRef"
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: In the plan's currency; equal to the plan budget (D-303).
+        owner:
+          description: The global budget's owner, whom to ask; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        canOpen:
+          type: boolean
+          description: The viewer holds globalBudgets.view, so the global budget's name is a link.
+    AllocationPlanRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, year, status, version]
+      properties:
+        id:
+          type: string
+          example: P-1001
+        name:
+          type: string
+        year:
+          type: integer
+        status:
+          $ref: "#/components/schemas/PlanStatus"
+        version:
+          type: integer
+          minimum: 1
+          description: Send it as planVersion with allocation changes.
+    GlobalBudgetFigures:
+      type: object
+      additionalProperties: false
+      description: >-
+        Every figure in USD. Allocations and planned costs kept in a plan's own currency are converted to USD once
+        each at the current rate, on read (D-303, D-041).
+      required: [amount, allocated, unallocated, plannedCost, overAllocated]
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+        allocated:
+          $ref: "#/components/schemas/Money"
+          description: Sum of every allocation, including those in the Other markets row.
+        unallocated:
+          $ref: "#/components/schemas/Money"
+          description: amount - allocated; negative when over-allocated.
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+          description: Planned cost of every allocated plan (domain model 4.2).
+        overAllocated:
+          type: boolean
+    BudgetAllocationRow:
+      type: object
+      additionalProperties: false
+      required: [id, plan, teams, owner, amount, amountUsd, plannedCost, leftToPlan, budgetUsedPercent, version, access]
+      properties:
+        id:
+          type: string
+          example: BA-1001
+        plan:
+          $ref: "#/components/schemas/AllocationPlanRef"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        amount:
+          $ref: "#/components/schemas/Money"
+          description: The allocation in the plan's currency; amount, plannedCost and leftToPlan are in that currency (D-303).
+        amountUsd:
+          $ref: "#/components/schemas/Money"
+          description: The allocation converted to USD at the current rate, as counted in GlobalBudgetFigures.allocated.
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+          description: null when nothing in the plan has a planned cost (as the plan page).
+        leftToPlan:
+          $ref: "#/components/schemas/Money"
+        budgetUsedPercent:
+          description: Planned cost / allocation x 100 with two decimals; null when the allocation is 0.00.
+          oneOf:
+            - type: string
+              example: "62.50"
+            - type: "null"
+        version:
+          type: integer
+          minimum: 1
+        access:
+          type: object
+          additionalProperties: false
+          required: [edit, remove]
+          properties:
+            edit:
+              $ref: "#/components/schemas/ActionAvailability"
+            remove:
+              $ref: "#/components/schemas/ActionAvailability"
+    OtherMarketsRow:
+      type: object
+      additionalProperties: false
+      description: Allocations to plans the viewer cannot see, added up in USD (FR-033, D-303).
+      required: [planCount, amount, plannedCost]
+      properties:
+        planCount:
+          type: integer
+          minimum: 1
+        amount:
+          $ref: "#/components/schemas/Money"
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+    AllocationOption:
+      type: object
+      additionalProperties: false
+      required: [plan, teams, owner, budget, canAllocate]
+      properties:
+        plan:
+          $ref: "#/components/schemas/AllocationPlanRef"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamRef"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        budget:
+          description: The plan's budget now; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        canAllocate:
+          $ref: "#/components/schemas/ActionAvailability"
+    AllocationOptionPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllocationOption"
+        total:
+          type: integer
+    GlobalBudget:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - year
+        - amount
+        - owner
+        - description
+        - figures
+        - allocations
+        - otherMarkets
+        - plansWithoutAllocation
+        - locks
+        - access
+        - version
+        - createdAt
+        - createdBy
+        - updatedAt
+        - updatedBy
+      properties:
+        id:
+          type: string
+          example: GB-1001
+        name:
+          type: string
+        year:
+          type: integer
+        amount:
+          $ref: "#/components/schemas/Money"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        description:
+          type: string
+        figures:
+          $ref: "#/components/schemas/GlobalBudgetFigures"
+        allocations:
+          type: array
+          description: Allocations to plans the viewer can see, sorted by plan name.
+          items:
+            $ref: "#/components/schemas/BudgetAllocationRow"
+        otherMarkets:
+          oneOf:
+            - $ref: "#/components/schemas/OtherMarketsRow"
+            - type: "null"
+        plansWithoutAllocation:
+          type: array
+          description: Visible plans of the year without any allocation, sorted by name ("Plans of 2026 without an allocation").
+          items:
+            $ref: "#/components/schemas/AllocationOption"
+        locks:
+          type: array
+          description: Always the year ("The year can't change once the global budget is saved."); delete while allocated.
+          items:
+            $ref: "#/components/schemas/Lock"
+        access:
+          type: object
+          additionalProperties: false
+          required: [edit, delete, allocate]
+          properties:
+            edit:
+              $ref: "#/components/schemas/ActionAvailability"
+            delete:
+              $ref: "#/components/schemas/ActionAvailability"
+            allocate:
+              $ref: "#/components/schemas/ActionAvailability"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+    GlobalBudgetSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, year, owner, figures, allocationCount]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        year:
+          type: integer
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/PersonRef"
+            - type: "null"
+        figures:
+          $ref: "#/components/schemas/GlobalBudgetFigures"
+        allocationCount:
+          type: integer
+          description: Every allocation of the global budget.
+    GlobalBudgetPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, years, create]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalBudgetSummary"
+        total:
+          type: integer
+        years:
+          type: array
+          description: Every year that has a global budget, newest first (the year filter).
+          items:
+            type: integer
+        create:
+          $ref: "#/components/schemas/ActionAvailability"
+          description: New global budget (needs globalBudgets.manage for All markets).
+    GlobalBudgetCreate:
+      type: object
+      additionalProperties: false
+      required: [name, year, amount, ownerId]
+      properties:
+        name:
+          type: string
+        year:
+          type: integer
+        amount:
+          $ref: "#/components/schemas/MoneyInput"
+          description: currency must be USD.
+        ownerId:
+          type: string
+        description:
+          type: string
+    GlobalBudgetUpdate:
+      type: object
+      additionalProperties: false
+      description: Only the fields to change, and the version (D-203). The year cannot change.
+      required: [version]
+      properties:
+        name:
+          type: string
+        amount:
+          $ref: "#/components/schemas/MoneyInput"
+        ownerId:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+    BudgetAllocationCreate:
+      type: object
+      additionalProperties: false
+      required: [planId, amount, planVersion]
+      properties:
+        planId:
+          type: string
+        amount:
+          $ref: "#/components/schemas/MoneyInput"
+          description: >-
+            In the plan's currency (016; USD until 016 is built), 0 or more; another currency is a field problem
+            "Enter the amount in <code>, the plan's currency." (consolidation D-303).
+        planVersion:
+          type: integer
+          description: The plan's version the person saw; a newer plan answers 409 version_conflict.
+    BudgetAllocationUpdate:
+      type: object
+      additionalProperties: false
+      required: [amount, version, planVersion]
+      properties:
+        amount:
+          $ref: "#/components/schemas/MoneyInput"
+          description: In the plan's currency, as BudgetAllocationCreate.amount (D-303).
+        version:
+          type: integer
+          description: The allocation's version.
+        planVersion:
+          type: integer
+          description: The plan's version the person saw.

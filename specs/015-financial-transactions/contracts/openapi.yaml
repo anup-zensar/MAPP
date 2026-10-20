@@ -1,0 +1,1054 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 015 fragment (financial transactions)
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT to merge into backend/api/openapi.yaml. It follows that file's conventions and reuses its
+    components by $ref: responses BadRequest, Unauthorized, NotFound, Conflict, Error; schemas Money (002),
+    ActorRef (001), HomeScope (009); parameter HomeScope (009).
+
+    GSAP transactions are read-only (BUS.FIN.080). They arrive through a feed: now the simulated GSAP
+    extract (the import operations below) and the demo seed. Every amount marked "display" is in the
+    reader's display currency (D-061), converted once from a USD sum. "amount" is the transaction's
+    own currency as GSAP sent it.
+
+    Access (FR-028, consolidation D-299 and D-301): feature 014's permissions finance.view (scoped),
+    finance.link (scoped to the line item's plan) and finance.import. A refusal by permission, and a record
+    outside the person's access, answers 403 forbidden (Forbidden). 409 not_allowed stays only for the record
+    rules of link and unlink.
+
+    Merge rules:
+      1. Add the tag Financials, the paths, the parameters and the schemas below.
+      2. Add `- $ref: "#/components/parameters/AllWorkFinance"` to the parameters of GET /api/all-work
+         and GET /api/all-work/export (after AllWorkStrategic).
+      3. In schema AllWorkColumn, property group, add the enum value `financials` (after lineItem). The
+         column keys committed, invoiced, paid, accrued and notYetCommitted (kind money) are served by
+         GET /api/all-work/options; defaultColumns gains committed and invoiced.
+      4. List the ten new operations in notYetServed (backend/internal/app/app_test.go) until served.
+tags:
+  - name: Financials
+    description: GSAP purchase orders, invoices, payments and accruals (read-only) and their import
+paths:
+  /api/financials/records/{recordId}:
+    get:
+      tags: [Financials]
+      operationId: getFinancialRecord
+      summary: The financial figures of one plan, campaign, initiative, activity or line item
+      description: |
+        Figures of the record, the figures of each child (plan → campaigns, campaign → initiatives,
+        initiative → activities, activity → line items; none for a line item), the 5 latest
+        transactions (posting date, then ID, newest first), the SWBS codes on a line item's
+        transactions and where the data comes from. Calculated on read (FR-011, FR-012).
+      parameters:
+        - $ref: "#/components/parameters/FinancialRecordId"
+      responses:
+        "200":
+          description: The record's financials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialRecordView"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/transactions:
+    get:
+      tags: [Financials]
+      operationId: listFinancialTransactions
+      summary: One page of transactions for a filter set, with counts per tab and totals
+      description: |
+        counts are per tab for every filter except type and link (the "Not linked" tab counts link =
+        notLinked). totals cover every filter except type. A refused parameter answers 400
+        validation_failed with FieldError.field set to the parameter's name.
+      parameters:
+        - $ref: "#/components/parameters/FinancialType"
+        - $ref: "#/components/parameters/FinancialSearch"
+        - $ref: "#/components/parameters/FinancialYear"
+        - $ref: "#/components/parameters/FinancialPlan"
+        - $ref: "#/components/parameters/FinancialRecordFilter"
+        - $ref: "#/components/parameters/FinancialLinkFilter"
+        - $ref: "#/components/parameters/FinancialSort"
+        - $ref: "#/components/parameters/FinancialPageNumber"
+        - $ref: "#/components/parameters/FinancialPageSize"
+      responses:
+        "200":
+          description: The page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialTransactionPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/transactions/{transactionId}:
+    get:
+      tags: [Financials]
+      operationId: getFinancialTransaction
+      summary: One transaction with every field, its link and its import
+      parameters:
+        - $ref: "#/components/parameters/FinancialTransactionId"
+      responses:
+        "200":
+          description: The transaction.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialTransaction"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/transactions/{transactionId}/link:
+    post:
+      tags: [Financials]
+      operationId: linkFinancialTransaction
+      summary: Link a not-linked transaction to a line item by hand (FR-026)
+      description: |
+        Only for transactions whose link state is notLinked. A rule-based link answers 409 not_allowed
+        ("Linked by GSAP data (HX key HX1006) — correct it in GSAP."). A missing line item, or one in
+        the recycle bin, answers 400 validation_failed on lineItemId. Logged (verb "linked").
+      parameters:
+        - $ref: "#/components/parameters/FinancialTransactionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialLinkRequest"
+      responses:
+        "200":
+          description: The transaction after linking.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialTransaction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/transactions/{transactionId}/unlink:
+    post:
+      tags: [Financials]
+      operationId: unlinkFinancialTransaction
+      summary: Undo a manual link (FR-026)
+      description: |
+        Only when matchedBy is manual; otherwise 409 not_allowed ("Only links made by a person can be
+        undone here."). The transaction is matched again by the rules and usually becomes notLinked
+        with its reason. Logged (verb "unlinked").
+      parameters:
+        - $ref: "#/components/parameters/FinancialTransactionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialUnlinkRequest"
+      responses:
+        "200":
+          description: The transaction after unlinking.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialTransaction"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/overview:
+    get:
+      tags: [Financials]
+      operationId: getFinancialOverview
+      summary: Home's Financials card for the current year and the Home scope (FR-025)
+      parameters:
+        - $ref: "#/components/parameters/HomeScope"
+      responses:
+        "200":
+          description: The overview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialOverview"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/imports:
+    get:
+      tags: [Financials]
+      operationId: listFinancialImports
+      summary: Every GSAP import, newest first (FR-008)
+      responses:
+        "200":
+          description: The imports.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialImportPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Financials]
+      operationId: createFinancialImport
+      summary: Import a simulated GSAP extract (FR-004 – FR-007)
+      description: |
+        Applies the valid rows (refused rows are skipped and listed), links every row by the rules,
+        retries every stored not-linked transaction, stores one import record and writes one
+        activity-log entry. A problem with the whole file answers 400 validation_failed on content
+        (or fileName) and saves nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialImportRequest"
+      responses:
+        "201":
+          description: The import result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialImportResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/imports/check:
+    post:
+      tags: [Financials]
+      operationId: checkFinancialImport
+      summary: Check a simulated GSAP extract without saving anything
+      description: |
+        Runs exactly what the import would do and discards it. Lists at most 200 problems and 200
+        not-linked rows; the totals say how many there are.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialImportRequest"
+      responses:
+        "200":
+          description: What the import would do.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialImportCheck"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/financials/imports/template:
+    get:
+      tags: [Financials]
+      operationId: getFinancialImportTemplate
+      summary: The sample GSAP extract file (header and three example rows, FR-009)
+      responses:
+        "200":
+          description: The file, named northstar-gsap-extract-sample.csv in Content-Disposition.
+          headers:
+            Content-Disposition:
+              description: attachment with filename.
+              schema:
+                type: string
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    FinancialRecordId:
+      name: recordId
+      in: path
+      required: true
+      description: A plan, campaign, initiative, activity or line item readable ID.
+      schema:
+        type: string
+        pattern: ^[PCIAL]-[0-9]+$
+        example: A-1002
+    FinancialTransactionId:
+      name: transactionId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^FT-[0-9]+$
+        example: FT-1003
+    FinancialType:
+      name: type
+      in: query
+      description: The tab. Default all.
+      schema:
+        type: string
+        enum: [all, purchaseOrder, invoice, payment, accrual]
+        default: all
+    FinancialSearch:
+      name: q
+      in: query
+      description: >-
+        Text searched, ignoring letter case, in document number, PO number, vendor code and name, SWBS code,
+        HX key, description, and the linked line item's and activity's name and ID (at most 200 characters).
+      schema:
+        type: string
+        maxLength: 200
+    FinancialYear:
+      name: year
+      in: query
+      description: The linked plan's year; not-linked transactions by posting year. Default the current year.
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    FinancialPlan:
+      name: planId
+      in: query
+      schema:
+        type: string
+        pattern: ^P-[0-9]+$
+    FinancialRecordFilter:
+      name: recordId
+      in: query
+      description: Only transactions linked under this record (plan, campaign, initiative, activity or line item).
+      schema:
+        type: string
+        pattern: ^[PCIAL]-[0-9]+$
+    FinancialLinkFilter:
+      name: link
+      in: query
+      description: The Not linked tab sends notLinked. Default all.
+      schema:
+        type: string
+        enum: [all, linked, notLinked]
+        default: all
+    FinancialSort:
+      name: sort
+      in: query
+      description: A column and a direction. Default postingDate:desc (ties by ID, newest first). amount sorts by the USD value.
+      schema:
+        type: string
+        pattern: ^(postingDate|documentNumber|type|vendor|amount|linkedTo):(asc|desc)$
+        default: postingDate:desc
+    FinancialPageNumber:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    FinancialPageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        enum: [50, 100, 200]
+        default: 50
+    AllWorkFinance:
+      name: finance
+      in: query
+      description: >-
+        Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when
+        the activity or one of its line items is committed above its planned cost.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [hasPurchaseOrder, noPurchaseOrder, invoiced, committedAbovePlanned]
+
+  schemas:
+    FinancialTransactionType:
+      type: string
+      enum: [purchaseOrder, invoice, payment, accrual]
+    FinancialMatchedBy:
+      type: string
+      description: The rule that linked the transaction (FR-007) or manual (FR-026).
+      enum: [lineItemId, trackingKey, poNumber, swbsCode, manual]
+    FinancialLinkState:
+      type: string
+      enum: [linked, lineItemDeleted, notLinked]
+    FinancialRecordRef:
+      type: object
+      additionalProperties: false
+      required: [type, id, name]
+      properties:
+        type:
+          $ref: "#/components/schemas/AttributeLevel"
+        id:
+          type: string
+          example: L-1006
+        name:
+          type: string
+          example: Stand build
+    FinancialTotals:
+      type: object
+      additionalProperties: false
+      description: Sums in the display currency.
+      required: [committed, invoiced, paid, accrued]
+      properties:
+        committed:
+          $ref: "#/components/schemas/Money"
+        invoiced:
+          $ref: "#/components/schemas/Money"
+        paid:
+          $ref: "#/components/schemas/Money"
+        accrued:
+          $ref: "#/components/schemas/Money"
+    FinancialFigures:
+      type: object
+      additionalProperties: false
+      description: A record's figures (FR-011, FR-013), display currency.
+      required:
+        - plannedCost
+        - committed
+        - invoiced
+        - paid
+        - accrued
+        - notYetCommitted
+        - committedPercent
+        - committedAbovePlanned
+        - lineItemsAbovePlanned
+        - firstLineItemAbovePlanned
+        - transactionCount
+      properties:
+        plannedCost:
+          description: Null when the record has no planned cost.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        committed:
+          $ref: "#/components/schemas/Money"
+        invoiced:
+          $ref: "#/components/schemas/Money"
+        paid:
+          $ref: "#/components/schemas/Money"
+        accrued:
+          $ref: "#/components/schemas/Money"
+        notYetCommitted:
+          description: Planned cost − committed; negative when committed above planned cost; null without a planned cost.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        committedPercent:
+          description: Whole per cent, half up; null without a planned cost or when it is 0.00.
+          oneOf:
+            - type: integer
+            - type: "null"
+        committedAbovePlanned:
+          type: boolean
+        lineItemsAbovePlanned:
+          type: integer
+          description: Live line items below (activities and containers) committed above their own planned cost; 0 for line items.
+        firstLineItemAbovePlanned:
+          description: The first of them (by line item ID), for the link; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/FinancialRecordRef"
+            - type: "null"
+        transactionCount:
+          type: integer
+          description: Transactions linked to the record's live line items.
+    FinancialSource:
+      type: object
+      additionalProperties: false
+      required: [dataAsOf, feedName, fileName, accrualMonth]
+      properties:
+        dataAsOf:
+          description: When the newest import was made; null when no GSAP data was ever loaded.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        feedName:
+          oneOf:
+            - type: string
+              example: Demo data (simulated GSAP)
+            - type: "null"
+        fileName:
+          oneOf:
+            - type: string
+            - type: "null"
+        accrualMonth:
+          description: The latest accrual month in the data (Accrued counts only it); null when there are no accruals.
+          oneOf:
+            - type: string
+              pattern: ^[0-9]{4}-(0[1-9]|1[0-2])$
+              example: 2026-09
+            - type: "null"
+    FinancialBreakdownRow:
+      type: object
+      additionalProperties: false
+      required: [record, figures]
+      properties:
+        record:
+          $ref: "#/components/schemas/FinancialRecordRef"
+        figures:
+          $ref: "#/components/schemas/FinancialFigures"
+    FinancialRecordView:
+      type: object
+      additionalProperties: false
+      required: [record, planId, path, figures, breakdownLevel, breakdown, latest, swbsCodes, source]
+      properties:
+        record:
+          $ref: "#/components/schemas/FinancialRecordRef"
+        planId:
+          type: string
+          example: P-1001
+        path:
+          type: array
+          description: The record's ancestors, plan first; empty for a plan.
+          items:
+            $ref: "#/components/schemas/FinancialRecordRef"
+        figures:
+          $ref: "#/components/schemas/FinancialFigures"
+        breakdownLevel:
+          description: The level of the breakdown rows; null for a line item.
+          oneOf:
+            - $ref: "#/components/schemas/AttributeLevel"
+            - type: "null"
+        breakdown:
+          type: array
+          description: One row per live child, in the order of the plan tree (line items in creation order).
+          items:
+            $ref: "#/components/schemas/FinancialBreakdownRow"
+        latest:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/FinancialTransactionRow"
+        swbsCodes:
+          type: array
+          description: Line items - the distinct SWBS codes on their transactions, sorted; [] otherwise.
+          items:
+            type: string
+        source:
+          $ref: "#/components/schemas/FinancialSource"
+    FinancialVendor:
+      type: object
+      additionalProperties: false
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          example: V-100103
+        name:
+          type: string
+          example: Outdoor Frames Ltd
+    FinancialLink:
+      type: object
+      additionalProperties: false
+      required: [state, matchedBy, reason, lineItemId, path, manualBy, manualAt]
+      properties:
+        state:
+          $ref: "#/components/schemas/FinancialLinkState"
+        matchedBy:
+          oneOf:
+            - $ref: "#/components/schemas/FinancialMatchedBy"
+            - type: "null"
+        reason:
+          description: The not-linked reason (data-model §4.2) or the recycle-bin sentence; null when linked.
+          oneOf:
+            - type: string
+            - type: "null"
+        lineItemId:
+          oneOf:
+            - type: string
+              pattern: ^L-[0-9]+$
+            - type: "null"
+        path:
+          type: array
+          description: Plan → campaign → initiative → activity → line item when linked; [] otherwise.
+          items:
+            $ref: "#/components/schemas/FinancialRecordRef"
+        manualBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+        manualAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+    FinancialTransactionRow:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - name
+        - documentNumber
+        - lineNumber
+        - poNumber
+        - poLineNumber
+        - postingDate
+        - accrualMonth
+        - amount
+        - amountDisplay
+        - currencyMissing
+        - vendor
+        - description
+        - swbsCode
+        - link
+      properties:
+        id:
+          type: string
+          example: FT-1003
+        type:
+          $ref: "#/components/schemas/FinancialTransactionType"
+        name:
+          type: string
+          description: Readable name - "PO 4500001003 / 10", "Invoice 5100002003".
+        documentNumber:
+          type: string
+        lineNumber:
+          type: string
+          description: "\"\" when none."
+        poNumber:
+          type: string
+          description: "\"\" when none."
+        poLineNumber:
+          type: string
+          description: "\"\" when none."
+        postingDate:
+          type: string
+          format: date
+        accrualMonth:
+          oneOf:
+            - type: string
+              pattern: ^[0-9]{4}-(0[1-9]|1[0-2])$
+            - type: "null"
+        amount:
+          $ref: "#/components/schemas/Money"
+        amountDisplay:
+          description: In the display currency; null when the currency is no longer in Settings.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        currencyMissing:
+          type: boolean
+        vendor:
+          oneOf:
+            - $ref: "#/components/schemas/FinancialVendor"
+            - type: "null"
+        description:
+          type: string
+        swbsCode:
+          type: string
+          description: "\"\" when none."
+        link:
+          $ref: "#/components/schemas/FinancialLink"
+    FinancialImportRef:
+      type: object
+      additionalProperties: false
+      required: [id, feedName, fileName, importedAt, importedBy]
+      properties:
+        id:
+          type: string
+          example: FIM-1001
+        feedName:
+          type: string
+        fileName:
+          type: string
+          description: "\"\" for the demo data."
+        importedAt:
+          type: string
+          format: date-time
+        importedBy:
+          $ref: "#/components/schemas/ActorRef"
+    FinancialTransaction:
+      type: object
+      additionalProperties: false
+      description: A FinancialTransactionRow plus the fields of the details panel (FR-022).
+      required:
+        - id
+        - type
+        - name
+        - documentNumber
+        - lineNumber
+        - poNumber
+        - poLineNumber
+        - postingDate
+        - accrualMonth
+        - amount
+        - amountUsd
+        - amountDisplay
+        - currencyMissing
+        - vendor
+        - description
+        - swbsCode
+        - trackingKey
+        - sentLineItemId
+        - link
+        - import
+        - canLink
+        - canUnlink
+        - version
+        - createdAt
+        - updatedAt
+        - updatedBy
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/FinancialTransactionType"
+        name:
+          type: string
+        documentNumber:
+          type: string
+        lineNumber:
+          type: string
+        poNumber:
+          type: string
+        poLineNumber:
+          type: string
+        postingDate:
+          type: string
+          format: date
+        accrualMonth:
+          oneOf:
+            - type: string
+              pattern: ^[0-9]{4}-(0[1-9]|1[0-2])$
+            - type: "null"
+        amount:
+          $ref: "#/components/schemas/Money"
+        amountUsd:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        amountDisplay:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        currencyMissing:
+          type: boolean
+        vendor:
+          oneOf:
+            - $ref: "#/components/schemas/FinancialVendor"
+            - type: "null"
+        description:
+          type: string
+        swbsCode:
+          type: string
+        trackingKey:
+          type: string
+          description: As sent, upper case ("HX1006"); "" when none.
+        sentLineItemId:
+          type: string
+          description: The line_item_id column as sent; "" when none.
+        link:
+          $ref: "#/components/schemas/FinancialLink"
+        import:
+          $ref: "#/components/schemas/FinancialImportRef"
+        canLink:
+          type: boolean
+          description: Not linked and the person may link (Access).
+        canUnlink:
+          type: boolean
+          description: Manually linked and the person may link.
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+    FinancialTypeCounts:
+      type: object
+      additionalProperties: false
+      required: [all, purchaseOrder, invoice, payment, accrual, notLinked]
+      properties:
+        all:
+          type: integer
+        purchaseOrder:
+          type: integer
+        invoice:
+          type: integer
+        payment:
+          type: integer
+        accrual:
+          type: integer
+        notLinked:
+          type: integer
+    FinancialPlanChoice:
+      type: object
+      additionalProperties: false
+      required: [id, name, year]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        year:
+          type: integer
+    FinancialChoices:
+      type: object
+      additionalProperties: false
+      required: [years, currentYear, plans]
+      properties:
+        years:
+          type: array
+          description: Years of plans and of not-linked transactions' posting dates, plus the current year, newest first.
+          items:
+            type: integer
+        currentYear:
+          type: integer
+        plans:
+          type: array
+          description: Live plans of the selected year, by name.
+          items:
+            $ref: "#/components/schemas/FinancialPlanChoice"
+    FinancialTransactionPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, page, pageSize, year, counts, totals, recordFilter, choices, source]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialTransactionRow"
+        total:
+          type: integer
+          description: Matching transactions for every filter (the selected tab included).
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        year:
+          type: integer
+        counts:
+          $ref: "#/components/schemas/FinancialTypeCounts"
+        totals:
+          $ref: "#/components/schemas/FinancialTotals"
+        recordFilter:
+          description: The record of the recordId filter, for its chip; null without it.
+          oneOf:
+            - $ref: "#/components/schemas/FinancialRecordRef"
+            - type: "null"
+        choices:
+          $ref: "#/components/schemas/FinancialChoices"
+        source:
+          $ref: "#/components/schemas/FinancialSource"
+    FinancialLinkRequest:
+      type: object
+      additionalProperties: false
+      required: [lineItemId, version]
+      properties:
+        lineItemId:
+          type: string
+          pattern: ^L-[0-9]+$
+          example: L-1007
+        version:
+          type: integer
+    FinancialUnlinkRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+    FinancialImportRequest:
+      type: object
+      additionalProperties: false
+      required: [fileName, content]
+      properties:
+        fileName:
+          type: string
+          maxLength: 200
+          example: gsap-2026-10-19.csv
+        content:
+          type: string
+          contentEncoding: base64
+          description: The .csv file (UTF-8, at most 700 KB and 5,000 data rows) encoded as base64.
+    FinancialImportProblem:
+      type: object
+      additionalProperties: false
+      required: [row, column, message]
+      properties:
+        row:
+          type: integer
+          description: The file's row number (2 = first data row).
+        column:
+          type: string
+          description: The CSV column name; "" for a problem with the whole row.
+        message:
+          type: string
+    FinancialImportNotLinkedRow:
+      type: object
+      additionalProperties: false
+      required: [row, name, reason]
+      properties:
+        row:
+          type: integer
+        name:
+          type: string
+          example: PO 4500001004 / 10
+        reason:
+          type: string
+    FinancialImportCounts:
+      type: object
+      additionalProperties: false
+      required: [rows, new, updated, unchanged, refused, notLinked, relinked]
+      properties:
+        rows:
+          type: integer
+          description: rows = new + updated + unchanged + refused.
+        new:
+          type: integer
+        updated:
+          type: integer
+        unchanged:
+          type: integer
+        refused:
+          type: integer
+        notLinked:
+          type: integer
+          description: Accepted rows of this file left not linked.
+        relinked:
+          type: integer
+          description: Earlier not-linked transactions this import linked.
+    FinancialImportCheck:
+      type: object
+      additionalProperties: false
+      required: [fileName, counts, problems, problemsTotal, notLinked, notLinkedTotal, unusedColumns]
+      properties:
+        fileName:
+          type: string
+        counts:
+          $ref: "#/components/schemas/FinancialImportCounts"
+        problems:
+          type: array
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/FinancialImportProblem"
+        problemsTotal:
+          type: integer
+        notLinked:
+          type: array
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/FinancialImportNotLinkedRow"
+        notLinkedTotal:
+          type: integer
+        unusedColumns:
+          type: array
+          description: Header names NorthStar does not read.
+          items:
+            type: string
+    FinancialImport:
+      type: object
+      additionalProperties: false
+      required: [id, source, feedName, fileName, importedAt, importedBy, counts]
+      properties:
+        id:
+          type: string
+          example: FIM-1002
+        source:
+          type: string
+          enum: [file, demo]
+        feedName:
+          type: string
+          example: Simulated GSAP extract
+        fileName:
+          type: string
+        importedAt:
+          type: string
+          format: date-time
+        importedBy:
+          $ref: "#/components/schemas/ActorRef"
+        counts:
+          $ref: "#/components/schemas/FinancialImportCounts"
+    FinancialImportResult:
+      type: object
+      additionalProperties: false
+      required: [import, problems, problemsTotal, notLinked, notLinkedTotal]
+      properties:
+        import:
+          $ref: "#/components/schemas/FinancialImport"
+        problems:
+          type: array
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/FinancialImportProblem"
+        problemsTotal:
+          type: integer
+        notLinked:
+          type: array
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/FinancialImportNotLinkedRow"
+        notLinkedTotal:
+          type: integer
+    FinancialImportPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialImport"
+        total:
+          type: integer
+    FinancialOverview:
+      type: object
+      additionalProperties: false
+      required: [year, scope, figures, activitiesAbovePlanned, notLinked, source]
+      properties:
+        year:
+          type: integer
+        scope:
+          $ref: "#/components/schemas/HomeScope"
+        figures:
+          $ref: "#/components/schemas/FinancialFigures"
+        activitiesAbovePlanned:
+          type: integer
+          description: Activities of the scope's plans committed above planned cost (data-model §5).
+        notLinked:
+          type: integer
+          description: Transactions not linked to a line item (all of them; visible to people who may import once roles exist).
+        source:
+          $ref: "#/components/schemas/FinancialSource"

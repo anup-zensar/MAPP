@@ -1,4 +1,13 @@
-import { Bell, CircleCheckBig, CircleX, RotateCcw, RotateCw, Undo2 } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Bell,
+  BellRing,
+  CircleCheckBig,
+  CircleX,
+  RotateCcw,
+  RotateCw,
+  Undo2,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button, Skeleton, useToast } from '@/components';
@@ -18,6 +27,9 @@ const KIND_ICONS: Record<AppNotification['kind'], LucideIcon> = {
   declined: CircleX,
   recalled: Undo2,
   restarted: RotateCcw,
+  autoApproved: CircleCheckBig,
+  escalated: ArrowUpRight,
+  reminder: BellRing,
 };
 
 export interface NotificationListProps {

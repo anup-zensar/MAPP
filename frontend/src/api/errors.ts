@@ -32,6 +32,7 @@ export type ApiErrorKind =
   | 'notAllowed'
   | 'notReady'
   | 'parentDeletedPermanently'
+  | 'forbidden'
   | 'unreachable'
   | 'other';
 
@@ -53,6 +54,7 @@ const KIND_BY_CODE: Record<ErrorBody['code'], ApiErrorKind> = {
   not_allowed: 'notAllowed',
   not_ready: 'notReady',
   parent_deleted_permanently: 'parentDeletedPermanently',
+  forbidden: 'forbidden',
   internal_error: 'other',
 };
 

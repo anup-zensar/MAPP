@@ -2618,14 +2618,975 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/access/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The fixed list of permissions, grouped as the role page shows them (spec Table A) */
+        get: operations["listPermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/access/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Everyone with their roles and scopes (People tab), active people first, then by name */
+        get: operations["listPeopleAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/access/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest 20 activity-log entries about roles, people's roles and the access rules, newest first */
+        get: operations["listAccessChanges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every role, Administrator first, then by name ignoring letter case */
+        get: operations["listRoles"];
+        put?: never;
+        /** Create a role (the web app fills the form from another role for "Copy of …") */
+        post: operations["createRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example RL-1003 */
+                roleId: components["parameters"]["RoleId"];
+            };
+            cookie?: never;
+        };
+        /** One role with its permissions and the people who hold it */
+        get: operations["getRole"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a role nobody holds (it goes to the recycle bin)
+         * @description 409 in_use while people hold the role ("'Viewer' is given to 1 person. Take it away from them first."); 409 not_allowed for the Administrator role.
+         */
+        delete: operations["deleteRole"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a role's name, description, permissions or default scope
+         * @description Only the fields to change, plus the version (D-203). The Administrator role refuses every change with 409 not_allowed ("The Administrator role always has every permission and can't be changed.").
+         */
+        patch: operations["updateRole"];
+        trace?: never;
+    };
+    "/api/people/{personId}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        /** A person's roles and scopes, with the plain-language summary of what they allow */
+        get: operations["getPersonRoles"];
+        /**
+         * Replace a person's roles and scopes with the complete list sent
+         * @description roles is the complete list after the change; version is the PERSON's version (the person's version goes up by one and one "Roles" change is logged on the person, D-057 style). 409 not_allowed when no active administrator would be left; 409 version_conflict when the person changed meanwhile.
+         */
+        put: operations["setPersonRoles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/people/{personId}/roles/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say what saving these roles would cause, without saving (FR-022)
+         * @description Warnings of kinds approverCannotApprove (the person is an approver in active workflows and would no longer hold approvals.decide) and removesOwnAdministration (the signed-in administrator removes their own Administrator role). An empty list means nothing to confirm.
+         */
+        post: operations["checkPersonRolesImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/access-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The access rules (segregation of duties, role for new people) */
+        get: operations["getAccessRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change the access rules (only the fields to change, plus the version) */
+        patch: operations["updateAccessRules"];
+        trace?: never;
+    };
+    "/api/global-budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The global budgets of a year, by name */
+        get: operations["listGlobalBudgets"];
+        put?: never;
+        /** Create a global budget (needs globalBudgets.manage for All markets) */
+        post: operations["createGlobalBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/global-budgets/{globalBudgetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        /** One global budget with its figures and the allocations the viewer may see (FR-032, FR-033) */
+        get: operations["getGlobalBudget"];
+        put?: never;
+        post?: never;
+        /** Delete a global budget without allocations (it goes to the recycle bin); 409 in_use otherwise */
+        delete: operations["deleteGlobalBudget"];
+        options?: never;
+        head?: never;
+        /** Change a global budget's name, amount, owner or description (the year never changes) */
+        patch: operations["updateGlobalBudget"];
+        trace?: never;
+    };
+    "/api/global-budgets/{globalBudgetId}/allocation-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        /** Plans of the budget's year without an allocation that the person may allocate to, by name */
+        get: operations["listAllocationOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/global-budgets/{globalBudgetId}/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Allocate part of the global budget to a plan; the plan's budget becomes the amount (FR-030) */
+        post: operations["createBudgetAllocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/budget-allocations/{allocationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example BA-1001 */
+                allocationId: components["parameters"]["AllocationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an allocation; the plan keeps its budget, which becomes editable again (FR-034) */
+        delete: operations["removeBudgetAllocation"];
+        options?: never;
+        head?: never;
+        /** Change an allocation's amount; the plan's budget follows in the same save */
+        patch: operations["updateBudgetAllocation"];
+        trace?: never;
+    };
+    "/api/financials/records/{recordId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The financial figures of one plan, campaign, initiative, activity or line item
+         * @description Figures of the record, the figures of each child (plan → campaigns, campaign → initiatives,
+         *     initiative → activities, activity → line items; none for a line item), the 5 latest
+         *     transactions (posting date, then ID, newest first), the SWBS codes on a line item's
+         *     transactions and where the data comes from. Calculated on read (FR-011, FR-012).
+         */
+        get: operations["getFinancialRecord"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One page of transactions for a filter set, with counts per tab and totals
+         * @description counts are per tab for every filter except type and link (the "Not linked" tab counts link =
+         *     notLinked). totals cover every filter except type. A refused parameter answers 400
+         *     validation_failed with FieldError.field set to the parameter's name.
+         */
+        get: operations["listFinancialTransactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/transactions/{transactionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One transaction with every field, its link and its import */
+        get: operations["getFinancialTransaction"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/transactions/{transactionId}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link a not-linked transaction to a line item by hand (FR-026)
+         * @description Only for transactions whose link state is notLinked. A rule-based link answers 409 not_allowed
+         *     ("Linked by GSAP data (HX key HX1006) — correct it in GSAP."). A missing line item, or one in
+         *     the recycle bin, answers 400 validation_failed on lineItemId. Logged (verb "linked").
+         */
+        post: operations["linkFinancialTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/transactions/{transactionId}/unlink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo a manual link (FR-026)
+         * @description Only when matchedBy is manual; otherwise 409 not_allowed ("Only links made by a person can be
+         *     undone here."). The transaction is matched again by the rules and usually becomes notLinked
+         *     with its reason. Logged (verb "unlinked").
+         */
+        post: operations["unlinkFinancialTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Home's Financials card for the current year and the Home scope (FR-025) */
+        get: operations["getFinancialOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every GSAP import, newest first (FR-008) */
+        get: operations["listFinancialImports"];
+        put?: never;
+        /**
+         * Import a simulated GSAP extract (FR-004 – FR-007)
+         * @description Applies the valid rows (refused rows are skipped and listed), links every row by the rules,
+         *     retries every stored not-linked transaction, stores one import record and writes one
+         *     activity-log entry. A problem with the whole file answers 400 validation_failed on content
+         *     (or fileName) and saves nothing.
+         */
+        post: operations["createFinancialImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/imports/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check a simulated GSAP extract without saving anything
+         * @description Runs exactly what the import would do and discards it. Lists at most 200 problems and 200
+         *     not-linked rows; the totals say how many there are.
+         */
+        post: operations["checkFinancialImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/financials/imports/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The sample GSAP extract file (header and three example rows, FR-009) */
+        get: operations["getFinancialImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/currencies/{code}/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        /** A currency's rate history, newest first, and its current rate */
+        get: operations["listCurrencyRates"];
+        put?: never;
+        /** Add a dated rate (source manual). USD answers validation_failed on code ("USD is always 1."). */
+        post: operations["addCurrencyRate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/currencies/{code}/rates/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What adding this rate would change (saves nothing, D-044)
+         * @description Validates like addCurrencyRate. When the rate would become the current rate, answers the line-item
+         *     warning of 002 and an amountsRecalculated warning for the plans planned in the currency (016 FR-005);
+         *     a future-dated rate answers no warning.
+         */
+        post: operations["checkCurrencyRateImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exchange-rates/{rateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example XR-1001 */
+                rateId: components["parameters"]["RateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Move a rate to the recycle bin
+         * @description Refused with validation_failed on id when it is the currency's last rate dated today or earlier
+         *     ("EUR needs a rate dated today or earlier.").
+         */
+        delete: operations["deleteExchangeRate"];
+        options?: never;
+        head?: never;
+        /** Change a rate's value (its date never changes); the rate becomes source manual */
+        patch: operations["updateExchangeRate"];
+        trace?: never;
+    };
+    "/api/exchange-rates/{rateId}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example XR-1001 */
+                rateId: components["parameters"]["RateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What changing this rate would change (saves nothing) */
+        post: operations["checkExchangeRateImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exchange-rates/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every currency's current rate with its date and source (the "rate used" of FR-009) */
+        get: operations["listCurrentRates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exchange-rates/import-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review a GSAP daily rate file (simulated feed); saves nothing
+         * @description Every row's outcome (data-model §2.4). An unreadable file (missing column, not CSV, above 2 MB or
+         *     20,000 rows) answers validation_failed on content.
+         */
+        post: operations["checkRateImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exchange-rates/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import the rows to add and replace of a GSAP daily rate file, in one step
+         * @description Re-reads the file with the same rules as import-check. Nothing to add or replace answers
+         *     validation_failed on content ("Nothing to import: every rate is already present or not used.").
+         */
+        post: operations["importRates"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exchange-rates/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest rate imports, newest first */
+        get: operations["listRateImports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exchange-rates/import-sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A sample GSAP daily rate file with today's rates of the active currencies (+0.5 %) */
+        get: operations["getRateImportSample"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/field-help": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every help entry of the catalogue, with its text (edited or default) */
+        get: operations["listFieldHelp"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/field-help/{helpKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description A key of the Field help catalogue (data-model §6).
+                 * @example plan.budget
+                 */
+                helpKey: components["parameters"]["HelpKey"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit a help text, or reset it to the default with text null */
+        patch: operations["updateFieldHelp"];
+        trace?: never;
+    };
+    "/api/plans/{planId}/budget-phasing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the plan budget's phasing (any plan status; logged) */
+        put: operations["setPlanBudgetPhasing"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/campaigns/{campaignId}/budget-phasing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the campaign budget's phasing */
+        put: operations["setCampaignBudgetPhasing"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/initiatives/{initiativeId}/budget-phasing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the initiative budget's phasing */
+        put: operations["setInitiativeBudgetPhasing"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans/{planId}/budget-by-month": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        /** Phased budget against planned cost by month and quarter, for the plan and every campaign and initiative */
+        get: operations["getPlanBudgetByMonth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/split-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        /** What the Split dialog offers */
+        get: operations["getActivitySplitOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/split-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Both activities as a split would leave them (saves nothing)
+         * @description Problems are answered in the body (200) so the dialog can show them while typing; sides are null when they cannot be worked out.
+         */
+        post: operations["previewActivitySplit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/activities/{activityId}/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Split the activity, all or nothing (data-model §3.6) */
+        post: operations["splitActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/all-work/breakdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Breakdown view (and the plan page's Planned cost by card) for a filter set
+         * @description Takes every filter parameter of getAllWork. With amountsIn=plan and exactly one plan filtered, amounts
+         *     are in that plan's currency; otherwise in the display currency (amountsIn=plan with several plans
+         *     answers validation_failed on amountsIn).
+         */
+        get: operations["getAllWorkBreakdown"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approval-rule-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a level's rule may name — activity types, business units and roles (FR-001, FR-005)
+         * @description Roles are feature 014's roles that include approvals.decide.
+         */
+        get: operations["getApprovalRuleOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approval-delegations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delegations of the signed-in person (as delegating person or delegate), or everyone's (scope=all needs workflows.manage, else 403) (FR-024) */
+        get: operations["listApprovalDelegations"];
+        put?: never;
+        /**
+         * Delegate approvals for a date range (FR-022)
+         * @description personId defaults to the signed-in person; another person needs workflows.manage (403 forbidden). Every field problem at once (400 validation_failed).
+         */
+        post: operations["createApprovalDelegation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approval-delegations/{delegationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change a planned or current delegation (FR-024)
+         * @description Only the fields to change plus the version (D-203). The delegating person, or someone holding workflows.manage (else 403 forbidden); ended and cancelled ones answer 409 not_allowed.
+         */
+        patch: operations["updateApprovalDelegation"];
+        trace?: never;
+    };
+    "/api/approval-delegations/{delegationId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a planned or current delegation; it is kept for the audit trail (FR-024) */
+        post: operations["cancelApprovalDelegation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/monitoring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Monitoring tab — cards, ageing, waiting by level, overdue rows (FR-029, FR-030)
+         * @description Computed over the rows of the All open tab. monthStart / monthEnd as in getApprovalSummary (both or neither; default the current UTC month).
+         */
+        get: operations["getApprovalMonitoring"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/escalations/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
+         * @description Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by NorthStar.
+         */
+        post: operations["runApprovalEscalations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Every failure. Codes added by 002-012: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011). */
+        /** @description Every failure. Codes added by 002-014: in_use, cannot_restore (002), not_allowed (003), not_ready with missing (004), parent_deleted_permanently (011), forbidden (014: 403, refused by permission or scope, or a record outside the person's access; D-299). */
         Error: {
             /** @enum {string} */
-            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error" | "parent_deleted_permanently" | "in_use" | "cannot_restore" | "not_allowed" | "not_ready";
+            code: "validation_failed" | "bad_request" | "sign_in_required" | "session_expired" | "incorrect_credentials" | "not_found" | "version_conflict" | "restore_parent_first" | "undo_expired" | "already_resolved" | "name_taken" | "internal_error" | "parent_deleted_permanently" | "in_use" | "cannot_restore" | "not_allowed" | "not_ready" | "forbidden";
             /** @description Plain-language message for the user (never technical details). */
             message: string;
             /** @description Every field problem (validation_failed); always present, empty otherwise. */
@@ -2747,6 +3708,8 @@ export interface components {
             version?: number;
             /** @description The signed-in person's teams, active or not, sorted by name ("My teams" filters, plan defaults). */
             teams?: components["schemas"]["TeamRef"][];
+            /** @description The person's roles, permissions with scopes, administrators and access rule (014). Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["MyAccess"];
         };
         Change: {
             /** @example name */
@@ -2966,7 +3929,7 @@ export interface components {
         };
         ImpactWarning: {
             /** @enum {string} */
-            kind: "goalsRecalculated" | "activityTypeRemoved" | "becomesIncomplete" | "optionsRemoved" | "amountsRecalculated" | "ownerNeedsAttention";
+            kind: "goalsRecalculated" | "activityTypeRemoved" | "becomesIncomplete" | "optionsRemoved" | "amountsRecalculated" | "ownerNeedsAttention" | "approverCannotApprove" | "removesOwnAdministration";
             /** @description The sentence to show before saving. */
             message: string;
             /** @description How many records the warning is about. */
@@ -3317,9 +4280,13 @@ export interface components {
              * @example €
              */
             symbol: string;
+            /** @description The current rate (016 FR-002). */
             rate: components["schemas"]["ExchangeRate"];
             inverseRate: components["schemas"]["ExchangeRate"];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the current rate was recorded.
+             */
             rateChangedAt: string;
             rateChangedBy: components["schemas"]["ActorRef"];
             active: boolean;
@@ -3332,6 +4299,15 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /**
+             * Format: date
+             * @description The date of the current rate.
+             */
+            rateDate?: string;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            rateSource?: components["schemas"]["RateSource"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            rateImportFileName?: string | null;
         };
         CurrencyPage: {
             items: components["schemas"]["Currency"][];
@@ -3345,7 +4321,7 @@ export interface components {
             /** @example ¥ */
             symbol?: string;
             /**
-             * @description Units per 1 USD, above 0, at most six decimals; "" when not filled in.
+             * @description Units per 1 USD, above 0, at most six decimals; "" when not filled in. Becomes the currency's first exchange rate, dated today (016 FR-003).
              * @example 150
              */
             rate: string;
@@ -3354,6 +4330,7 @@ export interface components {
         CurrencyUpdate: {
             name?: string;
             symbol?: string;
+            /** @description Units per 1 USD, above 0, at most six decimals. Sets today's rate: adds or replaces today's row, source manual (016 FR-004). */
             rate?: string;
             version: number;
         };
@@ -3482,11 +4459,15 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            manager?: components["schemas"]["PersonRef"] | null;
+            /** @description People whose line manager this person is. */
+            reportCount?: number;
         };
         /** @description How many records of one type name the person in one role (records in the recycle bin are not counted). */
         UsageCount: {
             /** @enum {string} */
-            role: "owner" | "approver";
+            role: "owner" | "approver" | "manager";
             /** @example plan */
             recordType: string;
             /**
@@ -3526,6 +4507,8 @@ export interface components {
             jobTitle?: string;
             /** @description The person's teams; empty when not sent. */
             teamIds?: string[];
+            /** @description Empty or left out for none. */
+            managerId?: string;
         };
         /** @description Only the fields to change, and the version (D-203, D-210); a field left out keeps its value. Also the body of the impact check, where teams that are not sent are not removed. */
         PersonUpdate: {
@@ -3536,6 +4519,8 @@ export interface components {
             teamIds?: string[];
             /** @description The version the user started editing from. */
             version: number;
+            /** @description Sent only to change it; empty clears it. */
+            managerId?: string;
         };
         /** @description A plan that uses the team (feature 004). */
         TeamPlanUse: {
@@ -3752,7 +4737,7 @@ export interface components {
             /** @description Strategic / AOP plan. */
             aop: boolean;
             description: string;
-            /** @description The plan budget in USD, as stored and typed; null when none. */
+            /** @description The plan budget in the plan currency (016), as stored and typed; null when none. */
             budget: components["schemas"]["Money"] | null;
             defaultFinanceBudget: components["schemas"]["FinanceBudgetRef"] | null;
             defaultSpread: components["schemas"]["SpreadMethod"];
@@ -3781,6 +4766,20 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /** @description What the viewer may do with this plan (014). Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["PlanAccess"];
+            /** @description The global-budget allocation that sets this plan's budget (014 FR-031); null when none. Optional in the contract; always sent once its feature is built (D-298). */
+            allocation?: components["schemas"]["PlanAllocation"] | null;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            currency?: string;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planType?: components["schemas"]["PlanType"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            budgetPhasing?: components["schemas"]["BudgetPhasing"];
+            /** @description The figures in the plan currency (figures stays in the display currency). */
+            planFigures?: components["schemas"]["PlanFigures"];
+            /** @description Why the plan currency can't change (016 FR-012, and while the plan has a global-budget allocation, consolidation D-303); null when it can. */
+            currencyLock?: string | null;
         };
         /** @description A plan as the Plans list shows it. */
         PlanSummary: {
@@ -3794,6 +4793,16 @@ export interface components {
             businessUnit: components["schemas"]["OptionRef"][];
             figures: components["schemas"]["PlanFigures"];
             completeness: components["schemas"]["Completeness"];
+            /** @description 014. Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["PlanAccess"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planType?: components["schemas"]["PlanType"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            currency?: string;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planBudget?: components["schemas"]["Money"] | null;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planPlannedCost?: components["schemas"]["Money"] | null;
         };
         /** @description The summary cards of the Plans page, over the team scope and the chosen year. */
         PlanListSummary: {
@@ -3826,6 +4835,13 @@ export interface components {
             bcpir: boolean;
             defaultSpread: components["schemas"]["SpreadMethod"];
             goalStage: components["schemas"]["GoalStage"];
+            /**
+             * @description 016. Optional in the contract; always sent once its feature is built (D-298).
+             * @example USD
+             */
+            currency?: string;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planType?: components["schemas"]["PlanType"];
         };
         /** @description The whole plan form. Empty values are sent as null (or "" for text, [] and {} for lists). */
         PlanCreate: {
@@ -3836,7 +4852,7 @@ export interface components {
             ownerId: string | null;
             aop: boolean;
             description: string;
-            /** @description In USD; null for no budget. */
+            /** @description In the plan currency (its currency must equal currency); null for no budget. */
             budget: components["schemas"]["Money"] | null;
             defaultFinanceBudgetId: string | null;
             /** @description One of SpreadMethod; checked by the server. */
@@ -3848,6 +4864,10 @@ export interface components {
             attributes: {
                 [key: string]: components["schemas"]["AttributeValue"];
             };
+            /** @description The plan currency, an active currency code. */
+            currency?: string;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planType?: components["schemas"]["PlanType"];
         };
         /** @description The whole plan form (the year is not part of it) and the version the person started from. */
         PlanUpdate: {
@@ -3868,6 +4888,10 @@ export interface components {
             attributes: {
                 [key: string]: components["schemas"]["AttributeValue"];
             };
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            currency?: string;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planType?: components["schemas"]["PlanType"];
         };
         UnpublishRequest: {
             /** @description Why the plan is unpublished, 1 to 500 characters after trimming. */
@@ -3941,7 +4965,7 @@ export interface components {
             /** Format: date */
             endDate: string | null;
         };
-        /** @description Budget flowing down and cost rolling up for one campaign or initiative (domain model §4.1–4.2): in USD as budgetAndCost, and in the reader's display currency inside display (ContainerDisplay, D-220). */
+        /** @description Budget flowing down and cost rolling up for one campaign or initiative (domain model §4.1–4.2): in the plan currency as budgetAndCost (016), and in the reader's display currency inside display (ContainerDisplay, D-220). */
         BudgetAndCost: {
             /** @description Sum of the children's budgets (0.00 when none; always 0.00 for an initiative). */
             allocatedToChildren: components["schemas"]["Money"];
@@ -4003,12 +5027,14 @@ export interface components {
             startDate: string | null;
             /** Format: date */
             endDate: string | null;
+            /** @description In the plan currency. */
             budget: components["schemas"]["Money"] | null;
             attributes: components["schemas"]["AttributeValues"];
             plan: components["schemas"]["PlanRef"];
             campaign: components["schemas"]["CampaignRef"];
             /** @description The campaign's remaining budget (campaign budget minus all its initiatives' budgets, this one included); null when the campaign has no budget. */
             parentRemainingBudget: components["schemas"]["Money"] | null;
+            /** @description In the plan currency; display holds the display-currency amounts. */
             budgetAndCost: components["schemas"]["BudgetAndCost"];
             display: components["schemas"]["ContainerDisplay"];
             approvalProgress: components["schemas"]["ApprovalSummary"];
@@ -4027,6 +5053,10 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /** @description 014. Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["ContainerAccess"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            budgetPhasing?: components["schemas"]["BudgetPhasing"];
         };
         Campaign: {
             /** @example C-1001 */
@@ -4041,6 +5071,7 @@ export interface components {
             startDate: string | null;
             /** Format: date */
             endDate: string | null;
+            /** @description In the plan currency. */
             budget: components["schemas"]["Money"] | null;
             attributes: components["schemas"]["AttributeValues"];
             plan: components["schemas"]["PlanRef"];
@@ -4048,6 +5079,7 @@ export interface components {
             outsidePlanYear: boolean;
             /** @description The plan's remaining budget (plan budget minus all its campaigns' budgets, this one included); null when the plan has no budget. */
             parentRemainingBudget: components["schemas"]["Money"] | null;
+            /** @description In the plan currency; display holds the display-currency amounts. */
             budgetAndCost: components["schemas"]["BudgetAndCost"];
             display: components["schemas"]["ContainerDisplay"];
             approvalProgress: components["schemas"]["ApprovalSummary"];
@@ -4065,15 +5097,19 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /** @description 014. Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["ContainerAccess"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            budgetPhasing?: components["schemas"]["BudgetPhasing"];
         };
-        /** @description A campaign's or an initiative's amounts in the reader's display currency (D-061, D-220), for showing: each worked out in USD and converted once at today's rate, half up to the cent. The USD fields beside it (budget, parentRemainingBudget, budgetAndCost, goals) stay as they are, because the forms type and compare budgets in USD and the web app never converts. */
+        /** @description Amounts in the reader's display currency (D-061, D-220), for showing: each worked out in the plan currency and converted once at the current rate, half up to the cent (016-D = D-261). The plan-currency fields beside it stay as typed, because the forms type and compare amounts in the plan currency and the web app never converts. */
         ContainerDisplay: {
             budget: components["schemas"]["Money"] | null;
             parentRemainingBudget: components["schemas"]["Money"] | null;
             budgetAndCost: components["schemas"]["BudgetAndCost"];
             goals: components["schemas"]["GoalSums"];
         };
-        /** @description The plan tree's totals row and the plan's budget position (FR-022, domain model §4.1–4.2): in USD as totals, in the reader's display currency as displayTotals (D-220). */
+        /** @description The plan tree's totals row and the plan's budget position (FR-022, domain model §4.1–4.2): in the plan currency as totals (016), in the reader's display currency as displayTotals (D-220). */
         PlanCampaignTotals: {
             campaigns: number;
             initiatives: number;
@@ -4098,6 +5134,8 @@ export interface components {
             totals: components["schemas"]["PlanCampaignTotals"];
             /** @description The totals' amounts in the reader's display currency (D-220); the counts as in totals. */
             displayTotals: components["schemas"]["PlanCampaignTotals"];
+            /** @description 014. Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["PlanContentAccess"];
         };
         CampaignCreate: {
             name: string;
@@ -4107,7 +5145,7 @@ export interface components {
             startDate?: string | null;
             /** Format: date */
             endDate?: string | null;
-            /** @description USD only; at most 2 decimals; not negative. */
+            /** @description In the plan currency; at most 2 decimals; not negative. */
             budget?: components["schemas"]["Money"] | null;
             attributes?: components["schemas"]["AttributeValues"];
         };
@@ -4120,6 +5158,7 @@ export interface components {
             startDate: string | null;
             /** Format: date */
             endDate: string | null;
+            /** @description In the plan currency. */
             budget: components["schemas"]["Money"] | null;
             attributes: components["schemas"]["AttributeValues"];
             /** @description The version the user started editing from. Missing or below 1 answers validation_failed on version. */
@@ -4133,6 +5172,7 @@ export interface components {
             startDate?: string | null;
             /** Format: date */
             endDate?: string | null;
+            /** @description In the plan currency. */
             budget?: components["schemas"]["Money"] | null;
             attributes?: components["schemas"]["AttributeValues"];
         };
@@ -4145,6 +5185,7 @@ export interface components {
             startDate: string | null;
             /** Format: date */
             endDate: string | null;
+            /** @description In the plan currency. */
             budget: components["schemas"]["Money"] | null;
             attributes: components["schemas"]["AttributeValues"];
             version: number;
@@ -4337,6 +5378,7 @@ export interface components {
              */
             endDate: string | null;
             ongoing: boolean;
+            /** @description In the plan currency. */
             plannedCost: components["schemas"]["Money"] | null;
             approvalWorkflow: components["schemas"]["ActivityWorkflowRef"] | null;
             description: string;
@@ -4344,7 +5386,7 @@ export interface components {
             goals: components["schemas"]["ActivityGoals"];
             status: components["schemas"]["ActivityStatus"];
             displayStatus: components["schemas"]["ActivityDisplayStatus"];
-            /** @description Planned cost minus the line items' USD planned costs (Sys_Gen_Balance); null when there is neither. */
+            /** @description Planned cost minus the line items' planned costs in the plan currency (Sys_Gen_Balance, 016 FR-015); null when there is neither. */
             unassignedPlannedCost: components["schemas"]["Money"] | null;
             display: components["schemas"]["ActivityDisplay"];
             lineItems: components["schemas"]["ActivityLineItemTotals"];
@@ -4357,6 +5399,12 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /** @description 014; seeFinance also decides whether 015's Financials card is shown (D-305). Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["ActivityAccess"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            splitFrom?: components["schemas"]["SplitLink"] | null;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            splitInto?: components["schemas"]["SplitLink"][];
         };
         /** @description An activity as a row of the plan tree. */
         ActivitySummary: {
@@ -4379,8 +5427,10 @@ export interface components {
             displayStatus: components["schemas"]["ActivityDisplayStatus"];
             completeness: components["schemas"]["ActivityCompleteness"];
             version: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            splitFromId?: string | null;
         };
-        /** @description An activity's amounts in the reader's display currency (D-061, D-220), for showing: each converted once from USD at today's rate, half up to the cent. plannedCost, unassignedPlannedCost and goals.revenue beside it stay in USD, because the activity form types the planned cost in USD and compares it with the saved one. */
+        /** @description The amounts in the reader's display currency, each converted once from the plan currency. */
         ActivityDisplay: {
             plannedCost: components["schemas"]["Money"] | null;
             unassignedPlannedCost: components["schemas"]["Money"] | null;
@@ -4390,6 +5440,8 @@ export interface components {
         ActivitySummaryPage: {
             items: components["schemas"]["ActivitySummary"][];
             total: number;
+            /** @description 014. Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["PlanContentAccess"];
         };
         /** @description A new activity. Only name and activityTypeId are required; the others may be left out or null. */
         ActivityCreate: {
@@ -4402,6 +5454,7 @@ export interface components {
             /** @description YYYY-MM-DD; ignored when ongoing is true. */
             endDate?: string | null;
             ongoing?: boolean;
+            /** @description In the plan currency (its currency must equal the plan's). */
             plannedCost?: components["schemas"]["Money"] | null;
             approvalWorkflowId?: string | null;
             description?: string;
@@ -4417,6 +5470,7 @@ export interface components {
             startDate: string | null;
             endDate: string | null;
             ongoing: boolean;
+            /** @description In the plan currency. */
             plannedCost: components["schemas"]["Money"] | null;
             approvalWorkflowId: string | null;
             description: string;
@@ -4512,9 +5566,12 @@ export interface components {
         ActivityTypeOption: {
             id: string;
             name: string;
+            /** @description The default converted into the plan currency at the current rate (016 FR-016). */
             defaultPlannedCost: components["schemas"]["Money"] | null;
             active: boolean;
             allowed: boolean;
+            /** @description The type's default as kept in Settings (USD), for the conversion note. */
+            defaultPlannedCostUsd?: components["schemas"]["Money"] | null;
         };
         ActivityWorkflowLevel: {
             /** @example Level 1 */
@@ -4574,6 +5631,13 @@ export interface components {
             ratePerUsd: string;
             /** @description False for an inactive currency, kept on a line item and still converting at its last rate. */
             active: boolean;
+            /**
+             * Format: date
+             * @description 016. Optional in the contract; always sent once its feature is built (D-298).
+             */
+            rateDate?: string | null;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            rateSource?: components["schemas"]["RateSource"] | null;
         };
         FinanceBudgetItemRef: {
             id: string;
@@ -4663,6 +5727,8 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /** @description Planned cost in the plan currency at the current rates (016 FR-015). */
+            plannedCostPlan?: components["schemas"]["Money"];
         };
         /** @description What the line-item screens need to know about the activity. */
         LineItemActivity: {
@@ -4693,11 +5759,11 @@ export interface components {
              */
             businessUnitOptionIds: string[];
         };
-        /** @description Unassigned planned cost (Sys_Gen_Balance) = activity planned cost − sum of its line items' USD planned costs (domain model §4.3). Worked out in USD; the amounts are answered in the signed-in person's display currency in LineItemSection and LineItemDetails (each converted once from its USD figure, D-213) and in USD in LineItemFormOptions, where the form calculates "After saving" from the typed amount in USD (D-061: the web app never converts). Every amount says its currency. */
+        /** @description Unassigned planned cost (Sys_Gen_Balance) = activity planned cost − sum of its line items' planned costs in the plan currency (domain model §4.3; 016 FR-015). Worked out in the plan currency; answered in the signed-in person's display currency in LineItemSection and LineItemDetails (each converted once, D-213) and in the plan currency in LineItemFormOptions, where the form calculates "After saving" from the typed amount (D-061: the web app never converts). Every amount says its currency. */
         UnassignedBalance: {
             /** @description The activity's planned cost; null while it has none. */
             plannedCost: components["schemas"]["Money"] | null;
-            /** @description Sum of the line items' USD planned costs. */
+            /** @description Sum of the line items' planned costs in the plan currency. */
             assigned: components["schemas"]["Money"];
             /** @description Negative when line items exceed the planned cost; null while the activity has no planned cost. */
             balance: components["schemas"]["Money"] | null;
@@ -4723,7 +5789,7 @@ export interface components {
             cells: (components["schemas"]["Money"] | null)[];
             total: components["schemas"]["Money"];
         };
-        /** @description The activity's line items by month (FR-003, FR-020), in the signed-in person's display currency (007 FR-005, D-213): every cell and total is converted on its own from its USD amount, so a total can differ by a cent from the sum of its converted cells; in USD they add up exactly. Quarterly is calculated by the web app. */
+        /** @description The activity's line items by month (FR-003, FR-020), worked out in the plan currency (016 FR-015) and answered in the signed-in person's display currency (007 FR-005, D-213): every cell and total is converted on its own, so a total can differ by a cent from the sum of its converted cells; in the plan currency they add up exactly. Quarterly is calculated by the web app. */
         SpreadGrid: {
             columns: components["schemas"]["SpreadGridColumn"][];
             rows: components["schemas"]["SpreadGridRow"][];
@@ -4737,12 +5803,16 @@ export interface components {
             items: components["schemas"]["LineItem"][];
             balance: components["schemas"]["UnassignedBalance"];
             grid: components["schemas"]["SpreadGrid"];
+            /** @description 014. Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["LineItemAccess"];
         };
         LineItemDetails: {
             lineItem: components["schemas"]["LineItem"];
             activity: components["schemas"]["LineItemActivity"];
             /** @description The activity's unassigned planned cost now, with this line item included, in the signed-in person's display currency (D-213). */
             balance: components["schemas"]["UnassignedBalance"];
+            /** @description 014. Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["LineItemAccess"];
         };
         /** @description What a new line item starts with (FR-008). The web app labels each value with its source. */
         LineItemDefaults: {
@@ -4835,6 +5905,8 @@ export interface components {
             /** @example DO */
             initials: string;
             active: boolean;
+            /** @description False when the person holds no role that approves (014 FR-028). Optional in the contract; always sent once its feature is built (D-298). */
+            canApprove?: boolean;
         };
         WorkflowRef: {
             /** @example WF-1002 */
@@ -4853,6 +5925,29 @@ export interface components {
              */
             label: string;
             approvers: components["schemas"]["ApprovalPerson"][];
+            /**
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             * @enum {string}
+             */
+            approverType?: "people" | "manager" | "role";
+            /** @description The 014 role of a role level (RoleRef, consolidation D-300); null for other levels. */
+            role?: components["schemas"]["RoleRef"] | null;
+            /**
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             * @enum {string}
+             */
+            mode?: "any" | "all";
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            appliesWhen?: components["schemas"]["ApprovalCondition"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            autoApproveWhen?: components["schemas"]["ApprovalCondition"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            backupApprover?: components["schemas"]["ApprovalPerson"] | null;
+            /**
+             * @description This level's part of levelsText.
+             * @example Level 1 · Line manager · automatic when planned cost is below $10,000.00
+             */
+            summary?: string;
         };
         ApprovalWorkflow: {
             /** @example WF-1002 */
@@ -4876,6 +5971,10 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             updatedBy: components["schemas"]["ActorRef"];
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            reminderDays?: number | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            escalationDays?: number | null;
         };
         ApprovalWorkflowPage: {
             items: components["schemas"]["ApprovalWorkflow"][];
@@ -4903,12 +6002,28 @@ export interface components {
              *     ]
              */
             approverIds: string[];
+            /** @description Default people. Unknown values are a field problem. */
+            approverType?: string;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            roleId?: string;
+            /** @description any (default) or all; manager levels are stored any. */
+            mode?: string;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            appliesWhen?: components["schemas"]["ApprovalConditionInput"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            autoApproveWhen?: components["schemas"]["ApprovalConditionInput"] | null;
+            /** @description Empty for none. */
+            backupApproverId?: string;
         };
         ApprovalWorkflowCreate: {
             name: string;
             description?: string;
             /** @description In order; the first is level 1. The server reports an empty list as a field problem ("levels"), and a level's problems on "levels.<n>.name" and "levels.<n>.approverIds", n counted from 1 as in the messages (D-215). */
             levels: components["schemas"]["ApprovalWorkflowLevelInput"][];
+            /** @description Omitted or null = no reminders. */
+            reminderDays?: number | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            escalationDays?: number | null;
         };
         /** @description Only the fields to change, plus the version the person started editing from. */
         ApprovalWorkflowUpdate: {
@@ -4917,6 +6032,10 @@ export interface components {
             /** @description The complete new list of levels, in order; problems as in ApprovalWorkflowCreate ("levels.<n>.…", n from 1, D-215). */
             levels?: components["schemas"]["ApprovalWorkflowLevelInput"][];
             version: number;
+            /** @description Sent only to change it; null turns reminders off. */
+            reminderDays?: number | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            escalationDays?: number | null;
         };
         ApprovalWorkflowStatusChange: {
             /** @description The version the person saw when confirming. */
@@ -4931,6 +6050,13 @@ export interface components {
             /** Format: date-time */
             at: string;
             comment: string;
+            /**
+             * @description Empty for decisions recorded before feature 017.
+             * @enum {string}
+             */
+            capacity?: "approver" | "delegate" | "backup" | "onBehalf" | "";
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            asDelegateOf?: components["schemas"]["ActorRef"] | null;
         };
         ApprovalChainLevel: {
             number: number;
@@ -4942,9 +6068,51 @@ export interface components {
              * @description notDecided = the level was waiting when the round was recalled, restarted or cancelled.
              * @enum {string}
              */
-            state: "approved" | "declined" | "waiting" | "notReached" | "notDecided";
+            state: "approved" | "declined" | "waiting" | "notReached" | "notDecided" | "skipped" | "autoApproved";
             /** @description The decision on this level (approved or declined); null otherwise. */
             decision: components["schemas"]["ApprovalDecision"] | null;
+            /**
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             * @enum {string}
+             */
+            mode?: "any" | "all";
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            source?: string;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            ruleText?: string;
+            /** @description Every decision on the level, oldest first (several on "all" levels). */
+            decisions?: components["schemas"]["ApprovalDecision"][];
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            approvedCount?: number;
+            /** @description 1 for "any" levels; the number of resolved approvers for "all" levels. */
+            requiredCount?: number;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            excluded?: components["schemas"]["ApprovalExcludedPerson"][];
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            backup?: components["schemas"]["ApprovalPerson"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            backupUsed?: boolean;
+            /**
+             * Format: date-time
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             */
+            waitingSince?: string | null;
+            /**
+             * Format: date-time
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             */
+            remindedAt?: string | null;
+            /**
+             * Format: date-time
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             */
+            escalatedAt?: string | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            escalatedTo?: components["schemas"]["ApprovalPerson"] | null;
+            /** @description Nobody waiting can act (resolved with no approver, or every waiting approver inactive or without an approving role). */
+            noApprover?: boolean;
+            /** @description The no-approver advice (data-model §3); empty otherwise. */
+            advice?: string;
         };
         ApprovalChange: {
             /** @example Planned cost */
@@ -4974,12 +6142,25 @@ export interface components {
             actor: components["schemas"]["ActorRef"];
             onBehalfOf: components["schemas"]["ActorRef"][];
             /** @enum {string} */
-            action: "submitted" | "resubmitted" | "approved" | "declined" | "recalled" | "restarted" | "cancelled";
+            action: "submitted" | "resubmitted" | "approved" | "declined" | "recalled" | "restarted" | "cancelled" | "autoApproved" | "skipped" | "reminded" | "escalated";
             /** Format: date-time */
             at: string;
             comment: string;
             /** @description restarted only — the changed values. */
             changes: components["schemas"]["ApprovalChange"][];
+            /**
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             * @enum {string}
+             */
+            capacity?: "approver" | "delegate" | "backup" | "onBehalf" | "";
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            asDelegateOf?: components["schemas"]["ActorRef"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            rule?: string;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            escalatedTo?: components["schemas"]["ActorRef"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            waitedDays?: number;
         };
         ApprovalRound: {
             /** @example AR-1001 */
@@ -5003,6 +6184,14 @@ export interface components {
             levels: components["schemas"]["ApprovalChainLevel"][];
             /** @description The round's history entries, newest first. */
             history: components["schemas"]["ApprovalHistoryEntry"][];
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            facts?: components["schemas"]["ApprovalRuleFacts"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            reminderDays?: number | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            escalationDays?: number | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            autoApproved?: boolean;
         };
         /** @description The latest decline, shown at the top of the Approval section while the activity is Declined. */
         DeclineNote: {
@@ -5014,12 +6203,16 @@ export interface components {
             /** Format: date-time */
             at: string;
             comment: string;
+            /**
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             * @enum {string}
+             */
+            capacity?: "approver" | "delegate" | "backup" | "onBehalf" | "";
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            asDelegateOf?: components["schemas"]["ActorRef"] | null;
         };
-        ApprovalActionAvailability: {
-            available: boolean;
-            /** @description Why it is not available, when the screen must say so (for example recall of an Approved activity); empty otherwise. */
-            reason: string;
-        };
+        /** @description 008's name for ActionAvailability (014), kept so the approvals code keeps its type name (D-300). */
+        ApprovalActionAvailability: components["schemas"]["ActionAvailability"];
         /** @description The signed-in person's relation to the activity, for the dialogs (FR-017, edge cases). */
         ApprovalViewer: {
             isOwner: boolean;
@@ -5027,6 +6220,19 @@ export interface components {
             isCurrentApprover: boolean;
             /** @description The current level's approvers when the person is not one of them; empty otherwise. */
             onBehalfOf: components["schemas"]["ApprovalPerson"][];
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            canDecide?: boolean;
+            /**
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             * @enum {string|null}
+             */
+            capacity?: "approver" | "delegate" | "backup" | "onBehalf" | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            asDelegateOf?: components["schemas"]["ApprovalPerson"][];
+            /** @description Empty when canDecide, and empty when the person simply is not allowed (buttons hidden, 014); otherwise the step 3e or step 4 message of data-model §6. */
+            cannotDecideReason?: string;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            isSubmitter?: boolean;
         };
         ActivityApproval: {
             /** @example A-1042 */
@@ -5091,6 +6297,10 @@ export interface components {
             levels: components["schemas"]["ApprovalWorkflowLevel"][];
             /** @description A positive unassigned planned cost, shown as a note, in the signed-in person's display currency (D-213); null otherwise. */
             unassignedPlannedCost: components["schemas"]["Money"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            outcomes?: components["schemas"]["ApprovalSubmissionLevel"][];
+            /** @description No level needs a decision; confirming approves the activity. */
+            approvedAutomatically?: boolean;
         };
         SubmitRequest: {
             /** @description The activity version the person saw (activityVersion). */
@@ -5121,6 +6331,15 @@ export interface components {
             levelLabel: string;
             /** @description The current level's designated approvers. */
             approvers: components["schemas"]["ApprovalPerson"][];
+            /**
+             * @description 017. Optional in the contract; always sent once its feature is built (D-298).
+             * @enum {string}
+             */
+            mode?: "any" | "all";
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            approvedCount?: number;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            requiredCount?: number;
         };
         MyDecision: {
             /** @enum {string} */
@@ -5157,6 +6376,16 @@ export interface components {
             startDatePassed: boolean;
             /** @description decided tab only — the signed-in person's latest decision; null in the other tabs. */
             myDecision: components["schemas"]["MyDecision"] | null;
+            /** @description In the Waiting for me tab, the approvers the signed-in person acts for as delegate; empty elsewhere. */
+            asDelegateOf?: components["schemas"]["ApprovalPerson"][];
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            escalatedTo?: components["schemas"]["ApprovalPerson"] | null;
+            /** @description 017. Optional in the contract; always sent once its feature is built (D-298). */
+            overdue?: boolean;
+            /** @description Whole days the current level has waited; null for rows without an open round. */
+            waitingDays?: number | null;
+            /** @description As ApprovalChainLevel.noApprover for the current level. */
+            noApprover?: boolean;
         };
         ApprovalRowPage: {
             items: components["schemas"]["ApprovalRow"][];
@@ -5214,7 +6443,7 @@ export interface components {
             /** @example NT-1001 */
             id: string;
             /** @enum {string} */
-            kind: "approvalNeeded" | "levelApproved" | "approved" | "declined" | "recalled" | "restarted";
+            kind: "approvalNeeded" | "levelApproved" | "approved" | "declined" | "recalled" | "restarted" | "autoApproved" | "reminder" | "escalated";
             /** @example Approval needed */
             title: string;
             /** @example Priya Raman submitted 'Launch film' (A-1042) */
@@ -5489,6 +6718,14 @@ export interface components {
             /** @description Budget & cost only - one amount per AllWorkResult.periods entry; null = "—". */
             periods?: (components["schemas"]["Money"] | null)[];
             total?: components["schemas"]["Money"] | null;
+            /** @description Plans only - the plan's year. */
+            year?: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planType?: components["schemas"]["PlanType"];
+            /** @description Containers with comparePhased only - one per AllWorkResult.periods entry; null = not phased in that period. */
+            phasedBudget?: (components["schemas"]["Money"] | null)[];
+            /** @description Indexes of periods where planned cost is above phasedBudget. */
+            overPeriods?: number[];
         };
         AllWorkColumn: {
             /** @example attr.cluster */
@@ -5496,7 +6733,7 @@ export interface components {
             /** @example Cluster */
             label: string;
             /** @enum {string} */
-            group: "standard" | "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            group: "standard" | "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "financials";
             /** @enum {string} */
             kind: "text" | "money" | "number" | "percent" | "date" | "dateTime" | "status";
             /** @description The levels on which the column has values. */
@@ -5512,7 +6749,7 @@ export interface components {
             columns: components["schemas"]["AllWorkColumn"][];
         };
         AllWorkPeriod: {
-            /** @description 2026-01 … 2026-12, Q1 … Q4, other or noDates. */
+            /** @description 2026-01 … 2026-12, Q1-2026 … Q4-2026, 2026, other or noDates (016 FR-035). */
             key: string;
             /** @example Mar */
             label: string;
@@ -5547,6 +6784,7 @@ export interface components {
             id: string;
         };
         AllWorkResult: {
+            /** @description The first year of the range, equal to yearFrom (016). Kept for saved views and older clients (D-298). */
             year: number;
             /**
              * Format: date
@@ -5571,6 +6809,10 @@ export interface components {
             count: components["schemas"]["AllWorkCount"];
             totals: components["schemas"]["AllWorkTotals"];
             leftOut: components["schemas"]["AllWorkLeftOut"][];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            yearFrom?: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            yearTo?: number;
         };
         AllWorkOption: {
             id: string;
@@ -5585,8 +6827,15 @@ export interface components {
             /** @enum {string} */
             status: "draft" | "published";
             strategic: boolean;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            year?: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planType?: components["schemas"]["PlanType"];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            currency?: string;
         };
         AllWorkOptions: {
+            /** @description The first year of the range, equal to yearFrom (016). Kept for saved views and older clients (D-298). */
             year: number;
             currentYear: number;
             /** @description Years with plans plus the current year, newest first. */
@@ -5598,6 +6847,16 @@ export interface components {
             activityTypes: components["schemas"]["AllWorkOption"][];
             columnGroups: components["schemas"]["AllWorkColumnGroup"][];
             defaultColumns: string[];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            yearFrom?: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            yearTo?: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planTypes?: components["schemas"]["PlanType"][];
+            /** @description Plan currencies of the plans in the range. */
+            planCurrencies?: string[];
+            /** @description Filterable Shell attributes, level by level, in Settings' order (016 FR-039). */
+            attributes?: components["schemas"]["AllWorkFilterableAttribute"][];
         };
         AllWorkRecordLocation: {
             recordId: string;
@@ -5635,6 +6894,12 @@ export interface components {
             strategic: "include" | "only" | "exclude";
             /** @enum {string} */
             showLevels: "everything" | "completeBranches" | "campaignsWithoutInitiatives" | "initiativesWithoutActivities";
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planTypes?: components["schemas"]["PlanType"][];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            planCurrencies?: string[];
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            attributes?: components["schemas"]["AllWorkAttributeFilter"][];
         };
         AllWorkExpansion: {
             /** @enum {string} */
@@ -5644,7 +6909,8 @@ export interface components {
         };
         AllWorkViewState: {
             /** @enum {string} */
-            view: "grid" | "calendar" | "budget";
+            view: "grid" | "calendar" | "budget" | "breakdown";
+            /** @description The first year of the range, equal to yearFrom (016). Kept for saved views and older clients (D-298). */
             year: number;
             filters: components["schemas"]["AllWorkFilters"];
             search: string;
@@ -5653,9 +6919,17 @@ export interface components {
             expansion: components["schemas"]["AllWorkExpansion"];
             showUnassigned: boolean;
             /** @enum {string} */
-            period: "month" | "quarter";
+            period: "month" | "quarter" | "year";
             /** @enum {string} */
             calendarLayout: "timeline" | "month";
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            yearFrom?: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            yearTo?: number;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            comparePhased?: boolean;
+            /** @description 016. Optional in the contract; always sent once its feature is built (D-298). */
+            breakdown?: components["schemas"]["AllWorkBreakdownChoice"] | null;
         };
         SavedView: {
             /** @example SV-1001 */
@@ -5782,6 +7056,8 @@ export interface components {
             insideEntryIds?: string[];
             /** @description The record first, then everything inside it, parents before children. */
             records?: components["schemas"]["RecycleBinRecord"][];
+            /** @description 014 (D-A16 = D-238). Optional in the contract; always sent once its feature is built (D-298). */
+            access?: components["schemas"]["BinEntryAccess"];
         };
         /** @description One changed field of one record in a restore preview. */
         RestorePreviewChange: {
@@ -6087,6 +7363,1185 @@ export interface components {
             /** @example Add at least one campaign and one initiative to this plan before importing activities */
             cannotImportReason: string | null;
         };
+        /**
+         * @description A permission of spec Table A.
+         * @enum {string}
+         */
+        PermissionKey: "plans.view" | "plans.create" | "plans.edit" | "plans.publish" | "plans.delete" | "campaigns.edit" | "campaigns.delete" | "activities.edit" | "activities.delete" | "activities.submit" | "data.export" | "finance.view" | "finance.link" | "finance.import" | "approvals.decide" | "approvals.decideOnBehalf" | "globalBudgets.view" | "globalBudgets.manage" | "settings.manage" | "exchangeRates.manage" | "workflows.manage" | "people.manage" | "access.manage" | "activityLog.viewAll" | "recycleBin.purge";
+        PermissionInfo: {
+            key: components["schemas"]["PermissionKey"];
+            /** @example Edit plan details */
+            label: string;
+            /** @description true when the permission applies only to plans in the role's scope. */
+            scoped: boolean;
+        };
+        PermissionGroup: {
+            /** @enum {string} */
+            name: "Plans and planning" | "Financial data" | "Approvals" | "Global budgets" | "Administration";
+            permissions: components["schemas"]["PermissionInfo"][];
+        };
+        PermissionCatalogue: {
+            /** @description The five groups in Table A order. */
+            groups: components["schemas"]["PermissionGroup"][];
+        };
+        /**
+         * @description all = All markets; myTeams = the teams the person belongs to now; teams = the chosen teams.
+         * @enum {string}
+         */
+        AccessScopeType: "all" | "myTeams" | "teams";
+        AccessScope: {
+            type: components["schemas"]["AccessScopeType"];
+            /** @description The teams the scope covers now, sorted by name: the person's teams for myTeams, the chosen teams for teams; empty for all. */
+            teams: components["schemas"]["TeamRef"][];
+            /**
+             * @description As screens show it.
+             * @example My teams
+             */
+            text: string;
+        };
+        AccessScopeInput: {
+            type: components["schemas"]["AccessScopeType"];
+            /** @description Required (1 or more) when type is teams; ignored otherwise. */
+            teamIds?: string[];
+        };
+        /**
+         * @description Which seeded role this is; empty for roles made in Settings.
+         * @enum {string}
+         */
+        RoleBuiltIn: "" | "administrator" | "globalPlanner" | "planner" | "approver" | "viewer";
+        RoleRef: {
+            /** @example RL-1003 */
+            id: string;
+            /** @example Planner */
+            name: string;
+            builtIn: components["schemas"]["RoleBuiltIn"];
+        };
+        Role: {
+            /** @example RL-1003 */
+            id: string;
+            name: string;
+            description: string;
+            builtIn: components["schemas"]["RoleBuiltIn"];
+            /** @description In Table A order; every permission for the Administrator role. */
+            permissions: components["schemas"]["PermissionKey"][];
+            /** @enum {string} */
+            defaultScope: "all" | "myTeams";
+            /** @description The people who hold the role, active or not, sorted by name. */
+            people: components["schemas"]["PersonRef"][];
+            /** @description Fields and actions that cannot be used, with why (Administrator role: name, description, permissions, defaultScope, delete; a role people hold: delete). */
+            locks: components["schemas"]["Lock"][];
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        RolePage: {
+            items: components["schemas"]["Role"][];
+            total: number;
+        };
+        RoleCreate: {
+            /** @description 1-60 characters, unique among roles ignoring letter case. */
+            name: string;
+            /** @description 0-300 characters; empty when left out. */
+            description?: string;
+            /** @description At least one. */
+            permissions: components["schemas"]["PermissionKey"][];
+            /** @enum {string} */
+            defaultScope: "all" | "myTeams";
+        };
+        /** @description Only the fields to change, and the version (D-203); a field left out keeps its value. */
+        RoleUpdate: {
+            name?: string;
+            description?: string;
+            /** @description The complete list after the change. */
+            permissions?: components["schemas"]["PermissionKey"][];
+            /** @enum {string} */
+            defaultScope?: "all" | "myTeams";
+            version: number;
+        };
+        RoleAssignment: {
+            /** @example RA-1001 */
+            id: string;
+            role: components["schemas"]["RoleRef"];
+            scope: components["schemas"]["AccessScope"];
+            /** @description true when the scope covers no team (chosen teams all deleted, or myTeams for a person without a team). */
+            scopeEmpty: boolean;
+        };
+        RoleAssignmentInput: {
+            roleId: string;
+            scope: components["schemas"]["AccessScopeInput"];
+        };
+        PersonRoles: {
+            person: components["schemas"]["PersonRef"];
+            /** @description The person's teams, active or not, sorted by name. */
+            teams: components["schemas"]["TeamRef"][];
+            /** @description Sorted by role name; empty for a person without a role. */
+            roles: components["schemas"]["RoleAssignment"][];
+            /** @description What the roles allow together (merged as authz.Grants does), in Table A order; the web app writes the plain-language summary from it (plan, summariseAccess). */
+            permissions: components["schemas"]["MyPermission"][];
+            /** @description The person's version; send it back with PUT. */
+            version: number;
+        };
+        PersonRolesUpdate: {
+            /** @description The complete list after the change, one entry per role (a role twice answers validation_failed). Field problems are keyed roles.<i>.roleId, roles.<i>.scope and roles.<i>.teamIds, i counted from 0. */
+            roles: components["schemas"]["RoleAssignmentInput"][];
+            /** @description The person's version the administrator started from. */
+            version: number;
+        };
+        PeopleAccessPage: {
+            items: components["schemas"]["PersonRoles"][];
+            total: number;
+        };
+        AccessRules: {
+            /** @description Nobody approves an activity they own or submitted (FR-026). */
+            noSelfApproval: boolean;
+            /** @description The role a person added in Settings › People receives with scope My teams; null for no role. */
+            newPersonRole: components["schemas"]["RoleRef"] | null;
+            /** @description 0 while the defaults have never been saved (the first PATCH creates the record). */
+            version: number;
+            updatedAt: string | null;
+            updatedBy: components["schemas"]["ActorRef"] | null;
+        };
+        AccessRulesUpdate: {
+            noSelfApproval?: boolean;
+            /** @description A role that is not Administrator; "" for no role. */
+            newPersonRoleId?: string;
+            version: number;
+        };
+        MyPermission: {
+            key: components["schemas"]["PermissionKey"];
+            /** @description Granted for All markets (always true for permissions that are not scoped). */
+            all: boolean;
+            /** @description The teams it is granted for, when all is false, sorted by name. */
+            teams: components["schemas"]["TeamRef"][];
+        };
+        /** @description The signed-in person's access, for navigation, page-level gates, the View only note and My profile. Per-record decisions come from the records' own access objects, never from this. */
+        MyAccess: {
+            roles: components["schemas"]["RoleAssignment"][];
+            /** @description Every permission the person holds, in Table A order; permissions not held are left out. */
+            permissions: components["schemas"]["MyPermission"][];
+            /** @description The active people who hold the Administrator role, sorted by name ("Ask …"). */
+            administrators: components["schemas"]["PersonRef"][];
+            noSelfApproval: boolean;
+        };
+        /** @description Whether the signed-in person may take one action on this record now, and why not. The one availability shape of the contract: 008's ApprovalActionAvailability is an alias of it (consolidation D-300). reason is empty when available; otherwise the exact message the API would answer, or empty when the screen hides the action instead of explaining it (008's approve and decline for people who may not decide, 014 FR-025). */
+        ActionAvailability: {
+            available: boolean;
+            reason: string;
+        };
+        /** @description What the person may do with the records inside one plan (tree rows, add buttons, row menus). */
+        PlanContentAccess: {
+            addCampaign: components["schemas"]["ActionAvailability"];
+            /** @description Add initiatives, edit, move and copy campaigns and initiatives. */
+            editCampaigns: components["schemas"]["ActionAvailability"];
+            deleteCampaigns: components["schemas"]["ActionAvailability"];
+            addActivity: components["schemas"]["ActionAvailability"];
+            /** @description Edit, move and copy activities; add, edit and duplicate line items. */
+            editActivities: components["schemas"]["ActionAvailability"];
+            deleteActivities: components["schemas"]["ActionAvailability"];
+            submitActivities: components["schemas"]["ActionAvailability"];
+        };
+        PlanAccess: {
+            edit: components["schemas"]["ActionAvailability"];
+            /** @description Not available for an allocated plan (reason "Allocated from '…' — ask … to change it."). */
+            editBudget: components["schemas"]["ActionAvailability"];
+            delete: components["schemas"]["ActionAvailability"];
+            /** @description Publish and Unpublish (the plan's own readiness rules still apply). */
+            publish: components["schemas"]["ActionAvailability"];
+            copy: components["schemas"]["ActionAvailability"];
+            content: components["schemas"]["PlanContentAccess"];
+        };
+        /** @description A campaign's or an initiative's actions; addChild is Add initiative or Add activity. */
+        ContainerAccess: {
+            edit: components["schemas"]["ActionAvailability"];
+            delete: components["schemas"]["ActionAvailability"];
+            move: components["schemas"]["ActionAvailability"];
+            copy: components["schemas"]["ActionAvailability"];
+            addChild: components["schemas"]["ActionAvailability"];
+        };
+        ActivityAccess: {
+            edit: components["schemas"]["ActionAvailability"];
+            delete: components["schemas"]["ActionAvailability"];
+            move: components["schemas"]["ActionAvailability"];
+            copy: components["schemas"]["ActionAvailability"];
+            addLineItem: components["schemas"]["ActionAvailability"];
+            editLineItems: components["schemas"]["ActionAvailability"];
+            deleteLineItems: components["schemas"]["ActionAvailability"];
+            /** @description Permission only; 008's actions.submit adds the activity's own state rules. */
+            submit: components["schemas"]["ActionAvailability"];
+            /** @description Show the "From finance" section (FR-015). */
+            seeFinance: components["schemas"]["ActionAvailability"];
+        };
+        LineItemAccess: {
+            add: components["schemas"]["ActionAvailability"];
+            edit: components["schemas"]["ActionAvailability"];
+            delete: components["schemas"]["ActionAvailability"];
+            duplicate: components["schemas"]["ActionAvailability"];
+            seeFinance: components["schemas"]["ActionAvailability"];
+        };
+        BinEntryAccess: {
+            /** @description Also Undo and the restore preview. */
+            restore: components["schemas"]["ActionAvailability"];
+            deletePermanently: components["schemas"]["ActionAvailability"];
+        };
+        GlobalBudgetRef: {
+            /** @example GB-1001 */
+            id: string;
+            /** @example FY2026 Global marketing budget */
+            name: string;
+        };
+        /** @description The allocation that sets a plan's budget (Plan.allocation, FR-031, FR-033). */
+        PlanAllocation: {
+            /** @example BA-1001 */
+            allocationId: string;
+            globalBudget: components["schemas"]["GlobalBudgetRef"];
+            /** @description In the plan's currency; equal to the plan budget (D-303). */
+            amount: components["schemas"]["Money"];
+            /** @description The global budget's owner, whom to ask; null when none. */
+            owner: components["schemas"]["PersonRef"] | null;
+            /** @description The viewer holds globalBudgets.view, so the global budget's name is a link. */
+            canOpen: boolean;
+        };
+        AllocationPlanRef: {
+            /** @example P-1001 */
+            id: string;
+            name: string;
+            year: number;
+            status: components["schemas"]["PlanStatus"];
+            /** @description Send it as planVersion with allocation changes. */
+            version: number;
+        };
+        /** @description Every figure in USD. Allocations and planned costs kept in a plan's own currency are converted to USD once each at the current rate, on read (D-303, D-041). */
+        GlobalBudgetFigures: {
+            amount: components["schemas"]["Money"];
+            /** @description Sum of every allocation, including those in the Other markets row. */
+            allocated: components["schemas"]["Money"];
+            /** @description amount - allocated; negative when over-allocated. */
+            unallocated: components["schemas"]["Money"];
+            /** @description Planned cost of every allocated plan (domain model 4.2). */
+            plannedCost: components["schemas"]["Money"];
+            overAllocated: boolean;
+        };
+        BudgetAllocationRow: {
+            /** @example BA-1001 */
+            id: string;
+            plan: components["schemas"]["AllocationPlanRef"];
+            teams: components["schemas"]["TeamRef"][];
+            owner: components["schemas"]["PersonRef"] | null;
+            /** @description The allocation in the plan's currency; amount, plannedCost and leftToPlan are in that currency (D-303). */
+            amount: components["schemas"]["Money"];
+            /** @description The allocation converted to USD at the current rate, as counted in GlobalBudgetFigures.allocated. */
+            amountUsd: components["schemas"]["Money"];
+            /** @description null when nothing in the plan has a planned cost (as the plan page). */
+            plannedCost: components["schemas"]["Money"] | null;
+            leftToPlan: components["schemas"]["Money"];
+            /** @description Planned cost / allocation x 100 with two decimals; null when the allocation is 0.00. */
+            budgetUsedPercent: string | null;
+            version: number;
+            access: {
+                edit: components["schemas"]["ActionAvailability"];
+                remove: components["schemas"]["ActionAvailability"];
+            };
+        };
+        /** @description Allocations to plans the viewer cannot see, added up in USD (FR-033, D-303). */
+        OtherMarketsRow: {
+            planCount: number;
+            amount: components["schemas"]["Money"];
+            plannedCost: components["schemas"]["Money"];
+        };
+        AllocationOption: {
+            plan: components["schemas"]["AllocationPlanRef"];
+            teams: components["schemas"]["TeamRef"][];
+            owner: components["schemas"]["PersonRef"] | null;
+            /** @description The plan's budget now; null when none. */
+            budget: components["schemas"]["Money"] | null;
+            canAllocate: components["schemas"]["ActionAvailability"];
+        };
+        AllocationOptionPage: {
+            items: components["schemas"]["AllocationOption"][];
+            total: number;
+        };
+        GlobalBudget: {
+            /** @example GB-1001 */
+            id: string;
+            name: string;
+            year: number;
+            amount: components["schemas"]["Money"];
+            owner: components["schemas"]["PersonRef"] | null;
+            description: string;
+            figures: components["schemas"]["GlobalBudgetFigures"];
+            /** @description Allocations to plans the viewer can see, sorted by plan name. */
+            allocations: components["schemas"]["BudgetAllocationRow"][];
+            otherMarkets: components["schemas"]["OtherMarketsRow"] | null;
+            /** @description Visible plans of the year without any allocation, sorted by name ("Plans of 2026 without an allocation"). */
+            plansWithoutAllocation: components["schemas"]["AllocationOption"][];
+            /** @description Always the year ("The year can't change once the global budget is saved."); delete while allocated. */
+            locks: components["schemas"]["Lock"][];
+            access: {
+                edit: components["schemas"]["ActionAvailability"];
+                delete: components["schemas"]["ActionAvailability"];
+                allocate: components["schemas"]["ActionAvailability"];
+            };
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        GlobalBudgetSummary: {
+            id: string;
+            name: string;
+            year: number;
+            owner: components["schemas"]["PersonRef"] | null;
+            figures: components["schemas"]["GlobalBudgetFigures"];
+            /** @description Every allocation of the global budget. */
+            allocationCount: number;
+        };
+        GlobalBudgetPage: {
+            items: components["schemas"]["GlobalBudgetSummary"][];
+            total: number;
+            /** @description Every year that has a global budget, newest first (the year filter). */
+            years: number[];
+            /** @description New global budget (needs globalBudgets.manage for All markets). */
+            create: components["schemas"]["ActionAvailability"];
+        };
+        GlobalBudgetCreate: {
+            name: string;
+            year: number;
+            /** @description currency must be USD. */
+            amount: components["schemas"]["MoneyInput"];
+            ownerId: string;
+            description?: string;
+        };
+        /** @description Only the fields to change, and the version (D-203). The year cannot change. */
+        GlobalBudgetUpdate: {
+            name?: string;
+            amount?: components["schemas"]["MoneyInput"];
+            ownerId?: string;
+            description?: string;
+            version: number;
+        };
+        BudgetAllocationCreate: {
+            planId: string;
+            /** @description In the plan's currency (016; USD until 016 is built), 0 or more; another currency is a field problem "Enter the amount in <code>, the plan's currency." (consolidation D-303). */
+            amount: components["schemas"]["MoneyInput"];
+            /** @description The plan's version the person saw; a newer plan answers 409 version_conflict. */
+            planVersion: number;
+        };
+        BudgetAllocationUpdate: {
+            /** @description In the plan's currency, as BudgetAllocationCreate.amount (D-303). */
+            amount: components["schemas"]["MoneyInput"];
+            /** @description The allocation's version. */
+            version: number;
+            /** @description The plan's version the person saw. */
+            planVersion: number;
+        };
+        /** @enum {string} */
+        FinancialTransactionType: "purchaseOrder" | "invoice" | "payment" | "accrual";
+        /**
+         * @description The rule that linked the transaction (FR-007) or manual (FR-026).
+         * @enum {string}
+         */
+        FinancialMatchedBy: "lineItemId" | "trackingKey" | "poNumber" | "swbsCode" | "manual";
+        /** @enum {string} */
+        FinancialLinkState: "linked" | "lineItemDeleted" | "notLinked";
+        FinancialRecordRef: {
+            type: components["schemas"]["AttributeLevel"];
+            /** @example L-1006 */
+            id: string;
+            /** @example Stand build */
+            name: string;
+        };
+        /** @description Sums in the display currency. */
+        FinancialTotals: {
+            committed: components["schemas"]["Money"];
+            invoiced: components["schemas"]["Money"];
+            paid: components["schemas"]["Money"];
+            accrued: components["schemas"]["Money"];
+        };
+        /** @description A record's figures (FR-011, FR-013), display currency. */
+        FinancialFigures: {
+            /** @description Null when the record has no planned cost. */
+            plannedCost: components["schemas"]["Money"] | null;
+            committed: components["schemas"]["Money"];
+            invoiced: components["schemas"]["Money"];
+            paid: components["schemas"]["Money"];
+            accrued: components["schemas"]["Money"];
+            /** @description Planned cost − committed; negative when committed above planned cost; null without a planned cost. */
+            notYetCommitted: components["schemas"]["Money"] | null;
+            /** @description Whole per cent, half up; null without a planned cost or when it is 0.00. */
+            committedPercent: number | null;
+            committedAbovePlanned: boolean;
+            /** @description Live line items below (activities and containers) committed above their own planned cost; 0 for line items. */
+            lineItemsAbovePlanned: number;
+            /** @description The first of them (by line item ID), for the link; null when none. */
+            firstLineItemAbovePlanned: components["schemas"]["FinancialRecordRef"] | null;
+            /** @description Transactions linked to the record's live line items. */
+            transactionCount: number;
+        };
+        FinancialSource: {
+            /** @description When the newest import was made; null when no GSAP data was ever loaded. */
+            dataAsOf: string | null;
+            feedName: string | null;
+            fileName: string | null;
+            /** @description The latest accrual month in the data (Accrued counts only it); null when there are no accruals. */
+            accrualMonth: string | null;
+        };
+        FinancialBreakdownRow: {
+            record: components["schemas"]["FinancialRecordRef"];
+            figures: components["schemas"]["FinancialFigures"];
+        };
+        FinancialRecordView: {
+            record: components["schemas"]["FinancialRecordRef"];
+            /** @example P-1001 */
+            planId: string;
+            /** @description The record's ancestors, plan first; empty for a plan. */
+            path: components["schemas"]["FinancialRecordRef"][];
+            figures: components["schemas"]["FinancialFigures"];
+            /** @description The level of the breakdown rows; null for a line item. */
+            breakdownLevel: components["schemas"]["AttributeLevel"] | null;
+            /** @description One row per live child, in the order of the plan tree (line items in creation order). */
+            breakdown: components["schemas"]["FinancialBreakdownRow"][];
+            latest: components["schemas"]["FinancialTransactionRow"][];
+            /** @description Line items - the distinct SWBS codes on their transactions, sorted; [] otherwise. */
+            swbsCodes: string[];
+            source: components["schemas"]["FinancialSource"];
+        };
+        FinancialVendor: {
+            /** @example V-100103 */
+            code: string;
+            /** @example Outdoor Frames Ltd */
+            name: string;
+        };
+        FinancialLink: {
+            state: components["schemas"]["FinancialLinkState"];
+            matchedBy: components["schemas"]["FinancialMatchedBy"] | null;
+            /** @description The not-linked reason (data-model §4.2) or the recycle-bin sentence; null when linked. */
+            reason: string | null;
+            lineItemId: string | null;
+            /** @description Plan → campaign → initiative → activity → line item when linked; [] otherwise. */
+            path: components["schemas"]["FinancialRecordRef"][];
+            manualBy: components["schemas"]["ActorRef"] | null;
+            manualAt: string | null;
+        };
+        FinancialTransactionRow: {
+            /** @example FT-1003 */
+            id: string;
+            type: components["schemas"]["FinancialTransactionType"];
+            /** @description Readable name - "PO 4500001003 / 10", "Invoice 5100002003". */
+            name: string;
+            documentNumber: string;
+            /** @description "" when none. */
+            lineNumber: string;
+            /** @description "" when none. */
+            poNumber: string;
+            /** @description "" when none. */
+            poLineNumber: string;
+            /** Format: date */
+            postingDate: string;
+            accrualMonth: string | null;
+            amount: components["schemas"]["Money"];
+            /** @description In the display currency; null when the currency is no longer in Settings. */
+            amountDisplay: components["schemas"]["Money"] | null;
+            currencyMissing: boolean;
+            vendor: components["schemas"]["FinancialVendor"] | null;
+            description: string;
+            /** @description "" when none. */
+            swbsCode: string;
+            link: components["schemas"]["FinancialLink"];
+        };
+        FinancialImportRef: {
+            /** @example FIM-1001 */
+            id: string;
+            feedName: string;
+            /** @description "" for the demo data. */
+            fileName: string;
+            /** Format: date-time */
+            importedAt: string;
+            importedBy: components["schemas"]["ActorRef"];
+        };
+        /** @description A FinancialTransactionRow plus the fields of the details panel (FR-022). */
+        FinancialTransaction: {
+            id: string;
+            type: components["schemas"]["FinancialTransactionType"];
+            name: string;
+            documentNumber: string;
+            lineNumber: string;
+            poNumber: string;
+            poLineNumber: string;
+            /** Format: date */
+            postingDate: string;
+            accrualMonth: string | null;
+            amount: components["schemas"]["Money"];
+            amountUsd: components["schemas"]["Money"] | null;
+            amountDisplay: components["schemas"]["Money"] | null;
+            currencyMissing: boolean;
+            vendor: components["schemas"]["FinancialVendor"] | null;
+            description: string;
+            swbsCode: string;
+            /** @description As sent, upper case ("HX1006"); "" when none. */
+            trackingKey: string;
+            /** @description The line_item_id column as sent; "" when none. */
+            sentLineItemId: string;
+            link: components["schemas"]["FinancialLink"];
+            import: components["schemas"]["FinancialImportRef"];
+            /** @description Not linked and the person may link (Access). */
+            canLink: boolean;
+            /** @description Manually linked and the person may link. */
+            canUnlink: boolean;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        FinancialTypeCounts: {
+            all: number;
+            purchaseOrder: number;
+            invoice: number;
+            payment: number;
+            accrual: number;
+            notLinked: number;
+        };
+        FinancialPlanChoice: {
+            id: string;
+            name: string;
+            year: number;
+        };
+        FinancialChoices: {
+            /** @description Years of plans and of not-linked transactions' posting dates, plus the current year, newest first. */
+            years: number[];
+            currentYear: number;
+            /** @description Live plans of the selected year, by name. */
+            plans: components["schemas"]["FinancialPlanChoice"][];
+        };
+        FinancialTransactionPage: {
+            items: components["schemas"]["FinancialTransactionRow"][];
+            /** @description Matching transactions for every filter (the selected tab included). */
+            total: number;
+            page: number;
+            pageSize: number;
+            year: number;
+            counts: components["schemas"]["FinancialTypeCounts"];
+            totals: components["schemas"]["FinancialTotals"];
+            /** @description The record of the recordId filter, for its chip; null without it. */
+            recordFilter: components["schemas"]["FinancialRecordRef"] | null;
+            choices: components["schemas"]["FinancialChoices"];
+            source: components["schemas"]["FinancialSource"];
+        };
+        FinancialLinkRequest: {
+            /** @example L-1007 */
+            lineItemId: string;
+            version: number;
+        };
+        FinancialUnlinkRequest: {
+            version: number;
+        };
+        FinancialImportRequest: {
+            /** @example gsap-2026-10-19.csv */
+            fileName: string;
+            /** @description The .csv file (UTF-8, at most 700 KB and 5,000 data rows) encoded as base64. */
+            content: string;
+        };
+        FinancialImportProblem: {
+            /** @description The file's row number (2 = first data row). */
+            row: number;
+            /** @description The CSV column name; "" for a problem with the whole row. */
+            column: string;
+            message: string;
+        };
+        FinancialImportNotLinkedRow: {
+            row: number;
+            /** @example PO 4500001004 / 10 */
+            name: string;
+            reason: string;
+        };
+        FinancialImportCounts: {
+            /** @description rows = new + updated + unchanged + refused. */
+            rows: number;
+            new: number;
+            updated: number;
+            unchanged: number;
+            refused: number;
+            /** @description Accepted rows of this file left not linked. */
+            notLinked: number;
+            /** @description Earlier not-linked transactions this import linked. */
+            relinked: number;
+        };
+        FinancialImportCheck: {
+            fileName: string;
+            counts: components["schemas"]["FinancialImportCounts"];
+            problems: components["schemas"]["FinancialImportProblem"][];
+            problemsTotal: number;
+            notLinked: components["schemas"]["FinancialImportNotLinkedRow"][];
+            notLinkedTotal: number;
+            /** @description Header names NorthStar does not read. */
+            unusedColumns: string[];
+        };
+        FinancialImport: {
+            /** @example FIM-1002 */
+            id: string;
+            /** @enum {string} */
+            source: "file" | "demo";
+            /** @example Simulated GSAP extract */
+            feedName: string;
+            fileName: string;
+            /** Format: date-time */
+            importedAt: string;
+            importedBy: components["schemas"]["ActorRef"];
+            counts: components["schemas"]["FinancialImportCounts"];
+        };
+        FinancialImportResult: {
+            import: components["schemas"]["FinancialImport"];
+            problems: components["schemas"]["FinancialImportProblem"][];
+            problemsTotal: number;
+            notLinked: components["schemas"]["FinancialImportNotLinkedRow"][];
+            notLinkedTotal: number;
+        };
+        FinancialImportPage: {
+            items: components["schemas"]["FinancialImport"][];
+            total: number;
+        };
+        FinancialOverview: {
+            year: number;
+            scope: components["schemas"]["HomeScope"];
+            figures: components["schemas"]["FinancialFigures"];
+            /** @description Activities of the scope's plans committed above planned cost (data-model §5). */
+            activitiesAbovePlanned: number;
+            /** @description Transactions not linked to a line item (all of them; visible to people who may import once roles exist). */
+            notLinked: number;
+            source: components["schemas"]["FinancialSource"];
+        };
+        /**
+         * @description Entered by hand, or written by a GSAP rate import.
+         * @enum {string}
+         */
+        RateSource: "manual" | "gsapImport";
+        /** @description A currency's current rate and where it came from (016 FR-009). */
+        RateUsed: {
+            /** @example GBP */
+            currency: string;
+            rate: components["schemas"]["ExchangeRate"];
+            inverseRate: components["schemas"]["ExchangeRate"];
+            /**
+             * Format: date
+             * @description Null for USD.
+             */
+            rateDate: string | null;
+            source: components["schemas"]["RateSource"] | null;
+            importFileName: string | null;
+        };
+        CurrentRatePage: {
+            /**
+             * Format: date
+             * @description The API's date the current rates are worked out for.
+             */
+            today: string;
+            items: components["schemas"]["RateUsed"][];
+            total: number;
+        };
+        /** @description One dated rate of a currency (data-model §2.1). Named ExchangeRateRecord because ExchangeRate (002) is the rate string itself. */
+        ExchangeRateRecord: {
+            /** @example XR-1001 */
+            id: string;
+            /** @example EUR */
+            currency: string;
+            /** Format: date */
+            date: string;
+            rate: components["schemas"]["ExchangeRate"];
+            inverseRate: components["schemas"]["ExchangeRate"];
+            source: components["schemas"]["RateSource"];
+            importId: string | null;
+            importFileName: string | null;
+            /** @description The rate conversions use today. */
+            current: boolean;
+            /** @description Dated after today ("From <date>"). */
+            future: boolean;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ExchangeRatePage: {
+            /** @description Newest date first. */
+            items: components["schemas"]["ExchangeRateRecord"][];
+            total: number;
+            current: components["schemas"]["RateUsed"];
+        };
+        ExchangeRateCreate: {
+            /** @description YYYY-MM-DD; checked by the server. */
+            date: string;
+            /**
+             * @description Units per 1 USD, above 0, at most six decimals.
+             * @example 0.9214
+             */
+            rate: string;
+        };
+        ExchangeRateUpdate: {
+            rate: string;
+            version: number;
+        };
+        RateImportUpload: {
+            /** @example gsap_rates_2026-10-20.csv */
+            fileName: string;
+            /** @description The file, base64 (at most 2 MB before encoding). */
+            content: string;
+        };
+        /** @enum {string} */
+        RateImportOutcome: "add" | "replace" | "present" | "notUsed" | "problem";
+        RateImportRow: {
+            /** @description The file's own row number (the header is row 1). */
+            row: number;
+            outcome: components["schemas"]["RateImportOutcome"];
+            currency: string | null;
+            /** Format: date */
+            date: string | null;
+            rate: components["schemas"]["ExchangeRate"] | null;
+            /** @description replace only - the stored rate it replaces. */
+            previousRate: components["schemas"]["ExchangeRate"] | null;
+            /** @description notUsed and problem rows - why (data-model §2.4). */
+            message: string | null;
+        };
+        RateImportCounts: {
+            add: number;
+            replace: number;
+            present: number;
+            notUsed: number;
+            problem: number;
+        };
+        RateImportCheck: {
+            fileName: string;
+            /** @example gsapDailyRatesFile */
+            feed: string;
+            rows: components["schemas"]["RateImportRow"][];
+            counts: components["schemas"]["RateImportCounts"];
+        };
+        RateImport: {
+            /** @example RI-1002 */
+            id: string;
+            fileName: string;
+            feed: string;
+            /** Format: date */
+            firstDate: string | null;
+            /** Format: date */
+            lastDate: string | null;
+            added: number;
+            replaced: number;
+            unchanged: number;
+            notUsed: number;
+            problems: number;
+            /** Format: date-time */
+            importedAt: string;
+            importedBy: components["schemas"]["ActorRef"];
+        };
+        RateImportPage: {
+            items: components["schemas"]["RateImport"][];
+            total: number;
+        };
+        /** @enum {string} */
+        FieldHelpLevel: "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "phasing" | "common" | "allWork";
+        FieldHelpEntry: {
+            /** @example plan.budget */
+            key: string;
+            level: components["schemas"]["FieldHelpLevel"];
+            /** @example Plan budget */
+            label: string;
+            /** @description The text shown; empty hides the ⓘ. */
+            text: string;
+            defaultText: string;
+            isDefault: boolean;
+            /** @description 0 while the default is used. */
+            version: number;
+            /** Format: date-time */
+            updatedAt: string | null;
+            updatedBy: components["schemas"]["ActorRef"] | null;
+        };
+        FieldHelpPage: {
+            items: components["schemas"]["FieldHelpEntry"][];
+            total: number;
+            /** @description Active Shell attributes whose help text is empty (FR-048). */
+            shellAttributesWithoutHelp: number;
+        };
+        FieldHelpUpdate: {
+            /** @description The new text (0–300 characters); null resets to the default. */
+            text: string | null;
+            version: number;
+        };
+        /** @enum {string} */
+        PlanType: "operational" | "strategic" | "crossMarket";
+        /** @enum {string} */
+        PhasingMethod: "none" | "evenly" | "custom";
+        PhasingMonth: {
+            /** @example 2027-03 */
+            month: string;
+            amount: components["schemas"]["Money"];
+        };
+        PhasingMonthInput: {
+            /** @example 2027-03 */
+            month: string;
+            /** @description Decimal string in the plan currency, at most two decimals, 0 or more. */
+            amount: string;
+        };
+        /** @description A budget's phasing (data-model §3.3), in the plan currency. */
+        BudgetPhasing: {
+            method: components["schemas"]["PhasingMethod"];
+            /** @description custom only - the stored months; [] otherwise. */
+            months: components["schemas"]["PhasingMonth"][];
+            /** @description The 12 monthly amounts, January to December of the plan's year; [] when none. */
+            monthly: components["schemas"]["Money"][];
+            /** @description The sum of monthly; null when none. */
+            total: components["schemas"]["Money"] | null;
+            /** @description "Adds up to 590,000.00 GBP, not the budget 600,000.00 GBP"; null when fine. */
+            problem: string | null;
+        };
+        BudgetPhasingUpdate: {
+            method: components["schemas"]["PhasingMethod"];
+            /** @description custom only; ignored otherwise. */
+            months: components["schemas"]["PhasingMonthInput"][];
+            /** @description The record's version. */
+            version: number;
+        };
+        BudgetByMonthPeriods: {
+            /** @description One per period; null entries when not phased. */
+            budget: (components["schemas"]["Money"] | null)[];
+            plannedCost: components["schemas"]["Money"][];
+            difference: (components["schemas"]["Money"] | null)[];
+            /** @description Plans and campaigns - the children's phased budgets per period; null for initiatives. */
+            allocated: (components["schemas"]["Money"] | null)[] | null;
+            /** @description True where planned cost or allocated exceeds the phased budget. */
+            over: boolean[];
+        };
+        BudgetByMonthRow: {
+            /** @enum {string} */
+            recordType: "plan" | "campaign" | "initiative";
+            recordId: string;
+            parentId: string | null;
+            name: string;
+            method: components["schemas"]["PhasingMethod"];
+            months: components["schemas"]["BudgetByMonthPeriods"];
+            quarters: components["schemas"]["BudgetByMonthPeriods"];
+            /** @description Planned cost outside the plan's year; null when none. */
+            otherYears: components["schemas"]["Money"] | null;
+            /** @description Planned cost of activities without dates; null when none. */
+            noDates: components["schemas"]["Money"] | null;
+            childrenNotPhased: number;
+        };
+        BudgetByMonth: {
+            planId: string;
+            year: number;
+            /** @description The plan currency of every amount. */
+            currency: string;
+            /** @description The 12 month keys, 2027-01 … 2027-12. */
+            months: string[];
+            /** @description The plan, then each campaign followed by its initiatives, in plan-tree order. */
+            rows: components["schemas"]["BudgetByMonthRow"][];
+        };
+        SplitLink: {
+            /** @example A-1012 */
+            id: string;
+            name: string;
+            planId: string;
+            /** @description The other activity is in the recycle bin. */
+            deleted: boolean;
+        };
+        ActivitySplitLineItem: {
+            id: string;
+            name: string;
+            /** @description In the line item's currency. */
+            plannedCost: components["schemas"]["Money"];
+            /** @description In the plan currency. */
+            plannedCostPlan: components["schemas"]["Money"];
+        };
+        ActivitySplitOptions: {
+            activityId: string;
+            version: number;
+            status: components["schemas"]["ActivityStatus"];
+            plannedCost: components["schemas"]["Money"] | null;
+            planCurrency: string;
+            /** @example UK launch event (split) */
+            suggestedName: string;
+            /** @description The activity is Submitted or Approved; restartApproval true is needed. */
+            needsRestart: boolean;
+            lineItems: components["schemas"]["ActivitySplitLineItem"][];
+            /** @description The initiatives of the plan, the current one first, with Move's availability (006). */
+            destinations: components["schemas"]["ActivityDestination"][];
+        };
+        ActivitySplitRequest: {
+            name: string;
+            initiativeId: string;
+            lineItemIds: string[];
+            /** @description The amount to move, in the plan currency; null or "0" to move none. */
+            plannedCost: string | null;
+            restartApproval: boolean;
+            /** @description The original activity's version. */
+            version: number;
+        };
+        ActivitySplitSide: {
+            name: string;
+            initiativeName: string;
+            plannedCost: components["schemas"]["Money"] | null;
+            lineItemNames: string[];
+            unassignedPlannedCost: components["schemas"]["Money"] | null;
+            /** @enum {string} */
+            unassignedState: "left" | "allAssigned" | "exceeded" | "noPlannedCost";
+            status: components["schemas"]["ActivityStatus"];
+        };
+        ActivitySplitPreview: {
+            original: components["schemas"]["ActivitySplitSide"] | null;
+            created: components["schemas"]["ActivitySplitSide"] | null;
+            /** @description Every problem the split itself would answer; empty when it can be done. */
+            problems: components["schemas"]["FieldError"][];
+        };
+        ActivitySplitResult: {
+            activity: components["schemas"]["Activity"];
+            newActivity: components["schemas"]["Activity"];
+        };
+        AllWorkAttributeFilter: {
+            attributeId: string;
+            /** @description Option ids, yes, no, or none (Not filled in). */
+            values: string[];
+        };
+        AllWorkBreakdownChoice: {
+            by: string;
+            thenBy: string | null;
+        };
+        AllWorkGrouping: {
+            /** @example attr:SA-1013 */
+            key: string;
+            /** @example Country / OU */
+            label: string;
+            /** @description The attribute's level; null for built-in groupings. */
+            level: string | null;
+            /** @description Groups carry Budget and Budget used. */
+            hasBudget: boolean;
+        };
+        AllWorkFilterableAttribute: {
+            id: string;
+            label: string;
+            level: string;
+            /** @description An AttributeType of 002 (choice types and yesNo only). */
+            type: string;
+            values: components["schemas"]["AllWorkOption"][];
+        };
+        AllWorkBreakdownGroup: {
+            /** @description Option id, built-in id, notFilledIn or notOnLineItem. */
+            key: string;
+            label: string;
+            activities: number;
+            lineItems: number;
+            plannedCost: components["schemas"]["Money"];
+            /** @description Share of the total planned cost, two decimals ("37.50"); may exceed 100.00 when activities count in several groups. */
+            share: string;
+            budget: components["schemas"]["Money"] | null;
+            budgetUsedPercent: number | null;
+            overBudget: boolean;
+            /** @description The thenBy groups; [] without thenBy. */
+            children: components["schemas"]["AllWorkBreakdownSubgroup"][];
+        };
+        /** @description A thenBy group inside an AllWorkBreakdownGroup (same fields, no further level; D-298). */
+        AllWorkBreakdownSubgroup: {
+            /** @description Option id, built-in id, notFilledIn or notOnLineItem. */
+            key: string;
+            label: string;
+            activities: number;
+            lineItems: number;
+            plannedCost: components["schemas"]["Money"];
+            /** @description Share of the total planned cost, two decimals ("37.50"); may exceed 100.00 when activities count in several groups. */
+            share: string;
+            budget: components["schemas"]["Money"] | null;
+            budgetUsedPercent: number | null;
+            overBudget: boolean;
+        };
+        AllWorkBreakdown: {
+            by: components["schemas"]["AllWorkGrouping"];
+            thenBy: components["schemas"]["AllWorkGrouping"] | null;
+            currency: string;
+            groups: components["schemas"]["AllWorkBreakdownGroup"][];
+            total: components["schemas"]["AllWorkBreakdownGroup"];
+            /** @description A multiple choice without split counted activities in several groups. */
+            countsInEach: boolean;
+            /** @description Sentences to show under the table (data-model §3.5). */
+            notes: string[];
+            /** @description Every grouping the pickers offer. */
+            groupings: components["schemas"]["AllWorkGrouping"][];
+        };
+        /** @description A level condition as sent. At least one part is set; all set parts must match (FR-005). Amounts are USD decimal strings with at most two decimals. */
+        ApprovalConditionInput: {
+            /** @example 100000.00 */
+            plannedCostAtLeast?: string | null;
+            /** @example 10000.00 */
+            plannedCostBelow?: string | null;
+            /** @description Options of the plan-level Business unit attribute; empty when not part of the condition. */
+            businessUnitIds?: string[];
+            activityTypeIds?: string[];
+        };
+        /** @description A level condition as answered, with its text (data-model §2). */
+        ApprovalCondition: {
+            plannedCostAtLeast: components["schemas"]["Money"] | null;
+            plannedCostBelow: components["schemas"]["Money"] | null;
+            businessUnits: components["schemas"]["OptionRef"][];
+            activityTypes: components["schemas"]["SettingRef"][];
+            /** @example planned cost is below $10,000.00 */
+            text: string;
+        };
+        ApprovalRuleOptions: {
+            activityTypes: components["schemas"]["SettingRef"][];
+            businessUnits: components["schemas"]["OptionRef"][];
+            /** @description Feature 014's roles that include approvals.decide, sorted by name. */
+            roles: components["schemas"]["RoleRef"][];
+        };
+        /** @description A person left out of a level when it was resolved (FR-011). */
+        ApprovalExcludedPerson: {
+            person: components["schemas"]["ApprovalPerson"];
+            /** @enum {string} */
+            reason: "inactive" | "cannotApprove" | "owner" | "submitter";
+        };
+        /** @description What a submission would do with one level (FR-013). */
+        ApprovalSubmissionLevel: {
+            number: number;
+            label: string;
+            /** @enum {string} */
+            outcome: "decide" | "skipped" | "autoApproved";
+            /** @description The resolved approvers (decide only; empty otherwise or when a problem is listed). */
+            approvers: components["schemas"]["ApprovalPerson"][];
+            /** @description Empty for named people; "line manager of Priya Raman"; "role Approver". */
+            source: string;
+            /** @enum {string} */
+            mode: "any" | "all";
+            /**
+             * @description The reason for skipped and autoApproved; empty for decide.
+             * @example planned cost is below $10,000.00
+             */
+            ruleText: string;
+            excluded: components["schemas"]["ApprovalExcludedPerson"][];
+            backupUsed: boolean;
+            /** @description Nobody resolved and no usable backup; someone deciding on behalf must decide (does not block). */
+            noApprover: boolean;
+            /** @description The no-approver advice of data-model §3; empty otherwise. */
+            advice: string;
+        };
+        /** @description The values the rules used at submission (FR-010). */
+        ApprovalRuleFacts: {
+            plannedCost: components["schemas"]["Money"] | null;
+            activityType: components["schemas"]["RecordRef"] | null;
+            businessUnits: components["schemas"]["OptionRef"][];
+        };
+        ApprovalDelegation: {
+            /** @example DLG-1001 */
+            id: string;
+            person: components["schemas"]["ApprovalPerson"];
+            delegate: components["schemas"]["ApprovalPerson"];
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            note: string;
+            /** @enum {string} */
+            state: "planned" | "current" | "ended" | "cancelled";
+            /** @description The signed-in person may edit and cancel it (the delegating person or someone holding workflows.manage, and planned or current). */
+            canChange: boolean;
+            /** Format: date-time */
+            cancelledAt: string | null;
+            cancelledBy: components["schemas"]["ActorRef"] | null;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: date-time */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ActorRef"];
+        };
+        ApprovalDelegationPage: {
+            items: components["schemas"]["ApprovalDelegation"][];
+            total: number;
+            /** @description The signed-in person holds workflows.manage (may list, create and change anyone's delegations). */
+            canManageOthers: boolean;
+        };
+        ApprovalDelegationCreate: {
+            /** @description Defaults to the signed-in person. */
+            personId?: string;
+            delegateId: string;
+            /** @description YYYY-MM-DD; checked by the API. */
+            startDate: string;
+            endDate: string;
+            note?: string;
+        };
+        ApprovalDelegationUpdate: {
+            delegateId?: string;
+            startDate?: string;
+            endDate?: string;
+            note?: string;
+            version: number;
+        };
+        ApprovalDelegationCancel: {
+            version: number;
+        };
+        ApprovalAgeingBucket: {
+            /** @enum {string} */
+            bucket: "under1" | "days1to2" | "days3to5" | "days6to10" | "over10";
+            /** @example 3–5 days */
+            label: string;
+            count: number;
+        };
+        ApprovalLevelWaiting: {
+            workflow: {
+                id: string;
+                /** @description The name at submission of the oldest round in the group. */
+                name: string;
+            };
+            level: number;
+            levelLabel: string;
+            waiting: number;
+            overdue: number;
+            /** Format: date-time */
+            oldestWaitingSince: string;
+        };
+        ApprovalMonitoring: {
+            cards: {
+                overdue: number;
+                escalated: number;
+                /**
+                 * @description One decimal ("2.4"); null when nothing was decided in the month.
+                 * @example 2.4
+                 */
+                averageDecisionDays: string | null;
+                decidedThisMonth: number;
+                autoApprovedThisMonth: number;
+            };
+            /** @description Always the five buckets, in order. */
+            ageing: components["schemas"]["ApprovalAgeingBucket"][];
+            byLevel: components["schemas"]["ApprovalLevelWaiting"][];
+            /** @description Rows of All open that are overdue, oldest waiting first. */
+            overdue: components["schemas"]["ApprovalRow"][];
+            /** @description The signed-in person holds workflows.manage. */
+            canRunEscalations: boolean;
+        };
+        EscalationEvent: {
+            activity: components["schemas"]["RecordRef"];
+            roundNumber: number;
+            level: number;
+            /** @enum {string} */
+            action: "reminded" | "escalated" | "notEscalated";
+            /** @description Who was notified (reminded), the backup approver (escalated); empty for notEscalated. */
+            to: components["schemas"]["ApprovalPerson"][];
+            waitedDays: number;
+        };
+        EscalationRunResult: {
+            reminded: number;
+            escalated: number;
+            events: components["schemas"]["EscalationEvent"][];
+            /** @description Levels due for escalation that no backup approver could take. */
+            notEscalated: components["schemas"]["EscalationEvent"][];
+        };
     };
     responses: {
         /** @description The request is not valid (validation_failed lists every field problem; bad_request when the body cannot be read). */
@@ -6127,6 +8582,15 @@ export interface components {
         };
         /** @description Any other failure (for example internal_error). */
         Error: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description The signed-in person's roles do not allow this (forbidden), or the record is outside their access. The message says so in plain language and names nothing of a record they cannot see. Nothing was changed. */
+        Forbidden: {
             headers: {
                 [name: string]: unknown;
             };
@@ -6187,7 +8651,7 @@ export interface components {
         /** @description The plans' year. Default - the current year. */
         AllWorkYear: number;
         /** @description grid (default), calendar or budget (Budget & cost). */
-        AllWorkView: "grid" | "calendar" | "budget";
+        AllWorkView: "grid" | "calendar" | "budget" | "breakdown";
         /** @description Plan IDs (repeat the parameter for several). */
         AllWorkPlan: string[];
         AllWorkPlanStatus: ("draft" | "published")[];
@@ -6211,7 +8675,7 @@ export interface components {
         /** @description A column key and a direction, e.g. plannedCost:desc. Children are sorted within each parent. */
         AllWorkSort: string;
         /** @description Budget & cost columns by month (default) or quarter. */
-        AllWorkPeriod: "month" | "quarter";
+        AllWorkPeriod: "month" | "quarter" | "year";
         /** @example A-1001 */
         AllWorkRecordId: string;
         /** @example SV-1001 */
@@ -6220,6 +8684,74 @@ export interface components {
         BulkActionId: string;
         /** @example IMP-1001 */
         ImportId: string;
+        /** @example RL-1003 */
+        RoleId: string;
+        /** @example GB-1001 */
+        GlobalBudgetId: string;
+        /** @example BA-1001 */
+        AllocationId: string;
+        /** @description A plan, campaign, initiative, activity or line item readable ID. */
+        FinancialRecordId: string;
+        FinancialTransactionId: string;
+        /** @description The tab. Default all. */
+        FinancialType: "all" | "purchaseOrder" | "invoice" | "payment" | "accrual";
+        /** @description Text searched, ignoring letter case, in document number, PO number, vendor code and name, SWBS code, HX key, description, and the linked line item's and activity's name and ID (at most 200 characters). */
+        FinancialSearch: string;
+        /** @description The linked plan's year; not-linked transactions by posting year. Default the current year. */
+        FinancialYear: number;
+        FinancialPlan: string;
+        /** @description Only transactions linked under this record (plan, campaign, initiative, activity or line item). */
+        FinancialRecordFilter: string;
+        /** @description The Not linked tab sends notLinked. Default all. */
+        FinancialLinkFilter: "all" | "linked" | "notLinked";
+        /** @description A column and a direction. Default postingDate:desc (ties by ID, newest first). amount sorts by the USD value. */
+        FinancialSort: string;
+        FinancialPageNumber: number;
+        FinancialPageSize: 50 | 100 | 200;
+        /** @description Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when the activity or one of its line items is committed above its planned cost. */
+        AllWorkFinance: ("hasPurchaseOrder" | "noPurchaseOrder" | "invoiced" | "committedAbovePlanned")[];
+        /** @example XR-1001 */
+        RateId: string;
+        /**
+         * @description A key of the Field help catalogue (data-model §6).
+         * @example plan.budget
+         */
+        HelpKey: string;
+        /** @description First year of the range (inclusive). With yearTo; year is an alias for yearFrom = yearTo. */
+        PlansYearFrom: number;
+        /** @description Last year of the range (inclusive); not before yearFrom. */
+        PlansYearTo: number;
+        /** @description Only plans of these types (repeat the parameter); every type when not sent. */
+        PlansType: components["schemas"]["PlanType"][];
+        /** @description First year of the range; default the current year. year is an alias for yearFrom = yearTo. */
+        AllWorkYearFrom: number;
+        /** @description Last year of the range; default yearFrom; at most yearFrom + 4 ("Choose at most 5 years."). */
+        AllWorkYearTo: number;
+        /** @description Plans of these types (tested on plans). */
+        AllWorkPlanType: components["schemas"]["PlanType"][];
+        /** @description Plans planned in these currencies (tested on plans). */
+        AllWorkPlanCurrency: string[];
+        /**
+         * @description A Shell-attribute filter, repeatable: <attributeId>:<value>,<value>… where a value is an option id,
+         *     yes, no, or none (Not filled in). Tested on the attribute's level (016 FR-039).
+         * @example [
+         *       "SA-1022:SO-1301,none"
+         *     ]
+         */
+        AllWorkAttr: string[];
+        /** @description Budget & cost only - add phasedBudget and overPeriods to plan, campaign and initiative rows. */
+        AllWorkComparePhased: boolean;
+        /**
+         * @description The grouping - attr:<attributeId>, plan, planType, planCurrency, year, team, businessUnit, activityType or owner. Needed by GET /api/all-work/breakdown and by the Breakdown export (view=breakdown): missing there, it answers 400 validation_failed on by. Optional in the contract so the other exports need not send it (D-298).
+         * @example attr:SA-1013
+         */
+        AllWorkBy: string;
+        /** @description An optional second grouping, different from by. */
+        AllWorkThenBy: string;
+        /** @description display (default) or plan (one plan filtered - its plan currency). */
+        AllWorkAmountsIn: "display" | "plan";
+        /** @example DLG-1001 */
+        DelegationId: string;
     };
     requestBodies: never;
     headers: never;
@@ -6338,6 +8870,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6365,6 +8898,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
         };
@@ -6393,6 +8927,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6448,6 +8983,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6470,6 +9006,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6495,6 +9032,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -6526,6 +9064,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -6550,6 +9089,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6577,6 +9117,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6602,6 +9143,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -6633,6 +9175,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -6665,6 +9208,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -6691,6 +9235,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -6714,6 +9259,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6736,6 +9282,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6763,6 +9310,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6788,6 +9336,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -6814,6 +9363,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -6846,6 +9396,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -6878,6 +9429,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -6909,6 +9461,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -6933,6 +9486,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6960,6 +9514,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -6985,6 +9540,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7011,6 +9567,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7043,6 +9600,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7075,6 +9633,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7106,6 +9665,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7134,6 +9694,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7161,6 +9722,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7186,6 +9748,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7212,6 +9775,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7244,6 +9808,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7276,6 +9841,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7307,6 +9873,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7339,6 +9906,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7376,6 +9944,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7407,6 +9976,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7438,6 +10008,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7469,6 +10040,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7495,6 +10067,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7522,6 +10095,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7554,6 +10128,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7586,6 +10161,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7618,6 +10194,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7645,6 +10222,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7674,6 +10252,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7696,6 +10275,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7723,6 +10303,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7751,6 +10332,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7781,6 +10363,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7816,6 +10399,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7851,6 +10435,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -7885,6 +10470,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7913,6 +10499,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7943,6 +10530,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -7972,6 +10560,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -7997,6 +10586,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8023,6 +10613,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8055,6 +10646,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8087,6 +10679,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8111,6 +10704,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8138,6 +10732,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8163,6 +10758,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8194,6 +10790,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8226,6 +10823,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8257,6 +10855,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8281,6 +10880,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8308,6 +10908,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8333,6 +10934,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8359,6 +10961,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8391,6 +10994,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8423,6 +11027,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8454,6 +11059,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8478,6 +11084,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8500,6 +11107,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8517,6 +11125,12 @@ export interface operations {
                 year?: number;
                 /** @description Part of the name or of the ID, ignoring letter case and surrounding spaces. */
                 q?: string;
+                /** @description First year of the range (inclusive). With yearTo; year is an alias for yearFrom = yearTo. */
+                yearFrom?: components["parameters"]["PlansYearFrom"];
+                /** @description Last year of the range (inclusive); not before yearFrom. */
+                yearTo?: components["parameters"]["PlansYearTo"];
+                /** @description Only plans of these types (repeat the parameter); every type when not sent. */
+                type?: components["parameters"]["PlansType"];
             };
             header?: never;
             path?: never;
@@ -8535,6 +11149,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8562,6 +11177,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -8587,6 +11203,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8613,6 +11230,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8644,6 +11262,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8671,6 +11290,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8703,6 +11323,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8729,6 +11350,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8760,6 +11382,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8791,6 +11414,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8817,6 +11441,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8848,6 +11473,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8874,6 +11500,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8900,6 +11527,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8931,6 +11559,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -8962,6 +11591,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -8993,6 +11623,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9025,6 +11656,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9056,6 +11688,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9082,6 +11715,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9108,6 +11742,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9139,6 +11774,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9170,6 +11806,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9201,6 +11838,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9233,6 +11871,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9259,6 +11898,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9290,6 +11930,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9316,6 +11957,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9342,6 +11984,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9368,6 +12011,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9399,6 +12043,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9426,6 +12071,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9452,6 +12098,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9483,6 +12130,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9515,6 +12163,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9541,6 +12190,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9572,6 +12222,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9599,6 +12250,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9625,6 +12277,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9655,6 +12308,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9687,6 +12341,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9719,6 +12374,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9743,6 +12399,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -9770,6 +12427,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -9795,6 +12453,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9821,6 +12480,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9853,6 +12513,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9885,6 +12546,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9917,6 +12579,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -9944,6 +12607,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -9970,6 +12634,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -10001,6 +12666,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -10033,6 +12699,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -10065,6 +12732,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -10097,6 +12765,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -10125,6 +12794,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10156,6 +12826,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10181,6 +12852,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -10204,6 +12876,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10229,6 +12902,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -10252,6 +12926,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10278,6 +12953,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10304,6 +12980,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10326,6 +13003,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10348,6 +13026,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10370,6 +13049,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10396,6 +13076,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10421,6 +13102,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when the activity or one of its line items is committed above its planned cost. */
+                finance?: components["parameters"]["AllWorkFinance"];
                 showLevels?: components["parameters"]["AllWorkShowLevels"];
                 /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
                 search?: components["parameters"]["AllWorkSearch"];
@@ -10430,6 +13113,24 @@ export interface operations {
                 sort?: components["parameters"]["AllWorkSort"];
                 /** @description Budget & cost columns by month (default) or quarter. */
                 period?: components["parameters"]["AllWorkPeriod"];
+                /** @description First year of the range; default the current year. year is an alias for yearFrom = yearTo. */
+                yearFrom?: components["parameters"]["AllWorkYearFrom"];
+                /** @description Last year of the range; default yearFrom; at most yearFrom + 4 ("Choose at most 5 years."). */
+                yearTo?: components["parameters"]["AllWorkYearTo"];
+                /** @description Plans of these types (tested on plans). */
+                planType?: components["parameters"]["AllWorkPlanType"];
+                /** @description Plans planned in these currencies (tested on plans). */
+                planCurrency?: components["parameters"]["AllWorkPlanCurrency"];
+                /**
+                 * @description A Shell-attribute filter, repeatable: <attributeId>:<value>,<value>… where a value is an option id,
+                 *     yes, no, or none (Not filled in). Tested on the attribute's level (016 FR-039).
+                 * @example [
+                 *       "SA-1022:SO-1301,none"
+                 *     ]
+                 */
+                attr?: components["parameters"]["AllWorkAttr"];
+                /** @description Budget & cost only - add phasedBudget and overPeriods to plan, campaign and initiative rows. */
+                comparePhased?: components["parameters"]["AllWorkComparePhased"];
             };
             header?: never;
             path?: never;
@@ -10448,6 +13149,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10456,6 +13158,10 @@ export interface operations {
             query?: {
                 /** @description The plans' year. Default - the current year. */
                 year?: components["parameters"]["AllWorkYear"];
+                /** @description First year of the range; default the current year. year is an alias for yearFrom = yearTo. */
+                yearFrom?: components["parameters"]["AllWorkYearFrom"];
+                /** @description Last year of the range; default yearFrom; at most yearFrom + 4 ("Choose at most 5 years."). */
+                yearTo?: components["parameters"]["AllWorkYearTo"];
             };
             header?: never;
             path?: never;
@@ -10474,6 +13180,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10502,6 +13209,8 @@ export interface operations {
                 activityType?: components["parameters"]["AllWorkActivityType"];
                 /** @description Strategic / AOP plans. */
                 strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description Financials filter (FR-024), tested on activities; values combine with OR. committedAbovePlanned holds when the activity or one of its line items is committed above its planned cost. */
+                finance?: components["parameters"]["AllWorkFinance"];
                 showLevels?: components["parameters"]["AllWorkShowLevels"];
                 /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
                 search?: components["parameters"]["AllWorkSearch"];
@@ -10511,6 +13220,31 @@ export interface operations {
                 sort?: components["parameters"]["AllWorkSort"];
                 /** @description Budget & cost columns by month (default) or quarter. */
                 period?: components["parameters"]["AllWorkPeriod"];
+                /** @description First year of the range; default the current year. year is an alias for yearFrom = yearTo. */
+                yearFrom?: components["parameters"]["AllWorkYearFrom"];
+                /** @description Last year of the range; default yearFrom; at most yearFrom + 4 ("Choose at most 5 years."). */
+                yearTo?: components["parameters"]["AllWorkYearTo"];
+                /** @description Plans of these types (tested on plans). */
+                planType?: components["parameters"]["AllWorkPlanType"];
+                /** @description Plans planned in these currencies (tested on plans). */
+                planCurrency?: components["parameters"]["AllWorkPlanCurrency"];
+                /**
+                 * @description A Shell-attribute filter, repeatable: <attributeId>:<value>,<value>… where a value is an option id,
+                 *     yes, no, or none (Not filled in). Tested on the attribute's level (016 FR-039).
+                 * @example [
+                 *       "SA-1022:SO-1301,none"
+                 *     ]
+                 */
+                attr?: components["parameters"]["AllWorkAttr"];
+                /** @description Budget & cost only - add phasedBudget and overPeriods to plan, campaign and initiative rows. */
+                comparePhased?: components["parameters"]["AllWorkComparePhased"];
+                /**
+                 * @description The grouping - attr:<attributeId>, plan, planType, planCurrency, year, team, businessUnit, activityType or owner. Needed by GET /api/all-work/breakdown and by the Breakdown export (view=breakdown): missing there, it answers 400 validation_failed on by. Optional in the contract so the other exports need not send it (D-298).
+                 * @example attr:SA-1013
+                 */
+                by?: components["parameters"]["AllWorkBy"];
+                /** @description An optional second grouping, different from by. */
+                thenBy?: components["parameters"]["AllWorkThenBy"];
             };
             header?: never;
             path?: never;
@@ -10532,6 +13266,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10557,6 +13292,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -10580,6 +13316,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10607,6 +13344,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10629,6 +13367,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10656,6 +13395,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10681,6 +13421,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -10712,6 +13453,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -10741,6 +13483,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10768,6 +13511,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10793,6 +13537,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -10820,6 +13565,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -10847,6 +13593,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10874,6 +13621,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10901,6 +13649,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10928,6 +13677,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             default: components["responses"]["Error"];
         };
     };
@@ -10954,6 +13704,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
@@ -10981,6 +13732,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -11012,6 +13764,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -11043,6 +13796,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -11071,6 +13825,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -11097,6 +13852,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
@@ -11123,7 +13879,1773 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every permission. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionCatalogue"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listPeopleAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Everyone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeopleAccessPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listAccessChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The entries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityLogPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The roles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleCreate"];
+            };
+        };
+        responses: {
+            /** @description The new role. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example RL-1003 */
+                roleId: components["parameters"]["RoleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The role. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example RL-1003 */
+                roleId: components["parameters"]["RoleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example RL-1003 */
+                roleId: components["parameters"]["RoleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description The role after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPersonRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The person's roles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonRoles"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setPersonRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonRolesUpdate"];
+            };
+        };
+        responses: {
+            /** @description The person's roles after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonRoles"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkPersonRolesImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example U-1002 */
+                personId: components["parameters"]["PersonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonRolesUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getAccessRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The rules. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRules"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateAccessRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessRulesUpdate"];
+            };
+        };
+        responses: {
+            /** @description The rules after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRules"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listGlobalBudgets: {
+        parameters: {
+            query?: {
+                /** @description The year; every year when left out. */
+                year?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The global budgets. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalBudgetPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createGlobalBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlobalBudgetCreate"];
+            };
+        };
+        responses: {
+            /** @description The new global budget. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalBudget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getGlobalBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The global budget. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalBudget"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteGlobalBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to the recycle bin. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateGlobalBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlobalBudgetUpdate"];
+            };
+        };
+        responses: {
+            /** @description The global budget after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalBudget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listAllocationOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plans. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationOptionPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createBudgetAllocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example GB-1001 */
+                globalBudgetId: components["parameters"]["GlobalBudgetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetAllocationCreate"];
+            };
+        };
+        responses: {
+            /** @description The global budget after the allocation. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalBudget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    removeBudgetAllocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example BA-1001 */
+                allocationId: components["parameters"]["AllocationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The global budget after the removal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalBudget"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateBudgetAllocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example BA-1001 */
+                allocationId: components["parameters"]["AllocationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetAllocationUpdate"];
+            };
+        };
+        responses: {
+            /** @description The global budget after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalBudget"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getFinancialRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A plan, campaign, initiative, activity or line item readable ID. */
+                recordId: components["parameters"]["FinancialRecordId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The record's financials. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialRecordView"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listFinancialTransactions: {
+        parameters: {
+            query?: {
+                /** @description The tab. Default all. */
+                type?: components["parameters"]["FinancialType"];
+                /** @description Text searched, ignoring letter case, in document number, PO number, vendor code and name, SWBS code, HX key, description, and the linked line item's and activity's name and ID (at most 200 characters). */
+                q?: components["parameters"]["FinancialSearch"];
+                /** @description The linked plan's year; not-linked transactions by posting year. Default the current year. */
+                year?: components["parameters"]["FinancialYear"];
+                planId?: components["parameters"]["FinancialPlan"];
+                /** @description Only transactions linked under this record (plan, campaign, initiative, activity or line item). */
+                recordId?: components["parameters"]["FinancialRecordFilter"];
+                /** @description The Not linked tab sends notLinked. Default all. */
+                link?: components["parameters"]["FinancialLinkFilter"];
+                /** @description A column and a direction. Default postingDate:desc (ties by ID, newest first). amount sorts by the USD value. */
+                sort?: components["parameters"]["FinancialSort"];
+                page?: components["parameters"]["FinancialPageNumber"];
+                pageSize?: components["parameters"]["FinancialPageSize"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialTransactionPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getFinancialTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transactionId: components["parameters"]["FinancialTransactionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The transaction. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialTransaction"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    linkFinancialTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transactionId: components["parameters"]["FinancialTransactionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinancialLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description The transaction after linking. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialTransaction"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    unlinkFinancialTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transactionId: components["parameters"]["FinancialTransactionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinancialUnlinkRequest"];
+            };
+        };
+        responses: {
+            /** @description The transaction after unlinking. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialTransaction"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getFinancialOverview: {
+        parameters: {
+            query: {
+                /** @description myTeams covers plans with at least one of the person's teams; everything covers all plans. */
+                scope: components["parameters"]["HomeScope"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The overview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialOverview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listFinancialImports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The imports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialImportPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createFinancialImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinancialImportRequest"];
+            };
+        };
+        responses: {
+            /** @description The import result. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialImportResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkFinancialImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinancialImportRequest"];
+            };
+        };
+        responses: {
+            /** @description What the import would do. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialImportCheck"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getFinancialImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file, named northstar-gsap-extract-sample.csv in Content-Disposition. */
+            200: {
+                headers: {
+                    /** @description attachment with filename. */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listCurrencyRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRatePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    addCurrencyRate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeRateCreate"];
+            };
+        };
+        responses: {
+            /** @description The rate. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateRecord"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkCurrencyRateImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ISO code, which is the currency's id.
+                 * @example EUR
+                 */
+                code: components["parameters"]["CurrencyCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeRateCreate"];
+            };
+        };
+        responses: {
+            /** @description The warnings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteExchangeRate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example XR-1001 */
+                rateId: components["parameters"]["RateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted; Undo through the recycle bin entry. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateExchangeRate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example XR-1001 */
+                rateId: components["parameters"]["RateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeRateUpdate"];
+            };
+        };
+        responses: {
+            /** @description The rate. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateRecord"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkExchangeRateImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example XR-1001 */
+                rateId: components["parameters"]["RateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeRateUpdate"];
+            };
+        };
+        responses: {
+            /** @description The warnings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeImpact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listCurrentRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current rates; USD first, then by code. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentRatePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    checkRateImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateImportUpload"];
+            };
+        };
+        responses: {
+            /** @description The review. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateImportCheck"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    importRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateImportUpload"];
+            };
+        };
+        responses: {
+            /** @description The import record. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateImport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listRateImports: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The imports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateImportPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getRateImportSample: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file, named gsap_rates_<today>.csv in Content-Disposition. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listFieldHelp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The entries in catalogue order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldHelpPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateFieldHelp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description A key of the Field help catalogue (data-model §6).
+                 * @example plan.budget
+                 */
+                helpKey: components["parameters"]["HelpKey"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldHelpUpdate"];
+            };
+        };
+        responses: {
+            /** @description The entry. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldHelpEntry"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setPlanBudgetPhasing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetPhasingUpdate"];
+            };
+        };
+        responses: {
+            /** @description The plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setCampaignBudgetPhasing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example C-1001 */
+                campaignId: components["parameters"]["CampaignId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetPhasingUpdate"];
+            };
+        };
+        responses: {
+            /** @description The campaign. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Campaign"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    setInitiativeBudgetPhasing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example I-1001 */
+                initiativeId: components["parameters"]["InitiativeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetPhasingUpdate"];
+            };
+        };
+        responses: {
+            /** @description The initiative. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Initiative"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getPlanBudgetByMonth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example P-1001 */
+                planId: components["parameters"]["PlanId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description In the plan currency (data-model §3.4). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetByMonth"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getActivitySplitOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The options. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySplitOptions"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    previewActivitySplit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivitySplitRequest"];
+            };
+        };
+        responses: {
+            /** @description The preview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySplitPreview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    splitActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example A-1001 */
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivitySplitRequest"];
+            };
+        };
+        responses: {
+            /** @description The original and the new activity. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySplitResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getAllWorkBreakdown: {
+        parameters: {
+            query?: {
+                /** @description The plans' year. Default - the current year. */
+                year?: components["parameters"]["AllWorkYear"];
+                /** @description First year of the range; default the current year. year is an alias for yearFrom = yearTo. */
+                yearFrom?: components["parameters"]["AllWorkYearFrom"];
+                /** @description Last year of the range; default yearFrom; at most yearFrom + 4 ("Choose at most 5 years."). */
+                yearTo?: components["parameters"]["AllWorkYearTo"];
+                /** @description Plan IDs (repeat the parameter for several). */
+                plan?: components["parameters"]["AllWorkPlan"];
+                planStatus?: components["parameters"]["AllWorkPlanStatus"];
+                /** @description Campaign and initiative statuses. OR within Approval progress and within Timing; AND between the two. */
+                containerStatus?: components["parameters"]["AllWorkContainerStatus"];
+                activityStatus?: components["parameters"]["AllWorkActivityStatus"];
+                /** @description Person IDs; tested on plans, campaigns, initiatives and activities. */
+                owner?: components["parameters"]["AllWorkOwner"];
+                /** @description Team IDs; tested on the plan's teams. */
+                team?: components["parameters"]["AllWorkTeam"];
+                /** @description Option IDs of the plan-level Business unit attribute. */
+                businessUnit?: components["parameters"]["AllWorkBusinessUnit"];
+                activityType?: components["parameters"]["AllWorkActivityType"];
+                /** @description Strategic / AOP plans. */
+                strategic?: components["parameters"]["AllWorkStrategic"];
+                /** @description Plans of these types (tested on plans). */
+                planType?: components["parameters"]["AllWorkPlanType"];
+                /** @description Plans planned in these currencies (tested on plans). */
+                planCurrency?: components["parameters"]["AllWorkPlanCurrency"];
+                /**
+                 * @description A Shell-attribute filter, repeatable: <attributeId>:<value>,<value>… where a value is an option id,
+                 *     yes, no, or none (Not filled in). Tested on the attribute's level (016 FR-039).
+                 * @example [
+                 *       "SA-1022:SO-1301,none"
+                 *     ]
+                 */
+                attr?: components["parameters"]["AllWorkAttr"];
+                showLevels?: components["parameters"]["AllWorkShowLevels"];
+                /** @description Text searched in name, ID, external name and description at every level, ignoring letter case (at most 200 characters). */
+                search?: components["parameters"]["AllWorkSearch"];
+                /**
+                 * @description The grouping - attr:<attributeId>, plan, planType, planCurrency, year, team, businessUnit, activityType or owner. Needed by GET /api/all-work/breakdown and by the Breakdown export (view=breakdown): missing there, it answers 400 validation_failed on by. Optional in the contract so the other exports need not send it (D-298).
+                 * @example attr:SA-1013
+                 */
+                by?: components["parameters"]["AllWorkBy"];
+                /** @description An optional second grouping, different from by. */
+                thenBy?: components["parameters"]["AllWorkThenBy"];
+                /** @description display (default) or plan (one plan filtered - its plan currency). */
+                amountsIn?: components["parameters"]["AllWorkAmountsIn"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The groups. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllWorkBreakdown"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getApprovalRuleOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalRuleOptions"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    listApprovalDelegations: {
+        parameters: {
+            query?: {
+                scope?: "mine" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current and planned first (by first day), then ended and cancelled (latest last day first). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDelegationPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    createApprovalDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalDelegationCreate"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDelegation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    updateApprovalDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example DLG-1001 */
+                delegationId: components["parameters"]["DelegationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalDelegationUpdate"];
+            };
+        };
+        responses: {
+            /** @description The delegation after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDelegation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    cancelApprovalDelegation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example DLG-1001 */
+                delegationId: components["parameters"]["DelegationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalDelegationCancel"];
+            };
+        };
+        responses: {
+            /** @description The cancelled delegation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalDelegation"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getApprovalMonitoring: {
+        parameters: {
+            query?: {
+                monthStart?: string;
+                monthEnd?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The monitoring figures. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApprovalMonitoring"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            default: components["responses"]["Error"];
+        };
+    };
+    runApprovalEscalations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What was sent, and what could not be escalated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EscalationRunResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
             default: components["responses"]["Error"];
         };

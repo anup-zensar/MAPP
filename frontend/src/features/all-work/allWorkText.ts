@@ -19,6 +19,9 @@ export const FILTER_LABELS = {
   activityTypes: 'Activity type',
   strategic: 'Strategic / AOP plans',
   showLevels: 'Show levels',
+  attributes: 'Shell attribute',
+  planTypes: 'Plan type',
+  planCurrencies: 'Plan currency',
 } as const;
 
 export const PLAN_STATUS_LABELS: Record<Filters['planStatuses'][number], string> = {

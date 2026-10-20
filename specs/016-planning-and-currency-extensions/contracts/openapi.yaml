@@ -1,0 +1,1912 @@
+openapi: 3.1.0
+info:
+  title: NorthStar API — feature 016 Planning and currency extensions (fragment)
+  version: 0.1.0
+  license:
+    name: Proprietary - internal use only
+  description: |
+    FRAGMENT. The paths, parameters and schemas feature 016 adds, and under x-amendments the changes to
+    operations and schemas of 002–010 already in backend/api/openapi.yaml. The consolidation step merges
+    both (tasks.md T001); every $ref is written as it reads in the merged file.
+
+    Reused from the merged contract: responses BadRequest, Unauthorized, NotFound, Conflict, Error;
+    schemas Money, MoneyInput, ExchangeRate, Percent, ActorRef, RecordRef, FieldError, ChangeImpact,
+    DeleteResult, MissingField, ActivityStatus, ActivityDestination, Activity, Plan, Campaign, Initiative,
+    PlanFigures, AllWorkPeriod, AllWorkSummary; parameters CurrencyCode, PlanId, CampaignId, InitiativeId,
+    ActivityId and the AllWork* query parameters.
+
+    Conventions as 001–010: camelCase; dates YYYY-MM-DD; timestamps UTC; amounts the API answers are Money
+    objects; amounts a client sends are decimal strings with at most two decimals (D-190); rates are decimal
+    strings with at most six decimals; problems answer 400 validation_failed with every FieldError at once;
+    updates send the version they started from (409 version_conflict otherwise). No new error code (016-P).
+tags:
+  - name: Exchange rates
+    description: Dated exchange rates and the simulated GSAP rate import (feature 016)
+  - name: Field help
+    description: Help texts of built-in fields, maintained in Settings (feature 016)
+  - name: Budget phasing
+    description: Budget by month of plans, campaigns and initiatives (feature 016)
+  - name: Split activity
+    description: Splitting one activity into two (feature 016)
+
+paths:
+  /api/currencies/{code}/rates:
+    parameters:
+      - $ref: "#/components/parameters/CurrencyCode"
+    get:
+      tags: [Exchange rates]
+      operationId: listCurrencyRates
+      summary: A currency's rate history, newest first, and its current rate
+      responses:
+        "200":
+          description: The history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRatePage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Exchange rates]
+      operationId: addCurrencyRate
+      summary: Add a dated rate (source manual). USD answers validation_failed on code ("USD is always 1.").
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateCreate"
+      responses:
+        "201":
+          description: The rate.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRateRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/currencies/{code}/rates/impact:
+    parameters:
+      - $ref: "#/components/parameters/CurrencyCode"
+    post:
+      tags: [Exchange rates]
+      operationId: checkCurrencyRateImpact
+      summary: What adding this rate would change (saves nothing, D-044)
+      description: |
+        Validates like addCurrencyRate. When the rate would become the current rate, answers the line-item
+        warning of 002 and an amountsRecalculated warning for the plans planned in the currency (016 FR-005);
+        a future-dated rate answers no warning.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateCreate"
+      responses:
+        "200":
+          description: The warnings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/exchange-rates/{rateId}:
+    parameters:
+      - $ref: "#/components/parameters/RateId"
+    patch:
+      tags: [Exchange rates]
+      operationId: updateExchangeRate
+      summary: Change a rate's value (its date never changes); the rate becomes source manual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateUpdate"
+      responses:
+        "200":
+          description: The rate.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRateRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Exchange rates]
+      operationId: deleteExchangeRate
+      summary: Move a rate to the recycle bin
+      description: |
+        Refused with validation_failed on id when it is the currency's last rate dated today or earlier
+        ("EUR needs a rate dated today or earlier.").
+      responses:
+        "200":
+          description: Deleted; Undo through the recycle bin entry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/exchange-rates/{rateId}/impact:
+    parameters:
+      - $ref: "#/components/parameters/RateId"
+    post:
+      tags: [Exchange rates]
+      operationId: checkExchangeRateImpact
+      summary: What changing this rate would change (saves nothing)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateUpdate"
+      responses:
+        "200":
+          description: The warnings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeImpact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/exchange-rates/current:
+    get:
+      tags: [Exchange rates]
+      operationId: listCurrentRates
+      summary: Every currency's current rate with its date and source (the "rate used" of FR-009)
+      responses:
+        "200":
+          description: The current rates; USD first, then by code.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentRatePage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/exchange-rates/import-check:
+    post:
+      tags: [Exchange rates]
+      operationId: checkRateImport
+      summary: Review a GSAP daily rate file (simulated feed); saves nothing
+      description: |
+        Every row's outcome (data-model §2.4). An unreadable file (missing column, not CSV, above 2 MB or
+        20,000 rows) answers validation_failed on content.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateImportUpload"
+      responses:
+        "200":
+          description: The review.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateImportCheck"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/exchange-rates/import:
+    post:
+      tags: [Exchange rates]
+      operationId: importRates
+      summary: Import the rows to add and replace of a GSAP daily rate file, in one step
+      description: |
+        Re-reads the file with the same rules as import-check. Nothing to add or replace answers
+        validation_failed on content ("Nothing to import: every rate is already present or not used.").
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateImportUpload"
+      responses:
+        "201":
+          description: The import record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateImport"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/exchange-rates/imports:
+    get:
+      tags: [Exchange rates]
+      operationId: listRateImports
+      summary: The latest rate imports, newest first
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: The imports.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateImportPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/exchange-rates/import-sample:
+    get:
+      tags: [Exchange rates]
+      operationId: getRateImportSample
+      summary: A sample GSAP daily rate file with today's rates of the active currencies (+0.5 %)
+      responses:
+        "200":
+          description: The file, named gsap_rates_<today>.csv in Content-Disposition.
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/field-help:
+    get:
+      tags: [Field help]
+      operationId: listFieldHelp
+      summary: Every help entry of the catalogue, with its text (edited or default)
+      responses:
+        "200":
+          description: The entries in catalogue order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldHelpPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/field-help/{helpKey}:
+    parameters:
+      - $ref: "#/components/parameters/HelpKey"
+    patch:
+      tags: [Field help]
+      operationId: updateFieldHelp
+      summary: Edit a help text, or reset it to the default with text null
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FieldHelpUpdate"
+      responses:
+        "200":
+          description: The entry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldHelpEntry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/plans/{planId}/budget-phasing:
+    parameters:
+      - $ref: "#/components/parameters/PlanId"
+    put:
+      tags: [Budget phasing]
+      operationId: setPlanBudgetPhasing
+      summary: Set the plan budget's phasing (any plan status; logged)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetPhasingUpdate"
+      responses:
+        "200":
+          description: The plan.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/campaigns/{campaignId}/budget-phasing:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+    put:
+      tags: [Budget phasing]
+      operationId: setCampaignBudgetPhasing
+      summary: Set the campaign budget's phasing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetPhasingUpdate"
+      responses:
+        "200":
+          description: The campaign.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/initiatives/{initiativeId}/budget-phasing:
+    parameters:
+      - $ref: "#/components/parameters/InitiativeId"
+    put:
+      tags: [Budget phasing]
+      operationId: setInitiativeBudgetPhasing
+      summary: Set the initiative budget's phasing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetPhasingUpdate"
+      responses:
+        "200":
+          description: The initiative.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Initiative"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/plans/{planId}/budget-by-month:
+    parameters:
+      - $ref: "#/components/parameters/PlanId"
+    get:
+      tags: [Budget phasing]
+      operationId: getPlanBudgetByMonth
+      summary: Phased budget against planned cost by month and quarter, for the plan and every campaign and initiative
+      responses:
+        "200":
+          description: In the plan currency (data-model §3.4).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetByMonth"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/activities/{activityId}/split-options:
+    parameters:
+      - $ref: "#/components/parameters/ActivityId"
+    get:
+      tags: [Split activity]
+      operationId: getActivitySplitOptions
+      summary: What the Split dialog offers
+      responses:
+        "200":
+          description: The options.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivitySplitOptions"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/activities/{activityId}/split-preview:
+    parameters:
+      - $ref: "#/components/parameters/ActivityId"
+    post:
+      tags: [Split activity]
+      operationId: previewActivitySplit
+      summary: Both activities as a split would leave them (saves nothing)
+      description: Problems are answered in the body (200) so the dialog can show them while typing; sides are null when they cannot be worked out.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivitySplitRequest"
+      responses:
+        "200":
+          description: The preview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivitySplitPreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/activities/{activityId}/split:
+    parameters:
+      - $ref: "#/components/parameters/ActivityId"
+    post:
+      tags: [Split activity]
+      operationId: splitActivity
+      summary: Split the activity, all or nothing (data-model §3.6)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivitySplitRequest"
+      responses:
+        "201":
+          description: The original and the new activity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivitySplitResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+  /api/all-work/breakdown:
+    get:
+      tags:
+        - All work
+      operationId: getAllWorkBreakdown
+      summary: The Breakdown view (and the plan page's Planned cost by card) for a filter set
+      description: |
+        Takes every filter parameter of getAllWork. With amountsIn=plan and exactly one plan filtered, amounts
+        are in that plan's currency; otherwise in the display currency (amountsIn=plan with several plans
+        answers validation_failed on amountsIn).
+      parameters:
+        - $ref: "#/components/parameters/AllWorkYear"
+        - $ref: "#/components/parameters/AllWorkYearFrom"
+        - $ref: "#/components/parameters/AllWorkYearTo"
+        - $ref: "#/components/parameters/AllWorkPlan"
+        - $ref: "#/components/parameters/AllWorkPlanStatus"
+        - $ref: "#/components/parameters/AllWorkContainerStatus"
+        - $ref: "#/components/parameters/AllWorkActivityStatus"
+        - $ref: "#/components/parameters/AllWorkOwner"
+        - $ref: "#/components/parameters/AllWorkTeam"
+        - $ref: "#/components/parameters/AllWorkBusinessUnit"
+        - $ref: "#/components/parameters/AllWorkActivityType"
+        - $ref: "#/components/parameters/AllWorkStrategic"
+        - $ref: "#/components/parameters/AllWorkPlanType"
+        - $ref: "#/components/parameters/AllWorkPlanCurrency"
+        - $ref: "#/components/parameters/AllWorkAttr"
+        - $ref: "#/components/parameters/AllWorkShowLevels"
+        - $ref: "#/components/parameters/AllWorkSearch"
+        - $ref: "#/components/parameters/AllWorkBy"
+        - $ref: "#/components/parameters/AllWorkThenBy"
+        - $ref: "#/components/parameters/AllWorkAmountsIn"
+      responses:
+        "200":
+          description: The groups.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllWorkBreakdown"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  parameters:
+    RateId:
+      name: rateId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: XR-1001
+    HelpKey:
+      name: helpKey
+      in: path
+      required: true
+      description: A key of the Field help catalogue (data-model §6).
+      schema:
+        type: string
+        pattern: ^[a-zA-Z]+\.[a-zA-Z]+$
+      example: plan.budget
+    PlansYearFrom:
+      name: yearFrom
+      in: query
+      description: First year of the range (inclusive). With yearTo; year is an alias for yearFrom = yearTo.
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    PlansYearTo:
+      name: yearTo
+      in: query
+      description: Last year of the range (inclusive); not before yearFrom.
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    PlansType:
+      name: type
+      in: query
+      description: Only plans of these types (repeat the parameter); every type when not sent.
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/PlanType"
+      style: form
+      explode: true
+    AllWorkYearFrom:
+      name: yearFrom
+      in: query
+      description: First year of the range; default the current year. year is an alias for yearFrom = yearTo.
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    AllWorkYearTo:
+      name: yearTo
+      in: query
+      description: Last year of the range; default yearFrom; at most yearFrom + 4 ("Choose at most 5 years.").
+      schema:
+        type: integer
+        minimum: 2000
+        maximum: 2100
+    AllWorkPlanType:
+      name: planType
+      in: query
+      description: Plans of these types (tested on plans).
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/PlanType"
+      style: form
+      explode: true
+    AllWorkPlanCurrency:
+      name: planCurrency
+      in: query
+      description: Plans planned in these currencies (tested on plans).
+      schema:
+        type: array
+        items:
+          type: string
+          pattern: ^[A-Z]{3}$
+      style: form
+      explode: true
+    AllWorkAttr:
+      name: attr
+      in: query
+      description: |
+        A Shell-attribute filter, repeatable: <attributeId>:<value>,<value>… where a value is an option id,
+        yes, no, or none (Not filled in). Tested on the attribute's level (016 FR-039).
+      schema:
+        type: array
+        items:
+          type: string
+          pattern: "^[A-Z]+-[0-9]+:[A-Za-z0-9,-]+$"
+      style: form
+      explode: true
+      example: ["SA-1022:SO-1301,none"]
+    AllWorkComparePhased:
+      name: comparePhased
+      in: query
+      description: Budget & cost only - add phasedBudget and overPeriods to plan, campaign and initiative rows.
+      schema:
+        type: boolean
+        default: false
+    AllWorkBy:
+      name: by
+      in: query
+      description: >-
+        The grouping - attr:<attributeId>, plan, planType, planCurrency, year, team, businessUnit, activityType or
+        owner. Needed by GET /api/all-work/breakdown and by the Breakdown export (view=breakdown): missing there, it
+        answers 400 validation_failed on by. Optional in the contract so the other exports need not send it (D-298).
+      schema:
+        type: string
+      example: attr:SA-1013
+    AllWorkThenBy:
+      name: thenBy
+      in: query
+      description: An optional second grouping, different from by.
+      schema:
+        type: string
+    AllWorkAmountsIn:
+      name: amountsIn
+      in: query
+      description: display (default) or plan (one plan filtered - its plan currency).
+      schema:
+        type: string
+        enum:
+          - display
+          - plan
+        default: display
+
+  schemas:
+    RateSource:
+      type: string
+      enum:
+        - manual
+        - gsapImport
+      description: Entered by hand, or written by a GSAP rate import.
+    RateUsed:
+      type: object
+      additionalProperties: false
+      description: A currency's current rate and where it came from (016 FR-009).
+      required:
+        - currency
+        - rate
+        - inverseRate
+        - rateDate
+        - source
+        - importFileName
+      properties:
+        currency:
+          type: string
+          example: GBP
+        rate:
+          $ref: "#/components/schemas/ExchangeRate"
+        inverseRate:
+          $ref: "#/components/schemas/ExchangeRate"
+        rateDate:
+          type: [string, "null"]
+          format: date
+          description: Null for USD.
+        source:
+          oneOf:
+            - $ref: "#/components/schemas/RateSource"
+            - type: "null"
+        importFileName:
+          type: [string, "null"]
+    CurrentRatePage:
+      type: object
+      additionalProperties: false
+      required:
+        - today
+        - items
+        - total
+      properties:
+        today:
+          type: string
+          format: date
+          description: The API's date the current rates are worked out for.
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RateUsed"
+        total:
+          type: integer
+    ExchangeRateRecord:
+      type: object
+      additionalProperties: false
+      description: >-
+        One dated rate of a currency (data-model §2.1). Named ExchangeRateRecord because ExchangeRate (002) is the
+        rate string itself.
+      required:
+        - id
+        - currency
+        - date
+        - rate
+        - inverseRate
+        - source
+        - importId
+        - importFileName
+        - current
+        - future
+        - version
+        - createdAt
+        - createdBy
+        - updatedAt
+        - updatedBy
+      properties:
+        id:
+          type: string
+          example: XR-1001
+        currency:
+          type: string
+          example: EUR
+        date:
+          type: string
+          format: date
+        rate:
+          $ref: "#/components/schemas/ExchangeRate"
+        inverseRate:
+          $ref: "#/components/schemas/ExchangeRate"
+        source:
+          $ref: "#/components/schemas/RateSource"
+        importId:
+          type: [string, "null"]
+        importFileName:
+          type: [string, "null"]
+        current:
+          type: boolean
+          description: The rate conversions use today.
+        future:
+          type: boolean
+          description: Dated after today ("From <date>").
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/ActorRef"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/ActorRef"
+    ExchangeRatePage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - current
+      properties:
+        items:
+          type: array
+          description: Newest date first.
+          items:
+            $ref: "#/components/schemas/ExchangeRateRecord"
+        total:
+          type: integer
+        current:
+          $ref: "#/components/schemas/RateUsed"
+    ExchangeRateCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - date
+        - rate
+      properties:
+        date:
+          type: string
+          description: YYYY-MM-DD; checked by the server.
+        rate:
+          type: string
+          description: Units per 1 USD, above 0, at most six decimals.
+          example: "0.9214"
+    ExchangeRateUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - rate
+        - version
+      properties:
+        rate:
+          type: string
+        version:
+          type: integer
+    RateImportUpload:
+      type: object
+      additionalProperties: false
+      required:
+        - fileName
+        - content
+      properties:
+        fileName:
+          type: string
+          maxLength: 200
+          example: gsap_rates_2026-10-20.csv
+        content:
+          type: string
+          contentEncoding: base64
+          description: The file, base64 (at most 2 MB before encoding).
+    RateImportOutcome:
+      type: string
+      enum:
+        - add
+        - replace
+        - present
+        - notUsed
+        - problem
+    RateImportRow:
+      type: object
+      additionalProperties: false
+      required:
+        - row
+        - outcome
+        - currency
+        - date
+        - rate
+        - previousRate
+        - message
+      properties:
+        row:
+          type: integer
+          minimum: 2
+          description: The file's own row number (the header is row 1).
+        outcome:
+          $ref: "#/components/schemas/RateImportOutcome"
+        currency:
+          type: [string, "null"]
+        date:
+          type: [string, "null"]
+          format: date
+        rate:
+          oneOf:
+            - $ref: "#/components/schemas/ExchangeRate"
+            - type: "null"
+        previousRate:
+          description: replace only - the stored rate it replaces.
+          oneOf:
+            - $ref: "#/components/schemas/ExchangeRate"
+            - type: "null"
+        message:
+          type: [string, "null"]
+          description: notUsed and problem rows - why (data-model §2.4).
+    RateImportCounts:
+      type: object
+      additionalProperties: false
+      required: [add, replace, present, notUsed, problem]
+      properties:
+        add:
+          type: integer
+          minimum: 0
+        replace:
+          type: integer
+          minimum: 0
+        present:
+          type: integer
+          minimum: 0
+        notUsed:
+          type: integer
+          minimum: 0
+        problem:
+          type: integer
+          minimum: 0
+    RateImportCheck:
+      type: object
+      additionalProperties: false
+      required:
+        - fileName
+        - feed
+        - rows
+        - counts
+      properties:
+        fileName:
+          type: string
+        feed:
+          type: string
+          example: gsapDailyRatesFile
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/RateImportRow"
+        counts:
+          $ref: "#/components/schemas/RateImportCounts"
+    RateImport:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - fileName
+        - feed
+        - firstDate
+        - lastDate
+        - added
+        - replaced
+        - unchanged
+        - notUsed
+        - problems
+        - importedAt
+        - importedBy
+      properties:
+        id:
+          type: string
+          example: RI-1002
+        fileName:
+          type: string
+        feed:
+          type: string
+        firstDate:
+          type: [string, "null"]
+          format: date
+        lastDate:
+          type: [string, "null"]
+          format: date
+        added:
+          type: integer
+          minimum: 0
+        replaced:
+          type: integer
+          minimum: 0
+        unchanged:
+          type: integer
+          minimum: 0
+        notUsed:
+          type: integer
+          minimum: 0
+        problems:
+          type: integer
+          minimum: 0
+        importedAt:
+          type: string
+          format: date-time
+        importedBy:
+          $ref: "#/components/schemas/ActorRef"
+    RateImportPage:
+      type: object
+      additionalProperties: false
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RateImport"
+        total:
+          type: integer
+    FieldHelpLevel:
+      type: string
+      enum:
+        - plan
+        - campaign
+        - initiative
+        - activity
+        - lineItem
+        - phasing
+        - common
+        - allWork
+    FieldHelpEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - level
+        - label
+        - text
+        - defaultText
+        - isDefault
+        - version
+        - updatedAt
+        - updatedBy
+      properties:
+        key:
+          type: string
+          example: plan.budget
+        level:
+          $ref: "#/components/schemas/FieldHelpLevel"
+        label:
+          type: string
+          example: Plan budget
+        text:
+          type: string
+          maxLength: 300
+          description: The text shown; empty hides the ⓘ.
+        defaultText:
+          type: string
+        isDefault:
+          type: boolean
+        version:
+          type: integer
+          minimum: 0
+          description: 0 while the default is used.
+        updatedAt:
+          type: [string, "null"]
+          format: date-time
+        updatedBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActorRef"
+            - type: "null"
+    FieldHelpPage:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - shellAttributesWithoutHelp
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldHelpEntry"
+        total:
+          type: integer
+        shellAttributesWithoutHelp:
+          type: integer
+          minimum: 0
+          description: Active Shell attributes whose help text is empty (FR-048).
+    FieldHelpUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - text
+        - version
+      properties:
+        text:
+          type: [string, "null"]
+          description: The new text (0–300 characters); null resets to the default.
+        version:
+          type: integer
+          minimum: 0
+    PlanType:
+      type: string
+      enum:
+        - operational
+        - strategic
+        - crossMarket
+    PhasingMethod:
+      type: string
+      enum:
+        - none
+        - evenly
+        - custom
+    PhasingMonth:
+      type: object
+      additionalProperties: false
+      required: [month, amount]
+      properties:
+        month:
+          type: string
+          pattern: ^[0-9]{4}-[0-9]{2}$
+          example: "2027-03"
+        amount:
+          $ref: "#/components/schemas/Money"
+    PhasingMonthInput:
+      type: object
+      additionalProperties: false
+      required: [month, amount]
+      properties:
+        month:
+          type: string
+          example: "2027-03"
+        amount:
+          type: string
+          description: Decimal string in the plan currency, at most two decimals, 0 or more.
+    BudgetPhasing:
+      type: object
+      additionalProperties: false
+      description: A budget's phasing (data-model §3.3), in the plan currency.
+      required:
+        - method
+        - months
+        - monthly
+        - total
+        - problem
+      properties:
+        method:
+          $ref: "#/components/schemas/PhasingMethod"
+        months:
+          type: array
+          description: custom only - the stored months; [] otherwise.
+          items:
+            $ref: "#/components/schemas/PhasingMonth"
+        monthly:
+          type: array
+          description: The 12 monthly amounts, January to December of the plan's year; [] when none.
+          items:
+            $ref: "#/components/schemas/Money"
+        total:
+          description: The sum of monthly; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        problem:
+          type: [string, "null"]
+          description: '"Adds up to 590,000.00 GBP, not the budget 600,000.00 GBP"; null when fine.'
+    BudgetPhasingUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - method
+        - months
+        - version
+      properties:
+        method:
+          $ref: "#/components/schemas/PhasingMethod"
+        months:
+          type: array
+          description: custom only; ignored otherwise.
+          items:
+            $ref: "#/components/schemas/PhasingMonthInput"
+        version:
+          type: integer
+          description: The record's version.
+    BudgetByMonthPeriods:
+      type: object
+      additionalProperties: false
+      required:
+        - budget
+        - plannedCost
+        - difference
+        - allocated
+        - over
+      properties:
+        budget:
+          type: array
+          description: One per period; null entries when not phased.
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        plannedCost:
+          type: array
+          items:
+            $ref: "#/components/schemas/Money"
+        difference:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        allocated:
+          description: Plans and campaigns - the children's phased budgets per period; null for initiatives.
+          type: [array, "null"]
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        over:
+          type: array
+          description: True where planned cost or allocated exceeds the phased budget.
+          items:
+            type: boolean
+    BudgetByMonthRow:
+      type: object
+      additionalProperties: false
+      required:
+        - recordType
+        - recordId
+        - parentId
+        - name
+        - method
+        - months
+        - quarters
+        - otherYears
+        - noDates
+        - childrenNotPhased
+      properties:
+        recordType:
+          type: string
+          enum: [plan, campaign, initiative]
+        recordId:
+          type: string
+        parentId:
+          type: [string, "null"]
+        name:
+          type: string
+        method:
+          $ref: "#/components/schemas/PhasingMethod"
+        months:
+          $ref: "#/components/schemas/BudgetByMonthPeriods"
+        quarters:
+          $ref: "#/components/schemas/BudgetByMonthPeriods"
+        otherYears:
+          description: Planned cost outside the plan's year; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        noDates:
+          description: Planned cost of activities without dates; null when none.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        childrenNotPhased:
+          type: integer
+          minimum: 0
+    BudgetByMonth:
+      type: object
+      additionalProperties: false
+      required:
+        - planId
+        - year
+        - currency
+        - months
+        - rows
+      properties:
+        planId:
+          type: string
+        year:
+          type: integer
+        currency:
+          type: string
+          description: The plan currency of every amount.
+        months:
+          type: array
+          description: The 12 month keys, 2027-01 … 2027-12.
+          items:
+            type: string
+        rows:
+          type: array
+          description: The plan, then each campaign followed by its initiatives, in plan-tree order.
+          items:
+            $ref: "#/components/schemas/BudgetByMonthRow"
+    SplitLink:
+      type: object
+      additionalProperties: false
+      required: [id, name, planId, deleted]
+      properties:
+        id:
+          type: string
+          example: A-1012
+        name:
+          type: string
+        planId:
+          type: string
+        deleted:
+          type: boolean
+          description: The other activity is in the recycle bin.
+    ActivitySplitLineItem:
+      type: object
+      additionalProperties: false
+      required: [id, name, plannedCost, plannedCostPlan]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        plannedCost:
+          description: In the line item's currency.
+          $ref: "#/components/schemas/Money"
+        plannedCostPlan:
+          description: In the plan currency.
+          $ref: "#/components/schemas/Money"
+    ActivitySplitOptions:
+      type: object
+      additionalProperties: false
+      required:
+        - activityId
+        - version
+        - status
+        - plannedCost
+        - planCurrency
+        - suggestedName
+        - needsRestart
+        - lineItems
+        - destinations
+      properties:
+        activityId:
+          type: string
+        version:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ActivityStatus"
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        planCurrency:
+          type: string
+        suggestedName:
+          type: string
+          example: UK launch event (split)
+        needsRestart:
+          type: boolean
+          description: The activity is Submitted or Approved; restartApproval true is needed.
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivitySplitLineItem"
+        destinations:
+          type: array
+          description: The initiatives of the plan, the current one first, with Move's availability (006).
+          items:
+            $ref: "#/components/schemas/ActivityDestination"
+    ActivitySplitRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - initiativeId
+        - lineItemIds
+        - plannedCost
+        - restartApproval
+        - version
+      properties:
+        name:
+          type: string
+        initiativeId:
+          type: string
+        lineItemIds:
+          type: array
+          items:
+            type: string
+        plannedCost:
+          type: [string, "null"]
+          description: The amount to move, in the plan currency; null or "0" to move none.
+        restartApproval:
+          type: boolean
+        version:
+          type: integer
+          description: The original activity's version.
+    ActivitySplitSide:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - initiativeName
+        - plannedCost
+        - lineItemNames
+        - unassignedPlannedCost
+        - unassignedState
+        - status
+      properties:
+        name:
+          type: string
+        initiativeName:
+          type: string
+        plannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        lineItemNames:
+          type: array
+          items:
+            type: string
+        unassignedPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        unassignedState:
+          type: string
+          enum: [left, allAssigned, exceeded, noPlannedCost]
+        status:
+          $ref: "#/components/schemas/ActivityStatus"
+    ActivitySplitPreview:
+      type: object
+      additionalProperties: false
+      required: [original, created, problems]
+      properties:
+        original:
+          oneOf:
+            - $ref: "#/components/schemas/ActivitySplitSide"
+            - type: "null"
+        created:
+          oneOf:
+            - $ref: "#/components/schemas/ActivitySplitSide"
+            - type: "null"
+        problems:
+          type: array
+          description: Every problem the split itself would answer; empty when it can be done.
+          items:
+            $ref: "#/components/schemas/FieldError"
+    ActivitySplitResult:
+      type: object
+      additionalProperties: false
+      required: [activity, newActivity]
+      properties:
+        activity:
+          $ref: "#/components/schemas/Activity"
+        newActivity:
+          $ref: "#/components/schemas/Activity"
+    AllWorkAttributeFilter:
+      type: object
+      additionalProperties: false
+      required: [attributeId, values]
+      properties:
+        attributeId:
+          type: string
+        values:
+          type: array
+          description: Option ids, yes, no, or none (Not filled in).
+          items:
+            type: string
+    AllWorkBreakdownChoice:
+      type: object
+      additionalProperties: false
+      required: [by, thenBy]
+      properties:
+        by:
+          type: string
+        thenBy:
+          type: [string, "null"]
+    AllWorkGrouping:
+      type: object
+      additionalProperties: false
+      required: [key, label, level, hasBudget]
+      properties:
+        key:
+          type: string
+          example: attr:SA-1013
+        label:
+          type: string
+          example: Country / OU
+        level:
+          type: [string, "null"]
+          description: The attribute's level; null for built-in groupings.
+        hasBudget:
+          type: boolean
+          description: Groups carry Budget and Budget used.
+    AllWorkFilterableAttribute:
+      type: object
+      additionalProperties: false
+      required: [id, label, level, type, values]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        level:
+          type: string
+        type:
+          type: string
+          description: An AttributeType of 002 (choice types and yesNo only).
+        values:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkOption"
+    AllWorkBreakdownGroup:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - label
+        - activities
+        - lineItems
+        - plannedCost
+        - share
+        - budget
+        - budgetUsedPercent
+        - overBudget
+        - children
+      properties:
+        key:
+          type: string
+          description: Option id, built-in id, notFilledIn or notOnLineItem.
+        label:
+          type: string
+        activities:
+          type: integer
+          minimum: 0
+        lineItems:
+          type: integer
+          minimum: 0
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        share:
+          type: string
+          description: Share of the total planned cost, two decimals ("37.50"); may exceed 100.00 when activities count in several groups.
+          pattern: ^-?[0-9]{1,5}\.[0-9]{2}$
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetUsedPercent:
+          type: [integer, "null"]
+        overBudget:
+          type: boolean
+        children:
+          type: array
+          description: The thenBy groups; [] without thenBy.
+          items:
+            $ref: "#/components/schemas/AllWorkBreakdownSubgroup"
+    AllWorkBreakdownSubgroup:
+      type: object
+      additionalProperties: false
+      description: A thenBy group inside an AllWorkBreakdownGroup (same fields, no further level; D-298).
+      required:
+        - key
+        - label
+        - activities
+        - lineItems
+        - plannedCost
+        - share
+        - budget
+        - budgetUsedPercent
+        - overBudget
+      properties:
+        key:
+          type: string
+          description: Option id, built-in id, notFilledIn or notOnLineItem.
+        label:
+          type: string
+        activities:
+          type: integer
+          minimum: 0
+        lineItems:
+          type: integer
+          minimum: 0
+        plannedCost:
+          $ref: "#/components/schemas/Money"
+        share:
+          type: string
+          description: Share of the total planned cost, two decimals ("37.50"); may exceed 100.00 when activities count in several groups.
+          pattern: ^-?[0-9]{1,5}\.[0-9]{2}$
+        budget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        budgetUsedPercent:
+          type: [integer, "null"]
+        overBudget:
+          type: boolean
+    AllWorkBreakdown:
+      type: object
+      additionalProperties: false
+      required:
+        - by
+        - thenBy
+        - currency
+        - groups
+        - total
+        - countsInEach
+        - notes
+        - groupings
+      properties:
+        by:
+          $ref: "#/components/schemas/AllWorkGrouping"
+        thenBy:
+          oneOf:
+            - $ref: "#/components/schemas/AllWorkGrouping"
+            - type: "null"
+        currency:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkBreakdownGroup"
+        total:
+          $ref: "#/components/schemas/AllWorkBreakdownGroup"
+        countsInEach:
+          type: boolean
+          description: A multiple choice without split counted activities in several groups.
+        notes:
+          type: array
+          description: Sentences to show under the table (data-model §3.5).
+          items:
+            type: string
+        groupings:
+          type: array
+          description: Every grouping the pickers offer.
+          items:
+            $ref: "#/components/schemas/AllWorkGrouping"
+
+x-amendments:
+  description: |
+    Changes to existing operations and schemas of backend/api/openapi.yaml. "addProperties" are added to
+    properties and, unless listed under optional, to required. "describe" replaces a property's description.
+  operations:
+    listPlans:
+      addParameters: [PlansYearFrom, PlansYearTo, PlansType]
+      note: year stays as an alias for yearFrom = yearTo; summary covers the range; years unchanged.
+    getAllWork:
+      addParameters: [AllWorkYearFrom, AllWorkYearTo, AllWorkPlanType, AllWorkPlanCurrency, AllWorkAttr, AllWorkComparePhased]
+      note: AllWorkView adds breakdown (answered by getAllWorkBreakdown; getAllWork refuses it with validation_failed on view); AllWorkPeriod adds year.
+    exportAllWork:
+      addParameters: [AllWorkYearFrom, AllWorkYearTo, AllWorkPlanType, AllWorkPlanCurrency, AllWorkAttr, AllWorkComparePhased, AllWorkBy, AllWorkThenBy]
+      note: view=breakdown exports the group table (by required then); About this export lists the range, filters, breakdown and rates used.
+    getAllWorkOptions:
+      addParameters: [AllWorkYearFrom, AllWorkYearTo]
+  parameters:
+    AllWorkView:
+      addEnum: [breakdown]
+    AllWorkPeriod:
+      addEnum: [year]
+  schemas:
+    Currency:
+      addProperties:
+        rateDate:
+          type: string
+          format: date
+          description: The date of the current rate.
+        rateSource:
+          $ref: "#/components/schemas/RateSource"
+        rateImportFileName:
+          type: [string, "null"]
+      describe:
+        rate: The current rate (016 FR-002).
+        rateChangedAt: When the current rate was recorded.
+    CurrencyCreate:
+      describe:
+        rate: Units per 1 USD; becomes the currency's first rate, dated today.
+    CurrencyUpdate:
+      describe:
+        rate: Sets today's rate (adds or replaces today's row, source manual).
+    LineItemCurrency:
+      addProperties:
+        rateDate:
+          type: [string, "null"]
+          format: date
+        rateSource:
+          oneOf:
+            - $ref: "#/components/schemas/RateSource"
+            - type: "null"
+    PlanDefaults:
+      addProperties:
+        currency:
+          type: string
+          example: USD
+        planType:
+          $ref: "#/components/schemas/PlanType"
+    PlanCreate:
+      addProperties:
+        currency:
+          type: string
+          description: The plan currency, an active currency code.
+        planType:
+          $ref: "#/components/schemas/PlanType"
+      describe:
+        budget: In the plan currency (its currency must equal currency); null for no budget.
+    PlanUpdate:
+      addProperties:
+        currency:
+          type: string
+        planType:
+          $ref: "#/components/schemas/PlanType"
+    Plan:
+      addProperties:
+        currency:
+          type: string
+        planType:
+          $ref: "#/components/schemas/PlanType"
+        budgetPhasing:
+          $ref: "#/components/schemas/BudgetPhasing"
+        planFigures:
+          description: The figures in the plan currency (figures stays in the display currency).
+          $ref: "#/components/schemas/PlanFigures"
+        currencyLock:
+          type: [string, "null"]
+          description: >-
+            Why the plan currency can't change (016 FR-012, and while the plan has a global-budget allocation,
+            consolidation D-303); null when it can.
+      describe:
+        budget: In the plan currency.
+    PlanSummary:
+      addProperties:
+        planType:
+          $ref: "#/components/schemas/PlanType"
+        currency:
+          type: string
+        planBudget:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+        planPlannedCost:
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+    Campaign:
+      addProperties:
+        budgetPhasing:
+          $ref: "#/components/schemas/BudgetPhasing"
+      describe:
+        budget: In the plan currency.
+        budgetAndCost: In the plan currency; display holds the display-currency amounts.
+    Initiative:
+      addProperties:
+        budgetPhasing:
+          $ref: "#/components/schemas/BudgetPhasing"
+      describe:
+        budget: In the plan currency.
+        budgetAndCost: In the plan currency; display holds the display-currency amounts.
+    CampaignCreate:
+      describe:
+        budget: In the plan currency; at most 2 decimals; not negative.
+    CampaignUpdate:
+      describe:
+        budget: In the plan currency.
+    InitiativeCreate:
+      describe:
+        budget: In the plan currency.
+    InitiativeUpdate:
+      describe:
+        budget: In the plan currency.
+    BudgetAndCost:
+      describe:
+        description: In the record's plan currency as budgetAndCost, and in the display currency inside display.
+    ContainerDisplay:
+      describe:
+        description: The amounts in the reader's display currency, each converted once from the plan currency (016-D).
+    PlanCampaignTotals:
+      describe:
+        description: In the plan currency as totals and in the display currency as displayTotals.
+    Activity:
+      addProperties:
+        splitFrom:
+          oneOf:
+            - $ref: "#/components/schemas/SplitLink"
+            - type: "null"
+        splitInto:
+          type: array
+          items:
+            $ref: "#/components/schemas/SplitLink"
+      describe:
+        plannedCost: In the plan currency.
+        unassignedPlannedCost: In the plan currency.
+    ActivitySummary:
+      addProperties:
+        splitFromId:
+          type: [string, "null"]
+    ActivityCreate:
+      describe:
+        plannedCost: In the plan currency (its currency must equal the plan's).
+    ActivityUpdate:
+      describe:
+        plannedCost: In the plan currency.
+    ActivityDisplay:
+      describe:
+        description: The amounts in the reader's display currency, each converted once from the plan currency.
+    ActivityTypeOption:
+      addProperties:
+        defaultPlannedCostUsd:
+          description: The type's default as kept in Settings (USD), for the conversion note.
+          oneOf:
+            - $ref: "#/components/schemas/Money"
+            - type: "null"
+      describe:
+        defaultPlannedCost: The default converted into the plan currency at the current rate (016 FR-016).
+    LineItem:
+      addProperties:
+        plannedCostPlan:
+          description: Planned cost in the plan currency at the current rates (016 FR-015).
+          $ref: "#/components/schemas/Money"
+    UnassignedBalance:
+      describe:
+        description: Activity planned cost − the line items' plan-currency planned costs, worked out in the plan currency (016 FR-015); display variants as D-213.
+        assigned: Sum of the line items' planned costs in the plan currency.
+    SpreadGrid:
+      describe:
+        description: The activity's line items by month in the plan currency (016 FR-015); in LineItemSection converted to the display currency cell by cell (D-213).
+    AllWorkFilters:
+      addProperties:
+        planTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanType"
+        planCurrencies:
+          type: array
+          items:
+            type: string
+        attributes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllWorkAttributeFilter"
+    AllWorkViewState:
+      removeProperties: [year]
+      addProperties:
+        yearFrom:
+          type: integer
+        yearTo:
+          type: integer
+        comparePhased:
+          type: boolean
+        breakdown:
+          oneOf:
+            - $ref: "#/components/schemas/AllWorkBreakdownChoice"
+            - type: "null"
+      addEnum:
+        view: [breakdown]
+        period: [year]
+    AllWorkResult:
+      removeProperties: [year]
+      addProperties:
+        yearFrom:
+          type: integer
+        yearTo:
+          type: integer
+    AllWorkOptions:
+      removeProperties: [year]
+      addProperties:
+        yearFrom:
+          type: integer
+        yearTo:
+          type: integer
+        planTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanType"
+        planCurrencies:
+          type: array
+          description: Plan currencies of the plans in the range.
+          items:
+            type: string
+        attributes:
+          type: array
+          description: Filterable Shell attributes, level by level, in Settings' order (016 FR-039).
+          items:
+            $ref: "#/components/schemas/AllWorkFilterableAttribute"
+    AllWorkPlanOption:
+      addProperties:
+        year:
+          type: integer
+        planType:
+          $ref: "#/components/schemas/PlanType"
+        currency:
+          type: string
+    AllWorkRow:
+      addProperties:
+        year:
+          type: integer
+          description: Plans only - the plan's year.
+        planType:
+          $ref: "#/components/schemas/PlanType"
+        phasedBudget:
+          type: array
+          description: Containers with comparePhased only - one per AllWorkResult.periods entry; null = not phased in that period.
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Money"
+              - type: "null"
+        overPeriods:
+          type: array
+          description: Indexes of periods where planned cost is above phasedBudget.
+          items:
+            type: integer
+      optional: [year, planType, phasedBudget, overPeriods]
+    AllWorkPeriod:
+      describe:
+        key: 2026-01 … 2026-12, Q1-2026 … Q4-2026, 2026, other or noDates (016 FR-035).

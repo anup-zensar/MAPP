@@ -290,8 +290,8 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 }
 
 // notYetServed lists the operations of the contract that are designed but not served yet: the operations of
-// the Plan module, features 002-012, merged into backend/api/openapi.yaml before they are built (decision
-// D-192). The routes are written as the tests format them, "METHOD /path" with the contract's path.
+// the Plan module, features 002-012 and 014-017, merged into backend/api/openapi.yaml before they are built
+// (decisions D-192, D-298). The routes are written as the tests format them, "METHOD /path" with the contract's path.
 //
 // Each feature's backend removes its own operations from this list in the change that serves them.
 // TestNotYetServedIsAccurate fails when a listed operation is served or is not in the contract, so the list
@@ -316,6 +316,70 @@ var notYetServed = []string{
 	"GET /api/plans/{planId}/import-template",
 	"GET /api/imports/{importId}",
 	"POST /api/imports/{importId}/undo",
+	// 014 Access control and global budgets
+	"GET /api/access/permissions",
+	"GET /api/access/people",
+	"GET /api/access/changes",
+	"GET /api/roles",
+	"POST /api/roles",
+	"GET /api/roles/{roleId}",
+	"PATCH /api/roles/{roleId}",
+	"DELETE /api/roles/{roleId}",
+	"GET /api/people/{personId}/roles",
+	"PUT /api/people/{personId}/roles",
+	"POST /api/people/{personId}/roles/impact",
+	"GET /api/access-rules",
+	"PATCH /api/access-rules",
+	"GET /api/global-budgets",
+	"POST /api/global-budgets",
+	"GET /api/global-budgets/{globalBudgetId}",
+	"PATCH /api/global-budgets/{globalBudgetId}",
+	"DELETE /api/global-budgets/{globalBudgetId}",
+	"GET /api/global-budgets/{globalBudgetId}/allocation-options",
+	"POST /api/global-budgets/{globalBudgetId}/allocations",
+	"PATCH /api/budget-allocations/{allocationId}",
+	"DELETE /api/budget-allocations/{allocationId}",
+	// 015 Financial transactions
+	"GET /api/financials/records/{recordId}",
+	"GET /api/financials/transactions",
+	"GET /api/financials/transactions/{transactionId}",
+	"POST /api/financials/transactions/{transactionId}/link",
+	"POST /api/financials/transactions/{transactionId}/unlink",
+	"GET /api/financials/overview",
+	"GET /api/financials/imports",
+	"POST /api/financials/imports",
+	"POST /api/financials/imports/check",
+	"GET /api/financials/imports/template",
+	// 016 Planning and currency extensions
+	"GET /api/currencies/{code}/rates",
+	"POST /api/currencies/{code}/rates",
+	"POST /api/currencies/{code}/rates/impact",
+	"PATCH /api/exchange-rates/{rateId}",
+	"DELETE /api/exchange-rates/{rateId}",
+	"POST /api/exchange-rates/{rateId}/impact",
+	"GET /api/exchange-rates/current",
+	"POST /api/exchange-rates/import-check",
+	"POST /api/exchange-rates/import",
+	"GET /api/exchange-rates/imports",
+	"GET /api/exchange-rates/import-sample",
+	"GET /api/field-help",
+	"PATCH /api/field-help/{helpKey}",
+	"PUT /api/plans/{planId}/budget-phasing",
+	"PUT /api/campaigns/{campaignId}/budget-phasing",
+	"PUT /api/initiatives/{initiativeId}/budget-phasing",
+	"GET /api/plans/{planId}/budget-by-month",
+	"GET /api/activities/{activityId}/split-options",
+	"POST /api/activities/{activityId}/split-preview",
+	"POST /api/activities/{activityId}/split",
+	"GET /api/all-work/breakdown",
+	// 017 Approval rules
+	"GET /api/approval-rule-options",
+	"GET /api/approval-delegations",
+	"POST /api/approval-delegations",
+	"PATCH /api/approval-delegations/{delegationId}",
+	"POST /api/approval-delegations/{delegationId}/cancel",
+	"GET /api/approvals/monitoring",
+	"POST /api/approvals/escalations/run",
 }
 
 // The list of operations not yet served stays accurate: every entry is an operation of the contract, none
