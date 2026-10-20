@@ -192,6 +192,53 @@ func TestFinance_NoAccess_FR028(t *testing.T) {
 	}
 }
 
+// A reader who may see financial data in some plans only sees the figures of those: the rows of the other
+// plans show "—", never match the Financials filter and add nothing to the totals (015 FR-028,
+// consolidation "All work", D-301).
+func TestFinance_OnlyPlansWithAccess_FR028(t *testing.T) {
+	choices := fixtureChoices(priya.ID)
+	choices.FinancePlans = []string{"P-1001"}
+	in := input{query: Query{View: ViewGrid, Strategic: StrategicInclude, ShowLevels: ShowEverything, Period: PeriodMonth,
+		Columns: financeColumnKeys}, year: 2026, today: fixtureToday, now: fixtureNow, currency: usd,
+		data: financeYear().data(), choices: choices, catalogue: catalogue(fixtureAttributes)}
+	r := build(in).result
+	seen := map[string]bool{}
+	for _, row := range r.Rows {
+		if row.Level == LevelUnassigned {
+			continue
+		}
+		seen[row.PlanID] = true
+		texts := cellTexts(row.Cells)
+		dashes := !slices.ContainsFunc(texts, func(s string) bool { return s != "—" })
+		if row.PlanID == "P-1002" && !dashes {
+			t.Errorf("%s of a plan without access shows %q", row.Key, texts)
+		}
+		if row.PlanID == "P-1001" && row.Key != "A-1009" && row.Key != "I-1007" && dashes {
+			t.Errorf("%s of a plan with access shows only dashes", row.Key)
+		}
+	}
+	if !seen["P-1001"] || !seen["P-1002"] {
+		t.Fatalf("the fixture should have rows of both plans: %v", seen)
+	}
+	if got := cellTexts(r.Totals.Cells); !slices.Equal(got, []string{"35,652.17", "33,152.17", "30,652.17", "2,500.00", "424,347.83"}) {
+		t.Errorf("totals = %q, want the figures of P-1001 only", got)
+	}
+
+	in.query.Finance = []string{FinanceNoPurchaseOrder}
+	matched := 0
+	for _, row := range build(in).result.Rows {
+		if row.Level == LevelActivity && row.Role == RoleMatch {
+			matched++
+			if row.PlanID != "P-1001" {
+				t.Errorf("%s of a plan without access matches the Financials filter", row.Key)
+			}
+		}
+	}
+	if matched == 0 {
+		t.Errorf("no activity of P-1001 matches No PO yet")
+	}
+}
+
 // An export with a financial column says when the GSAP data was loaded, and the Financials filter is among
 // its filter notes (015 FR-023, US5 scenario 3).
 func TestFinance_ExportNotes_FR023(t *testing.T) {

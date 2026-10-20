@@ -97,12 +97,16 @@ func defaultColumnsIn(byKey map[string]Column) []string {
 	return keys
 }
 
-// withFinance gives every record of the tree its financial figures, for a reader who may see them: a line
-// item its own (0.00 without transactions), an activity the sum of its line items and whether it is
-// committed above planned cost, a container an empty start for its roll-ups.
-func (t *tree) withFinance() {
+// withFinance gives every record of the plans the reader may see financial data in (plans; nil for every
+// plan) its financial figures: a line item its own (0.00 without transactions), an activity the sum of its
+// line items and whether it is committed above planned cost, a container an empty start for its roll-ups.
+// The records of other plans keep none: "—" in the columns, and never a match of the filter (015
+// consolidation, D-301).
+func (t *tree) withFinance(plans []string) {
 	for _, p := range t.plans {
-		financeOf(p)
+		if plans == nil || slices.Contains(plans, p.n.ID) {
+			financeOf(p)
+		}
 	}
 }
 
@@ -154,7 +158,8 @@ func emptyFinance(marker *FinanceFacts) *FinanceFacts {
 
 // financeCell returns the cell of a financial column from the figures f (FR-023): "—" when the reader may
 // not see financial data; Committed red when above the planned cost; Not yet committed = planned cost −
-// committed, "—" without a planned cost and red when negative.
+// committed, "—" without a planned cost and red when negative. The planned cost is that of the records
+// whose figures are shown (figures.financePlanned).
 func financeCell(key string, f figures, cur Currency) *Cell {
 	if f.finance == nil {
 		return emptyCell()
@@ -163,7 +168,7 @@ func financeCell(key string, f figures, cur Currency) *Cell {
 	switch key {
 	case columnCommitted:
 		cell := moneyCell(cur, &f.finance.Committed)
-		if abovePlanned(f.planned, f.finance) {
+		if abovePlanned(f.financePlanned, f.finance) {
 			cell.Tone = ToneProblem
 		}
 		return cell
@@ -174,10 +179,10 @@ func financeCell(key string, f figures, cur Currency) *Cell {
 	case columnAccrued:
 		amount = f.finance.Accrued
 	case columnNotYetCommitted:
-		if f.planned == nil {
+		if f.financePlanned == nil {
 			return emptyCell()
 		}
-		amount = f.planned.Sub(f.finance.Committed)
+		amount = f.financePlanned.Sub(f.finance.Committed)
 	}
 	return moneyCell(cur, &amount)
 }

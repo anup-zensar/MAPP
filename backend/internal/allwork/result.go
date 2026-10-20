@@ -41,7 +41,7 @@ func build(in input) built {
 	in.query = q
 	t := buildTree(in.data.Nodes)
 	if in.choices.SeesFinance {
-		t.withFinance() // feature 015 (finance.go)
+		t.withFinance(in.choices.FinancePlans) // feature 015 (finance.go)
 	}
 	applyFilters(t, q)
 	rollUp(t)

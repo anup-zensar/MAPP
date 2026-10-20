@@ -660,6 +660,11 @@ func (s allWorkSource) Choices(ctx context.Context, personID string) (allwork.Ch
 		c.People = append(c.People, allwork.Option{ID: p.ID, Label: p.Name, Inactive: !p.Active})
 	}
 	c.SeesFinance = s.seesFinance(ctx, personID) // feature 015 (financials.go)
+	if c.SeesFinance {
+		if c.FinancePlans, err = s.financeAccess.VisiblePlanIDs(ctx, actor.Actor{ID: personID}); err != nil {
+			return allwork.Choices{}, err
+		}
+	}
 	return c, nil
 }
 
