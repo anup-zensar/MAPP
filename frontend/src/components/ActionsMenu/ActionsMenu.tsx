@@ -19,6 +19,12 @@ export interface ActionsMenuItem {
    * deleted, so the history keeps their name."
    */
   hint?: string;
+  /**
+   * An action the person may not take on this record now (feature 014, FR-011): shown, not chosen,
+   * with its reason as the hint — never greyed out without one (constitution III). See
+   * availabilityProps in @/lib/access.
+   */
+  disabled?: boolean;
 }
 
 export interface ActionsMenuProps {
@@ -85,6 +91,7 @@ export function ActionsMenu({ label, items, trigger = 'icon' }: ActionsMenuProps
               <DropdownMenu.Item
                 className={cx(styles.item, item.tone === 'danger' && styles.danger)}
                 aria-describedby={item.hint ? `${hintId}-${index}` : undefined}
+                disabled={item.disabled}
                 onSelect={() => {
                   chosenAction.current = item.onSelect;
                 }}

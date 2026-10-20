@@ -7,6 +7,7 @@ import { Calculator, Coins, ListChecks, Shapes, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { components } from '@/api/schema';
+import type { Permission } from '@/lib/access';
 import { APPROVAL_WORKFLOW_SETTINGS_SECTIONS } from '@/features/approval-workflows/settingsSections';
 import { PEOPLE_SETTINGS_SECTIONS } from '@/features/people/settingsSections';
 
@@ -29,6 +30,11 @@ export interface SettingsSection {
    * out for every section with a page — a page still being built is a link to its stub.
    */
   comingSoon?: boolean;
+  /**
+   * What a role of the person must include for the card to be shown (feature 014, FR-012), such as
+   * "access.manage" for Roles and access; left out for the cards everyone reads (D-240).
+   */
+  permission?: Permission;
 }
 
 /** Feature 002's own sections. */

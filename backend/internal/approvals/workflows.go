@@ -343,7 +343,7 @@ func (s *Service) checkWorkflow(ctx context.Context, problems *errs.Problems, d 
 		}
 		seen, unknown := map[string]bool{}, false
 		for _, id := range l.ApproverIDs {
-			p, found := d[id]
+			p, found := d.byID[id]
 			switch {
 			case !found:
 				unknown = true
@@ -351,6 +351,8 @@ func (s *Service) checkWorkflow(ctx context.Context, problems *errs.Problems, d 
 				problems.Add(field, fmt.Sprintf(listedTwiceMessage, n, p.Name))
 			case !p.Active && !slices.Contains(kept, id):
 				problems.Add(field, fmt.Sprintf(inactiveApproverMessage, n, p.Name))
+			case d.approving != nil && !d.approving[id] && !slices.Contains(kept, id): // 014 FR-028: may stay, not be added
+				problems.Add(field, fmt.Sprintf(msgCannotApprove, p.Name))
 			}
 			seen[id] = true
 		}

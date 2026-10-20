@@ -30,6 +30,12 @@
   background: color-mix(in srgb, var(--blue) 12%, transparent);
 }
 
+/* An action that is not possible now: its words fade, its reason stays readable (feature 014). */
+.item[data-disabled] {
+  color: var(--ink-2);
+  cursor: not-allowed;
+}
+
 .hint {
   display: block;
   max-width: 260px;

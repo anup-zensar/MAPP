@@ -50,7 +50,8 @@ type Service struct {
 	ids       *ids.Generator
 	history   *history.Service
 	directory Directory
-	approvals ApprovalFacts // nil until UseApprovalFacts: nobody is an approver
+	approvals ApprovalFacts           // nil until UseApprovalFacts: nobody is an approver
+	targets   map[string]TargetFinder // by path parameter name (UseTargets); none: services check records
 	now       clock.Clock
 }
 

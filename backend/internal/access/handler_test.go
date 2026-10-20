@@ -175,7 +175,7 @@ func TestSetPersonRoles_AppliesToTheNextRequest_FR017_FR020(t *testing.T) {
 	if refusedBefore.Status != http.StatusForbidden {
 		t.Errorf("before: Sara opening an activity form = %d, want 403", refusedBefore.Status)
 	}
-	if form := sara.Do(t, http.MethodGet, "/api/activities/A-1006/form", nil); form.Status != http.StatusOK {
+	if form := sara.Do(t, http.MethodGet, "/api/activities/A-1010/form", nil); form.Status != http.StatusOK {
 		t.Errorf("after: Sara opening a Mobility activity's form = %d %s, want 200", form.Status, form.Body)
 	}
 

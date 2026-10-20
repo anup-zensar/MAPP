@@ -148,6 +148,10 @@ type PersonView struct {
 	Name     string `json:"name"`
 	Initials string `json:"initials"`
 	Active   bool   `json:"active"`
+	// CanApprove is false when the person holds no role that approves (feature 014, FR-028): the chain flags
+	// them "(can't approve — no approving role)". Always sent once access control is wired (UseApprovers);
+	// nil before.
+	CanApprove *bool `json:"canApprove,omitempty"`
 }
 
 // WorkflowRef is a workflow referred to by an activity (WorkflowRef).

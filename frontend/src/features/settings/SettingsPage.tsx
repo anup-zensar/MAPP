@@ -1,8 +1,10 @@
 import { CircleAlert, RotateCw } from 'lucide-react';
 import { Link } from 'react-router';
+import { itemsFor } from '@/app/navigation';
 import { useSettingsOverview } from '@/api/settingsQueries';
 import type { components } from '@/api/schema';
 import { Button, PageHeader, StatusChip } from '@/components';
+import { useAccess } from '@/lib/access';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { SETTINGS_SECTIONS } from './sections';
 import type { SettingsSection } from './sections';
@@ -18,10 +20,12 @@ type Counts =
 /**
  * Settings (feature 002, FR-001): one card per section — its icon, name, one-line explanation and
  * the number of active records — each opening the section's own page. Sections still to come show
- * "Coming soon" and are not links. When the counts can't be loaded the cards stay usable.
+ * "Coming soon" and are not links. When the counts can't be loaded the cards stay usable. A card
+ * whose section the person's roles do not open is left out (feature 014, FR-012).
  */
 export function SettingsPage() {
   usePageTitle('Settings');
+  const { has } = useAccess();
   const overview = useSettingsOverview();
   const counts: Counts = overview.data
     ? { state: 'loaded', overview: overview.data }
@@ -46,7 +50,7 @@ export function SettingsPage() {
         </div>
       )}
       <ul role="list" aria-label="Sections" className={styles.grid}>
-        {SETTINGS_SECTIONS.map((section) => (
+        {itemsFor(SETTINGS_SECTIONS, has).map((section) => (
           <SectionCard key={section.path} section={section} counts={counts} />
         ))}
       </ul>

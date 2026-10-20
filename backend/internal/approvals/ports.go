@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
@@ -42,6 +43,9 @@ type ActivityFacts struct {
 	TypeName, Description string
 	WorkflowID            string // the activity's Approval workflow field; "" when empty
 	record.Meta                  // version, and who changed the activity last, and when
+	// Access is the activity's plan as access decisions need it (feature 014): who sees the activity and who
+	// may submit, recall or decide on it.
+	Access authz.PlanFacts
 }
 
 // ReadyCheck is the result of the ready-to-submit check: every problem that blocks submitting, all at once

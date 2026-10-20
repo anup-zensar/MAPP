@@ -35,6 +35,8 @@ describe('the shared building blocks', () => {
       'LockedNote',
       'Logo',
       'MoneyField',
+      'NO_ACCESS_DEFAULT',
+      'NoAccess',
       'PageHeader',
       'PasswordField',
       'PersonLabel',
@@ -58,6 +60,7 @@ describe('the shared building blocks', () => {
       'ToastProvider',
       'Tooltip',
       'TreeTable',
+      'ViewOnlyNote',
       'allowedOptions',
       'attributeField',
       'autoFill',
@@ -67,6 +70,7 @@ describe('the shared building blocks', () => {
       'problemOf',
       'useToast',
       'valuesToClear',
+      'viewOnlyText',
       'visibleAttributes',
     ]);
   });

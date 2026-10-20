@@ -29,6 +29,7 @@ const socialAlwaysOn = "A-1002"
 func TestRecall_FR021(t *testing.T) {
 	server := apitest.New(t)
 	mei := server.SignIn(t, meisEmail)
+	server.GrantRole(t, meisEmail, "globalPlanner", "all") // 014: every market's plans
 	alex := server.SignIn(t, alexsEmail)
 	recall := map[string]any{"roundId": "AR-1008", "reason": "Wrong workflow — use the fleet one."}
 
@@ -117,6 +118,7 @@ func TestDeleteSubmittedActivity_UndoKeepsRound_RestoreCancels_FR023(t *testing.
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	mei := server.SignIn(t, meisEmail)
+	server.GrantRole(t, meisEmail, "globalPlanner", "all") // 014: every market's plans
 	daniel := server.SignIn(t, danielsEmail)
 	path := "/api/activities/" + tradeMagazineAds
 

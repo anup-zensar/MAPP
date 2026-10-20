@@ -2,8 +2,9 @@ import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useId } from 'react';
 import { Link, useLocation, useMatch } from 'react-router';
 import { Logo, Tooltip } from '@/components';
+import { useAccess } from '@/lib/access';
 import { cx } from '@/lib/cx';
-import { MAIN_ITEMS, MORE_ITEMS } from './navigation';
+import { itemsFor, MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import type { NavItem } from './navigation';
 import styles from './Sidebar.module.css';
 import { useCurrentUser, useSession } from './useSession';
@@ -69,11 +70,12 @@ interface NavItemsProps {
   labelledBy?: string;
 }
 
-/** One group of sidebar links. */
+/** One group of sidebar links: those the person's roles open (feature 014, FR-012). */
 function NavItems({ items, collapsed, labelledBy }: NavItemsProps) {
+  const { has } = useAccess();
   return (
     <ul className={styles.list} aria-labelledby={labelledBy}>
-      {items.map((item) => (
+      {itemsFor(items, has).map((item) => (
         <li key={item.path}>
           <NavItemLink item={item} collapsed={collapsed} />
         </li>

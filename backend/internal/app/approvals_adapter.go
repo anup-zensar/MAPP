@@ -170,7 +170,7 @@ func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, acti
 // facts returns act as approvals needs it: with its plan, campaign and initiative, type name, display
 // status and unassigned planned cost, all derived now (D-041).
 func (p *approvalsActivities) facts(ctx context.Context, act activities.Activity) (approvals.ActivityFacts, error) {
-	path, err := p.path(ctx, act.InitiativeID)
+	path, plan, err := p.path(ctx, act.InitiativeID)
 	if err != nil {
 		return approvals.ActivityFacts{}, err
 	}
@@ -182,7 +182,7 @@ func (p *approvalsActivities) facts(ctx context.Context, act activities.Activity
 		ID: act.ID, Name: act.Name, Status: string(act.Status), DisplayStatus: displayStatus(act, date.Today(p.now())),
 		Path: path, OwnerID: act.OwnerID, StartDate: act.StartDate, EndDate: act.EndDate, Ongoing: act.Ongoing,
 		PlannedCost: act.PlannedCost, UnassignedPlannedCost: unassigned, Description: act.Description,
-		WorkflowID: act.ApprovalWorkflowID, Meta: act.Meta,
+		WorkflowID: act.ApprovalWorkflowID, Meta: act.Meta, Access: plans.AccessFacts(plan),
 	}
 	if act.ActivityTypeID != "" {
 		activityType, found, err := p.settings.GetActivityType(ctx, act.ActivityTypeID)
@@ -211,34 +211,35 @@ func displayStatus(act activities.Activity, today date.Date) string {
 	}
 }
 
-// path returns the plan, campaign and initiative of the initiative initiativeID, top level first.
-func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]errs.RecordRef, error) {
+// path returns the plan, campaign and initiative of the initiative initiativeID, top level first, and the
+// plan itself.
+func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]errs.RecordRef, plans.Plan, error) {
 	initiative, found, err := p.campaigns.GetInitiative(ctx, initiativeID)
 	if err != nil {
-		return nil, err
+		return nil, plans.Plan{}, err
 	}
 	if !found {
-		return nil, fmt.Errorf("app: initiative %s is not stored", initiativeID)
+		return nil, plans.Plan{}, fmt.Errorf("app: initiative %s is not stored", initiativeID)
 	}
 	campaign, found, err := p.campaigns.GetCampaign(ctx, initiative.CampaignID)
 	if err != nil {
-		return nil, err
+		return nil, plans.Plan{}, err
 	}
 	if !found {
-		return nil, fmt.Errorf("app: campaign %s is not stored", initiative.CampaignID)
+		return nil, plans.Plan{}, fmt.Errorf("app: campaign %s is not stored", initiative.CampaignID)
 	}
 	plan, found, err := p.plans.Get(ctx, campaign.PlanID)
 	if err != nil {
-		return nil, err
+		return nil, plans.Plan{}, err
 	}
 	if !found {
-		return nil, fmt.Errorf("app: plan %s is not stored", campaign.PlanID)
+		return nil, plans.Plan{}, fmt.Errorf("app: plan %s is not stored", campaign.PlanID)
 	}
 	return []errs.RecordRef{
 		{Type: "plan", ID: plan.ID, Name: plan.Name},
 		{Type: "campaign", ID: campaign.ID, Name: campaign.Name},
 		{Type: "initiative", ID: initiative.ID, Name: initiative.Name},
-	}, nil
+	}, plan, nil
 }
 
 // unassigned is the activity's planned cost (0.00 when empty) minus its line items' planned costs in USD

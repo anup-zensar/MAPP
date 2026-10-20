@@ -12,6 +12,7 @@ import (
 	"northstar/internal/history"
 	"northstar/internal/people"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/clock"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/ids"
@@ -113,6 +114,7 @@ func (s *Service) Create(ctx context.Context, a actor.Actor, input PlanInput) (P
 		if err != nil {
 			return err
 		}
+		checkTeams(ctx, authz.PlansCreate, nil, authz.PlanFacts{TeamIDs: p.TeamIDs, CreatedByID: a.ID}, &problems) // 014 FR-013
 		if err := problems.Err(); err != nil {
 			return err
 		}
@@ -157,9 +159,9 @@ func filterProblems(filter ListFilter) errs.Problems {
 	return problems
 }
 
-// List returns the plans of the Plans page (FR-001 – FR-004, D-080). The team scope comes first: All
-// plans, or My teams — plans with one of a's teams, which only narrows the list (Q-006). Total counts the
-// plans in the scope; the summary covers the scope and the year, whatever the status and the search; the
+// List returns the plans of the Plans page (FR-001 – FR-004, D-080): only the plans a may see (014 FR-007).
+// The team scope comes next: All plans, or My teams — plans with one of a's teams, which only narrows the
+// list (Q-006). Total counts the plans in the scope; the summary covers the scope and the year, whatever the status and the search; the
 // items match every filter — the search is any part of the name or the ID, ignoring letter case — newest
 // year first, then by name. Each level below is asked once for all the plans (SC-009).
 func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (PlanList, error) {
@@ -172,6 +174,7 @@ func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (P
 		if err != nil {
 			return err
 		}
+		scoped = visible(ctx, scoped)
 		slices.SortFunc(scoped, func(x, y Plan) int {
 			return cmp.Or(cmp.Compare(y.Year, x.Year), strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name)),
 				strings.Compare(x.ID, y.ID))
@@ -341,7 +344,7 @@ func (s *Service) References(ctx context.Context, a actor.Actor) ([]References, 
 		for _, p := range stored {
 			refs = append(refs, referencesOf(p, false))
 		}
-		bin, err := s.history.ListBin(ctx, a)
+		bin, err := s.history.ListBin(authz.Unrestricted(ctx), a) // every plan in the bin, whoever asks (014)
 		if err != nil {
 			return err
 		}

@@ -21,6 +21,13 @@ func From(ctx context.Context) (Grants, bool) {
 	return g, ok
 }
 
+// Unrestricted returns a copy of ctx without Grants, for a read that must see every record whoever asks —
+// such as the "Used by" counts of Settings, which count records the person may not see. Use it only where
+// the answer does not show those records.
+func Unrestricted(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKey{}, nil)
+}
+
 // Has reports whether the person acting holds p in any scope; true for an internal call.
 func Has(ctx context.Context, p Permission) bool {
 	g, ok := From(ctx)

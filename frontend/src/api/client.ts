@@ -69,22 +69,37 @@ export function setSessionLostHandler(handler: (() => void) | null): void {
   sessionLostHandler = handler;
 }
 
+let forbiddenHandler: (() => void) | null = null;
+
+/**
+ * Tells the client what to do when a call is refused because of the person's roles (403 forbidden,
+ * feature 014): the session provider reloads the person's access, so the screens follow a role
+ * that changed while a page was open (FR-020). null removes it.
+ */
+export function setForbiddenHandler(handler: (() => void) | null): void {
+  forbiddenHandler = handler;
+}
+
 // Any call answering "sign in again" means the session has ended — except signing in itself and
-// the session check (GET /api/me), whose 401 answers the session code handles (research R15).
+// the session check (GET /api/me), whose 401 answers the session code handles (research R15). Any
+// call refused by the person's roles means their access may have changed (feature 014, FR-020).
 api.use({
   async onResponse({ request, response }) {
-    if (response.status !== 401 || isSessionCall(request)) {
+    const sessionLost = response.status === 401 && !isSessionCall(request);
+    if (!sessionLost && response.status !== 403) {
       return;
     }
     const body: unknown = await response
       .clone()
       .json()
       .catch(() => null);
-    if (
-      isErrorBody(body) &&
-      (body.code === 'sign_in_required' || body.code === 'session_expired')
-    ) {
+    if (!isErrorBody(body)) {
+      return;
+    }
+    if (sessionLost && (body.code === 'sign_in_required' || body.code === 'session_expired')) {
       sessionLostHandler?.();
+    } else if (response.status === 403 && body.code === 'forbidden') {
+      forbiddenHandler?.();
     }
   },
 });

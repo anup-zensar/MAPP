@@ -171,8 +171,9 @@ func (s *Service) Submit(ctx context.Context, a actor.Actor, activityID string, 
 }
 
 // Approve approves the current level of the activity's open round, as in.RoundID and in.Level name it
-// (FR-014, FR-015). Anyone may approve (D-020): a person who is not an approver of the level decides on
-// behalf of its approvers (FR-017). A level other than the last moves the round to the next level, whose
+// (FR-014, FR-015). A named approver of the level who may approve decides as approver; a person allowed to
+// decide on behalf of the named approvers decides on their behalf (FR-017 as feature 014 rewrote it,
+// FR-025); nobody decides on an activity they own or submitted while that rule is on (014 FR-026). A level other than the last moves the round to the next level, whose
 // approvers are notified, and tells the owner; the last level makes the activity Approved and tells the
 // owner (FR-035). A level or round that has moved on is refused, saying what happened (FR-018).
 func (s *Service) Approve(ctx context.Context, a actor.Actor, activityID string, in DecisionInput) (ActivityApproval, error) {
@@ -221,6 +222,9 @@ func (s *Service) decide(ctx context.Context, a actor.Actor, activityID string, 
 		}
 		if round.Outcome != OutcomeOpen || round.CurrentLevel != *in.Level {
 			return s.movedOn(ctx, round, *in.Level)
+		}
+		if refusal, _ := decideRefusal(ctx, facts, round); refusal != "" { // 014 FR-025, FR-026
+			return errs.Forbidden(refusal)
 		}
 
 		now := s.now()
@@ -289,8 +293,9 @@ func (s *Service) decide(ctx context.Context, a actor.Actor, activityID string, 
 // Recall takes back the submission of a Submitted activity, as in.RoundID names its open round, with an
 // optional reason (FR-021): the round ends as recalled at the level it waited at, the activity is Created
 // again and leaves the approvers' lists, the round's history and the activity log record it with the reason
-// (FR-026), and the owner and the approvers of the waiting level are told (FR-035). Anyone may recall in
-// this phase (D-020). An Approved activity cannot be recalled — a change of domain model §2.5 sends it back
+// (FR-026), and the owner and the approvers of the waiting level are told (FR-035). The owner and the
+// round's submitter recall with "Submit activities for approval and recall them" in the plan, others only
+// on behalf of the approvers (014 FR-027). An Approved activity cannot be recalled — a change of domain model §2.5 sends it back
 // for approval — and the refusal says so. A round that ended meanwhile is refused, saying what ended it
 // (FR-018).
 func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, in RecallInput) (ActivityApproval, error) {
@@ -324,6 +329,9 @@ func (s *Service) Recall(ctx context.Context, a actor.Actor, activityID string, 
 		}
 		if round.Outcome != OutcomeOpen {
 			return s.movedOn(ctx, round, 0) // no level is decided by a recall: what ended the round explains it
+		}
+		if refusal, _ := recallRefusal(ctx, facts, round); refusal != "" { // 014 FR-027
+			return errs.Forbidden(refusal)
 		}
 
 		now := s.now()

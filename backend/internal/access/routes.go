@@ -30,8 +30,11 @@ const (
 
 // Rule is the access rule of one API operation.
 type Rule struct {
-	Kind       RuleKind
-	Permission authz.Permission // for Need and InPlan; for View and Custom, the permission the service also checks, if any
+	Kind RuleKind
+	// Permission is what Need and InPlan operations need. A View operation with a permission (viewAnd) needs
+	// it in any scope, and the service checks where it applies: the destination of a copy, the plans a
+	// destination list offers. A Custom operation's permission only documents what its service checks.
+	Permission authz.Permission
 }
 
 func public() Rule                       { return Rule{Kind: Public} }
@@ -141,7 +144,7 @@ var routeRules = map[string]Rule{
 	"POST /api/plans/{planId}/publish":        inPlan(authz.PlansPublish),
 	"POST /api/plans/{planId}/unpublish":      inPlan(authz.PlansPublish),
 	"GET /api/plans/{planId}/copy-options":    viewAnd(authz.PlansCreate),
-	"POST /api/plans/{planId}/copy":           inPlan(authz.PlansCreate),
+	"POST /api/plans/{planId}/copy":           viewAnd(authz.PlansCreate), // the service: plans.create for the copy's teams
 	"POST /api/plans/{planId}/change-effects": inPlan(authz.PlansEdit),
 	"GET /api/plans/{planId}/campaigns":       view(),
 
@@ -152,14 +155,14 @@ var routeRules = map[string]Rule{
 	"DELETE /api/campaigns/{campaignId}":               inPlan(authz.CampaignsDelete),
 	"GET /api/campaigns/{campaignId}/destinations":     viewAnd(authz.CampaignsEdit), // filtered to destinations with campaigns.edit
 	"POST /api/campaigns/{campaignId}/move":            inPlan(authz.CampaignsEdit),
-	"POST /api/campaigns/{campaignId}/copy":            inPlan(authz.CampaignsEdit),
+	"POST /api/campaigns/{campaignId}/copy":            viewAnd(authz.CampaignsEdit), // the service: at the destination
 	"POST /api/campaigns/{campaignId}/initiatives":     inPlan(authz.CampaignsEdit),
 	"GET /api/initiatives/{initiativeId}":              view(),
 	"PATCH /api/initiatives/{initiativeId}":            inPlan(authz.CampaignsEdit),
 	"DELETE /api/initiatives/{initiativeId}":           inPlan(authz.CampaignsDelete),
-	"GET /api/initiatives/{initiativeId}/destinations": viewAnd(authz.CampaignsEdit),
+	"GET /api/initiatives/{initiativeId}/destinations": inPlan(authz.CampaignsEdit), // campaigns of the same plan
 	"POST /api/initiatives/{initiativeId}/move":        inPlan(authz.CampaignsEdit),
-	"POST /api/initiatives/{initiativeId}/copy":        inPlan(authz.CampaignsEdit),
+	"POST /api/initiatives/{initiativeId}/copy":        inPlan(authz.CampaignsEdit), // into a campaign of the same plan
 
 	// 006 Activities
 	"GET /api/initiatives/{initiativeId}/activity-form": inPlan(authz.ActivitiesEdit),
@@ -169,9 +172,9 @@ var routeRules = map[string]Rule{
 	"PATCH /api/activities/{activityId}":                inPlan(authz.ActivitiesEdit),
 	"DELETE /api/activities/{activityId}":               inPlan(authz.ActivitiesDelete),
 	"GET /api/activities/{activityId}/form":             inPlan(authz.ActivitiesEdit),
-	"GET /api/activities/{activityId}/destinations":     viewAnd(authz.ActivitiesEdit), // filtered to destinations with activities.edit
+	"GET /api/activities/{activityId}/destinations":     inPlan(authz.ActivitiesEdit), // initiatives of the same plan
 	"POST /api/activities/{activityId}/move":            inPlan(authz.ActivitiesEdit),
-	"POST /api/activities/{activityId}/copy":            inPlan(authz.ActivitiesEdit),
+	"POST /api/activities/{activityId}/copy":            inPlan(authz.ActivitiesEdit), // into an initiative of the same plan
 
 	// 007 Line items
 	"GET /api/activities/{activityId}/line-items":              view(),
@@ -215,7 +218,7 @@ var routeRules = map[string]Rule{
 	"GET /api/all-work":                    signedIn(),
 	"GET /api/all-work/options":            signedIn(),
 	"GET /api/all-work/export":             inPlan(authz.DataExport),
-	"GET /api/all-work/records/{recordId}": signedIn(), // a record the person cannot see answers 403
+	"GET /api/all-work/records/{recordId}": view(),     // a record the person cannot see answers 403
 	"GET /api/all-work/preferences":        signedIn(), // own
 	"PUT /api/all-work/preferences":        signedIn(), // own
 	"GET /api/saved-views":                 signedIn(), // own

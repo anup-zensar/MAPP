@@ -12,6 +12,7 @@ import (
 
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/ids"
@@ -65,9 +66,9 @@ var levelsBelowPlan = []struct {
 }
 
 // CampaignDestinations returns the plans the campaign id can be moved or copied to (FR-023, FR-024, FR-026,
-// D-100): the plans of its plan's year only (D-017). For a move, every other plan, unavailable — with the
-// reason and the fix — when it already has a campaign with this name; for a copy, its own plan first, then
-// the others, all available, each with a suggested name. Each says what the campaign's budget would leave
+// D-100): the plans of its plan's year only (D-017) where a may change campaigns (014 FR-014). For a move,
+// every other plan, unavailable — with the reason and the fix — when it already has a campaign with this
+// name; for a copy, its own plan first, then the others, all available, each with a suggested name. Each says what the campaign's budget would leave
 // there and, for a plan with another model or business unit, what would change below.
 func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, purpose string) (DestinationList, error) {
 	if err := checkPurpose(purpose); err != nil {
@@ -93,7 +94,7 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 		}
 		for _, p := range plans {
 			current := p.ID == plan.ID
-			if current && purpose == PurposeMove {
+			if (current && purpose == PurposeMove) || !authz.InScope(ctx, authz.CampaignsEdit, p.Access) { // 014 FR-014
 				continue
 			}
 			siblings, err := s.repo.CampaignsOfPlan(ctx, p.ID)
@@ -235,6 +236,11 @@ func (s *Service) MoveCampaign(ctx context.Context, a actor.Actor, id string, in
 		if err != nil {
 			return err
 		}
+		if found { // the destination too needs "Add, edit, move and copy campaigns" (014 FR-014)
+			if err := authz.RequireIn(ctx, authz.CampaignsEdit, target.Access); err != nil {
+				return err
+			}
+		}
 		switch {
 		case !found:
 			problems.Add("planId", planGoneChooseMessage)
@@ -368,6 +374,11 @@ func (s *Service) CopyCampaign(ctx context.Context, a actor.Actor, id string, in
 		target, found, err := s.deps.Plans.Plan(ctx, strings.TrimSpace(in.PlanID))
 		if err != nil {
 			return err
+		}
+		if found { // the destination needs "Add, edit, move and copy campaigns" (014 FR-014)
+			if err := authz.RequireIn(ctx, authz.CampaignsEdit, target.Access); err != nil {
+				return err
+			}
 		}
 		var targetProblem string
 		var siblings []Campaign

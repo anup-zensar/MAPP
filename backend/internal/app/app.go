@@ -107,6 +107,8 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	plans.NewHandler(planService).Routes(router, signedIn)
+	// Who sees which log and recycle-bin entries and may restore them follows the plans' visibility (014).
+	historyService.UseAccess(historyAccess{plans: plansRepo, history: historyService})
 
 	// Activities (006) are built before campaigns, which roll their summaries up (campaigns.Activities), and
 	// line items (007) next to them: each reads the other (activities.LineItems, lineitems.Activities).
@@ -181,8 +183,12 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// recycle bin ends an activity's approval (FR-022, FR-023).
 	activitiesService.UseApprovalHooks(activityApprovalHooks{svc: approvalsService})
 	approvalsService.UseDisplayRates(peopleService) // amounts on the Approvals page (D-213)
-	// The roles impact check of access control reads approval workflows and rounds (014 FR-022).
+	// The roles impact check of access control reads approval workflows and rounds (014 FR-022); the access
+	// middleware finds the plan of every planning record an operation names in its path (access_targets.go).
 	accessService.UseApprovalFacts(accessApprovals{repo: approvalsRepo})
+	approvalsService.UseApprovers(accessService) // who may be named and flagged as an approver (014 FR-028)
+	accessService.UseTargets(planningTargets{db: db, plans: plansRepo, campaigns: campaignsRepo, activities: activitiesRepo,
+		lineItems: lineItemsRepo, approvals: approvalsRepo}.finders())
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
 
 	// Home (009): a read-only dashboard over the services of 003–008 (home_sources.go).

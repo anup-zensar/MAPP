@@ -16,9 +16,18 @@ const noRuleMessage = "This action isn't available. Ask an administrator if you 
 
 // Authorize wraps every route that needs a signed-in person, after auth.RequireSignIn, which put the actor in
 // the context (plan "Authorization model"). It builds the person's Grants, puts them in the request's
-// context for the services, and applies the operation's rule from routes.go: Need and InPlan operations are
-// refused with 403 forbidden when no role of the person includes the permission; the services check scopes
-// and records. An operation without a rule is refused.
+// context for the services, and applies the operation's rule from routes.go:
+//
+//   - Need and InPlan operations, and View operations with a permission, are refused with 403 forbidden
+//     when no role of the person includes the permission (messages 1 and 2);
+//   - when the path names a planning record (a plan, campaign, initiative, activity or line item, through
+//     the finders of UseTargets), View, InPlan and Custom operations are refused when the person cannot
+//     see the record (message 4, FR-008), and InPlan operations when the permission is not theirs in the
+//     record's plan (message 3, FR-009);
+//   - the services check what the path does not say: destinations of moves and copies, the teams of a
+//     plan, list filters and the rules of Custom operations.
+//
+// An operation without a rule is refused.
 //
 // Every refusal, by the middleware or by a service, is written to the technical log with the operation, the
 // person's ID and the code forbidden, never a name or an e-mail (FR-039, constitution VI). Refused requests
@@ -37,10 +46,22 @@ func (s *Service) Authorize(next http.HandlerFunc) http.HandlerFunc {
 			web.WriteError(w, r, err)
 			return
 		}
-		if (rule.Kind == Need || rule.Kind == InPlan) && !g.Has(rule.Permission) {
+		if rule.Permission != "" && rule.Kind != Custom && !g.Has(rule.Permission) {
 			logForbidden(r, a.ID)
 			web.WriteError(w, r, errs.Forbidden(g.Refusal(rule.Permission, nil)))
 			return
+		}
+		if rule.Kind == View || rule.Kind == InPlan || rule.Kind == Custom {
+			target, found, err := s.targetOf(r)
+			if err != nil {
+				web.WriteError(w, r, err)
+				return
+			}
+			if refusal := checkTarget(g, rule, target); found && refusal != "" {
+				logForbidden(r, a.ID)
+				web.WriteError(w, r, errs.Forbidden(refusal))
+				return
+			}
 		}
 
 		answer := &statusWriter{ResponseWriter: w, status: http.StatusOK}

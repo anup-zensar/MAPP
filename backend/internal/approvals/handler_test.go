@@ -257,6 +257,7 @@ func TestApprove_OnBehalfOfDaniel_FR017(t *testing.T) {
 func TestListApprovals_TabsForDaniel_FR029(t *testing.T) {
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
 
 	waiting := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/approvals", nil))
 	open := decodeRows(t, daniel.Do(t, http.MethodGet, "/api/approvals?tab=open", nil))
@@ -289,6 +290,7 @@ func TestListApprovals_TabsForDaniel_FR029(t *testing.T) {
 func TestApprovalSummary_FR028(t *testing.T) {
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "approver", "all") // 014: every market's approvals
 
 	march := daniel.Do(t, http.MethodGet, "/api/approvals/summary", nil)
 	february := daniel.Do(t, http.MethodGet, "/api/approvals/summary?monthStart=2026-02-01T00:00:00Z&monthEnd=2026-03-01T00:00:00Z", nil)

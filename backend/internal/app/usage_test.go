@@ -359,7 +359,9 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 	}
 	server := apitest.New(t, apitest.WithDataDir(dir))
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@northstar.demo", "globalPlanner", "all") // 014: every market's plans
 	mei := server.SignIn(t, "mei.lin@northstar.demo")
+	server.GrantRole(t, "mei.lin@northstar.demo", "globalPlanner", "all") // 014: every market's plans
 
 	got := summaries(t, priya, []string{"/api/currencies/USD", "/api/currencies/EUR"})
 	budgetCurrency := func(c *apitest.Client) string {
@@ -394,6 +396,7 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 func TestPlanChangeEffects_DisallowedActivities_FR019(t *testing.T) {
 	server := apitest.New(t)
 	mei := server.SignIn(t, "mei.lin@northstar.demo")
+	server.GrantRole(t, "mei.lin@northstar.demo", "globalPlanner", "all") // 014: every market's plans
 	type effects struct {
 		ModelChanged         bool
 		DisallowedActivities []recordRef

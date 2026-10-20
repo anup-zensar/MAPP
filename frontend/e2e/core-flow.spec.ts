@@ -467,29 +467,29 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
 test('D: the plan form offers only members of the chosen teams as owner and refuses an owner outside them', async ({
   page,
 }) => {
-  await signInAs(page, PRIYA);
+  // Alex Morgan, whose role lets him give a plan any team (014 FR-013); his team is Global Marketing Ops.
+  await signInAs(page, ALEX);
   await page.goto('/plans/new');
   await expect(page.getByRole('heading', { name: 'New plan', level: 1 })).toBeVisible();
   // 003's TeamPicker and PersonPicker inputs are comboboxes named by their labels.
   const teams = page.getByRole('combobox', { name: /^Teams/ });
   const owner = page.getByRole('combobox', { name: /^Owner/ });
 
-  // Defaults: Priya's team and Priya herself (004 FR-006).
+  // Defaults: Alex's team and Alex himself (004 FR-006).
   await expect(page.getByText('Default: your teams')).toBeVisible();
   await expect(page.getByText('Default: you', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Remove Lubricants Europe' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove Global Marketing Ops' })).toBeVisible();
 
-  // The owner list holds only active members of Lubricants Europe, Priya first (003 FR-017, FR-019).
+  // The owner list holds only active members of Global Marketing Ops, Alex first (003 FR-017, FR-019).
   // The picker's list is a listbox named like its field; the form's native selects have options too.
   const owners = page.getByRole('listbox', { name: 'Owner' });
   await owner.click();
   await owner.press('ArrowDown');
   // An option's name is the person's name, then the job title and teams.
-  await expect(owners.getByRole('option').first()).toHaveAccessibleName(/^Priya Raman \(you\)/);
-  await expect(owners.getByRole('option', { name: /^Daniel Okoro/ })).toBeVisible();
-  await expect(owners.getByRole('option', { name: /^Sara Novak/ })).toBeVisible();
+  await expect(owners.getByRole('option').first()).toHaveAccessibleName(/^Alex Morgan \(you\)/);
+  await expect(owners.getByRole('option', { name: /^Carlos Mendes/ })).toBeVisible();
   await expect(owners.getByRole('option', { name: /^Mei Lin/ })).toHaveCount(0);
-  await expect(page.getByText('3 people').first()).toBeVisible();
+  await expect(page.getByText('2 people').first()).toBeVisible();
   await owner.fill('mei');
   await expect(
     page.getByText(
@@ -498,13 +498,13 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   ).toBeVisible();
   await owner.press('Escape');
 
-  // Swap the team for Mobility China: Priya is not one of its members (R1, 004 FR-021).
+  // Swap the team for Mobility China: Alex is not one of its members (R1, 004 FR-021).
   await teams.fill('Mobility');
   await page.getByRole('option', { name: /^Mobility China/ }).click();
   await teams.press('Escape');
-  await page.getByRole('button', { name: 'Remove Lubricants Europe' }).click();
+  await page.getByRole('button', { name: 'Remove Global Marketing Ops' }).click();
   const notInTeams =
-    "Priya Raman isn't in any of the chosen teams — choose another owner or clear the field";
+    "Alex Morgan isn't in any of the chosen teams — choose another owner or clear the field";
   // The owner picker flags the chosen owner with this sentence (the plan form's notMemberText).
   await expect(page.getByText(notInTeams).first()).toBeVisible();
 

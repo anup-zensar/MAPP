@@ -18,7 +18,7 @@ type Overview struct {
 	Contents     Contents
 }
 
-// Overviews returns every plan with its figures in US dollars, its completeness and its contents, worked
+// Overviews returns every plan a may see (014 FR-007) with its figures in US dollars, its completeness and its contents, worked
 // out exactly as the Plans list and the plan page work them out (FR-012, FR-017): for feature 009's Home,
 // through an adapter in internal/app (D-196). Each level below is asked once for all the plans (SC-009).
 // It joins the caller's transaction.
@@ -29,6 +29,7 @@ func (s *Service) Overviews(ctx context.Context, a actor.Actor) ([]Overview, err
 		if err != nil {
 			return err
 		}
+		all = visible(ctx, all)
 		planIDs := make([]string, 0, len(all))
 		for _, p := range all {
 			planIDs = append(planIDs, p.ID)

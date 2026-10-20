@@ -60,6 +60,7 @@ type counted struct {
 func TestCampaignDestinations_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	var move, copies destinationList
 	moveAnswer := priya.Do(t, http.MethodGet, "/api/campaigns/C-1001/destinations?purpose=move", nil)
@@ -87,6 +88,7 @@ func TestCampaignDestinations_Contract(t *testing.T) {
 func TestMoveCampaign_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	response := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
 
@@ -108,6 +110,7 @@ func TestMoveCampaign_Contract(t *testing.T) {
 func TestMoveCampaign_Refused400(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 	server.Advance(time.Hour)
 	edit := helixForm(1)
 	edit["description"] = "Premium launch"

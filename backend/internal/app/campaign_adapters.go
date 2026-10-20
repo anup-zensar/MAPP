@@ -45,6 +45,7 @@ func (p campaignPlans) PlansOfYear(ctx context.Context, year int) ([]campaigns.P
 func planFacts(p plans.Plan) campaigns.PlanFacts {
 	facts := campaigns.PlanFacts{
 		ID: p.ID, Name: p.Name, Year: p.Year, Status: string(p.Status), ModelID: p.ModelID, Attributes: p.Attributes,
+		Access: plans.AccessFacts(p),
 	}
 	if p.OwnerID != "" {
 		owner := p.OwnerID

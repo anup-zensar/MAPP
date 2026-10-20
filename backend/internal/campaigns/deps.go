@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"northstar/internal/people"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/money"
 	"northstar/internal/settings"
 )
@@ -28,6 +29,7 @@ type PlanFacts struct {
 	Budget     *money.Money             // USD; nil when none
 	ModelID    string                   // the plan's model
 	Attributes settings.AttributeValues // the plan's Shell attribute values, Business unit included (R9)
+	Access     authz.PlanFacts          // what access decisions need: teams, owner, creator (feature 014)
 }
 
 // PlanSource reads plans (feature 004).

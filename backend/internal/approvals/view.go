@@ -68,7 +68,9 @@ func (s *Service) approval(ctx context.Context, a actor.Actor, facts ActivityFac
 		if !view.Viewer.IsCurrentApprover {
 			view.Viewer.OnBehalfOf = d.copiedAll(approvers)
 		}
+		limitDecisions(ctx, &view.Actions, facts, open) // 014 FR-025 – FR-027
 	}
+	limitSubmit(ctx, &view.Actions, facts) // 014 FR-027
 	if facts.Status == StatusDeclined {
 		view.LatestDecline = latestDecline(entries)
 	}

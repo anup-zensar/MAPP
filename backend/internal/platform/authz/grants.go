@@ -189,6 +189,13 @@ func (g Grants) RoleNames() []string {
 	return names
 }
 
+// ScopeTeamNames returns the names of the teams where the person holds p, sorted: "your own teams" of the
+// plan form's messages (FR-013). Empty for All markets and for a permission they do not hold.
+func (g Grants) ScopeTeamNames(p Permission) []string {
+	_, teams := g.Teams(p)
+	return g.teamNames(teams)
+}
+
 // teamNames returns the names of the teams teamIDs, sorted; a team without a known name is left out.
 func (g Grants) teamNames(teamIDs []string) []string {
 	names := []string{}
