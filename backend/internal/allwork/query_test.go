@@ -20,6 +20,7 @@ func TestParseQuery_AllParameters_FR004(t *testing.T) {
 		"owner": {"U-1003"}, "team": {"T-1001"}, "businessUnit": {"SO-1002"}, "activityType": {"AT-1005"},
 		"strategic": {"only"}, "showLevels": {"completeBranches"}, "search": {"  Launch film "},
 		"column": {"plannedCost", "id", "attr.SA-1003", "id"}, "sort": {"plannedCost:desc"}, "period": {"quarter"},
+		"finance": {"invoiced", "hasPurchaseOrder", "invoiced"},
 	}
 
 	q, err := ParseQuery(values)
@@ -31,8 +32,9 @@ func TestParseQuery_AllParameters_FR004(t *testing.T) {
 		Year: 2027, View: ViewBudget, Plans: []string{"P-1001", "P-1002"}, PlanStatuses: []string{"published"},
 		ContainerStatuses: []string{"inProgress", "running"}, ActivityStatuses: []string{"declined", "approved"},
 		Owners: []string{"U-1003"}, Teams: []string{"T-1001"}, BusinessUnits: []string{"SO-1002"},
-		ActivityTypes: []string{"AT-1005"}, Strategic: StrategicOnly, ShowLevels: ShowCompleteBranches,
-		Search: "Launch film", Columns: []string{"plannedCost", "id", "attr.SA-1003"},
+		ActivityTypes: []string{"AT-1005"}, Finance: []string{"invoiced", "hasPurchaseOrder"}, Strategic: StrategicOnly,
+		ShowLevels: ShowCompleteBranches,
+		Search:     "Launch film", Columns: []string{"plannedCost", "id", "attr.SA-1003"},
 		Sort: &Sort{Column: "plannedCost", Direction: SortDescending}, Period: PeriodQuarter,
 	}
 	if !reflect.DeepEqual(q, want) {

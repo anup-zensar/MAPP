@@ -5,11 +5,11 @@
 // Load writes the steps in the order of decision D-202, one file per feature: people (this file), Settings
 // (settings.go, 002), teams (teams.go, 003), plans (plans.go, 004), campaigns and initiatives
 // (campaigns.go, 005), approval workflows and activities (activities.go, 006), line items (lineitems.go,
-// 007), approval rounds and notifications (approvals.go, 008); then saved views (allwork.go, 010), personal
-// settings rather than records; and last the demo history (history.go, 011). Every step writes through its
-// feature's repository with IDs from the generator and looks up earlier records by name. Only the last step
-// writes activity-log and recycle-bin entries (D-188): it writes them in time order, so the log's sequence
-// numbers follow time.
+// 007), approval rounds and notifications (approvals.go, 008), the demo GSAP transactions (financials.go,
+// 015); then saved views (allwork.go, 010), personal settings rather than records; and last the demo history
+// (history.go, 011). Every step writes through its feature's repository with IDs from the generator and looks
+// up earlier records by name. Only the last step writes activity-log and recycle-bin entries (D-188): it
+// writes them in time order, so the log's sequence numbers follow time.
 package seed
 
 import (
@@ -85,6 +85,7 @@ func Load(ctx context.Context, db *store.DB, now clock.Clock, opts ...Option) er
 			d.addGlobalBudgets, // 014's global budget and its allocations, after the plans (budgets.go, D-306)
 			d.addCampaigns, d.addActivities,
 			d.addLineItems, d.addApprovals,
+			d.addFinancials, // 015's demo GSAP data (financials.go), after approvals (D-306)
 			d.addSavedViews, // 010's personal settings (allwork.go)
 		}
 		if !o.withoutHistory {

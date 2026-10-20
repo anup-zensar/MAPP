@@ -65,6 +65,7 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixLineItem: "L-1010", ids.PrefixLogEntry: "LOG-1047", ids.PrefixBinEntry: "BIN-1002",
 		ids.PrefixApprovalWorkflow: "WF-1003", ids.PrefixApprovalRound: "AR-1009",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
+		ids.PrefixFinancialTransaction: "FT-1012", ids.PrefixFinancialImport: "FIM-1002",
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	err := db.Write(t.Context(), func(ctx context.Context) error {

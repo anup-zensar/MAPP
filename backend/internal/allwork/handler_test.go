@@ -41,7 +41,7 @@ func TestGetAllWork_Contract(t *testing.T) {
 		}
 	}
 	if !slices.Equal(plans, []string{"FY2026 Lubricants Europe", "FY2026 Mobility China"}) || r.Year != 2026 ||
-		r.View != "grid" || r.DisplayCurrency != "USD" || len(r.Columns) != 9 || r.Today.String() != "2026-03-12" {
+		r.View != "grid" || r.DisplayCurrency != "USD" || len(r.Columns) != 11 || r.Today.String() != "2026-03-12" {
 		t.Errorf("plans %q, year %d, view %s, currency %s, %d columns, today %s", plans, r.Year, r.View,
 			r.DisplayCurrency, len(r.Columns), r.Today)
 	}
@@ -239,7 +239,7 @@ func TestGetOptions_Contract(t *testing.T) {
 		!slices.Equal(plans, []string{"FY2026 Lubricants Europe", "FY2026 Mobility China"}) ||
 		!slices.Contains(owners, "Daniel Okoro") || len(o.Teams) == 0 || !o.Teams[0].Mine ||
 		o.Teams[0].Label != "Lubricants Europe" || len(o.BusinessUnits) == 0 || len(o.ActivityTypes) == 0 ||
-		len(o.ColumnGroups) == 0 || len(o.DefaultColumns) != 9 {
+		len(o.ColumnGroups) == 0 || len(o.DefaultColumns) != 11 {
 		t.Errorf("options = %s", response.Body)
 	}
 	assertAnswer(t, wrongYear, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
@@ -252,7 +252,8 @@ func TestPreferences_GetPut_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
-	defaults := `{"columns":["id","status","owner","startDate","endDate","planBudget","plannedCost","lineItems","unassigned"],"sort":null}`
+	defaults := `{"columns":["id","status","owner","startDate","endDate","planBudget","plannedCost","lineItems","unassigned",` +
+		`"committed","invoiced"],"sort":null}`
 
 	before := priya.Do(t, http.MethodGet, "/api/all-work/preferences", nil)
 	saved := priya.Do(t, http.MethodPut, "/api/all-work/preferences",

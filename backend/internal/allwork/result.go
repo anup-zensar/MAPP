@@ -40,6 +40,9 @@ func build(in input) built {
 	q, leftOut := knownValues(in.query, in.data, in.choices)
 	in.query = q
 	t := buildTree(in.data.Nodes)
+	if in.choices.SeesFinance {
+		t.withFinance() // feature 015 (finance.go)
+	}
 	applyFilters(t, q)
 	rollUp(t)
 	columns, sort, columnsLeftOut := resolveColumns(q, in.catalogue)
@@ -261,7 +264,8 @@ func (b rowBuilder) totals(m matches) Totals {
 		switch c.Key {
 		case "planBudget":
 			totals.Cells[i] = moneyCell(cur, m.planBudget)
-		case "plannedCost", "lineItems", "unassigned", "activities", "inq", "mql", "revenue":
+		case "plannedCost", "lineItems", "unassigned", "activities", "inq", "mql", "revenue",
+			columnCommitted, columnInvoiced, columnPaid, columnAccrued, columnNotYetCommitted:
 			totals.Cells[i] = rolledCell(c.Key, &tnode{n: &Node{}}, m.activities, cur)
 		}
 	}

@@ -50,6 +50,10 @@ const (
 
 	// Feature 010, All work (D-125).
 	PrefixSavedView = "SV" // saved views
+
+	// Feature 015, financial transactions (D-254).
+	PrefixFinancialTransaction = "FT"  // GSAP transactions: FT-1001
+	PrefixFinancialImport      = "FIM" // GSAP imports: FIM-1001
 )
 
 // Prefixes lists every prefix above, in that order.
@@ -60,6 +64,7 @@ var Prefixes = []string{
 	PrefixPlan, PrefixCampaign, PrefixInitiative, PrefixActivity, PrefixLineItem,
 	PrefixApprovalWorkflow, PrefixApprovalRound, PrefixApprovalAction, PrefixNotification,
 	PrefixSavedView,
+	PrefixFinancialTransaction, PrefixFinancialImport,
 }
 
 // firstNumber is the number of the first ID of every prefix: "P-1001".

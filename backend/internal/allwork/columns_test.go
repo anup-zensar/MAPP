@@ -8,8 +8,8 @@ import (
 )
 
 // Without a choice of columns the grid shows the default columns, in order: ID, Status, Owner, Start date,
-// End date, Plan budget, Planned cost, Line items, Unassigned planned cost; Name is always shown and is not
-// a column (FR-019).
+// End date, Plan budget, Planned cost, Line items, Unassigned planned cost, then 015's Committed and
+// Invoiced; Name is always shown and is not a column (FR-019, 015 FR-023).
 func TestColumns_DefaultColumns_FR019(t *testing.T) {
 	r := view(seedYear(), Query{})
 
@@ -17,7 +17,8 @@ func TestColumns_DefaultColumns_FR019(t *testing.T) {
 	for _, c := range r.Columns {
 		keys = append(keys, c.Key)
 	}
-	want := []string{"id", "status", "owner", "startDate", "endDate", "planBudget", "plannedCost", "lineItems", "unassigned"}
+	want := []string{"id", "status", "owner", "startDate", "endDate", "planBudget", "plannedCost", "lineItems", "unassigned",
+		"committed", "invoiced"}
 	if !reflect.DeepEqual(keys, want) {
 		t.Errorf("columns = %q\nwant      %q", keys, want)
 	}
@@ -46,7 +47,7 @@ func TestColumns_StandardGroupAndLevelGroups_FR018(t *testing.T) {
 	for _, g := range groups {
 		names = append(names, g.Label)
 	}
-	if !reflect.DeepEqual(names, []string{"Standard", "Plan", "Campaign", "Initiative", "Activity", "Line item"}) {
+	if !reflect.DeepEqual(names, []string{"Standard", "Plan", "Campaign", "Initiative", "Activity", "Line item", "Financials"}) {
 		t.Fatalf("groups = %q", names)
 	}
 	keysOf := func(g ColumnGroup) []string {
@@ -67,6 +68,9 @@ func TestColumns_StandardGroupAndLevelGroups_FR018(t *testing.T) {
 		t.Errorf("standard %d, plan %d, line item %d columns", len(groups[0].Columns), len(groups[1].Columns), len(groups[5].Columns))
 	}
 	for _, c := range columns {
+		if c.Group == GroupFinancials { // the GSAP figures of feature 015 (FR-023)
+			continue
+		}
 		for _, later := range []string{"actual", "invoice", "purchase", "swbsCode"} {
 			if strings.Contains(strings.ToLower(c.Key), strings.ToLower(later)) {
 				t.Errorf("column %s is filled by Finance or GSAP later", c.Key)

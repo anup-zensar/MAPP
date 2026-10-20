@@ -60,11 +60,17 @@ var standardColumns = []Column{
 }
 
 // DefaultColumns are the columns of the standard view, in order (FR-019).
-var DefaultColumns = []string{"id", "status", "owner", "startDate", "endDate", "planBudget", "plannedCost", "lineItems", "unassigned"}
+var DefaultColumns = []string{
+	"id", "status", "owner", "startDate", "endDate", "planBudget", "plannedCost", "lineItems", "unassigned",
+	columnCommitted, columnInvoiced, // feature 015 (FR-023)
+}
 
 // rolledColumns are the roll-up columns: on a container they add up the matching activities shown below it
 // and carry the unfiltered value when filters hide some (FR-013).
-var rolledColumns = []string{"budgetUsed", "plannedCost", "lineItems", "unassigned", "activities", "inq", "mql", "revenue"}
+var rolledColumns = []string{
+	"budgetUsed", "plannedCost", "lineItems", "unassigned", "activities", "inq", "mql", "revenue",
+	columnCommitted, columnInvoiced, columnPaid, columnAccrued, columnNotYetCommitted, // feature 015 (finance.go)
+}
 
 // standard returns a column of the Standard group.
 func standard(key, label, kind string, levels []Level) Column {
@@ -72,7 +78,7 @@ func standard(key, label, kind string, levels []Level) Column {
 }
 
 // levelColumns are the fields of each level's group (data model §6.2, field catalogue §1–§5), before the
-// group's Shell attributes. Fields that Finance or GSAP fill later are not offered (FR-018).
+// group's Shell attributes. Financial figures come from feature 015 (finance.go).
 var levelColumns = []Column{
 	ofLevel(LevelPlan, "plan.year", "Year", KindNumber),
 	ofLevel(LevelPlan, "plan.model", "Model", KindText),
@@ -128,7 +134,8 @@ func attributeKey(id string) string {
 }
 
 // catalogue returns every column the grid offers (FR-018): the Standard group, then each level's group —
-// its fields, then its Shell attributes in Settings' order, active and inactive.
+// its fields, then its Shell attributes in Settings' order, active and inactive — then the Financials group
+// of feature 015 (FR-023), which forReader leaves out for a reader who may not see financial data.
 func catalogue(attributes []Attribute) []Column {
 	columns := slices.Clone(standardColumns)
 	for _, level := range []Level{LevelPlan, LevelCampaign, LevelInitiative, LevelActivity, LevelLineItem} {
@@ -143,7 +150,7 @@ func catalogue(attributes []Attribute) []Column {
 			}
 		}
 	}
-	return columns
+	return append(columns, financialColumns...)
 }
 
 // offered returns the catalogue as the column chooser offers it: without the inactive attributes, except
@@ -174,7 +181,7 @@ func resolveColumns(q Query, catalogue []Column) ([]Column, *Sort, []LeftOut) {
 	byKey := catalogueOf(catalogue)
 	keys := q.Columns
 	if keys == nil {
-		keys = DefaultColumns
+		keys = defaultColumnsIn(byKey)
 	}
 	columns := []Column{}
 	leftOut := []LeftOut{}
@@ -346,6 +353,9 @@ func rolledCell(key string, t *tnode, f figures, cur Currency) *Cell {
 		return numberCell(f.mql)
 	case "revenue":
 		return moneyCell(cur, f.revenue)
+	}
+	if slices.Contains(financialKeys, key) {
+		return financeCell(key, f, cur)
 	}
 	return emptyCell()
 }

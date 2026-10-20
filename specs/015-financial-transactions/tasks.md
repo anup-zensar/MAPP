@@ -28,7 +28,7 @@ files with the editor tools.
   following its four merge rules. Add the 10 operations to `notYetServed` in
   `backend/internal/app/app_test.go`. Run `go test ./internal/app/...` and the web app's `npm run
   api:check` to regenerate `frontend/src/api/` types.
-- [ ] T002 [P] Add `PrefixFinancialTransaction = "FT"` and `PrefixFinancialImport = "FIM"` to
+- [x] T002 [P] Add `PrefixFinancialTransaction = "FT"` and `PrefixFinancialImport = "FIM"` to
   `backend/internal/platform/ids/ids.go` and to `Prefixes`, with tests in `ids_test.go`.
 
 ---
@@ -37,16 +37,16 @@ files with the editor tools.
 
 ### Backend (B)
 
-- [ ] T003 [P] Write `backend/internal/financials/model.go`: the types of data-model §1–§2, the API view
+- [x] T003 [P] Write `backend/internal/financials/model.go`: the types of data-model §1–§2, the API view
   structs named as the contract schemas, and the readable name function. Write `repository.go` and
   `store_json.go` (tables `financial_transactions`, `financial_imports`). Write `store_json_test.go`,
   which checks a round trip and the invariants of data-model §1.
-- [ ] T004 [P] Write `backend/internal/financials/feed.go` (`Feed`, `Delivery`, `Incoming`,
+- [x] T004 [P] Write `backend/internal/financials/feed.go` (`Feed`, `Delivery`, `Incoming`,
   `RowProblem`) and `feed_demo.go`, which holds the 11 rows of data-model §6, in file order, as
   `Incoming`. Write `feed_demo_test.go`.
-- [ ] T005 [P] Write `backend/internal/financials/ports.go`: `Planning`, `Node`, `LineItemState`,
+- [x] T005 [P] Write `backend/internal/financials/ports.go`: `Planning`, `Node`, `LineItemState`,
   `Rates`, `Displays`, `Access` and `AllowAll{}`, as in plan *Ports*.
-- [ ] T006 Write the tests `backend/internal/financials/match_test.go` and the code `match.go` + `index.go`
+- [x] T006 Write the tests `backend/internal/financials/match_test.go` and the code `match.go` + `index.go`
   (FR-007, data-model §4):
   - the rule order and every reason;
   - POs first, IDs in processing order;
@@ -55,7 +55,7 @@ files with the editor tools.
   - manual links kept;
   - a bin line item still matches, an unknown one does not;
   - ambiguous PO and SWBS.
-- [ ] T007 Write the tests `backend/internal/financials/figures_test.go` and the code `figures.go`
+- [x] T007 Write the tests `backend/internal/financials/figures_test.go` and the code `figures.go`
   (FR-010–FR-014, data-model §5):
   - `usd` per transaction, half up;
   - credit notes;
@@ -65,13 +65,13 @@ files with the editor tools.
   - above planned (record and line items below), `firstLineItemAbovePlanned`;
   - a missing currency left out and flagged;
   - one display conversion per figure.
-- [ ] T008 Write `backend/internal/financials/kinds.go` + `kinds_test.go`: the top-level kinds
+- [x] T008 Write `backend/internal/financials/kinds.go` + `kinds_test.go`: the top-level kinds
   `financialImport` and `financialTransaction` (data-model §7), with `Describe` for `lineItemId`.
-- [ ] T009 Write `backend/internal/financials/service.go` (constructor, `apply` shared by Check, Import and
+- [x] T009 Write `backend/internal/financials/service.go` (constructor, `apply` shared by Check, Import and
   LoadDemo, `Record`, `FactsByLineItem`, `DataAsOf`) and `texts.go` (every message of plan *User-visible
   messages* and data-model §4.2). Write `service_test.go` for `Record` against the data-model §6.1 values,
   using fakes for the ports.
-- [ ] T010 Write `backend/internal/app/financials.go`:
+- [x] T010 Write `backend/internal/app/financials.go`:
   - `planningAdapter` over plans, campaigns, activities and lineitems (same readers as
     `allwork_source.go`; 005 `rollup` for container planned cost; `history.SnapshotsInBin` for
     `LineItemState`);
@@ -79,7 +79,7 @@ files with the editor tools.
   - Wire the service, kinds and routes in `app.go`.
   - Tests in `financials_test.go`: the adapter answers the seed's tree with the planned costs of
     data-model §6.1.
-- [ ] T011 Write `backend/seed/financials.go`: call `financials.LoadDemo` after approvals and before
+- [x] T011 Write `backend/seed/financials.go`: call `financials.LoadDemo` after approvals and before
   011's history step, in `seed/seed.go` (D-202), with no log entries. Add
   `TestSeed_FinancialsStory_015` in `seed/seed_test.go` for every figure and count of data-model §6.1
   (FR-031).
@@ -112,10 +112,10 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 **Independent Test**: spec US1.
 
-- [ ] T015 [US1] (B) In `backend/internal/financials/handler.go` + `handler_test.go`, serve `GET
+- [x] T015 [US1] (B) In `backend/internal/financials/handler.go` + `handler_test.go`, serve `GET
   /api/financials/records/{recordId}` with `apitest` contract checks, the 404 and the `not_allowed`
   answer (fake `Access`). Remove the operation from `notYetServed`.
-- [ ] T016 [US1] (B) Serve `GET /api/financials/transactions` with the `recordId` filter and paging (the
+- [x] T016 [US1] (B) Serve `GET /api/financials/transactions` with the `recordId` filter and paging (the
   rest comes in US3), so the line-item page can list its transactions. Add handler tests.
 - [ ] T017 [US1] (W) Activity page (FR-015, changes 006 FR-020):
   - in `frontend/src/features/activities/ActivityPage.tsx`, render `<FinancialsCard recordId={activity.id}
@@ -144,7 +144,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 **Independent Test**: spec US2.
 
-- [ ] T022 [US2] (B) Add to `service_test.go` the roll-up equality for every container of data-model
+- [x] T022 [US2] (B) Add to `service_test.go` the roll-up equality for every container of data-model
   §6.1, the display-currency conversion (EUR reader), and the move of an activity to another initiative
   (its figures move) (FR-012, SC-002).
 - [ ] T023 [P] [US2] (W) In `frontend/src/features/plans/PlanPage.tsx` (+ test), add `<FinancialsCard
@@ -159,7 +159,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 **Independent Test**: spec US3.
 
-- [ ] T026 [US3] (B) Complete `Transactions` in `service.go`:
+- [x] T026 [US3] (B) Complete `Transactions` in `service.go`:
   - type, q, year (plan year / posting year), planId and link filters;
   - counts per tab, totals without type, sort and choices.
   - Serve `GET /api/financials/transactions/{transactionId}`.
@@ -185,15 +185,15 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 **Independent Test**: spec US4.
 
-- [ ] T031 [US4] (B) Write the tests `backend/internal/financials/feed_csv_test.go` (table-driven: every
+- [x] T031 [US4] (B) Write the tests `backend/internal/financials/feed_csv_test.go` (table-driven: every
   column rule and message of plan *Simulated GSAP extract*, BOM, quoting, header case, unknown columns,
   empty lines, row numbers, every whole-file refusal) and the code `feed_csv.go` (FR-004, FR-005).
-- [ ] T032 [US4] (B) Implement `Check` (discarded `Write`) and `Import`:
+- [x] T032 [US4] (B) Implement `Check` (discarded `Write`) and `Import`:
   - the currency and duplicate-key checks, counts and lists capped at 200;
   - the import record and one log entry (FR-027).
   - Tests in `service_test.go`: Check saves nothing; counts add up (SC-003); importing twice changes
     nothing; refused rows are skipped; the retry relinks; SC-006 with a second fake feed.
-- [ ] T033 [US4] (B) Write `template.go` and serve `GET /api/financials/imports`, `POST
+- [x] T033 [US4] (B) Write `template.go` and serve `GET /api/financials/imports`, `POST
   /api/financials/imports/check`, `POST /api/financials/imports` and `GET
   /api/financials/imports/template`, each with handler tests (FR-008, FR-009).
 - [ ] T034 [US4] (W) Write `frontend/src/features/financials/ImportDialog.tsx` (+ test):
@@ -210,7 +210,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 **Independent Test**: spec US5.
 
-- [ ] T036 [US5] (B) Write the tests first, then change `backend/internal/allwork`:
+- [x] T036 [US5] (B) Write the tests first, then change `backend/internal/allwork`:
   - `source.go`: `Node.Finance` with `POCount` and `InvoiceCount`;
   - `columns.go`: group `financials`, five columns, the new `DefaultColumns`, the group left out without
     access;
@@ -219,7 +219,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - `options.go`; `export.go`: the note.
   - Tests in `columns_test.go`, `rollup_test.go`, `query_test.go`, `export_test.go` and `handler_test.go`
     (FR-023, FR-024). The totals equal `financials` for the same plans (SC-002).
-- [ ] T037 [US5] (B) In `backend/internal/app/allwork_source.go` (+ test), fill `Node.Finance` from
+- [x] T037 [US5] (B) In `backend/internal/app/allwork_source.go` (+ test), fill `Node.Finance` from
   `financials.FactsByLineItem` for the year's line items.
 - [ ] T038 [P] [US5] (W) In `frontend/src/features/all-work/FilterMenu.tsx`, `FilterBar.tsx`,
   `viewState.ts`, `allWorkText.ts` and `allWorkApi.ts` (+ tests), add the Financials filter, its chips
@@ -232,7 +232,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 **Independent Test**: spec US6.
 
-- [ ] T039 [US6] (B) Implement `Overview` (current year from the API clock, Home scope through
+- [x] T039 [US6] (B) Implement `Overview` (current year from the API clock, Home scope through
   `MyTeamPlanIDs`, activities above planned, not-linked count). Serve `GET /api/financials/overview`.
   Tests: seed values for Priya Raman (My teams) and Alex Morgan (Everything), and handler contract
   tests (FR-025).
@@ -246,7 +246,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 **Independent Test**: spec US7.
 
-- [ ] T041 [US7] (B) Implement `Link` and `Unlink`:
+- [x] T041 [US7] (B) Implement `Link` and `Unlink`:
   - only not-linked / only manual;
   - a bin or unknown line item refused;
   - version conflict; one log entry each.
@@ -261,7 +261,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 
 ## Phase 10: Polish and cross-cutting
 
-- [ ] T043 [P] (B) Access seam (FR-028): in `service_test.go`, a fake `Access` denying view, import and
+- [x] T043 [P] (B) Access seam (FR-028): in `service_test.go`, a fake `Access` denying view, import and
   link, and `VisiblePlanIDs` scoping lists, counts, totals, the overview and `FactsByLineItem` users (All
   work hides the group).
 - [ ] T044 [P] (W) No-access states: the "You don't have access to financial data" text in
@@ -272,10 +272,10 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   `frontend/src/features/activities/DeleteActivityDialog.tsx`,
   `frontend/src/features/campaigns/DeleteRecordDialog.tsx` and the plan delete dialog in
   `frontend/src/features/plans/dialogs/`, from the record view's `transactionCount` (+ tests).
-- [ ] T046 [P] (B) In `service_test.go`, test that copying a plan, campaign, activity or line item copies
+- [x] T046 [P] (B) In `service_test.go`, test that copying a plan, campaign, activity or line item copies
   no transaction and the copy's figures are 0.00 (FR-030). Test that deleting a line item drops its
   amounts from every figure and restoring brings them back (FR-012).
-- [ ] T047 [P] (B) Stress tests (SC-004) in `backend/internal/financials/stress_test.go`: a 5,000-row
+- [x] T047 [P] (B) Stress tests (SC-004) in `backend/internal/financials/stress_test.go`: a 5,000-row
   import under 5 s and a 20,000-transaction list under 1 s, skipped by default as in 010.
 - [ ] T048 [P] Documentation (no decision-log edits; the decisions are D-242–D-257):
   - `docs/product/domain-model.md`: rewrite §4.6 as "Financial figures from GSAP" (data-model §5) and add

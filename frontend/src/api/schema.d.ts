@@ -6743,7 +6743,7 @@ export interface components {
         };
         AllWorkColumnGroup: {
             /** @enum {string} */
-            group: "standard" | "plan" | "campaign" | "initiative" | "activity" | "lineItem";
+            group: "standard" | "plan" | "campaign" | "initiative" | "activity" | "lineItem" | "financials";
             /** @example Campaign */
             label: string;
             columns: components["schemas"]["AllWorkColumn"][];

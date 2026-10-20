@@ -38,6 +38,8 @@ const (
 	// CodeParentDeletedPermanently refuses a restore whose parent, or a record above it, was deleted
 	// permanently; Parent names that record (011, D-182).
 	CodeParentDeletedPermanently = "parent_deleted_permanently"
+	// The refusal by permission or scope (feature 014, D-227, D-299): 403 forbidden.
+	CodeForbidden = "forbidden"
 )
 
 // Error is an API failure. Status is the HTTP status and is not part of the JSON.
@@ -191,6 +193,12 @@ func CannotRestore(message string) *Error {
 // NotAllowed refuses an action the person may not take, with a message for the user (409 not_allowed).
 func NotAllowed(message string) *Error {
 	return newError(http.StatusConflict, CodeNotAllowed, message)
+}
+
+// Forbidden refuses an action the person's access does not allow, or a record outside it, with a message
+// for the user (403 forbidden, D-227, D-299).
+func Forbidden(message string) *Error {
+	return newError(http.StatusForbidden, CodeForbidden, message)
 }
 
 // NotReady refuses to publish or submit while needed fields are missing, listing every one of them grouped

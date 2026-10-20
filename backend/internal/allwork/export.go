@@ -152,6 +152,9 @@ func (e exporter) notes(a actor.Actor) [][2]string {
 		search = "None"
 	}
 	now := e.in.now.UTC()
+	if showsFinance(e.b.result.Columns) {
+		notes = append(notes, financeNote(e.in.data.FinanceAsOf)) // feature 015 (FR-023)
+	}
 	return append(notes,
 		[2]string{"Search", search},
 		[2]string{"Show levels", showLevelsWords[e.b.query.ShowLevels]},
@@ -189,6 +192,7 @@ func (e exporter) chips() []string {
 	add("Team", q.Teams, optionLabel(e.in.choices.Teams))
 	add("Business unit", q.BusinessUnits, optionLabel(e.in.choices.BusinessUnits))
 	add("Activity type", q.ActivityTypes, optionLabel(e.in.choices.ActivityTypes))
+	add("Financials", q.Finance, func(v string) string { return financeWords[v] })
 	switch q.Strategic {
 	case StrategicOnly:
 		chips = append(chips, "Strategic / AOP plans: Only")

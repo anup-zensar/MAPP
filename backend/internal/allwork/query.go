@@ -67,7 +67,8 @@ type Query struct {
 	Teams             []string
 	BusinessUnits     []string
 	ActivityTypes     []string
-	Strategic         string // include, only or exclude
+	Finance           []string // the Financials filter of feature 015 (FR-024): finance.go's values
+	Strategic         string   // include, only or exclude
 	ShowLevels        string
 	Search            string   // trimmed
 	Columns           []string // in display order; nil when the query names none: the default columns
@@ -142,6 +143,7 @@ func parseQuery(values url.Values, problems *errs.Problems) Query {
 	q.Teams = list(values, "team")
 	q.BusinessUnits = list(values, "businessUnit")
 	q.ActivityTypes = list(values, "activityType")
+	q.Finance = listOf(values, "finance", financeValues, problems)
 	q.Strategic = single(values, "strategic", strategicValues, StrategicInclude, msgChooseListed, problems)
 	q.ShowLevels = single(values, "showLevels", showLevelsValues, ShowEverything, msgChooseListed, problems)
 	q.Period = single(values, "period", periodValues, PeriodMonth, msgChooseListed, problems)

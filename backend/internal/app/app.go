@@ -12,6 +12,7 @@ import (
 	"northstar/internal/auth"
 	"northstar/internal/budgets"
 	"northstar/internal/campaigns"
+	"northstar/internal/financials"
 	"northstar/internal/history"
 	"northstar/internal/home"
 	"northstar/internal/lineitems"
@@ -35,6 +36,8 @@ type App struct {
 
 	// allWork is the source All work reads (allwork_source.go), kept for the adapter's tests.
 	allWork allwork.Source
+	// finance is the planning tree financials reads (financials.go), kept for the adapter's tests.
+	finance financials.Planning
 }
 
 // New builds the API on the data in db, with now as the clock of the services that need one (a fixed clock
@@ -181,6 +184,24 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	approvalsService.UseDisplayRates(peopleService) // amounts on the Approvals page (D-213)
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
 
+	// Financial transactions (015): GSAP's POs, invoices, payments and accruals, read-only, from the
+	// simulated GSAP extract and the demo data, with figures over the planning tree (financials.go). Its two
+	// history kinds are top level, so their order is free.
+	finance := financialPlanning{
+		plans: plansRepo, campaigns: campaignsService, activities: activitiesService, lineItems: lineItemsRepo,
+		settings: settingsService, people: peopleService, history: historyService,
+	}
+	financialsService := financials.NewService(db, financials.NewJSONRepository(), generator, historyService, financials.Deps{
+		Planning: finance, Rates: settingsService, Displays: financialDisplays{people: peopleService},
+		Access: financialAccess{},
+	}, now)
+	for _, kind := range financialsService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	financials.NewHandler(financialsService).Routes(router, signedIn)
+
 	// Home (009): a read-only dashboard over the services of 003–008 and 011's activity log (home_sources.go).
 	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
 		approvalsService, historyService))
@@ -194,7 +215,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		activities: activitiesService, activitiesRepo: activitiesRepo, lineItems: lineItemsService,
 		lineItemsRepo: lineItemsRepo, settings: settingsService, budgetItems: lineItemBudgets{repo: settingsRepo},
 		workflows: activityWorkflows{repo: approvalsRepo}, people: peopleService, peopleRepo: peopleRepo,
-		history: historyService,
+		history: historyService, financials: financialsService, financeAccess: financialAccess{},
 	}
 	allWorkService := allwork.NewService(db, allwork.NewJSONRepository(), allWork, generator, now)
 	allwork.NewHandler(allWorkService).Routes(router, signedIn)
@@ -218,7 +239,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// Every other path or method under /api/ answers JSON 404 (http.ServeMux would answer plain text).
 	router.Handle("/api/", web.NotFound)
 
-	return &App{Handler: web.Middleware(router), Routes: routes, allWork: allWork}, nil
+	return &App{Handler: web.Middleware(router), Routes: routes, allWork: allWork, finance: finance}, nil
 }
 
 // healthAnswer is the answer of GET /api/health.

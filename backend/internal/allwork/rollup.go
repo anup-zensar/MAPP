@@ -17,13 +17,14 @@ type figures struct {
 	negative   int           // activities with a negative balance (line items above the planned cost)
 	inq, mql   *int64
 	revenue    *money.Amount
+	finance    *FinanceFacts // the line items' GSAP figures (015); nil when the reader may not see them
 }
 
 // activityFigures are an activity's own values.
 func activityFigures(a *tnode) figures {
 	f := figures{
 		activities: 1, planned: a.n.PlannedCost, lineItems: a.lineItemsUSD, unassigned: a.balance,
-		inq: a.n.INQ, mql: a.n.MQL, revenue: a.n.Revenue,
+		inq: a.n.INQ, mql: a.n.MQL, revenue: a.n.Revenue, finance: a.finance,
 	}
 	if a.balance != nil && a.balance.Sign() < 0 {
 		f.negative = 1
@@ -48,6 +49,7 @@ func (f *figures) addActivity(a figures) {
 	f.inq = addCount(f.inq, a.inq)
 	f.mql = addCount(f.mql, a.mql)
 	f.revenue = addAmount(f.revenue, a.revenue)
+	f.finance = addFacts(f.finance, a.finance)
 }
 
 // addContainer adds a container's figures to its parent's.
@@ -60,6 +62,7 @@ func (f *figures) addContainer(c figures) {
 	f.inq = addCount(f.inq, c.inq)
 	f.mql = addCount(f.mql, c.mql)
 	f.revenue = addAmount(f.revenue, c.revenue)
+	f.finance = addFacts(f.finance, c.finance)
 }
 
 // rollUp works out the roll-ups of every record (FR-013): an activity's own values; a container's sums over
@@ -74,13 +77,18 @@ func rollUp(t *tree) {
 func rollUpNode(n *tnode) {
 	switch n.n.Level {
 	case LevelActivity:
+		for _, li := range n.children {
+			rollUpNode(li)
+		}
 		n.fig = activityFigures(n)
 		n.all = n.fig
 		return
-	case LevelLineItem:
+	case LevelLineItem: // its own planned cost and GSAP figures, for the financial columns (015)
+		n.fig = figures{planned: n.n.PlannedCost, finance: n.finance}
+		n.all = n.fig
 		return
 	}
-	n.fig, n.all = figures{}, figures{}
+	n.fig, n.all = figures{finance: emptyFinance(n.finance)}, figures{finance: emptyFinance(n.finance)}
 	for _, c := range n.children {
 		rollUpNode(c)
 		if c.n.Level == LevelActivity {

@@ -323,17 +323,6 @@ var notYetServed = []string{
 	"POST /api/people/{personId}/roles/impact",
 	"GET /api/access-rules",
 	"PATCH /api/access-rules",
-	// 015 Financial transactions
-	"GET /api/financials/records/{recordId}",
-	"GET /api/financials/transactions",
-	"GET /api/financials/transactions/{transactionId}",
-	"POST /api/financials/transactions/{transactionId}/link",
-	"POST /api/financials/transactions/{transactionId}/unlink",
-	"GET /api/financials/overview",
-	"GET /api/financials/imports",
-	"POST /api/financials/imports",
-	"POST /api/financials/imports/check",
-	"GET /api/financials/imports/template",
 	// 016 Planning and currency extensions
 	"GET /api/currencies/{code}/rates",
 	"POST /api/currencies/{code}/rates",

@@ -40,6 +40,9 @@ type Source interface {
 // YearData is the input of every calculation: the nodes of one year's plans, in any order.
 type YearData struct {
 	Nodes []Node
+	// FinanceAsOf is when the newest GSAP data was loaded (feature 015, FR-008), for the export's note; nil
+	// when none ever was.
+	FinanceAsOf *time.Time
 }
 
 // Node is one plan, campaign, initiative, activity or line item of the year (data model §2), with the
@@ -89,6 +92,10 @@ type Node struct {
 	ActivityTypeID  string   // activities
 
 	Fields map[string]Value // the level-specific columns (data model §6.2) by column key; missing = empty
+
+	// Finance is a line item's figures from its GSAP transactions (feature 015, finance.go); nil for a line
+	// item without transactions. Activities and containers add up their line items'.
+	Finance *FinanceFacts
 }
 
 // Value is the value of a level-specific column of one record, as its owning feature stores it, with the
@@ -127,6 +134,9 @@ type Choices struct {
 	BusinessUnits []Option // the options of the plan-level Business unit attribute, in Settings' order
 	ActivityTypes []Option // every activity type, by name
 	People        []Option // every person: the owners a query or a saved view may name
+	// SeesFinance says whether the person may see financial data (feature 015, FR-028): without it, the
+	// Financials column group and filter are not offered and the figures are not worked out.
+	SeesFinance bool
 }
 
 // MonthAmount is a line item's amount in one month, in USD.
