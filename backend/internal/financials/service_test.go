@@ -195,6 +195,41 @@ func TestRecord_CopiesHaveNoTransactions_FR030(t *testing.T) {
 	}
 }
 
+// A record without transactions shows 0.00 for every amount, its whole planned cost as not yet committed and
+// no latest transactions, so the card can say that none have come yet (FR-014).
+func TestRecord_NoTransactionsShowsZero_FR014(t *testing.T) {
+	f := newFixture(t)
+	for id, planned := range map[string]string{"A-1001": "120000.00", "C-1002": "185000.00"} {
+		v := f.record(t, priya, id)
+		zero := usd(t, "0.00")
+		got := v.Figures
+		if got.Committed != zero || got.Invoiced != zero || got.Paid != zero || got.Accrued != zero ||
+			got.TransactionCount != 0 || len(v.Latest) != 0 || got.NotYetCommitted == nil ||
+			*got.NotYetCommitted != usd(t, planned) || got.CommittedPercent == nil || *got.CommittedPercent != 0 {
+			t.Errorf("%s = %+v, latest %v", id, got, rowIDs(v.Latest))
+		}
+	}
+}
+
+// Every level answers how many transactions are linked under it, the count the delete dialogs show; a line
+// item in the recycle bin no longer counts (FR-029).
+func TestRecord_TransactionCountForDeleteDialogs_FR029(t *testing.T) {
+	f := newFixture(t)
+	want := map[string]int{
+		"P-1001": 10, "C-1001": 10, "C-1002": 0, "I-1001": 7, "I-1002": 3,
+		"A-1001": 0, "A-1002": 7, "A-1003": 3, "L-1003": 3, "L-1004": 4, "L-1006": 3,
+	}
+	for id, n := range want {
+		if got := f.record(t, priya, id).Figures.TransactionCount; got != n {
+			t.Errorf("%s has %d transactions, want %d", id, got, n)
+		}
+	}
+	f.planning.moveToBin("L-1004")
+	if got := f.record(t, priya, "A-1002").Figures.TransactionCount; got != 3 {
+		t.Errorf("Social always-on without Speaker fees has %d transactions, want 3", got)
+	}
+}
+
 // User story 3 — the Financials page (FR-021).
 
 // list returns the page for q, stopping the test on an error.
@@ -564,7 +599,7 @@ func (f fakeFeed) Read(context.Context, Delivery) ([]Incoming, []RowProblem, []s
 
 // Another feed replaces the simulated extract with no other change: the same checks, matching and figures
 // (FR-003, SC-006).
-func TestImport_AnotherFeed_SC006(t *testing.T) {
+func TestImport_AnotherFeed_FR003(t *testing.T) {
 	f := newFixture(t)
 	f.service.UseFeed(fakeFeed{rows: []Incoming{{Row: 2, Fields: Fields{
 		Type: TypePurchaseOrder, DocumentNumber: "4500007001", PONumber: "4500007001", PostingDate: date.MustParse("2026-10-01"),

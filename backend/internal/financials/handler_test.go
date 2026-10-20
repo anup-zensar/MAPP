@@ -4,12 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
 	"northstar/internal/financials"
 	"northstar/internal/platform/apitest"
 	"northstar/internal/platform/money"
+	"northstar/internal/platform/web"
 )
 
 // The contract tests of feature 015: every operation on the seed's demo data (data model §6), checked
@@ -437,5 +439,28 @@ func TestOperations_NeedSignIn_FR028(t *testing.T) {
 	payload, _ := json.Marshal(map[string]any{"version": 1})
 	if response := server.Do(t, http.MethodPost, "/api/financials/transactions/FT-1004/unlink", nil, apitest.RawBody(payload)); response.Status != http.StatusUnauthorized {
 		t.Errorf("unlink = %d, want 401", response.Status)
+	}
+}
+
+// Transactions are read-only: of the ten operations, only an import, its check and a manual link or unlink
+// change anything; none creates, edits or deletes a transaction (FR-002).
+func TestOperations_TransactionsAreReadOnly_FR002(t *testing.T) {
+	router := web.NewRouter()
+	financials.NewHandler(nil).Routes(router, func(h http.HandlerFunc) http.HandlerFunc { return h })
+
+	changing := []string{}
+	for _, pattern := range router.Patterns() {
+		if !strings.HasPrefix(pattern, http.MethodGet+" ") {
+			changing = append(changing, pattern)
+		}
+	}
+	want := []string{
+		"POST /api/financials/transactions/{transactionId}/link",
+		"POST /api/financials/transactions/{transactionId}/unlink",
+		"POST /api/financials/imports",
+		"POST /api/financials/imports/check",
+	}
+	if len(router.Patterns()) != 10 || !slices.Equal(changing, want) {
+		t.Errorf("operations = %q\nchanging = %q, want %q", router.Patterns(), changing, want)
 	}
 }
