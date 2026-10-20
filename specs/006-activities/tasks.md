@@ -104,8 +104,8 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### Provided to other features (backend)
 
-- [ ] T033 Write `TestCopyAll_ShiftsYears` (names kept, dates +1 year, 29 Feb → 28 Feb, ongoing kept, status Created, no log entries, `LineItems.CopyAll` per activity), `TestTypesNotAllowed`, `TestSubmitCheck_SameAsReadiness` and `TestSetStatus_LogsStatusChanged` in `backend/internal/activities/provided_test.go`
-- [ ] T034 Implement `CopyAll`, `TypesNotAllowed`, `SubmitCheck` and `SetStatus` in `backend/internal/activities/provided.go`; in `backend/internal/app/app.go` hand `CopyAll` and `TypesNotAllowed` to the activity seams of 004 (plan copy, model change) and 005 (campaign and initiative copy)
+- [x] T033 Write `TestCopyAll_ShiftsYears` (names kept, dates +1 year, 29 Feb → 28 Feb, ongoing kept, status Created, no log entries, `LineItems.CopyAll` per activity), `TestTypesNotAllowed`, `TestSubmitCheck_SameAsReadiness` and `TestSetStatus_LogsStatusChanged` in `backend/internal/activities/provided_test.go`
+- [x] T034 Implement `CopyAll`, `TypesNotAllowed`, `SubmitCheck` and `SetStatus` in `backend/internal/activities/provided.go`; in `backend/internal/app/app.go` hand `CopyAll` and `TypesNotAllowed` to the activity seams of 004 (plan copy, model change) and 005 (campaign and initiative copy)
 
 **Checkpoint**: `gofmt -l .`, `go vet ./...` and `go test ./...` pass in `backend/`.
 
@@ -115,12 +115,12 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### Frontend foundation (blocks the frontend stories)
 
-- [ ] T035 [P] Extend `frontend/src/components/CompletenessChip/CompletenessChip.tsx` with the optional props `below?: string` and `onOpen?: () => void` (plan, *Shared component change*); tests in `CompletenessChip.test.tsx` ("2 fields needed · 1 line item needs attention", `onOpen` called instead of the popover, unchanged behaviour without the props); show both variants in `frontend/src/features/dev/ComponentGalleryPage.tsx`
+- [x] T035 [P] Extend `frontend/src/components/CompletenessChip/CompletenessChip.tsx` with the optional props `below?: string` and `onOpen?: () => void` (plan, *Shared component change*); tests in `CompletenessChip.test.tsx` ("2 fields needed · 1 line item needs attention", `onOpen` called instead of the popover, unchanged behaviour without the props); show both variants in `frontend/src/features/dev/ComponentGalleryPage.tsx`
 - [X] T036 [P] Write `frontend/src/features/activities/activitiesApi.ts`: query keys and hooks of the plan's *Data* section (`useActivity`, `useNewActivityForm`, `useEditActivityForm`, `usePlanActivities`, `useActivityDestinations`, `useCreateActivity`, `useUpdateActivity`, `useDeleteActivity`, `useMoveActivity`, `useCopyActivity`), types from `@/api/schema`, invalidation on settle
 - [X] T037 [P] Write `frontend/src/features/activities/activityStatus.ts` (+ `activityStatus.test.ts`: word and tone for the six display statuses — Created neutral, Submitted review, Declined problem, Approved positive, In progress active, Complete done; banner text) and `ActivityStatusChip.tsx` (+ `ActivityStatusChip.test.tsx`) — FR-021
 - [X] T038 [P] Write `frontend/src/features/activities/activityText.ts` (+ `activityText.test.ts`): `datesText` ("01 Mar 2026 – 31 May 2026", "Ongoing from 01 Mar 2026", "—"), `thingsText` ("1 thing", "5 things"), `lineItemsText`, `activityHref`, `activityEditHref(planId, id, field?)`
 - [X] T039 Write `frontend/src/features/activities/activityForm.ts` (+ `activityForm.test.ts`): `FormState`, `fromDefaults(form)`, `fromActivity(activity)`, `isDirty`, `validate(state, form, mode, original?)` repeating every server rule of the plan's *Client checks* with the messages-table texts, `reapprovalChanges(original, state)` (planned cost, start, end, ongoing — old → new texts), `toCreateBody`, `toUpdateBody(state, version, restartApproval)`; tests per rule (FR-006, FR-009, FR-010, FR-011, FR-018, FR-027)
-- [ ] T040 Add the three activity routes of the plan to `frontend/src/app/router.tsx` (inside `RequireSignIn`, `handle.title` New activity / Activity / Edit activity) and a test in `frontend/src/app/router.test.tsx`
+- [x] T040 Add the three activity routes of the plan to `frontend/src/app/router.tsx` (inside `RequireSignIn`, `handle.title` New activity / Activity / Edit activity) and a test in `frontend/src/app/router.test.tsx`
 
 ### User Story 1 — Create an activity (frontend)
 
@@ -167,7 +167,7 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 - [ ] T062 [US3] Add "US3: attributes, splits and goals" (on a copy of A-1001 made through the API, so the seed stays untouched)
 - [ ] T063 [US4] Add "US4: edit an approved activity" (on seeded A-1006, Approved and used by no other test: description keeps Approved; planned cost shows "This activity will need approval again" and returns it to Created; both changes in `GET /api/activity-log?recordId=A-1006`)
 - [ ] T064 [US5] Add "US5: copy, move, delete and Undo" (copy A-1002, move the copy, refused move message, delete dialog texts, Undo restores the same ID)
-- [ ] T065 Add the accessibility checks to `frontend/e2e/activities.spec.ts`: axe (WCAG 2.1 A/AA) on the activity page, the form with its error summary, and the Move, Copy, Delete and re-approval dialogs; a keyboard-only journey (Add activity → type → Save → More › Delete → Undo)
+- [ ] T065 Add the accessibility checks to `frontend/e2e/activities.spec.ts`: axe (WCAG 2.2 A/AA) on the activity page, the form with its error summary, and the Move, Copy, Delete and re-approval dialogs; a keyboard-only journey (Add activity → type → Save → More › Delete → Undo)
 
 ---
 

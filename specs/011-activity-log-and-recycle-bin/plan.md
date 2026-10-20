@@ -56,7 +56,7 @@ under 2 seconds (the server keeps tables in memory; one query is one pass over t
 
 **Constraints**: 127.0.0.1 only; entries are never changed or removed (001 FR-023); nothing leaves the bin
 automatically (FR-031); every restore, permanent delete and empty is logged with the actor (SC-007);
-WCAG 2.1 AA and keyboard-only use (SC-008); no personal data in server logs
+WCAG 2.2 AA and keyboard-only use (SC-008); no personal data in server logs
 
 **Scale/Scope**: 2 pages + 1 section reused on 5 record pages; 7 API operations (3 new, 4 extended from 001)
 

@@ -54,7 +54,7 @@ with `apitest` on the seeded app); Vitest + Testing Library (`mockApi`, fake tim
 notification is visible within 60 s (poll every 30 s, FR-036)
 
 **Constraints**: servers on `127.0.0.1` only; no personal data in server logs; no third runtime part
-(no push channel); WCAG 2.1 AA (SC-008); deterministic tests (fixed clock 2026-03-12 09:00 UTC)
+(no push channel); WCAG 2.2 AA (SC-008); deterministic tests (fixed clock 2026-03-12 09:00 UTC)
 
 **Scale/Scope**: 6 demo people, tens of activities, hundreds of rounds and notifications. 3 web routes,
 1 page section, 1 bell, 19 API operations.
@@ -748,7 +748,7 @@ that need the real 006/007 code:
 5. **US5 (re-approval, recall)** — Priya recalls a Submitted activity with a reason → Created, history
    "Recalled"; changes the planned cost of a Submitted activity (006's edit, **Save and restart
    approval**) → Created, history "Approval restarted" with "Planned cost changed from … to …".
-6. **Accessibility** — axe (WCAG 2.1 A/AA) on Approvals with the preview open, the decline dialog with its
+6. **Accessibility** — axe (WCAG 2.2 A/AA) on Approvals with the preview open, the decline dialog with its
    error, Approval workflows with the form panel and its errors, the bell popover; keyboard only: open a
    row, approve, close.
 

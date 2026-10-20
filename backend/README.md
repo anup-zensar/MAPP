@@ -14,7 +14,7 @@ Run them in this folder (`backend/`).
 
 | Command | What it does |
 |---|---|
-| `go run ./cmd/seed` | Loads the demo data (people, teams, Settings, plans with their campaigns, initiatives, activities and line items, approvals, two saved All work views) into an empty data folder — stop the API first |
+| `go run ./cmd/seed` | Loads the demo data (people, teams, roles and access rules, Settings with dated exchange rates, plans with their campaigns, initiatives, activities and line items, approval workflows with rules and a delegation, a global budget with its allocations, simulated GSAP transactions, activity-log history and a recycle-bin entry, two saved All work views) into an empty data folder — stop the API first |
 | `go run ./cmd/seed -reset` | Deletes the data files (`*.json`, `*.jsonl`, `*.tmp`) and loads the demo data again |
 | `go run ./cmd/seed -data <folder>` | Uses another data folder |
 | `go run ./cmd/api` | Starts the API on <http://127.0.0.1:8080>; Ctrl+C stops it |
@@ -76,7 +76,23 @@ internal/
                       views; it reads 004–007 through allwork.Source (internal/app/allwork_source.go)
   budgets/            global budgets and their allocations to plans (014): an allocation sets the plan budget
                       through plans.SetBudgetFromAllocation (internal/app/budgets_adapter.go)
+  access/             roles, role assignments with scopes (All markets, My teams, Chosen teams), access rules
+                      and the route table that gives every operation its permission, failing closed (014)
+  financials/         GSAP transactions (POs, invoices, payments, accruals): the simulated GSAP extract
+                      (CSV import with a check step), matching to line items, figures and manual links (015)
+  rollup/             how plans, campaigns and initiatives add up what is below them, and budget phasing (005, 016)
 ```
+
+`platform/authz` holds the fixed permissions, the five built-in roles and `Grants` (what a person may do,
+where); `internal/access` fills them from the stored roles. Settings also holds dated exchange rates, the
+simulated GSAP rate-file import (`ratefeed.go`) and field help (`fieldhelp.go`) of 016; `approvals` holds
+017's rules, delegations, reminders and escalation, and monitoring. GSAP data and rates come from files and
+demo data behind adapters (ADR-0009), so a real feed replaces them without changing the services.
+
+**Demo roles** (`seed/access.go`): Alex Morgan Administrator (all markets); Carlos Mendes Global planner
+(all markets); Daniel Okoro Planner and Approver, Priya Raman and Mei Lin Planner, Sara Novak Viewer (each for
+their own teams). A refused operation answers with the reason ("You don't have access to this …"); the
+access matrix test (`internal/app/access_matrix_test.go`) checks every served operation against each persona.
 
 The Plan module's packages (002–008) started from a shared foundation: each has its stored types and API
 types (`model.go`), the hook types other features implement (`hooks.go`, `usage.go`, `levels.go`), its

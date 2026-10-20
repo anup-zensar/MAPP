@@ -550,7 +550,7 @@ starts the refusal message ("<Noun> isn't part of your role …").
   page, and an allocation change shows in the plan's budget on the next page load.
 - **SC-006**: 100 % of access changes and allocation changes appear in the activity log with who, when and old →
   new.
-- **SC-007**: Every new screen passes an automated WCAG 2.1 AA check and works with the keyboard alone.
+- **SC-007**: Every new screen passes an automated WCAG 2.2 AA check and works with the keyboard alone.
 
 ## Assumptions
 

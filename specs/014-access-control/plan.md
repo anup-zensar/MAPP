@@ -44,7 +44,7 @@ merged into `backend/api/openapi.yaml`) · [tasks.md](tasks.md). Conventions are
 under 10 ms at Hive9's scale of ≈ 250 people, 20 roles); list filtering is in memory over plans already read
 
 **Constraints**: 127.0.0.1 only; no personal data in technical logs (the forbidden log line carries the person's
-ID only); WCAG 2.1 AA; 390 px without horizontal scroll; the UI follows the design system and the UI foundation
+ID only); WCAG 2.2 AA; 390 px without horizontal scroll; the UI follows the design system and the UI foundation
 revamp (white, modern, obvious CRUD)
 
 **Scale/Scope**: 22 new API operations; every one of the ≈ 190 existing operations gets a declared rule and a 403

@@ -59,7 +59,7 @@ on the seed; Vitest + Testing Library with `mockApi`; Playwright + axe (`fronten
 - No personal data in technical logs. Vendor names and descriptions are never logged.
 - Exact money (never floats).
 - The request body is at most 1 MB (`web.ReadJSON`), so files are at most 700 KB as base64, as in D-051.
-- WCAG 2.1 AA.
+- WCAG 2.2 AA.
 
 **Scale/Scope**:
 - 10 new API operations; 2 changed (`GET /api/all-work`, `GET /api/all-work/export`) and the All work

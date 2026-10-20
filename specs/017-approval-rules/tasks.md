@@ -5,6 +5,14 @@ description: "Task list for feature 017 — Approval rules (amends 008, 014 and 
 
 # Tasks: Approval Rules
 
+> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the rule engine,
+> delegation, reminders and escalation, Monitoring and their screens are built and ticked. **Open:** T001 and
+> T008 (approvals still read people's roles from the stand-in `backend/internal/app/approvals_access.go`, which
+> hard-codes the demo roles; role changes made in Settings › Roles and access do not yet change who can approve);
+> T036 (line manager on the People screen; line managers come from the demo data); T046 (`npm run check`: three
+> tests in `src/app/RequireSignIn.test.tsx` and `src/app/SessionProvider.test.tsx` fail at the merge);
+> T047–T049 (end-to-end journeys); T050.
+
 **Input**: [plan.md](plan.md), [spec.md](spec.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml). **Prerequisites**: feature 008 built; **feature 014
 (Access control) merged** — 017 uses its `platform/authz`, `internal/access` hooks, Table C and approve/
@@ -126,36 +134,36 @@ plan wins and the difference is reported.
 
 ### Foundation
 
-- [ ] T031 [P] Extend `frontend/src/features/approvals/approvalTypes.ts`, `messages.ts` (every text of plan *User-visible messages*), `approvalsApi.ts` (monitoring query, run mutation), new `delegationsApi.ts`, `features/approval-workflows/workflowsApi.ts` (rule options query) and the `testData.ts` fixtures of both folders with the new fields
+- [x] T031 [P] Extend `frontend/src/features/approvals/approvalTypes.ts`, `messages.ts` (every text of plan *User-visible messages*), `approvalsApi.ts` (monitoring query, run mutation), new `delegationsApi.ts`, `features/approval-workflows/workflowsApi.ts` (rule options query) and the `testData.ts` fixtures of both folders with the new fields
 
 ### US1
 
-- [ ] T032 [P] [US1] `features/approval-workflows/RuleConditionFields.tsx` (+ css, test): the four parts, USD `MoneyField`s, multiple `ChoiceField`s with "(inactive)", errors per field
-- [ ] T033 [US1] `LevelsEditor.tsx` (+ test) and `levelDrafts.ts`: Who approves, approvers or role (roles that approve), mode (not for line manager), Only needed when / Approve automatically when toggles with `RuleConditionFields`, Backup approver; problem keys `levels.<n>.*` mapped to fields (depends on T032)
-- [ ] T034 [US1] `WorkflowFormPanel.tsx` (+ test): Reminders and escalation section (new workflows 3 and 5), new hint text, every API problem in `FormErrorSummary`; `WorkflowDetailsPanel.tsx`, `ApprovalWorkflowsPage.tsx`, `workflowTexts.ts`: level summaries and timings (tests updated)
-- [ ] T035 [US1] `features/approvals/SubmitDialog.tsx` (+ test): outcomes per level, left-out notes (incl. "can't approve — no approving role"), backup line, no-approver advice, "This activity will be approved automatically.", toast "Activity '<name>' approved automatically"
+- [x] T032 [P] [US1] `features/approval-workflows/RuleConditionFields.tsx` (+ css, test): the four parts, USD `MoneyField`s, multiple `ChoiceField`s with "(inactive)", errors per field
+- [x] T033 [US1] `LevelsEditor.tsx` (+ test) and `levelDrafts.ts`: Who approves, approvers or role (roles that approve), mode (not for line manager), Only needed when / Approve automatically when toggles with `RuleConditionFields`, Backup approver; problem keys `levels.<n>.*` mapped to fields (depends on T032)
+- [x] T034 [US1] `WorkflowFormPanel.tsx` (+ test): Reminders and escalation section (new workflows 3 and 5), new hint text, every API problem in `FormErrorSummary`; `WorkflowDetailsPanel.tsx`, `ApprovalWorkflowsPage.tsx`, `workflowTexts.ts`: level summaries and timings (tests updated)
+- [x] T035 [US1] `features/approvals/SubmitDialog.tsx` (+ test): outcomes per level, left-out notes (incl. "can't approve — no approving role"), backup line, no-approver advice, "This activity will be approved automatically.", toast "Activity '<name>' approved automatically"
 - [ ] T036 [P] [US1] `features/people/…` people form and details (+ tests): Line manager picker with hint, details lines, Deactivate usage line (FR-016)
 
 ### US2 and US7
 
-- [ ] T037 [US2] `ApprovalChain.tsx` (+ css, test): Not needed / Approved automatically states, "<a> of <b> approved" with each approver's state, escalation and reminder lines, source text, left-out people, "No approver" with advice
-- [ ] T038 [P] [US7] `ApprovalHistory.tsx` (+ test): new actions, capacity sentences, "Rules applied to: …" per round, waited days
+- [x] T037 [US2] `ApprovalChain.tsx` (+ css, test): Not needed / Approved automatically states, "<a> of <b> approved" with each approver's state, escalation and reminder lines, source text, left-out people, "No approver" with advice
+- [x] T038 [P] [US7] `ApprovalHistory.tsx` (+ test): new actions, capacity sentences, "Rules applied to: …" per round, waited days
 
 ### US3
 
-- [ ] T039 [US3] `ApprovalSection.tsx`, `ApprovalPreviewPanel.tsx`, `DecisionButton.tsx`, `DecisionDialog.tsx` (+ tests): buttons per `actions` (shown / reason as text / hidden on empty reason, 014); capacity sentences; "all" level lines; 008's "You own this activity." note removed
+- [x] T039 [US3] `ApprovalSection.tsx`, `ApprovalPreviewPanel.tsx`, `DecisionButton.tsx`, `DecisionDialog.tsx` (+ tests): buttons per `actions` (shown / reason as text / hidden on empty reason, 014); capacity sentences; "all" level lines; 008's "You own this activity." note removed
 
 ### US4
 
-- [ ] T040 [US4] `DelegationPanel.tsx`, `DelegationForm.tsx` (+ css, tests): groups, Everyone switch and Delegating person only when `canManageOthers`, add/edit/cancel with confirm, all API problems shown, conflict message
-- [ ] T041 [US4] `DelegationBanner.tsx` (+ test); `ApprovalsPage.tsx` header action **Delegate my approvals** with `?panel=delegations`; banners above the cards (depends on T040)
+- [x] T040 [US4] `DelegationPanel.tsx`, `DelegationForm.tsx` (+ css, tests): groups, Everyone switch and Delegating person only when `canManageOthers`, add/edit/cancel with confirm, all API problems shown, conflict message
+- [x] T041 [US4] `DelegationBanner.tsx` (+ test); `ApprovalsPage.tsx` header action **Delegate my approvals** with `?panel=delegations`; banners above the cards (depends on T040)
 
 ### US5 and US6
 
-- [ ] T042 [US6] `MonitoringView.tsx`, `AgeingBars.tsx` (+ css, tests): four cards with tips, ageing list with text counts, Waiting by level table, Overdue list reusing `ApprovalsTable`, empty texts; Monitoring as the fourth pill tab in `ApprovalsPage.tsx` (toolbar hidden on it)
-- [ ] T043 [US5] `RunEscalationsButton.tsx` (+ test): shown when `canRunEscalations`; confirm dialog; result toast and not-escalated toast; invalidation
-- [ ] T044 [US6] `ApprovalsTable.tsx` (+ test): chips Overdue, Escalated to, as delegate of, No approver; "<a> of <b> approved" in the Level cell
-- [ ] T045 [P] `features/notifications/NotificationList.tsx` (+ test): icons and texts of `autoApproved`, `reminder`, `escalated`
+- [x] T042 [US6] `MonitoringView.tsx`, `AgeingBars.tsx` (+ css, tests): four cards with tips, ageing list with text counts, Waiting by level table, Overdue list reusing `ApprovalsTable`, empty texts; Monitoring as the fourth pill tab in `ApprovalsPage.tsx` (toolbar hidden on it)
+- [x] T043 [US5] `RunEscalationsButton.tsx` (+ test): shown when `canRunEscalations`; confirm dialog; result toast and not-escalated toast; invalidation
+- [x] T044 [US6] `ApprovalsTable.tsx` (+ test): chips Overdue, Escalated to, as delegate of, No approver; "<a> of <b> approved" in the Level cell
+- [x] T045 [P] `features/notifications/NotificationList.tsx` (+ test): icons and texts of `autoApproved`, `reminder`, `escalated`
 - [ ] T046 `npm run check` green in `frontend/` (api:check, typecheck, lint, format, tests)
 
 ---

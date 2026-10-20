@@ -59,7 +59,7 @@ operation; Vitest + Testing Library for every component and page; Playwright + a
 attribute of 5,000 options; option search answers in under 100 ms; the activity form definition with
 5,000 options is about 0.5 MB and is fetched when a form opens (SC-008)
 
-**Constraints**: servers on `127.0.0.1`; no personal data in logs; WCAG 2.1 AA including keyboard
+**Constraints**: servers on `127.0.0.1`; no personal data in logs; WCAG 2.2 AA including keyboard
 reordering (SC-009); request bodies ≤ 1 MB (001), so import files are limited to 700 KB (base64 ≈ 950 KB)
 
 **Scale/Scope**: 5 Settings sections + the Settings page; 9 web routes; 47 API operations; 7 record kinds;

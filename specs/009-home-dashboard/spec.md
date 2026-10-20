@@ -174,8 +174,8 @@ empty screen.
 
 **Summary cards**
 
-- **FR-005**: Home MUST show four summary cards (design system §2) in the ZenReach style — a tinted icon
-  tile, a label with an ⓘ tip, a large value coloured only when the colour carries meaning:
+- **FR-005**: Home MUST show four summary cards (design system v2) in Shell's design language (no tinted icon
+  tile), a label with an ⓘ tip, a large value coloured only when the colour carries meaning:
   (1) **My teams' plans** ("All plans" under **Everything**): number of plans, with "n published · n
   draft"; (2) **Activities I own**: number, with "n declined · n submitted"; (3) **Waiting for my
   approval**: number (amber when above zero), with "oldest waiting n days"; (4) **Planned cost vs plan
@@ -290,7 +290,7 @@ approval rounds and the activity log from features 001 and 004–008.
 - **SC-005**: Changing the display currency updates 100 % of amounts on Home within 1 second, each
   labelled with its currency.
 - **SC-006**: A brand-new user with no team sees the getting-started steps and no blank or broken card.
-- **SC-007**: Home passes an automated WCAG 2.1 AA check, can be used with the keyboard alone, and every
+- **SC-007**: Home passes an automated WCAG 2.2 AA check, can be used with the keyboard alone, and every
   bar and coloured pill also shows its value or name as text.
 
 ## Assumptions

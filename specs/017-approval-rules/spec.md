@@ -484,7 +484,7 @@ BRD trace: every FR names its BRD capability. "W10" = BUS.WFL.010, "W30" = BUS.W
 - **SC-005**: Running reminders and escalations twice in a row sends nothing the second time.
 - **SC-006**: Monitoring's ageing bars add up to the **All open** count and its overdue list equals the
   rows flagged overdue.
-- **SC-007**: Every new or changed screen passes the automated WCAG 2.1 AA check and works with the
+- **SC-007**: Every new or changed screen passes the automated WCAG 2.2 AA check and works with the
   keyboard alone.
 
 ## Assumptions

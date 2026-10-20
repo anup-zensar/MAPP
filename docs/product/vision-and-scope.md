@@ -7,7 +7,7 @@ campaigns, initiatives and activities, plan every cost as line items, get activi
 see the status of everything and what is missing.
 
 It replaces Hive9's Plan module with the same business process and data, in a modern, friendly design
-(ZenReach style) that a first-time user understands without training.
+(Shell's design language, design system v2) that a first-time user understands without training.
 
 ## Why
 
@@ -36,7 +36,7 @@ can do everything.
 
 | Area | What users can do |
 |---|---|
-| Sign-in and shell | Demo sign-in page; ZenReach-style layout, navigation, user menu, light/dark mode |
+| Sign-in and shell | Demo sign-in page; layout in Shell's design language (design system v2), navigation, user menu, light/dark mode |
 | Home | A dashboard of their plans, activities, approvals and what needs attention |
 | Settings | Manage models, activity types, Shell attributes and options, currencies and rates, finance budget items, approval workflows |
 | People and teams | Manage demo people and teams; plans use teams and owners |

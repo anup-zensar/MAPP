@@ -1,5 +1,11 @@
 # Tasks: Access Control and Global Budgets
 
+> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the backend, Settings ›
+> Roles and access (routed in `25ea214`, only with `access.manage`), Your access, Global budgets and allocations,
+> the filtered sidebar and Home's no-role state are built and ticked. **Open:** T043 (record pages do not yet show
+> `NoAccess` on a 403), T044–T051 (pages still show actions the reader's role does not allow; the API refuses
+> them), T061 (end-to-end journeys), T063 (product documents), T064 (full check run).
+
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml)
 
@@ -178,7 +184,7 @@ built with 012.
   tests (FR-011, FR-017, FR-024).
 - [x] T041 [P] `frontend/src/components/ViewOnlyNote/`, `frontend/src/components/NoAccess/` (+ `index.ts` exports,
   gallery entries, tests; texts 33–36 and FR-008) (FR-008, FR-011).
-- [ ] T042 `frontend/src/app/RequirePermission.tsx`; `frontend/src/app/navigation.ts` (`NavItem.permission`,
+- [x] T042 `frontend/src/app/RequirePermission.tsx`; `frontend/src/app/navigation.ts` (`NavItem.permission`,
   `GLOBAL_BUDGETS` after Plans), `Sidebar.tsx`, `NavDrawer.tsx` filtering; `frontend/src/features/settings/sections.ts`
   (`SettingsSection.permission`, `ACCESS_SETTINGS_SECTIONS`); router entries for the 6 new routes with stub pages;
   tests (FR-012, FR-036). *Build state (lane 014 core):* `RequirePermission`, `NavItem.permission`,
@@ -207,24 +213,24 @@ built with 012.
 - [ ] T051 [P] [US2] `frontend/src/features/recycle-bin/` and `features/activity-log/`: Restore and Delete
   permanently from `RecycleBinListItem.access`, Empty only with `recycleBin.purge`, record-type filter gains Role,
   Access rules, Global budget, Budget allocation; tests (FR-007, FR-011).
-- [ ] T052 [US3] `frontend/src/features/access/`: `accessApi.ts`, `AccessPage` (tabs), People tab, `PersonRolesPanel`
+- [x] T052 [US3] `frontend/src/features/access/`: `accessApi.ts`, `AccessPage` (tabs), People tab, `PersonRolesPanel`
   (scope choice, live summary, impact warnings, save), `settingsSections.ts`; tests US3 scenarios 1–2, 4–5 (FR-017,
   FR-021, FR-022).
-- [ ] T053 [P] [US3] `YourAccessCard` in `frontend/src/features/access/`, shown by
+- [x] T053 [P] [US3] `YourAccessCard` in `frontend/src/features/access/`, shown by
   `frontend/src/features/people/ProfilePage.tsx`; person panel "Roles" line and **Change roles** link for
   `access.manage`; tests (FR-024).
-- [ ] T054 [US4] Roles tab, `RolePage`, `RoleForm` (grouped permissions, locks, New role empty or copy, delete with
+- [x] T054 [US4] Roles tab, `RolePage`, `RoleForm` (grouped permissions, locks, New role empty or copy, delete with
   server reason); tests US4 scenarios 1–5 (FR-018).
-- [ ] T055 [P] [US4] Rules tab (toggle, role for new people, `FormPanel` with version); tests (FR-019).
-- [ ] T056 [US5] `frontend/src/features/approvals/`: chain flag 9 for `canApprove: false`, submit advice 7, reasons from
+- [x] T055 [P] [US4] Rules tab (toggle, role for new people, `FormPanel` with version); tests (FR-019).
+- [x] T056 [US5] `frontend/src/features/approvals/`: chain flag 9 for `canApprove: false`, submit advice 7, reasons from
   `actions.*`; `features/approval-workflows/` shows the `approverIds` field error; tests (FR-025–FR-028).
-- [ ] T057 [US6] `frontend/src/features/global-budgets/`: `globalBudgetsApi.ts`, `GlobalBudgetsPage` (year filter,
+- [x] T057 [US6] `frontend/src/features/global-budgets/`: `globalBudgetsApi.ts`, `GlobalBudgetsPage` (year filter,
   cards, New global budget, empty state); tests (FR-036).
-- [ ] T058 [US6] `GlobalBudgetPage`, `GlobalBudgetForm`, `AllocationDialog` (figures, red over-allocation, rows, Other
+- [x] T058 [US6] `GlobalBudgetPage`, `GlobalBudgetForm`, `AllocationDialog` (figures, red over-allocation, rows, Other
   markets, plans without allocation, change, remove); tests US6 scenarios 1, 2, 5, 6 (FR-029–FR-034).
-- [ ] T059 [P] [US6] `frontend/src/features/plans/`: `PlanAllocationNote` on the budget card, `PlanForm` budget
+- [x] T059 [P] [US6] `frontend/src/features/plans/`: `PlanAllocationNote` on the budget card, `PlanForm` budget
   read-only with `LockedNote` when allocated; tests US6 scenarios 3–4 (FR-031, FR-033).
-- [ ] T060 [US7] `RecentAccessChanges` card on `AccessPage`; tests US7 scenario 3 (FR-038).
+- [x] T060 [US7] `RecentAccessChanges` card on `AccessPage`; tests US7 scenario 3 (FR-038).
 
 ## Phase 6: End-to-end (needs Phases 3 and 5)
 

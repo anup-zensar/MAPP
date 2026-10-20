@@ -255,7 +255,7 @@ in from another browser and see the same preferences.
 - **SC-006**: After a display-currency or date-format change, 100 % of amounts and dates on the next page use it,
   and every amount is labelled with its currency.
 - **SC-007**: 100 % of form problems are shown in a single save attempt.
-- **SC-008**: Every screen of this feature passes an automated WCAG 2.1 AA check and works with the keyboard alone.
+- **SC-008**: Every screen of this feature passes an automated WCAG 2.2 AA check and works with the keyboard alone.
 
 ## Assumptions
 

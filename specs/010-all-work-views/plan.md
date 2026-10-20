@@ -54,7 +54,7 @@ from the tables of features 002–008 inside one `store.Read`.
 2 seconds (50 rows per page rendered).
 
 **Constraints**: `127.0.0.1` only; no personal data in server logs (the request log writes the path, never
-the query string, so search text and IDs of the query are not logged); WCAG 2.1 AA (SC-008); usable at
+the query string, so search text and IDs of the query are not logged); WCAG 2.2 AA (SC-008); usable at
 1280 × 720 (the grid scrolls sideways inside its card).
 
 **Scale/Scope**: 1 page route; 7 API paths (10 operations); 2 stored record types; ~25 web components and
@@ -533,7 +533,7 @@ then the toast "Exported '<file name>'".
 4. **US6**: save "E2E view <unique>" as default, sign in again → applied; sign in as Daniel → not listed;
    delete it with Undo (FR-029 – FR-031).
 5. **US7**: Export → Spreadsheet → a download named "NorthStar All work – Grid – …xlsx" (FR-034).
-6. axe (WCAG 2.1 AA) on the Grid, Calendar, Budget & cost, the column chooser and the Views menu; the Grid
+6. axe (WCAG 2.2 AA) on the Grid, Calendar, Budget & cost, the column chooser and the Views menu; the Grid
    used with the keyboard alone (SC-008).
 
 ## Dependencies

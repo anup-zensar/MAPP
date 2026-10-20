@@ -5,6 +5,14 @@ description: "Task list for feature 015 Financial Transactions"
 
 # Tasks: Financial Transactions
 
+> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the backend is complete.
+> The web tasks were built by the UI lanes, partly under other names: `features/plans/RecordFinancials.tsx`
+> (plan, campaign and initiative), `features/line-items/GsapFigures.tsx` and `FinancialsSection.tsx` (activity
+> and line item), `features/home/FinancialsCard.tsx` (Home) and `features/financials/` (page, details panel,
+> import, import history, link). **Open:** T021, T025, T030, T035 (end-to-end journeys); T044 (the Home card has
+> no no-access state yet); T045 (the linked-transactions sentence is in the line-item and activity delete
+> dialogs only, not yet in the campaign, initiative and plan dialogs); T048 (product documents); T049, T050.
+
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [data-model.md](data-model.md),
 [contracts/openapi.yaml](contracts/openapi.yaml)
 
@@ -86,15 +94,15 @@ files with the editor tools.
 
 ### Web (W)
 
-- [ ] T012 [P] Write `frontend/src/features/financials/financialsApi.ts` (queries, mutations and query keys
+- [x] T012 [P] Write `frontend/src/features/financials/financialsApi.ts` (queries, mutations and query keys
   of plan *Query keys*), `financialsText.ts` + `financialsText.test.ts` (every text of plan *User-visible
   messages*, plurals, type words, matched-by words), `financialsLinks.ts` (`financialsHref`) and
   `testData.ts` (the demo data's API answers for A-1002, A-1003, L-1003, L-1004, L-1006, P-1001, C Helix
   launch, the transactions page and the overview).
-- [ ] T013 [P] Write `frontend/src/features/financials/FinancialFigures.tsx` (+ `.module.css`,
+- [x] T013 [P] Write `frontend/src/features/financials/FinancialFigures.tsx` (+ `.module.css`,
   `.test.tsx`): tiles, ⓘ texts, the meter, red states with words, `null` states and a responsive wrap
   (FR-011, FR-013, FR-014).
-- [ ] T014 Write `frontend/src/features/financials/FinancialsCard.tsx` (+ `.module.css`, `.test.tsx`):
+- [x] T014 Write `frontend/src/features/financials/FinancialsCard.tsx` (+ `.module.css`, `.test.tsx`):
   - the variants `page` and `panel`, with breakdown headings per level;
   - latest transactions (activities);
   - the View all link and the source line;
@@ -117,19 +125,19 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   answer (fake `Access`). Remove the operation from `notYetServed`.
 - [x] T016 [US1] (B) Serve `GET /api/financials/transactions` with the `recordId` filter and paging (the
   rest comes in US3), so the line-item page can list its transactions. Add handler tests.
-- [ ] T017 [US1] (W) Activity page (FR-015, changes 006 FR-020):
+- [x] T017 [US1] (W) Activity page (FR-015, changes 006 FR-020):
   - in `frontend/src/features/activities/ActivityPage.tsx`, render `<FinancialsCard recordId={activity.id}
     variant="page" id="financials" />` right after `ActivityDetails`;
   - remove `FromFinance` from `ActivitySections.tsx` and its uses;
   - update `ActivityPage.test.tsx` and `ActivitySections.test.tsx`: the card is the 2nd section, open,
     and has no "From finance" region.
-- [ ] T018 [US1] (W) In `frontend/src/features/line-items/LineItemsSection.tsx` (+ `.module.css`,
+- [x] T018 [US1] (W) In `frontend/src/features/line-items/LineItemsSection.tsx` (+ `.module.css`,
   `.test.tsx`), add the Committed and Invoiced columns from the activity's record view (shared query
   key), with the red marker and the loading and error cells (FR-016).
-- [ ] T019 [US1] (W) Write `frontend/src/features/financials/LineItemFinancials.tsx` (+ `.test.tsx`):
+- [x] T019 [US1] (W) Write `frontend/src/features/financials/LineItemFinancials.tsx` (+ `.test.tsx`):
   figures, the Transactions table (paged by 50) and the SWBS code line (FR-017). Use it in
   `LineItemPage.tsx` in place of `FromFinanceSection`.
-- [ ] T020 [US1] (W) Line-item form (FR-017, changes 007 FR-007/FR-025):
+- [x] T020 [US1] (W) Line-item form (FR-017, changes 007 FR-007/FR-025):
   - remove `FromFinanceSection` from `LineItemForm.tsx`;
   - delete `frontend/src/features/line-items/FromFinanceSection.tsx` and the three `FROM_FINANCE` texts
     in `lineItemText.ts`;
@@ -147,9 +155,9 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 - [x] T022 [US2] (B) Add to `service_test.go` the roll-up equality for every container of data-model
   §6.1, the display-currency conversion (EUR reader), and the move of an activity to another initiative
   (its figures move) (FR-012, SC-002).
-- [ ] T023 [P] [US2] (W) In `frontend/src/features/plans/PlanPage.tsx` (+ test), add `<FinancialsCard
+- [x] T023 [P] [US2] (W) In `frontend/src/features/plans/PlanPage.tsx` (+ test), add `<FinancialsCard
   recordId={plan.id} variant="page" />` right after `PlanSummaryCards` (FR-018).
-- [ ] T024 [P] [US2] (W) In `frontend/src/features/campaigns/CampaignPanel.tsx` and `InitiativePanel.tsx`
+- [x] T024 [P] [US2] (W) In `frontend/src/features/campaigns/CampaignPanel.tsx` and `InitiativePanel.tsx`
   (+ tests), add `<FinancialsCard variant="panel" />` after Budget and cost (FR-019).
 - [ ] T025 [US2] (W) e2e journey 2 in `frontend/e2e/financials.spec.ts`.
 
@@ -165,15 +173,15 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - Serve `GET /api/financials/transactions/{transactionId}`.
   - Tests: `service_test.go` for each filter and the seed's tab counts and totals (spec US3 scenario 1);
     `handler_test.go` for every parameter refusal (FieldError.field = name).
-- [ ] T027 [P] [US3] (W) In `frontend/src/app/navigation.ts` (+ its test), add the `FINANCIALS` item
+- [x] T027 [P] [US3] (W) In `frontend/src/app/navigation.ts` (+ its test), add the `FINANCIALS` item
   (`ReceiptText`) after All work. In `frontend/src/app/router.tsx`, add `/financials` and
   `/financials/transactions/:transactionId` (FR-020). In `frontend/src/lib/recordLinks.ts` (+ test), add
   `financialTransaction`.
-- [ ] T028 [US3] (W) Write `frontend/src/features/financials/FinancialsPage.tsx` (+ `.module.css`,
+- [x] T028 [US3] (W) Write `frontend/src/features/financials/FinancialsPage.tsx` (+ `.module.css`,
   `.test.tsx`) and `TransactionsTable.tsx` (+ test):
   - header, source line, tabs with counts, search and filters kept in the address;
   - record chip, summary cards, sortable table, pager, phone card layout and empty result (FR-021).
-- [ ] T029 [US3] (W) Write `frontend/src/features/financials/TransactionPanel.tsx` (+ test): fields,
+- [x] T029 [US3] (W) Write `frontend/src/features/financials/TransactionPanel.tsx` (+ test): fields,
   linked path, matched-by, import line and timestamps; actions hidden in this story (FR-022).
 - [ ] T030 [US3] (W) e2e journey 3, with axe on the Financials page and the panel.
 
@@ -196,7 +204,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
 - [x] T033 [US4] (B) Write `template.go` and serve `GET /api/financials/imports`, `POST
   /api/financials/imports/check`, `POST /api/financials/imports` and `GET
   /api/financials/imports/template`, each with handler tests (FR-008, FR-009).
-- [ ] T034 [US4] (W) Write `frontend/src/features/financials/ImportDialog.tsx` (+ test):
+- [x] T034 [US4] (W) Write `frontend/src/features/financials/ImportDialog.tsx` (+ test):
   - choose, check, result and done steps; Download sample file;
   - the problem and not-linked lists; Import disabled with a reason;
   - toast and invalidation.
@@ -221,7 +229,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
     (FR-023, FR-024). The totals equal `financials` for the same plans (SC-002).
 - [x] T037 [US5] (B) In `backend/internal/app/allwork_source.go` (+ test), fill `Node.Finance` from
   `financials.FactsByLineItem` for the year's line items.
-- [ ] T038 [P] [US5] (W) In `frontend/src/features/all-work/FilterMenu.tsx`, `FilterBar.tsx`,
+- [x] T038 [P] [US5] (W) In `frontend/src/features/all-work/FilterMenu.tsx`, `FilterBar.tsx`,
   `viewState.ts`, `allWorkText.ts` and `allWorkApi.ts` (+ tests), add the Financials filter, its chips
   and its address parameter `finance`. Check that the column chooser shows the `financials` group from
   the options (no hard-coded list).
@@ -236,7 +244,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   `MyTeamPlanIDs`, activities above planned, not-linked count). Serve `GET /api/financials/overview`.
   Tests: seed values for Priya Raman (My teams) and Alex Morgan (Everything), and handler contract
   tests (FR-025).
-- [ ] T040 [US6] (W) Write `frontend/src/features/financials/FinancialsHomeCard.tsx` (+ test): figures,
+- [x] T040 [US6] (W) Write `frontend/src/features/financials/FinancialsHomeCard.tsx` (+ test): figures,
   the two links, Open Financials, the source line, the empty state and `SectionError`. Place it right
   after `SummaryCards` in `frontend/src/features/home/HomePage.tsx` and update `HomePage.test.tsx`.
 
@@ -253,7 +261,7 @@ items section shows Committed and Invoiced; no "From finance (coming later)" rem
   - Serve both operations.
   - Tests in `service_test.go` and `handler_test.go`, including an import after a manual link (the link
     is kept) (FR-026, FR-027).
-- [ ] T042 [US7] (W) Write `frontend/src/features/financials/LinkTransactionDialog.tsx` (+ test): the ID
+- [x] T042 [US7] (W) Write `frontend/src/features/financials/LinkTransactionDialog.tsx` (+ test): the ID
   field, the preview through `GET /api/line-items/{id}`, the refusals and `conflictMessage`. Add Link
   and Unlink (with `ConfirmDialog`) to `TransactionPanel.tsx` and its test.
 

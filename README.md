@@ -16,10 +16,54 @@ spec, agreed, planned, broken into tasks, and only then built and tested.
 | Web app | React 19 + TypeScript (`frontend/`) |
 | Data | Local JSON file store now, PostgreSQL later |
 | Sign-in | Demo sign-in now (password `northstar`), Shell single sign-on later |
-| Design | ZenReach design language (`docs/product/design-system.md`) |
+| Design | Shell's enterprise design language, design system v2 (`docs/product/design-system.md`) |
 | Phase | **Plan module** — see `docs/sdd/feature-map.md` |
 
 Everything runs on your own computer and listens on `127.0.0.1` only — no cloud services.
+
+## What the Plan module does
+
+| Area | Feature | What a person can do |
+|---|---|---|
+| Sign-in, Home | 001, 009 | Demo sign-in; Home with summary cards, plans at a glance, needs attention, waiting for my approval, a Financials card and recent changes |
+| Plans and planning records | 004–007 | Plans, campaigns, initiatives, activities and line items: create, edit, copy (also into next year), move, delete with Undo; status and completeness everywhere |
+| Approvals | 008, 017 | Approval workflows with levels of named people, the owner's line manager or a role; any or all must approve; conditional and automatic levels; backup approvers; delegation; reminders and escalation (**Run reminders and escalations**); a Monitoring tab |
+| All work | 010 | One grid over all plans with roll-ups, filters (years range, plan type, plan currency, Financials), calendar, Budget & cost (Monthly, Quarterly, Yearly, compare with phased budget), saved views, export |
+| Activity log, Recycle bin | 011 | Who changed what; a History section on every record; restore or delete permanently |
+| Roles and access, Global budgets | 014 | Five roles with team scopes, view-only vs edit enforced by the API, segregation of duties; global budgets allocated to market plans |
+| Financials | 015 | GSAP purchase orders, invoices, payments and accruals (read-only, from a **simulated** GSAP extract) on the activity, line item, plan, campaign, initiative, All work, Home and a Financials page; import and manual linking |
+| Planning and currency | 016 | Dated exchange rates and a **simulated** GSAP rate file import, plan currency, budget by month, split activity, plan type, multi-year views, Settings › Field help |
+| Settings, People | 002, 003, 014, 016 | Models, activity types, Shell attributes, currencies and rates, finance budget items, people and teams, approval workflows, roles and access, field help |
+
+What is still open (screens for attribute filters and Breakdown, field-help tips on record screens, hiding
+actions a role does not allow, the end-to-end journeys of 014–017) is listed in the
+[final validation report](docs/reports/final-validation-report.md) §7 and at the top of each feature's `tasks.md`.
+
+## Demo people and their roles
+
+All demo people share the password **`northstar`**. Roles come from the demo data (feature 014) and can be
+changed in **Settings › Roles and access** (Administrators only).
+
+| Person | E-mail | Role (scope) | Good for showing |
+|---|---|---|---|
+| Alex Morgan | alex.morgan@northstar.demo | Administrator (all markets) | Settings, Roles and access, approval level 2, deciding on behalf, GSAP imports |
+| Carlos Mendes | carlos.mendes@northstar.demo | Global planner (all markets) | Global budgets and allocations, Mobility approvals (level 1) |
+| Daniel Okoro | daniel.okoro@northstar.demo | Planner and Approver (own teams: Lubricants Europe) | Approving Lubricants activities |
+| Priya Raman | priya.raman@northstar.demo | Planner (own teams: Lubricants Europe) | Building the Lubricants plan, submitting for approval |
+| Mei Lin | mei.lin@northstar.demo | Planner (own teams: Mobility China) | Building the Mobility plan |
+| Sara Novak | sara.novak@northstar.demo | Viewer (own teams: Lubricants Europe, Mobility China) | View only: sees plans and financial data, changes nothing |
+
+| Role | May |
+|---|---|
+| Administrator | Everything, including Settings, roles and access, deleting plans, GSAP imports and deciding approvals on behalf of others |
+| Global planner | Plan in every market, publish and delete plans, link GSAP transactions, decide approvals, manage global budgets |
+| Planner | Plan in their own markets (create, edit, publish plans; edit and delete campaigns and activities; submit), link GSAP transactions |
+| Approver | View plans of their markets, export, see financial data, decide approvals they are named on |
+| Viewer | View plans of their markets, export, see financial data |
+
+Nobody approves an activity they own or submitted (segregation of duties, on by default). New people get the
+Viewer role for their own teams. Details: [014 spec](specs/014-access-control/spec.md) Table B and
+[demo users and data](docs/product/demo-users-and-data.md).
 
 ## Prerequisites
 
@@ -39,7 +83,7 @@ Use two terminals: one for the API, one for the web app.
 
 ```powershell
 cd backend
-go run ./cmd/seed          # once: loads the six demo people into backend/data
+go run ./cmd/seed          # once: loads the demo data (people, roles, plans, approvals, GSAP data) into backend/data
 go run ./cmd/api           # prints "NorthStar API listening on http://127.0.0.1:8080 …"
 ```
 
@@ -100,8 +144,9 @@ Like demo sign-in, they exist only when `APP_ENV` is `local` (the default) or `d
 2. **The rules:** [.specify/memory/constitution.md](.specify/memory/constitution.md)
 3. **The features and their order:** [docs/sdd/feature-map.md](docs/sdd/feature-map.md)
 4. **The features themselves:** [specs/](specs/) — one folder per feature (spec → plan → tasks). The code
-   so far implements [specs/001-app-shell-and-sign-in/](specs/001-app-shell-and-sign-in/); its
-   [quickstart.md](specs/001-app-shell-and-sign-in/quickstart.md) walks through every screen
+   implements 001–011 and 014–017 (012 bulk actions and import is deferred; 013 waits on Shell); the
+   [final validation report](docs/reports/final-validation-report.md) checks it against Shell's MVP
+   requirements
 5. **How we work:** [docs/sdd/sdd-process.md](docs/sdd/sdd-process.md)
 6. **The business model:** [docs/product/domain-model.md](docs/product/domain-model.md) and
    [docs/product/field-catalogue.md](docs/product/field-catalogue.md)

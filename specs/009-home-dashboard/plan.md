@@ -9,7 +9,7 @@
 
 ## Summary
 
-Home becomes the ZenReach-style dashboard: a greeting header with a **Currency** picker, a **My teams /
+Home becomes the dashboard of design system v2 (Shell's design language): a greeting header with a **Currency** picker, a **My teams /
 Everything** switch, four summary cards, **Plans at a glance**, **Needs your attention**, **Waiting for my
 approval**, **My activities** and **Recent changes**. 001's **Getting started** card stays, but only for
 new users (no team, or no plan in their teams).
@@ -41,7 +41,7 @@ Vitest + Testing Library; Playwright + axe
 5,000 activities (each endpoint one pass over the inputs; cards load in parallel); SC-005 — a currency
 change redraws every amount within 1 s
 
-**Constraints**: 127.0.0.1 only; no personal data in server logs; WCAG 2.1 AA, keyboard-only use, every
+**Constraints**: 127.0.0.1 only; no personal data in server logs; WCAG 2.2 AA, keyboard-only use, every
 bar and pill also shows its value or name as text (SC-007)
 
 **Scale/Scope**: 1 page (`/`), 9 cards; 6 new API operations; 1 preference
@@ -505,7 +505,7 @@ activity through 006's API and its figures leave Home at once. 001's route tests
 | US3 (Priya, Daniel) | declined item first with "Declined by Daniel Okoro on …" and its link; "Line items exceed the planned cost by $1,200.00"; Daniel: **Review** opens Approvals with the preview (1 step, SC-003) |
 | US4 (Priya) | change an activity's planned cost through the API, return Home: Recent changes starts with "Priya Raman changed planned cost of activity '…' (A-…)" and "just now" |
 | US5 | a new person without a team (created through 003's API) sees Getting started with the no-team sentence and every card's empty state (SC-006) |
-| SC-007 | axe (WCAG 2.1 AA) on Home in light and dark mode; keyboard: switch, card links, Show all, Review |
+| SC-007 | axe (WCAG 2.2 AA) on Home in light and dark mode; keyboard: switch, card links, Show all, Review |
 
 `frontend/e2e/smoke.spec.ts`: the Home assertion for Priya changes from "Getting started" to the "Plans at
 a glance" card (001 plan: kept green by 009).

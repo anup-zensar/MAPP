@@ -54,9 +54,9 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 - [X] T003 [P] Write the failing tests `TestAfterRestore_RunsOnceForDeletedRecord_FR033`, `TestAfterRestore_Notes` and `TestAfterRestore_ErrorChangesNothing` in `backend/internal/history/service_test.go` (a parent kind and a child kind with hooks: deleting the child runs only the child's hook; deleting the parent runs only the parent's; notes appear in the `restored` entry's details and in `RestoreResult.details`; a hook error leaves the bin entry and storage unchanged)
 - [X] T004 Add the optional `AfterRestore func(ctx context.Context, rc RestoreContext, top Snapshot) (notes []string, err error)` field to `history.Kind` in `backend/internal/history/kinds.go` and call it in `putBack` in `backend/internal/history/service.go` after `putSnapshots`, for the entry's own kind only, appending its notes (plan *History*); T003 passes (depends on T003)
-- [ ] T005 [P] Create `backend/internal/lineitems/model.go`: stored `LineItem`, `Spread`, `MonthAmount`, `SpreadMethod` (+ constants) exactly as data-model §1; API types `View`, `Details`, `Section`, `ActivityView` (`LineItemActivity`), `Balance`, `Grid`, `GridColumn`, `GridRow`, `FormOptions`, `Defaults`, `CurrencyView`, `BudgetItemRef`, `MissingField`, `SpreadView`, `SpreadMonthView`, `Input`, `Update` (`Input` + `Version *int`), `DuplicateInput`, `ActivitySummary`, `LineItemProblems`, `Usage`, `RateImpact` with the JSON names of `contracts/openapi.yaml`; lists never nil
+- [x] T005 [P] Create `backend/internal/lineitems/model.go`: stored `LineItem`, `Spread`, `MonthAmount`, `SpreadMethod` (+ constants) exactly as data-model §1; API types `View`, `Details`, `Section`, `ActivityView` (`LineItemActivity`), `Balance`, `Grid`, `GridColumn`, `GridRow`, `FormOptions`, `Defaults`, `CurrencyView`, `BudgetItemRef`, `MissingField`, `SpreadView`, `SpreadMonthView`, `Input`, `Update` (`Input` + `Version *int`), `DuplicateInput`, `ActivitySummary`, `LineItemProblems`, `Usage`, `RateImpact` with the JSON names of `contracts/openapi.yaml`; lists never nil
 - [X] T006 [P] Create `backend/internal/lineitems/deps.go` with `Deps`, `Activities`, `ActivityFacts`, `Currencies`, `Currency`, `FinanceBudgets`, `BudgetItem`, `Attributes`, `People` exactly as plan *Package `lineitems` and its dependencies*
-- [ ] T007 Create `backend/internal/lineitems/repository.go` (`Repository`: `Get`, `ListByActivity`, `List`, `Put`, `Delete`) and `backend/internal/lineitems/store_json.go` (`NewJSONRepository()`, table `line_items`, creation order = ID order) (depends on T005)
+- [x] T007 Create `backend/internal/lineitems/repository.go` (`Repository`: `Get`, `ListByActivity`, `List`, `Put`, `Delete`) and `backend/internal/lineitems/store_json.go` (`NewJSONRepository()`, table `line_items`, creation order = ID order) (depends on T005)
 - [X] T008 Create `backend/internal/lineitems/fakes_test.go`: in-memory fakes of `Activities` (facts per id, records `RestartApproval` calls), `Currencies` (USD 1, EUR 0.92, GBP 0.79, CNY 7.10, INR 83.50 inactive), `FinanceBudgets` (2026 Lubricants Budget: Europe – Digital, Europe – Events, Europe – Brand; a budget with one item; one inactive item; 2027 empty), `Attributes` (configurable problems, missing list and changes), `People`; and `newTestService(t)` building the service on `store.Open(t.TempDir())`, a fixed clock (2026-03-12 09:00 UTC), a real `history.Service` with a fake `activity` kind registered before `lineItem` (depends on T006, T007)
 
 ### User Story 3 — spread over time (pure rules first; US1 and US2 use them)
@@ -86,15 +86,15 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 ### Provided to other features
 
 - [ ] T021 [P] Write the failing tests in `backend/internal/lineitems/provided_test.go`: `TestSummaries_ReadyToSubmit_FR023_FR028_SC005`, `TestCopyLineItems_SameYear` (new IDs, same values, no log entries), `TestCopyLineItems_NextYear_007P9`, `TestUsage_IncludesRecycleBin`, `TestRateChangeImpact_FR013`, `TestOwnerUsage`
-- [ ] T022 Implement `backend/internal/lineitems/provided.go`: `Summaries`, `CopyLineItems`, `CurrencyUsage`, `FinanceBudgetItemUsage`, `AttributeUsage`, `OwnerUsage`, `RateChangeImpact` (plan *Provided to other features*); T021 passes (depends on T018, T021)
+- [x] T022 Implement `backend/internal/lineitems/provided.go`: `Summaries`, `CopyLineItems`, `CurrencyUsage`, `FinanceBudgetItemUsage`, `AttributeUsage`, `OwnerUsage`, `RateChangeImpact` (plan *Provided to other features*); T021 passes (depends on T018, T021)
 
 ### HTTP, wiring and demo data
 
 - [X] T023 Implement `backend/internal/lineitems/handler.go`: `NewHandler`, `Routes` registering the 7 operations of the contract behind `signedIn`; each handler `web.ReadJSON` → `actor.From` → service → `web.WriteJSON` (201 for create and duplicate; delete answers `history.DeleteResult{RecycleBinEntry: entry.View()}`; the `restartApproval` query value `true`/`false`, anything else `400 bad_request`) (depends on T020, T022)
 - [X] T024 Create `backend/internal/app/lineitems.go` with the adapters implementing `lineitems.Activities` (facts from 006's activity and 004's plan; `RestartApproval` → 006), `Currencies`, `FinanceBudgets`, `Attributes` (002), `People` (003); in `backend/internal/app/app.go` build the repository and service, register `Kinds()` after 006's `activity` kind, call `NewHandler(...).Routes(router, signedIn)`, and hand the provided functions to the other features through their seams as plan *Alignment with the designs of 002, 004 and 006* (002 `settings.ReferenceSource` for usage and rate impact, 003 owner count, 004 `plans.RegisterLevel` with `AddFacts` and `Copy`, 006 `UseLineItems` with `Facts`, `CopyAll` and a no-op `DatesChanged`, 005 through the same `CopyLineItems`); `TestRoutesMatchContract` and `TestEveryProtectedOperationRequiresSignIn_FR005` pass (depends on T023)
 - [X] T025 [P] Write `backend/internal/lineitems/handler_test.go` (`package lineitems_test`, `apitest.New(t)` with the seed): `TestListActivityLineItems_Contract`, `TestGetLineItemFormOptions_Contract`, `TestCreateLineItem_Contract`, `TestGetLineItem_Contract`, `TestUpdateLineItem_Contract`, `TestDuplicateLineItem_Contract`, `TestDeleteLineItem_Contract` as plan *Contract tests* (needs T024 and T027 to pass)
-- [ ] T026 [P] Write the failing test `TestLoad_LineItems` in `backend/seed/seed_test.go` (eight line items L-1001…L-1008; Launch film balance 20,000.00 USD; the Mobility China activity exceeded by 500.00 USD; every reference found)
-- [ ] T027 Add `addLineItems(ctx, generator, createdAt)` to `backend/seed/seed.go`, called after the records of 002–006, creating data-model §8 (look-ups by name, *computed* amounts, an error naming any missing reference); T026 and T025 pass (depends on T024, T026)
+- [x] T026 [P] Write the failing test `TestLoad_LineItems` in `backend/seed/seed_test.go` (eight line items L-1001…L-1008; Launch film balance 20,000.00 USD; the Mobility China activity exceeded by 500.00 USD; every reference found)
+- [x] T027 Add `addLineItems(ctx, generator, createdAt)` to `backend/seed/seed.go`, called after the records of 002–006, creating data-model §8 (look-ups by name, *computed* amounts, an error naming any missing reference); T026 and T025 pass (depends on T024, T026)
 
 **Checkpoint**: `go test ./...` green; the API serves the contract with the demo data.
 
@@ -139,8 +139,8 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 ### User Story 3 — spreads follow the activity's dates
 
 - [X] T050 [P] [US3] Write the failing tests `frontend/src/features/line-items/SpreadEffectNote.test.tsx` (FR-022: nothing when the dates are unchanged or there are no line items; "When you save, 2 line items are re-spread over the new dates and 1 custom spread is kept as typed."; outside sentence; no-dates sentence; singular forms)
-- [ ] T051 [US3] Create `frontend/src/features/line-items/SpreadEffectNote.tsx`; render it under the dates of feature 006's activity edit form and add `spreadEffectText(...)` to 006's re-approval dialog list (007-P11); T050 and 006's tests pass (depends on T029, T030, T031, T050)
-- [ ] T052 Add the three routes and their titles to `frontend/src/app/router.test.tsx` (depends on T045, T047, T049)
+- [x] T051 [US3] Create `frontend/src/features/line-items/SpreadEffectNote.tsx`; render it under the dates of feature 006's activity edit form and add `spreadEffectText(...)` to 006's re-approval dialog list (007-P11); T050 and 006's tests pass (depends on T029, T030, T031, T050)
+- [x] T052 Add the three routes and their titles to `frontend/src/app/router.test.tsx` (depends on T045, T047, T049)
 
 **Checkpoint**: `npm run check` green.
 
@@ -160,7 +160,7 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 ## Phase 5: Polish
 
 - [ ] T059 [P] Add the proposed decisions 007-P1 … 007-P15 to `docs/sdd/decision-log.md` with their consolidated numbers, and mark 007 in `docs/sdd/feature-map.md`
-- [ ] T060 [P] Add `lineitems/` to the package list of `backend/README.md` and `features/line-items/` to the folder list of `frontend/README.md`
+- [x] T060 [P] Add `lineitems/` to the package list of `backend/README.md` and `features/line-items/` to the folder list of `frontend/README.md`
 - [ ] T061 Run `gofmt -l .`, `go vet ./...`, `go test ./...` in `backend/` and `npm run check`, `npm run test:e2e` in `frontend/`; walk through plan *Quickstart checks* with the demo data; compare the screens with `docs/product/design-system.md` (§4 chips and money, §6 CRUD pattern, §6.6 read-only, §7 forms) at 1280 × 720 and 390 px
 
 ---

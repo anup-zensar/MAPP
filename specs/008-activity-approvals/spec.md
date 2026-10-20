@@ -348,7 +348,7 @@ own action.
   ever notified about their own action.
 - **SC-007**: The approvals page's card counts always equal the rows of the matching unfiltered tab, and
   the sidebar badge equals the **Waiting for me** count.
-- **SC-008**: Every screen of this feature passes an automated WCAG 2.1 AA check and can be used with
+- **SC-008**: Every screen of this feature passes an automated WCAG 2.2 AA check and can be used with
   the keyboard alone.
 
 ## Assumptions

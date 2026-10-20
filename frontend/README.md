@@ -40,7 +40,11 @@ src/
                 and BuildingPage — the stub of a page still being built), dev/ (the developer pages),
                 and the Plan module's settings/, people/, plans/, campaigns/, activities/, line-items/,
                 approvals/, approval-workflows/, notifications/ (002–008), home/ (009, the Home
-                dashboard) and all-work/ (010)
+                dashboard), all-work/ (010), activity-log/ and recycle-bin/ (011), access/ (Settings ›
+                Roles and access, Your access) and global-budgets/ (014), financials/ (015: the
+                Financials page, transaction panel, GSAP import and link dialogs), budget-phasing/
+                (016: Budget by month) and settings/currencies/ (rate history, GSAP rate import) and
+                settings/field-help/ (016)
   api/          client.ts (api and call()), errors.ts (ApiError and its messages), settingsQueries.ts
                 (Settings read hooks) and schema.d.ts — generated from the contract: never edit it by hand
   lib/          small helpers: format.ts (dates, date ranges, relative times and money), decimal.ts
@@ -52,9 +56,20 @@ src/
   test/         test helpers: setup.ts, mockApi.ts, render.tsx, users.ts (testUser()) and
                 attributeForms.ts (Shell attribute forms)
 e2e/            Playwright end-to-end tests: smoke.spec.ts (001), core-flow.spec.ts (002–008 core),
-                module-rest.spec.ts (the rest of the module, D-221); helpers fixtures.ts and
-                planning.ts (records prepared through the API)
+                module-rest.spec.ts (the rest of the module, D-221), activity-log.spec.ts,
+                recycle-bin.spec.ts and activity-log-and-recycle-bin.spec.ts (011); helpers fixtures.ts
+                and planning.ts (records prepared through the API). Each journey signs in as the demo
+                person whose role allows its steps (014). The journeys of 014–017 are not written yet
 ```
+
+## Roles in the web app (014)
+
+The API decides what a person may do; the web app only shows it. The sidebar and the Settings cards show
+the items a person's roles open (`NavItem.permission`, `SettingsSection.permission`), `RequirePermission`
+guards whole pages (Settings › Roles and access needs `access.manage`), and `NoAccess` and `ViewOnlyNote`
+explain a refusal or a view-only page. Record answers carry `access` (what the reader may do with that
+record); pages use it, and `useAccess().has(permission)`, to hide or explain actions. Sign in as the demo
+person with the role you want to see (see the root [README](../README.md#demo-people-and-their-roles)).
 
 Import from `src` with the `@/` alias: `import { Button, PageHeader } from '@/components';`. Tests sit
 next to the code they test (`Name.test.tsx`).

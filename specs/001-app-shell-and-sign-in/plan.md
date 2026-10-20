@@ -19,7 +19,7 @@ Feature 001 creates NorthStar's two runtime parts and everything later features 
   **activity-log and recycle-bin core** (one log entry per change with its path and readable values,
   delete to the bin with everything underneath, Undo, restore with the parent check); a developer-only
   **sample records** type that exercises that core; a demo-data loader.
-- **React web app** (`frontend/`): ZenReach-style sign-in page, application layout (sidebar with collapse
+- **React web app** (`frontend/`): sign-in page in Shell's design language (design system v2), application layout (sidebar with collapse
   and mobile drawer, account menu, notification bell, light/dark switch, demo banner, footer),
   getting-started Home, "Coming soon" and "Page not found" pages, the shared building blocks of design
   system §5, a typed API client generated from the OpenAPI contract, date and money formatting, shared
@@ -45,7 +45,7 @@ ESLint 10. Full list and reasons: research R2, R12.
 ADR-0007, research R3)
 
 **Testing**: Go `testing` + `httptest` + OpenAPI contract validation; Vitest 5 + Testing Library + jsdom;
-Playwright 1.64 + axe for end-to-end and WCAG 2.1 AA checks (research R19)
+Playwright 1.64 + axe for end-to-end and WCAG 2.2 AA checks (research R19)
 
 **Target Platform**: developer laptops (Windows 11 first; macOS/Linux work the same); browsers: current
 Chrome and Edge (Playwright Chromium in tests)
@@ -56,7 +56,7 @@ Chrome and Edge (Playwright Chromium in tests)
 answers in well under 100 ms with demo-sized data
 
 **Constraints**: servers listen on `127.0.0.1` only; no cloud services; no secrets in the repository;
-demo sign-in only in `local`/`development`; WCAG 2.1 AA (SC-006); usable at 1280 × 720 and 390 px wide
+demo sign-in only in `local`/`development`; WCAG 2.2 AA (SC-006); usable at 1280 × 720 and 390 px wide
 (SC-007); deterministic tests
 
 **Scale/Scope**: 6 demo people; demo-sized data (thousands of records, tens of thousands of log
@@ -70,7 +70,7 @@ entries). 8 signed-in routes + sign-in + not found + 2 developer pages; 16 API o
 |---|---|---|
 | I. Spec first | Every element traces to an FR, acceptance scenario, edge case or SC (tables below). The developer pages are in the spec's Assumptions (D-036); the other-tab sign-in, the refused Undo and the one-Undo-at-a-time rule are in the spec's edge cases and FR-026. No `[NEEDS CLARIFICATION]` in the spec, so clarify was skipped as allowed | Pass |
 | II. Shell business, plain language | Navigation uses Plans, Approvals, All work, Settings, Recycle bin, Activity log; no Hive9 terms; every user-visible message is listed once in *User-visible messages* (spec wording kept verbatim) | Pass |
-| III. Simple, friendly experience | ZenReach layout and tokens; delete with confirmation and Undo; unsaved changes protected; all errors at once; nothing disabled without a reason; WCAG 2.1 AA with automated checks of every screen and overlay and AA-safe colours (research R17). One recorded exception: the developer sample page is not a full CRUD page (Complexity Tracking) | Pass (1 exception) |
+| III. Simple, friendly experience | ZenReach layout with the tokens of design system v2 (Shell's design language); delete with confirmation and Undo; unsaved changes protected; all errors at once; nothing disabled without a reason; WCAG 2.2 AA with automated checks of every screen and overlay and AA-safe colours (research R17). One recorded exception: the developer sample page is not a full CRUD page (Complexity Tracking) | Pass (1 exception) |
 | IV. Simple, layered architecture | Two runtime parts. Go packages per area (`auth`, `people`, `history`, `samples`), each handler → service → repository; services own every rule; all storage — readable-ID counters included (`ids.Counters`) — goes through repository interfaces plus `store.Transactor`, so PostgreSQL needs no service change; REST + JSON with an OpenAPI 3.1 file; generated web types | Pass |
 | V. Tested business rules | Unit tests for every rule (table *Business rules and the tests that prove them*); a test for every acceptance scenario; end-to-end browser tests for US1–US5; a contract test for every endpoint plus a route-coverage test; Go tests use a fixed clock and temporary data; Vitest runs in UTC with fixed time; end-to-end tests run on their own seeded data (the real-clock exception is in *Complexity Tracking*) | Pass |
 | VI. Safe by default | Demo sign-in only in local/development (and no session works outside them); the demo password is public on purpose (D-004, ADR-0005: fictitious data, local only) and is the only credential in the repository; the actor is on every request and passed to every service call, reads included; the activity log is written in the same transaction as the change (display preferences are not business records and are not logged, D-038); the HttpOnly `SameSite=Strict` cookie carries a random token and the server stores only its SHA-256 hash; cross-origin, wrong-host and non-JSON requests are refused; input validated by the API; personal data never in server logs; timestamps UTC; deletes go to the recycle bin and restore parents first | Pass |
@@ -817,7 +817,7 @@ per test with `page.route('**/api/**', …)` (abort, or an empty `text/plain` 50
 | `home.spec.ts` | US3 scenario 1 and every step link |
 | `session.spec.ts` | US4: account menu content (long names in a tooltip), sign out + Back, switch to another person (the account button shows the new first name), lost session (cookie removed, then the theme switch) → "Please sign in again" → back on the same page; another tab signs in as someone else → toast; API unreachable → spec sentence and **Try again** recovers |
 | `history.spec.ts` | US5 scenarios 1–4 on the sample page: create, rename, add a note, delete through the ⋯ menu → log entries with actor, path and readable changes; the rows and summary cards drop; Undo within 10 s brings back the same IDs and logs `restored`; delete a note then its folder → one Undo message, Undo brings back the folder; restore refused naming the parent; FR-008: Daniel renames a folder Priya created, no permission message; two-person conflict (Priya's page refetches before she saves and still gets the message); unsaved-changes guard on Back; the page stays usable after a menu-opened dialog; no horizontal scroll at 1280 × 720 and 390 px (SC-007) |
-| `accessibility.spec.ts` | axe (WCAG 2.1 A/AA) in light and dark mode on: sign-in (plain, with the error summary, with "Incorrect e-mail or password.", with no demo people, demo off, unreachable); Home; a Coming-soon page; Not found (signed in and out); collapsed sidebar; 390 px with the drawer open; account menu open; bell popover open; sample page with the side panel and its errors, the confirm dialog, the Undo message; the gallery. Keyboard-only journeys: sign in, every sidebar item, collapse and expand, theme, bell, account menu → Sign out; on the sample page create, rename, delete and reach **Undo** with F8 within 10 s (SC-006) |
+| `accessibility.spec.ts` | axe (WCAG 2.2 A/AA) in light and dark mode on: sign-in (plain, with the error summary, with "Incorrect e-mail or password.", with no demo people, demo off, unreachable); Home; a Coming-soon page; Not found (signed in and out); collapsed sidebar; 390 px with the drawer open; account menu open; bell popover open; sample page with the side panel and its errors, the confirm dialog, the Undo message; the gallery. Keyboard-only journeys: sign in, every sidebar item, collapse and expand, theme, bell, account menu → Sign out; on the sample page create, rename, delete and reach **Undo** with F8 within 10 s (SC-006) |
 
 **Written so far (decision D-040)**: `smoke.spec.ts` only — the main journey of US1, US2, US4 and US5, that
 Home shows the Getting started card, and axe on the sign-in page and Home in light mode. The six files in

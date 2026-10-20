@@ -22,9 +22,10 @@ Sync Impact Report
 - Documents updated with this amendment: CLAUDE.md (non-negotiables 6, 10, 11); ADR-0008 (supersedes
   ADR-0005's "no roles"); ADR-0009; ADR-0005 and ADR-0006 status lines; decision log D-310–D-315;
   design system v2 and the UX design recommendations (decision numbers)
-- Follow-up TODOs (deferred, not blocking): specs and plans of 001–017 still name "WCAG 2.1 AA" in their
-  constraints, and docs/README.md and docs/product/vision-and-scope.md still describe the ZenReach look;
-  this constitution and design system v2 win, and each is corrected when it is next edited. The
+- Follow-up TODOs: done on 21 October 2026 — the specs, plans and tasks of 001–017 name WCAG 2.2 AA, and
+  docs/README.md, docs/product/vision-and-scope.md, the feature map, the specs of 001 and 009 and the
+  READMEs describe Shell's design language (design system v2). Historical records (decision log, reports,
+  reference material, ADR-0006) keep their original wording. The
   Complexity Tracking exceptions of 014, 015 and 016 for roles and simulated GSAP feeds are resolved by
   this amendment; no re-plan is needed.
 -->

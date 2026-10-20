@@ -14,7 +14,7 @@
 
 ### User Story 1 - Sign in with a demo account (Priority: P1)
 
-A Shell user opens NorthStar and lands on a single, friendly sign-in page in ZenReach style: the
+A Shell user opens NorthStar and lands on a single, friendly sign-in page in Shell's design language (design system v2): the
 NorthStar logo on the brand gradient, "Welcome back", e-mail and password fields, and a section
 "Explore as a demo person" listing the seeded demo users with their job titles. The page states clearly
 that this is a demo sign-in and shows the shared demo password. The user either types a demo e-mail and
@@ -46,7 +46,7 @@ the Home page greets that person by name.
 
 ### User Story 2 - Find my way around the application (Priority: P1)
 
-After signing in the user sees the ZenReach-style layout: a light-grey left sidebar with the NorthStar
+After signing in the user sees the layout of design system v2 (Shell's design language): a white left sidebar with the NorthStar
 logo, the main sections (**Home, Plans, Approvals, All work**), a **MORE** group (**Settings, Recycle
 bin, Activity log**), and at the bottom a collapse toggle, their account button, a notification bell and
 a light/dark switch. Every page uses the same page header (blue eyebrow, title, one-line description,
@@ -172,7 +172,7 @@ Undo after the delete brings the record back unchanged.
 
 **Sign-in and session**
 
-- **FR-001**: NorthStar MUST show a single sign-in page in the ZenReach style (design system §2 and
+- **FR-001**: NorthStar MUST show a single sign-in page in Shell's design language (design system v2 §2; layout from
   ZenReach spec §6.8.3): logo on the brand gradient, "Welcome back", e-mail, password with a show/hide
   control, **Sign in**, and "Explore as a demo person" listing every active demo person with avatar,
   name and job title.
@@ -290,7 +290,7 @@ Undo after the delete brings the record back unchanged.
 - **SC-005**: 100 % of deletes can be undone from their confirmation message within 10 seconds, unless
   another delete replaced the message, with nothing lost; every delete can be restored from the recycle
   bin.
-- **SC-006**: Every screen of this feature passes an automated WCAG 2.1 AA check with no failures and can
+- **SC-006**: Every screen of this feature passes an automated WCAG 2.2 AA check with no failures and can
   be used with the keyboard alone.
 - **SC-007**: The layout is usable without horizontal scrolling at 1280 × 720 and on a 390 px-wide phone.
 

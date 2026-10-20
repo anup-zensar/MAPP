@@ -791,7 +791,7 @@ before/after differences:
    **Delete campaign** → **Undo** within 10 s → same IDs back, totals restored.
 5. **US6 Move and copy**: create two campaigns and an initiative; move it (unavailable destination shows
    its reason), check both rows; copy a campaign → "(copy)" row highlighted with new IDs.
-6. **Accessibility**: axe (WCAG 2.1 AA) on the create panel with errors, a details panel, the move dialog
+6. **Accessibility**: axe (WCAG 2.2 AA) on the create panel with errors, a details panel, the move dialog
    and the delete dialog; keyboard: reach a row's ⋯ menu and **Add initiative** without a mouse.
 
 ## Dependencies

@@ -600,7 +600,7 @@ field help, split) with their own verbs (D-167); exchange rates are restorable f
   groupings.
 - **SC-008**: 100 % of built-in fields on the five planning forms show an ⓘ; an edited help text is visible on
   the next form any user opens.
-- **SC-009**: Every new screen and dialog passes the automated WCAG 2.1 AA check and works with the keyboard
+- **SC-009**: Every new screen and dialog passes the automated WCAG 2.2 AA check and works with the keyboard
   alone.
 
 ## Defaults for Shell to confirm

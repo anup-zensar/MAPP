@@ -328,7 +328,7 @@ result and the activity-log entries.
   result of each filter change, in under 2 seconds.
 - **SC-007**: Nothing is permanently deleted without a confirmation, and 100 % of restores, permanent
   deletes and bin empties appear in the activity log with the person who did them.
-- **SC-008**: Both pages and the History section pass an automated WCAG 2.1 AA check with no failures
+- **SC-008**: Both pages and the History section pass an automated WCAG 2.2 AA check with no failures
   and can be used with the keyboard alone.
 
 ## Assumptions

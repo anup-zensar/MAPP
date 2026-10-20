@@ -72,7 +72,7 @@ goals and percentages; deterministic tests (fixed clock 2026-03-12 09:00 UTC →
 |---|---|---|
 | I. Spec first | Every element traces to an FR, acceptance scenario, edge case or SC (traceability table). No `[NEEDS CLARIFICATION]` in the spec; the defaults of D-035 and Q-001/Q-004/Q-005/Q-006 are applied (Decisions) | Pass |
 | II. Shell business, plain language | Shell's words only (Plan, Campaign, Initiative, Activity, Line item, AOP, BCPIR, SMP, INQ, MQL, Goal stage, Default line-item spread); Hive9's "Waterfall Goal", "Default Line-Item Allocation", "Set plan as Strategic/AOP" never shown; models, attributes, teams, finance budgets come from Settings data, never hard-coded | Pass |
-| III. Simple, friendly experience | Standard CRUD pattern (list → plan page → Edit → delete to the bin with Undo); status and completeness chips on every list card, table row, tree row and the header; all problems at once; every disabled control and lock says why (owner, year, next-year copy); unsaved changes protected; consequences confirmed before saving; WCAG 2.1 AA with axe in the e2e test | Pass |
+| III. Simple, friendly experience | Standard CRUD pattern (list → plan page → Edit → delete to the bin with Undo); status and completeness chips on every list card, table row, tree row and the header; all problems at once; every disabled control and lock says why (owner, year, next-year copy); unsaved changes protected; consequences confirmed before saving; WCAG 2.2 AA with axe in the e2e test | Pass |
 | IV. Simple, layered architecture | One package `plans` (handler → service → repository); all rules and calculations in the service (figures, goals, completeness, publish check, copy names, R1); the web app repeats only the live goal preview and the owner check for instant feedback; contract first; storage only through `plans.Repository` and `store.Transactor` | Pass |
 | V. Tested business rules | Service test per rule named with its FR; handler/contract test per operation; component test per page and dialog; `plans.spec.ts` covers every P1 story (US1–US5) and US6; deterministic fixed clock | Pass |
 | VI. Safe by default | Actor passed to every service method (reads included) and recorded on every change; no role checks (D-004, FR-032); input validated by the API; amounts exact decimals in USD with display conversion on the server; delete → recycle bin, restore parents first | Pass |
@@ -821,7 +821,7 @@ seed (models, teams, display currency USD).
 | US4 edit | Edit an own plan: year locked text, change budget and teams (owner R1 message), save → values; published plan stays Published |
 | US5 publish | FY2026 Mobility China → **Publish** → "Publish needs 1 field" (Plan › Business unit) without changing it; own plan without business unit → link → fill → publish → toast → unpublish with a reason → Draft |
 | US6 copy and delete | Copy FY2026 Lubricants Europe into 2027 (unique name) → Draft 2027 page; delete it from its page → dialog sentences → list + toast → **Undo** → back with the same ID |
-| Accessibility | axe (WCAG 2.1 AA) on the list (cards and table), the create form with its error summary, the plan page, the copy, unpublish and delete dialogs |
+| Accessibility | axe (WCAG 2.2 AA) on the list (cards and table), the create form with its error summary, the plan page, the copy, unpublish and delete dialogs |
 
 Tests use their own plans (unique names) and never assert global counts, except reading the seed in US2/US3
 without changing it (001's isolation rules).

@@ -5,6 +5,15 @@ description: "Task list for feature 016 — Planning and Currency Extensions"
 
 # Tasks: Planning and Currency Extensions
 
+> **Build state after the final merge** (`plan-module` at `a1ae8fe`, 21 October 2026): the backend is complete.
+> Shared web parts were built under other names: `RateTip`, `MoneyPair` and `rates.ts` in `features/line-items/`,
+> `AmountPair` in `features/plans/`, `YearRangeMenu` in `features/all-work/`, `useFieldHelp` and `FieldHelpTip`
+> in `features/settings/field-help/`. **Open:** T028 (the Import GSAP rates page is built, but
+> `/settings/currencies/import` is not in `frontend/src/app/router.tsx` — `SETTINGS_016_ROUTES` is unused — so
+> the Currencies page's **Import GSAP rates** button opens Not found); T074–T077 (attribute filters, Breakdown,
+> Planned cost by, saved views and export of them); T084–T088 (record screens do not read Field help yet);
+> T089 (end-to-end journeys); T090–T093 (product documents); T094, T095.
+
 **Input**: Design documents from `specs/016-planning-and-currency-extensions/`
 
 **Prerequisites**: [plan.md](plan.md), [spec.md](spec.md), [data-model.md](data-model.md),
@@ -53,10 +62,10 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T014 [P] Create `frontend/src/api/ratesQueries.ts` (`useCurrentRates`, `currentRatesKey`, invalidation helper) and `frontend/src/components/RateTip/` (`RateTip.tsx`, test, gallery entry) per plan *Shared parts*
-- [ ] T015 [P] Create `frontend/src/components/AmountPair/` (component, test: secondary hidden when same currency, RateTip present, negative red), export in `components/index.ts`, gallery entry
-- [ ] T016 [P] Create `frontend/src/components/YearRangeField/` (component, test: from ≤ to kept, max span message "Choose at most 5 years.", "All years"), export, gallery entry
-- [ ] T017 [P] Create `frontend/src/api/fieldHelp.ts` (`useFieldHelp()` → `help(key)`; empty text → undefined) with tests using `mockApi`
+- [x] T014 [P] Create `frontend/src/api/ratesQueries.ts` (`useCurrentRates`, `currentRatesKey`, invalidation helper) and `frontend/src/components/RateTip/` (`RateTip.tsx`, test, gallery entry) per plan *Shared parts*
+- [x] T015 [P] Create `frontend/src/components/AmountPair/` (component, test: secondary hidden when same currency, RateTip present, negative red), export in `components/index.ts`, gallery entry
+- [x] T016 [P] Create `frontend/src/components/YearRangeField/` (component, test: from ≤ to kept, max span message "Choose at most 5 years.", "All years"), export, gallery entry
+- [x] T017 [P] Create `frontend/src/api/fieldHelp.ts` (`useFieldHelp()` → `help(key)`; empty text → undefined) with tests using `mockApi`
 
 **Checkpoint**: Foundation ready; lanes start in parallel.
 
@@ -79,8 +88,8 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T026 [P] [US1] Currency details in `frontend/src/features/settings/currencies/`: current rate line with date and source, `RateHistorySection` (table, "Current", "From <date>", Add rate, row menu Edit/Delete with `useUndoableDelete`); tests
-- [ ] T027 [P] [US1] `RateDialog` (add/edit, date + rate, impact confirmation via the two impact operations, "Keep editing" / "Save rate"); invalidate `useCurrentRates`; tests
+- [x] T026 [P] [US1] Currency details in `frontend/src/features/settings/currencies/`: current rate line with date and source, `RateHistorySection` (table, "Current", "From <date>", Add rate, row menu Edit/Delete with `useUndoableDelete`); tests
+- [x] T027 [P] [US1] `RateDialog` (add/edit, date + rate, impact confirmation via the two impact operations, "Keep editing" / "Save rate"); invalidate `useCurrentRates`; tests
 - [ ] T028 [P] [US1] `ImportRatesPage` at `/settings/currencies/import` (upload, review grouped by outcome with counts and row numbers, Import n rates, Cancel, sample link) and `RecentImports` on the Currencies list; route in `frontend/src/app/router.tsx`; tests with `mockApi`
 
 **Checkpoint**: US1 works alone (spec US1 scenarios).
@@ -106,11 +115,11 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T039 [P] [US2] `frontend/src/features/plans/PlanForm.tsx`: Plan type (Basics) and Plan currency (Budget, active currencies, lock note from `currencyLock`), budget `MoneyField` in the plan currency with "≈ X USD" from the API's figures after save; `planFormValues.ts`; tests (FR-011, FR-012, FR-032)
-- [ ] T040 [P] [US2] Plan page and list: `PlanHeader` chips (type, "Planned in GBP"), `PlanSummaryCards` from `planFigures` with `figures` beside (`AmountPair`), `PlanCard`/`PlanTable` type chip and `AmountPair`; plan tree rows (`features/plans/tree`); tests (FR-013, FR-014, FR-032)
-- [ ] T041 [P] [US2] Campaigns: `RecordForm` budget in the plan currency, `BudgetCost`, `RecordDetails`, `campaignRows` with `AmountPair`; `Destinations` shows the API's reason; tests (FR-011, FR-013, FR-017)
-- [ ] T042 [P] [US2] Activities: `ActivityForm` planned cost in the plan currency with the type-default note, `ActivityHeader` and `activityTreeRows` with `AmountPair`; tests (FR-011, FR-013, FR-016)
-- [ ] T043 [P] [US2] Line items: `LineItemsSection` columns (local, plan currency, display), `UnassignedBalanceRow` and `SpreadGrid` in the plan currency, `CostFields` conversion line "= 19,750.00 GBP at 0.92 EUR and 0.79 GBP per USD (rates of 19 Oct 2026)", `LineItemPage`; tests (FR-009, FR-015)
+- [x] T039 [P] [US2] `frontend/src/features/plans/PlanForm.tsx`: Plan type (Basics) and Plan currency (Budget, active currencies, lock note from `currencyLock`), budget `MoneyField` in the plan currency with "≈ X USD" from the API's figures after save; `planFormValues.ts`; tests (FR-011, FR-012, FR-032)
+- [x] T040 [P] [US2] Plan page and list: `PlanHeader` chips (type, "Planned in GBP"), `PlanSummaryCards` from `planFigures` with `figures` beside (`AmountPair`), `PlanCard`/`PlanTable` type chip and `AmountPair`; plan tree rows (`features/plans/tree`); tests (FR-013, FR-014, FR-032)
+- [x] T041 [P] [US2] Campaigns: `RecordForm` budget in the plan currency, `BudgetCost`, `RecordDetails`, `campaignRows` with `AmountPair`; `Destinations` shows the API's reason; tests (FR-011, FR-013, FR-017)
+- [x] T042 [P] [US2] Activities: `ActivityForm` planned cost in the plan currency with the type-default note, `ActivityHeader` and `activityTreeRows` with `AmountPair`; tests (FR-011, FR-013, FR-016)
+- [x] T043 [P] [US2] Line items: `LineItemsSection` columns (local, plan currency, display), `UnassignedBalanceRow` and `SpreadGrid` in the plan currency, `CostFields` conversion line "= 19,750.00 GBP at 0.92 EUR and 0.79 GBP per USD (rates of 19 Oct 2026)", `LineItemPage`; tests (FR-009, FR-015)
 
 **Checkpoint**: US2 works alone; existing 002–010 tests green.
 
@@ -131,10 +140,10 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T050 [P] [US3] `frontend/src/features/budget-phasing/phasingMath.ts` (BigInt cents: even split of 12, quarter split of 3, totals, left/too much) with tests from data-model §3.3
-- [ ] T051 [P] [US3] `PhasingEditorPanel.tsx`: method choice, 12-month grid with Monthly · Quarterly entry, Split evenly, Copy from planned cost (from `budget-by-month`, with the left-out note), Use month total as budget, running total, Save via the level's `PUT`; unsaved-changes guard; tests (FR-020, FR-021, FR-023)
-- [ ] T052 [P] [US3] `BudgetByMonthCard.tsx`: rows Budget, Planned cost, Difference, Allocated, Monthly · Quarterly switch, red "Over by X", Other years / No dates columns, "Not phased"; **Edit** opens the panel; tests (FR-024)
-- [ ] T053 [US3] Place the card on `PlanPage` (after the summary cards) and in the campaign and initiative panels (`RecordDetails`); completeness links to it (`focusOnArrival`); budget field note "Budget by month will be removed" in `PlanForm` and `RecordForm` (depends on T051, T052)
+- [x] T050 [P] [US3] `frontend/src/features/budget-phasing/phasingMath.ts` (BigInt cents: even split of 12, quarter split of 3, totals, left/too much) with tests from data-model §3.3
+- [x] T051 [P] [US3] `PhasingEditorPanel.tsx`: method choice, 12-month grid with Monthly · Quarterly entry, Split evenly, Copy from planned cost (from `budget-by-month`, with the left-out note), Use month total as budget, running total, Save via the level's `PUT`; unsaved-changes guard; tests (FR-020, FR-021, FR-023)
+- [x] T052 [P] [US3] `BudgetByMonthCard.tsx`: rows Budget, Planned cost, Difference, Allocated, Monthly · Quarterly switch, red "Over by X", Other years / No dates columns, "Not phased"; **Edit** opens the panel; tests (FR-024)
+- [x] T053 [US3] Place the card on `PlanPage` (after the summary cards) and in the campaign and initiative panels (`RecordDetails`); completeness links to it (`focusOnArrival`); budget field note "Budget by month will be removed" in `PlanForm` and `RecordForm` (depends on T051, T052)
 
 **Checkpoint**: US3 works alone.
 
@@ -153,9 +162,9 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T058 [P] [US4] `frontend/src/features/activities/SplitActivityDialog.tsx`: name, initiative (`DestinationList`), line-item checklist with plan-currency amounts, amount (`MoneyField`, follows ticks until typed), debounced preview of both activities, re-approval line, problems at once; toast with **View**; tests (FR-026 – FR-029)
-- [ ] T059 [P] [US4] `SplitLinks.tsx` under the activity header ("Split from …", "Split into …", "(deleted)"); tests (FR-031)
-- [ ] T060 [US4] Add **Split activity** to the activity page's More menu and the activity row's ⋯ menu in `useActivityActions.tsx` and `activityTreeRows.tsx`; tests (depends on T058)
+- [x] T058 [P] [US4] `frontend/src/features/activities/SplitActivityDialog.tsx`: name, initiative (`DestinationList`), line-item checklist with plan-currency amounts, amount (`MoneyField`, follows ticks until typed), debounced preview of both activities, re-approval line, problems at once; toast with **View**; tests (FR-026 – FR-029)
+- [x] T059 [P] [US4] `SplitLinks.tsx` under the activity header ("Split from …", "Split into …", "(deleted)"); tests (FR-031)
+- [x] T060 [US4] Add **Split activity** to the activity page's More menu and the activity row's ⋯ menu in `useActivityActions.tsx` and `activityTreeRows.tsx`; tests (depends on T058)
 
 **Checkpoint**: US4 works alone.
 
@@ -174,11 +183,11 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T065 [P] [US5] `PlansPage.tsx`: Years (`YearRangeField`, allowAll), Plan type filter chips, remembered in `listPreferences.ts` (old `year` read as a one-year range); tests (FR-033)
-- [ ] T066 [P] [US5] All work `FilterBar.tsx` / `FilterMenu.tsx`: Years range (max 5), Plan type, Plan currency; `allWorkApi.ts` parameters; `viewState.ts` and `allWorkStore.ts` with the new state and migration; tests (FR-034, FR-037, FR-043)
-- [ ] T067 [P] [US5] `BudgetView.tsx`: Monthly · Quarterly · Yearly, opens on Yearly for a range above one year, **Compare with phased budget** sub-rows and red cells; tests (FR-035, FR-038)
-- [ ] T068 [P] [US5] `CalendarView.tsx` and `calendar.ts`: timeline over the range with year and quarter bands, "Continues from / into" at the range's edges; tests (FR-036)
-- [ ] T069 [P] [US5] `ColumnChooser.tsx`: the five new Standard columns; plan rows show their year; tests (FR-037)
+- [x] T065 [P] [US5] `PlansPage.tsx`: Years (`YearRangeField`, allowAll), Plan type filter chips, remembered in `listPreferences.ts` (old `year` read as a one-year range); tests (FR-033)
+- [x] T066 [P] [US5] All work `FilterBar.tsx` / `FilterMenu.tsx`: Years range (max 5), Plan type, Plan currency; `allWorkApi.ts` parameters; `viewState.ts` and `allWorkStore.ts` with the new state and migration; tests (FR-034, FR-037, FR-043)
+- [x] T067 [P] [US5] `BudgetView.tsx`: Monthly · Quarterly · Yearly, opens on Yearly for a range above one year, **Compare with phased budget** sub-rows and red cells; tests (FR-035, FR-038)
+- [x] T068 [P] [US5] `CalendarView.tsx` and `calendar.ts`: timeline over the range with year and quarter bands, "Continues from / into" at the range's edges; tests (FR-036)
+- [x] T069 [P] [US5] `ColumnChooser.tsx`: the five new Standard columns; plan rows show their year; tests (FR-037)
 
 **Checkpoint**: US5 works alone.
 
@@ -219,8 +228,8 @@ and multi-year · US6 categories · US7 field help.
 
 ### Frontend
 
-- [ ] T082 [P] [US7] `frontend/src/features/settings/field-help/FieldHelpPage.tsx` and `FieldHelpPanel.tsx` (search, level tabs, chips, Edit with counter, Reset to default with confirmation, version conflict message, note with the Shell-attribute link); route `/settings/field-help`; Settings card in `sections.ts`; tests (FR-045, FR-046, FR-048)
-- [ ] T083 [P] [US7] Shell attributes list: "No help yet" chip and `?help=missing` filter in `features/settings/shell-attributes/`; tests (FR-048)
+- [x] T082 [P] [US7] `frontend/src/features/settings/field-help/FieldHelpPage.tsx` and `FieldHelpPanel.tsx` (search, level tabs, chips, Edit with counter, Reset to default with confirmation, version conflict message, note with the Shell-attribute link); route `/settings/field-help`; Settings card in `sections.ts`; tests (FR-045, FR-046, FR-048)
+- [x] T083 [P] [US7] Shell attributes list: "No help yet" chip and `?help=missing` filter in `features/settings/shell-attributes/`; tests (FR-048)
 - [ ] T084 [P] [US7] Tips on plan form, details, header and summary cards (`PlanForm`, `PlanDetails`, `PlanFacts`, `PlanSummaryCards`, `GoalFields`, `PlanGoals`) from `help()`; fixed tip literals removed; tests assert one ⓘ per labelled field (FR-047)
 - [ ] T085 [P] [US7] Tips on campaign and initiative forms, panels and rows (`RecordForm`, `RecordDetails`, `BudgetCost`, `StatusChips`); tests (FR-047)
 - [ ] T086 [P] [US7] Tips on the activity form, page and sections (`ActivityForm`, `ActivityHeader`, `ActivitySections`, `GoalsFields`, `SplitLinks`); tests (FR-047)

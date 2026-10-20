@@ -371,7 +371,7 @@ filtered, its totals, money in its currency, and a note of every filter used.
 - **SC-006**: 100 % of exported files contain exactly the view's rows, columns and totals, and name
   every active filter.
 - **SC-007**: Saving the current view takes at most 3 steps, and applying a saved view at most 2.
-- **SC-008**: Every view passes an automated WCAG 2.1 AA check with no failures, can be used with the
+- **SC-008**: Every view passes an automated WCAG 2.2 AA check with no failures, can be used with the
   keyboard alone, and never shows status by colour alone.
 
 ## Assumptions

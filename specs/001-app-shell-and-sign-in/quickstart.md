@@ -83,7 +83,7 @@ All commands must finish without errors. The end-to-end tests never touch `backe
 | 20 | Edge | Stop the API and reload the web app | "NorthStar can't reach its server right now. Check that it is running and try again." with **Try again**; start the API, choose **Try again** → the page loads |
 | 21 | FR-028 | Stop the API. Run `$env:DATA_DIR = Join-Path $env:TEMP 'northstar-empty'; go run ./cmd/api` and reload the sign-in page. Then follow the page's instruction: stop the API, run `go run ./cmd/seed`, start `go run ./cmd/api` again and reload. Finally stop the API, run `Remove-Item Env:DATA_DIR` and start `go run ./cmd/api` | First "No demo users found — load the demo data first" with the instruction; after following it, six demo people appear |
 | 22 | SC-006 | Use only the keyboard: Tab to a demo person, Enter, Tab through the sidebar, open and close the account menu | Focus is always visible; everything works |
-| 23 | Design | Open <http://127.0.0.1:5173/dev/components> in light and dark mode | Every shared building block of design system §5 looks like ZenReach and is readable |
+| 23 | Design | Open <http://127.0.0.1:5173/dev/components> in light and dark mode | Every shared building block of design system §5 follows design system v2 (Shell's design language) and is readable |
 
 **SC-002** is checked in a moderated session, organised by the product owner, with at least 5 people who
 have not used NorthStar: each is asked to find every navigation item and to say what each section is for.

@@ -53,7 +53,7 @@ store) + `apitest` contract tests; Vitest + Testing Library + `mockApi`; Playwri
 under 100 ms locally; the form's live preview updates on every keystroke without a request
 
 **Constraints**: 127.0.0.1 only; no personal data in server logs; money never in binary floating point;
-WCAG 2.1 AA; usable at 1280 × 720 and 390 px (the grid scrolls sideways inside its card)
+WCAG 2.2 AA; usable at 1280 × 720 and 390 px (the grid scrolls sideways inside its card)
 
 **Scale/Scope**: demo-sized (010 expects up to 20,000 line items a year); 7 API operations; 3 new web
 routes, 1 section embedded in feature 006's activity page, 1 note embedded in 006's activity edit form
@@ -710,7 +710,7 @@ which no other end-to-end file reads.
 | `US2: add a line item with its defaults` | **Add line item** → defaults and sources, summary bar "… After saving 0.00 USD"; EUR 10,000 → "= 10,869.57 USD at 0.92 EUR per USD"; empty name + "-50" → all problems at once; spend type with one GL code fills it; save → toast, highlighted row, "All of the planned cost is assigned"; **Save and add another** shows the new balance; clean-up delete (FR-006–FR-012, FR-014) |
 | `US3: spread a line item over time` | 10,000.00 EUR: Evenly preview 3,333.33 / 3,333.33 / 3,333.34; Custom + Feb 2,000.00 → "Outside the activity's dates…" and "12,000.00 of 10,000.00 EUR spread — 2,000.00 EUR too much"; save → "Spread doesn't add up to the planned cost" in the completeness list; edit → **Use month total as planned cost** → 12,000.00; clean-up (FR-017–FR-019) |
 | `US4: edit, duplicate and delete on an approved activity` | on the seeded Approved activity change Venue hire's finance budget item (Europe – Events → Europe – Brand; its spend type has a single GL code, so the GL-code case is covered by `LineItemEditPage.test.tsx`) → no dialog, activity still Approved; change the planned cost → "This activity will need approval again" → **Save and restart approval** → activity Created; Duplicate → "(copy)" page; Delete → dialog texts → toast → **Undo** → back with the same ID (FR-026–FR-033) |
-| `Accessibility: line-item screens pass axe` | axe (WCAG 2.1 A/AA) on the section, the create form with its error summary, the custom grid, the details page, the restart and delete dialogs (SC-006 basis) |
+| `Accessibility: line-item screens pass axe` | axe (WCAG 2.2 A/AA) on the section, the create form with its error summary, the custom grid, the details page, the restart and delete dialogs (SC-006 basis) |
 
 ## Requirement traceability
 

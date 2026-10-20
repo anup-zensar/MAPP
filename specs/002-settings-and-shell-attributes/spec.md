@@ -323,7 +323,7 @@ Shell has long lists (1,217 cost centres). The administrator downloads a templat
   (Lubricants 1.0: 250,000 INQ → 5,000 MQL → 250 deals → 2,500,000 USD).
 - **SC-007**: A user finds one cost centre among 1,217 options in at most 2 steps, in Settings and on a form.
 - **SC-008**: A changed setting is visible on the next form any user opens, with no release.
-- **SC-009**: Every Settings screen passes an automated WCAG 2.1 AA check and works with the keyboard alone,
+- **SC-009**: Every Settings screen passes an automated WCAG 2.2 AA check and works with the keyboard alone,
   including reordering attributes.
 
 ## Assumptions

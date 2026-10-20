@@ -365,7 +365,7 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
 | jsdom (dev) | ^30.1.3 | Browser-like test environment |
 | @testing-library/react, user-event, jest-dom, dom (dev) | ^16.3.3, ^14.6.8, ^7.0.1, ^10.4.2 | Tests that act like a user |
 | @playwright/test (dev) | ^1.64.1 | End-to-end browser tests (Chromium already installed for this version) |
-| @axe-core/playwright (dev) | ^4.14.0 | Automated WCAG 2.1 AA checks (SC-006) |
+| @axe-core/playwright (dev) | ^4.14.0 | Automated WCAG 2.2 AA checks (SC-006) |
 | eslint, @eslint/js (dev) | ^10.13.0, ^10.0.1 | Linting (ESLint 9 is no longer supported) |
 | typescript-eslint, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals (dev) | ^8.71.2, ^7.1.1, ^0.5.7, ^17.13.0 | Recommended rule sets |
 | prettier (dev) | ^3.9.10 | One code format |
@@ -389,7 +389,7 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
   `cx()` helper. No colour literals outside `tokens.css`.
 - **Rationale**: CSS that reads like the design system, scoped per component, no utility-class soup and
   no runtime styling library. ZenReach's look (white, `#f5f5f7` sidebar, 16 px cards, blue eyebrow,
-  brand gradient) is reproduced from its CSS values (`ZenReach/client/src/index.css`, `Layout.jsx`).
+  brand gradient) is reproduced from its CSS values (`ZenReach/client/src/index.css`, `Layout.jsx`). Superseded for the look by design system v2 (Shell's design language, D-310–D-314).
 - **Alternatives**: Tailwind (ZenReach uses it, but long class strings are hard for beginners to read
   and review), Material UI (ZenReach uses it; heavy and opinionated), CSS-in-JS (runtime cost, extra
   library).
@@ -401,7 +401,7 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
   popover, the info tip (popover), tooltips and toasts on **Radix** primitives from the single
   `radix-ui` package, styled with our CSS.
 - **Rationale**: focus trapping, Escape, outside click, `aria-*` wiring and screen-reader announcements
-  are hard to get right by hand; SC-006 requires keyboard use and WCAG 2.1 AA.
+  are hard to get right by hand; SC-006 requires keyboard use and WCAG 2.2 AA.
 - **Known quirks** (from the team's previous project): a Radix tooltip inside a dialog swallows the first
   Escape — so close buttons inside dialogs, side panels and the drawer have no tooltip, and footer
   controls inside the mobile drawer show text labels instead of tooltips; Radix menus take their
@@ -469,7 +469,7 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
 
 ## R17. Accessibility decisions (SC-006)
 
-Contrast calculations (WCAG 2.1 formula) show that some ZenReach colours are too light **as small
+Contrast calculations (WCAG 2.2 formula) show that some ZenReach colours are too light **as small
 text** on their tints. The design tokens therefore add text variants; the design system's colours stay
 for dots, bars, borders and tints.
 

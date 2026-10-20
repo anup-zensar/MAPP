@@ -88,7 +88,7 @@ differ, the plan wins and the difference is reported).
 
 ## Phase 3: User Story 1 — Sign in with a demo account (Priority: P1) 🎯 MVP
 
-**Goal**: a single ZenReach-style sign-in page; typed or one-click demo sign-in; sessions that survive
+**Goal**: a single sign-in page in Shell's design language (design system v2); typed or one-click demo sign-in; sessions that survive
 reloads and new tabs; Home greets the person.
 
 **Independent test**: start with the seed data, sign in as each demo person in turn (a new private window

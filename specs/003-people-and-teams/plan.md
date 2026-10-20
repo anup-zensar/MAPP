@@ -54,7 +54,7 @@ gains two fields (001's records stay valid). New readable-ID counters `T` and `T
 `GET /api/people` returns everyone once (cached by TanStack Query) and the picker filters in memory
 
 **Constraints**: 127.0.0.1 only; personal data limited to name, e-mail and job title, never in server logs;
-WCAG 2.1 AA and keyboard-only use (SC-008); 390 px wide without horizontal page scroll
+WCAG 2.2 AA and keyboard-only use (SC-008); 390 px wide without horizontal page scroll
 
 **Scale/Scope**: demo: 6 people, 3 teams; designed for Hive9's scale (≈250 people, a team of 250, a person
 in 85 teams). 15 new API operations (+3 with larger answers), 3 routes, 12 new or changed shared web parts
@@ -610,7 +610,7 @@ Every text appears once; code and tests quote this table. `<…>` is filled in a
 
 | File | Journey |
 |---|---|
-| `people-and-teams.spec.ts` | **US1** as Alex: New person with all problems at once, then valid with team Lubricants Europe → toast → listed Active; a second browser context signs in as the new person (demo password); Alex deactivates them (dialog text, Cancel focused) → Inactive; the other context's next navigation lands on sign-in; sign-in refused; Reactivate → sign-in works (FR-001 – FR-008, SC-004). **US2**: New team with two members picked with the picker → toast; add a third from that person's form → the team shows them; delete the unused team → Undo brings it back with its members (FR-010 – FR-015). **US3**: in the member field type "finance" → Sara Novak; "okoro@" → Daniel Okoro; choose with the keyboard; Escape closes (FR-016 – FR-020). axe (WCAG 2.1 AA) on both lists, both details panels, the person form with errors, the deactivate and delete dialogs and the open picker; no horizontal page scroll at 390 px (SC-008) |
+| `people-and-teams.spec.ts` | **US1** as Alex: New person with all problems at once, then valid with team Lubricants Europe → toast → listed Active; a second browser context signs in as the new person (demo password); Alex deactivates them (dialog text, Cancel focused) → Inactive; the other context's next navigation lands on sign-in; sign-in refused; Reactivate → sign-in works (FR-001 – FR-008, SC-004). **US2**: New team with two members picked with the picker → toast; add a third from that person's form → the team shows them; delete the unused team → Undo brings it back with its members (FR-010 – FR-015). **US3**: in the member field type "finance" → Sara Novak; "okoro@" → Daniel Okoro; choose with the keyboard; Escape closes (FR-016 – FR-020). axe (WCAG 2.2 AA) on both lists, both details panels, the person form with errors, the deactivate and delete dialogs and the open picker; no horizontal page scroll at 390 px (SC-008) |
 | `profile.spec.ts` | **US4** with a person created for the test: My profile shows details and teams; change the date format to DD/MM/YYYY → the People page's record line shows `dd/mm/yyyy`; change the name → the account button shows it at once; a second browser context signs in as the same person and sees the same preferences (FR-021 – FR-025, SC-006). axe on the page and both panels. Amounts in EUR are proven by 004's tests once 002 provides currencies |
 
 ## Requirement traceability

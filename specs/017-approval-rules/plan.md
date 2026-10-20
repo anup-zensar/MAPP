@@ -50,7 +50,7 @@ and `authz` grants in the context; handler tests with `apitest` on the seeded ap
 Library (`mockApi`); Playwright + axe in `frontend/e2e/approval-rules.spec.ts`.
 
 **Target Platform / Project Type / Constraints**: as 008 — 127.0.0.1 only, no third runtime part, fixed
-clock in tests (2026-03-12 09:00 UTC), WCAG 2.1 AA.
+clock in tests (2026-03-12 09:00 UTC), WCAG 2.2 AA.
 
 **Performance Goals**: every approvals call under 100 ms with demo data; the job over the demo data
 under 200 ms.

@@ -55,7 +55,7 @@ contract tests through `apitest` (clock 12 Mar 2026 09:00 UTC, demo seed); Vites
 in under 2 seconds (004 SC-009); every other call well under 100 ms locally
 
 **Constraints**: 127.0.0.1 only; money as exact decimals (never float); calendar dates `YYYY-MM-DD`;
-WCAG 2.1 AA; usable at 1280 × 720 and 390 px; deterministic tests
+WCAG 2.2 AA; usable at 1280 × 720 and 390 px; deterministic tests
 
 **Scale/Scope**: 5 user stories, 33 FRs; 10 API operations; 3 routes; 11 seed activities
 
@@ -694,7 +694,7 @@ counts):
 | US3: attributes, splits and goals | Edit A-1001: Lubricants group sentence; split three countries → 33.33/33.33/33.34; change to 50 → "116.67 % — 16.67 % too much", save works, panel lists it, **Split evenly**; INQ 250,000 → MQL 5,000, revenue $2,500,000.00 |
 | US4: edit an approved activity | A-1006 (used by no other test): change description → stays Approved; change planned cost → dialog → Created; both in the activity log API |
 | US5: copy, move, delete and Undo | Copy A-1002 → "(copy)" Created; move the copy to another initiative; refused move with the dates message; delete with the dialog texts → plan page toast → **Undo** brings it back with the same ID |
-| Accessibility | axe (WCAG 2.1 AA) on the activity page, the form with its error summary, and each dialog |
+| Accessibility | axe (WCAG 2.2 AA) on the activity page, the form with its error summary, and each dialog |
 
 ## Requirement traceability
 
