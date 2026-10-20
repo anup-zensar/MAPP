@@ -12,6 +12,7 @@ import (
 	"northstar/internal/activities"
 	"northstar/internal/allwork"
 	"northstar/internal/campaigns"
+	"northstar/internal/financials"
 	"northstar/internal/history"
 	"northstar/internal/lineitems"
 	"northstar/internal/people"
@@ -48,6 +49,8 @@ type allWorkSource struct {
 	people         *people.Service
 	peopleRepo     people.Repository
 	history        *history.Service
+	financials     *financials.Service // 015's GSAP figures of line items (financials.go)
+	financeAccess  financials.Access   // who may see them (015 FR-028)
 }
 
 // The compiler checks here that allWorkSource implements allwork.Source.
@@ -86,6 +89,9 @@ func (s allWorkSource) Year(ctx context.Context, year int, today date.Date, colu
 		return allwork.YearData{}, err
 	}
 	data.Nodes = y.nodes
+	if err := s.addFinance(ctx, &data); err != nil { // feature 015 (financials.go)
+		return allwork.YearData{}, err
+	}
 	return data, nil
 }
 
@@ -653,6 +659,7 @@ func (s allWorkSource) Choices(ctx context.Context, personID string) (allwork.Ch
 	for _, p := range everyone {
 		c.People = append(c.People, allwork.Option{ID: p.ID, Label: p.Name, Inactive: !p.Active})
 	}
+	c.SeesFinance = s.seesFinance(ctx, personID) // feature 015 (financials.go)
 	return c, nil
 }
 

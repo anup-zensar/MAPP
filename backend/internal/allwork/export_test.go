@@ -75,7 +75,7 @@ func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 	_, table := csvLines(t, f)
 
 	heading := []string{"Level", "Path", "Name", "ID", "Status", "Owner", "Start date", "End date", "Plan budget (USD)",
-		"Planned cost (USD)", "Line items (USD)", "Unassigned planned cost (USD)"}
+		"Planned cost (USD)", "Line items (USD)", "Unassigned planned cost (USD)", "Committed (USD)", "Invoiced (USD)"}
 	if !reflect.DeepEqual(table[0], heading) {
 		t.Fatalf("heading = %q", table[0])
 	}
@@ -84,13 +84,13 @@ func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 	}
 	want := map[string][]string{
 		"Digital & social": {"Initiative", "FY2026 Lubricants Europe › Helix launch", "Digital & social", "I-1001", "In progress",
-			"Priya Raman", "2026-01-01", "2026-06-30", "300000.00", "200000.00", "125000.00", "75000.00"},
+			"Priya Raman", "2026-01-01", "2026-06-30", "300000.00", "200000.00", "125000.00", "75000.00", "0.00", "0.00"},
 		"Film production": {"Line item", "FY2026 Lubricants Europe › Helix launch › Digital & social › Launch film", "Film production",
-			"L-1002", "All filled in", "Priya Raman", "", "", "", "50000.00", "", ""},
+			"L-1002", "All filled in", "Priya Raman", "", "", "", "50000.00", "", "", "0.00", "0.00"},
 		"Partner co-marketing fund": {"Activity", "FY2026 Lubricants Europe › Rimula fleet › Events", "Partner co-marketing fund",
-			"A-1005", "In progress", "Priya Raman", "2026-03-01", "Ongoing", "", "100000.00", "", "100000.00"},
+			"A-1005", "In progress", "Priya Raman", "2026-03-01", "Ongoing", "", "100000.00", "", "100000.00", "0.00", "0.00"},
 		"FY2026 Lubricants Europe": {"Plan", "", "FY2026 Lubricants Europe", "P-1001", "Published", "Priya Raman", "2026-01-01",
-			"2026-12-31", "1200000.00", "460000.00", "165000.00", "295000.00"},
+			"2026-12-31", "1200000.00", "460000.00", "165000.00", "295000.00", "0.00", "0.00"},
 	}
 	for name, line := range want {
 		if got := rowNamed(t, table, name); !reflect.DeepEqual(got, line) {
@@ -99,11 +99,12 @@ func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
 	}
 	unassigned := table[slicesIndex(table, "Launch film")+3]
 	if !reflect.DeepEqual(unassigned, []string{"Unassigned planned cost", "FY2026 Lubricants Europe › Helix launch › Digital & social › Launch film",
-		"Unassigned planned cost (Sys_Gen_Balance)", "", "", "", "", "", "", "20000.00", "", "20000.00"}) {
+		"Unassigned planned cost (Sys_Gen_Balance)", "", "", "", "", "", "", "20000.00", "", "20000.00", "", ""}) {
 		t.Errorf("unassigned row = %q", unassigned)
 	}
 	totals := table[len(table)-1]
-	if !reflect.DeepEqual(totals, []string{"", "", "Total · 10 activities", "", "", "", "", "", "2000000.00", "650000.00", "205500.00", "445000.00"}) {
+	if !reflect.DeepEqual(totals, []string{"", "", "Total · 10 activities", "", "", "", "", "", "2000000.00", "650000.00", "205500.00",
+		"445000.00", "0.00", "0.00"}) {
 		t.Errorf("totals = %q", totals)
 	}
 
@@ -211,7 +212,8 @@ func TestExport_NotesBeforeData_AboutSheet_FileName_FR034(t *testing.T) {
 
 	want := [][]string{
 		{"View", "Grid"}, {"Year", "2026"}, {"Filters", "Activity status: Declined"}, {"", "Owner: Priya Raman"},
-		{"", "Strategic / AOP plans: Exclude"}, {"Search", "fleet"}, {"Show levels", "Complete branches only"},
+		{"", "Strategic / AOP plans: Exclude"}, {"Financial figures", "No GSAP data loaded yet"}, {"Search", "fleet"},
+		{"Show levels", "Complete branches only"},
 		{"Display currency", "USD"}, {"Exported by", "Priya Raman"}, {"Exported at", "18 Oct 2026, 14:05 UTC"},
 	}
 	if !reflect.DeepEqual(notes, want) {
@@ -221,7 +223,7 @@ func TestExport_NotesBeforeData_AboutSheet_FileName_FR034(t *testing.T) {
 		t.Errorf("the data follows the notes")
 	}
 	plain, _ := csvLines(t, exportOf(t, b, Query{}, FormatCSV, true))
-	if plain[2][1] != "None" || plain[3][1] != "None" {
+	if plain[2][1] != "None" || plain[4][1] != "None" {
 		t.Errorf("no filters and no search read None: %q", plain)
 	}
 

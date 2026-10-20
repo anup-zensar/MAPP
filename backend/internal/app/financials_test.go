@@ -5,8 +5,10 @@ import (
 	"slices"
 	"testing"
 
+	"northstar/internal/allwork"
 	"northstar/internal/financials"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/date"
 	"northstar/internal/platform/money"
 )
 
@@ -107,5 +109,39 @@ func TestFinancialDisplays_PersonCurrency_FR011(t *testing.T) {
 	})
 	if err != nil || d.Currency() != "USD" {
 		t.Errorf("Priya's display = %v, %v", d.Currency(), err)
+	}
+}
+
+// All work's source gives the year's line items their GSAP figures from feature 015, says when the data was
+// loaded and that the person may see it (015 FR-023, FR-028, T037).
+func TestPlanningSource_FinancialFigures_FR023(t *testing.T) {
+	built, db := newSeededApp(t)
+	var data allwork.YearData
+	var choices allwork.Choices
+	err := db.Read(t.Context(), func(ctx context.Context) error {
+		var err error
+		if data, err = built.allWork.Year(ctx, 2026, date.MustParse("2026-03-12"), nil); err != nil {
+			return err
+		}
+		choices, err = built.allWork.Choices(ctx, "U-1002")
+		return err
+	})
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	byName := map[string]allwork.Node{}
+	for _, n := range data.Nodes {
+		byName[n.Name] = n
+	}
+	venue, fee := byName["Venue hire"], byName["Agency fee"]
+	if venue.Finance == nil || venue.Finance.Committed.Format() != "20,000.00" || venue.Finance.POCount != 1 ||
+		venue.Finance.InvoiceCount != 1 || venue.Finance.Paid.Format() != "20,000.00" {
+		t.Errorf("Venue hire = %+v", venue.Finance)
+	}
+	if fee.Finance != nil {
+		t.Errorf("Agency fee has no transactions: %+v", fee.Finance)
+	}
+	if data.FinanceAsOf == nil || !choices.SeesFinance {
+		t.Errorf("data as of %v, sees finance %v", data.FinanceAsOf, choices.SeesFinance)
 	}
 }

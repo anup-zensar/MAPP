@@ -199,7 +199,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		activities: activitiesService, activitiesRepo: activitiesRepo, lineItems: lineItemsService,
 		lineItemsRepo: lineItemsRepo, settings: settingsService, budgetItems: lineItemBudgets{repo: settingsRepo},
 		workflows: activityWorkflows{repo: approvalsRepo}, people: peopleService, peopleRepo: peopleRepo,
-		history: historyService,
+		history: historyService, financials: financialsService, financeAccess: financialAccess{},
 	}
 	allWorkService := allwork.NewService(db, allwork.NewJSONRepository(), allWork, generator, now)
 	allwork.NewHandler(allWorkService).Routes(router, signedIn)

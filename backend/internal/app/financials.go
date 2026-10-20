@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"northstar/internal/activities"
+	"northstar/internal/allwork"
 	"northstar/internal/campaigns"
 	"northstar/internal/financials"
 	"northstar/internal/history"
@@ -190,4 +191,36 @@ func (financialAccess) Link(context.Context, actor.Actor, string) error { return
 // VisiblePlanIDs gives every plan until 014.
 func (financialAccess) VisiblePlanIDs(context.Context, actor.Actor) ([]string, error) {
 	return nil, nil
+}
+
+// addFinance gives All work the GSAP figures of the year's line items, as feature 015 works them out for
+// its cards (FR-023, SC-002), and when the GSAP data was loaded, for the export's note. A line item without
+// transactions keeps no figures: All work shows 0.00 for it.
+func (s allWorkSource) addFinance(ctx context.Context, data *allwork.YearData) error {
+	if s.financials == nil {
+		return nil
+	}
+	facts, err := s.financials.FactsByLineItem(ctx)
+	if err != nil {
+		return err
+	}
+	for i := range data.Nodes {
+		n := &data.Nodes[i]
+		f, found := facts[n.ID]
+		if n.Level != allwork.LevelLineItem || !found {
+			continue
+		}
+		n.Finance = &allwork.FinanceFacts{
+			Committed: f.Committed, Invoiced: f.Invoiced, Paid: f.Paid, Accrued: f.Accrued, POCount: f.POCount,
+			InvoiceCount: f.InvoiceCount,
+		}
+	}
+	data.FinanceAsOf, err = s.financials.DataAsOf(ctx)
+	return err
+}
+
+// seesFinance reports whether the person may see financial data in at least one plan (015 FR-028): All
+// work then offers the Financials columns and filter.
+func (s allWorkSource) seesFinance(ctx context.Context, personID string) bool {
+	return s.financeAccess != nil && s.financeAccess.SeeFinance(ctx, actor.Actor{ID: personID}) == nil
 }

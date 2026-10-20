@@ -30,6 +30,12 @@ type tnode struct {
 	lineItemsUSD *money.Amount // the sum of its line items' USD planned costs; nil without line items
 	balance      *money.Amount // its unassigned planned cost: planned cost − line items; nil with neither
 
+	// Feature 015 (finance.go): the GSAP figures of a line item, or of an activity's line items; a zero
+	// start for containers; nil when the reader may not see them. abovePlanned marks an activity committed
+	// above its planned cost, itself or on one of its line items.
+	finance      *FinanceFacts
+	abovePlanned bool
+
 	fig figures // roll-ups over the matching activities shown below (activities: their own values)
 	all figures // the same over every activity below, for the "Filtered" mark (FR-013)
 }
@@ -248,6 +254,9 @@ func (f filter) holds(t *tnode) bool {
 // the Show levels choice of q (data model §3).
 func applyFilters(t *tree, q Query) {
 	filters := filtersOf(q)
+	if len(q.Finance) > 0 {
+		filters = append(filters, financeFilter(q.Finance, t)) // feature 015 (FR-024)
+	}
 	for _, p := range t.plans {
 		mark(p, filters, q.Search, strings.ToLower(q.Search), false)
 	}

@@ -15264,6 +15264,7 @@ components:
             - initiative
             - activity
             - lineItem
+            - financials
         label:
           type: string
           example: Campaign

@@ -82,6 +82,7 @@ func (s *Service) input(ctx context.Context, a actor.Actor, q Query) (input, err
 	if err != nil {
 		return input{}, err
 	}
+	columns = forReader(columns, choices.SeesFinance)
 	return input{
 		query: q, year: year, today: today, now: now, currency: currency, data: data, choices: choices,
 		catalogue: columns,
@@ -156,7 +157,7 @@ func (s *Service) Options(ctx context.Context, a actor.Actor, year int) (Options
 				named = append(named, v.State.Sort.Column)
 			}
 		}
-		options = optionsOf(year, today.Year(), years, data, choices, offered(columns, named))
+		options = optionsOf(year, today.Year(), years, data, choices, offered(forReader(columns, choices.SeesFinance), named))
 		return nil
 	})
 	if err != nil {

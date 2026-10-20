@@ -483,6 +483,7 @@ func fixtureChoices(personID string) Choices {
 			{ID: priya.ID, Label: priya.Name}, {ID: daniel.ID, Label: daniel.Name}, {ID: mei.ID, Label: mei.Name},
 			{ID: sara.ID, Label: sara.Name, Inactive: true},
 		},
+		SeesFinance: true, // feature 015: the people of the fixtures may see financial data
 	}
 }
 

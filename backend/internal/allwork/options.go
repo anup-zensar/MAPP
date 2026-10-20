@@ -17,6 +17,7 @@ var groupLabels = []struct{ group, label string }{
 	{GroupInitiative, "Initiative"},
 	{GroupActivity, "Activity"},
 	{GroupLineItem, "Line item"},
+	{GroupFinancials, "Financials"}, // feature 015 (FR-023)
 }
 
 // optionsOf returns the choices for year (FR-004): the years with plans and the current year, newest first;
@@ -27,7 +28,7 @@ func optionsOf(year, currentYear int, years []int, data YearData, c Choices, cat
 	o := Options{
 		Year: year, CurrentYear: currentYear, Years: []int{currentYear}, Plans: []PlanOption{}, Owners: []Option{},
 		Teams: slices.Clone(c.Teams), BusinessUnits: orNone(c.BusinessUnits), ActivityTypes: orNone(c.ActivityTypes),
-		ColumnGroups: columnGroupsOf(catalogue), DefaultColumns: slices.Clone(DefaultColumns),
+		ColumnGroups: columnGroupsOf(catalogue), DefaultColumns: defaultColumnsIn(catalogueOf(catalogue)),
 	}
 	for _, y := range years {
 		if !slices.Contains(o.Years, y) {
