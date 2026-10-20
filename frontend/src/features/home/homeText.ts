@@ -220,11 +220,6 @@ export const RECENT_CHANGES = {
     everything: 'Latest changes in all plans',
   } satisfies Record<HomeScope, string>,
   empty: 'No changes yet in these plans.',
-  /** While the Activity log (feature 011) is still "Coming soon". */
-  comingSoon: {
-    title: 'Coming soon',
-    text: 'Recent changes will show here once the Activity log is built.',
-  },
 };
 
 /**

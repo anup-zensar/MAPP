@@ -1,0 +1,60 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* Entries adapt to the width they get (a side panel is narrower than the page), see LogEntry. */
+  container-type: inline-size;
+}
+
+/* A day's heading on the subtle grey of table headers, with its count in grey. */
+.heading {
+  margin: 0 0 4px;
+  padding: 6px 10px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.count {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* "Showing the last 50 of 1,204" and Load more, centred under the list. */
+.more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.loaded {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

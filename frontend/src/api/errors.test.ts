@@ -254,7 +254,7 @@ describe('messages with a time', () => {
     );
   }
 
-  function resolvedError(how: 'undone' | 'restored', at: string): ApiError {
+  function resolvedError(how: 'undone' | 'restored' | 'deletedPermanently', at: string): ApiError {
     return ApiError.fromBody(
       409,
       errorBody('already_resolved', "'Ideas' is no longer in the recycle bin.", {
@@ -291,6 +291,12 @@ describe('messages with a time', () => {
     expect(resolvedMessage(resolvedError('undone', '2026-03-10T16:45:00Z'), 'Ideas')).toBe(
       "'Ideas' is no longer in the recycle bin — Priya Raman undid the delete on 10 Mar 2026 at 16:45",
     );
+  });
+
+  it('says who deleted an item permanently and when (feature 011, FR-032)', () => {
+    expect(
+      resolvedMessage(resolvedError('deletedPermanently', '2026-03-12T08:05:00Z'), 'Ideas'),
+    ).toBe("'Ideas' is no longer in the recycle bin — Priya Raman deleted it permanently at 08:05");
   });
 
   it('writes the date in the person’s date format (feature 003, FR-024)', () => {

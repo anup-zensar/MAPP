@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
@@ -20,7 +21,12 @@ const DUPLICATE = 'POST /api/line-items/L-1001/duplicate';
 const DELETE = 'DELETE /api/line-items/L-1001';
 
 function renderPage(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ ...formAnswers(), [GET]: { body: details() }, ...answers });
+  const api = mockApi({
+    ...HISTORY_ANSWERS,
+    ...formAnswers(),
+    [GET]: { body: details() },
+    ...answers,
+  });
   return {
     api,
     ...renderWithProviders(<LineItemPage />, {
@@ -91,8 +97,23 @@ describe('LineItemPage (US4, FR-026)', () => {
     expect(items).toEqual(['Duplicate', 'View history', 'Delete']);
     await user.click(screen.getByRole('menuitem', { name: 'View history' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?recordType=lineItem&recordId=L-1001');
+    // The page's History section gets the focus (feature 011, FR-011).
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
+    );
+    expect(router.state.location.pathname).toBe('/line-items/L-1001');
+  });
+
+  it('ends with the line item’s History, without an include option (011 FR-011, FR-012)', async () => {
+    const { api } = renderPage();
+    await screen.findByRole('heading', { level: 1, name: 'Agency fee' });
+
+    const history = screen.getByRole('region', { name: 'History' });
+    expect(within(history).getByText('Every change to this line item, newest first')).toBeVisible();
+    expect(within(history).queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(await within(history).findByText('No changes recorded yet.')).toBeVisible();
+    const asked = api.requests.find((request) => request.path === '/api/activity-log');
+    expect(new URLSearchParams(asked?.search).get('recordId')).toBe('L-1001');
   });
 
   it('duplicates and opens the copy (scenario 4, FR-029)', async () => {

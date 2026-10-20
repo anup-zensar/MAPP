@@ -46,6 +46,10 @@ type fakeSources struct {
 	waiting    map[string][]Waiting   // approver id → the Waiting for me tab, oldest first
 	currencies map[string]Currency    // person id → display currency; none means US dollars
 	failWith   error                  // when set, every source fails with it
+
+	logAsked  [][]string // the plan ids of every RecentChanges call; nil for every plan
+	logLimit  int        // the limit of the last RecentChanges call
+	logAnswer RecentChangesPage
 }
 
 // newFakeSources returns the demo teams and nothing else.
@@ -85,6 +89,11 @@ func (f *fakeSources) sources() Sources {
 				return c, f.failWith
 			}
 			return Currency{Code: "USD", Rate: money.One}, f.failWith
+		},
+		RecentChanges: func(_ context.Context, _ actor.Actor, planIDs []string, limit int) (RecentChangesPage, error) {
+			f.logAsked = append(f.logAsked, slices.Clone(planIDs))
+			f.logLimit = limit
+			return f.logAnswer, f.failWith
 		},
 	}
 }

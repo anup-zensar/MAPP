@@ -73,6 +73,9 @@ type Preferences struct {
 	DisplayCurrency  string `json:"displayCurrency"`  // ISO code; "" = DefaultDisplayCurrency (003)
 	DateFormat       string `json:"dateFormat"`       // one of DateFormats; "" = DefaultDateFormat (003)
 	HomeScope        string `json:"homeScope"`        // HomeScopeEverything, or "" for the default HomeScopeMyTeams (009)
+	// HistoryIncludeInside is the History section's Include items inside / Include line items choice on
+	// record pages (011 FR-012); false by default.
+	HistoryIncludeInside bool `json:"historyIncludeInside,omitempty"`
 }
 
 // The values of Home's My teams / Everything switch (feature 009, D-172): My teams is the default.
@@ -172,6 +175,8 @@ type PreferencesView struct {
 	DisplayCurrency  string `json:"displayCurrency"`
 	DateFormat       string `json:"dateFormat"`
 	HomeScope        string `json:"homeScope"` // always sent (009, D-191)
+	// HistoryIncludeInside is always sent (011, D-191).
+	HistoryIncludeInside bool `json:"historyIncludeInside"`
 }
 
 // PreferencesUpdate is the body of PATCH /api/me/preferences: only the preferences to change. A field that
@@ -182,6 +187,8 @@ type PreferencesUpdate struct {
 	DisplayCurrency  *string `json:"displayCurrency"`
 	DateFormat       *string `json:"dateFormat"`
 	HomeScope        *string `json:"homeScope"`
+	// HistoryIncludeInside (011 FR-012) is saved only when it changes, and not logged.
+	HistoryIncludeInside *bool `json:"historyIncludeInside"`
 }
 
 // currentUser returns p as the signed-in person, with prefs and their teams.
@@ -211,7 +218,8 @@ func (p Preferences) view() PreferencesView {
 		homeScope = HomeScopeMyTeams
 	}
 	return PreferencesView{Theme: p.Theme, SidebarCollapsed: p.SidebarCollapsed,
-		DisplayCurrency: p.DisplayCurrency, DateFormat: p.DateFormat, HomeScope: homeScope}
+		DisplayCurrency: p.DisplayCurrency, DateFormat: p.DateFormat, HomeScope: homeScope,
+		HistoryIncludeInside: p.HistoryIncludeInside}
 }
 
 // The API types of feature 003 (contract schemas in brackets; JSON names as the contract). 001's

@@ -36,6 +36,10 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 - [X] TC01 Drop `lib/teamColor.ts` and the `--team-1…8` tokens from T019/T040; use 003's `TeamPill` and `TeamRef.colour` (D-201).
 - [X] TC02 Replace the USD fall-back test with `TestSummary_InactiveDisplayCurrencyStaysInUse`; `unavailableCurrency` is always null (D-201).
 - [X] TC03 Reuse 008's `formatRelativeTime`/`formatWaitingTime` and 004's `recordHref`; add only missing entries (D-194, D-197).
+- Recent changes (US4, FR-015, FR-016) is served through 011's `QueryLog` (T013, T034, D-222). Its end-to-end step is
+  proven by the last journey of `frontend/e2e/activity-log-and-recycle-bin.spec.ts` (D-223): a planned-cost change
+  first with "just now", a deleted initiative "(in recycle bin)" without a link, the record link and
+  **View activity log**. The rest of T038 and `home.spec.ts` stay open (D-221).
 
 ## Phase 1: Setup
 
@@ -75,14 +79,14 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 ### US4 — My activities and recent changes (backend)
 
 - [X] T012 [US4] Write `TestMyActivities_Groups_FR014`, `TestMyActivities_UsesDisplayedStatus_EdgeCase` and implement `MyActivities` in `backend/internal/home/service.go` (depends on T011)
-- [ ] T013 [US4] Write `TestRecentChanges_Scope_FR015` (record types, `PlanIDs` of the plans in scope, nil for everything, no call and an empty page for `myTeams` without plans, limit 10) and implement `RecentChanges` in `backend/internal/home/service.go` (depends on T012; uses 011's `history.LogQuery`)
+- [X] T013 [US4] Write `TestRecentChanges_Scope_FR015` (record types, `PlanIDs` of the plans in scope, nil for everything, no call and an empty page for `myTeams` without plans, limit 10) and implement `RecentChanges` in `backend/internal/home/service.go` (depends on T012; uses 011's `history.LogQuery`)
 - [X] T014 [US1] Write `TestHome_LargeScope_SC004` (50 plans, 5,000 activities, each operation < 300 ms) in `backend/internal/home/service_test.go` (depends on T013, T010)
 
 ### API, wiring and seed
 
 - [X] T015 Write `backend/internal/home/handler.go` (`NewHandler`, `Routes(r, signedIn)`: the six `GET /api/home/*` routes; `scope` parsed with `ParseScope`, invalid → `validation_failed`) (depends on T013, T010)
 - [X] T016 Write `backend/internal/app/home_sources.go` (`homeSources(...) home.Sources` built from the services of 002–008 and 011 named in plan *Dependencies*) and wire `home.NewService` / `home.NewHandler(...).Routes` in `backend/internal/app/app.go` (depends on T015)
-- [ ] T017 [US1] [US2] [US3] [US4] Write `backend/internal/home/handler_test.go` (`package home_test`, `apitest` with the seed): `TestHomeSummary_Contract`, `TestHomePlans_Contract`, `TestHomeAttention_Contract`, `TestHomeWaiting_Contract`, `TestHomeMyActivities_Contract`, `TestHomeRecentChanges_Contract`, `TestHome_InvalidScope_400`, `TestHome_EqualsPlanAndApprovalPages_SC002_FR017` (every seeded person, both scopes, against 004's plan figures, 004's list totals and 008's Waiting for me total), `TestHome_DeletedRecordsNeverCount_FR019` (depends on T016)
+- [X] T017 [US1] [US2] [US3] [US4] Write `backend/internal/home/handler_test.go` (`package home_test`, `apitest` with the seed): `TestHomeSummary_Contract`, `TestHomePlans_Contract`, `TestHomeAttention_Contract`, `TestHomeWaiting_Contract`, `TestHomeMyActivities_Contract`, `TestHomeRecentChanges_Contract`, `TestHome_InvalidScope_400`, `TestHome_EqualsPlanAndApprovalPages_SC002_FR017` (every seeded person, both scopes, against 004's plan figures, 004's list totals and 008's Waiting for me total), `TestHome_DeletedRecordsNeverCount_FR019` (depends on T016)
 - [ ] T018 [US1] [US3] Write `TestSeed_HomeStory_009` in `backend/seed/seed_test.go` checking the facts of plan *Demo data* through the Home endpoints (Priya's declined activity by Daniel Okoro with a comment; an activity of Priya's whose line items exceed its planned cost by exactly 1,200.00 USD; Alex Morgan's over-allocated FY2027 campaign; an activity waiting for Daniel at level 1 of 1; the teams); add any missing fact to `backend/seed/seed.go` (for example one extra line item) (depends on T016)
 
 **Checkpoint**: `go test ./...` passes, including 001's `TestRoutesMatchContract` and `TestEveryProtectedOperationRequiresSignIn_FR005`.

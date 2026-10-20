@@ -6,9 +6,10 @@
 // (settings.go, 002), teams (teams.go, 003), plans (plans.go, 004), campaigns and initiatives
 // (campaigns.go, 005), approval workflows and activities (activities.go, 006), line items (lineitems.go,
 // 007), approval rounds and notifications (approvals.go, 008); then saved views (allwork.go, 010), personal
-// settings rather than records. Every step writes through its feature's
-// repository with IDs from the generator, looks up earlier records by name, and writes no activity-log
-// entries (feature 011's step will add the demo history).
+// settings rather than records; and last the demo history (history.go, 011). Every step writes through its
+// feature's repository with IDs from the generator and looks up earlier records by name. Only the last step
+// writes activity-log and recycle-bin entries (D-188): it writes them in time order, so the log's sequence
+// numbers follow time.
 package seed
 
 import (
@@ -35,7 +36,7 @@ var ErrNotEmpty = errors.New("seed: the store already has data")
 // Loaded says what Load loads, for the seed command's message; a test checks it against the store.
 const Loaded = "6 people, 3 teams, 2 models, 6 activity types, 35 Shell attributes with 110 options, " +
 	"5 currencies, 6 finance budget items, 3 plans, 4 campaigns, 8 initiatives, 10 activities, 8 line items, " +
-	"2 approval workflows, 8 approval rounds"
+	"2 approval workflows, 8 approval rounds, 46 activity-log entries, 1 recycle-bin entry"
 
 // demoPeople are the demo people of docs/product/demo-users-and-data.md, in the order of its table, which
 // gives them the IDs U-1001 to U-1006.
@@ -50,11 +51,30 @@ var demoPeople = []struct {
 	{"Sara Novak", "sara.novak@northstar.demo", "Local finance advisor"},
 }
 
+// Option changes what Load loads. The seed command uses none; tests use them.
+type Option func(*options)
+
+// options are what the Options of one Load chose.
+type options struct {
+	withoutHistory bool
+}
+
+// WithoutHistory leaves out the demo history (history.go): the activity log and the recycle bin start empty
+// and the deleted initiative takes no IDs. Tests of the rules of the log and the bin use it, so their
+// entries and IDs do not depend on the demo story.
+func WithoutHistory() Option {
+	return func(o *options) { o.withoutHistory = true }
+}
+
 // Load loads the demo data into db, which must be empty (ErrNotEmpty otherwise), in one Write: all of it,
 // or nothing when something fails. NorthStar itself (actor.System) creates every record, at the time now
-// gives, so tests can fix it; the approval history is dated before that time. Call Load outside
-// transactions.
-func Load(ctx context.Context, db *store.DB, now clock.Clock) error {
+// gives, so tests can fix it; the approval history and the demo history are dated before that time. Call
+// Load outside transactions.
+func Load(ctx context.Context, db *store.DB, now clock.Clock, opts ...Option) error {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
 	if !db.IsEmpty() {
 		return ErrNotEmpty
 	}
@@ -64,6 +84,9 @@ func Load(ctx context.Context, db *store.DB, now clock.Clock) error {
 			d.addPeople, d.addSettings, d.addTeams, d.addPlans, d.addCampaigns, d.addActivities,
 			d.addLineItems, d.addApprovals,
 			d.addSavedViews, // 010's personal settings (allwork.go)
+		}
+		if !o.withoutHistory {
+			steps = append(steps, d.addHistory) // 011's demo history (history.go): always last (D-188)
 		}
 		for _, step := range steps {
 			if err := step(ctx); err != nil {

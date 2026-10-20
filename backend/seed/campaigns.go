@@ -99,29 +99,37 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 		d.campaigns[c.plan+"/"+c.name] = id
 
 		for _, i := range c.initiatives {
-			ownerID, err := find(d.people, "person", i.owner)
+			initiative, err := d.initiativeOf(i, id)
 			if err != nil {
 				return err
 			}
-			start, end, budget, attributes, err := d.planningFields(i.start, i.end, i.budget, settings.LevelInitiative, i.attributes)
-			if err != nil {
+			if initiative.ID, err = d.next(ctx, ids.PrefixInitiative); err != nil {
 				return err
-			}
-			initiativeID, err := d.next(ctx, ids.PrefixInitiative)
-			if err != nil {
-				return err
-			}
-			initiative := campaigns.Initiative{
-				ID: initiativeID, CampaignID: id, Name: i.name, OwnerID: &ownerID, StartDate: start, EndDate: end,
-				Budget: budget, Attributes: attributes, Meta: d.meta(),
 			}
 			if err := repo.PutInitiative(ctx, initiative); err != nil {
 				return err
 			}
-			d.initiatives[c.name+"/"+i.name] = initiativeID
+			d.initiatives[c.name+"/"+i.name] = initiative.ID
 		}
 	}
 	return nil
+}
+
+// initiativeOf builds the stored initiative i of the campaign campaignID, without its ID, looking up its
+// owner by name. NorthStar creates it at the seed time.
+func (d *demo) initiativeOf(i demoInitiative, campaignID string) (campaigns.Initiative, error) {
+	ownerID, err := find(d.people, "person", i.owner)
+	if err != nil {
+		return campaigns.Initiative{}, err
+	}
+	start, end, budget, attributes, err := d.planningFields(i.start, i.end, i.budget, settings.LevelInitiative, i.attributes)
+	if err != nil {
+		return campaigns.Initiative{}, err
+	}
+	return campaigns.Initiative{
+		CampaignID: campaignID, Name: i.name, OwnerID: &ownerID, StartDate: start, EndDate: end,
+		Budget: budget, Attributes: attributes, Meta: d.meta(),
+	}, nil
 }
 
 // planningFields turns the texts of a seeded campaign or initiative into its stored dates, USD budget and

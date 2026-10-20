@@ -12,6 +12,8 @@ import {
   ShellAttributeValues,
   Skeleton,
 } from '@/components';
+import { HistorySection } from '@/features/activity-log/HistorySection';
+import { showHistory } from '@/features/activity-log/showHistory';
 import { formatRate, toCents } from '@/lib/decimal';
 import { localDate } from '@/lib/format';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
@@ -56,7 +58,7 @@ import { useLineItemActions } from './useLineItemActions';
 /**
  * A line item's details (US4, FR-026), at /line-items/:lineItemId: where it lives, its chips, the
  * facts, who created and changed it, Edit and More (Duplicate, View history, Delete), then every
- * value read-only in the form's order, "—" for empty ones.
+ * value read-only in the form's order, "—" for empty ones, and its History (feature 011).
  */
 export function LineItemPage() {
   const { lineItemId = '' } = useParams();
@@ -95,13 +97,8 @@ export function LineItemPage() {
             <MoreMenu
               items={[
                 { label: DUPLICATE, onSelect: () => actions.duplicate(lineItem, activity) },
-                {
-                  label: VIEW_HISTORY,
-                  onSelect: () =>
-                    void navigate(
-                      `/activity-log?${new URLSearchParams({ recordType: 'lineItem', recordId: lineItem.id })}`,
-                    ),
-                },
+                // Brings the History section below into view and focuses it (feature 011).
+                { label: VIEW_HISTORY, onSelect: () => showHistory() },
                 {
                   label: DELETE,
                   tone: 'danger',
@@ -118,6 +115,14 @@ export function LineItemPage() {
         onSelectField={(field) => void navigate(fieldHref('lineItem', lineItem.id, field))}
       />
       <Values lineItem={lineItem} activity={activity} />
+      <div className={styles.history}>
+        <HistorySection
+          recordType="lineItem"
+          recordId={lineItem.id}
+          recordName={lineItem.name}
+          level="lineItem"
+        />
+      </div>
       {actions.dialogs}
     </>
   );

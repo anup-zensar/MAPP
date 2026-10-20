@@ -491,6 +491,39 @@ func TestUpdatePreferences_HomeScope_FR003(t *testing.T) {
 	}
 }
 
+// TestUpdatePreferences_HistoryIncludeInside_FR012: the History section's include choice (feature 011) is
+// false by default, remembered for the person, saved only when it changes, and leaves the activity log alone.
+func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) {
+	service, db := newTestService(t)
+	priya := newPerson("U-1002", "Priya Raman", true)
+	addPeople(t, db, priya)
+	yes, no := true, false
+
+	user, err := service.CurrentUser(t.Context(), priya.Actor())
+	if err != nil || user.Preferences.HistoryIncludeInside {
+		t.Fatalf("default = %+v, %v; want false", user.Preferences, err)
+	}
+	unchanged, err := service.UpdatePreferences(t.Context(), priya.Actor(), PreferencesUpdate{HistoryIncludeInside: &no})
+	if err != nil || unchanged.HistoryIncludeInside {
+		t.Fatalf("choosing false = %+v, %v; want false", unchanged, err)
+	}
+	if _, found := storedPreferences(t, db, priya.ID); found {
+		t.Error("a preferences record was saved although nothing changed")
+	}
+
+	on, err := service.UpdatePreferences(t.Context(), priya.Actor(), PreferencesUpdate{HistoryIncludeInside: &yes})
+	if err != nil || !on.HistoryIncludeInside {
+		t.Fatalf("choosing true = %+v, %v; want true", on, err)
+	}
+	user, _ = service.CurrentUser(t.Context(), priya.Actor())
+	if !user.Preferences.HistoryIncludeInside {
+		t.Error("GET /api/me historyIncludeInside = false, want true (remembered)")
+	}
+	if stored, _ := storedPreferences(t, db, priya.ID); !stored.HistoryIncludeInside || stored.Theme != "system" {
+		t.Errorf("stored preferences = %+v, want historyIncludeInside true and the other defaults", stored)
+	}
+}
+
 // newTestService returns a people service on a new, empty data folder, and the store behind it.
 func newTestService(t *testing.T) (*Service, *store.DB) {
 	t.Helper()

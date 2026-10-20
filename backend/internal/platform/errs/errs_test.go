@@ -268,3 +268,22 @@ func TestPlanModuleErrors_409_D043(t *testing.T) {
 		t.Errorf("NotReady JSON =\n%s\nwant\n%s", got, want)
 	}
 }
+
+// A restore whose parent was deleted permanently is a 409 conflict that names the level, the parent's
+// level and the parent, and carries the parent, so the web app can explain it (011 FR-024, D-182).
+func TestParentDeletedPermanently(t *testing.T) {
+	parent := errs.RecordRef{Type: "initiative", ID: "I-1003", Name: "Digital & social"}
+
+	got := errs.ParentDeletedPermanently("activity", parent, "initiative")
+
+	if got.Status != http.StatusConflict || got.Code != errs.CodeParentDeletedPermanently ||
+		errs.CodeParentDeletedPermanently != "parent_deleted_permanently" {
+		t.Errorf("status %d, code %q; want 409 parent_deleted_permanently", got.Status, got.Code)
+	}
+	want := `{"code":"parent_deleted_permanently",` +
+		`"message":"This activity can't be restored because its initiative 'Digital \u0026 social' was permanently deleted.",` +
+		`"fields":[],"parent":{"type":"initiative","id":"I-1003","name":"Digital \u0026 social"}}`
+	if body := encode(t, got); body != want {
+		t.Errorf("JSON =\n%s\nwant\n%s", body, want)
+	}
+}

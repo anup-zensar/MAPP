@@ -52,7 +52,8 @@ func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 }
 
 // Every ID comes from the readable-ID counters, so the next record of each type continues after the seed
-// (FR-027, research R4, R22; the "next IDs" of the data models of 002–008).
+// (FR-027, research R4, R22; the "next IDs" of the data models of 002–008). The deleted initiative of 011's
+// demo history took I-1009, A-1011 and L-1009, which are only in the recycle bin and never given out again.
 func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 	db := loadedStore(t)
 
@@ -60,8 +61,9 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixPerson: "U-1007", ids.PrefixActivityType: "AT-1007", ids.PrefixModel: "MOD-1003",
 		ids.PrefixShellAttribute: "SA-1036", ids.PrefixShellOption: "SO-1111", ids.PrefixFinanceBudget: "FB-1003",
 		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1009",
-		ids.PrefixPlan: "P-1004", ids.PrefixCampaign: "C-1005", ids.PrefixInitiative: "I-1009", ids.PrefixActivity: "A-1011",
-		ids.PrefixLineItem: "L-1009", ids.PrefixApprovalWorkflow: "WF-1003", ids.PrefixApprovalRound: "AR-1009",
+		ids.PrefixPlan: "P-1004", ids.PrefixCampaign: "C-1005", ids.PrefixInitiative: "I-1010", ids.PrefixActivity: "A-1012",
+		ids.PrefixLineItem: "L-1010", ids.PrefixLogEntry: "LOG-1047", ids.PrefixBinEntry: "BIN-1002",
+		ids.PrefixApprovalWorkflow: "WF-1003", ids.PrefixApprovalRound: "AR-1009",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
@@ -117,24 +119,19 @@ func TestLoad_Twice_FR028(t *testing.T) {
 	}
 }
 
-// The seed writes no activity-log entries and nothing in the recycle bin: only feature 011's step will add
-// the demo history (D-202, D-188).
-func TestLoad_WritesNoHistory_D202(t *testing.T) {
-	db := loadedStore(t)
-	read(t, db, func(ctx context.Context) error {
-		entries, err := history.NewJSONRepository().Entries(ctx)
-		if err != nil {
-			return err
+// Only feature 011's step writes history (D-202, D-188): every activity-log entry of the seed is one of
+// the demo history's kinds, about a planning record, and no entry is about the records of the other steps'
+// Settings, people, teams or approval workflows.
+func TestLoad_OnlyTheHistoryStepWritesHistory_D202(t *testing.T) {
+	entries, _ := demoLog(t, loadedStore(t))
+	planning := []string{"plan", "campaign", "initiative", "activity", "lineItem"}
+	actions := []history.Action{history.ActionCreated, history.ActionStatusChanged, history.ActionChanged, history.ActionDeleted}
+	for _, e := range entries {
+		if !slices.Contains(planning, e.RecordType) || !slices.Contains(actions, e.Action) {
+			t.Errorf("%s: a %s entry about a %s, want only the demo history's entries about planning records",
+				entryText(e), e.Action, e.RecordType)
 		}
-		bin, err := history.NewJSONRepository().BinEntries(ctx)
-		if err != nil {
-			return err
-		}
-		if len(entries) != 0 || len(bin) != 0 {
-			t.Errorf("%d log entries and %d recycle-bin entries, want none", len(entries), len(bin))
-		}
-		return nil
-	})
+	}
 }
 
 // seed.Loaded, which the seed command prints, says exactly what is stored.
@@ -146,12 +143,13 @@ func TestLoaded_SaysWhatIsLoaded_FR028(t *testing.T) {
 			activeOptions++
 		}
 	}
+	entries, bin := demoLog(t, loadedStore(t))
 	got := fmt.Sprintf("%d people, %d teams, %d models, %d activity types, %d Shell attributes with %d options, "+
 		"%d currencies, %d finance budget items, %d plans, %d campaigns, %d initiatives, %d activities, %d line items, "+
-		"%d approval workflows, %d approval rounds",
+		"%d approval workflows, %d approval rounds, %d activity-log entries, %d recycle-bin entry",
 		len(d.people), len(d.teams), len(d.models), len(d.activityTypes), len(d.attributes), activeOptions,
 		len(d.currencies), len(d.items), len(d.plans), len(d.campaigns), len(d.initiatives), len(d.activities),
-		len(d.lineItems), len(d.workflows), len(d.rounds))
+		len(d.lineItems), len(d.workflows), len(d.rounds), len(entries), len(bin))
 	if got != seed.Loaded {
 		t.Errorf("stored: %s\nseed.Loaded: %s", got, seed.Loaded)
 	}

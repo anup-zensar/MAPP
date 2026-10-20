@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 import { FORM_ANSWERS, plan, planDefaults, seedList } from './testData';
 
@@ -21,6 +22,7 @@ vi.mock('@/features/campaigns/useCampaignTreeContent', () => ({
 /** What the four pages ask the API. */
 const ANSWERS = {
   ...FORM_ANSWERS,
+  ...HISTORY_ANSWERS,
   'GET /api/plans': { body: seedList() },
   'GET /api/plan-defaults': { body: planDefaults() },
   'GET /api/plans/P-1001': { body: plan() },

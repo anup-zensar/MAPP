@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { planForm } from '@/test/attributeForms';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -29,6 +30,7 @@ function renderPage(
   more: Record<string, MockHandler> = {},
 ) {
   const api = mockApi({
+    ...HISTORY_ANSWERS,
     'GET /api/plans/P-1001': answer,
     'GET /api/shell-attribute-forms/plan': { body: planForm() },
     ...more,
@@ -361,7 +363,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     ).toBeInTheDocument();
   });
 
-  it('opens the plan’s history from More (FR-031)', async () => {
+  it('brings the plan’s History section up from More (FR-031, 011 FR-011)', async () => {
     const { user, router } = renderPage();
 
     await user.click(
@@ -369,8 +371,25 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     );
     await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?recordType=plan&recordId=P-1001');
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
+    );
+    expect(router.state.location.pathname).toBe('/plans/P-1001');
+  });
+
+  it('ends with the plan’s History, with Include items inside (011 FR-011 – FR-013)', async () => {
+    const { api } = renderPage();
+
+    const history = await screen.findByRole('region', { name: 'History' });
+    expect(within(history).getByText('Every change to this plan, newest first')).toBeVisible();
+    expect(within(history).getByRole('checkbox', { name: 'Include items inside' })).toBeVisible();
+    expect(within(history).getByRole('link', { name: 'Open in activity log' })).toHaveAttribute(
+      'href',
+      '/activity-log?record=P-1001',
+    );
+    expect(await within(history).findByText('No changes recorded yet.')).toBeVisible();
+    const asked = api.requests.find((request) => request.path === '/api/activity-log');
+    expect(new URLSearchParams(asked?.search).get('recordId')).toBe('P-1001');
   });
 
   it('shows grey shapes while loading, then an error with Try again', async () => {

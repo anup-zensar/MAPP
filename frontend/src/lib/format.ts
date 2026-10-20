@@ -151,6 +151,17 @@ export function formatDateTime(
   return `${formatDate(localDate(timestamp), format)}, ${formatTime(timestamp)}`;
 }
 
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * The calendar date "2026-10-12" as "Monday 12 Oct 2026" (feature 011: the activity log's day
+ * headings). The weekday is worked out in UTC, so the time zone cannot move it to another day.
+ */
+export function formatWeekdayDate(date: string): string {
+  const weekday = WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()];
+  return `${weekday} ${formatDate(date)}`;
+}
+
 /**
  * How long ago something happened (feature 008, notifications): "just now", "1 minute ago",
  * "5 hours ago", "yesterday", "3 days ago" (by calendar day, in the user's time zone), and from

@@ -439,3 +439,40 @@ func TestHome_LargeScope_SC004(t *testing.T) {
 		}
 	}
 }
+
+// Recent changes asks the activity log for the 10 newest entries of the plans in scope: My teams names the
+// person's team plans, Everything every plan (nil); My teams without team plans answers an empty page
+// without asking; another scope is refused (FR-015).
+func TestRecentChanges_Scope_FR015(t *testing.T) {
+	f := newFakeSources()
+	f.plans = []Plan{
+		newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope),
+		newPlan("P-1002", "FY2026 Mobility China", 2026, mobilityChina),
+		newPlan("P-1003", "FY2026 Global brand", 2026, lubricantsEurope, mobilityChina),
+	}
+	entry := map[string]any{"id": "LOG-1001"}
+	f.logAnswer = RecentChangesPage{Items: []any{entry}, Total: 12}
+	service := newService(t, f)
+
+	mine, err := service.RecentChanges(t.Context(), priya, "myTeams")
+	if err != nil || mine.Total != 12 || len(mine.Items) != 1 {
+		t.Fatalf("My teams = %+v, %v; want the answer of the log", mine, err)
+	}
+	if _, err := service.RecentChanges(t.Context(), sara, "everything"); err != nil {
+		t.Fatalf("Everything: %v", err)
+	}
+	if want := [][]string{{"P-1001", "P-1003"}, nil}; !reflect.DeepEqual(f.logAsked, want) || f.logLimit != 10 {
+		t.Errorf("asked the log for %v (limit %d), want %v (limit 10)", f.logAsked, f.logLimit, want)
+	}
+
+	none, err := service.RecentChanges(t.Context(), nina, "myTeams") // in no team
+	if err != nil || none.Total != 0 || none.Items == nil || len(none.Items) != 0 {
+		t.Errorf("My teams without team plans = %+v, %v; want an empty page", none, err)
+	}
+	if len(f.logAsked) != 2 {
+		t.Errorf("the log was asked %d times, want 2 (not for a person without team plans)", len(f.logAsked))
+	}
+
+	_, err = service.RecentChanges(t.Context(), priya, "all")
+	assertError(t, err, scopeRefused)
+}

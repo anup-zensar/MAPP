@@ -25,6 +25,14 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("GET /api/home/attention", signedIn(h.attention))
 	r.Handle("GET /api/home/waiting", signedIn(h.waiting))
 	r.Handle("GET /api/home/my-activities", signedIn(h.myActivities))
+	r.Handle("GET /api/home/recent-changes", signedIn(h.recentChanges))
+}
+
+// recentChanges answers GET /api/home/recent-changes?scope=: Recent changes (FR-015, FR-016).
+func (h *Handler) recentChanges(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	page, err := h.service.RecentChanges(r.Context(), a, r.URL.Query().Get("scope"))
+	answer(w, r, page, err)
 }
 
 // myActivities answers GET /api/home/my-activities: My activities (FR-014).

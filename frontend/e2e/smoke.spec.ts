@@ -58,26 +58,24 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   const nav = page.getByRole('navigation', { name: 'Main' });
   const main = page.getByRole('main');
 
-  // Plans, Approvals, Settings (features 002–008), Home (009) and All work (010) are built; Recycle
-  // bin and Activity log (011) still show their "Coming soon" page. (Home's Recent changes card says
-  // "Coming soon" too until 011 is built, so the page is recognised by its own sentence.)
-  const pages: { item: string; heading: string; comingSoon: boolean }[] = [
-    { item: 'Plans', heading: 'Plans', comingSoon: false },
-    { item: 'Approvals', heading: 'Approvals', comingSoon: false },
-    { item: 'All work', heading: 'See all planned work across plans', comingSoon: false },
-    { item: 'Settings', heading: 'Settings', comingSoon: false },
-    { item: 'Recycle bin', heading: 'Recycle bin', comingSoon: true },
-    { item: 'Activity log', heading: 'Activity log', comingSoon: true },
-    { item: 'Home', heading: 'Welcome back, Daniel.', comingSoon: false },
+  // Every section is built: Plans, Approvals, Settings (features 002–008), Home (009), All work (010),
+  // Recycle bin and Activity log (011, whose headings are the messages table's "Deleted, not gone." and
+  // "Every change, on the record."). No page shows "Coming soon" any more.
+  const pages: { item: string; heading: string }[] = [
+    { item: 'Plans', heading: 'Plans' },
+    { item: 'Approvals', heading: 'Approvals' },
+    { item: 'All work', heading: 'See all planned work across plans' },
+    { item: 'Settings', heading: 'Settings' },
+    { item: 'Recycle bin', heading: 'Deleted, not gone.' },
+    { item: 'Activity log', heading: 'Every change, on the record.' },
+    { item: 'Home', heading: 'Welcome back, Daniel.' },
   ];
-  for (const { item, heading, comingSoon } of pages) {
+  for (const { item, heading } of pages) {
     await nav.getByRole('link', { name: item }).click();
     await expect(page).toHaveTitle(`${item} · NorthStar`);
     await expect(nav.getByRole('link', { name: item })).toHaveAttribute('aria-current', 'page');
     await expect(main.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
-    await expect(main.getByText("This part of NorthStar isn't built yet.")).toHaveCount(
-      comingSoon ? 1 : 0,
-    );
+    await expect(main.getByText("This part of NorthStar isn't built yet.")).toHaveCount(0);
   }
 
   await page.goto('/nowhere');

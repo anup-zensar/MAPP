@@ -1,0 +1,62 @@
+/* The summary cards, then the filters and the list, one under the other. */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* The four cards side by side; on narrow screens they wrap onto more rows. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.cardSkeleton {
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.cardLink {
+  color: var(--link);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+/* The filters and the entries in one white card. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.count {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .panel {
+    padding: 16px;
+  }
+}

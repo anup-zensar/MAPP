@@ -90,15 +90,11 @@ export function useHomeMyActivities() {
   });
 }
 
-/**
- * Recent changes: the 10 newest activity-log entries about the plans in scope. `enabled` is false
- * while the activity log (feature 011) is not built, so nothing is asked.
- */
-export function useHomeRecentChanges(scope: HomeScope, enabled = true) {
+/** Recent changes: the 10 newest activity-log entries (feature 011) about the plans in scope. */
+export function useHomeRecentChanges(scope: HomeScope) {
   return useQuery({
     queryKey: HOME_KEYS.recentChanges(scope),
     queryFn: () => call(api.GET('/api/home/recent-changes', { params: { query: { scope } } })),
-    enabled,
     ...ALWAYS_FRESH,
   });
 }

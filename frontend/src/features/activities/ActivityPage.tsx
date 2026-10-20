@@ -2,6 +2,7 @@ import { Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router';
 import { ActionsMenu, LinkButton, PageHeader } from '@/components';
+import { HistorySection } from '@/features/activity-log/HistorySection';
 import { ApprovalSection } from '@/features/approvals/ApprovalSection';
 import { ApprovalStatusAction } from '@/features/approvals/ApprovalStatusAction';
 import type { ApprovalActivity } from '@/features/approvals/approvalTypes';
@@ -28,7 +29,8 @@ const ACTIVITY_GONE = 'This activity no longer exists — someone may have delet
 /**
  * An activity's page (feature 006, US2, FR-019 – FR-025), at /plans/:planId/activities/:activityId:
  * the header with status, completeness and the facts, Ready to submit, the details, then the line
- * items (feature 007, in #line-items) and the approval (feature 008, in #approval). An address
+ * items (feature 007, in #line-items), the approval (feature 008, in #approval) and the History
+ * (feature 011, in #history). An address
  * ending in #ready or #completeness (Home's "Show fields", feature 009) opens Ready to submit. An
  * address with another plan's ID is replaced by the right one.
  */
@@ -178,6 +180,12 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
           <ApprovalSection activity={approvalActivity} onShowProblems={showSubmitProblems} />
         </div>
         <FromFinance />
+        <HistorySection
+          recordType="activity"
+          recordId={activity.id}
+          recordName={activity.name}
+          level="activity"
+        />
       </div>
       {more.dialogs}
     </>
