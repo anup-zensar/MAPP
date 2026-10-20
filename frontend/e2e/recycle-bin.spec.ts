@@ -53,7 +53,7 @@ function gone(page: Page): Locator {
 /** Opens the recycle bin and searches it for `text`. */
 async function searchBin(page: Page, text: string): Promise<void> {
   await page.goto('/recycle-bin');
-  await expect(page.getByRole('heading', { level: 1, name: 'Deleted, not gone.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Recycle bin' })).toBeVisible();
   await page.getByRole('searchbox', { name: 'Search name or ID' }).fill(text);
 }
 
@@ -80,7 +80,7 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
 
   // The search also looks inside each entry (FR-016).
   await page.getByRole('searchbox', { name: 'Search name or ID' }).fill(stand.recordId);
-  await expect(page.getByText(/^Showing 1 of \d+$/)).toBeVisible();
+  await expect(page.getByText(/^1 of \d+ items?$/)).toBeVisible();
   await expect(row.getByText(`Contains ${stand.recordId} 'Fleet expo stand'`)).toBeVisible();
 
   // Step 1: Restore — the dialog says where it returns and with what (FR-018).
@@ -213,7 +213,9 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   // Empty recycle bin: everything listed goes, in one step (FR-029).
   await callApi(page, 'DELETE', `/api/initiatives/${records.initiativeId}`);
   await page.goto('/recycle-bin');
-  await page.getByRole('button', { name: 'Empty recycle bin' }).click();
+  // Destructive and rare, so it is in the header's More menu (design system §5.1).
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Empty recycle bin' }).click();
   const empty = page.getByRole('alertdialog', { name: 'Empty the recycle bin?' });
   await expect(empty.getByText(/^This permanently deletes \d+ items?/)).toBeVisible();
   await expect(empty.getByText("This can't be undone.")).toBeVisible();
@@ -221,12 +223,8 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   await expectNoAxeViolations(page);
   await empty.getByRole('button', { name: 'Empty recycle bin' }).click();
   await expectToast(page, /The recycle bin is empty — \d+ items? deleted permanently/);
-  await expect(
-    page.getByText(
-      'Nothing in the recycle bin — when you delete a plan, campaign, initiative, activity or line item, it comes here so you can bring it back.',
-    ),
-  ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Empty recycle bin' })).toHaveCount(0);
+  await expect(page.getByText('Nothing in the recycle bin', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'More' })).toHaveCount(0);
 
   // Both are in the activity log, with Mei as the actor (FR-030, SC-007).
   await page.goto('/activity-log');

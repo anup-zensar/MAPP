@@ -1,0 +1,43 @@
+/* Under the table: per page on the left, the range and Previous / Next on the right. */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--card-padding);
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.size {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.select {
+  height: var(--control-sm);
+  padding: 0 var(--space-6) 0 var(--space-2);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background-color: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.range {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.after {
+  width: 16px;
+  height: 16px;
+}

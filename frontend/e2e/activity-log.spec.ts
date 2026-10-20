@@ -51,9 +51,7 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await callApi(page, 'DELETE', `/api/initiatives/${binned.id}`);
 
   await page.goto('/activity-log');
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Every change, on the record.' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Activity log' })).toBeVisible();
   await expect(page).toHaveTitle('Activity log · NorthStar');
   await expect(
     page.getByText("See who changed what, and when. Entries can't be edited or removed."),
@@ -67,7 +65,7 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await expect(page).toHaveURL(/[?&]range=today\b/);
   await expect(chip(page, 'Date: Today')).toBeVisible();
 
-  // Person and action (FR-003): chips and "Showing N of M entries".
+  // Person and action (FR-003): chips and "N of M entries".
   await page.getByLabel('Person', { exact: true }).selectOption({ label: 'Mei Lin' });
   await expect(chip(page, 'Person: Mei Lin')).toBeVisible();
   await page.getByRole('button', { name: 'Action: Any action' }).click();
@@ -75,7 +73,7 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await page.keyboard.press('Escape');
   await expect(chip(page, 'Action: Changed')).toBeVisible();
   await expect(page).toHaveURL(/[?&]person=U-\d+/);
-  await expect(page.getByText(/^Showing [\d,]+ of [\d,]+ entries$/)).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ of [\d,]+ entries$/)).toBeVisible();
 
   // The activity's change expands into its field change (FR-007), with the keyboard (SC-008).
   const changed = entry(page, `Mei Lin changed activity '${records.activityName}'`);

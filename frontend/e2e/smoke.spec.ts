@@ -59,15 +59,15 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   const main = page.getByRole('main');
 
   // Every section is built: Plans, Approvals, Settings (features 002–008), Home (009), All work (010),
-  // Recycle bin and Activity log (011, whose headings are the messages table's "Deleted, not gone." and
-  // "Every change, on the record."). No page shows "Coming soon" any more.
+  // Recycle bin and Activity log (011), Financials (015). No page shows "Coming soon" any more.
   const pages: { item: string; heading: string }[] = [
     { item: 'Plans', heading: 'Plans' },
     { item: 'Approvals', heading: 'Approvals' },
     { item: 'All work', heading: 'See all planned work across plans' },
     { item: 'Settings', heading: 'Settings' },
-    { item: 'Recycle bin', heading: 'Deleted, not gone.' },
-    { item: 'Activity log', heading: 'Every change, on the record.' },
+    { item: 'Financials', heading: 'Financials' },
+    { item: 'Recycle bin', heading: 'Recycle bin' },
+    { item: 'Activity log', heading: 'Activity log' },
     { item: 'Home', heading: 'Welcome back, Daniel.' },
   ];
   for (const { item, heading } of pages) {

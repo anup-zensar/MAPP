@@ -83,9 +83,9 @@ test('An activity deleted from its page is found in the recycle bin and restored
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Recycle bin' })
     .click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Deleted, not gone.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Recycle bin' })).toBeVisible();
   await page.getByRole('searchbox', { name: 'Search name or ID' }).fill(records.activityId);
-  await expect(page.getByText(/^Showing 1 of [\d,]+$/)).toBeVisible();
+  await expect(page.getByText(/^1 of [\d,]+ items?$/)).toBeVisible();
   const row = binRow(page, name);
   await expect(row.getByText(records.activityId, { exact: true })).toBeVisible();
   await expect(row.getByText(`Was in ${place}`)).toBeVisible();
@@ -125,14 +125,12 @@ test('An activity deleted from its page is found in the recycle bin and restored
     .getByRole('navigation', { name: 'Main' })
     .getByRole('link', { name: 'Activity log' })
     .click();
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Every change, on the record.' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Activity log' })).toBeVisible();
   await expect(page.getByText(/^[\d,]+ entries$/)).toBeVisible();
   await page.getByRole('searchbox', { name: 'Search name, ID or person' }).fill(name);
   await expect(page).toHaveURL(/[?&]q=/);
   await expect(chip(page, `Search: '${name}'`)).toBeVisible();
-  await expect(page.getByText(/^Showing 4 of [\d,]+ entries$/)).toBeVisible();
+  await expect(page.getByText(/^4 of [\d,]+ entries$/)).toBeVisible();
   const log = page.getByRole('main');
   await expectEntries(log.locator('ol[role="list"]'), lifeOf);
   await expectNoAxeViolations(page);
@@ -142,7 +140,7 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await page.getByRole('menuitemcheckbox', { name: 'Restored', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(chip(page, 'Action: Restored')).toBeVisible();
-  await expect(page.getByText(/^Showing 1 of [\d,]+ entries$/)).toBeVisible();
+  await expect(page.getByText(/^1 of [\d,]+ entries$/)).toBeVisible();
   await expectEntries(log.locator('ol[role="list"]'), [lifeOf[0]]);
 
   // Its record link opens the activity, which exists again (FR-008).
@@ -155,7 +153,7 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await expect(chip(page, 'Action: Restored')).toBeVisible();
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page).toHaveURL(/\/activity-log$/);
-  await expect(page.getByText(/^Showing [\d,]+ of [\d,]+ entries$/)).toHaveCount(0);
+  await expect(page.getByText(/^[\d,]+ of [\d,]+ entries$/)).toHaveCount(0);
 });
 
 test('Delete permanently: the activity leaves the bin for good and the log keeps every step, without a link (011 US5, FR-008, FR-028, FR-030)', async ({
@@ -193,7 +191,7 @@ test('Delete permanently: the activity leaves the bin for good and the log keeps
 
   // The log: permanently deleted, deleted, created — the name is plain text now, with no link.
   await page.goto(`/activity-log?q=${encodeURIComponent(name)}`);
-  await expect(page.getByText(/^Showing 3 of [\d,]+ entries$/)).toBeVisible();
+  await expect(page.getByText(/^3 of [\d,]+ entries$/)).toBeVisible();
   await expectEntries(page.getByRole('main').locator('ol[role="list"]'), [
     {
       text: `Mei Lin permanently deleted activity '${name}' (permanently deleted)`,
@@ -255,7 +253,5 @@ test('Home: Recent changes shows the latest changes in Mei’s plans, newest fir
   await page.goBack();
   await card.getByRole('link', { name: 'View activity log' }).click();
   await expect(page).toHaveURL(/\/activity-log$/);
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Every change, on the record.' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Activity log' })).toBeVisible();
 });
