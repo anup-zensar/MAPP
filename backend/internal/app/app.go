@@ -10,6 +10,7 @@ import (
 	"northstar/internal/allwork"
 	"northstar/internal/approvals"
 	"northstar/internal/auth"
+	"northstar/internal/budgets"
 	"northstar/internal/campaigns"
 	"northstar/internal/history"
 	"northstar/internal/home"
@@ -134,6 +135,21 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	campaigns.NewHandler(campaignsService).Routes(router, signedIn)
 	activities.NewHandler(activitiesService).Routes(router, signedIn)
 	lineitems.NewHandler(lineItemsService).Routes(router, signedIn)
+
+	// Global budgets (014, BUS.BUD.040): global budgets and their allocations to plans, which set the plans'
+	// budgets through the plans service (budgets_adapter.go). Their kinds come after the planning kinds: an
+	// allocation is a child of its plan, which takes it along when deleted and restored. Without Access the
+	// service allows every action; the access rules of 014 come in through budgets.Deps.Access.
+	budgetsService := budgets.NewService(db, budgets.NewJSONRepository(), generator, historyService, budgets.Deps{
+		Plans: budgetPlans{plans: planService, repo: plansRepo}, Directory: peopleService, Rates: settingsService,
+	}, now)
+	for _, kind := range budgetsService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+	planService.UseAllocations(planAllocations{budgets: budgetsService}) // Plan.allocation and the budget lock
+	budgets.NewHandler(budgetsService).Routes(router, signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API

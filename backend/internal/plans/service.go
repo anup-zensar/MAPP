@@ -37,6 +37,8 @@ type Service struct {
 	directory Directory
 	now       clock.Clock
 	levels    []Level // the levels below the plan, top-down (RegisterLevel)
+
+	allocations Allocations // 014's global-budget allocations (UseAllocations); nil: no plan is allocated
 }
 
 // NewService returns the plans service. It keeps plans in repo, gives them readable IDs with generator,
@@ -555,6 +557,9 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 			b = settings.FinanceBudget{ID: p.DefaultFinanceBudgetID, Year: p.Year, Name: p.DefaultFinanceBudgetID}
 		}
 		view.DefaultFinanceBudget = &FinanceBudgetRef{ID: b.ID, Year: b.Year, Name: b.Name}
+	}
+	if view.Allocation, err = s.allocationView(ctx, p); err != nil { // where the budget comes from (014 FR-031)
+		return PlanView{}, err
 	}
 	return view, nil
 }

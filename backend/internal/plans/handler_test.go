@@ -278,14 +278,15 @@ func europeForm(version int) map[string]any {
 
 // Saving the edit form answers the plan after the change: still Published, version 2, by Daniel. A save
 // from the old version is refused naming Daniel and the time; a missing version and an empty name are
-// reported at once; an unknown plan is not found (FR-018, FR-022, FR-023, US4).
+// reported at once; an unknown plan is not found (FR-018, FR-022, FR-023, US4). The seed's global budget
+// sets this plan's budget (014 FR-031), so the edit changes the description.
 func TestUpdatePlan_200_409_404_FR018_FR023(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
 	server.Advance(90 * time.Minute)
 	edited := europeForm(1)
-	edited["budget"] = map[string]any{"amount": "1300000.00", "currency": "USD"}
+	edited["description"] = "Lubricants marketing in Europe for 2026, with the spring campaign."
 	invalid := europeForm(0)
 	invalid["name"] = ""
 
@@ -295,8 +296,8 @@ func TestUpdatePlan_200_409_404_FR018_FR023(t *testing.T) {
 	gone := priya.Do(t, http.MethodPatch, "/api/plans/P-9999", europeForm(1))
 
 	assertFields(t, saved, http.StatusOK, map[string]any{
-		"status": "published", "version": 2, "year": 2026, "budget": map[string]any{"amount": "1300000.00", "currency": "USD"},
-		"updatedAt": "2026-03-12T10:30:00Z", "updatedBy": map[string]any{"id": "U-1003", "name": "Daniel Okoro"},
+		"status": "published", "version": 2, "year": 2026,
+		"description": "Lubricants marketing in Europe for 2026, with the spring campaign.", "updatedAt": "2026-03-12T10:30:00Z", "updatedBy": map[string]any{"id": "U-1003", "name": "Daniel Okoro"},
 	})
 	assertAnswer(t, outOfDate, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this plan",`+
 		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}`)

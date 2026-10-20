@@ -20,8 +20,9 @@ const msgReload = "Reload the page and try again."
 // Update saves the whole plan form from the version the person started from (FR-018 – FR-023, D-078): the
 // year never changes and the status stays, so a Published plan stays Published. Every problem is reported
 // at once, a missing version among them; a save from an out-of-date version is refused naming who changed
-// the plan and when. A save that changes nothing creates no version and no log entry; otherwise one
-// "changed" entry lists every changed field, each Shell attribute on its own.
+// the plan and when. The budget of a plan that a global budget allocates to is read-only: a save that changes
+// it is refused with 409 not_allowed (014 FR-031). A save that changes nothing creates no version and no log
+// entry; otherwise one "changed" entry lists every changed field, each Shell attribute on its own.
 func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update PlanUpdate) (PlanView, error) {
 	var view PlanView
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
@@ -41,6 +42,9 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update P
 			return err
 		}
 		if err := stored.CheckVersion(*update.Version, kindSingular); err != nil {
+			return err
+		}
+		if err := s.refuseAllocatedBudget(ctx, stored, changed); err != nil { // 014 FR-031
 			return err
 		}
 		changes, err := planChanges(stored, changed)
