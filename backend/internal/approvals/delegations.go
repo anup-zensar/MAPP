@@ -347,6 +347,7 @@ func (s *Service) checkDelegation(ctx context.Context, a actor.Actor, d director
 	start, startOK := parseDay(form.startDate)
 	end, endOK := parseDay(form.endDate)
 	current := stored != nil && stored.state(today) == DelegationCurrent
+	datesOK := false // both dates are right: the overlap check needs them
 	switch {
 	case !startOK:
 		problems.Add("startDate", enterFirstDayMessage)
@@ -354,7 +355,11 @@ func (s *Service) checkDelegation(ctx context.Context, a actor.Actor, d director
 		problems.Add("startDate", startedMessage)
 	case !current && start.Before(today):
 		problems.Add("startDate", firstDayTodayMessage)
+	default:
+		datesOK = true
 	}
+	startFine := datesOK
+	datesOK = false
 	switch {
 	case !endOK:
 		problems.Add("endDate", enterLastDayMessage)
@@ -364,13 +369,15 @@ func (s *Service) checkDelegation(ctx context.Context, a actor.Actor, d director
 		problems.Add("endDate", lastDayTodayMessage)
 	case startOK && end.After(start.AddDays(maxDelegationDays-1)):
 		problems.Add("endDate", maxDaysMessage)
+	default:
+		datesOK = startFine
 	}
 	if tooLong(dl.Note, maxNoteLength) {
 		problems.Add("note", noteTooLongMessage)
 	}
 	dl.StartDate, dl.EndDate = start, end
 
-	if startOK && endOK && personKnown && !end.Before(start) {
+	if datesOK && personKnown { // the days of other delegations, once the dates themselves are right
 		all, err := s.repo.ListDelegations(ctx)
 		if err != nil {
 			return Delegation{}, err

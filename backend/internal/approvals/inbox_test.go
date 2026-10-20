@@ -380,3 +380,30 @@ func TestPreview_FR032(t *testing.T) {
 	_, gone := f.service.Preview(t.Context(), carlos, "A-9999")
 	assertError(t, gone, errs.NotFound("This activity no longer exists — someone may have deleted it."))
 }
+
+// The summary's Waiting for me equals the Waiting for me tab, delegated activities included (017 FR-031,
+// SC-007).
+func TestSummary_MatchesWaitingWithDelegates_SC007(t *testing.T) {
+	f := newFixture(t)
+	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
+	f.addActivity(t, "A-1002", "Fleet card launch", mei.ID, chinaFlow)
+	f.submit(t, priya, "A-1001", "")
+	f.submit(t, mei, "A-1002", "")
+	f.write(t, func(ctx context.Context) error {
+		return f.service.repo.PutDelegation(ctx, Delegation{ID: "DLG-1001", PersonID: daniel.ID, DelegateID: carlos.ID,
+			StartDate: date.Today(start), EndDate: date.Today(start)})
+	})
+
+	for _, p := range []actor.Actor{carlos, daniel, alex} {
+		counts, err := f.service.Summary(t.Context(), p, nil, nil)
+		if err != nil {
+			t.Fatalf("Summary: %v", err)
+		}
+		if rows := f.inbox(t, p, TabWaiting); counts.WaitingForMe != len(rows) {
+			t.Errorf("%s: count %d, tab %d rows", p.Name, counts.WaitingForMe, len(rows))
+		}
+	}
+	if counts, _ := f.service.Summary(t.Context(), carlos, nil, nil); counts.WaitingForMe != 2 {
+		t.Errorf("Carlos waits for %d, want 2: his own level and Daniel's as delegate", counts.WaitingForMe)
+	}
+}

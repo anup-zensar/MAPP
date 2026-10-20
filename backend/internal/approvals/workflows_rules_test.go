@@ -220,7 +220,7 @@ func TestWorkflowChanges_LoggedWithRules_FR035(t *testing.T) {
 	below := "10000.00"
 
 	_, err := f.service.UpdateWorkflow(t.Context(), alex, created.ID, WorkflowUpdate{
-		Levels: &[]LevelInput{{ApproverType: SourceManager, AutoApproveWhen: &ConditionInput{PlannedCostBelow: &below}, BackupApproverID: alex.ID}},
+		Levels:       &[]LevelInput{{ApproverType: SourceManager, AutoApproveWhen: &ConditionInput{PlannedCostBelow: &below}, BackupApproverID: alex.ID}},
 		ReminderDays: OptionalDays{Sent: true, Days: days(1)}, EscalationDays: OptionalDays{Sent: true, Days: days(2)}, Version: version(1),
 	})
 	if err != nil {

@@ -122,3 +122,66 @@ func TestJSONRepository_RoundTrip(t *testing.T) {
 		t.Fatalf("Read: %v", err)
 	}
 }
+
+// Records stored before feature 017 read with the defaults of data-model §10 (017-P19): a level of named
+// people where any one approves, always needed and never automatic, without backup; a round level decided
+// by its approvers with nobody left out; a round without facts or timings; an entry without capacity.
+func TestLegacyRecords_ReadWithDefaults_017P19(t *testing.T) {
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	type legacyLevel struct {
+		Name        string   `json:"name"`
+		ApproverIDs []string `json:"approverIds"`
+	}
+	type legacyRoundLevel struct {
+		Number    int           `json:"number"`
+		Name      string        `json:"name"`
+		Approvers []actor.Actor `json:"approvers"`
+	}
+	meta := record.NewMeta(actor.System, seededAt)
+	err = db.Write(t.Context(), func(ctx context.Context) error {
+		if err := store.Put(ctx, "approval_workflows", "WF-1001", map[string]any{
+			"id": "WF-1001", "name": "Lubricants EU approval", "description": "", "active": true,
+			"levels": []legacyLevel{{ApproverIDs: []string{"U-1003"}}}, "version": 1, "createdAt": seededAt, "createdBy": actor.System,
+			"updatedAt": seededAt, "updatedBy": actor.System,
+		}); err != nil {
+			return err
+		}
+		return store.Put(ctx, "approval_rounds", "AR-1001", map[string]any{
+			"id": "AR-1001", "activityId": "A-1004", "number": 1, "workflowId": "WF-1001", "workflowName": "Lubricants EU approval",
+			"levels": []legacyRoundLevel{{Number: 1, Approvers: []actor.Actor{daniel}}}, "currentLevel": 1, "outcome": "open",
+			"submittedAt": seededAt, "submittedBy": priya, "comment": "", "endedAt": nil, "version": 1, "createdAt": seededAt,
+			"createdBy": priya, "updatedAt": seededAt, "updatedBy": priya,
+		})
+	})
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+
+	repo := approvals.NewJSONRepository()
+	err = db.Read(t.Context(), func(ctx context.Context) error {
+		w, _, err := repo.GetWorkflow(ctx, "WF-1001")
+		if err != nil {
+			return err
+		}
+		wantLevel := approvals.Level{ApproverType: approvals.SourcePeople, ApproverIDs: []string{"U-1003"}, Mode: approvals.ModeAny}
+		if !reflect.DeepEqual(w.Levels, []approvals.Level{wantLevel}) || w.ReminderDays != nil || w.EscalationDays != nil || w.Meta != meta {
+			t.Errorf("workflow = %+v, want the 017 defaults", w)
+		}
+		r, _, err := repo.GetRound(ctx, "AR-1001")
+		if err != nil {
+			return err
+		}
+		wantRoundLevel := approvals.RoundLevel{Number: 1, Approvers: []actor.Actor{daniel}, ApproverType: approvals.SourcePeople,
+			Mode: approvals.ModeAny, Resolution: approvals.ResolutionDecide, Excluded: []approvals.Excluded{}}
+		if !reflect.DeepEqual(r.Levels, []approvals.RoundLevel{wantRoundLevel}) || r.Facts != nil || r.ReminderDays != nil || r.AutoApproved {
+			t.Errorf("round = %+v, want the 017 defaults", r)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Read: %v", err)
+	}
+}
