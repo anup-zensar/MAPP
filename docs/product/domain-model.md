@@ -81,11 +81,21 @@ Created ──Submit──► Submitted ──Approve (last level)──► Appr
    │              Declined ◄── Decline (comment required)   │
    │                                                        │
    └─────────────── a "re-approval" change (§2.5) ◄─────────┘
+
+Created / Declined ──Submit, when no level needs a decision──► Approved   (approved automatically)
 ```
 
 - **Re-submit** sends a Declined activity straight back to Submitted and starts a new approval round at
   level 1. **Recall** lets the owner withdraw a Submitted activity back to Created. The approval rules
-  (levels, approvers, notifications) are specified in feature 008.
+  (levels, approvers, notifications) are specified in feature 008 and extended by feature 017.
+- **Approval rules** (feature 017) are evaluated **once, at submission**, on the activity's planned cost
+  (USD), its activity type and the plan's business units; the outcome is frozen in the approval round.
+  Each level is then *not needed* (its "only needed when" condition does not match), *approved
+  automatically* (its "approve automatically when" condition matches) or *waiting for a decision*. When
+  no level waits for a decision, the activity goes from Created or Declined **straight to Approved** at
+  submission; the history shows each level as "Not needed" or "Approved automatically" by NorthStar, and
+  the owner is notified when someone else submitted. Only the changes of §2.5 restart approval; changing
+  the activity type or the plan's business units does not re-evaluate an open or approved round.
 
 | Status | Stored or shown | Meaning |
 |---|---|---|
@@ -282,8 +292,8 @@ Finance module and GSAP are connected". They are never typed by users.
 | **Custom attribute** | Label, level (plan · campaign · initiative · activity · line item), type (single choice · multiple choice · multiple choice with % split · yes/no · text · long text · number), options, marking (optional / needed to publish / needed to submit), business-unit condition, parent attribute for dependent options, display order, active | Every level's form |
 | **Currency** | Code (ISO), name, symbol, rate = units per 1 USD (USD fixed at 1), active | Line items, display currency |
 | **Finance budget item** | Budget year, budget name (e.g. "2026 Lubricants Budget"), item name, code, active. A stand-in list until the Finance module exists. | Line item link, plan default finance budget |
-| **Approval workflow** | Name, ordered levels, each with one or more approvers (any one approver approves the level), active | Activity |
-| **Person** | Name, e-mail, job title, teams | Owners, approvers, demo sign-in |
+| **Approval workflow** | Name, ordered levels, active; remind after (1–60 days) and escalate after (1–90 days, more than remind after), both optional. Each level: who approves (named people · the activity owner's line manager · the holders of a role that approves, for the plan), any one or all must approve, optional "only needed when" and "approve automatically when" conditions (planned cost at least / below in USD, business unit is one of, activity type is one of; the parts combine with AND), and a backup approver (required on every level when escalation is on) | Activity |
+| **Person** | Name, e-mail, job title, teams, line manager (optional; never oneself, no loops) | Owners, approvers, "line manager" approval levels, demo sign-in |
 | **Team** | Name, members, colour (assigned automatically from the chart palette, changeable) | Plan teams, owner choice, "My teams" filter, coloured team pills |
 
 Configuration records are never hard-deleted while in use: they are set **inactive** (no longer offered
@@ -298,7 +308,8 @@ for new choices, existing values kept and labelled "(inactive)").
 | **Activity log entry** | Who did what to which record, when, with the changed fields (before → after). Written for every create, edit, status change, move, copy, delete and restore. Read-only. |
 | **Recycle bin entry** | A deleted record and everything that was under it, who deleted it and when; restorable. |
 | **Comment** | Free-text note on an activity (also used for decline reasons). |
-| **Notification** | In-app message to a person, e.g. "Activity A-1042 is waiting for your approval". |
+| **Notification** | In-app message to a person, e.g. "Activity A-1042 is waiting for your approval", also for activities approved automatically, approval reminders and escalations. |
+| **Approval delegation** | A person's approvals handed to a delegate (who can approve) for a date range of at most 90 days, with an optional note; planned, current, ended or cancelled; never deleted. While current, the delegate approves the person's waiting levels "as delegate of" them. |
 | **Saved view** | A user's named combination of filters, columns and view type on the planning views. |
 
 ---
@@ -307,6 +318,12 @@ for new choices, existing values kept and labelled "(inactive)").
 
 - Plans become visible only to members of the plan's teams (Shell's rule). Today a **My teams / All
   plans** switch on the Plans list shows this without enforcing it.
-- Approve/decline becomes limited to the approvers of the level. Today any signed-in user can act on an
-  approval, but the screen shows who the approver is and records who actually acted.
+- Approve/decline is limited on the server (feature 017): the waiting approvers of the current level, their
+  current delegates, the backup approver once the level is escalated, or someone allowed to decide on
+  behalf. While the access rule "Nobody approves an activity they own or submitted" is on, the owner and
+  the submitter can never decide and are left out when approvers are resolved (segregation of duties). The
+  history records the capacity (as delegate of, as backup approver, on behalf of).
+- Line managers are kept in NorthStar today; later they come from Entra ID. Reminders and escalations run
+  when someone allowed to create and change approval workflows runs them (a job endpoint); later a
+  scheduler runs them and notifications are also sent by e-mail.
 - Permissions per level (create/edit/delete) come from roles mapped to Shell's 19 Hive9 roles.

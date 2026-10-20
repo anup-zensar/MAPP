@@ -29,7 +29,9 @@ All demo users share the password **`northstar`**, shown on the sign-in page (de
 | Activity types | Agency fees – Creative · Event · Digital media · Content production · Sponsorship · MOBILITY – Long-term contract (Mobility only) |
 | Currencies (units per 1 USD) | USD 1 · EUR 0.92 · GBP 0.79 · CNY 7.10 · INR 83.50 |
 | Finance budget items (2026) | *2026 Lubricants Budget:* Europe – Digital · Europe – Events · Europe – Brand · *2026 Mobility Budget:* China – Retail · China – Fleet · Delhi |
-| Approval workflows | **Lubricants EU approval** — level 1: Daniel Okoro · **China BC approval workflow** — level 1: Carlos Mendes; level 2: Alex Morgan |
+| Line managers | Priya Raman and Sara Novak → Daniel Okoro · Mei Lin → Carlos Mendes · Daniel Okoro and Carlos Mendes → Alex Morgan · Alex Morgan has none |
+| Approval workflows | **Lubricants EU approval** (WF-1001) — level 1: Daniel Okoro, backup Alex Morgan; remind after 1 day, escalate after 2 (short, so a demo shows both on the first run) · **China BC approval workflow** (WF-1002) — level 1: Carlos Mendes, backup Alex Morgan; level 2: Alex Morgan, backup Carlos Mendes; remind after 3 days, escalate after 5 · **Standard marketing approval** (WF-1003, used by no seeded activity) — level 1: the owner's line manager, approved automatically below 10,000 USD, backup Alex Morgan; level 2: Alex Morgan, only needed from 100,000 USD, backup Carlos Mendes; level 3 "Mobility second check": Daniel Okoro and Alex Morgan, all must approve, only for the Mobility business unit, backup Carlos Mendes; remind after 3 days, escalate after 5 |
+| Approval delegations | **DLG-1001** — Daniel Okoro → Carlos Mendes from today + 7 days to today + 11 days, note "Annual leave" (planned, so it changes nothing in today's lists) |
 | Shell attributes | The full set in the field catalogue with 3–8 sample options each (e.g. Cluster: Lubricants – Europe, Retail – China, Fleet – China; Region per cluster; Company code: GB01, NL02, CN04; Spend type → GL code pairs such as "Digital – Platform development → 7250080 – Advertising digital") |
 
 ## Planning seed (the demo story)
@@ -42,3 +44,8 @@ All demo users share the password **`northstar`**, shown on the sign-in page (de
 
 The recycle bin contains one deleted initiative (with its activity) and the activity log contains about
 two weeks of back-dated history, so those screens are not empty in a demo.
+
+Approval rules (feature 017) in the demo: the open round of **Trade magazine ads** (WF-1001) has waited two
+days, so it is overdue on the Approvals monitoring and the first **Run reminders and escalations** escalates
+it to Alex Morgan; **Fleet card launch** (WF-1002) waits at level 2. Submitting a Lubricants activity below
+10,000 USD with WF-1003 shows an activity approved automatically.
