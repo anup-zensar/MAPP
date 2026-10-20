@@ -18,7 +18,7 @@ In progress · Done.
 | 008 | [008-activity-approvals](../../specs/008-activity-approvals/spec.md) | Approval workflows (Settings), submit / approve / decline / re-submit, approvals inbox, notifications | P1 | 006, 007 | In progress |
 | 009 | [009-home-dashboard](../../specs/009-home-dashboard/spec.md) | ZenReach-style home: summary cards, my plans, my activities, waiting for my approval, needs attention | P1 | 004–008 | In progress |
 | 010 | [010-all-work-views](../../specs/010-all-work-views/spec.md) | All work: grid with roll-ups, filters and search, calendar, budget & cost by month, saved views, export | P2 | 004–008 | In progress |
-| 011 | [011-activity-log-and-recycle-bin](../../specs/011-activity-log-and-recycle-bin/spec.md) | Activity log page and record history; recycle bin page with restore and permanent delete | P2 | 001, 004–007 | In progress |
+| 011 | [011-activity-log-and-recycle-bin](../../specs/011-activity-log-and-recycle-bin/spec.md) | Activity log page and record history; recycle bin page with restore and permanent delete | P2 | 001, 004–007 | Done |
 | 012 | [012-bulk-actions-and-import](../../specs/012-bulk-actions-and-import/spec.md) | Select many rows: change owner/status fields, copy, move, delete; import activities from a template | P3 | 010 | Draft |
 | 013 | [013-bcpir-and-spa](../../specs/013-bcpir-and-spa/spec.md) | Shell's BCPIR and SP&A plan views (meaning to be clarified with Shell) | P3 | 004–008 | Draft |
 

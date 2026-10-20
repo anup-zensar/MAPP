@@ -18,6 +18,11 @@
 //
 // Services depend only on the Transactor interface and on their own repository interfaces, never on DB,
 // so a PostgreSQL implementation can replace this store without changing them.
+//
+// Memo keeps a value worked out from the data for the rest of the transaction, so that what many records
+// need, such as the Shell attribute forms, is decoded once per request instead of once per record. For
+// the same reason a Read decodes each table once, however many times List reads it: pages such as Home
+// and the Plans list build the tree of every plan, and every tree reads the same tables.
 package store
 
 import (
@@ -32,6 +37,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"slices"
 	"strings"
@@ -96,6 +102,15 @@ type tx struct {
 	writable bool
 	changed  map[string]map[string]json.RawMessage // this Write's own copies of the tables it changed
 	appended map[string][]json.RawMessage          // records this Write appended, per append-only table
+
+	memoMu sync.Mutex
+	memo   map[any]any // Memo's values and a Read's decoded tables (listKey); forgotten on every change
+}
+
+// listKey is the memo key of a table decoded as one record type in a Read (List).
+type listKey struct {
+	table  string
+	record reflect.Type
 }
 
 // txKey is the context key of the current transaction.
@@ -281,11 +296,29 @@ func Get[T any](ctx context.Context, table, id string) (T, bool, error) {
 
 // List returns every record of table, ordered by id: shorter ids first, then alphabetically, so that
 // P-999 comes before P-1001. The list is never nil.
+//
+// A Read decodes the table once and gives every List of it the same records in a list of its own: the
+// caller may reorder or append to the list, but the records' slices, maps and pointed-to values are
+// shared with the other Lists of that Read and must not be changed in place. A Write decodes afresh on
+// every call, so records read to be changed and saved are always the caller's own.
 func List[T any](ctx context.Context, table string) ([]T, error) {
 	t, err := transaction(ctx, table)
 	if err != nil {
 		return nil, err
 	}
+	if t.writable {
+		return decodeTable[T](t, table)
+	}
+	list, err := memo(ctx, t, listKey{table: table, record: reflect.TypeFor[T]()},
+		func(context.Context) ([]T, error) { return decodeTable[T](t, table) })
+	if err != nil {
+		return nil, err
+	}
+	return slices.Clone(list), nil
+}
+
+// decodeTable decodes every record of table as the transaction sees it, ordered by id (List).
+func decodeTable[T any](t *tx, table string) ([]T, error) {
 	records := t.records(table)
 	list := make([]T, 0, len(records))
 	for _, id := range slices.SortedFunc(maps.Keys(records), compareIDs) {
@@ -311,6 +344,7 @@ func Put(ctx context.Context, table, id string, record any) error {
 	if err != nil {
 		return fmt.Errorf("store: put %s %s: %w", table, id, err)
 	}
+	t.forgetMemos()
 	t.ownCopy(table)[id] = encoded
 	return nil
 }
@@ -322,6 +356,7 @@ func Delete(ctx context.Context, table, id string) error {
 		return err
 	}
 	if _, found := t.records(table)[id]; found {
+		t.forgetMemos()
 		delete(t.ownCopy(table), id)
 	}
 	return nil
@@ -337,8 +372,55 @@ func Append(ctx context.Context, table string, record any) error {
 	if err != nil {
 		return fmt.Errorf("store: append to %s: %w", table, err)
 	}
+	t.forgetMemos()
 	t.appended[table] = append(t.appended[table], encoded)
 	return nil
+}
+
+// Memo returns what load returns, worked out once per transaction for key: a later call with the same key
+// in the same transaction (or one that joined it) answers the first result without calling load again.
+// Every change in a Write (Put, Delete, Append) forgets all memos, so a memo never outlives the data it
+// was worked out from; an error is not kept. Every caller in the transaction gets the same value, so
+// callers must treat it as read-only. Keys are named after their package, such as "settings.form:plan".
+func Memo[T any](ctx context.Context, key string, load func(ctx context.Context) (T, error)) (T, error) {
+	t, ok := ctx.Value(txKey{}).(*tx)
+	if !ok {
+		var zero T
+		return zero, ErrNoTransaction
+	}
+	return memo(ctx, t, key, load)
+}
+
+// memo is Memo in the transaction t, for any comparable key.
+func memo[T any](ctx context.Context, t *tx, key any, load func(ctx context.Context) (T, error)) (T, error) {
+	var zero T
+	t.memoMu.Lock()
+	cached, found := t.memo[key]
+	t.memoMu.Unlock()
+	if found {
+		if value, ok := cached.(T); ok {
+			return value, nil
+		}
+		return zero, fmt.Errorf("store: memo %v holds a %T, not the type asked for", key, cached)
+	}
+	value, err := load(ctx) // outside the lock: load may use other memos
+	if err != nil {
+		return zero, err
+	}
+	t.memoMu.Lock()
+	if t.memo == nil {
+		t.memo = map[any]any{}
+	}
+	t.memo[key] = value
+	t.memoMu.Unlock()
+	return value, nil
+}
+
+// forgetMemos drops every value Memo kept: the data they were worked out from is about to change.
+func (t *tx) forgetMemos() {
+	t.memoMu.Lock()
+	t.memo = nil
+	t.memoMu.Unlock()
 }
 
 // Scan returns every record of the append-only table in the order they were appended, including the

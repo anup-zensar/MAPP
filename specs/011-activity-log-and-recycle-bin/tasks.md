@@ -33,13 +33,18 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 - Merged into the current Plan module on 2026-10-20 (D-222, branch lane-011b): the backend and both pages of lane-011 with
   the T005 preference, T021's "deleted it permanently" wording, Home's Recent changes (009 T013) and the end of the
-  "Coming soon" sections. T029 was built as `LogFilterBar.tsx`. Open: T019 (demo history), T032 – T035 (History sections
-  on the record pages; until then **View history** opens the Activity log with the Record filter), T045 – T046
-  (end-to-end), T049 (needs those) and TC99.
+  "Coming soon" sections. T029 was built as `LogFilterBar.tsx`.
+- Completed on 2026-10-20 on the same branch (D-223): T019 (tests in `backend/seed/history_test.go`), T032 – T035
+  (**View history** now brings the page's own History section into view; the side panels use `history-<recordId>`),
+  T045 – T046, the cross-feature journeys of `frontend/e2e/activity-log-and-recycle-bin.spec.ts` (delete from the
+  page, find and restore, delete permanently, the log and History with who and when, Home's Recent changes), T049
+  (every end-to-end file twice green; the store now decodes each table once per Read, which ended the time-outs
+  of Home, the Plans list and the restore dialog) and TC99 (`checklists/success-criteria.md`). Nothing of 011 is
+  open.
 - The Phase 1 tasks that merge the contract and regenerate `schema.d.ts` are done (marked below); verify with `npm run api:check` (D-192).
 - [x] TC00 When an operation is served, remove it from `notYetServed` in `backend/internal/app/app_test.go` (D-192).
 - [x] TC01 Contract extensions of 001 schemas are optional (D-191): T003 updates only the fixtures its tests need.
-- [ ] TC99 Check the success criteria SC-003, SC-004, SC-007, which no task above names, in the final review (timed end-to-end run or moderated session, as each criterion says) and record the result in `checklists/`.
+- [x] TC99 Check the success criteria SC-003, SC-004, SC-007, which no task above names, in the final review (timed end-to-end run or moderated session, as each criterion says) and record the result in `checklists/`.
 
 ## Phase 1: Setup
 
@@ -88,7 +93,7 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ### Demo data
 
-- [ ] T019 [US1] [US2] Write `backend/seed/history.go` with `addHistory(ctx, generator, now)` as plan *Demo data* (created entries 14–8 days back, published plans, 008's approval history as `statusChanged` entries, one planned-cost change by Priya Raman, the deleted initiative "Trade shows" with "Fleet expo stand" and "Stand build" as a bin entry 2 days back), entries sorted by time before they are appended; call it last in `backend/seed/seed.go`; test `TestSeed_HistoryAndRecycleBin_011` in `backend/seed/seed_test.go` (entries in time order, within 14 days, one unresolved bin entry with contents 1 activity and 1 line item, its records not stored, `GET /api/recycle-bin` restore state `restorable`)
+- [x] T019 [US1] [US2] Write `backend/seed/history.go` with `addHistory(ctx, generator, now)` as plan *Demo data* (created entries 14–8 days back, published plans, 008's approval history as `statusChanged` entries, one planned-cost change by Priya Raman, the deleted initiative "Trade shows" with "Fleet expo stand" and "Stand build" as a bin entry 2 days back), entries sorted by time before they are appended; call it last in `backend/seed/seed.go`; test `TestSeed_HistoryAndRecycleBin_011` in `backend/seed/seed_test.go` (entries in time order, within 14 days, one unresolved bin entry with contents 1 activity and 1 line item, its records not stored, `GET /api/recycle-bin` restore state `restorable`)
 
 **Checkpoint**: `go test ./...` passes, including 001's `TestRoutesMatchContract` and `TestEveryProtectedOperationRequiresSignIn_FR005`.
 
@@ -116,10 +121,10 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 ### US3 — History section (frontend)
 
 - [x] T031 [US3] Write `frontend/src/features/activity-log/HistorySection.tsx` (+ css, `HistorySection.test.tsx`) and `frontend/src/features/activity-log/showHistory.ts`: card `#history`, include checkbox label by level, preference saved with `PATCH /api/me/preferences` (failed save → "Your choice couldn't be saved." with **Try again**), 20 entries with **Load more**, **Open in activity log** URL, empty and error states (FR-011 – FR-013) (depends on T026, T028)
-- [ ] T032 [P] [US3] Add `<HistorySection level="plan" …/>` to the plan page of 004 (`frontend/src/features/plans/PlanPage.tsx`) and make its **⋯ More › View history** call `showHistory()`; extend its page test
-- [ ] T033 [P] [US3] Same for the campaign and initiative details of 005 (levels `campaign`, `initiative`) and their View history items; extend their tests
-- [ ] T034 [P] [US3] Same for the activity page of 006 (`frontend/src/features/activities/ActivityPage.tsx`, level `activity`, **Include line items**); extend its test
-- [ ] T035 [P] [US3] Same for the line item details of 007 (level `lineItem`, no include option); extend its test
+- [x] T032 [P] [US3] Add `<HistorySection level="plan" …/>` to the plan page of 004 (`frontend/src/features/plans/PlanPage.tsx`) and make its **⋯ More › View history** call `showHistory()`; extend its page test
+- [x] T033 [P] [US3] Same for the campaign and initiative details of 005 (levels `campaign`, `initiative`) and their View history items; extend their tests
+- [x] T034 [P] [US3] Same for the activity page of 006 (`frontend/src/features/activities/ActivityPage.tsx`, level `activity`, **Include line items**); extend its test
+- [x] T035 [P] [US3] Same for the line item details of 007 (level `lineItem`, no include option); extend its test
 
 ### US1 — Recycle bin page and restore (frontend)
 
@@ -145,8 +150,8 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 ## Phase 4: End-to-end (needs Phases 2 and 3)
 
-- [ ] T045 [US1] [US4] [US5] Write `frontend/e2e/recycle-bin.spec.ts`: seeded "Trade shows" row with its contents and deleter; search the activity's ID → "Contains …"; Restore → dialog text → toast → the plan page shows it, the activity is Created (SC-001: ≤ 3 steps); delete an approved activity, let the Undo message close, restore it from the bin → Created and "must be submitted for approval again" in the dialog; delete an activity then its initiative → "Its initiative … is also in the recycle bin" → **Restore both**; Delete permanently and Empty recycle bin with their texts, then the activity log shows "emptied the recycle bin"; axe (WCAG 2.1 AA) on the page and on each dialog (SC-008)
-- [ ] T046 [US2] [US3] Write `frontend/e2e/activity-log.spec.ts`: cards and a card link; filter by person and action → chips and "Showing N of M entries"; expand an entry; follow a record link and a "(in the recycle bin)" link to the highlighted row; change an activity's planned cost twice and a line item once → its History without and with **Include line items** (choice kept after reload) → **Open in activity log** shows the Record chip (SC-005: ≤ 3 steps); axe on the page and the History section; keyboard-only: filter, expand, Load more (SC-008)
+- [x] T045 [US1] [US4] [US5] Write `frontend/e2e/recycle-bin.spec.ts`: seeded "Trade shows" row with its contents and deleter; search the activity's ID → "Contains …"; Restore → dialog text → toast → the plan page shows it, the activity is Created (SC-001: ≤ 3 steps); delete an approved activity, let the Undo message close, restore it from the bin → Created and "must be submitted for approval again" in the dialog; delete an activity then its initiative → "Its initiative … is also in the recycle bin" → **Restore both**; Delete permanently and Empty recycle bin with their texts, then the activity log shows "emptied the recycle bin"; axe (WCAG 2.1 AA) on the page and on each dialog (SC-008)
+- [x] T046 [US2] [US3] Write `frontend/e2e/activity-log.spec.ts`: cards and a card link; filter by person and action → chips and "Showing N of M entries"; expand an entry; follow a record link and a "(in the recycle bin)" link to the highlighted row; change an activity's planned cost twice and a line item once → its History without and with **Include line items** (choice kept after reload) → **Open in activity log** shows the Record chip (SC-005: ≤ 3 steps); axe on the page and the History section; keyboard-only: filter, expand, Load more (SC-008)
 
 ---
 
@@ -154,7 +159,7 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 
 - [x] T047 [P] Update the package comment of `backend/internal/history/model.go` (011 adds the queries, restore preview, purge and empty) and the "History" tag description in `backend/api/openapi.yaml`
 - [x] T048 [P] Set feature 011's status in `docs/sdd/feature-map.md`
-- [ ] T049 Run `go test ./...` (in `backend/`), `npm run check` and `npm run test:e2e` (in `frontend/`); fix any failure; verify the demo with the seed: the bin shows one item, the log shows two weeks of history
+- [x] T049 Run `go test ./...` (in `backend/`), `npm run check` and `npm run test:e2e` (in `frontend/`); fix any failure; verify the demo with the seed: the bin shows one item, the log shows two weeks of history
 
 ---
 

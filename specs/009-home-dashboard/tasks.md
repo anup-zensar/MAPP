@@ -36,6 +36,10 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 - [X] TC01 Drop `lib/teamColor.ts` and the `--team-1…8` tokens from T019/T040; use 003's `TeamPill` and `TeamRef.colour` (D-201).
 - [X] TC02 Replace the USD fall-back test with `TestSummary_InactiveDisplayCurrencyStaysInUse`; `unavailableCurrency` is always null (D-201).
 - [X] TC03 Reuse 008's `formatRelativeTime`/`formatWaitingTime` and 004's `recordHref`; add only missing entries (D-194, D-197).
+- Recent changes (US4, FR-015, FR-016) is served through 011's `QueryLog` (T013, T034, D-222). Its end-to-end step is
+  proven by the last journey of `frontend/e2e/activity-log-and-recycle-bin.spec.ts` (D-223): a planned-cost change
+  first with "just now", a deleted initiative "(in recycle bin)" without a link, the record link and
+  **View activity log**. The rest of T038 and `home.spec.ts` stay open (D-221).
 
 ## Phase 1: Setup
 
