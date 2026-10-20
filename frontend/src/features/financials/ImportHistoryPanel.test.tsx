@@ -25,6 +25,10 @@ describe('ImportHistoryPanel (015 FR-008)', () => {
     renderWithProviders(<ImportHistoryPanel onClose={vi.fn()} />, { user: testUser() });
 
     const panel = await screen.findByRole('dialog', { name: 'Import history' });
+    // The list takes the focus, so the keyboard can scroll a long history (axe scrollable-region).
+    expect(
+      await within(panel).findByRole('list', { name: 'Imports, newest first' }),
+    ).toHaveAttribute('tabindex', '0');
     const items = await within(panel).findAllByRole('listitem');
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent('gsap-2026-10-19.csv');

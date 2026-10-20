@@ -119,9 +119,12 @@
   white-space: nowrap;
 }
 
+/* The plan's name, the row's link: a 24 px target (WCAG 2.5.8) without changing the row. */
 .name {
   display: inline-block;
   min-width: 180px;
+  margin-block: -2px;
+  padding-block: 2px;
   color: var(--link);
   font-weight: var(--weight-bold);
 }

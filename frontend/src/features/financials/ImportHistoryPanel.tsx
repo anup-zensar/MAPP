@@ -31,7 +31,8 @@ export function ImportHistoryPanel({ onClose }: ImportHistoryPanelProps) {
         imports.data.items.length === 0 ? (
           <EmptyState icon={<FileText />} title={NO_DATA} />
         ) : (
-          <ol className={styles.list}>
+          // Focusable, so the keyboard can scroll a long history, which holds no link or button.
+          <ol className={styles.list} tabIndex={0} aria-label="Imports, newest first">
             {imports.data.items.map((item) => (
               <ImportItem key={item.id} item={item} />
             ))}

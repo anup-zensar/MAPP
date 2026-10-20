@@ -110,10 +110,13 @@
   color: var(--muted);
 }
 
-/* The transaction's readable name, the row's link; it never breaks inside a number. */
+/* The transaction's readable name, the row's link; it never breaks inside a number. The 2 px
+   padding makes it a 24 px target (WCAG 2.5.8) and the negative margin keeps the row as it was. */
 .name {
   display: block;
   min-width: 160px;
+  margin-block: -2px;
+  padding-block: 2px;
   color: var(--link);
   font-weight: var(--weight-bold);
   white-space: nowrap;
