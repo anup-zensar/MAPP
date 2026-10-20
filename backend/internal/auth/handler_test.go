@@ -31,7 +31,7 @@ const lubricantsEurope = `{"id":"T-1001","name":"Lubricants Europe","colour":"bl
 // segregation-of-duties rule.
 var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email":"priya.raman@northstar.demo",` +
 	`"jobTitle":"Marketer","initials":"PR",` +
-	`"preferences":{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams"},` +
+	`"preferences":{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false},` +
 	`"version":1,"teams":[` + lubricantsEurope + `],` +
 	`"access":{"roles":[{"id":"RA-1005","role":{"id":"RL-1003","name":"Planner","builtIn":"planner"},` +
 	`"scope":{"type":"myTeams","teams":[` + lubricantsEurope + `],"text":"My teams"},"scopeEmpty":false}],` +

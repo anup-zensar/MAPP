@@ -194,6 +194,9 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 				changed.HomeScope = ""
 			}
 		}
+		if update.HistoryIncludeInside != nil {
+			changed.HistoryIncludeInside = *update.HistoryIncludeInside
+		}
 		var currencies []Currency // needed only to choose another display currency
 		if changed.DisplayCurrency != current.DisplayCurrency {
 			if currencies, err = s.currencies(ctx); err != nil {

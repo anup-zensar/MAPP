@@ -31,6 +31,12 @@
   max-width: 720px;
 }
 
+/* The History card under the values, as wide as they are (feature 011). */
+.history {
+  max-width: 720px;
+  margin-top: 16px;
+}
+
 .facts {
   display: flex;
   flex-direction: column;

@@ -2,6 +2,7 @@ package samples_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,6 +13,9 @@ const (
 	priyasEmail  = "priya.raman@northstar.demo"
 	danielsEmail = "daniel.okoro@northstar.demo"
 )
+
+// Every test here starts the API with apitest.WithoutDemoHistory: the recycle bin starts empty, so its
+// entries (BIN-1001, …) are the test's own.
 
 // The bodies of the API's answers, as the web app receives them. Priya creates every record when the test
 // starts, at 12 Mar 2026 09:00 UTC.
@@ -32,7 +36,7 @@ const (
 // The developer page lists every sample folder with its notes; a folder without notes has an empty list
 // (research R10).
 func TestListFolders_WithTheirNotes(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/sample-folders", nil), http.StatusOK, emptyPageBody)
 	createFolder(t, priya, "Plans") // SF-1001
@@ -56,7 +60,7 @@ func TestListFolders_WithTheirNotes(t *testing.T) {
 // Creating a folder answers 201 with the new folder (FR-022 logs it); a missing or taken name is refused
 // next to the field (FR-020).
 func TestCreateFolder_CreatedOrRefused_FR020(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 
 	created := priya.Do(t, http.MethodPost, "/api/sample-folders", map[string]string{"name": "  Ideas "})
@@ -72,7 +76,7 @@ func TestCreateFolder_CreatedOrRefused_FR020(t *testing.T) {
 // A rename from the current version answers the folder with its new name and version, and who changed it
 // when; Daniel may rename Priya's folder, because there are no permission checks (FR-029, FR-008).
 func TestUpdateFolder_Renamed_FR029(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	createFolder(t, server.SignIn(t, priyasEmail), "Ideas")
 	daniel := server.SignIn(t, danielsEmail)
 	server.Advance(time.Hour)
@@ -87,7 +91,7 @@ func TestUpdateFolder_Renamed_FR029(t *testing.T) {
 // Every problem of a rename is reported at once, a folder that is gone answers not found, and a rename
 // from an out-of-date copy is refused naming who changed the folder and when (FR-020, FR-029).
 func TestUpdateFolder_Refused_FR020_FR029(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
 	createFolder(t, priya, "Ideas")
@@ -112,7 +116,7 @@ func TestUpdateFolder_Refused_FR020_FR029(t *testing.T) {
 // Deleting a folder moves it with its notes to the recycle bin and answers the bin entry, so that the web
 // app can offer Undo; the bin lists it, newest first, and the folders list no longer does (FR-024).
 func TestDeleteFolder_MovesItToTheRecycleBin_FR024(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas") // SF-1001
 	createFolder(t, priya, "Plans") // SF-1002
@@ -130,18 +134,27 @@ func TestDeleteFolder_MovesItToTheRecycleBin_FR024(t *testing.T) {
 		`"recordId":"SF-1002","recordName":"Plans","path":[],"parent":null,` +
 		`"deletedAt":"2026-03-12T09:00:00Z","deletedBy":{"id":"U-1002","name":"Priya Raman"},` +
 		`"contents":[{"recordType":"sampleNote","label":"sample notes","count":2}]}`
+	// The recycle bin lists each entry with its restore state and the records it holds (011 FR-015 – FR-017).
+	ideasRow := strings.TrimSuffix(ideasEntry, "}") + `,"recordTypePlural":"sample folders","restoreState":"restorable",` +
+		`"missingParent":null,"parentEntryIds":[],"insideEntryIds":[],"records":[` +
+		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas","parentId":""}]}`
+	plansRow := strings.TrimSuffix(plansEntry, "}") + `,"recordTypePlural":"sample folders","restoreState":"restorable",` +
+		`"missingParent":null,"parentEntryIds":[],"insideEntryIds":[],"records":[` +
+		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1002","recordName":"Plans","parentId":""},` +
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"Budget","parentId":"SF-1002"},` +
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Dates","parentId":"SF-1002"}]}`
 	assertAnswer(t, empty, http.StatusOK, `{"recycleBinEntry":`+ideasEntry+`}`)
 	assertAnswer(t, withNotes, http.StatusOK, `{"recycleBinEntry":`+plansEntry+`}`)
 	assertAnswer(t, gone, http.StatusNotFound, folderGoneBody)
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin", nil), http.StatusOK,
-		`{"items":[`+plansEntry+`,`+ideasEntry+`],"total":2}`)
+		`{"items":[`+plansRow+`,`+ideasRow+`],"total":2}`)
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/sample-folders", nil), http.StatusOK, emptyPageBody)
 }
 
 // Adding a note answers 201 with the note; a missing title is refused next to the field, and a folder
 // that is gone answers not found (FR-020).
 func TestCreateNote_AddedOrRefused_FR020(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 
@@ -156,7 +169,7 @@ func TestCreateNote_AddedOrRefused_FR020(t *testing.T) {
 
 // Deleting a note moves it to the recycle bin; the entry says which folder it was in (FR-024).
 func TestDeleteNote_MovesItToTheRecycleBin_FR024(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 	addNote(t, priya, "SF-1001", "First idea")
@@ -174,7 +187,7 @@ func TestDeleteNote_MovesItToTheRecycleBin_FR024(t *testing.T) {
 // Undo right after a delete brings the folder and its notes back exactly as they were, and the bin is
 // empty again (FR-026, US5 scenario 3).
 func TestUndo_BringsTheFolderBackExactly_FR026(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 	addNote(t, priya, "SF-1001", "First idea")
@@ -193,7 +206,7 @@ func TestUndo_BringsTheFolderBackExactly_FR026(t *testing.T) {
 // The server accepts Undo for 2 minutes after the delete; later, the item must be restored from the
 // recycle bin (FR-026, D-037).
 func TestUndo_TooLate_FR026(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 	deleteFolder(t, priya, "SF-1001")
@@ -208,7 +221,7 @@ func TestUndo_TooLate_FR026(t *testing.T) {
 // A note whose folder is also in the recycle bin cannot come back on its own: the refusal names the folder
 // to restore first (FR-025, US5 scenario 4).
 func TestRestore_ParentFirst_FR025(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 	addNote(t, priya, "SF-1001", "First idea")
@@ -224,7 +237,7 @@ func TestRestore_ParentFirst_FR025(t *testing.T) {
 // A delete that was already undone cannot be undone or restored again; the refusal says who did it and
 // when (FR-025).
 func TestUndo_AlreadyUndone_FR025(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 	deleteFolder(t, priya, "SF-1001")
@@ -244,7 +257,7 @@ func TestUndo_AlreadyUndone_FR025(t *testing.T) {
 // When someone has meanwhile created a folder with the same name, Undo is refused and nothing changes
 // (spec edge case, D-037).
 func TestUndo_NameTaken_FR026(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 	deleteFolder(t, priya, "SF-1001")
@@ -259,7 +272,7 @@ func TestUndo_NameTaken_FR026(t *testing.T) {
 // Restore from the recycle bin brings the folder back even when its name is taken, with the suffix
 // " (restored)", and says so (FR-025, spec edge case).
 func TestRestore_RenamesWhenTheNameIsTaken_FR025(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")
 	deleteFolder(t, priya, "SF-1001")

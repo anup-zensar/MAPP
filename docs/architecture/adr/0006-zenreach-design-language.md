@@ -1,6 +1,8 @@
 # ADR-0006: ZenReach design language
 
-**Status:** Accepted · **Date:** 2026-10-18
+**Status:** Accepted; the visual part is replaced by the product owner's decisions D-310–D-314 (Shell's
+enterprise design language, design system version 2, constitution 1.1.0); the layout and CRUD patterns
+stay · **Date:** 2026-10-18
 
 ## Context
 Shell users find Hive9 complex and dated. The product owner wants NorthStar to be friendly to beginners and

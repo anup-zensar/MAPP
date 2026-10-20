@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
 import { details, formAnswers, formOptions } from './testData';
@@ -10,6 +11,7 @@ const FORM_OPTIONS: Record<string, MockHandler> = {
 };
 const DETAILS: Record<string, MockHandler> = {
   ...FORM_OPTIONS,
+  ...HISTORY_ANSWERS,
   'GET /api/line-items/L-1001': { body: details() },
 };
 

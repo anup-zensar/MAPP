@@ -5,7 +5,7 @@
 | **Deliverable** | UX/UI research findings and design recommendations |
 | **For** | The Shell client team and the NorthStar product owner |
 | **Date** | 20 October 2026 |
-| **Status** | Recommendations agreed with the product owner on 20 October 2026 (decisions in §3); questions for Shell open (§8) |
+| **Status** | Recommendations agreed with the product owner on 20 October 2026 (decisions in §3, recorded as D-310–D-314); questions for Shell open (§8) |
 | **Built on** | [Shell brand research](ux-research-shell-brand.md) · [Shell UI patterns research](ux-research-shell-ui-patterns.md) · [UI audit, page by page](ui-audit.md) (97 findings) · [Functional review](functional-review.md) (25 findings) |
 | **Leads to** | [Design system, version 2](../product/design-system.md) (binding) · [UI/UX implementation plan](ui-ux-implementation-plan.md) |
 
@@ -32,7 +32,7 @@ approver and an administrator. Our findings and recommendations:
 4. **The product owner decided on 20 October 2026** to give NorthStar the look of a Shell enterprise tool:
    yellow primary buttons with dark text, at most one per page; a light-grey canvas with white cards; Jost
    headings and Arial body text standing in for Shell's own font; no Shell logo until Shell consents; WCAG
-   2.2 AA; red only for danger and errors (§3).
+   2.2 AA; red only for danger and errors (§3; decision log D-310–D-314).
 5. **We recommend a small, strict system:** seven text sizes, one 4 px spacing scale, three control heights,
    four radii, one page header, one panel footer, one table standard, one date format and one meaning per
    status colour (§5). It is written down as [design system version 2](../product/design-system.md).
@@ -102,16 +102,16 @@ brand book is behind a sign-in, so official values still need Shell's confirmati
 
 | # | Decision | Evidence | What it means in the design system |
 |---|---|---|---|
-| PO-1 | **Primary action buttons in Shell yellow `#FFC800` with dark text** (`#404040` or `#4A4A4A`), as on shell.com — **at most one yellow primary button per page or dialog** | Yellow is Shell's "act here" colour on every current Shell site; ink on yellow is 6.67:1; Fleet Hub's dark blue belongs to an older generation (patterns §2, §10 Q2) | Tokens `--button-primary-*`; rule 1 of §11; one primary chosen by the person's role (§6.3) |
-| PO-2 | **Light-grey page background `#F5F5F5` with white cards and panels** | Shell's paper1/paper2 pair; white cards on grey bands (patterns §4); answers patterns §10 Q3 | `--page-bg` grey; cards, panels, dialogs, top bar and sidebar white; cards have no shadow |
-| PO-3 | **Jost 600/700 for headings** (open licence, `@fontsource/jost` 5.3.0, OFL-1.1) and **Arial, Roboto, Helvetica, sans-serif for body text**, standing in for Shell's proprietary font; **no Shell pecten or logo** (needs Shell's consent) — NorthStar keeps its own mark | Jost matches Shell Heavy's shape most closely (x/cap 0.66 vs 0.65; patterns §3.3, image 08); Arial is Shell's own body stack; pecten consent process (brand §4) | `--font-heading`, `--font`, self-hosted fonts; Logo redrawn without gradient; §12 lists the switch-over |
-| PO-4 | **Accessibility target WCAG 2.2 AA** | Shell's public statement covers internal sites (brand §9) | §9 of the design system; axe with `wcag22aa` |
-| PO-5 | **Red only for danger and errors** | Red appears in no interface element on 15 of 17 Shell pages (brand §3.4) | Red for destructive confirm buttons, errors and the problem status family; amber for "waiting"; never decoration |
+| PO-1 (D-310) | **Primary action buttons in Shell yellow `#FFC800` with dark text** (`#404040` or `#4A4A4A`), as on shell.com — **at most one yellow primary button per page or dialog** | Yellow is Shell's "act here" colour on every current Shell site; ink on yellow is 6.67:1; Fleet Hub's dark blue belongs to an older generation (patterns §2, §10 Q2) | Tokens `--button-primary-*`; rule 1 of §11; one primary chosen by the person's role (§6.3) |
+| PO-2 (D-311) | **Light-grey page background `#F5F5F5` with white cards and panels** | Shell's paper1/paper2 pair; white cards on grey bands (patterns §4); answers patterns §10 Q3 | `--page-bg` grey; cards, panels, dialogs, top bar and sidebar white; cards have no shadow |
+| PO-3 (D-312) | **Jost 600/700 for headings** (open licence, `@fontsource/jost` 5.3.0, OFL-1.1) and **Arial, Roboto, Helvetica, sans-serif for body text**, standing in for Shell's proprietary font; **no Shell pecten or logo** (needs Shell's consent) — NorthStar keeps its own mark | Jost matches Shell Heavy's shape most closely (x/cap 0.66 vs 0.65; patterns §3.3, image 08); Arial is Shell's own body stack; pecten consent process (brand §4) | `--font-heading`, `--font`, self-hosted fonts; Logo redrawn without gradient; §12 lists the switch-over |
+| PO-4 (D-313) | **Accessibility target WCAG 2.2 AA** | Shell's public statement covers internal sites (brand §9) | §9 of the design system; axe with `wcag22aa` |
+| PO-5 (D-314) | **Red only for danger and errors** | Red appears in no interface element on 15 of 17 Shell pages (brand §3.4) | Red for destructive confirm buttons, errors and the problem status family; amber for "waiting"; never decoration |
 
-These decisions replace the **visual** part of decision D-005 (the ZenReach/Apple look). The functional
-part stays: ZenReach's layout and CRUD patterns are kept and Hive9's screens are not copied. Constitution
-principle III still says "one blue primary action" and "WCAG 2.1 AA"; it needs a matching amendment
-(implementation plan, phase 1).
+These decisions, recorded as D-310–D-314 in the decision log, replace the **visual** part of decision
+D-005 (the ZenReach/Apple look). The functional part stays: ZenReach's layout and CRUD patterns are kept
+and Hive9's screens are not copied. Constitution 1.1.0 amends principle III to match (one yellow primary
+action, WCAG 2.2 AA), replacing "one blue primary action" and "WCAG 2.1 AA".
 
 ---
 
@@ -132,8 +132,8 @@ principle III still says "one blue primary action" and "WCAG 2.1 AA"; it needs a
 
 ## 5. Recommendations
 
-Each recommendation names its evidence and, where one applies, the product-owner decision. The exact
-values are in [design system version 2](../product/design-system.md).
+Each recommendation names its evidence and, where one applies, the product-owner decision (PO-1–PO-5
+are D-310–D-314, §3). The exact values are in [design system version 2](../product/design-system.md).
 
 ### 5.1 Colour
 
@@ -298,7 +298,7 @@ Every stand-in is one token or one component, so each asset can be switched in w
 ## 9. Next steps
 
 1. **Record the decisions** of §3 in the decision log and amend constitution principle III (one yellow
-   primary action, WCAG 2.2 AA).
+   primary action, WCAG 2.2 AA). Done: D-310–D-314 and constitution 1.1.0.
 2. **Build the foundation** (phase 1 of the [implementation plan](ui-ux-implementation-plan.md)): tokens,
    fonts, shared components, app shell and the global bug fixes.
 3. **Apply it page by page** (phase 2), each area accepted on screenshots at 1440 and 390 px in light and

@@ -1,0 +1,143 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* The controls side by side; on narrow screens they wrap onto more rows. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.search {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+/* A small label above its control, as in the design system's toolbars. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.control {
+  min-width: 140px;
+  max-width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 400;
+}
+
+.control:focus {
+  border-color: var(--blue);
+}
+
+.control[aria-invalid='true'] {
+  border-color: var(--status-problem);
+}
+
+select.control {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 180px;
+  cursor: pointer;
+}
+
+.menuButton svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-2);
+}
+
+.menuText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu {
+  z-index: 50;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 13.5px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* The item under the pointer or the arrow keys; the tint is also the keyboard focus indicator. */
+.menuItem[data-highlighted] {
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
+}
+
+/* The tick box of a menu item; the tick shows only when it is chosen. */
+.box {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+.menuItem[data-state='checked'] .box {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: var(--on-accent);
+}
+
+.box svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--status-problem-text);
+  font-size: 12.5px;
+}

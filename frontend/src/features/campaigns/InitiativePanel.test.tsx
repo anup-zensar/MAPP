@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionProvider } from '@/app/SessionProvider';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { campaignForm } from '@/test/attributeForms';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -30,6 +31,7 @@ const DETAILS = '/plans/P-1001/initiatives/I-1001';
 
 function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
+    ...HISTORY_ANSWERS,
     'GET /api/initiatives/I-1001': { body: initiative() },
     'GET /api/plans/P-1001': { body: planAnswer() },
     'GET /api/shell-attribute-forms/initiative': {
@@ -129,6 +131,23 @@ describe('InitiativePanel (feature 005, US3)', () => {
       expect(router.state.location.pathname).toBe(
         '/plans/P-1001/initiatives/I-1001/activities/new',
       ),
+    );
+  });
+
+  it('shows the initiative’s History, which View history brings up (011 FR-011, FR-012)', async () => {
+    const { user } = renderPanel(DETAILS);
+    const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
+    const history = within(panel).getByRole('region', { name: 'History' });
+    expect(
+      within(history).getByText('Every change to this initiative, newest first'),
+    ).toBeVisible();
+    expect(within(history).getByRole('checkbox', { name: 'Include items inside' })).toBeVisible();
+
+    await user.click(within(panel).getByRole('button', { name: 'Actions for Digital & social' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
+
+    await waitFor(() =>
+      expect(within(history).getByRole('heading', { level: 3, name: 'History' })).toHaveFocus(),
     );
   });
 

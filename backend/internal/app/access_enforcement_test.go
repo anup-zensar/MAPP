@@ -275,7 +275,7 @@ func TestListsAndTotals_OnlyWhatThePersonSees_SC004(t *testing.T) {
 // "See the whole activity log"; restoring needs the level's delete permission in the plan (FR-007, FR-038,
 // D-238).
 func TestLogAndRecycleBin_Filtered_FR007_FR038(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory()) // only the entries of this test
 	alex, priya, mei := server.SignIn(t, alexsEmail), server.SignIn(t, priyasEmail), server.SignIn(t, meisEmail)
 	var deleted struct{ RecycleBinEntry struct{ ID string } }
 	mei.Do(t, http.MethodDelete, "/api/initiatives/I-1006", nil).Decode(t, &deleted)

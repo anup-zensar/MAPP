@@ -29,6 +29,10 @@ function More({ activity }: { activity: Activity }) {
     <>
       <ActionsMenu label={activity.name} items={more.items} />
       {more.dialogs}
+      {/* Stands in for the page's History section (feature 011), which View history brings up. */}
+      <section id="history">
+        <h2>History</h2>
+      </section>
     </>
   );
 }
@@ -153,13 +157,15 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042');
   });
 
-  it('opens the activity log of the activity from View history (FR-032)', async () => {
+  it('brings the page’s History section up from View history (FR-032, 011 FR-011)', async () => {
     const { user, router } = openMenu();
 
     await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?recordType=activity&recordId=A-1042');
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
+    );
+    expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042');
   });
 });

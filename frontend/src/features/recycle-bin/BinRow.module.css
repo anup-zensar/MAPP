@@ -1,0 +1,125 @@
+/* One entry: what it is on the left, Restore and ⋯ on the right. */
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  font-size: 13.5px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--hairline);
+}
+
+/* The row a link from the activity log points at. */
+.row[data-highlighted] {
+  background: color-mix(in srgb, var(--blue) 8%, transparent);
+  box-shadow: inset 3px 0 0 var(--blue);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.name {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.id {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.deleted {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.time {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+}
+
+/* Why it cannot simply come back: the warning colour, with the words as the signal. */
+.state {
+  margin: 2px 0 0;
+  color: var(--status-review-text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.contains {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
+.toggle {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  text-decoration: underline;
+}
+
+.tree {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+/* On a phone Restore and ⋯ go under the entry, so nothing scrolls sideways. */
+@media (max-width: 560px) {
+  .row {
+    flex-direction: column;
+    padding: 14px 16px;
+  }
+}

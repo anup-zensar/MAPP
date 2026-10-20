@@ -1,0 +1,126 @@
+/* One entry: the avatar, the sentence and its details, then the time and the action chip. */
+.entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  font-size: 13.5px;
+}
+
+.entry + .entry {
+  border-top: 1px solid var(--hairline);
+}
+
+.body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sentence {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.link {
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.name {
+  font-weight: 600;
+}
+
+/* The record's ID after the sentence, in small grey figures. */
+.id {
+  margin-left: 8px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  margin: 2px 0 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.toggle {
+  margin-top: 4px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  text-decoration: underline;
+}
+
+/* Long values wrap and are shown in full (FR-007). */
+.details {
+  margin: 6px 0 0;
+  padding: 8px 12px 8px 26px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.time {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+/*
+ * On a phone, or in a list narrower than 480 px (a History section in a side panel), the time and
+ * chip move under the sentence, so nothing scrolls sideways and the sentence keeps its width.
+ */
+@media (max-width: 560px) {
+  .entry {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .side {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+@container (max-width: 480px) {
+  .entry {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .side {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+  }
+}

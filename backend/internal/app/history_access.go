@@ -17,8 +17,10 @@ import (
 //     from the entry (the plan itself, or the first record of its path), stored or in the recycle bin; the
 //     entries of a plan deleted permanently are seen only with "View plans" for All markets.
 //   - Entries about Settings, people, teams, approval workflows, roles and the access rules need "See the
-//     whole activity log"; global budgets also "See global budgets" for All markets. Entries of a kind this
-//     adapter does not know need "See the whole activity log" too (fail closed).
+//     whole activity log"; global budgets also "See global budgets" for All markets; GSAP imports and
+//     transactions (015) also "Import GSAP extracts" (D-304). Entries of any other kind need "See the whole
+//     activity log" too (fail closed): the delegations (017), exchange rates, rate imports and field help
+//     (016) among them.
 //   - Restoring needs to see the entry and the level's delete permission in the plan, or the permission that
 //     manages an administration record. The developer sample records stay open to everyone.
 type historyAccess struct {
@@ -33,8 +35,14 @@ var managedBy = map[string]authz.Permission{
 	"financeBudgetItem": authz.SettingsManage, "currency": authz.ExchangeRatesManage,
 	"person": authz.PeopleManage, "team": authz.PeopleManage, "teamMembership": authz.PeopleManage,
 	"approvalWorkflow": authz.WorkflowsManage, "role": authz.AccessManage, "accessRules": authz.AccessManage,
-	"globalBudget": authz.GlobalBudgetsManage,
+	"globalBudget": authz.GlobalBudgetsManage, "approvalDelegation": authz.WorkflowsManage,
+	"exchangeRate": authz.ExchangeRatesManage, "rateImport": authz.ExchangeRatesManage, "fieldHelp": authz.SettingsManage,
+	"financialImport": authz.FinanceImport, "financialTransaction": authz.FinanceImport,
 }
+
+// importedFinance are the kinds of feature 015's GSAP imports, which "Import GSAP extracts" also opens in the
+// log (D-304).
+var importedFinance = map[string]bool{"financialImport": true, "financialTransaction": true}
 
 // deletedWith is the delete permission of each level of a plan: what restoring one of its records needs.
 var deletedWith = map[string]authz.Permission{
@@ -90,6 +98,8 @@ func (h historyAccess) canSee(ctx context.Context, kind, id string, path []histo
 	case kind == "globalBudget":
 		all, _ := g.Teams(authz.GlobalBudgetsView)
 		return all || g.Has(authz.ActivityLogViewAll)
+	case importedFinance[kind]:
+		return g.Has(authz.FinanceImport) || g.Has(authz.ActivityLogViewAll)
 	}
 	if _, planning := deletedWith[kind]; !planning {
 		return g.Has(authz.ActivityLogViewAll)

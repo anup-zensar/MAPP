@@ -58,9 +58,10 @@ type Server struct {
 type Option func(*settings)
 
 type settings struct {
-	env         string // APP_ENV
-	dataDir     string // empty: a new temporary folder
-	withoutSeed bool   // do not load the demo people
+	env            string // APP_ENV
+	dataDir        string // empty: a new temporary folder
+	withoutSeed    bool   // do not load the demo people
+	withoutHistory bool   // load the demo data without its demo history
 }
 
 // WithEnv starts the API in the environment env ("local", "development" or "production") instead of
@@ -79,6 +80,13 @@ func WithDataDir(dir string) Option {
 // loaded.
 func WithoutSeed() Option {
 	return func(s *settings) { s.withoutSeed = true }
+}
+
+// WithoutDemoHistory loads the demo data without its demo history (feature 011): the activity log and the
+// recycle bin start empty, and the IDs the history's deleted initiative takes stay free. Tests of the rules
+// of the log and the bin use it, so their entries and IDs do not depend on the demo story.
+func WithoutDemoHistory() Option {
+	return func(s *settings) { s.withoutHistory = true }
 }
 
 // New builds the API for test t. The data folder starts with the demo people of the seed, created at the
@@ -107,7 +115,11 @@ func New(t testing.TB, opts ...Option) *Server {
 
 	server := &Server{db: db, contract: newContractValidator(t), now: startTime, demoPassword: cfg.DemoPassword}
 	if !s.withoutSeed {
-		err := seed.Load(t.Context(), db, server.clock)
+		var seedOptions []seed.Option
+		if s.withoutHistory {
+			seedOptions = append(seedOptions, seed.WithoutHistory())
+		}
+		err := seed.Load(t.Context(), db, server.clock, seedOptions...)
 		if err != nil && !errors.Is(err, seed.ErrNotEmpty) { // a folder with data is used as it is
 			t.Fatalf("apitest: loading the demo data: %v", err)
 		}

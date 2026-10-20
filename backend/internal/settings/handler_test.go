@@ -172,7 +172,7 @@ func TestModelsAPI_Status_FR004(t *testing.T) {
 // An unused model moves to the recycle bin, which lists it as a model, and Undo brings it back (FR-004,
 // FR-006).
 func TestModelsAPI_DeleteAndUndo_FR004(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory()) // BIN-1001 is the first entry of an empty recycle bin
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/models", lubricants2)
 
@@ -334,7 +334,7 @@ func TestActivityTypesAPI_Status_FR004(t *testing.T) {
 // An unused activity type moves to the recycle bin and Undo brings it back; a type in use is refused with
 // in_use (FR-004, US5-5).
 func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/activity-types", webinarBody())
 
@@ -765,7 +765,7 @@ func TestFinanceAPI_Status_FR004(t *testing.T) {
 // An unused item moves to the recycle bin under its budget and Undo brings it back; an item linked to line
 // items is refused with in_use (FR-004, US5-5).
 func TestFinanceAPI_Delete_FR004(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/finance-budget-items", retailBody)
 
@@ -1238,7 +1238,7 @@ func TestCurrenciesAPI_Status_FR004(t *testing.T) {
 
 // An unused currency moves to the recycle bin, listed by its code, and Undo brings it back (FR-004).
 func TestCurrenciesAPI_DeleteAndUndo_FR004(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/currencies", jpyBody)
 

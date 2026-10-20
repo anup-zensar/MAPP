@@ -15,7 +15,7 @@ const recentChangesLimit = 20
 // RecentChanges returns the latest 20 activity-log entries about access, newest first, and how many there
 // are in all (FR-038): changes of roles, of the access rules, and of people's roles (entries on a person that
 // change the field "roles").
-func (s *Service) RecentChanges(ctx context.Context, a actor.Actor) ([]history.Entry, int, error) {
+func (s *Service) RecentChanges(ctx context.Context, a actor.Actor) ([]history.EntryView, int, error) {
 	entries, err := s.history.Entries(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -27,7 +27,8 @@ func (s *Service) RecentChanges(ctx context.Context, a actor.Actor) ([]history.E
 		}
 	}
 	slices.SortFunc(matching, func(x, y history.Entry) int { return cmp.Compare(y.Seq, x.Seq) })
-	return matching[:min(recentChangesLimit, len(matching))], len(matching), nil
+	views, err := s.history.EntryViews(ctx, matching[:min(recentChangesLimit, len(matching))])
+	return views, len(matching), err
 }
 
 // isAccessChange reports whether the log entry is about access: a role, the access rules, or a person's

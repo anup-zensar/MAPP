@@ -165,7 +165,8 @@ func TestCreateLineItem_Contract(t *testing.T) {
 	assertAnswer(t, created, http.StatusCreated, "")
 	var v lineitems.View
 	created.Decode(t, &v)
-	if v.ID != "L-1009" || v.Name != "Music rights" || v.PlannedCost.Format() != "10,000.00 EUR" ||
+	// L-1009 is the line item of the demo history's deleted initiative, in the recycle bin (011 T019).
+	if v.ID != "L-1010" || v.Name != "Music rights" || v.PlannedCost.Format() != "10,000.00 EUR" ||
 		v.PlannedCostUSD.Format() != "10,869.57 USD" || v.SwbsStatus != "waitingForApproval" || len(v.Spread.Months) != 3 ||
 		v.Owner == nil || v.Version != 1 || v.CreatedBy.Name != "Priya Raman" {
 		t.Errorf("created = %+v", v)
@@ -250,7 +251,7 @@ func TestDuplicateLineItem_Contract(t *testing.T) {
 	assertAnswer(t, copied, http.StatusCreated, "")
 	var v lineitems.View
 	copied.Decode(t, &v)
-	if v.ID != "L-1009" || v.Name != "Agency fee (copy)" || v.PlannedCost.Format() != "50,000.00 USD" || len(v.Missing) != 0 {
+	if v.ID != "L-1010" || v.Name != "Agency fee (copy)" || v.PlannedCost.Format() != "50,000.00 USD" || len(v.Missing) != 0 {
 		t.Errorf("copy = %+v", v)
 	}
 	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)

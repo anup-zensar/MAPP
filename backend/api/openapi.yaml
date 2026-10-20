@@ -38,7 +38,9 @@ tags:
   - name: Me
     description: The signed-in person and their preferences
   - name: History
-    description: Activity log and recycle bin (the mechanism every feature uses)
+    description: >-
+      Activity log and recycle bin: the mechanism every feature uses (001), and the Activity log page, record history,
+      restore preview, Restore with its parents, Delete permanently and Empty recycle bin (011)
   - name: Samples
     description: Developer sample records, only in local and development environments
   - name: Settings

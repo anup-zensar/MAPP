@@ -14,6 +14,7 @@ import (
 	"northstar/internal/platform/actor"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
+	"northstar/internal/platform/store"
 )
 
 // The limits of attribute values (data model §9, D-053).
@@ -49,6 +50,16 @@ type formData struct {
 	options      map[string][]Option // attribute id → its options in display order
 	optionByID   map[string]Option
 	businessUnit *Attribute
+}
+
+// formOf is loadForm for the rules that only read the form (completeness, the needed-field checks and the
+// attribute checks of a save): the form is read once per transaction and shared, because these rules run
+// once per record and a page such as Home or the Plans list checks every record of every plan. The form
+// must not be changed by its callers. Code that changes Settings uses loadForm.
+func (s *Service) formOf(ctx context.Context, level Level) (formData, error) {
+	return store.Memo(ctx, "settings.form:"+string(level), func(ctx context.Context) (formData, error) {
+		return s.loadForm(ctx, level)
+	})
 }
 
 // loadForm reads the form of level inside the caller's transaction.
@@ -154,7 +165,7 @@ func nonNil(list []string) []string {
 func (s *Service) CheckAttributes(ctx context.Context, level Level, in AttributeInput) (AttributeResult, error) {
 	var result AttributeResult
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		f, err := s.loadForm(ctx, level)
+		f, err := s.formOf(ctx, level)
 		if err != nil {
 			return err
 		}
@@ -183,7 +194,7 @@ func (s *Service) CheckValues(ctx context.Context, a actor.Actor, level Level, r
 func (s *Service) MissingAttributes(ctx context.Context, level Level, values AttributeValues, businessUnit []string) ([]MissingField, error) {
 	var missing []MissingField
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		f, err := s.loadForm(ctx, level)
+		f, err := s.formOf(ctx, level)
 		if err != nil {
 			return err
 		}
@@ -207,7 +218,7 @@ func (s *Service) MissingAttributes(ctx context.Context, level Level, values Att
 func (s *Service) BusinessUnit(ctx context.Context, planValues AttributeValues) ([]string, error) {
 	var businessUnit []string
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		f, err := s.loadForm(ctx, LevelPlan)
+		f, err := s.formOf(ctx, LevelPlan)
 		if err != nil {
 			return err
 		}

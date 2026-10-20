@@ -1,5 +1,6 @@
 import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -31,6 +32,7 @@ const PATH = '/plans/:planId/activities/:activityId';
 
 function openPage(answer: MockHandler, route = '/plans/P-1001/activities/A-1042') {
   const api = mockApi({
+    ...HISTORY_ANSWERS,
     'GET /api/activities/A-1042': answer,
     'GET /api/activities/A-1042/form': { body: editForm() },
     'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
@@ -128,7 +130,7 @@ describe('ActivityPage (feature 006, US2)', () => {
     await waitFor(() => expect(panel).toHaveFocus());
   });
 
-  it('shows the sections in order: Ready to submit, details, line items, approval, from finance (FR-020)', async () => {
+  it('shows the sections in order: Ready to submit, details, line items, approval, from finance, history (FR-020, 011 FR-011)', async () => {
     openPage({ body: launchFilm({ externalName: '' }) });
 
     await screen.findByRole('heading', { level: 1, name: 'Launch film' });
@@ -138,6 +140,7 @@ describe('ActivityPage (feature 006, US2)', () => {
       screen.getByRole('region', { name: 'Line items' }),
       screen.getByRole('region', { name: 'Approval' }),
       screen.getByRole('region', { name: 'From finance (coming later)' }),
+      screen.getByRole('region', { name: 'History' }),
     ];
     for (let index = 1; index < names.length; index += 1) {
       expect(
@@ -148,6 +151,8 @@ describe('ActivityPage (feature 006, US2)', () => {
       screen.getByRole('region', { name: 'Line items' }).closest('#line-items'),
     ).not.toBeNull();
     expect(screen.getByRole('region', { name: 'Approval' }).closest('#approval')).not.toBeNull();
+    expect(screen.getByRole('region', { name: 'History' }).closest('#history')).not.toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Include line items' })).not.toBeChecked();
     expect(screen.getByText('Total actuals')).not.toBeVisible();
   });
 

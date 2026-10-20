@@ -5,7 +5,7 @@
 | **Version** | 2.0 · 20 October 2026 |
 | **Status** | Binding for every screen of the web app. Code that disagrees with this document is a defect. |
 | **Replaces** | Version 1 (ZenReach/Apple look: Apple blue `#0071e3`, blue-to-purple gradient, system font stack, pill shapes) |
-| **Decided by** | Product owner, 20 October 2026: Shell yellow primary button with dark text (at most one per page or dialog), light-grey canvas with white cards, Jost headings and Arial body, no Shell logo, WCAG 2.2 AA, red only for danger and errors (decision log, "Shell visual language") |
+| **Decided by** | Product owner, 20 October 2026: Shell yellow primary button with dark text, at most one per page or dialog (D-310); light-grey canvas with white cards (D-311); Jost headings and Arial body, no Shell logo (D-312); WCAG 2.2 AA (D-313); red only for danger and errors (D-314) — decision log D-310–D-314 |
 | **Evidence** | [Shell brand research](../reports/ux-research-shell-brand.md) · [Shell UI patterns research](../reports/ux-research-shell-ui-patterns.md) · [UI audit](../reports/ui-audit.md) · [Functional review](../reports/functional-review.md) · [Recommendations](../reports/ux-design-recommendations.md) · [Implementation plan](../reports/ui-ux-implementation-plan.md) |
 | **Code** | Tokens: `frontend/src/styles/tokens.css` · base styles: `frontend/src/styles/global.css` · shared components: `frontend/src/components/` · app shell: `frontend/src/app/` |
 
@@ -460,8 +460,8 @@ All chip texts also pass on white and on grey (≥ 5.6 light) and on the dark pa
 - "In progress" is used **only** for a running activity. The approval roll-up of plans, campaigns and
   initiatives is written "Partly approved" or "2 of 4 approved" (functional review A-02; product-owner
   confirmation listed in the implementation plan).
-- Amber is the attention colour; red is reserved for danger and errors (product-owner decision 5). Yellow
-  never marks a status.
+- Amber is the attention colour; red is reserved for danger and errors (product-owner decision 5,
+  D-314). Yellow never marks a status.
 - A row shows **at most two chips**: its status and one problem chip; anything else goes into the problem
   chip's popover.
 
@@ -1020,7 +1020,7 @@ values "—" (§4.4).
 ## 9. Accessibility (WCAG 2.2 AA)
 
 The target is **WCAG 2.2 level A and AA**, as in Shell's public accessibility statement (product-owner
-decision 4). Automated checks run axe with the tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa`.
+decision 4, D-313). Automated checks run axe with the tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa`.
 
 - **Keyboard:** everything works with the keyboard; the order of focus follows the order on screen; menus,
   tabs, trees and comboboxes follow the WAI-ARIA patterns described in §5.
@@ -1128,4 +1128,4 @@ or one component (see the recommendations report for the questions to Shell).
 | Version | Date | Change |
 |---|---|---|
 | 1 | 18 Oct 2026 | ZenReach/Apple-inspired design language (D-005), feature 001 tokens (research R17) |
-| 2 | 20 Oct 2026 | Shell visual language per the product-owner decisions of 20 Oct 2026: Shell tokens light and dark with contrast values, Jost + Arial type scale, spacing, radius, elevation, control heights, breakpoints and widths; top bar and white sidebar with the yellow bar; one page header and five page templates; specs for every shared component; WCAG 2.2 AA; consistency checklist. §6–§8 and §10 kept, with §6.3 (one primary by role), §6.7 (set inactive) and §7 (rail, progress) added. |
+| 2 | 20 Oct 2026 | Shell visual language per the product-owner decisions of 20 Oct 2026 (D-310–D-314): Shell tokens light and dark with contrast values, Jost + Arial type scale, spacing, radius, elevation, control heights, breakpoints and widths; top bar and white sidebar with the yellow bar; one page header and five page templates; specs for every shared component; WCAG 2.2 AA; consistency checklist. §6–§8 and §10 kept, with §6.3 (one primary by role), §6.7 (set inactive) and §7 (rail, progress) added. |

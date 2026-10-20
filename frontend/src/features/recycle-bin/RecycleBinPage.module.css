@@ -1,0 +1,58 @@
+/* The toolbar and the rows in one white card. */
+.panel {
+  min-width: 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.search {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.count {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* "That item is no longer in the recycle bin." above the list. */
+.notice {
+  margin: 16px 20px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skeletonRow {
+  padding: 16px 20px;
+}
+
+.skeletonRow + .skeletonRow {
+  border-top: 1px solid var(--hairline);
+}
+
+@media (max-width: 560px) {
+  .toolbar {
+    padding: 14px 16px;
+  }
+}

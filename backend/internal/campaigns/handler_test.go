@@ -277,7 +277,8 @@ func TestCreateInitiative_Contract201(t *testing.T) {
 	assertStatus(t, response, http.StatusCreated)
 	var created initiative
 	response.Decode(t, &created)
-	if created.ID != "I-1009" || created.CampaignID != "C-1001" || created.PlanID != "P-1001" || created.Timing != nil ||
+	// I-1009 is the demo history's deleted initiative "Trade shows", in the recycle bin (011 T019).
+	if created.ID != "I-1010" || created.CampaignID != "C-1001" || created.PlanID != "P-1001" || created.Timing != nil ||
 		*created.ParentRemainingBudget != usd("150000.00") {
 		t.Errorf("created = %+v", created)
 	}

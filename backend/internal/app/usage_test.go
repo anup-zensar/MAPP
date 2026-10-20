@@ -19,7 +19,8 @@ import (
 // or use a team — stored and in the recycle bin, as each feature counts them. Every answer is checked
 // against the contract by apitest. The demo data: plan P-1002 "FY2026 Mobility China" (model MOD-1002,
 // team T-1002 Mobility China, finance budget FB-1002) is owned by Mei Lin, who also owns its campaign, two
-// initiatives, two of its three activities and their line items.
+// initiatives, two of its three activities and their line items. The demo history (011) keeps one entry in
+// the recycle bin: initiative "Trade shows" with an activity and a USD line item, which "Used by" counts.
 
 // usage is the "Used by" of a Settings record (Usage).
 type usage struct {
@@ -109,10 +110,10 @@ func TestUsedBy_SeesEveryFeature_FR003(t *testing.T) {
 		"/api/activity-types/AT-1006":        "Used by 1 activity · Allowed in 1 model",
 		"/api/shell-attributes/SA-1001":      "Used by 2 plans · Condition of 11 attributes",
 		"/api/shell-attributes/SA-1003":      "Used by 3 campaigns · Region depends on it",
-		"/api/shell-attributes/SA-1011":      "Used by 8 initiatives",
-		"/api/shell-attributes/SA-1012":      "Used by 9 activities",
-		"/api/shell-attributes/SA-1033":      "Used by 6 line items",
-		"/api/currencies/USD":                "Used by 4 line items · Display currency of 6 people",
+		"/api/shell-attributes/SA-1011":      "Used by 9 initiatives (1 in the recycle bin)",
+		"/api/shell-attributes/SA-1012":      "Used by 10 activities (1 in the recycle bin)",
+		"/api/shell-attributes/SA-1033":      "Used by 7 line items (1 in the recycle bin)",
+		"/api/currencies/USD":                "Used by 5 line items (1 in the recycle bin) · Display currency of 6 people",
 		"/api/currencies/CNY":                "Used by 1 line item",
 		"/api/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}
@@ -149,10 +150,10 @@ func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 		"/api/activity-types/AT-1006":        "Used by 1 activity (1 in the recycle bin) · Allowed in 1 model",
 		"/api/shell-attributes/SA-1001":      "Used by 2 plans · Condition of 11 attributes", // P-1002 has no business unit
 		"/api/shell-attributes/SA-1003":      "Used by 3 campaigns (1 in the recycle bin) · Region depends on it",
-		"/api/shell-attributes/SA-1011":      "Used by 8 initiatives (4 in the recycle bin)",
-		"/api/shell-attributes/SA-1012":      "Used by 9 activities (5 in the recycle bin)",
-		"/api/shell-attributes/SA-1033":      "Used by 6 line items (1 in the recycle bin)",
-		"/api/currencies/USD":                "Used by 4 line items (1 in the recycle bin) · Display currency of 6 people",
+		"/api/shell-attributes/SA-1011":      "Used by 9 initiatives (5 in the recycle bin)",
+		"/api/shell-attributes/SA-1012":      "Used by 10 activities (6 in the recycle bin)",
+		"/api/shell-attributes/SA-1033":      "Used by 7 line items (2 in the recycle bin)",
+		"/api/currencies/USD":                "Used by 5 line items (2 in the recycle bin) · Display currency of 6 people",
 		"/api/currencies/CNY":                "Used by 1 line item (1 in the recycle bin)",
 		"/api/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}
@@ -379,7 +380,7 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 	}
 
 	want := map[string]string{
-		"/api/currencies/USD": "Used by 4 line items · Display currency of 5 people",
+		"/api/currencies/USD": "Used by 5 line items (1 in the recycle bin) · Display currency of 5 people",
 		"/api/currencies/EUR": "Used by 2 line items · Display currency of 1 person",
 	}
 	if !reflect.DeepEqual(got, want) {

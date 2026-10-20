@@ -59,8 +59,9 @@ func lubricantsActivity(country, companyCode, costCentre, brand, fit4ID string) 
 	}
 }
 
-// demoActivities are A-1001 … A-1010, in ID order. A-1011 "Press day Hamburg", which goes to the recycle
-// bin with its initiative, is written by feature 011's seed step together with that initiative.
+// demoActivities are A-1001 … A-1010, in ID order. A-1011 "Fleet expo stand", which is in the recycle bin
+// with its initiative "Trade shows", is written by feature 011's seed step (history.go) together with that
+// initiative.
 var demoActivities = []demoActivity{
 	{plan: lubricantsPlan, campaign: "Helix launch", initiative: "Digital & social", name: "Launch film",
 		status: activities.StatusCreated, activityType: "Content production", owner: "Priya Raman",
@@ -137,39 +138,15 @@ func (d *demo) addActivities(ctx context.Context) error {
 	for _, a := range demoActivities {
 		var r resolver
 		initiativeID := r.id(d.initiatives, "initiative", a.campaign+"/"+a.initiative)
-		activity := activities.Activity{
-			InitiativeID: initiativeID, Name: a.name,
-			ActivityTypeID: r.id(d.settings.ActivityTypes, "activity type", a.activityType),
-			Ongoing:        a.ongoing, Status: a.status, Meta: d.meta(),
-		}
-		if a.owner != "" {
-			activity.OwnerID = r.id(d.people, "person", a.owner)
-		}
-		if a.workflow != "" {
-			activity.ApprovalWorkflowID = r.id(d.workflows, "approval workflow", a.workflow)
-		}
 		if _, err := find(d.campaigns, "campaign", a.plan+"/"+a.campaign); err != nil && r.err == nil {
 			r.err = err // the initiative must be in that plan's campaign
 		}
 		if r.err != nil {
 			return r.err
 		}
-		start, end, cost, attributes, err := d.planningFields(a.start, a.end, a.plannedCost, settings.LevelActivity, a.attributes)
+		activity, err := d.activityOf(a, initiativeID)
 		if err != nil {
-			return fmt.Errorf("seed: activity %s: %w", a.name, err)
-		}
-		activity.StartDate, activity.EndDate, activity.PlannedCost, activity.Attributes = start, end, cost, attributes
-		if a.inq > 0 {
-			inq := a.inq
-			activity.INQ = &inq
-		}
-		if a.typedRevenue != "" {
-			revenue, err := usd(a.typedRevenue)
-			if err != nil {
-				return err
-			}
-			mql := a.typedMQL
-			activity.SetLaterStagesMyself, activity.MQL, activity.Revenue = true, &mql, &revenue
+			return err
 		}
 		if activity.ID, err = d.next(ctx, ids.PrefixActivity); err != nil {
 			return err
@@ -180,6 +157,44 @@ func (d *demo) addActivities(ctx context.Context) error {
 		d.activities[a.plan+"/"+a.name] = activity.ID
 	}
 	return nil
+}
+
+// activityOf builds the stored activity a of the initiative initiativeID, without its ID, looking up its
+// activity type, owner and approval workflow by name. NorthStar creates it at the seed time.
+func (d *demo) activityOf(a demoActivity, initiativeID string) (activities.Activity, error) {
+	var r resolver
+	activity := activities.Activity{
+		InitiativeID: initiativeID, Name: a.name,
+		ActivityTypeID: r.id(d.settings.ActivityTypes, "activity type", a.activityType),
+		Ongoing:        a.ongoing, Status: a.status, Meta: d.meta(),
+	}
+	if a.owner != "" {
+		activity.OwnerID = r.id(d.people, "person", a.owner)
+	}
+	if a.workflow != "" {
+		activity.ApprovalWorkflowID = r.id(d.workflows, "approval workflow", a.workflow)
+	}
+	if r.err != nil {
+		return activities.Activity{}, r.err
+	}
+	start, end, cost, attributes, err := d.planningFields(a.start, a.end, a.plannedCost, settings.LevelActivity, a.attributes)
+	if err != nil {
+		return activities.Activity{}, fmt.Errorf("seed: activity %s: %w", a.name, err)
+	}
+	activity.StartDate, activity.EndDate, activity.PlannedCost, activity.Attributes = start, end, cost, attributes
+	if a.inq > 0 {
+		inq := a.inq
+		activity.INQ = &inq
+	}
+	if a.typedRevenue != "" {
+		revenue, err := usd(a.typedRevenue)
+		if err != nil {
+			return activities.Activity{}, err
+		}
+		mql := a.typedMQL
+		activity.SetLaterStagesMyself, activity.MQL, activity.Revenue = true, &mql, &revenue
+	}
+	return activity, nil
 }
 
 // addWorkflows creates WF-1001 and WF-1002, active, in feature 008's shape.

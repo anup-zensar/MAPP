@@ -297,13 +297,6 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 // TestNotYetServedIsAccurate fails when a listed operation is served or is not in the contract, so the list
 // cannot go stale. The list must be empty when the Plan module is done; then remove it and its uses.
 var notYetServed = []string{
-	// 009 Home dashboard: Recent changes reads 011's activity-log query, and 011 is set aside (D-209)
-	"GET /api/home/recent-changes",
-	// 011 Activity log and recycle bin
-	"GET /api/activity-log/summary",
-	"POST /api/recycle-bin/empty",
-	"DELETE /api/recycle-bin/{entryId}",
-	"GET /api/recycle-bin/{entryId}/restore-preview",
 	// 012 Bulk actions and import
 	"GET /api/bulk-actions/fields",
 	"POST /api/bulk-actions/targets",
