@@ -1,12 +1,13 @@
 /**
  * The cards of the Settings page (feature 002, FR-001), in order: 002's five sections, then the
  * sections other features add from their own folders — People and Teams (003), Approval workflows
- * (008) — so each feature changes only its own file.
+ * (008), Roles and access (014) — so each feature changes only its own file.
  */
 import { Calculator, Coins, ListChecks, Shapes, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { components } from '@/api/schema';
+import { ACCESS_SETTINGS_SECTIONS } from '@/features/access/settingsSections';
 import { APPROVAL_WORKFLOW_SETTINGS_SECTIONS } from '@/features/approval-workflows/settingsSections';
 import { PEOPLE_SETTINGS_SECTIONS } from '@/features/people/settingsSections';
 
@@ -78,4 +79,5 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   ...SETTINGS_OWN_SECTIONS,
   ...PEOPLE_SETTINGS_SECTIONS,
   ...APPROVAL_WORKFLOW_SETTINGS_SECTIONS,
+  ...ACCESS_SETTINGS_SECTIONS,
 ];

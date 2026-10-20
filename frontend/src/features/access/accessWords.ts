@@ -3,7 +3,13 @@
  * permission labels, a role with its scope, the plain-language summary of what roles allow, and
  * the administrators to ask.
  */
-import type { AccessScopeType, MyPermission, PermissionKey, RoleAssignment } from './accessApi';
+import type {
+  AccessScopeType,
+  ActivityLogEntry,
+  MyPermission,
+  PermissionKey,
+  RoleAssignment,
+} from './accessApi';
 
 /** One permission of Table A: its label on the role page and whether a scope limits it. */
 export interface PermissionWords {
@@ -96,6 +102,26 @@ export function assignmentText(assignment: RoleAssignment): string {
   return `${assignment.role.name} · ${assignment.scope.text}`;
 }
 
+/** "Viewer · My teams, Planner · Mobility China"; "No role" when there is none. */
+export function rolesText(assignments: RoleAssignment[]): string {
+  return assignments.length > 0 ? assignments.map(assignmentText).join(', ') : 'No role';
+}
+
+/** "0 people", "1 person", "4 people": how many hold a role. */
+export function peopleText(count: number): string {
+  return count === 1 ? '1 person' : `${count} people`;
+}
+
+/** True when a scope limits the permission (Table A "scoped"); unknown keys count as scoped. */
+export function isScoped(key: PermissionKey): boolean {
+  return BY_KEY.get(key)?.permission.scoped ?? true;
+}
+
+/** Table A's order of a permission (unknown keys last). */
+export function permissionOrder(key: PermissionKey): number {
+  return BY_KEY.get(key)?.index ?? PERMISSIONS.length;
+}
+
 /** "A", "A and B", "A, B and C". */
 export function andList(items: string[]): string {
   return joinList(items, 'and');
@@ -154,4 +180,19 @@ export function summariseAccess(permissions: MyPermission[]): string[] {
     lines.push(`Everywhere: ${andList(everywhere)}.`);
   }
   return lines.length > 0 ? lines : ['No access yet.'];
+}
+
+/** Text 11: the note on the Administrator role. */
+export const ADMINISTRATOR_LOCK =
+  "The Administrator role always has every permission and can't be changed.";
+
+/** Text 12: the Administrator role is never limited to some markets. */
+export const ADMINISTRATOR_SCOPE = 'The Administrator role always applies to all markets.';
+
+/** Text 37: a scope that covers no team any more. */
+export const SCOPE_EMPTY = 'No teams left in this scope';
+
+/** "Alex Morgan changed person 'Sara Novak'", as the activity log writes it (FR-038). */
+export function changeText(entry: ActivityLogEntry): string {
+  return `${entry.actor.name} ${entry.verb} ${entry.recordTypeLabel} '${entry.recordName}'`;
 }

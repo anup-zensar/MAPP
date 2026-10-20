@@ -1,7 +1,8 @@
 import { Link } from 'react-router';
 import styles from '@/features/settings/shared/SettingsTable.module.css';
 import { usePersonRoles } from './accessApi';
-import { assignmentText } from './accessWords';
+import { personRolesPath } from './accessPaths';
+import { rolesText } from './accessWords';
 
 /**
  * The "Roles" line of a person's details panel (014 plan, "Changes to existing web features"): each
@@ -14,18 +15,12 @@ export function PersonRolesFact({ personId }: { personId: string }) {
   if (!roles.data) {
     return null;
   }
-  const assignments = roles.data.roles;
   return (
     <div>
       <dt>Roles</dt>
       <dd className={styles.usage}>
-        <span>
-          {assignments.length > 0 ? assignments.map(assignmentText).join(', ') : 'No role'}
-        </span>
-        <Link
-          className={styles.inlineLink}
-          to={`/settings/access?tab=people&person=${encodeURIComponent(personId)}`}
-        >
+        <span>{rolesText(roles.data.roles)}</span>
+        <Link className={styles.inlineLink} to={personRolesPath(personId)}>
           Change roles
         </Link>
       </dd>

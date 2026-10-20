@@ -71,11 +71,12 @@ export function useRoles() {
   return useQuery({ queryKey: ROLES_KEY, queryFn: () => call(api.GET('/api/roles')) });
 }
 
-/** One role with its permissions, the people who hold it and its locks. */
+/** One role with its permissions, the people who hold it and its locks; nothing for "". */
 export function useRole(roleId: string) {
   return useQuery({
     queryKey: [...ROLES_KEY, roleId],
     queryFn: () => call(api.GET('/api/roles/{roleId}', { params: { path: { roleId } } })),
+    enabled: roleId !== '',
   });
 }
 

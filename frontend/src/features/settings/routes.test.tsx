@@ -16,6 +16,8 @@ const PAGE_ANSWERS: Record<string, MockHandler> = {
   'GET /api/people': { body: { items: [], total: 0 } },
   'GET /api/teams': { body: { items: [], total: 0 } },
   'GET /api/approval-workflows': { body: { items: [], total: 0 } },
+  // The Roles and access card counts the roles (014).
+  'GET /api/roles': { body: { items: [], total: 0 } },
 };
 
 // Feature 002's addresses (build guide §5). Feature 002 keeps this file up to date as it replaces
@@ -53,6 +55,7 @@ describe('Settings routes (feature 002)', () => {
       'People',
       'Teams',
       'Approval workflows',
+      'Roles and access',
     ]);
     expect(await within(sections).findByText('1 active')).toBeInTheDocument();
   });

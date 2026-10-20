@@ -1,13 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { ROLES } from '@/features/access/testData';
 import { CHINA_WORKFLOW, workflowOf } from '@/features/approval-workflows/testData';
 import { mockApi } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { SettingsPage } from './SettingsPage';
 
-// The real list of cards: 002's five, then People and Teams (003) and Approval workflows (008),
-// whose features count their own records.
+// The real list of cards: 002's five, then People and Teams (003), Approval workflows (008) and
+// Roles and access (014), whose features count their own records.
 
 const OVERVIEW = {
   models: 3,
@@ -54,6 +55,7 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
           total: 3,
         },
       },
+      'GET /api/roles': { body: { items: ROLES, total: ROLES.length } },
     });
     renderWithProviders(<SettingsPage />, { route: '/settings', user: testUser() });
 
@@ -73,6 +75,15 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
     expect(within(people).getByRole('link', { name: 'People' })).toHaveAttribute(
       'href',
       '/settings/people',
+    );
+    const access = card('Roles and access');
+    expect(
+      within(access).getByText('Who can see and change what, by role and market.'),
+    ).toBeInTheDocument();
+    expect(await within(access).findByText('5 roles')).toBeInTheDocument();
+    expect(within(access).getByRole('link', { name: 'Roles and access' })).toHaveAttribute(
+      'href',
+      '/settings/access',
     );
   });
 });

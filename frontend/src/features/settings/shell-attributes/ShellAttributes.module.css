@@ -81,8 +81,10 @@
   cursor: not-allowed;
 }
 
+/* Labels stay on one line (design system §5.4): they are short, and a wrapped name reads as two. */
 .nameCell {
   min-width: 200px;
+  white-space: nowrap;
 }
 
 .name {
