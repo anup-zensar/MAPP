@@ -1,11 +1,13 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { InfoTip } from '@/components';
 import { cx } from '@/lib/cx';
 import styles from './AllWorkGrid.module.css';
-import { totalText } from './allWorkText';
+import { COLUMN_TIPS, totalText } from './allWorkText';
 import type { AllWorkColumn, AllWorkResult, AllWorkRow, Sort } from './allWorkTypes';
 import { CellValue } from './CellValue';
 import { isNumeric } from './cellText';
 import { GridRow } from './GridRow';
+import { ScrollBox } from './ScrollBox';
 import type { VisibleRow } from './viewState';
 
 export interface AllWorkGridProps {
@@ -44,7 +46,7 @@ export function AllWorkGrid({
   return (
     <div className={styles.grid}>
       {continued && <p className={styles.continued}>Continued: {continued}</p>}
-      <div className={styles.scroll}>
+      <ScrollBox label="All work grid">
         <table className={styles.table}>
           <caption className="visually-hidden">All work grid</caption>
           <thead>
@@ -83,7 +85,7 @@ export function AllWorkGrid({
             </tr>
           </tfoot>
         </table>
-      </div>
+      </ScrollBox>
     </div>
   );
 }
@@ -96,11 +98,25 @@ interface ColumnHeadingProps {
 
 /**
  * A column heading; a sortable one is a button that sorts ascending, then descending, then back to
- * the plan-tree order (FR-015). aria-sort tells screen readers which way.
+ * the plan-tree order (FR-015). aria-sort tells screen readers which way. A column whose sum needs
+ * explaining has an ⓘ after its words (Unassigned planned cost; functional review X-02).
  */
 function ColumnHeading({ column, sort, onSort }: ColumnHeadingProps) {
   const direction = sort?.column === column.key ? sort.direction : null;
   const Icon = direction === 'asc' ? ArrowUp : direction === 'desc' ? ArrowDown : ArrowUpDown;
+  const tip = COLUMN_TIPS[column.key];
+  const label = column.sortable ? (
+    <button
+      type="button"
+      className={cx(styles.sort, direction && styles.sorted)}
+      onClick={() => onSort(column.key)}
+    >
+      {column.label}
+      <Icon aria-hidden="true" />
+    </button>
+  ) : (
+    column.label
+  );
   return (
     <th
       scope="col"
@@ -109,17 +125,13 @@ function ColumnHeading({ column, sort, onSort }: ColumnHeadingProps) {
         direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : undefined
       }
     >
-      {column.sortable ? (
-        <button
-          type="button"
-          className={cx(styles.sort, direction && styles.sorted)}
-          onClick={() => onSort(column.key)}
-        >
-          {column.label}
-          <Icon aria-hidden="true" />
-        </button>
+      {tip ? (
+        <span className={styles.headWithTip}>
+          {label}
+          <InfoTip label={column.label} text={tip} />
+        </span>
       ) : (
-        column.label
+        label
       )}
     </th>
   );

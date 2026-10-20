@@ -22,8 +22,14 @@ import type {
 export const ALL_WORK_KEYS = {
   all: ['all-work'] as const,
   view: (query: AllWorkQuery | null) => ['all-work', query] as const,
-  /** null: the current year, before the first visit knows which year that is. */
-  options: (year: number | null) => ['all-work-options', year] as const,
+  /**
+   * null: the current year, before the first visit knows which year that is. A range of years
+   * (016 FR-034) has its own choices; one year keeps the key it had before ranges.
+   */
+  options: (year: number | null, yearTo?: number) =>
+    yearTo !== undefined && year !== null && yearTo > year
+      ? (['all-work-options', year, yearTo] as const)
+      : (['all-work-options', year] as const),
   preferences: ['all-work-preferences'] as const,
   views: ['saved-views'] as const,
 };
@@ -41,14 +47,14 @@ export function useAllWork(query: AllWorkQuery | null) {
 }
 
 /**
- * The filter bar's choices and the column catalogue for a year; for null, those of the current
- * year, which the answer also files under its year.
+ * The filter bar's choices and the column catalogue for a year or a range of years (016 FR-034);
+ * for null, those of the current year, which the answer also files under its year.
  */
-export function useAllWorkOptions(year: number | null, enabled = true) {
+export function useAllWorkOptions(year: number | null, enabled = true, yearTo?: number) {
   const queryClient = useQueryClient();
   return useQuery({
-    queryKey: ALL_WORK_KEYS.options(year),
-    queryFn: () => fetchOptions(queryClient, year),
+    queryKey: ALL_WORK_KEYS.options(year, yearTo),
+    queryFn: () => fetchOptions(queryClient, year, yearTo),
     enabled,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -56,19 +62,26 @@ export function useAllWorkOptions(year: number | null, enabled = true) {
   });
 }
 
-/** The choices of a year, from the cache when they were asked before (a saved view's year). */
-export function fetchOptionsOf(queryClient: QueryClient, year: number) {
+/**
+ * The choices of a year or range, from the cache when they were asked before (a saved view's
+ * years).
+ */
+export function fetchOptionsOf(queryClient: QueryClient, year: number, yearTo?: number) {
   return queryClient.fetchQuery({
-    queryKey: ALL_WORK_KEYS.options(year),
-    queryFn: () => fetchOptions(queryClient, year),
+    queryKey: ALL_WORK_KEYS.options(year, yearTo),
+    queryFn: () => fetchOptions(queryClient, year, yearTo),
     staleTime: Infinity,
   });
 }
 
-async function fetchOptions(queryClient: QueryClient, year: number | null) {
-  const options = await call(
-    api.GET('/api/all-work/options', { params: { query: year === null ? {} : { year } } }),
-  );
+async function fetchOptions(queryClient: QueryClient, year: number | null, yearTo?: number) {
+  const query =
+    year === null
+      ? {}
+      : yearTo !== undefined && yearTo > year
+        ? { yearFrom: year, yearTo }
+        : { year };
+  const options = await call(api.GET('/api/all-work/options', { params: { query } }));
   if (year === null) {
     queryClient.setQueryData(ALL_WORK_KEYS.options(options.year), options);
   }

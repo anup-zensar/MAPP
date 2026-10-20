@@ -1,10 +1,11 @@
 /* "To change how a cost is spread, open its line item" (FR-024): the view is read-only. */
 .note {
   margin: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-6);
   border-bottom: 1px solid var(--hairline);
   color: var(--ink-2);
   font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 
 .amount {
@@ -23,5 +24,39 @@
 
 .exceeded {
   font-size: var(--text-xs);
-  white-space: normal;
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+}
+
+/* Phones: 16 px from the card's edges, like the toolbar. */
+@media (max-width: 599px) {
+  .note {
+    padding-inline: var(--space-4);
+  }
+}
+
+/* The Phased budget row under a plan, campaign or initiative (016 FR-038): quieter, in italics. */
+.phasedRow th,
+.phasedRow td {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+.phasedName {
+  display: inline-block;
+  font-style: italic;
+}
+
+.amount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.overIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
 }

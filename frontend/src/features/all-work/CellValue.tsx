@@ -5,6 +5,7 @@ import type { AllWorkCell } from './allWorkTypes';
 import { cellText, isProblem, NOTHING } from './cellText';
 import styles from './CellValue.module.css';
 import { Highlight } from './Highlight';
+import { statusWord } from './statusWords';
 
 /** Text longer than this is cut to one line and shown in full in a tip. */
 const LONG_TEXT = 40;
@@ -53,7 +54,7 @@ function Value({ cell, search }: { cell: AllWorkCell; search: string }) {
     case 'status':
       return (
         <StatusChip tone={cell.tone ?? 'neutral'}>
-          {cell.text}
+          {statusWord(cell.text ?? '', cell.tone)}
           {cell.inactive && ' (inactive)'}
         </StatusChip>
       );

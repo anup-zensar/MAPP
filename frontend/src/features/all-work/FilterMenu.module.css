@@ -37,7 +37,7 @@
 }
 
 .summary {
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .menu {
@@ -109,14 +109,14 @@
   margin-bottom: var(--space-1);
   border-bottom: 1px solid var(--hairline);
   border-radius: var(--radius-2) var(--radius-2) 0 0;
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .group {
   margin: var(--space-2) var(--space-2) 2px;
   color: var(--ink-2);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .nothing {

@@ -12,6 +12,7 @@ import {
   groupOf,
   logEntryOf,
   myActivityOf,
+  overviewOf,
   summaryOf,
   waitingItemOf,
 } from './testData';
@@ -33,20 +34,45 @@ function requestsTo(api: ReturnType<typeof mockApi>, path: string) {
 }
 
 describe('HomePage', () => {
-  it('greets the person in the ZenReach header with the Currency picker (FR-001, US1 scenario 1)', async () => {
+  it('greets the person, with the scope switch and the Currency picker in the header (FR-001, US1 scenario 1, design system §2.4 E)', async () => {
     renderHome();
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Welcome back, Priya.' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(
-      screen.getByText('Your plans, your activities and what needs you today.'),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Currency' })).toHaveValue('USD');
+    const header = screen.getByRole('banner');
+    expect(within(header).getByRole('group', { name: 'Scope' })).toBeInTheDocument();
+    expect(within(header).getByRole('combobox', { name: 'Currency' })).toHaveValue('USD');
+    // Home has no create action: no primary button (design system §2.4 E).
+    expect(header.querySelector('[class*="primary"]')).toBeNull();
     expect(
       await screen.findByRole('link', { name: "My teams' plans: 0 — open the Plans list" }),
     ).toBeInTheDocument();
+  });
+
+  it('tells a person without any role whom to ask, instead of empty cards (014 edge case "No role")', () => {
+    renderHome(
+      {},
+      testUser({
+        access: {
+          roles: [],
+          permissions: [],
+          administrators: [
+            { id: 'U-1001', name: 'Alex Morgan', initials: 'AM', jobTitle: 'Admin', active: true },
+          ],
+          noSelfApproval: true,
+        },
+      }),
+    );
+
+    expect(screen.getByText('No access to plans yet')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "You don't have access to any plans yet. Ask an administrator (Alex Morgan) to give you a role.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Summary' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Scope' })).not.toBeInTheDocument();
   });
 
   it('names the page "Home · NorthStar" in the browser tab', () => {
@@ -174,6 +200,17 @@ describe('HomePage', () => {
     expect(requestsTo(api, '/api/home/attention')).toHaveLength(1);
     expect(requestsTo(api, '/api/home/waiting')).toHaveLength(1);
     expect(requestsTo(api, '/api/home/my-activities')).toHaveLength(1);
+  });
+
+  it('shows the Financials card right under the summary cards, for the Home scope (015 FR-025)', async () => {
+    const { api } = renderHome({
+      'GET /api/financials/overview': { body: overviewOf() },
+    });
+
+    const financials = await screen.findByRole('region', { name: 'Financials · 2026' });
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(summary.nextElementSibling).toBe(financials);
+    expect(requestsTo(api, '/api/financials/overview')[0]?.search).toBe('?scope=myTeams');
   });
 
   it('shows what needs the person and what waits for their approval (US3)', async () => {

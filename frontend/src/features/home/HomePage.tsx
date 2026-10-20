@@ -4,12 +4,14 @@ import type { SegmentedFilterOption } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { AttentionCard } from './AttentionCard';
 import { CurrencyPicker } from './CurrencyPicker';
+import { FinancialsCard } from './FinancialsCard';
 import { GettingStartedCard } from './GettingStartedCard';
 import { useHomeSummary } from './homeApi';
 import type { HomeScope } from './homeApi';
-import { HOME_DESCRIPTION, SCOPE_HINT } from './homeText';
+import { SCOPE_HINT, greetingText } from './homeText';
 import styles from './HomePage.module.css';
 import { MyActivitiesCard } from './MyActivitiesCard';
+import { NoRoleCard } from './NoRoleCard';
 import { PlansAtAGlanceCard } from './PlansAtAGlanceCard';
 import { RecentChangesCard } from './RecentChangesCard';
 import { SummaryCards } from './SummaryCards';
@@ -21,11 +23,14 @@ const SCOPES: SegmentedFilterOption<HomeScope>[] = [
 ];
 
 /**
- * Home (feature 009): the ZenReach-style dashboard. A greeting with the Currency picker, Getting
- * started for new people (FR-020), the My teams / Everything switch (FR-003), the four summary
- * cards (FR-005), Plans at a glance (FR-008), Needs your attention (FR-011), Waiting for my
- * approval (FR-013), My activities (FR-014) and Recent changes (FR-015). Every card asks its own
- * data, so one that fails never hides the others (FR-022).
+ * Home (feature 009) on the dashboard template of design system §2.4 E: the greeting with the My
+ * teams / Everything switch (FR-003) and the Currency picker in the header's actions, Getting
+ * started for new people (FR-020), the four summary cards (FR-005), the Financials card right under
+ * them (015 FR-025), Needs your attention (FR-011) and Waiting for my approval (FR-013) side by side
+ * at one height, then Plans at a glance (FR-008), My activities (FR-014) and Recent changes
+ * (FR-015) across the page. Every card asks its own
+ * data, so one that fails never hides the others (FR-022). A person without any role sees why and
+ * whom to ask instead of the cards (014 edge case "No role").
  */
 export function HomePage() {
   usePageTitle('Home');
@@ -36,31 +41,48 @@ export function HomePage() {
   const changeScope = (homeScope: HomeScope) => updatePreferences({ homeScope });
   const summary = useHomeSummary(scope);
   const gettingStarted = summary.data?.gettingStarted ?? null;
+  // Before 014 is served the person has no access object: Home shows its cards as before.
+  const noRole = person.access !== undefined && person.access.roles.length === 0;
 
   return (
     <>
       <PageHeader
-        eyebrow="Home"
-        title="Welcome back,"
-        highlight={`${person.firstName}.`}
-        description={HOME_DESCRIPTION}
-        actions={<CurrencyPicker />}
+        title={greetingText(person.firstName)}
+        description={noRole ? undefined : SCOPE_HINT}
+        actions={
+          !noRole && (
+            <div className={styles.actions}>
+              <SegmentedFilter
+                label="Scope"
+                options={SCOPES}
+                value={scope}
+                onChange={changeScope}
+              />
+              <CurrencyPicker />
+            </div>
+          )
+        }
       />
-      <div className={styles.page}>
-        {gettingStarted && <GettingStartedCard reason={gettingStarted} />}
-        <div className={styles.scope}>
-          <SegmentedFilter label="Scope" options={SCOPES} value={scope} onChange={changeScope} />
-          <p className={styles.hint}>{SCOPE_HINT}</p>
+      {noRole ? (
+        <div className={styles.page}>
+          <NoRoleCard
+            administrators={person.access?.administrators.map((admin) => admin.name) ?? []}
+          />
         </div>
-        <SummaryCards scope={scope} />
-        <PlansAtAGlanceCard scope={scope} onShowEverything={() => changeScope('everything')} />
-        <div className={styles.columns}>
-          <AttentionCard />
-          <WaitingCard />
+      ) : (
+        <div className={styles.page}>
+          {gettingStarted && <GettingStartedCard reason={gettingStarted} />}
+          <SummaryCards scope={scope} />
+          <FinancialsCard scope={scope} />
+          <div className={styles.pair}>
+            <AttentionCard />
+            <WaitingCard />
+          </div>
+          <PlansAtAGlanceCard scope={scope} onShowEverything={() => changeScope('everything')} />
           <MyActivitiesCard />
           <RecentChangesCard scope={scope} />
         </div>
-      </div>
+      )}
     </>
   );
 }

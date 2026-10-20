@@ -11,7 +11,10 @@ import {
   ACTIVITY_STATUS_LABELS,
   CONTAINER_STATUS_LABELS,
   FILTER_LABELS,
+  FINANCE_LABELS,
+  MAX_YEARS,
   PLAN_STATUS_LABELS,
+  PLAN_TYPE_LABELS,
   SHOW_LEVELS_LABELS,
   STRATEGIC_LABELS,
 } from './allWorkText';
@@ -22,6 +25,7 @@ import type {
   AllWorkRow,
   FilterValue,
   Filters,
+  SavedView,
   Sort,
   ViewState,
 } from './allWorkTypes';
@@ -48,9 +52,50 @@ export type PageSize = (typeof PAGE_SIZES)[number];
 export const ID_FILTERS = ['plans', 'owners', 'teams', 'businessUnits', 'activityTypes'] as const;
 export type IdFilter = (typeof ID_FILTERS)[number];
 
-/** The filters that hold fixed values (statuses). */
-const VALUE_FILTERS = ['planStatuses', 'containerStatuses', 'activityStatuses'] as const;
+/** The filters that hold fixed values (statuses, plan types, currencies, Financials). */
+const VALUE_FILTERS = [
+  'planStatuses',
+  'containerStatuses',
+  'activityStatuses',
+  'planTypes',
+  'planCurrencies',
+  'finance',
+] as const;
 type ValueFilter = (typeof VALUE_FILTERS)[number];
+
+/** A plan currency in the address: three capital letters. */
+const CURRENCY_CODE = /^[A-Z]{3}$/;
+
+/**
+ * The years a state shows (016 FR-034): from `year` to `yearTo`, or the one year of a state saved
+ * before ranges existed (FR-043: an old year reads as a one-year range).
+ */
+export function yearRange(state: Pick<ViewState, 'year' | 'yearTo'>): { from: number; to: number } {
+  const to =
+    state.yearTo !== undefined && state.yearTo > state.year
+      ? Math.min(state.yearTo, state.year + MAX_YEARS - 1)
+      : state.year;
+  return { from: state.year, to };
+}
+
+/**
+ * The state for the years `from` to `to` (016 FR-034, FR-035): a one-year range keeps the plain
+ * year (as before 016, so older servers understand it); a longer one opens Budget & cost on
+ * Yearly. Chosen plans go, as with a new year: the plans of other years cannot be chosen.
+ */
+export function withYears(state: ViewState, from: number, to: number): ViewState {
+  const { yearFrom: _from, yearTo: _to, ...rest } = state;
+  void _from;
+  void _to;
+  const range = to > from;
+  return {
+    ...rest,
+    year: from,
+    ...(range && { yearFrom: from, yearTo: to }),
+    period: range ? 'year' : state.period === 'year' ? 'month' : state.period,
+    filters: { ...state.filters, plans: [] },
+  };
+}
 
 /**
  * The standard view (FR-009): the Grid of the year without filters, with the person's remembered
@@ -77,7 +122,10 @@ export function standardState(preferences: AllWorkPreferences, year: number): Vi
  */
 export function toQueryParams(state: ViewState): AllWorkQuery {
   const { filters } = state;
-  const query: AllWorkQuery = { year: state.year, view: state.view };
+  const { from, to } = yearRange(state);
+  // One year goes as `year`, as before 016; a range as yearFrom and yearTo (016 FR-034).
+  const query: AllWorkQuery =
+    to > from ? { yearFrom: from, yearTo: to, view: state.view } : { year: from, view: state.view };
   const ids = (values: FilterValue[]) => values.map((value) => value.id);
   if (filters.plans.length > 0) query.plan = ids(filters.plans);
   if (filters.planStatuses.length > 0) query.planStatus = [...filters.planStatuses];
@@ -89,17 +137,26 @@ export function toQueryParams(state: ViewState): AllWorkQuery {
   if (filters.activityTypes.length > 0) query.activityType = ids(filters.activityTypes);
   if (filters.strategic !== 'include') query.strategic = filters.strategic;
   if (filters.showLevels !== 'everything') query.showLevels = filters.showLevels;
+  if (filters.planTypes?.length) query.planType = [...filters.planTypes];
+  if (filters.planCurrencies?.length) query.planCurrency = [...filters.planCurrencies];
+  if (filters.finance?.length) query.finance = [...filters.finance];
   const search = state.search.trim();
   if (search !== '') query.search = search;
   if (state.view === 'grid') query.column = [...state.columns];
   if (state.sort) query.sort = `${state.sort.column}:${state.sort.direction}`;
   if (state.view === 'budget') query.period = state.period;
+  if (state.view === 'budget' && state.comparePhased) query.comparePhased = true;
   return query;
 }
 
 /** The address parameters other pages may link with (the API's names, D-122). */
 const ADDRESS_KEYS = [
   'year',
+  'yearFrom',
+  'yearTo',
+  'planType',
+  'planCurrency',
+  'finance',
   'plan',
   'planStatus',
   'containerStatus',
@@ -132,6 +189,12 @@ export function fromAddress(params: URLSearchParams, base: ViewState): ViewState
     allowed(key, values)[0] ?? fallback;
 
   const year = Number(params.get('year'));
+  const isYear = (value: number) => Number.isInteger(value) && value >= 2000 && value <= 2100;
+  const yearFrom = Number(params.get('yearFrom') ?? params.get('year'));
+  const yearTo = Number(params.get('yearTo'));
+  const planTypes = allowed('planType', keysOf(PLAN_TYPE_LABELS));
+  const planCurrencies = params.getAll('planCurrency').filter((code) => CURRENCY_CODE.test(code));
+  const finance = allowed('finance', keysOf(FINANCE_LABELS));
   const filters: Filters = {
     plans: idValues('plan'),
     planStatuses: allowed('planStatus', keysOf(PLAN_STATUS_LABELS)),
@@ -143,13 +206,33 @@ export function fromAddress(params: URLSearchParams, base: ViewState): ViewState
     activityTypes: idValues('activityType'),
     strategic: one('strategic', keysOf(STRATEGIC_LABELS), 'include'),
     showLevels: one('showLevels', keysOf(SHOW_LEVELS_LABELS), 'everything'),
+    ...(planTypes.length > 0 && { planTypes }),
+    ...(planCurrencies.length > 0 && { planCurrencies }),
+    ...(finance.length > 0 && { finance }),
   };
+  // A range of at most five years (016 FR-034); anything else falls back to one year.
+  if (isYear(yearFrom) && isYear(yearTo) && yearTo > yearFrom && yearTo - yearFrom < MAX_YEARS) {
+    return withYears({ ...base, filters, search: params.get('search') ?? '' }, yearFrom, yearTo);
+  }
+  const { yearFrom: _from, yearTo: _to, ...single } = base;
+  void _from;
+  void _to;
   return {
-    ...base,
-    year: Number.isInteger(year) && year >= 2000 && year <= 2100 ? year : base.year,
+    ...single,
+    year: isYear(year) ? year : isYear(yearFrom) ? yearFrom : base.year,
     filters,
     search: params.get('search') ?? '',
   };
+}
+
+/**
+ * The state a saved view keeps (data-model §1.2): the contract's filters only, so the Financials
+ * filter of the session (015 FR-024, an address filter) is left out.
+ */
+export function savedStateOf(state: ViewState): SavedView['state'] {
+  const { finance: _finance, ...filters } = state.filters;
+  void _finance;
+  return { ...state, filters };
 }
 
 /**
@@ -163,8 +246,14 @@ export function sameState(a: ViewState, b: ViewState): boolean {
 function canonical(state: ViewState): string {
   const { filters } = state;
   const sortedIds = (values: FilterValue[]) => values.map((value) => value.id).sort();
+  const sorted = (values: string[] | undefined) => [...(values ?? [])].sort();
+  const { from, to } = yearRange(state);
   return JSON.stringify({
     ...state,
+    year: from,
+    yearFrom: undefined,
+    yearTo: to,
+    comparePhased: Boolean(state.comparePhased),
     search: state.search.trim(),
     filters: {
       ...filters,
@@ -176,6 +265,10 @@ function canonical(state: ViewState): string {
       teams: sortedIds(filters.teams),
       businessUnits: sortedIds(filters.businessUnits),
       activityTypes: sortedIds(filters.activityTypes),
+      planTypes: sorted(filters.planTypes),
+      planCurrencies: sorted(filters.planCurrencies),
+      finance: sorted(filters.finance),
+      attributes: filters.attributes ?? [],
     },
     expansion: { mode: state.expansion.mode, toggled: [...state.expansion.toggled].sort() },
   });
@@ -391,6 +484,9 @@ export function chipsOf(state: ViewState, options?: AllWorkOptions): Chip[] {
   if (filters.showLevels !== 'everything') {
     add('showLevels', filters.showLevels, SHOW_LEVELS_LABELS[filters.showLevels]);
   }
+  filters.planTypes?.forEach((value) => add('planTypes', value, PLAN_TYPE_LABELS[value]));
+  filters.planCurrencies?.forEach((value) => add('planCurrencies', value, value));
+  filters.finance?.forEach((value) => add('finance', value, FINANCE_LABELS[value]));
   return chips;
 }
 
@@ -405,8 +501,10 @@ export function removeChip(state: ViewState, chipKey: string): ViewState {
     filters[key] = filters[key].filter((chosen) => chosen.id !== value);
   } else if ((VALUE_FILTERS as readonly string[]).includes(filter)) {
     const key = filter as ValueFilter;
-    // The three lists hold different words; filtering by text keeps each list's own type.
-    (filters[key] as string[]) = (filters[key] as string[]).filter((chosen) => chosen !== value);
+    // The lists hold different words; filtering by text keeps each list's own type.
+    (filters[key] as string[]) = ((filters[key] ?? []) as string[]).filter(
+      (chosen) => chosen !== value,
+    );
   } else if (filter === 'strategic') {
     filters.strategic = 'include';
   } else if (filter === 'showLevels') {
@@ -432,6 +530,9 @@ const PARAMETER_FILTERS: Record<string, keyof Filters> = {
   activityType: 'activityTypes',
   strategic: 'strategic',
   showLevels: 'showLevels',
+  planType: 'planTypes',
+  planCurrency: 'planCurrencies',
+  finance: 'finance',
 };
 
 /**
@@ -444,8 +545,14 @@ export function withoutRefused(state: ViewState, fields: string[], standard: Vie
     const filter = PARAMETER_FILTERS[field];
     if (filter) {
       next = { ...next, filters: { ...next.filters, [filter]: NO_FILTERS[filter] } };
-    } else if (field === 'year') {
-      next = { ...next, year: standard.year };
+    } else if (field === 'year' || field === 'yearFrom' || field === 'yearTo') {
+      // Back to the standard year, as one year (016 FR-034).
+      const { yearFrom: _from, yearTo: _to, ...single } = next;
+      void _from;
+      void _to;
+      next = { ...single, year: standard.year };
+    } else if (field === 'comparePhased') {
+      next = { ...next, comparePhased: false };
     } else if (field === 'search') {
       next = { ...next, search: '' };
     } else if (field === 'column') {

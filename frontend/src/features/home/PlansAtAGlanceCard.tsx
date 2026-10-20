@@ -20,7 +20,15 @@ import { useFormatters } from '@/lib/useFormatters';
 import { useHomePlans } from './homeApi';
 import type { HomePlanRow, HomeScope } from './homeApi';
 import { plansListHref } from './homeLinks';
-import { PLANS_AT_A_GLANCE, approvedPercent, approvedText, viewAllPlansText } from './homeText';
+import {
+  NOTHING_PLANNED,
+  PLANS_AT_A_GLANCE,
+  approvedPercent,
+  approvedText,
+  isZero,
+  percentText,
+  viewAllPlansText,
+} from './homeText';
 import styles from './PlansAtAGlanceCard.module.css';
 import { SectionError } from './SectionError';
 
@@ -31,9 +39,11 @@ export interface PlansAtAGlanceCardProps {
 }
 
 /**
- * Plans at a glance (FR-008 – FR-010), like ZenReach's "Which team is working on which campaign":
- * each plan in scope with its status, teams, counts, approval progress, budget used and planned
- * cost, newest year first; at most 10, with "View all <n> plans".
+ * Plans at a glance (FR-008 – FR-010): each plan in scope with its status, teams, counts, approval
+ * progress, budget used and planned cost, newest year first; at most 10, with "View all <n>
+ * plans". The table follows the data table standard (design system §5.4; UI audit X-18): a grey
+ * header band in sentence case, numbers right-aligned under their headings, and a shadow at the
+ * edge with more columns when it scrolls sideways inside the card.
  */
 export function PlansAtAGlanceCard({ scope, onShowEverything }: PlansAtAGlanceCardProps) {
   const plans = useHomePlans(scope);
@@ -87,7 +97,8 @@ function PlansTable({ rows }: { rows: HomePlanRow[] }) {
 
   return (
     <div className={styles.scroll}>
-      <table className={styles.table} aria-label="Plans at a glance">
+      <table className={styles.table}>
+        <caption className="visually-hidden">Plans at a glance</caption>
         <thead>
           <tr>
             <th scope="col">Plan</th>
@@ -121,7 +132,8 @@ function PlansTable({ rows }: { rows: HomePlanRow[] }) {
                     {plan.strategicAop && (
                       <>
                         {' '}
-                        <StatusChip tone="active">AOP</StatusChip>
+                        {/* A tag, not a status: blue chips mean "running" (design system §4.1). */}
+                        <span className={styles.aop}>AOP</span>
                       </>
                     )}
                   </span>
@@ -154,7 +166,7 @@ function PlansTable({ rows }: { rows: HomePlanRow[] }) {
                       —
                       {plan.budget === null && (
                         <>
-                          {' '}
+                          {' · '}
                           <span className={styles.note}>No budget</span>
                         </>
                       )}
@@ -167,12 +179,21 @@ function PlansTable({ rows }: { rows: HomePlanRow[] }) {
                         tone={plan.overBudget ? 'problem' : undefined}
                       />
                       <span className={cx(plan.overBudget && styles.problem)}>
-                        {formatWhole(plan.budgetUsedPercent)} %
+                        {percentText(plan.budgetUsedPercent)}
                       </span>
                     </span>
                   )}
                 </td>
-                <td className={styles.number}>{money(plan.plannedCost)}</td>
+                <td className={styles.number}>
+                  {plan.activityCount === 0 || isZero(plan.plannedCost) ? (
+                    // Nothing planned is "—", never "$0.00" (design system §4.4).
+                    <span className={styles.muted}>
+                      —<span className="visually-hidden"> {NOTHING_PLANNED}</span>
+                    </span>
+                  ) : (
+                    money(plan.plannedCost)
+                  )}
+                </td>
               </tr>
             );
           })}

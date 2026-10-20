@@ -9,11 +9,17 @@ import { fieldHref, recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { useHomeMyActivities } from './homeApi';
 import type { MyActivityGroup, MyActivityRow } from './homeApi';
-import { NO_ACTIVITIES, datesText, lineItemsNeedAttentionText, showAllText } from './homeText';
+import {
+  NO_ACTIVITIES,
+  SHOW_FEWER,
+  datesText,
+  lineItemsNeedAttentionText,
+  viewAllText,
+} from './homeText';
 import styles from './MyActivitiesCard.module.css';
 import { SectionError } from './SectionError';
 
-/** How many activities a group shows before "Show all <n>" (FR-014). */
+/** How many activities a group shows before "View all (n)" (FR-014). */
 const SHOWN = 5;
 
 /**
@@ -88,7 +94,7 @@ function ActivityGroup({ group }: { group: MyActivityGroup }) {
             aria-expanded={showAll}
             onClick={() => setShowAll(!showAll)}
           >
-            {showAll ? 'Show fewer' : showAllText(group.count)}
+            {showAll ? SHOW_FEWER : viewAllText(group.count)}
           </Button>
         )}
       </div>

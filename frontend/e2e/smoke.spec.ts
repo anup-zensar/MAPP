@@ -64,7 +64,7 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
   const pages: { item: string; heading: string }[] = [
     { item: 'Plans', heading: 'Plans' },
     { item: 'Approvals', heading: 'Approvals' },
-    { item: 'All work', heading: 'See all planned work across plans' },
+    { item: 'All work', heading: 'All work' },
     { item: 'Settings', heading: 'Settings' },
     { item: 'Recycle bin', heading: 'Deleted, not gone.' },
     { item: 'Activity log', heading: 'Every change, on the record.' },

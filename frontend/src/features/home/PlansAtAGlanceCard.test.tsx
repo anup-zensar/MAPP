@@ -75,7 +75,7 @@ describe('PlansAtAGlanceCard', () => {
       '3',
       '7',
       '3 of 7 approved',
-      '84 %',
+      '84%',
       '$1,003,000.00',
     ]);
     expect(
@@ -105,7 +105,7 @@ describe('PlansAtAGlanceCard', () => {
 
     await screen.findByRole('link', { name: 'FY2026 Mobility China' });
     const row = within(rowOf('FY2026 Mobility China'));
-    expect(row.getByText('115 %').className).toMatch(/problem/);
+    expect(row.getByText('115%').className).toMatch(/problem/);
     expect(row.getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuetext',
       '115 %',
@@ -120,11 +120,31 @@ describe('PlansAtAGlanceCard', () => {
     const row = within(rowOf('FY2027 Global Brand'));
     expect(row.getByRole('rowheader')).toHaveTextContent('P-1003 · 2027 AOP');
     expect(row.getByText('No activities')).toBeInTheDocument();
-    expect(row.getByText('No budget').parentElement).toHaveTextContent('— No budget');
+    expect(row.getByText('No budget').parentElement).toHaveTextContent('— · No budget');
     expect(row.queryByRole('progressbar')).not.toBeInTheDocument();
-    // Nothing planned shows "—", as on the plan page (D-217).
-    expect(row.getAllByRole('cell').at(-1)).toHaveTextContent('—');
+    // Nothing planned shows "—", as on the plan page (D-217, design system §4.4).
+    expect(row.getAllByRole('cell').at(-1)).toHaveTextContent('— Nothing planned yet');
     expect(row.getByText('Global Marketing Ops')).toBeInTheDocument();
+  });
+
+  it('follows the data table standard: a named table with numbers right-aligned under their headings (UI audit X-18)', async () => {
+    renderCard();
+
+    const table = await screen.findByRole('table', { name: 'Plans at a glance' });
+    const headings = within(table).getAllByRole('columnheader');
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      'Plan',
+      'Status',
+      'Teams',
+      'Campaigns',
+      'Activities',
+      'Approval',
+      'Budget used',
+      'Planned cost',
+    ]);
+    for (const name of ['Campaigns', 'Activities', 'Planned cost']) {
+      expect(within(table).getByRole('columnheader', { name }).className).toMatch(/number/);
+    }
   });
 
   it('opens the plan page when its row is chosen (FR-010)', async () => {

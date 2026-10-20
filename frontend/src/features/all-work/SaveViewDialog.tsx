@@ -12,6 +12,7 @@ import { useCreateView, useUpdateView } from './allWorkApi';
 import type { SavedView, ViewState } from './allWorkTypes';
 import { useViewRefusal } from './useViewRefusal';
 import { nameProblem, viewNamed } from './viewNames';
+import { savedStateOf } from './viewState';
 
 export interface SaveViewDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -59,7 +60,7 @@ export function SaveViewDialog({ onOpenChange, views, state, onSaved }: SaveView
       return;
     }
     create.mutate(
-      { name: name.trim(), state, isDefault },
+      { name: name.trim(), state: savedStateOf(state), isDefault },
       {
         onSuccess: (view) => done(view, 'saved'),
         onError: (error) => setErrors(refused(error, nameField)),
@@ -69,7 +70,10 @@ export function SaveViewDialog({ onOpenChange, views, state, onSaved }: SaveView
 
   function replace(view: SavedView) {
     update.mutate(
-      { viewId: view.id, body: { state, ...(isDefault && { isDefault: true }) } },
+      {
+        viewId: view.id,
+        body: { state: savedStateOf(state), ...(isDefault && { isDefault: true }) },
+      },
       {
         onSuccess: (saved) => done(saved, 'updated'),
         onError: (error) => {

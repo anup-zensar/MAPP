@@ -5,7 +5,7 @@ import type { SavedView, ViewState } from './allWorkTypes';
 import { ManageViewsPanel } from './ManageViewsPanel';
 import { SaveViewDialog } from './SaveViewDialog';
 import { useViewRefusal } from './useViewRefusal';
-import { sameState } from './viewState';
+import { sameState, savedStateOf } from './viewState';
 import { ViewsMenu } from './ViewsMenu';
 
 export interface ViewsControlProps {
@@ -44,7 +44,7 @@ export function ViewsControl({
   function updateActive() {
     if (!active || !state) return;
     update.mutate(
-      { viewId: active.id, body: { state } },
+      { viewId: active.id, body: { state: savedStateOf(state) } },
       {
         onSuccess: (view) => show({ message: `View '${view.name}' updated` }),
         onError: (error) => refused(error, 'name'),

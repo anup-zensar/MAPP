@@ -13,7 +13,7 @@ import { useAllWorkState } from './allWorkStore';
 import type { AllWorkEntry } from './allWorkStore';
 import { leftOutMessage } from './allWorkText';
 import type { SavedView, ViewState } from './allWorkTypes';
-import { fromAddress, hasAddressFilters, leftOutOf, standardState } from './viewState';
+import { fromAddress, hasAddressFilters, leftOutOf, standardState, yearRange } from './viewState';
 import type { PageSize } from './viewState';
 
 /** A new state, or a change of the state as it is when the change applies. */
@@ -70,7 +70,10 @@ export function useAllWorkSession(): AllWorkSession {
   const fitted = useCallback(
     async (view: SavedView) => {
       try {
-        return leftOutOf(view.state, await fetchOptionsOf(queryClient, view.state.year));
+        return leftOutOf(
+          view.state,
+          await fetchOptionsOf(queryClient, view.state.year, yearRange(view.state).to),
+        );
       } catch {
         // The choices could not be read: the API leaves unknown values out itself.
         return { state: view.state, names: [] };

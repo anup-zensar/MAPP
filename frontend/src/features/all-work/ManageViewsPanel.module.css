@@ -27,7 +27,7 @@
 
 .label {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
   overflow-wrap: break-word;
 }
 
@@ -37,7 +37,7 @@
   background: var(--chip);
   color: var(--ink-2);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .actions {

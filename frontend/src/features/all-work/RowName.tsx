@@ -7,10 +7,11 @@ import type { AllWorkRow } from './allWorkTypes';
 import { Highlight } from './Highlight';
 import { rowHref } from './rowHref';
 import styles from './RowName.module.css';
+import { statusWord } from './statusWords';
 import type { VisibleRow } from './viewState';
 
-/** Names longer than this are cut to one line; the full name shows on hover and focus. */
-const LONG_NAME = 40;
+/** Names longer than this may end with an ellipsis; the full name shows on hover and focus. */
+const LONG_NAME = 36;
 
 export interface RowNameProps {
   visible: VisibleRow;
@@ -48,7 +49,7 @@ export function RowName({ visible, search, showStatus, onToggle, onOpen, childre
   );
 
   return (
-    <div className={styles.name} style={{ paddingLeft: `${row.depth * 20}px` }}>
+    <div className={styles.name} style={{ paddingLeft: `${row.depth * 24}px` }}>
       {childCount > 0 ? (
         <button
           type="button"
@@ -66,9 +67,15 @@ export function RowName({ visible, search, showStatus, onToggle, onOpen, childre
         <div className={styles.line}>
           {row.level !== 'unassigned' && <LevelTag level={row.level} />}
           {row.name.length > LONG_NAME ? <Tooltip content={row.name}>{link}</Tooltip> : link}
+          {row.level === 'plan' && row.year !== undefined && (
+            // Plan rows show their year: All work may show several (016 FR-034).
+            <span className={styles.year}>{row.year}</span>
+          )}
           {row.strategic && <span className={styles.aop}>AOP</span>}
           {showStatus && row.status && (
-            <StatusChip tone={row.status.tone}>{row.status.label}</StatusChip>
+            <StatusChip tone={row.status.tone}>
+              {statusWord(row.status.label, row.status.tone)}
+            </StatusChip>
           )}
         </div>
         {row.role === 'context' && (

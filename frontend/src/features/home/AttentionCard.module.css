@@ -13,29 +13,30 @@
 }
 
 .item + .item {
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid var(--row-divider);
 }
 
-/* Level tag, name and ID on one line; they wrap on phones. */
+/* Level tag, name and ID on one line; on phones the ID moves to the next line. */
 .head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-2);
+  gap: var(--space-1) var(--space-2);
   min-width: 0;
 }
 
 .name {
   min-width: 0;
-  color: var(--ink);
+  color: var(--link);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
+  text-decoration: none;
   overflow-wrap: break-word;
 }
 
 .name:hover,
 .name:focus-visible {
-  color: var(--link);
+  text-decoration: underline;
 }
 
 .id {
@@ -45,7 +46,7 @@
 }
 
 .where {
-  margin-top: 2px;
+  margin-top: var(--space-1);
   color: var(--ink-2);
   font-size: var(--text-xs);
 }
@@ -71,17 +72,17 @@
 
 .icon {
   flex: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   margin-top: 2px;
   color: var(--status-problem);
 }
 
 .fix {
-  font-weight: 600;
+  font-weight: var(--weight-bold);
   white-space: nowrap;
 }
 
 .more {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
 }

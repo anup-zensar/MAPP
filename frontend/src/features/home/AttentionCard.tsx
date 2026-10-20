@@ -9,21 +9,27 @@ import { useHomeAttention } from './homeApi';
 import type { HomeAttentionItem } from './homeApi';
 import type { ReasonFormatters } from './homeText';
 import {
+  ATTENTION_SUBTITLE,
   NOTHING_NEEDS_ATTENTION,
-  REASON_LINK,
+  SHOW_FEWER,
   reasonLinkName,
+  reasonLinkOf,
   reasonText,
-  showAllText,
+  viewAllText,
 } from './homeText';
 import { SectionError } from './SectionError';
 
-/** How many items show before "Show all <n>" (FR-012). */
-const SHOWN = 8;
+/**
+ * How many items show before "View all (n)": 5, as in Waiting for my approval beside it, so the
+ * two cards stay even (design system §2.2, §2.4 E; UI audit H-02).
+ */
+const SHOWN = 5;
 
 /**
  * Needs your attention (FR-011, FR-012): the plans, campaigns, initiatives and activities the
  * person owns, in every plan, that have a problem — each once, with all its reasons and a link to
  * where each is fixed. The API sends them in order: declined, balance, budget, missing fields.
+ * There is no page of them, so View all opens the rest on the card.
  */
 export function AttentionCard() {
   const attention = useHomeAttention();
@@ -31,7 +37,7 @@ export function AttentionCard() {
   const [showAll, setShowAll] = useState(false);
 
   return (
-    <Card title="Needs your attention" subtitle="Things you own that have a problem">
+    <Card title="Needs your attention" subtitle={ATTENTION_SUBTITLE}>
       {attention.isPending ? (
         <Skeleton lines={4} height="18px" />
       ) : attention.isError ? (
@@ -57,7 +63,7 @@ export function AttentionCard() {
               aria-expanded={showAll}
               onClick={() => setShowAll(!showAll)}
             >
-              {showAll ? 'Show fewer' : showAllText(attention.data.total)}
+              {showAll ? SHOW_FEWER : viewAllText(attention.data.total)}
             </Button>
           )}
         </>
@@ -80,12 +86,12 @@ function AttentionRow({ item, format }: { item: HomeAttentionItem; format: Reaso
       {item.recordType !== 'plan' && <p className={styles.where}>in {item.plan.name}</p>}
       <ul className={styles.reasons}>
         {item.reasons.map((reason) => {
-          const link = REASON_LINK[reason.kind];
+          const link = reasonLinkOf(reason, item.recordType);
           return (
             <li key={reason.kind} className={styles.reason}>
               <CircleAlert aria-hidden="true" className={styles.icon} />
               <span>
-                {reasonText(reason, format)}{' '}
+                {reasonText(reason, format, item.recordType)}{' '}
                 <Link
                   to={`${href}${link.hash}`}
                   aria-label={reasonLinkName(link.label, item.recordTypeLabel, item.name)}

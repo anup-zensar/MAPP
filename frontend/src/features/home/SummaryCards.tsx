@@ -1,14 +1,15 @@
-import { ClipboardList, Hourglass, ListChecks, Wallet } from 'lucide-react';
 import { useCurrentUser } from '@/app/useSession';
-import { LinkSummaryCard, ProgressBar, Skeleton } from '@/components';
+import { ProgressBar, Skeleton } from '@/components';
 import { cx } from '@/lib/cx';
 import { formatWhole } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { useHomeSummary } from './homeApi';
 import type { HomeScope, HomeSummary } from './homeApi';
 import {
+  NOTHING_PLANNED,
   PLANS_CARD,
   activityCountsText,
+  isZero,
   ofPlanBudgetText,
   oldestWaitingText,
   percentUsedText,
@@ -18,11 +19,13 @@ import {
 import { myActivitiesHref, plansListHref, waitingForMeHref } from './homeLinks';
 import { SectionError } from './SectionError';
 import styles from './SummaryCards.module.css';
+import { SummaryLinkCard } from './SummaryLinkCard';
 
 /**
- * The four summary cards of Home (FR-005 – FR-007): my teams' plans, activities I own, waiting for
- * my approval and planned cost against plan budget, each opening its list with the same filter.
- * While loading each shows a placeholder; a failure shows "This section couldn't load".
+ * The four summary cards of Home (FR-005 – FR-007, design system §2.4 E): my teams' plans,
+ * activities I own, waiting for my approval and planned cost against plan budget, each opening its
+ * list with the same filter. Four in a row on wide screens, 2 × 2 below (UI audit H-06). While
+ * loading each shows a placeholder; a failure shows "This section couldn't load".
  */
 export function SummaryCards({ scope }: { scope: HomeScope }) {
   const person = useCurrentUser();
@@ -50,13 +53,12 @@ export function SummaryCards({ scope }: { scope: HomeScope }) {
 
   const { plans, activitiesOwned, waitingForMe, plannedCost } = summary.data;
   const plansCard = PLANS_CARD[scope];
-  const hasPlans = plannedCost.planCount > 0;
+  // Nothing planned is "—", never "$0.00" (design system §4.4, functional review X-08).
+  const nothingPlanned = plannedCost.planCount === 0 || isZero(plannedCost.plannedCost);
 
   return (
     <section aria-label="Summary" className={styles.cards}>
-      <LinkSummaryCard
-        icon={<ClipboardList />}
-        tint="var(--blue)"
+      <SummaryLinkCard
         label={plansCard.label}
         tip={plansCard.tip}
         value={formatWhole(plans.count)}
@@ -64,9 +66,7 @@ export function SummaryCards({ scope }: { scope: HomeScope }) {
         to={plansListHref(scope)}
         linkLabel="open the Plans list"
       />
-      <LinkSummaryCard
-        icon={<ListChecks />}
-        tint="var(--level-campaign)"
+      <SummaryLinkCard
         label="Activities I own"
         tip="Activities you own, in every plan."
         value={formatWhole(activitiesOwned.count)}
@@ -76,9 +76,7 @@ export function SummaryCards({ scope }: { scope: HomeScope }) {
         to={myActivitiesHref(person.id)}
         linkLabel="open your activities"
       />
-      <LinkSummaryCard
-        icon={<Hourglass />}
-        tint="var(--status-review)"
+      <SummaryLinkCard
         label="Waiting for my approval"
         tip="Submitted activities waiting at a level where you are an approver."
         value={formatWhole(waitingForMe.count)}
@@ -87,18 +85,20 @@ export function SummaryCards({ scope }: { scope: HomeScope }) {
         to={waitingForMeHref()}
         linkLabel="open Approvals"
       />
-      <LinkSummaryCard
-        icon={<Wallet />}
-        tint="var(--status-positive)"
+      <SummaryLinkCard
         label="Planned cost vs plan budget"
         tip="Planned cost of the plans in scope compared with their plan budgets."
-        value={hasPlans ? moneyCompact(plannedCost.plannedCost) : '—'}
-        fullValue={hasPlans ? money(plannedCost.plannedCost) : undefined}
+        value={nothingPlanned ? '—' : moneyCompact(plannedCost.plannedCost)}
+        fullValue={nothingPlanned ? undefined : money(plannedCost.plannedCost)}
         detail={
-          hasPlans ? (
-            <BudgetUsed cost={plannedCost} budget={moneyCompact(plannedCost.planBudget)} />
-          ) : (
+          plannedCost.planCount === 0 ? (
             <span>No plans in scope</span>
+          ) : (
+            <BudgetUsed
+              cost={plannedCost}
+              budget={moneyCompact(plannedCost.planBudget)}
+              nothingPlanned={nothingPlanned}
+            />
           )
         }
         to={plansListHref(scope)}
@@ -108,26 +108,35 @@ export function SummaryCards({ scope }: { scope: HomeScope }) {
   );
 }
 
+interface BudgetUsedProps {
+  cost: HomeSummary['plannedCost'];
+  budget: string;
+  nothingPlanned: boolean;
+}
+
 /**
- * Card 4's lines (FR-006): "of <budget> plan budget", the budget-used bar with "<n> % used" (red
+ * Card 4's lines (FR-006): "of <budget> plan budget", the budget-used bar with "<n>% used" (red
  * above the budget) and "Includes <n> plans with no budget"; without any plan budget "No plan
- * budgets set" and "—".
+ * budgets set" and "—"; with nothing planned yet "Nothing planned yet" instead of the bar.
  */
-function BudgetUsed({ cost, budget }: { cost: HomeSummary['plannedCost']; budget: string }) {
+function BudgetUsed({ cost, budget, nothingPlanned }: BudgetUsedProps) {
   const used = cost.budgetUsedPercent;
   return (
     <>
+      {nothingPlanned && <span>{NOTHING_PLANNED}</span>}
       <span>{cost.planBudget ? ofPlanBudgetText(budget) : 'No plan budgets set'}</span>
-      <span className={styles.usage}>
-        <ProgressBar
-          value={used}
-          label="Budget used"
-          tone={cost.overBudget ? 'problem' : undefined}
-        />
-        <span className={cx(styles.percent, cost.overBudget && styles.problem)}>
-          {used === null ? '—' : percentUsedText(used)}
+      {!nothingPlanned && (
+        <span className={styles.usage}>
+          <ProgressBar
+            value={used}
+            label="Budget used"
+            tone={cost.overBudget ? 'problem' : undefined}
+          />
+          <span className={cx(styles.percent, cost.overBudget && styles.problem)}>
+            {used === null ? '—' : percentUsedText(used)}
+          </span>
         </span>
-      </span>
+      )}
       {cost.planBudget && cost.plansWithoutBudget > 0 && (
         <span>{plansWithoutBudgetText(cost.plansWithoutBudget)}</span>
       )}

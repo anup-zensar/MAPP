@@ -179,6 +179,37 @@ describe('BudgetView (US4)', () => {
     });
   });
 
+  it('compares with the phased budget: a Phased budget row and red cells above it (016 FR-038)', () => {
+    const result = budgetResult('quarter');
+    result.rows = result.rows.map((row) =>
+      row.key === 'C-1001'
+        ? {
+            ...row,
+            phasedBudget: [usd('3000.00'), usd('10000.00'), null, null],
+            overPeriods: [0],
+          }
+        : row,
+    );
+    renderBudget(result);
+
+    const phased = screen.getByRole('rowheader', { name: 'Phased budget of Helix launch' });
+    const cells = within(phased.closest('tr') as HTMLElement).getAllByRole('cell');
+    expect(cells.map((cell) => cell.textContent)).toEqual([
+      '',
+      '$3,000.00',
+      '$10,000.00',
+      'Not phased',
+      'Not phased',
+      '',
+    ]);
+    // Q1's planned cost is above its phased budget: red, with a sign and words, not colour alone.
+    const campaign = phased.closest('tr')?.previousElementSibling as HTMLElement;
+    const [, q1, q2] = within(campaign).getAllByRole('cell');
+    expect(q1).toHaveTextContent('$4,000.00 (above the phased budget)');
+    expect(q1.querySelector('svg')).not.toBeNull();
+    expect(q2).not.toHaveTextContent('above the phased budget');
+  });
+
   it('opens a row’s record (FR-024)', async () => {
     const { user, onOpen } = renderBudget();
 

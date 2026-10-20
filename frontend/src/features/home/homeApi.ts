@@ -28,6 +28,7 @@ export type MyActivitiesPage = components['schemas']['MyActivitiesPage'];
 export type ActivityLogEntry = components['schemas']['ActivityLogEntry'];
 export type RecentChangesPage = components['schemas']['RecentChangesPage'];
 export type Money = components['schemas']['Money'];
+export type FinancialOverview = components['schemas']['FinancialOverview'];
 
 /** Every query of Home starts with this key; a currency change asks all of them again. */
 export const HOME_KEY = ['home'] as const;
@@ -95,6 +96,20 @@ export function useHomeRecentChanges(scope: HomeScope) {
   return useQuery({
     queryKey: HOME_KEYS.recentChanges(scope),
     queryFn: () => call(api.GET('/api/home/recent-changes', { params: { query: { scope } } })),
+    ...ALWAYS_FRESH,
+  });
+}
+
+/**
+ * The Financials card (015 FR-025): committed, invoiced, paid and accrued for the current year and
+ * the Home scope (GET /api/financials/overview). Its key starts with 'financials', so a GSAP import
+ * or a link made on the Financials page asks it again (015 plan, "Query keys"); the display
+ * currency is part of the key, so a new currency asks it again too.
+ */
+export function useFinancialOverview(scope: HomeScope, currency: string) {
+  return useQuery({
+    queryKey: ['financials', 'overview', scope, currency] as const,
+    queryFn: () => call(api.GET('/api/financials/overview', { params: { query: { scope } } })),
     ...ALWAYS_FRESH,
   });
 }

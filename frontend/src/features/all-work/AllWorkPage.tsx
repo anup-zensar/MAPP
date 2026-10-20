@@ -22,7 +22,7 @@ import {
   usePreferencesSaver,
 } from './allWorkApi';
 import styles from './AllWorkPage.module.css';
-import { VIEW_LABELS } from './allWorkText';
+import { ALL_WORK_DESCRIPTION, VIEW_LABELS } from './allWorkText';
 import type { AllWorkResult, Sort, ViewState, ViewType } from './allWorkTypes';
 import { AllWorkGrid } from './AllWorkGrid';
 import { BudgetView } from './BudgetView';
@@ -47,6 +47,7 @@ import {
   toQueryParams,
   visibleRows,
   withoutRefused,
+  yearRange,
 } from './viewState';
 
 /** The views as pill tabs (FR-001). */
@@ -67,7 +68,11 @@ export function AllWorkPage() {
   const session = useAllWorkSession();
   const { state, entry, setState } = session;
   const query = useAllWork(state ? toQueryParams(state) : null);
-  const options = useAllWorkOptions(state ? state.year : null, state !== null);
+  const options = useAllWorkOptions(
+    state ? state.year : null,
+    state !== null,
+    state ? yearRange(state).to : undefined,
+  );
   const preferences = useAllWorkPreferences();
   const open = useOpenRecord(session.rememberScroll);
   const savePreferences = usePreferencesSaver();
@@ -124,20 +129,93 @@ export function AllWorkPage() {
     }
   }
 
+  const view = state && (
+    <>
+      <FilterBar
+        state={state}
+        options={options.data}
+        count={query.data?.count}
+        updating={query.isFetching && query.data !== undefined}
+        onChange={(change) => setState(change)}
+      />
+      {/* The cards and the count are the same in every view: the last answer serves. */}
+      <SummaryCards summary={query.data?.summary ?? null} />
+      <div aria-busy={query.isFetching} className={styles.card}>
+        <ViewToolbar
+          state={state}
+          generatedAt={result?.generatedAt}
+          onChange={changeExpansion}
+          onColumns={() => setChoosingColumns(true)}
+          onRefresh={() => void query.refetch()}
+        />
+        <ViewContent
+          state={state}
+          result={result}
+          error={query.isError ? query.error : null}
+          hasPlans={options.data ? options.data.plans.length > 0 : true}
+          onRetry={() => void query.refetch()}
+          onClearFilters={() => setState(clearAll)}
+        >
+          {result && monthLayout && (
+            <MonthCalendar key={result.year} result={result} onOpen={(row) => void open(row)} />
+          )}
+          {result && state.view === 'calendar' && !monthLayout && (
+            <CalendarView
+              result={result}
+              rows={page.rows}
+              continued={continuedPath(page.rows, result.rows)}
+              search={state.search}
+              onToggle={(key) => changeExpansion(toggleRow(state, key))}
+              onOpen={(row) => void open(row)}
+            />
+          )}
+          {result && state.view === 'budget' && (
+            <BudgetView
+              result={result}
+              rows={page.rows}
+              continued={continuedPath(page.rows, result.rows)}
+              search={state.search}
+              onToggle={(key) => changeExpansion(toggleRow(state, key))}
+              onOpen={(row) => void open(row)}
+            />
+          )}
+          {result && state.view === 'grid' && (
+            <AllWorkGrid
+              result={result}
+              rows={page.rows}
+              continued={continuedPath(page.rows, result.rows)}
+              search={state.search}
+              sort={state.sort}
+              onSort={(column) => changeColumns(state.columns, nextSort(state.sort, column))}
+              onToggle={(key) => changeExpansion(toggleRow(state, key))}
+              onOpen={(row) => void open(row)}
+            />
+          )}
+        </ViewContent>
+      </div>
+      {result && result.rows.length > 0 && !monthLayout && (
+        <Pager
+          page={page}
+          pageSize={entry.pageSize}
+          onPage={session.setPage}
+          onPageSize={session.setPageSize}
+        />
+      )}
+    </>
+  );
+
   return (
     <>
       <PageHeader
-        eyebrow="All work"
-        title="See all planned work"
-        highlight="across plans"
-        description="Filter, compare and export every campaign, initiative, activity and line item of a year."
+        title="All work"
+        description={ALL_WORK_DESCRIPTION}
         actions={
           <>
             <ViewsControl
               state={state}
               appliedViewId={entry.appliedViewId}
-              onApply={(view) => void session.applyView(view)}
-              onSaved={(view) => session.setAppliedView(view.id)}
+              onApply={(saved) => void session.applyView(saved)}
+              onSaved={(saved) => session.setAppliedView(saved.id)}
               onStandard={session.applyStandard}
             />
             {state && <ExportMenu state={state} result={result} />}
@@ -149,101 +227,22 @@ export function AllWorkPage() {
           <Card>
             <ErrorState error={session.startError} onRetry={session.retryStart} />
           </Card>
+        ) : state ? (
+          // The view switch sits right under the header, the filters after it (UI audit AW-03).
+          <Tabs
+            label="All work views"
+            tabs={TABS}
+            value={state.view}
+            onChange={(next) => setState({ ...state, view: next }, { keepPage: true })}
+          >
+            <div className={styles.view}>{view}</div>
+          </Tabs>
         ) : (
           <>
-            {/* The cards and the count are the same in every view: the last answer serves. */}
-            <SummaryCards summary={state ? (query.data?.summary ?? null) : null} />
-            {state && (
-              <FilterBar
-                state={state}
-                options={options.data}
-                count={query.data?.count}
-                updating={query.isFetching && query.data !== undefined}
-                onChange={(change) => setState(change)}
-              />
-            )}
-            {state ? (
-              <Tabs
-                label="All work views"
-                tabs={TABS}
-                value={state.view}
-                onChange={(view) => setState({ ...state, view }, { keepPage: true })}
-              >
-                <div className={styles.view}>
-                  <ViewToolbar
-                    state={state}
-                    generatedAt={result?.generatedAt}
-                    onChange={changeExpansion}
-                    onColumns={() => setChoosingColumns(true)}
-                    onRefresh={() => void query.refetch()}
-                  />
-                  <div aria-busy={query.isFetching} className={styles.card}>
-                    <ViewContent
-                      state={state}
-                      result={result}
-                      error={query.isError ? query.error : null}
-                      hasPlans={options.data ? options.data.plans.length > 0 : true}
-                      onRetry={() => void query.refetch()}
-                      onClearFilters={() => setState(clearAll)}
-                    >
-                      {result && monthLayout && (
-                        <MonthCalendar
-                          key={result.year}
-                          result={result}
-                          onOpen={(row) => void open(row)}
-                        />
-                      )}
-                      {result && state.view === 'calendar' && !monthLayout && (
-                        <CalendarView
-                          result={result}
-                          rows={page.rows}
-                          continued={continuedPath(page.rows, result.rows)}
-                          search={state.search}
-                          onToggle={(key) => changeExpansion(toggleRow(state, key))}
-                          onOpen={(row) => void open(row)}
-                        />
-                      )}
-                      {result && state.view === 'budget' && (
-                        <BudgetView
-                          result={result}
-                          rows={page.rows}
-                          continued={continuedPath(page.rows, result.rows)}
-                          search={state.search}
-                          onToggle={(key) => changeExpansion(toggleRow(state, key))}
-                          onOpen={(row) => void open(row)}
-                        />
-                      )}
-                      {result && state.view === 'grid' && (
-                        <AllWorkGrid
-                          result={result}
-                          rows={page.rows}
-                          continued={continuedPath(page.rows, result.rows)}
-                          search={state.search}
-                          sort={state.sort}
-                          onSort={(column) =>
-                            changeColumns(state.columns, nextSort(state.sort, column))
-                          }
-                          onToggle={(key) => changeExpansion(toggleRow(state, key))}
-                          onOpen={(row) => void open(row)}
-                        />
-                      )}
-                    </ViewContent>
-                  </div>
-                  {result && result.rows.length > 0 && !monthLayout && (
-                    <Pager
-                      page={page}
-                      pageSize={entry.pageSize}
-                      onPage={session.setPage}
-                      onPageSize={session.setPageSize}
-                    />
-                  )}
-                </div>
-              </Tabs>
-            ) : (
-              <div className={styles.card}>
-                <GridSkeleton />
-              </div>
-            )}
+            <SummaryCards summary={null} />
+            <div className={styles.card}>
+              <GridSkeleton />
+            </div>
           </>
         )}
       </div>

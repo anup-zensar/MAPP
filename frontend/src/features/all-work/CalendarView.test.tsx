@@ -25,7 +25,7 @@ function renderCalendar(result: AllWorkResult = calendarResult()) {
 
 /** The bar of a record: the link in the timeline cell of its row. */
 function barOf(name: RegExp): HTMLElement {
-  const table = screen.getByRole('table', { name: 'Calendar 2026' });
+  const table = screen.getByRole('table', { name: /^Calendar 2026/ });
   const [header] = within(table).getAllByRole('rowheader', { name });
   const cell = within(header.closest('tr') as HTMLElement).getByRole('cell');
   return within(cell).getByRole('link');
@@ -47,7 +47,7 @@ describe('CalendarView (US5)', () => {
   it('shows the months of the year across the top (FR-025)', () => {
     renderCalendar();
 
-    const table = screen.getByRole('table', { name: 'Calendar 2026' });
+    const table = screen.getByRole('table', { name: /^Calendar 2026/ });
     const [, timeline] = within(table).getAllByRole('columnheader');
     expect(timeline).toHaveTextContent('JanFebMarAprMayJunJulAugSepOctNovDec');
   });
@@ -61,21 +61,62 @@ describe('CalendarView (US5)', () => {
     expect(percent(bar.style.width)).toBeCloseTo((92 / 365) * 100, 4);
     expect(bar.className).toMatch(/positive/);
     expect(barOf(/Helix social ads/).className).toMatch(/problem/);
-    // The name column shows the status chip too.
+    // The bar says the status, so the name column shows no chip (UI audit AW-06); a plan has no
+    // bar and keeps its chip.
     const header = screen.getByRole('rowheader', { name: /Helix launch event/ });
-    expect(within(header).getByText('Approved')).toBeInTheDocument();
+    expect(within(header).queryByText('Approved')).not.toBeInTheDocument();
+    const plan = screen.getByRole('rowheader', { name: /FY2026 Lubricants Europe/ });
+    expect(within(plan).getByText('Published')).toBeInTheDocument();
   });
 
-  it('explains the colours with a legend of words (FR-025, SC-008)', () => {
+  it('writes the words of a short bar beside it instead of cutting them (UI audit AW-06)', () => {
+    renderCalendar(withRow('A-1001', { startDate: '2026-03-01', endDate: '2026-03-10' }));
+
+    const bar = barOf(/Helix launch event/);
+    expect(bar).toHaveTextContent('Helix launch eventApproved');
+    expect(bar.className).toMatch(/wordsAfter/);
+    // A bar long enough for its words keeps them on it.
+    expect(barOf(/Helix launch$/).className).not.toMatch(/wordsAfter|wordsBefore/);
+  });
+
+  it('puts the words of a short bar near the end of the year before it', () => {
+    renderCalendar(withRow('A-1001', { startDate: '2026-12-01', endDate: '2026-12-10' }));
+
+    expect(barOf(/Helix launch event/).className).toMatch(/wordsBefore/);
+  });
+
+  it('explains the colours with a legend of words, each word once (FR-025, SC-008, UI audit X-14)', () => {
     renderCalendar();
 
     expect(screen.getByText('Status')).toBeInTheDocument();
     const legend = screen.getByText('Status').parentElement as HTMLElement;
+    // The approval roll-up of campaigns and initiatives reads "Partly approved": "In progress"
+    // is only a running activity (functional review A-02).
     expect(
       within(legend)
         .getAllByRole('listitem')
         .map((item) => item.textContent),
-    ).toEqual(['In progress', 'Approved', 'Declined', 'Created', 'No activities']);
+    ).toEqual(['Partly approved', 'Approved', 'Declined', 'Created', 'No activities']);
+    expect(barOf(/Helix launch$/)).toHaveTextContent('Helix launchPartly approved');
+  });
+
+  it('shows a range of years as one timeline with year and quarter bands (016 FR-036)', () => {
+    renderCalendar(calendarResult({ yearTo: 2027, today: '2027-01-05' }));
+
+    const table = screen.getByRole('table', { name: 'Calendar 2026–2027' });
+    const [, timeline] = within(table).getAllByRole('columnheader');
+    expect(timeline).toHaveTextContent('20262027Q1Q2Q3Q4Q1Q2Q3Q4');
+    // 1 Mar 2026 is day 59 of the 730 days of 2026 and 2027.
+    const bar = barOf(/Helix launch event/);
+    expect(percent(bar.style.left)).toBeCloseTo((59 / 730) * 100, 4);
+    expect(percent(screen.getByText('Today').style.left)).toBeCloseTo((369.5 / 730) * 100, 4);
+  });
+
+  it('says "Continues into" only at the end of the range (016 FR-036)', () => {
+    const result = withRow('C-1003', { startDate: '2026-11-01', endDate: '2028-02-28' });
+    renderCalendar({ ...result, yearTo: 2027 });
+
+    expect(barOf(/Retail push/)).toHaveTextContent('Continues into 2028');
   });
 
   it('gives plans no bar (D-124)', () => {

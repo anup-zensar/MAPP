@@ -2,33 +2,30 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--grid-gap);
   container: home / inline-size;
 }
 
-/* The My teams / Everything switch with its hint beside it (under it on phones). */
-.scope {
+/* The header's controls: the My teams / Everything switch, then the Currency picker. */
+.actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-4);
 }
 
-.hint {
-  color: var(--ink-2);
-  font-size: var(--text-xs);
-}
-
-/* The cards of the person's own work: two columns when Home is wide, one under the other below. */
-.columns {
+/*
+ * Needs your attention and Waiting for my approval: two equal columns (6 + 6) when Home is wide,
+ * stretched to one height (UI audit H-02, X-12); one under the other below.
+ */
+.pair {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-5);
+  gap: var(--grid-gap);
 }
 
-@container home (min-width: 880px) {
-  .columns {
+@container home (min-width: 640px) {
+  .pair {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

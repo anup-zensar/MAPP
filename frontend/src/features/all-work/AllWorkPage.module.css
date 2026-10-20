@@ -1,18 +1,19 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   min-width: 0;
 }
 
+/* Inside the tab panel: the filters, the summary cards, the view's card and its pager. */
 .view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-5);
   min-width: 0;
 }
 
-/* The view's card (design system §2); wide tables scroll sideways inside it. */
+/* The view's card (design system §2.4 A): its toolbar on top; wide tables scroll inside it. */
 .card {
   min-width: 0;
   overflow: hidden;
@@ -24,5 +25,15 @@
 
 /* Loading, error and empty states inside the card. */
 .state {
-  padding: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+}
+
+@media (max-width: 599px) {
+  .view {
+    gap: var(--space-3);
+  }
+
+  .state {
+    padding: var(--space-4);
+  }
 }
