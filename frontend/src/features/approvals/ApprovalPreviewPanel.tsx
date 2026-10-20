@@ -20,6 +20,8 @@ import { ApprovalHistory } from './ApprovalHistory';
 import { useApprovalPreview } from './approvalsApi';
 import type { ApprovalPreview } from './approvalsApi';
 import { DecisionButton } from './DecisionButton';
+import { OwnerDecisionMenu } from './DecisionActions';
+import { decisionRole } from './decisionRole';
 import { ACTIVITY_GONE, roundOutcomeText } from './messages';
 import styles from './ApprovalPreviewPanel.module.css';
 
@@ -66,20 +68,7 @@ export function ApprovalPreviewPanel({
       description={description}
       footer={
         data && !gone ? (
-          <>
-            {data.approval.actions.approve.available && (
-              <DecisionButton mode="approve" approval={data.approval} onDecided={onDecided} />
-            )}
-            {data.approval.actions.decline.available && (
-              <DecisionButton mode="decline" approval={data.approval} onDecided={onDecided} />
-            )}
-            <LinkButton
-              to={`${recordHref('activity', data.activity.id, planId)}#approval`}
-              icon={<ExternalLink />}
-            >
-              Open activity
-            </LinkButton>
-          </>
+          <PreviewFooter preview={data} planId={planId} onDecided={onDecided} />
         ) : (
           <Button onClick={onClose}>Close</Button>
         )
@@ -98,11 +87,55 @@ export function ApprovalPreviewPanel({
   );
 }
 
+interface PreviewFooterProps {
+  preview: ApprovalPreview;
+  planId: string | undefined;
+  onDecided: () => void;
+}
+
+/**
+ * The panel's buttons, one primary chosen by the person's role (design system §2.5, §6.3): an
+ * approver sees **Decline · Approve** with Approve last and primary; the owner never sees Approve
+ * as a button (functional review A-01) — where the rules let them decide, it waits in ⋯. The
+ * footer lines its buttons up from the right, so they are listed primary first.
+ */
+function PreviewFooter({ preview, planId, onDecided }: PreviewFooterProps) {
+  const { approval, activity } = preview;
+  const role = decisionRole(approval);
+  return (
+    <>
+      {role === 'decide' && approval.actions.approve.available && (
+        <DecisionButton
+          mode="approve"
+          approval={approval}
+          variant="primary"
+          onDecided={onDecided}
+        />
+      )}
+      {role === 'decide' && approval.actions.decline.available && (
+        <DecisionButton mode="decline" approval={approval} onDecided={onDecided} />
+      )}
+      <LinkButton
+        to={`${recordHref('activity', activity.id, planId)}#approval`}
+        icon={<ExternalLink />}
+      >
+        Open activity
+      </LinkButton>
+      {role === 'owner' && <OwnerDecisionMenu approval={approval} onDecided={onDecided} />}
+    </>
+  );
+}
+
 function PreviewBody({ preview }: { preview: ApprovalPreview }) {
   const format = useFormatters();
   const id = useId();
   const { activity, lineItems, unassignedPlannedCost, approval } = preview;
   const round = approval.rounds[0];
+  // Why this person cannot decide, when the API says so (014, 017); empty hides it.
+  const reason =
+    activity.status === 'submitted' && !approval.actions.approve.available
+      ? approval.actions.approve.reason
+      : '';
   const negative = unassignedPlannedCost?.amount.startsWith('-') ?? false;
   const dates = activity.ongoing
     ? activity.startDate
@@ -116,6 +149,7 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
         <ActivityStatusChip status={activity.displayStatus} />
         <CompletenessChip missing={activity.missing} />
       </div>
+      {reason && <p className={styles.muted}>{reason}</p>}
 
       <section className={styles.section} aria-labelledby={`${id}-details`}>
         <h3 id={`${id}-details`} className={styles.heading}>
@@ -144,7 +178,13 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
         {lineItems.length === 0 ? (
           <p className={styles.muted}>No line items yet.</p>
         ) : (
-          <div className={styles.scroll}>
+          // Focusable, so the keyboard can scroll it sideways when it is wider than the panel.
+          <div
+            className={styles.scroll}
+            role="region"
+            aria-label="Line items, scrolls sideways"
+            tabIndex={0}
+          >
             <table className={styles.table}>
               <thead>
                 <tr>

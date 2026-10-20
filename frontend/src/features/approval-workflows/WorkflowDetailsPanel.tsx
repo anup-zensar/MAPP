@@ -1,6 +1,8 @@
 import { Link } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { Button, ErrorState, SidePanel, Skeleton, StatusChip } from '@/components';
+import { Pencil } from 'lucide-react';
+import { ActionsMenu, Button, ErrorState, SidePanel, Skeleton, StatusChip } from '@/components';
+import { ApprovalAlert } from '@/features/approvals/ApprovalAlert';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { ApprovalChain } from '@/features/approvals/ApprovalChain';
 import { localDate } from '@/lib/format';
@@ -27,8 +29,9 @@ export interface WorkflowDetailsPanelProps {
 /**
  * One approval workflow (US4, FR-005), at /settings/approval-workflows/:workflowId: its status,
  * who uses it, its levels with their approvers, warnings (a level without active approver), the
- * activities that use it and who created and last changed it; Edit, Set inactive / Set active and
- * Delete at the bottom.
+ * activities that use it and who created and last changed it; **Edit** at the bottom, Set inactive
+ * / Set active and Delete in ⋯ (design system §5.3: destructive and rare actions never sit in the
+ * footer as buttons).
  */
 export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowDetailsPanelProps) {
   const details = useWorkflowDetails(workflowId);
@@ -47,22 +50,27 @@ export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowD
       description={workflow ? usedByText(workflow.usedByCount, workflow.waitingCount) : undefined}
       footer={
         workflow ? (
+          // The one panel footer (design system §5.3): listed primary first, as the footer lines
+          // its buttons up from the right — Edit, Close, then ⋯ with Set inactive and Delete.
           <>
-            <Button variant="primary" onClick={() => actions.edit(workflow)}>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(workflow)}>
               Edit
             </Button>
-            {workflow.active ? (
-              <Button onClick={() => actions.setInactive(workflow)}>Set inactive</Button>
-            ) : (
-              <Button onClick={() => actions.setActive(workflow)}>Set active</Button>
-            )}
-            <Button
-              variant="tertiary"
-              className={styles.delete}
-              onClick={() => actions.remove(workflow)}
-            >
-              Delete
-            </Button>
+            <Button onClick={onClose}>Close</Button>
+            <ActionsMenu
+              label={workflow.name}
+              items={[
+                workflow.active
+                  ? { label: 'Set inactive', onSelect: () => actions.setInactive(workflow) }
+                  : { label: 'Set active', onSelect: () => actions.setActive(workflow) },
+                {
+                  label: 'Delete',
+                  tone: 'danger',
+                  separatorBefore: true,
+                  onSelect: () => actions.remove(workflow),
+                },
+              ]}
+            />
           </>
         ) : (
           <Button onClick={onClose}>Close</Button>
@@ -104,16 +112,11 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
       {workflow.description && <p className={styles.description}>{workflow.description}</p>}
 
       {workflow.warnings.length > 0 && (
-        <div className={styles.warnings}>
-          {workflow.warnings.map((warning) => (
-            <p key={warning} className={styles.warning}>
-              {warning}
-            </p>
-          ))}
+        <ApprovalAlert tone="warning" title={workflow.warnings.join(' · ')}>
           <p>
             Anyone can still decide on their behalf. Edit the workflow to choose an active approver.
           </p>
-        </div>
+        </ApprovalAlert>
       )}
 
       <section className={styles.section} aria-label="Levels">

@@ -44,15 +44,56 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('offers Approve for a Submitted activity and opens the decision dialog (FR-014)', async () => {
+  it('offers Decline and Approve side by side to an approver and opens the dialog (FR-014)', async () => {
+    const approver = approvalOf({
+      viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] },
+    });
     const { user } = renderAction(
+      { ...CREATED, status: 'submitted' },
+      { 'GET /api/activities/A-1042/approval': { body: approver } },
+    );
+
+    const approve = await screen.findByRole('button', { name: 'Approve' });
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Decline',
+      'Approve',
+    ]);
+    // Secondary while Edit is the page's primary action (design system §11 rule 1).
+    expect(approve.className).not.toMatch(/primary/);
+    await user.click(approve);
+
+    expect(screen.getByRole('alertdialog', { name: "Approve 'Launch film'?" })).toBeInTheDocument();
+  });
+
+  it('makes Approve the primary action when the page asks for it (design system §6.3)', async () => {
+    mockApi({
+      'GET /api/activities/A-1042/approval': {
+        body: approvalOf({ viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] } }),
+      },
+    });
+    renderWithProviders(
+      <ApprovalStatusAction
+        activity={{ ...CREATED, status: 'submitted' }}
+        onShowProblems={vi.fn()}
+        primaryDecision
+      />,
+      { user: testUser() },
+    );
+
+    expect((await screen.findByRole('button', { name: 'Approve' })).className).toMatch(/primary/);
+  });
+
+  it('never offers the owner Approve as a button (functional review A-01)', async () => {
+    const { api } = renderAction(
       { ...CREATED, status: 'submitted' },
       { 'GET /api/activities/A-1042/approval': { body: approvalOf() } },
     );
 
-    await user.click(await screen.findByRole('button', { name: 'Approve' }));
-
-    expect(screen.getByRole('alertdialog', { name: "Approve 'Launch film'?" })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.requests.some((request) => request.path.endsWith('/approval'))).toBe(true),
+    );
+    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('with problems, shows every one of them in 006 list and sends nothing (FR-010)', async () => {

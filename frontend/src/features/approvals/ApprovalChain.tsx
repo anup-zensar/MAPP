@@ -1,14 +1,13 @@
 import { useCurrentUser } from '@/app/useSession';
 import type { components } from '@/api/schema';
-import { PersonLabel } from '@/components';
-import { cx } from '@/lib/cx';
+import { PersonLabel, StatusChip } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import type { ApprovalPerson, ApprovalRound } from './approvalsApi';
-import { chainStateText } from './messages';
+import { chainState } from './messages';
+import type { ChainState } from './messages';
 import styles from './ApprovalChain.module.css';
 
 type WorkflowLevel = components['schemas']['ApprovalWorkflowLevel'];
-type ChainState = components['schemas']['ApprovalChainLevel']['state'];
 
 export type ApprovalChainProps =
   /** The chain of a round: each level with its state. */
@@ -21,13 +20,13 @@ interface ChainRow {
   label: string;
   approvers: ApprovalPerson[];
   state?: ChainState;
-  stateText?: string;
 }
 
 /**
  * The approval chain (FR-024): one row per level, in order — the badge "L1", the level's name,
- * its approvers ("(you)" for the signed-in person, "(inactive)") and its state ("Approved by
- * Carlos Mendes on 12 Mar 2026", "Waiting", "Not reached yet", …).
+ * its approvers ("(you)" for the signed-in person, "(inactive)") and its state as a status chip
+ * with what follows it ("Approved" by Carlos Mendes on 12 Mar 2026, "Waiting", "Not reached
+ * yet", …). Each state word has one colour (design system §4.1).
  */
 export function ApprovalChain(props: ApprovalChainProps) {
   const user = useCurrentUser();
@@ -36,7 +35,7 @@ export function ApprovalChain(props: ApprovalChainProps) {
     'round' in props
       ? props.round.levels.map((level) => ({
           ...level,
-          stateText: chainStateText(level, props.round.outcome, dateFormat),
+          state: chainState(level, props.round.outcome, dateFormat),
         }))
       : props.upcomingLevels;
 
@@ -55,16 +54,21 @@ export function ApprovalChain(props: ApprovalChainProps) {
                 <span className="visually-hidden">{` (level ${row.number})`}</span>
               )}
             </p>
-            <ul role="list" className={styles.approvers}>
-              {row.approvers.map((person) => (
-                <li key={person.id}>
-                  <PersonLabel person={person} you={person.id === user.id} />
-                </li>
-              ))}
-            </ul>
+            {row.approvers.length > 0 && (
+              <ul role="list" className={styles.approvers}>
+                {row.approvers.map((person) => (
+                  <li key={person.id}>
+                    <PersonLabel person={person} you={person.id === user.id} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {row.stateText && (
-            <p className={cx(styles.state, row.state && styles[row.state])}>{row.stateText}</p>
+          {row.state && (
+            <p className={styles.state}>
+              <StatusChip tone={row.state.tone}>{row.state.word}</StatusChip>
+              {row.state.detail && <span className={styles.detail}> {row.state.detail}</span>}
+            </p>
           )}
         </li>
       ))}

@@ -31,6 +31,7 @@ import { useApprovalRows } from './approvalsApi';
 import type { ApprovalRow, ApprovalTab } from './approvalsApi';
 import { ApprovalsFilters } from './ApprovalsFilters';
 import { ApprovalsTable } from './ApprovalsTable';
+import { activitiesCount } from './messages';
 import { useApprovalSummary } from './useApprovalSummary';
 import styles from './ApprovalsPage.module.css';
 
@@ -49,18 +50,25 @@ const EMPTY_TAB: Record<ApprovalTab, string> = {
  * Approvals (US3, FR-027 – FR-032), at /approvals: the four summary cards, the tabs Waiting for me ·
  * All open · Decided by me (?tab=), search and filters with chips and a count, and the rows; a row
  * opens the preview (?activity=), where the approver decides without leaving the page.
+ *
+ * Without a chosen tab the page opens the first view that has something in it: Waiting for me
+ * when anything waits for the person, otherwise All open (UI audit AP-03), so someone who only
+ * sends activities never lands on a view that is always empty.
  */
 export function ApprovalsPage() {
   usePageTitle('Approvals');
   const [params, setParams] = useSearchParams();
   const tabParam = params.get('tab') as ApprovalTab | null;
-  const tab: ApprovalTab = tabParam && TAB_VALUES.includes(tabParam) ? tabParam : 'waiting';
+  const chosenTab = tabParam && TAB_VALUES.includes(tabParam) ? tabParam : null;
   const previewId = params.get('activity');
   // Search and filters stay when the tab changes (plan, "Approvals page").
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<ApprovalFilterValues>(NO_FILTERS);
   const summary = useApprovalSummary();
-  const rows = useApprovalRows(tab);
+  const landingTab = landingTabOf(summary.data, summary.isError);
+  const tab: ApprovalTab = chosenTab ?? landingTab ?? 'waiting';
+  // The rows wait for the counts when no tab is chosen, so the first view is the right one.
+  const rows = useApprovalRows(tab, chosenTab !== null || landingTab !== null);
   const allRows = rows.data?.items ?? [];
   const visible = applyFilters(allRows, search, filters);
 
@@ -85,24 +93,20 @@ export function ApprovalsPage() {
   }
 
   const counts = summary.data;
+  // Waiting for me is something to act on (a badge); All open is only counted (design system §5.2).
   const tabs: TabItem<ApprovalTab>[] = [
     {
       value: 'waiting',
       label: 'Waiting for me',
       badge: counts && <CountBadge count={counts.waitingForMe} label="activities" />,
     },
-    {
-      value: 'open',
-      label: 'All open',
-      badge: counts && <CountBadge count={counts.allOpen} label="activities" />,
-    },
+    { value: 'open', label: counts ? `All open (${counts.allOpen})` : 'All open' },
     { value: 'decided', label: 'Decided by me' },
   ];
 
   return (
     <>
       <PageHeader
-        eyebrow="Approvals"
         title="Approvals"
         description="Approve or decline the activities waiting for you, and follow the ones you sent."
       />
@@ -132,7 +136,7 @@ export function ApprovalsPage() {
               />
               {rows.data && (
                 <p className={styles.count} aria-live="polite">
-                  {`${visible.length} of ${allRows.length}`}
+                  {`${visible.length} of ${activitiesCount(allRows.length)}`}
                 </p>
               )}
             </div>
@@ -187,6 +191,17 @@ export function ApprovalsPage() {
   );
 }
 
+/**
+ * The view to open when the address names none: Waiting for me when something waits for the
+ * person, otherwise All open; null while the counts are still on their way.
+ */
+function landingTabOf(counts: ApprovalCounts | undefined, failed: boolean): ApprovalTab | null {
+  if (counts) {
+    return counts.waitingForMe > 0 ? 'waiting' : 'open';
+  }
+  return failed ? 'waiting' : null;
+}
+
 interface SummaryCardsProps {
   counts: ApprovalCounts | undefined;
   failed: boolean;
@@ -198,7 +213,7 @@ function SummaryCards({ counts, failed }: SummaryCardsProps) {
     return (
       <div className={styles.summary}>
         {[1, 2, 3, 4].map((key) => (
-          <Skeleton key={key} height="88px" />
+          <Skeleton key={key} height="104px" />
         ))}
       </div>
     );

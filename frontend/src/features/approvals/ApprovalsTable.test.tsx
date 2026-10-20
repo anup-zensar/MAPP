@@ -43,8 +43,8 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(row).toHaveTextContent('Priya Raman');
     expect(row).toHaveTextContent('$50,000.00');
     expect(row).toHaveTextContent('Lubricants EU approval');
-    expect(row).toHaveTextContent('Level 1 of 2 · Carlos Mendes');
-    expect(row).toHaveTextContent('10 Mar 2026waiting 3 days');
+    expect(row).toHaveTextContent('Level 1 of 2 Carlos Mendes');
+    expect(row).toHaveTextContent('10 Mar 2026 waiting 3 days');
     expect(row).not.toHaveTextContent('Start date passed');
   });
 
@@ -120,4 +120,39 @@ describe('ApprovalsTable (feature 008, US3)', () => {
 
     expect(onOpen).toHaveBeenCalledWith('A-1042');
   });
+
+  it('shows every row as a stacked card on a phone (design system §5.4, UI audit AP-01)', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(max-width: 599px)',
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    renderTable();
+
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    const card = screen.getByRole('listitem');
+    expect(within(card).getByRole('button', { name: 'Launch film' })).toBeInTheDocument();
+    const facts = within(card)
+      .getAllByRole('term')
+      .map((term) => `${term.textContent}: ${visibleText(term.nextElementSibling)}`);
+    expect(facts).toEqual([
+      'Plan › campaign: FY2026 Lubricants Europe › Spring launch',
+      'Owner: Priya Raman',
+      'Planned cost: $50,000.00',
+      'Workflow: Lubricants EU approval',
+      'Level: Level 1 of 2 Carlos Mendes',
+      'Submitted: 10 Mar 2026 waiting 3 days',
+    ]);
+  });
 });
+
+/** The text a screen reader reads: the element's text without its decorative (aria-hidden) parts. */
+function visibleText(element: Element | null): string {
+  if (!element) {
+    return '';
+  }
+  const copy = element.cloneNode(true) as Element;
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
+  return copy.textContent ?? '';
+}

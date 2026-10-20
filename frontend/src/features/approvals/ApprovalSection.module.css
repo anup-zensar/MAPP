@@ -1,26 +1,15 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   color: var(--ink);
   font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 
-/* The latest decline, on the problem tint (design system §4). */
-.decline {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--status-problem);
-  border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--status-problem) 10%, transparent);
-  overflow-wrap: break-word;
-}
-
-.declineBy {
-  color: var(--status-problem-text);
-  font-weight: 600;
+/* The decline reason keeps the line breaks the approver typed. */
+.comment {
+  white-space: pre-line;
 }
 
 .status {
@@ -39,13 +28,16 @@
 
 .subheading {
   color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
 }
 
+/* Submit, Decline · Approve, Recall, and the owner's ⋯: one row, controls of one height. */
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
 }
 

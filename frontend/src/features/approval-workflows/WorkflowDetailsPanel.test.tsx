@@ -75,21 +75,31 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
       'Inactive — not offered on activities. Activities that use it keep it.',
     );
     expect(panel).toHaveTextContent('No activities use it yet.');
-    await user.click(within(panel).getByRole('button', { name: 'Set active' }));
+    await user.click(
+      within(panel).getByRole('button', { name: 'Actions for China BC approval workflow' }),
+    );
+    await user.click(await screen.findByRole('menuitem', { name: 'Set active' }));
     expect(actions.setActive).toHaveBeenCalledWith(CHINA_WORKFLOW);
   });
 
-  it('offers Edit, Set inactive and Delete at the bottom', async () => {
-    const { user, actions } = renderPanel({ body: detailsOf() });
+  it('offers Edit as the primary action, Close, and Set inactive and Delete in ⋯ (design system §5.3)', async () => {
+    const { user, actions, onClose } = renderPanel({ body: detailsOf() });
 
     const panel = await screen.findByRole('dialog', { name: 'Lubricants EU approval' });
+    expect(within(panel).queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
     await user.click(within(panel).getByRole('button', { name: 'Edit' }));
-    await user.click(within(panel).getByRole('button', { name: 'Set inactive' }));
-    await user.click(within(panel).getByRole('button', { name: 'Delete' }));
+    const more = within(panel).getByRole('button', { name: 'Actions for Lubricants EU approval' });
+    await user.click(more);
+    await user.click(await screen.findByRole('menuitem', { name: 'Set inactive' }));
+    await user.click(more);
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
+    const closeButtons = within(panel).getAllByRole('button', { name: 'Close' });
+    await user.click(closeButtons[closeButtons.length - 1]);
 
     expect(actions.edit).toHaveBeenCalled();
     expect(actions.setInactive).toHaveBeenCalled();
     expect(actions.remove).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('says when the workflow no longer exists', async () => {

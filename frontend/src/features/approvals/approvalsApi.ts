@@ -58,11 +58,12 @@ export function fetchSubmission(
   });
 }
 
-/** One page of rows of the approvals page. */
-export function useApprovalRows(tab: ApprovalTab) {
+/** One page of rows of the approvals page; `enabled` false waits (the page still picks its tab). */
+export function useApprovalRows(tab: ApprovalTab, enabled = true) {
   return useQuery({
     queryKey: ['approvals', tab],
     queryFn: () => call(api.GET('/api/approvals', { params: { query: { tab } } })),
+    enabled,
   });
 }
 

@@ -35,7 +35,7 @@
 .heading {
   color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .tools {

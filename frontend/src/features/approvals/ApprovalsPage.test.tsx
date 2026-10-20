@@ -73,14 +73,14 @@ describe('ApprovalsPage (feature 008, US3)', () => {
       'aria-selected',
       'true',
     );
-    expect(screen.getByRole('tab', { name: 'All open 5 activities' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'All open (5)' })).toBeInTheDocument();
   });
 
   it('lists the rows of the tab with a count (FR-029, FR-030)', async () => {
     const { api } = renderPage();
 
     expect(await screen.findByRole('button', { name: 'Launch film' })).toBeInTheDocument();
-    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('3 of 3 activities')).toBeInTheDocument();
     expect(api.requests.find((request) => request.path === '/api/approvals')?.search).toBe(
       '?tab=waiting',
     );
@@ -100,7 +100,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
     await waitFor(() => expect(router.state.location.search).toBe('?tab=open'));
     expect(await screen.findByRole('button', { name: 'Spring radio' })).toBeInTheDocument();
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
     expect(api.requests.some((request) => request.search === '?tab=open')).toBe(true);
   });
 
@@ -120,7 +120,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     await screen.findByRole('button', { name: 'Launch film' });
 
     await user.type(search, 'a-1044');
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Trade show' })).toBeInTheDocument();
 
     await user.clear(search);
@@ -138,7 +138,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     await user.selectOptions(within(filters).getByRole('combobox', { name: 'Owner' }), 'U-1003');
     await user.keyboard('{Escape}');
 
-    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('2 of 3 activities')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
     await user.selectOptions(
@@ -149,15 +149,15 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     );
     await user.keyboard('{Escape}');
 
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Remove filter: Owner: Daniel Okoro' }));
     expect(
       screen.getByRole('button', { name: 'Remove filter: Plan: FY2026 Mobility China' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 activities')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
-    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('3 of 3 activities')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument();
   });
 
@@ -216,5 +216,39 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
     expect(await screen.findByRole('button', { name: 'Launch film' })).toBeInTheDocument();
+  });
+
+  it('opens All open when nothing waits for the person (UI audit AP-03)', async () => {
+    const { api } = renderPage('/approvals', {
+      'GET /api/approvals/summary': {
+        body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
+      },
+    });
+
+    expect(await screen.findByRole('tab', { name: 'All open (3)' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await screen.findByRole('button', { name: 'Launch film' });
+    expect(api.requests.filter((request) => request.path === '/api/approvals')).toEqual([
+      expect.objectContaining({ search: '?tab=open' }),
+    ]);
+  });
+
+  it('keeps the tab the address names, even when nothing waits (UI audit AP-03)', async () => {
+    renderPage('/approvals?tab=waiting', {
+      'GET /api/approvals/summary': {
+        body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
+      },
+      'GET /api/approvals': page([]),
+    });
+
+    expect(
+      await screen.findByText("Nothing is waiting for you. You're all caught up."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^Waiting for me/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 });

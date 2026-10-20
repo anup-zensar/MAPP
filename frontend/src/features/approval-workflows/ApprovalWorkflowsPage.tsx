@@ -34,7 +34,7 @@ import {
 import type { ApprovalWorkflow } from './workflowsApi';
 import styles from './ApprovalWorkflowsPage.module.css';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+type StatusFilter = 'active' | 'inactive' | 'all';
 
 const LIST_PATH = '/settings/approval-workflows';
 
@@ -62,7 +62,8 @@ export function ApprovalWorkflowsPage() {
   const workflows = useWorkflows();
   const setActive = useSetWorkflowActive();
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
+  // Settings lists open on the records in use (design system §2.4 D).
+  const [status, setStatus] = useState<StatusFilter>('active');
   const [form, setForm] = useState<OpenForm | null>(null);
   const [dialog, setDialog] = useState<PendingDialog | null>(null);
 
@@ -79,16 +80,28 @@ export function ApprovalWorkflowsPage() {
     });
   }
 
-  async function changeActive(workflow: ApprovalWorkflow, active: boolean) {
+  async function changeActive(workflow: ApprovalWorkflow, active: boolean, offerUndo = false) {
     if (setActive.isPending) {
       return;
     }
     try {
-      await setActive.mutateAsync({ id: workflow.id, active, version: workflow.version });
+      const saved = await setActive.mutateAsync({
+        id: workflow.id,
+        active,
+        version: workflow.version,
+      });
       show({
         message: active
           ? `Approval workflow '${workflow.name}' is active again`
           : `Approval workflow '${workflow.name}' set inactive`,
+        // Setting an unused workflow inactive applies at once, with Undo (design system §6.7).
+        action: offerUndo
+          ? {
+              label: 'Undo',
+              altText: 'Set it active again from its actions menu',
+              onClick: () => void changeActive(saved, true),
+            }
+          : undefined,
       });
     } catch (error) {
       showFailure(error);
@@ -104,7 +117,11 @@ export function ApprovalWorkflowsPage() {
       }
       setForm({ kind: 'edit', workflow });
     },
-    setInactive: (workflow) => setDialog({ kind: 'setInactive', workflow }),
+    // In use: say what changes first; not in use: at once, with Undo (design system §6.7).
+    setInactive: (workflow) =>
+      workflow.usedByCount > 0
+        ? setDialog({ kind: 'setInactive', workflow })
+        : void changeActive(workflow, false, true),
     setActive: (workflow) => void changeActive(workflow, true),
     remove: (workflow) =>
       setDialog({ kind: workflow.usedByCount > 0 ? 'cantDelete' : 'delete', workflow }),
@@ -114,7 +131,6 @@ export function ApprovalWorkflowsPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Approval workflows' }]}
-        eyebrow="Settings"
         title="Approval workflows"
         description="Who approves activities, level by level."
         actions={
@@ -233,6 +249,11 @@ function WorkflowList({
     );
   }
   const text = search.trim().toLowerCase();
+  const counts = {
+    active: all.filter((workflow) => workflow.active).length,
+    inactive: all.filter((workflow) => !workflow.active).length,
+    all: all.length,
+  };
   const shown = all.filter(
     (workflow) =>
       workflow.name.toLowerCase().includes(text) &&
@@ -255,12 +276,14 @@ function WorkflowList({
           value={status}
           onChange={onStatus}
           options={[
-            { value: 'all', label: 'All' },
-            { value: 'active', label: 'Active' },
-            { value: 'inactive', label: 'Inactive' },
+            { value: 'active', label: `Active (${counts.active})` },
+            { value: 'inactive', label: `Inactive (${counts.inactive})` },
+            { value: 'all', label: `All (${counts.all})` },
           ]}
         />
-        <p className={styles.count} aria-live="polite">{`${shown.length} of ${all.length}`}</p>
+        <p className={styles.count} aria-live="polite">
+          {`${shown.length} of ${workflowsCount(all.length)}`}
+        </p>
       </div>
       {shown.length === 0 ? (
         <EmptyState
@@ -282,11 +305,15 @@ function WorkflowList({
           <table className={styles.table}>
             <thead>
               <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Levels</th>
+                <th scope="col" className={styles.nameCol}>
+                  Name
+                </th>
+                <th scope="col" className={styles.levelsCol}>
+                  Levels
+                </th>
                 <th scope="col">Used by</th>
                 <th scope="col">Status</th>
-                <th scope="col">
+                <th scope="col" className={styles.actionsCell}>
                   <span className="visually-hidden">Actions</span>
                 </th>
               </tr>
@@ -301,6 +328,11 @@ function WorkflowList({
       )}
     </>
   );
+}
+
+/** "1 approval workflow" / "3 approval workflows", for the count line "2 of 3 approval workflows". */
+function workflowsCount(count: number): string {
+  return count === 1 ? '1 approval workflow' : `${count} approval workflows`;
 }
 
 function WorkflowRow({
@@ -333,7 +365,7 @@ function WorkflowRow({
       </th>
       <td>{workflow.levelsText}</td>
       <td>{usedByText(workflow.usedByCount, workflow.waitingCount)}</td>
-      <td>
+      <td className={styles.nowrap}>
         {workflow.active ? (
           <StatusChip tone="positive">Active</StatusChip>
         ) : (

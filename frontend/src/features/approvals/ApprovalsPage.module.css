@@ -1,29 +1,34 @@
 .sections {
   display: flex;
   flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* Summary cards: 4 per row from 960 px, 2 per row below (design system §5.3), equal heights. */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5);
 }
 
-/* The summary cards side by side; on narrow screens they wrap onto more rows. */
-.summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: var(--space-4);
+@media (min-width: 960px) {
+  .summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
-/* Search, Filters and the count; they wrap on narrow screens. */
+/* The list toolbar (design system §5.2): search · Filters · the count pushed to the right end. */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .search {
-  flex: 1 1 240px;
+  flex: 0 1 320px;
   min-width: 0;
-  max-width: 360px;
 }
 
 .count {
@@ -31,8 +36,16 @@
   color: var(--ink-2);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .chips {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+/* Phones: the search takes the whole first row. */
+@media (max-width: 599px) {
+  .search {
+    flex-basis: 100%;
+  }
 }

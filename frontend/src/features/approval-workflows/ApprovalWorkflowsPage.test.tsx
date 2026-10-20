@@ -41,7 +41,7 @@ const rowOf = (name: string) => screen.getByRole('row', { name: new RegExp(name)
 
 describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   it('lists the workflows with their levels, use and status (FR-001, FR-005)', async () => {
-    renderPage();
+    const { user } = renderPage();
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Approval workflows' }),
@@ -51,10 +51,18 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     expect(eu).toHaveTextContent('Level 1 · Carlos Mendes → Global brand · Alex Morgan');
     expect(eu).toHaveTextContent('Used by 3 activities (2 waiting for approval)');
     expect(eu).toHaveTextContent('Active');
+    // The list opens on the active ones, with a count per status (design system §2.4 D).
+    expect(screen.getByText('1 of 2 approval workflows')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Active (1)' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByRole('row', { name: /China BC/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'All (2)' }));
     const china = rowOf('China BC approval workflow');
     expect(china).toHaveTextContent('Not used yet');
     expect(china).toHaveTextContent('Inactive');
-    expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('2 of 2 approval workflows')).toBeInTheDocument();
     expect(within(eu).getByRole('link', { name: 'Lubricants EU approval' })).toHaveAttribute(
       'href',
       '/settings/approval-workflows/WF-1001',
@@ -64,21 +72,21 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   it('searches names and filters by status', async () => {
     const { user } = renderPage();
     await screen.findByRole('row', { name: /Lubricants EU approval/ });
+    await user.click(screen.getByRole('button', { name: 'All (2)' }));
 
     await user.type(screen.getByRole('searchbox', { name: 'Search name' }), 'china');
-    expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    expect(screen.getByText('1 of 2 approval workflows')).toBeInTheDocument();
     expect(screen.queryByRole('row', { name: /Lubricants EU/ })).not.toBeInTheDocument();
 
     await user.clear(screen.getByRole('searchbox', { name: 'Search name' }));
-    await user.click(screen.getByRole('button', { name: 'Active' }));
-    expect(screen.getByText('1 of 2')).toBeInTheDocument();
-    expect(screen.queryByRole('row', { name: /China BC/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Inactive (1)' }));
+    expect(screen.getByText('1 of 2 approval workflows')).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Lubricants EU/ })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Inactive' }));
     await user.type(screen.getByRole('searchbox', { name: 'Search name' }), 'lubricants');
     expect(screen.getByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
-    expect(screen.getByText('2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('2 of 2 approval workflows')).toBeInTheDocument();
   });
 
   it('shows a warning icon for a workflow with warnings', async () => {
@@ -133,6 +141,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     const { user, api } = renderPage('/settings/approval-workflows', {
       'POST /api/approval-workflows/WF-1002/activate': { body: CHINA_WORKFLOW },
     });
+    await user.click(await screen.findByRole('button', { name: 'All (2)' }));
     await screen.findByRole('row', { name: /China BC/ });
 
     await user.click(
@@ -174,6 +183,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
         },
       },
     });
+    await user.click(await screen.findByRole('button', { name: 'All (2)' }));
     await screen.findByRole('row', { name: /China BC/ });
 
     await user.click(
@@ -209,6 +219,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
         },
       },
     });
+    await user.click(await screen.findByRole('button', { name: 'All (2)' }));
     await screen.findByRole('row', { name: /China BC/ });
 
     await user.click(
@@ -249,6 +260,33 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     const panel = await screen.findByRole('dialog', { name: 'Edit approval workflow' });
     expect(within(panel).getByRole('textbox', { name: /^Name/ })).toHaveValue(
       'Lubricants EU approval',
+    );
+  });
+
+  it('sets an unused workflow inactive at once, with Undo (design system §6.7)', async () => {
+    const unused = workflowOf({ usedByCount: 0, waitingCount: 0 });
+    const { user, api } = renderPage('/settings/approval-workflows', {
+      [LIST]: list([unused]),
+      'POST /api/approval-workflows/WF-1001/deactivate': {
+        body: workflowOf({ active: false, usedByCount: 0, waitingCount: 0, version: 5 }),
+      },
+      'POST /api/approval-workflows/WF-1001/activate': { body: unused },
+    });
+    await screen.findByRole('row', { name: /Lubricants EU approval/ });
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Lubricants EU approval' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Set inactive' }));
+
+    expect(
+      await screen.findByText("Approval workflow 'Lubricants EU approval' set inactive"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    const messages = await findMessages();
+    await user.click(within(messages).getByRole('button', { name: 'Undo' }));
+    await waitFor(() =>
+      expect(api.bodiesOf('POST /api/approval-workflows/WF-1001/activate')).toEqual([
+        { version: 5 },
+      ]),
     );
   });
 });

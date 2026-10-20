@@ -7,6 +7,7 @@ import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema';
 import { formatDate, formatTime, localDate } from '@/lib/format';
 import type { DateFormat } from '@/lib/format';
+import type { StatusTone } from '@/components';
 
 type ApprovalPerson = components['schemas']['ApprovalPerson'];
 type ActorRef = components['schemas']['ActorRef'];
@@ -94,42 +95,92 @@ export function historyActionText(action: ApprovalHistoryEntry['action']): strin
   return texts[action];
 }
 
+/** The state of one level of the chain as a status word, its family and what follows the word. */
+export interface ChainState {
+  /** The status word, shown in a chip of its one family (design system §4.1): "Approved". */
+  word: string;
+  tone: StatusTone;
+  /** What follows the word: "by Carlos Mendes on 12 Mar 2026", "— submission recalled"; "" for none. */
+  detail: string;
+}
+
 /**
- * The state of one level of the chain: "Approved by Carlos Mendes on 12 Mar 2026" (with "on behalf
- * of …" when so), "Waiting", "Not reached yet", or why it was not decided.
+ * The state of one level of the chain: "Approved" by Carlos Mendes on 12 Mar 2026 (with "on behalf
+ * of …" when so), "Waiting", "Not reached yet", "Approved automatically" or "Not needed" with the
+ * rule, or why it was not decided. Each word has one colour everywhere (design system §4.1).
  */
+export function chainState(
+  level: ApprovalChainLevel,
+  outcome: ApprovalRound['outcome'],
+  dateFormat?: DateFormat,
+): ChainState {
+  switch (level.state) {
+    case 'approved':
+    case 'declined': {
+      const approved = level.state === 'approved';
+      const word = approved ? 'Approved' : 'Declined';
+      const tone: StatusTone = approved ? 'positive' : 'problem';
+      if (!level.decision) {
+        return { word, tone, detail: '' };
+      }
+      const { at } = level.decision;
+      const by = decisionActorText(level.decision);
+      return { word, tone, detail: `by ${by} on ${formatDate(localDate(at), dateFormat)}` };
+    }
+    case 'waiting':
+      return { word: 'Waiting', tone: 'review', detail: '' };
+    case 'notReached':
+      return { word: 'Not reached yet', tone: 'neutral', detail: '' };
+    case 'autoApproved':
+      return { word: 'Approved automatically', tone: 'positive', detail: ruleDetail(level) };
+    case 'skipped':
+      return { word: 'Not needed', tone: 'neutral', detail: ruleDetail(level) };
+    case 'notDecided': {
+      const why =
+        outcome === 'recalled'
+          ? 'submission recalled'
+          : outcome === 'restarted'
+            ? 'approval restarted'
+            : 'activity deleted';
+      return { word: 'Not decided', tone: 'neutral', detail: `— ${why}` };
+    }
+  }
+}
+
+/** The state of one level as one sentence: "Approved by Carlos Mendes on 12 Mar 2026". */
 export function chainStateText(
   level: ApprovalChainLevel,
   outcome: ApprovalRound['outcome'],
   dateFormat?: DateFormat,
 ): string {
-  switch (level.state) {
-    case 'approved':
-    case 'declined': {
-      const verb = level.state === 'approved' ? 'Approved' : 'Declined';
-      if (!level.decision) {
-        return verb;
-      }
-      const { actor, onBehalfOf, at } = level.decision;
-      return `${verb} by ${actorText(actor, onBehalfOf)} on ${formatDate(localDate(at), dateFormat)}`;
-    }
-    case 'waiting':
-      return 'Waiting';
-    case 'notReached':
-      return 'Not reached yet';
-    case 'autoApproved':
-      return 'Approved automatically';
-    case 'skipped':
-      return 'Skipped — its rule did not apply';
-    case 'notDecided':
-      if (outcome === 'recalled') {
-        return 'Not decided — submission recalled';
-      }
-      if (outcome === 'restarted') {
-        return 'Not decided — approval restarted';
-      }
-      return 'Not decided — activity deleted';
+  const { word, detail } = chainState(level, outcome, dateFormat);
+  return detail ? `${word} ${detail}` : word;
+}
+
+/** "— only when planned cost is at least $100,000.00"; "" without a rule text. */
+function ruleDetail(level: Pick<ApprovalChainLevel, 'ruleText'>): string {
+  return level.ruleText ? `— ${level.ruleText}` : '';
+}
+
+/**
+ * Who made a decision, in the capacity it was made (017 FR-019): "Carlos Mendes", "Carlos Mendes
+ * as delegate of Daniel Okoro", "Alex Morgan as backup approver", "Alex Morgan on behalf of Daniel
+ * Okoro". Decisions recorded before 017 have no capacity and read as before.
+ */
+export function decisionActorText(decision: {
+  actor: ActorRef;
+  onBehalfOf: ActorRef[];
+  capacity?: string;
+  asDelegateOf?: ActorRef | null;
+}): string {
+  const { actor, onBehalfOf, capacity, asDelegateOf } = decision;
+  if (capacity === 'delegate' && asDelegateOf) {
+    return `${actor.name} as delegate of ${asDelegateOf.name}`;
   }
+  if (capacity === 'backup') {
+    return `${actor.name} as backup approver`;
+  }
+  return actorText(actor, onBehalfOf);
 }
 
 /** "Declined by Alex Morgan on behalf of Daniel Okoro on 12 Mar 2026, 14:32". */
