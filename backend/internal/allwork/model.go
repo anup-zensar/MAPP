@@ -132,6 +132,12 @@ type Row struct {
 	Cells       []*Cell        `json:"cells"`              // one per column of Result.Columns; nil = blank
 	Periods     []*money.Money `json:"periods,omitempty"`  // Budget & cost: one per Result.Periods; nil = "—"
 	Total       *money.Money   `json:"total"`              // Budget & cost: the row's total; null otherwise
+	// 016: the plan's year (plan rows, FR-034), the plan type of the record's plan (FR-032) and, with Compare
+	// with phased budget, the phased budget per period and the periods where planned cost is above it (FR-038).
+	Year         *int           `json:"year,omitempty"`
+	PlanType     string         `json:"planType,omitempty"`
+	PhasedBudget []*money.Money `json:"phasedBudget,omitempty"`
+	OverPeriods  []int          `json:"overPeriods,omitempty"`
 }
 
 // Column is one column of the catalogue (AllWorkColumn).
@@ -154,7 +160,7 @@ type ColumnGroup struct {
 
 // Period is one period column of Budget & cost (AllWorkPeriod).
 type Period struct {
-	Key   string `json:"key"` // 2026-01 … 2026-12, Q1 … Q4, other or noDates
+	Key   string `json:"key"` // 2026-01 … 2026-12, Q1-2026 … Q4-2026, 2026, other or noDates (016 FR-035)
 	Label string `json:"label"`
 }
 
@@ -194,7 +200,9 @@ type LeftOut struct {
 
 // Result is everything one view shows for a filter set (AllWorkResult).
 type Result struct {
-	Year            int       `json:"year"`
+	Year            int       `json:"year"` // the first year of the range (016)
+	YearFrom        int       `json:"yearFrom"`
+	YearTo          int       `json:"yearTo"`
 	Today           date.Date `json:"today"`
 	View            string    `json:"view"`
 	DisplayCurrency string    `json:"displayCurrency"`
@@ -222,6 +230,19 @@ type PlanOption struct {
 	Label     string `json:"label"`
 	Status    string `json:"status"` // draft or published
 	Strategic bool   `json:"strategic"`
+	Year      int    `json:"year"`     // 016
+	PlanType  string `json:"planType"` // 016
+	Currency  string `json:"currency"` // 016
+}
+
+// FilterableAttribute is a Shell attribute the attribute filters and the Breakdown offer (contract
+// AllWorkFilterableAttribute, 016 FR-039): its options, or Yes and No.
+type FilterableAttribute struct {
+	ID     string   `json:"id"`
+	Label  string   `json:"label"`
+	Level  Level    `json:"level"`
+	Type   string   `json:"type"`
+	Values []Option `json:"values"`
 }
 
 // Options are the choices of the filter bar for a year and the column catalogue (AllWorkOptions).
@@ -236,6 +257,12 @@ type Options struct {
 	ActivityTypes  []Option      `json:"activityTypes"`
 	ColumnGroups   []ColumnGroup `json:"columnGroups"`
 	DefaultColumns []string      `json:"defaultColumns"`
+	// 016: the range, the plan types, the plan currencies of the range's plans and the filterable attributes.
+	YearFrom       int                   `json:"yearFrom"`
+	YearTo         int                   `json:"yearTo"`
+	PlanTypes      []string              `json:"planTypes"`
+	PlanCurrencies []string              `json:"planCurrencies"`
+	Attributes     []FilterableAttribute `json:"attributes"`
 }
 
 // RecordLocation is a row's record that still exists (AllWorkRecordLocation).
@@ -285,6 +312,9 @@ type Filters struct {
 	ActivityTypes     []FilterValue `json:"activityTypes"`
 	Strategic         string        `json:"strategic"`
 	ShowLevels        string        `json:"showLevels"`
+	PlanTypes         []string      `json:"planTypes"`      // 016 FR-043
+	PlanCurrencies    []string      `json:"planCurrencies"` // 016 FR-043
+	Attributes        []AttrFilter  `json:"attributes"`     // 016 FR-043
 }
 
 // Expansion says which rows are open (AllWorkExpansion, data model §4).
@@ -305,6 +335,18 @@ type ViewState struct {
 	ShowUnassigned bool      `json:"showUnassigned"`
 	Period         string    `json:"period"`
 	CalendarLayout string    `json:"calendarLayout"`
+	// 016 FR-043: the range (a view saved before 016 has only year: read as year–year), Compare with phased
+	// budget and the Breakdown's groupings.
+	YearFrom      int              `json:"yearFrom"`
+	YearTo        int              `json:"yearTo"`
+	ComparePhased bool             `json:"comparePhased"`
+	Breakdown     *BreakdownChoice `json:"breakdown"`
+}
+
+// BreakdownChoice is the groupings of a saved Breakdown view (contract AllWorkBreakdownChoice).
+type BreakdownChoice struct {
+	By     string  `json:"by"`
+	ThenBy *string `json:"thenBy"`
 }
 
 // SavedView is a saved view as the API returns it (SavedView): only its owner ever sees it (FR-030).

@@ -74,6 +74,7 @@ func (x lineItemActivities) Facts(ctx context.Context, id string) (lineitems.Act
 		},
 		PlanYear:      plan.Year,
 		DefaultSpread: lineitems.SpreadMethod(plan.DefaultSpread),
+		PlanCurrency:  plan.Currency, // 016 FR-015
 	}
 	if act.PlannedCost != nil {
 		planned := act.PlannedCost.Amount
@@ -217,7 +218,8 @@ func (x lineItemsForActivities) Facts(ctx context.Context, activityIDs []string)
 	}
 	facts := make(map[string]activities.LineItemFacts, len(summaries))
 	for id, s := range summaries {
-		f := activities.LineItemFacts{Count: s.Count, PlannedCostUSD: s.PlannedCostUSD, AutoSpread: s.AutoSpread, CustomSpread: s.CustomSpread}
+		f := activities.LineItemFacts{Count: s.Count, PlannedCostPlan: s.PlannedCostPlan, Currency: s.Currency,
+			AutoSpread: s.AutoSpread, CustomSpread: s.CustomSpread}
 		for _, item := range s.Incomplete {
 			for _, m := range item.Missing {
 				f.Problems = append(f.Problems, lineItemProblem(item, m))
@@ -333,4 +335,23 @@ func activitiesOfPlan(ctx context.Context, planID string, activitiesRepo activit
 		}
 	}
 	return ids, nil
+}
+
+// Items returns the line items of an activity in short, with their planned costs in the plan currency (016
+// FR-026, the Split dialog).
+func (x lineItemsForActivities) Items(ctx context.Context, activityID string) ([]activities.LineItemBrief, error) {
+	briefs, err := x.svc.Briefs(ctx, activityID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]activities.LineItemBrief, 0, len(briefs))
+	for _, b := range briefs {
+		items = append(items, activities.LineItemBrief{ID: b.ID, Name: b.Name, PlannedCost: b.PlannedCost, PlannedCostPlan: b.PlannedCostPlan})
+	}
+	return items, nil
+}
+
+// MoveToActivity moves line items to another activity: the split of an activity (016 FR-028).
+func (x lineItemsForActivities) MoveToActivity(ctx context.Context, a actor.Actor, lineItemIDs []string, toActivityID string) error {
+	return x.svc.MoveToActivity(ctx, a, lineItemIDs, toActivityID)
 }

@@ -63,7 +63,8 @@ func TestColumns_StandardGroupAndLevelGroups_FR018(t *testing.T) {
 		"activity.approvalWorkflow", "activity.description", "activity.setLaterStages", "attr.SA-1020", "attr.SA-1021"}) {
 		t.Errorf("Activity group = %q", got)
 	}
-	if len(groups[0].Columns) != 20 || len(groups[1].Columns) != 13 || len(groups[5].Columns) != 9 {
+	// 016 FR-037 adds Year, Plan type, Plan currency, Plan budget (plan currency) and Planned cost (plan currency).
+	if len(groups[0].Columns) != 25 || len(groups[1].Columns) != 13 || len(groups[5].Columns) != 9 {
 		t.Errorf("standard %d, plan %d, line item %d columns", len(groups[0].Columns), len(groups[1].Columns), len(groups[5].Columns))
 	}
 	for _, c := range columns {

@@ -54,7 +54,7 @@ type Activity struct {
 	StartDate            *date.Date               `json:"startDate"`          // nil = not set
 	EndDate              *date.Date               `json:"endDate"`            // nil = not set or ongoing
 	Ongoing              bool                     `json:"ongoing"`            // once saved true it stays true (R6)
-	PlannedCost          *money.Money             `json:"plannedCost"`        // USD, 0.00 or more; nil = not set
+	PlannedCost          *money.Money             `json:"plannedCost"`        // in the plan currency (016 FR-011), 0.00 or more; nil = not set
 	ApprovalWorkflowID   string                   `json:"approvalWorkflowId"` // an approval workflow of 008; "" = not set
 	Description          string                   `json:"description"`        // 0–2,000 characters
 	Attributes           settings.AttributeValues `json:"attributes"`         // activity-level Shell attribute values; never nil
@@ -63,7 +63,19 @@ type Activity struct {
 	MQL                  *int64                   `json:"mql"`     // stored only when SetLaterStagesMyself
 	Revenue              *money.Money             `json:"revenue"` // USD; stored only when SetLaterStagesMyself
 	Status               Status                   `json:"status"`
+	// SplitFromID is the activity this one was split from (016 FR-028, data-model §4.3); "" otherwise and in
+	// older data. Set only by Split; never copied (FR-031).
+	SplitFromID string `json:"splitFromId,omitempty"`
 	record.Meta
+}
+
+// SplitLink is the other activity of a split, as the activity page shows it (SplitLink, 016 FR-031):
+// "Split from 'UK launch event' (A-1011)", with Deleted when that activity is in the recycle bin.
+type SplitLink struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	PlanID  string `json:"planId"`
+	Deleted bool   `json:"deleted"`
 }
 
 // The codes of the ready-to-submit problems (data model §4.1); feature 007 adds the codes of line items.
@@ -118,7 +130,7 @@ type GoalsInput struct {
 // LineItemTotals are the activity's line items in short (ActivityLineItemTotals; zero until 007).
 type LineItemTotals struct {
 	Count        int         `json:"count"`
-	PlannedCost  money.Money `json:"plannedCost"`  // USD
+	PlannedCost  money.Money `json:"plannedCost"`  // in the plan currency (016 FR-015)
 	AutoSpread   int         `json:"autoSpread"`   // re-spread when the dates change
 	CustomSpread int         `json:"customSpread"` // kept as typed when the dates change
 }
@@ -172,6 +184,8 @@ type View struct {
 	LineItems             LineItemTotals           `json:"lineItems"`
 	Completeness          Completeness             `json:"completeness"`
 	Readiness             SubmitCheck              `json:"readiness"`
+	SplitFrom             *SplitLink               `json:"splitFrom"` // 016 FR-031: null when not split from another
+	SplitInto             []SplitLink              `json:"splitInto"` // 016 FR-031: the activities split off it; never nil
 	record.Meta
 }
 
@@ -192,6 +206,7 @@ type Summary struct {
 	DisplayStatus         DisplayStatus     `json:"displayStatus"`
 	Completeness          Completeness      `json:"completeness"`
 	Version               int               `json:"version"`
+	SplitFromID           *string           `json:"splitFromId"` // 016 FR-031: null when not split from another
 }
 
 // SummaryPage is the answer of GET /api/plans/{planId}/activities (ActivitySummaryPage).
@@ -312,9 +327,12 @@ type FormContext struct {
 type TypeOption struct {
 	ID                 string       `json:"id"`
 	Name               string       `json:"name"`
-	DefaultPlannedCost *money.Money `json:"defaultPlannedCost"`
+	DefaultPlannedCost *money.Money `json:"defaultPlannedCost"` // 016 FR-016: converted into the plan currency
 	Active             bool         `json:"active"`
 	Allowed            bool         `json:"allowed"`
+	// DefaultPlannedCostUSD is the type's default as kept in Settings, for the form's note "Default 5,000.00 USD
+	// = 3,950.00 GBP at today's rate" (016 FR-016).
+	DefaultPlannedCostUSD *money.Money `json:"defaultPlannedCostUsd"`
 }
 
 // WorkflowLevel is one level of a workflow the form offers (ActivityWorkflowLevel).

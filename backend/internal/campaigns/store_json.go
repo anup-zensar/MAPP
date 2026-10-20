@@ -21,14 +21,20 @@ func NewJSONRepository() Repository {
 	return jsonRepository{}
 }
 
-// GetCampaign reads one campaign.
+// GetCampaign reads one campaign, its phasing read with the defaults of older data (016 data-model §4.5).
 func (jsonRepository) GetCampaign(ctx context.Context, id string) (Campaign, bool, error) {
-	return store.Get[Campaign](ctx, campaignsTable, id)
+	c, found, err := store.Get[Campaign](ctx, campaignsTable, id)
+	c.BudgetPhasing = c.BudgetPhasing.Normalised()
+	return c, found, err
 }
 
-// ListCampaigns reads the whole campaigns table.
+// ListCampaigns reads the whole campaigns table, each phasing with the defaults of older data.
 func (jsonRepository) ListCampaigns(ctx context.Context) ([]Campaign, error) {
-	return store.List[Campaign](ctx, campaignsTable)
+	campaigns, err := store.List[Campaign](ctx, campaignsTable)
+	for i := range campaigns {
+		campaigns[i].BudgetPhasing = campaigns[i].BudgetPhasing.Normalised()
+	}
+	return campaigns, err
 }
 
 // CampaignsOfPlan reads every campaign to find those of one plan: quick for the records of a demo.
@@ -55,14 +61,20 @@ func (jsonRepository) DeleteCampaign(ctx context.Context, id string) error {
 	return store.Delete(ctx, campaignsTable, id)
 }
 
-// GetInitiative reads one initiative.
+// GetInitiative reads one initiative, its phasing read with the defaults of older data (016 data-model §4.5).
 func (jsonRepository) GetInitiative(ctx context.Context, id string) (Initiative, bool, error) {
-	return store.Get[Initiative](ctx, initiativesTable, id)
+	i, found, err := store.Get[Initiative](ctx, initiativesTable, id)
+	i.BudgetPhasing = i.BudgetPhasing.Normalised()
+	return i, found, err
 }
 
-// ListInitiatives reads the whole initiatives table.
+// ListInitiatives reads the whole initiatives table, each phasing with the defaults of older data.
 func (jsonRepository) ListInitiatives(ctx context.Context) ([]Initiative, error) {
-	return store.List[Initiative](ctx, initiativesTable)
+	initiatives, err := store.List[Initiative](ctx, initiativesTable)
+	for i := range initiatives {
+		initiatives[i].BudgetPhasing = initiatives[i].BudgetPhasing.Normalised()
+	}
+	return initiatives, err
 }
 
 // InitiativesOfCampaign reads every initiative to find those of one campaign.

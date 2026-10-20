@@ -96,7 +96,7 @@ func TestGetAllWork_Budget_Contract(t *testing.T) {
 	var m, q allwork.Result
 	monthly.Decode(t, &m)
 	quarterly.Decode(t, &q)
-	if len(m.Periods) < 12 || m.Periods[2].Label != "Mar" || len(q.Periods) < 4 || q.Periods[0].Key != "Q1" {
+	if len(m.Periods) < 12 || m.Periods[2].Label != "Mar" || len(q.Periods) < 4 || q.Periods[0].Key != "Q1-2026" || q.Periods[0].Label != "Q1" {
 		t.Fatalf("periods: monthly %+v, quarterly %+v", m.Periods, q.Periods)
 	}
 	for _, row := range m.Rows {

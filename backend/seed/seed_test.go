@@ -62,8 +62,9 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixPerson: "U-1007", ids.PrefixActivityType: "AT-1007", ids.PrefixModel: "MOD-1003",
 		ids.PrefixShellAttribute: "SA-1036", ids.PrefixShellOption: "SO-1111", ids.PrefixFinanceBudget: "FB-1003",
 		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1009",
-		ids.PrefixPlan: "P-1004", ids.PrefixCampaign: "C-1005", ids.PrefixInitiative: "I-1009", ids.PrefixActivity: "A-1011",
-		ids.PrefixLineItem: "L-1009", ids.PrefixApprovalWorkflow: "WF-1003", ids.PrefixApprovalRound: "AR-1009",
+		ids.PrefixPlan: "P-1005", ids.PrefixCampaign: "C-1006", ids.PrefixInitiative: "I-1011", ids.PrefixActivity: "A-1013",
+		ids.PrefixLineItem: "L-1011", ids.PrefixApprovalWorkflow: "WF-1003", ids.PrefixApprovalRound: "AR-1009",
+		ids.PrefixExchangeRate: "XR-1125", ids.PrefixRateImport: "RI-1002",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())

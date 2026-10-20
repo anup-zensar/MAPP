@@ -7,7 +7,7 @@ import (
 )
 
 // Grid builds the spread grid of the activity f from the views of its line items, in creation order (data
-// model §3.8, FR-003, FR-020), in USD:
+// model §3.8, FR-003, FR-020), in the plan currency (016 FR-015):
 //
 //   - columns: every activity month (an ongoing activity: its start month) and every month a custom spread
 //     uses, sorted, without filling gaps, each marked when it lies outside the activity's dates; then a "No
@@ -48,20 +48,20 @@ func Grid(f ActivityFacts, items []View) SpreadGrid {
 			row.Cells[column] = &cell
 			rowTotal = rowTotal.Add(cell.Amount)
 			if grid.Totals[column] == nil {
-				grid.Totals[column] = &money.Money{Currency: money.BaseCurrency}
+				grid.Totals[column] = &money.Money{Currency: f.planCurrency()}
 			}
 			grid.Totals[column].Amount = grid.Totals[column].Amount.Add(cell.Amount)
 		}
 		for _, m := range item.Spread.Months {
-			put(slices.Index(months, m.Month), m.AmountUSD)
+			put(slices.Index(months, m.Month), m.AmountPlan)
 		}
 		if item.Spread.State == StateNotSpread {
-			put(len(columns)-1, item.PlannedCostUSD)
+			put(len(columns)-1, item.PlannedCostPlan)
 		}
-		row.Total = money.USD(rowTotal)
+		row.Total = money.Money{Amount: rowTotal, Currency: f.planCurrency()}
 		total = total.Add(rowTotal)
 		grid.Rows = append(grid.Rows, row)
 	}
-	grid.Total = money.USD(total)
+	grid.Total = money.Money{Amount: total, Currency: f.planCurrency()}
 	return grid
 }

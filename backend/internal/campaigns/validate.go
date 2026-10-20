@@ -33,7 +33,8 @@ const (
 	childOutsideMessage        = "%s would be outside these dates. Change its dates first, or choose dates that include it."
 	childrenOutsideMessage     = "These %s would be outside these dates: %s. Change their dates first, or choose dates that include them."
 	negativeBudgetMessage      = "Budget can't be negative."
-	budgetAmountMessage        = "Enter an amount in USD with at most 2 decimals, such as 12500 or 12500.50."
+	budgetAmountMessage        = "Enter an amount in %s with at most 2 decimals, such as 12500 or 12500.50."
+	budgetCurrencyMessage      = "Enter the amount in %s, the plan's currency." // 016 FR-011
 	reloadMessage              = "Reload the page and try again."
 	campaignGoneMessage        = "This campaign no longer exists — someone may have deleted it."
 	initiativeGoneMessage      = "This initiative no longer exists — someone may have deleted it."
@@ -60,9 +61,10 @@ type checked struct {
 
 // checkForm checks the fields that need nothing but the form (FR-005), adding every problem to problems:
 // the name (and, through nameTaken, its uniqueness under the parent), the description, both dates or
-// neither with the start on or before the end, and the budget (USD, at most 2 decimals, not negative — never
-// compared with what remains, D-015). nameTaken returns the "already has" message for a valid name, or "".
-func checkForm(problems *errs.Problems, f form, nameTaken func(name string) string) checked {
+// neither with the start on or before the end, and the budget (in the plan currency, at most 2 decimals, not
+// negative — never compared with what remains, D-015). nameTaken returns the "already has" message for a
+// valid name, or "".
+func checkForm(problems *errs.Problems, f form, currency string, nameTaken func(name string) string) checked {
 	c := checked{
 		Description: strings.TrimSpace(f.Description),
 		OwnerID:     f.OwnerID,
@@ -87,7 +89,7 @@ func checkForm(problems *errs.Problems, f form, nameTaken func(name string) stri
 		problems.Add("endDate", fmt.Sprintf(endBeforeStartMessage, date.Format(*c.StartDate)))
 	}
 
-	c.Budget = checkBudget(problems, f.Budget)
+	c.Budget = checkBudget(problems, f.Budget, currency)
 	return c
 }
 
@@ -109,14 +111,19 @@ func checkName(problems *errs.Problems, name string, nameTaken func(name string)
 	return name
 }
 
-// checkBudget reads a budget: nil for none, otherwise USD with at most two decimals and not negative.
-func checkBudget(problems *errs.Problems, in *money.Input) *money.Money {
+// checkBudget reads a budget: nil for none, otherwise in the plan currency (016 FR-011) with at most two
+// decimals and not negative.
+func checkBudget(problems *errs.Problems, in *money.Input, currency string) *money.Money {
 	if in == nil {
 		return nil
 	}
 	budget, err := money.ParseInput(*in)
-	if err != nil || budget.Currency != money.BaseCurrency {
-		problems.Add("budget", budgetAmountMessage)
+	switch {
+	case err != nil:
+		problems.Add("budget", fmt.Sprintf(budgetAmountMessage, currency))
+		return nil
+	case budget.Currency != currency:
+		problems.Add("budget", fmt.Sprintf(budgetCurrencyMessage, currency))
 		return nil
 	}
 	if budget.Amount.Sign() < 0 {

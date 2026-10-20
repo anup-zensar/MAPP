@@ -41,10 +41,14 @@ func (s *Service) Overviews(ctx context.Context, a actor.Actor) ([]Overview, err
 		if err != nil {
 			return err
 		}
+		rates, err := s.settings.Rates(ctx)
+		if err != nil {
+			return err
+		}
 		list = make([]Overview, 0, len(all))
 		for _, p := range all {
 			f := *facts[p.ID]
-			sh, err := s.shownOf(ctx, p, f, l, usdConverter)
+			sh, err := s.shownOf(ctx, p, f, l, usdConverter.reading(p.Currency, rates)) // 016 FR-014: each plan in USD
 			if err != nil {
 				return err
 			}

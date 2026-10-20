@@ -133,7 +133,7 @@ func TestCreate_OnlyNameAndTypeRequired_FR003_FR004(t *testing.T) {
 
 	view := f.create(t, digitalAndSocial, activities.Input{Name: " Launch video ", ActivityTypeID: eventType})
 
-	if view.ID != "A-1011" || view.Name != "Launch video" || view.Status != activities.StatusCreated ||
+	if view.ID != "A-1013" || view.Name != "Launch video" || view.Status != activities.StatusCreated ||
 		view.DisplayStatus != activities.DisplayCreated || view.Owner != nil || view.StartDate != nil ||
 		view.PlannedCost != nil || view.ApprovalWorkflow != nil || view.Version != 1 || view.CreatedBy != priya {
 		t.Errorf("view = %+v", view)
@@ -147,7 +147,7 @@ func TestCreate_OnlyNameAndTypeRequired_FR003_FR004(t *testing.T) {
 	entries := f.entries(t)
 	want := []history.RecordRef{{Type: "initiative", ID: digitalAndSocial, Name: "Digital & social"}}
 	if len(entries) != 1 || entries[0].Action != history.ActionCreated || entries[0].Actor != priya ||
-		entries[0].RecordID != "A-1011" || entries[0].RecordName != "Launch video" || !reflect.DeepEqual(entries[0].Path, want) {
+		entries[0].RecordID != "A-1013" || entries[0].RecordName != "Launch video" || !reflect.DeepEqual(entries[0].Path, want) {
 		t.Errorf("entries = %+v, want one created entry by Priya under the initiative", entries)
 	}
 
@@ -203,7 +203,7 @@ func TestCreate_AllProblemsAtOnce_FR009(t *testing.T) {
 		"endDate", "End date must be on or after the start date (01 Jul 2026).",
 		"startDate", outside,
 		"plannedCost", "Planned cost can't be negative."))
-	if _, found := f.stored(t, "A-1011"); found || len(f.entries(t)) != 0 {
+	if _, found := f.stored(t, "A-1013"); found || len(f.entries(t)) != 0 {
 		t.Error("a refused create saved something")
 	}
 	_, err = f.service.Create(t.Context(), priya, fleetCards, activities.Input{
@@ -226,7 +226,8 @@ func TestCreate_OngoingClearsEndDate_FR010(t *testing.T) {
 	}
 }
 
-// The planned cost is USD, 0.00 or more with at most two decimals; 0.00 is a value (FR-011, D-190).
+// The planned cost is in the plan currency (016 FR-011), 0.00 or more with at most two decimals; 0.00 is a value
+// (FR-011, D-190).
 func TestCreate_PlannedCostRules_FR011(t *testing.T) {
 	f := newFixture(t)
 	tests := []struct {
@@ -235,7 +236,7 @@ func TestCreate_PlannedCostRules_FR011(t *testing.T) {
 		{"negative", "-0.01", "USD", "Planned cost can't be negative."},
 		{"three decimals", "12.345", "USD", "Enter an amount, such as 12,500.00."},
 		{"not a number", "12,500", "USD", "Enter an amount, such as 12,500.00."},
-		{"another currency", "100.00", "EUR", "Enter the planned cost in USD."},
+		{"another currency", "100.00", "EUR", "Enter the amount in USD, the plan's currency."},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -66,11 +66,11 @@ func newFixture(t *testing.T) *fixture {
 		db: db,
 		plans: &fakePlans{plans: map[string]PlanFacts{
 			"P-1001": {ID: "P-1001", Name: "FY2026 Lubricants Europe", Year: 2026, Status: "published", OwnerID: ptr("U-1002"),
-				Budget: usd("1200000.00"), ModelID: "MOD-1001", Attributes: settings.AttributeValues{"SA-1001": json.RawMessage(`["SO-1002"]`)}},
+				Budget: usd("1200000.00"), Currency: "USD", ModelID: "MOD-1001", Attributes: settings.AttributeValues{"SA-1001": json.RawMessage(`["SO-1002"]`)}},
 			"P-1002": {ID: "P-1002", Name: "FY2026 Mobility China", Year: 2026, Status: "draft", OwnerID: ptr("U-1004"),
-				Budget: usd("800000.00"), ModelID: "MOD-1002", Attributes: settings.AttributeValues{"SA-1001": json.RawMessage(`["SO-1001"]`)}},
+				Budget: usd("800000.00"), Currency: "USD", ModelID: "MOD-1002", Attributes: settings.AttributeValues{"SA-1001": json.RawMessage(`["SO-1001"]`)}},
 			"P-1003": {ID: "P-1003", Name: "FY2027 Global Brand", Year: 2027, Status: "draft", OwnerID: ptr("U-1001"),
-				ModelID: "MOD-1001", Attributes: settings.AttributeValues{}},
+				Currency: "USD", ModelID: "MOD-1001", Attributes: settings.AttributeValues{}},
 		}},
 		settings:   &fakeSettings{problems: map[settings.Level][]errs.FieldError{}},
 		activities: &fakeActivities{byInitiative: map[string][]ActivitySummary{}},
@@ -320,6 +320,11 @@ func (s *fakeSettings) DescribeAttribute(_ context.Context, field string, value 
 		return "Label " + id, strings.Join(texts, ", "), nil
 	}
 	return "Label " + id, "", nil
+}
+
+// Rates are the rates of the 016 examples: EUR 0.92, GBP 0.79 per USD.
+func (s *fakeSettings) Rates(context.Context) (money.Rates, error) {
+	return money.Rates{"USD": money.One, "EUR": money.RateFromMicros(920_000), "GBP": money.RateFromMicros(790_000)}, nil
 }
 
 // Model knows Lubricants 1.0 (MOD-1001: Content production and Event) and Mobility 1.0 (MOD-1002: Event and

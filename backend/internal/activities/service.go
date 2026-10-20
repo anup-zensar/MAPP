@@ -49,7 +49,7 @@ const (
 	workflowRecallMessage   = "Recall the activity to choose another workflow." // while Submitted (008 FR-013)
 	ongoingLockedMessage    = "Ongoing can't be undone — to plan with an end date, create a new activity."
 	costNegativeMessage     = "Planned cost can't be negative."
-	costCurrencyMessage     = "Enter the planned cost in USD."
+	costCurrencyMessage     = "Enter the amount in %s, the plan's currency." // 016 FR-011
 	revenueCurrencyMessage  = "Enter the revenue in USD."
 	enterAmountMessage      = "Enter an amount, such as 12,500.00."
 	restartApprovalMessage  = "This activity will need approval again — confirm the change to save it."
@@ -252,6 +252,7 @@ func (s *Service) ListForPlan(ctx context.Context, a actor.Actor, planID string)
 				Owner: d.owner, StartDate: activity.StartDate, EndDate: activity.EndDate, Ongoing: activity.Ongoing,
 				PlannedCost: activity.PlannedCost, UnassignedPlannedCost: d.unassigned, Status: activity.Status,
 				DisplayStatus: d.displayStatus, Completeness: d.completeness, Version: activity.Version,
+				SplitFromID: splitFromID(activity),
 			}))
 		}
 		return nil
@@ -635,7 +636,8 @@ func (s *Service) checkFields(ctx context.Context, problems *errs.Problems, pc p
 
 	next.PlannedCost = nil
 	if in.PlannedCost != nil {
-		next.PlannedCost = parseUSDField(problems, "plannedCost", *in.PlannedCost, costNegativeMessage, costCurrencyMessage)
+		next.PlannedCost = parseAmountField(problems, "plannedCost", *in.PlannedCost, pc.plan.Currency, costNegativeMessage,
+			fmt.Sprintf(costCurrencyMessage, pc.plan.Currency))
 	}
 
 	next.ApprovalWorkflowID = strings.TrimSpace(deref(in.ApprovalWorkflowID))
@@ -706,27 +708,27 @@ func (s *Service) checkAttributes(ctx context.Context, problems *errs.Problems, 
 	return stored, nil
 }
 
-// parseUSDField reads a USD amount of a request: at most two decimals (D-190), USD, not negative. A problem
-// is added under field with the first message that applies, and the amount is then nil.
-func parseUSDField(problems *errs.Problems, field string, in money.Input, negativeMessage, currencyMessage string) *money.Money {
+// parseAmountField reads an amount of a request in currency: at most two decimals (D-190), in currency, not
+// negative. A problem is added under field with the first message that applies, and the amount is then nil.
+func parseAmountField(problems *errs.Problems, field string, in money.Input, currency, negativeMessage, currencyMessage string) *money.Money {
 	amount, err := money.ParseAmount(strings.TrimSpace(in.Amount))
 	switch {
 	case err != nil:
 		problems.Add(field, enterAmountMessage)
-	case in.Currency != money.BaseCurrency:
+	case in.Currency != currency:
 		problems.Add(field, currencyMessage)
 	case amount.Sign() < 0:
 		problems.Add(field, negativeMessage)
 	default:
-		usd := money.USD(amount)
-		return &usd
+		return &money.Money{Amount: amount, Currency: currency}
 	}
 	return nil
 }
 
-// parseUSD reads a USD amount that may not be negative, with the generic currency message.
+// parseUSD reads a USD amount that may not be negative, with the generic currency message: goals stay in USD
+// (016 FR-019).
 func parseUSD(problems *errs.Problems, field string, in money.Input, negativeMessage string) *money.Money {
-	return parseUSDField(problems, field, in, negativeMessage, revenueCurrencyMessage)
+	return parseAmountField(problems, field, in, money.BaseCurrency, negativeMessage, revenueCurrencyMessage)
 }
 
 // deref returns the text p points at, or "" for nil.

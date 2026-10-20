@@ -107,6 +107,28 @@ func newFakeSettings() *fakeSettings {
 	}
 }
 
+// fakeCurrencies are the currencies of the tests (016): USD, EUR, GBP active, INR inactive, at the rates of
+// the 016 examples.
+var fakeCurrencies = map[string]settings.Currency{
+	"USD": {Code: "USD", Rate: money.One, Active: true},
+	"EUR": {Code: "EUR", Rate: money.RateFromMicros(920_000), Active: true},
+	"GBP": {Code: "GBP", Rate: money.RateFromMicros(790_000), Active: true},
+	"INR": {Code: "INR", Rate: money.RateFromMicros(83_500_000), Active: false},
+}
+
+func (f *fakeSettings) Currency(_ context.Context, code string) (settings.Currency, bool, error) {
+	c, found := fakeCurrencies[code]
+	return c, found, nil
+}
+
+func (f *fakeSettings) Rates(context.Context) (money.Rates, error) {
+	rates := money.Rates{}
+	for code, c := range fakeCurrencies {
+		rates[code] = c.Rate
+	}
+	return rates, nil
+}
+
 func (f *fakeSettings) Model(_ context.Context, id string) (settings.Model, bool, error) {
 	m, found := f.models[id]
 	return m, found, nil

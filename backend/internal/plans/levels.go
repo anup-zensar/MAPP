@@ -42,8 +42,9 @@ type Facts struct {
 	Activities         int
 	ApprovedActivities int // Approved, In progress or Complete
 	LineItems          int
-	CampaignBudgets    money.Amount    // sum of the campaign budgets (USD)
-	PlannedCost        *money.Amount   // sum of the activities' planned costs (USD); nil when nothing below has one
+	CampaignBudgets    money.Amount    // sum of the campaign budgets (in the plan currency, 016)
+	PlannedCost        *money.Amount   // sum of the activities' planned costs (plan currency); nil when nothing below has one
+	AmountsSet         int             // 016 FR-012: campaign and initiative budgets and activity planned costs that are set
 	ActivityGoals      GoalTotals      // sums of every activity goal: INQ, MQL, revenue in USD
 	NeedsAttention     []AttentionItem // every record below that is not complete, top-down, then by name
 }

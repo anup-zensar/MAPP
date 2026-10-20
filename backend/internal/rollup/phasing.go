@@ -241,8 +241,8 @@ var methodWords = map[string]string{
 }
 
 // PhasingChanges lists what changed between two phasings of a record, for its "changed" log entry
-// (FR-023): the method, then every month whose amount changed, January first, with old and new amounts in
-// the plan currency ("Budget by month: Mar 2027 50,000.00 → 60,000.00 GBP"). Empty when nothing changed.
+// (FR-023): the method, then every month whose amount changed — a month not phased counting as 0.00 —
+// January first, with old and new amounts in the plan currency (null for a month not phased) ("Budget by month: Mar 2027 50,000.00 → 60,000.00 GBP"). Empty when nothing changed.
 func PhasingChanges(before, after Phasing, budgetBefore, budgetAfter *money.Amount, year int, currency string) []history.Change {
 	before, after = before.Normalised(), after.Normalised()
 	changes := []history.Change{}
@@ -251,12 +251,21 @@ func PhasingChanges(before, after Phasing, budgetBefore, budgetAfter *money.Amou
 	}
 	old, now := before.MonthAmounts(budgetBefore, year), after.MonthAmounts(budgetAfter, year)
 	for m := 1; m <= 12; m++ {
-		oldValue, newValue := monthValue(old, m, currency), monthValue(now, m, currency)
-		if string(oldValue) != string(newValue) {
-			changes = append(changes, history.Change{Field: phasingField + "." + monthKey(year, m), Old: oldValue, New: newValue})
+		if monthAmount(old, m) == monthAmount(now, m) { // a month not phased counts as 0.00: only real changes are logged
+			continue
 		}
+		changes = append(changes, history.Change{Field: phasingField + "." + monthKey(year, m),
+			Old: monthValue(old, m, currency), New: monthValue(now, m, currency)})
 	}
 	return changes
+}
+
+// monthAmount is month m (1–12) of amounts; 0.00 when not phased.
+func monthAmount(amounts []money.Amount, m int) money.Amount {
+	if amounts == nil {
+		return money.Amount{}
+	}
+	return amounts[m-1]
 }
 
 // monthValue is the stored value of month m (1–12) of amounts: a Money object, or null when not phased.

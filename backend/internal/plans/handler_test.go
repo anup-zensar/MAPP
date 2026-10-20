@@ -49,10 +49,10 @@ func TestPlanDefaults_FR006(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusOK, `{"currentYear":2026,"years":[2025,2026,2027,2028,2029,2030,2031],`+
 		`"year":2026,"teamIds":["T-1001"],"ownerId":"U-1002","modelId":null,"aop":false,"bcpir":false,`+
-		`"defaultSpread":"evenly","goalStage":"inq"}`)
+		`"defaultSpread":"evenly","goalStage":"inq","currency":"USD","planType":"operational"}`)
 }
 
-// Creating a plan answers 201 with the new Draft plan, P-1004 after the seed, its figures and goals; a
+// Creating a plan answers 201 with the new Draft plan, P-1005 after the seed (P-1004 is the GBP plan of 016), its figures and goals; a
 // form without name, year and model answers every problem at once (FR-010, US1 scenarios 2 and 3).
 func TestCreatePlan_201AndValidation_FR010(t *testing.T) {
 	server := apitest.New(t)
@@ -68,7 +68,7 @@ func TestCreatePlan_201AndValidation_FR010(t *testing.T) {
 	}
 	var plan plans.PlanView
 	created.Decode(t, &plan)
-	if plan.ID != "P-1004" || plan.Status != plans.StatusDraft || plan.Name != "FY2026 Lubricants Test" ||
+	if plan.ID != "P-1005" || plan.Status != plans.StatusDraft || plan.Name != "FY2026 Lubricants Test" ||
 		plan.Owner == nil || plan.Owner.Name != "Priya Raman" || len(plan.Completeness.Missing) != 0 ||
 		plan.Goals.Plan.MQL == nil || *plan.Goals.Plan.MQL != 5000 || plan.Goals.Plan.Revenue == nil ||
 		plan.Goals.Plan.Revenue.Amount.String() != "2500000.00" || plan.CreatedBy.Name != "Priya Raman" {
@@ -161,18 +161,20 @@ func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 	byID := listOf(t, priya.Do(t, http.MethodGet, "/api/plans?q=p-1002", nil))
 	wrong := priya.Do(t, http.MethodGet, "/api/plans?status=open&year=next", nil, apitest.SkipRequestValidation())
 
-	if ids := listIDs(all); !reflect.DeepEqual(ids, []string{"P-1003", "P-1001", "P-1002"}) || all.Total != 3 ||
+	// Since 016 the seed has P-1004, FY2027 Lubricants UK & Ireland, planned in GBP: 600,000.00 GBP budget
+	// (759,493.67 USD) and 65,000.00 GBP planned (82,278.48 USD), each plan converted once (FR-014).
+	if ids := listIDs(all); !reflect.DeepEqual(ids, []string{"P-1003", "P-1004", "P-1001", "P-1002"}) || all.Total != 4 ||
 		!reflect.DeepEqual(all.Years, []int{2027, 2026}) {
 		t.Errorf("all plans: %q, total %d, years %v", ids, all.Total, all.Years)
 	}
 	summary := all.Summary
-	if summary.Plans != 3 || summary.Draft != 2 || summary.Published != 1 || summary.PlannedCost == nil ||
-		summary.PlannedCost.Format() != "650,000.00 USD" || summary.Budget == nil || summary.Budget.Format() != "2,500,000.00 USD" {
-		t.Errorf("summary = %+v; want 3 plans, 2 Draft, 1 Published, 650,000.00 USD planned, 2,500,000.00 USD", summary)
+	if summary.Plans != 4 || summary.Draft != 3 || summary.Published != 1 || summary.PlannedCost == nil ||
+		summary.PlannedCost.Format() != "732,278.48 USD" || summary.Budget == nil || summary.Budget.Format() != "3,259,493.67 USD" {
+		t.Errorf("summary = %+v; want 4 plans, 3 Draft, 1 Published, 732,278.48 USD planned, 3,259,493.67 USD", summary)
 	}
 	for name, list := range map[string]plans.PlanList{"draft 2026": draft2026, "mobility": byName, "p-1002": byID} {
-		if ids := listIDs(list); !reflect.DeepEqual(ids, []string{"P-1002"}) || list.Total != 3 {
-			t.Errorf("%s: %q, total %d; want P-1002 of 3", name, ids, list.Total)
+		if ids := listIDs(list); !reflect.DeepEqual(ids, []string{"P-1002"}) || list.Total != 4 {
+			t.Errorf("%s: %q, total %d; want P-1002 of 4", name, ids, list.Total)
 		}
 	}
 	assertAnswer(t, wrong, http.StatusBadRequest, validationBody(`{"field":"status","message":"Choose draft or published."},`+
@@ -487,7 +489,7 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 	var result plans.CopyResult
 	copied.Decode(t, &result)
 	p := result.Plan
-	if copied.Status != http.StatusCreated || p.ID != "P-1004" || p.Year != 2027 || p.Status != plans.StatusDraft ||
+	if copied.Status != http.StatusCreated || p.ID != "P-1005" || p.Year != 2027 || p.Status != plans.StatusDraft ||
 		p.DefaultFinanceBudget != nil || p.Contents != (plans.Contents{Campaigns: 2, Initiatives: 4, Activities: 7, LineItems: 6}) ||
 		p.CreatedBy.Name != "Priya Raman" {
 		t.Errorf("copy = %d %s", copied.Status, copied.Body)
@@ -505,7 +507,7 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 			ID, Name, StartDate, EndDate string
 		} `json:"items"`
 	}
-	priya.Do(t, http.MethodGet, "/api/plans/P-1004/campaigns", nil).Decode(t, &campaigns)
+	priya.Do(t, http.MethodGet, "/api/plans/P-1005/campaigns", nil).Decode(t, &campaigns)
 	var helix []string
 	for _, c := range campaigns.Items {
 		if c.Name == "Helix launch" {
@@ -520,7 +522,7 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 			Name, Status, StartDate string
 		} `json:"items"`
 	}
-	priya.Do(t, http.MethodGet, "/api/plans/P-1004/activities", nil).Decode(t, &activities)
+	priya.Do(t, http.MethodGet, "/api/plans/P-1005/activities", nil).Decode(t, &activities)
 	for _, a := range activities.Items {
 		if a.Status != "created" || (a.Name == "Partner co-marketing fund" && a.StartDate != "2027-03-01") {
 			t.Errorf("copied activity %q: %s from %s, want Created, a year later", a.Name, a.Status, a.StartDate)
@@ -531,7 +533,7 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 			Action, Details string
 		} `json:"items"`
 	}
-	priya.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1004", nil).Decode(t, &log)
+	priya.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1005", nil).Decode(t, &log)
 	if len(log.Items) != 1 || log.Items[0].Action != "copied" || log.Items[0].Details !=
 		"from 'FY2026 Lubricants Europe' (P-1001), with 2 campaigns, 4 initiatives, 7 activities and 6 line items" {
 		t.Errorf("log of the copy = %+v, want one copied entry with the counts", log.Items)

@@ -174,7 +174,7 @@ func readyInput() checkInput {
 	return checkInput{
 		activity: complete(), initiative: digitalAndSocial, typeName: "Event", typeAllowed: true, modelName: "Lubricants 1.0",
 		workflow:  &WorkflowFacts{ID: "WF-1001", Name: "Lubricants EU approval", Active: true},
-		lineItems: LineItemFacts{Count: 1, PlannedCostUSD: usd("1000.00").Amount},
+		lineItems: LineItemFacts{Count: 1, PlannedCostPlan: usd("1000.00").Amount},
 	}
 }
 
@@ -189,7 +189,7 @@ func TestCheck_ListsEveryProblemAtOnce_FR023(t *testing.T) {
 		{Field: "attributes.SA-1013", Label: "Country / OU", Reason: "Shares add up to 90.00 % — they must add up to 100.00 %."},
 		{Field: "attributes.SA-1015", Label: "Cost centre"},
 	}
-	in.lineItems = LineItemFacts{Count: 2, PlannedCostUSD: usd("1500.00").Amount, Problems: []LineItemProblem{
+	in.lineItems = LineItemFacts{Count: 2, PlannedCostPlan: usd("1500.00").Amount, Problems: []LineItemProblem{
 		{LineItemID: "L-1001", LineItemName: "Film shoot", Code: "missingField", Field: "attributes.SA-1033", Message: "GL code — needed to submit"},
 		{LineItemID: "L-1002", LineItemName: "Edit", Code: "customSpreadMismatch", Field: "spread", Message: "The months add up to 900.00 of 1,000.00"},
 	}}
@@ -288,14 +288,14 @@ func TestCheck_InactiveWorkflow_FR023(t *testing.T) {
 // A positive unassigned planned cost is advice that never blocks; a negative one blocks (FR-024, D-204).
 func TestCheck_UnassignedPlannedCost_FR024(t *testing.T) {
 	in := readyInput()
-	in.lineItems = LineItemFacts{Count: 1, PlannedCostUSD: usd("800.00").Amount}
+	in.lineItems = LineItemFacts{Count: 1, PlannedCostPlan: usd("800.00").Amount}
 	got := check(in)
 	advice := []SubmitProblem{{Code: ProblemUnassignedRemaining, Field: "lineItems", Message: "200.00 USD not yet assigned to a line item"}}
 	if !got.Ready || !reflect.DeepEqual(got.Advice, advice) {
 		t.Errorf("positive balance: check = %+v, want ready with the advice %+v", got, advice)
 	}
 
-	in.lineItems = LineItemFacts{Count: 1, PlannedCostUSD: usd("1000.01").Amount}
+	in.lineItems = LineItemFacts{Count: 1, PlannedCostPlan: usd("1000.01").Amount}
 	got = check(in)
 	if got.Ready || got.ProblemCount != 1 || got.LineItems[0].Code != ProblemNegativeUnassigned || len(got.Advice) != 0 {
 		t.Errorf("negative balance: check = %+v, want one blocking line-item problem", got)

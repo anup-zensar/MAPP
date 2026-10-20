@@ -39,6 +39,7 @@ func (s *Service) ListViews(ctx context.Context, a actor.Actor) (SavedViewPage, 
 		}
 		sortViews(own)
 		for _, v := range own {
+			v.State = migrateState(v.State) // a view saved before 016 reads as a one-year range
 			page.Items = append(page.Items, v.view())
 		}
 		page.Total = len(page.Items)
@@ -200,6 +201,7 @@ func checkViewName(problems *errs.Problems, name string, own []StoredView, excep
 // filters with fixed values, the search, the columns, the sort, the expansion, the period and the calendar
 // layout.
 func checkState(problems *errs.Problems, s ViewState) ViewState {
+	s = migrateState(s)
 	f := &s.Filters
 	f.Plans, f.Owners, f.Teams = orNoValues(f.Plans), orNoValues(f.Owners), orNoValues(f.Teams)
 	f.BusinessUnits, f.ActivityTypes = orNoValues(f.BusinessUnits), orNoValues(f.ActivityTypes)
@@ -210,6 +212,9 @@ func checkState(problems *errs.Problems, s ViewState) ViewState {
 	checkColumns(&state, "state", s.Columns)
 	valid := len(state) == 0 &&
 		slices.Contains(viewValues, s.View) && s.Year >= firstYear && s.Year <= lastYear &&
+		s.YearTo >= s.YearFrom && s.YearTo-s.YearFrom < maxRangeYears && allIn(f.PlanTypes, planTypeValues) &&
+		!slices.ContainsFunc(f.Attributes, func(a AttrFilter) bool { return a.AttributeID == "" || len(a.Values) == 0 }) &&
+		(s.Breakdown == nil || s.Breakdown.By != "") &&
 		allIn(f.PlanStatuses, planStatusValues) && allIn(f.ContainerStatuses, containerStatusValues) &&
 		allIn(f.ActivityStatuses, activityStatusValues) && slices.Contains(strategicValues, f.Strategic) &&
 		slices.Contains(showLevelsValues, f.ShowLevels) && utf8.RuneCountInString(s.Search) <= maxSearchLength &&
@@ -218,6 +223,26 @@ func checkState(problems *errs.Problems, s ViewState) ViewState {
 		slices.Contains(periodValues, s.Period) && slices.Contains([]string{"timeline", "month"}, s.CalendarLayout)
 	if !valid {
 		problems.Add("state", msgViewState)
+	}
+	return s
+}
+
+// migrateState reads a view state with the defaults of 016 (data-model §5.2): a state with only a year is the
+// range year–year; the new filters are empty lists; yearFrom is answered as year too.
+func migrateState(s ViewState) ViewState {
+	switch {
+	case s.YearFrom == 0 && s.YearTo == 0:
+		s.YearFrom, s.YearTo = s.Year, s.Year
+	case s.YearFrom == 0:
+		s.YearFrom = s.YearTo
+	case s.YearTo == 0:
+		s.YearTo = s.YearFrom
+	}
+	s.Year = s.YearFrom
+	f := &s.Filters
+	f.PlanTypes, f.PlanCurrencies = orNoKeys(f.PlanTypes), orNoKeys(f.PlanCurrencies)
+	if f.Attributes == nil {
+		f.Attributes = []AttrFilter{}
 	}
 	return s
 }

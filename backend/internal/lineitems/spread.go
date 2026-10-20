@@ -116,6 +116,12 @@ func SpreadMonths(li LineItem, f ActivityFacts) (months []MonthAmount, spread bo
 // converted months in the last month that has a non-zero amount, so they add up exactly. 10,000.00 EUR
 // evenly over three months at 0.92 → 3,623.18 · 3,623.18 · 3,623.21 USD = 10,869.57 USD.
 func USDMonths(months []MonthAmount, rate money.Rate) []money.Amount {
+	return ConvertMonths(months, rate, money.One)
+}
+
+// ConvertMonths converts month amounts between two currencies with their rates per 1 USD, as USDMonths does
+// into USD (016 FR-015: into the plan currency). The same rate keeps the amounts as they are.
+func ConvertMonths(months []MonthAmount, from, to money.Rate) []money.Amount {
 	usd := make([]money.Amount, len(months))
 	last := -1 // the last month with a non-zero amount
 	for i, m := range months {
@@ -130,7 +136,7 @@ func USDMonths(months []MonthAmount, rate money.Rate) []money.Amount {
 	for i := range parts {
 		parts[i] = months[i].Amount
 	}
-	copy(usd, money.ConvertSpread(parts, rate)) // the months after the last non-zero one stay 0.00
+	copy(usd, money.ConvertParts(parts, from, to)) // the months after the last non-zero one stay 0.00
 	return usd
 }
 

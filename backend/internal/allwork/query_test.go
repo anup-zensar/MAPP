@@ -34,6 +34,9 @@ func TestParseQuery_AllParameters_FR004(t *testing.T) {
 		ActivityTypes: []string{"AT-1005"}, Strategic: StrategicOnly, ShowLevels: ShowCompleteBranches,
 		Search: "Launch film", Columns: []string{"plannedCost", "id", "attr.SA-1003"},
 		Sort: &Sort{Column: "plannedCost", Direction: SortDescending}, Period: PeriodQuarter,
+		// 016: year is the alias of the range year–year; the new filters are empty, amounts in the display currency.
+		YearFrom: 2027, YearTo: 2027, PlanTypes: []string{}, PlanCurrencies: []string{}, Attributes: []AttrFilter{},
+		AmountsIn: AmountsInDisplay,
 	}
 	if !reflect.DeepEqual(q, want) {
 		t.Errorf("query = %+v\nwant    %+v", q, want)

@@ -6,7 +6,9 @@ import (
 
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/errs"
 	"northstar/internal/platform/web"
+	"northstar/internal/rollup"
 )
 
 // Handler answers the HTTP requests of plans (plan "API operations").
@@ -33,6 +35,23 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/plans/{planId}/unpublish", signedIn(h.unpublish))
 	r.Handle("GET /api/plans/{planId}/copy-options", signedIn(h.copyOptions))
 	r.Handle("POST /api/plans/{planId}/copy", signedIn(h.copy))
+	r.Handle("PUT /api/plans/{planId}/budget-phasing", signedIn(h.setBudgetPhasing)) // 016 FR-020
+}
+
+// setBudgetPhasing answers PUT /api/plans/{planId}/budget-phasing with the plan after the save (016 FR-020).
+func (h *Handler) setBudgetPhasing(w http.ResponseWriter, r *http.Request) {
+	var input rollup.PhasingInput
+	if err := web.ReadJSON(w, r, &input); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	plan, err := h.service.SetBudgetPhasing(r.Context(), a, r.PathValue("planId"), input)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, plan)
 }
 
 // defaults answers GET /api/plan-defaults: what a new plan starts with for the signed-in person.
@@ -73,18 +92,40 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, plan)
 }
 
-// list answers GET /api/plans: the plans matching the query's scope, status, year and search, with the
-// summary cards (FR-001 – FR-004). Every wrong parameter is reported at once.
+// list answers GET /api/plans: the plans matching the query's scope, status, years (year, or yearFrom and
+// yearTo, 016 FR-033), plan types and search, with the summary cards (FR-001 – FR-004). Every wrong
+// parameter is reported at once.
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	filter := ListFilter{Scope: query.Get("scope"), Status: query.Get("status"), Q: query.Get("q")}
-	problems := filterProblems(filter)
-	if text := query.Get("year"); text != "" {
-		year, err := strconv.Atoi(text)
-		if err != nil {
-			problems.Add("year", msgChooseListYear)
+	filter := ListFilter{Scope: query.Get("scope"), Status: query.Get("status"), Q: query.Get("q"), Types: query["type"]}
+	var yearProblems errs.Problems
+	for _, year := range []struct {
+		name   string
+		target **int
+	}{{"year", &filter.Year}, {"yearFrom", &filter.YearFrom}, {"yearTo", &filter.YearTo}} {
+		name, target := year.name, year.target
+		if text := query.Get(name); text != "" {
+			year, err := strconv.Atoi(text)
+			if err != nil {
+				yearProblems.Add(name, msgChooseListYear)
+				continue
+			}
+			*target = &year
 		}
-		filter.Year = &year
+	}
+	// In the order of the query: scope and status, then the years, then the range and the plan types.
+	var problems errs.Problems
+	others := filterProblems(filter)
+	for _, p := range others {
+		if p.Field == "scope" || p.Field == "status" {
+			problems.Add(p.Field, p.Message)
+		}
+	}
+	problems = append(problems, yearProblems...)
+	for _, p := range others {
+		if p.Field != "scope" && p.Field != "status" {
+			problems.Add(p.Field, p.Message)
+		}
 	}
 	if err := problems.Err(); err != nil {
 		web.WriteError(w, r, err)

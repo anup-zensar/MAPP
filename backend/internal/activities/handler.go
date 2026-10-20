@@ -31,6 +31,41 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("GET /api/activities/{activityId}/destinations", signedIn(h.destinations))
 	r.Handle("POST /api/activities/{activityId}/move", signedIn(h.move))
 	r.Handle("POST /api/activities/{activityId}/copy", signedIn(h.copy))
+	r.Handle("GET /api/activities/{activityId}/split-options", signedIn(h.splitOptions))  // 016 FR-026
+	r.Handle("POST /api/activities/{activityId}/split-preview", signedIn(h.splitPreview)) // 016 FR-027
+	r.Handle("POST /api/activities/{activityId}/split", signedIn(h.split))                // 016 FR-028
+}
+
+// splitOptions answers GET /api/activities/{activityId}/split-options: what the Split dialog offers.
+func (h *Handler) splitOptions(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context())
+	options, err := h.service.SplitOptions(r.Context(), a, r.PathValue("activityId"))
+	answer(w, r, http.StatusOK, options, err)
+}
+
+// splitPreview answers POST /api/activities/{activityId}/split-preview: both activities as the split would
+// leave them and its problems, in the body (200).
+func (h *Handler) splitPreview(w http.ResponseWriter, r *http.Request) {
+	var in SplitRequest
+	if err := web.ReadJSON(w, r, &in); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	preview, err := h.service.PreviewSplit(r.Context(), a, r.PathValue("activityId"), in)
+	answer(w, r, http.StatusOK, preview, err)
+}
+
+// split answers POST /api/activities/{activityId}/split with 201, the original and the new activity.
+func (h *Handler) split(w http.ResponseWriter, r *http.Request) {
+	var in SplitRequest
+	if err := web.ReadJSON(w, r, &in); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	result, err := h.service.Split(r.Context(), a, r.PathValue("activityId"), in)
+	answer(w, r, http.StatusCreated, result, err)
 }
 
 // newForm answers GET /api/initiatives/{initiativeId}/activity-form: the new-activity form with defaults.

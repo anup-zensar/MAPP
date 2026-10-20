@@ -9,7 +9,8 @@ import (
 
 // viewOf is the part of a line item's view the grid reads: its USD planned cost and its spread.
 func viewOf(id, name string, li LineItem, f ActivityFacts, r money.Rate) View {
-	return View{ID: id, Name: name, PlannedCostUSD: money.USD(PlannedCostUSD(li, r)), Spread: spreadView(li, f, r)}
+	usd := money.USD(PlannedCostUSD(li, r))
+	return View{ID: id, Name: name, PlannedCostUSD: usd, PlannedCostPlan: usd, Spread: spreadView(li, f, r, money.One)} // a USD plan
 }
 
 // lineItem returns a line item of planned cost in its currency, spread with method; custom months as

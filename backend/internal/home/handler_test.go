@@ -88,20 +88,22 @@ func TestHomeSummary_Contract(t *testing.T) {
 	if got.Scope != home.ScopeMyTeams || got.DisplayCurrency != "USD" {
 		t.Errorf("scope %q, currency %q", got.Scope, got.DisplayCurrency)
 	}
-	if got.Plans != (home.PlanCounts{Count: 1, Published: 1}) || everything.Plans != (home.PlanCounts{Count: 3, Published: 1, Draft: 2}) {
-		t.Errorf("plans = %+v (everything %+v); want 1 published (3: 1 published, 2 draft)", got.Plans, everything.Plans)
+	// Since 016 her team also has P-1004, FY2027 Lubricants UK & Ireland (Draft, planned in GBP), with two of
+	// her activities: 600,000.00 GBP = 759,493.67 USD budget, 65,000.00 GBP = 82,278.48 USD planned (FR-014).
+	if got.Plans != (home.PlanCounts{Count: 2, Published: 1, Draft: 1}) || everything.Plans != (home.PlanCounts{Count: 4, Published: 1, Draft: 3}) {
+		t.Errorf("plans = %+v (everything %+v); want 1 published, 1 draft (4: 1 published, 3 draft)", got.Plans, everything.Plans)
 	}
-	if got.ActivitiesOwned != (home.ActivityCounts{Count: 7, Declined: 1, Submitted: 1}) {
-		t.Errorf("activities owned = %+v, want 7: 1 declined, 1 submitted", got.ActivitiesOwned)
+	if got.ActivitiesOwned != (home.ActivityCounts{Count: 9, Declined: 1, Submitted: 1}) {
+		t.Errorf("activities owned = %+v, want 9: 1 declined, 1 submitted", got.ActivitiesOwned)
 	}
 	if got.WaitingForMe != (home.WaitingCounts{}) {
 		t.Errorf("waiting for Priya = %+v, want nothing", got.WaitingForMe)
 	}
 	cost := got.PlannedCost
-	if cost.PlanCount != 1 || cost.PlannedCost != usd(t, "460000.00") || cost.PlanBudget == nil ||
-		*cost.PlanBudget != usd(t, "1200000.00") || cost.BudgetUsedPercent == nil || *cost.BudgetUsedPercent != 38 ||
+	if cost.PlanCount != 2 || cost.PlannedCost != usd(t, "542278.48") || cost.PlanBudget == nil ||
+		*cost.PlanBudget != usd(t, "1959493.67") || cost.BudgetUsedPercent == nil || *cost.BudgetUsedPercent != 28 ||
 		cost.OverBudget || cost.PlansWithoutBudget != 0 {
-		t.Errorf("planned cost = %+v, want 460,000.00 of 1,200,000.00 USD, 38 %%", cost)
+		t.Errorf("planned cost = %+v, want 542,278.48 of 1,959,493.67 USD, 28 %%", cost)
 	}
 	w := danielsCards.WaitingForMe
 	if w.Count != 1 || w.OldestWaitingSince == nil || !w.OldestWaitingSince.Equal(now.Add(-48*time.Hour)) {
@@ -228,13 +230,15 @@ func TestHomePlans_Contract(t *testing.T) {
 		}
 		return list
 	}
-	if got := names(mine); !slices.Equal(got, []string{"FY2026 Lubricants Europe", "FY2026 Mobility China"}) || mine.Total != 2 {
-		t.Errorf("My teams = %q of %d, want both FY2026 plans", got, mine.Total)
+	if got := names(mine); !slices.Equal(got, []string{"FY2027 Lubricants UK & Ireland", "FY2026 Lubricants Europe", "FY2026 Mobility China"}) ||
+		mine.Total != 3 {
+		t.Errorf("My teams = %q of %d, want the GBP plan of 016 and both FY2026 plans", got, mine.Total)
 	}
-	if got := names(all); !slices.Equal(got, []string{"FY2027 Global Brand", "FY2026 Lubricants Europe", "FY2026 Mobility China"}) || all.Total != 3 {
+	if got := names(all); !slices.Equal(got, []string{"FY2027 Global Brand", "FY2027 Lubricants UK & Ireland", "FY2026 Lubricants Europe",
+		"FY2026 Mobility China"}) || all.Total != 4 {
 		t.Errorf("Everything = %q of %d", got, all.Total)
 	}
-	lubricants := mine.Items[0]
+	lubricants := mine.Items[1]
 	if lubricants.Status != "published" || len(lubricants.Teams) != 1 || lubricants.Teams[0] != (home.TeamView{ID: "T-1001", Name: "Lubricants Europe", Colour: "blue", Active: true, Mine: true}) ||
 		lubricants.CampaignCount != 2 || lubricants.ActivityCount != 7 || lubricants.ApprovedActivityCount != 4 ||
 		*lubricants.PlannedCost != usd(t, "460000.00") || *lubricants.BudgetUsedPercent != 38 || lubricants.OverBudget {
@@ -389,9 +393,9 @@ func TestHomeMyActivities_Contract(t *testing.T) {
 		}
 		groups = append(groups, g.Status+": "+strings.Join(ids, " "))
 	}
-	want := []string{"declined: A-1005", "created: A-1001", "submitted: A-1004", "approved: A-1006",
-		"inProgress: A-1002 A-1007", "complete: A-1003"}
-	if !slices.Equal(groups, want) || view.Total != 7 {
+	want := []string{"declined: A-1005", "created: A-1001 A-1011 A-1012", "submitted: A-1004", "approved: A-1006",
+		"inProgress: A-1002 A-1007", "complete: A-1003"} // A-1011, A-1012: the GBP plan of 016
+	if !slices.Equal(groups, want) || view.Total != 9 {
 		t.Errorf("groups = %q (total %d)\nwant %q", groups, view.Total, want)
 	}
 	launchFilm := view.Groups[1].Items[0]
@@ -419,7 +423,8 @@ func TestHome_MyActivitiesEqualTheirPages_SC002_FR017(t *testing.T) {
 		for _, g := range view.Groups {
 			for _, row := range g.Items {
 				page := get[activities.View](t, client, "/api/activities/"+row.ID)
-				if row.Status != string(page.DisplayStatus) || !sameMoney(row.PlannedCost, page.PlannedCost) ||
+				// Home adds up plans in the display currency, so it shows the page's display amount (016 FR-014).
+				if row.Status != string(page.DisplayStatus) || !sameMoney(row.PlannedCost, page.Display.PlannedCost) ||
 					len(row.Missing) != page.Completeness.MissingFields || row.ItemsBelow != page.Completeness.LineItemsNeedingAttention {
 					t.Errorf("%s: %+v\nits page: %s, %v, %+v", email, row, page.DisplayStatus, page.PlannedCost, page.Completeness)
 				}
@@ -443,8 +448,9 @@ func TestHome_DeletedRecordsNeverCount_FR019(t *testing.T) {
 	attention := get[home.HomeAttentionPage](t, priya, "/api/home/attention")
 	rows := get[home.PlanPage](t, priya, "/api/home/plans?scope=myTeams")
 
-	if summary.ActivitiesOwned.Count != 6 || view.Total != 6 || summary.PlannedCost.PlannedCost != usd(t, "340000.00") {
-		t.Errorf("after the delete: %d owned, %d in My activities, planned %v; want 6, 6 and 340,000.00 USD",
+	// Priya also owns the two activities of the GBP plan P-1004 (016): 65,000.00 GBP = 82,278.48 USD.
+	if summary.ActivitiesOwned.Count != 8 || view.Total != 8 || summary.PlannedCost.PlannedCost != usd(t, "422278.48") {
+		t.Errorf("after the delete: %d owned, %d in My activities, planned %v; want 8, 8 and 422,278.48 USD",
 			summary.ActivitiesOwned.Count, view.Total, summary.PlannedCost.PlannedCost)
 	}
 	for _, item := range attention.Items {
@@ -452,8 +458,14 @@ func TestHome_DeletedRecordsNeverCount_FR019(t *testing.T) {
 			t.Errorf("Needs your attention still lists the deleted Launch film: %+v", item)
 		}
 	}
-	if len(rows.Items) != 1 || rows.Items[0].ActivityCount != 6 || rows.Items[0].PlannedCost == nil ||
-		*rows.Items[0].PlannedCost != usd(t, "340000.00") {
-		t.Errorf("plan row = %+v, want 6 activities and 340,000.00 USD", rows.Items)
+	var lubricants *home.PlanRow
+	for i := range rows.Items {
+		if rows.Items[i].ID == "P-1001" {
+			lubricants = &rows.Items[i]
+		}
+	}
+	if len(rows.Items) != 2 || lubricants == nil || lubricants.ActivityCount != 6 || lubricants.PlannedCost == nil ||
+		*lubricants.PlannedCost != usd(t, "340000.00") {
+		t.Errorf("plan rows = %+v, want P-1001 with 6 activities and 340,000.00 USD (and P-1004)", rows.Items)
 	}
 }

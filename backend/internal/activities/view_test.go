@@ -16,7 +16,7 @@ import (
 func TestView_DerivedValues_FR019_FR020(t *testing.T) {
 	f := newFixture(t)
 	f.lineItems.facts["A-1001"] = activities.LineItemFacts{
-		Count: 3, PlannedCostUSD: money.FromCents(10_000_000), AutoSpread: 2, CustomSpread: 1,
+		Count: 3, PlannedCostPlan: money.FromCents(10_000_000), AutoSpread: 2, CustomSpread: 1,
 		Problems: []activities.LineItemProblem{{LineItemID: "L-1002", LineItemName: "Edit", Code: "missingField",
 			Field: "attributes.SA-1033", Message: "GL code — needed to submit"}},
 	}

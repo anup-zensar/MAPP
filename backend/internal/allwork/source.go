@@ -35,6 +35,9 @@ type Source interface {
 	// InRecycleBin reports whether the record recordID is in the recycle bin: in an entry not yet undone or
 	// restored.
 	InRecycleBin(ctx context.Context, recordID string) (bool, error)
+	// RatesUsed returns the current rate of every currency other than USD as an export's "About this export"
+	// states it (016 FR-009): "1 USD = 0.79 GBP · rate of 19 Oct 2026 · GSAP import".
+	RatesUsed(ctx context.Context) ([]string, error)
 }
 
 // YearData is the input of every calculation: the nodes of one year's plans, in any order.
@@ -72,8 +75,8 @@ type Node struct {
 	Missing  int    // the record's own needed fields still empty (completeness)
 	Swbs     string // line items: their SWBS request (notRequested, waitingForApproval, readyToSend)
 
-	Budget           *money.Amount // plans, campaigns, initiatives: their own budget (USD); nil = none
-	PlannedCost      *money.Amount // activities as typed (nil = none); line items converted to USD
+	Budget           *money.Amount // plans, campaigns, initiatives: their own budget, converted to USD (016); nil = none
+	PlannedCost      *money.Amount // activities as typed, converted to USD (016; nil = none); line items converted to USD
 	LocalPlannedCost *money.Money  // line items: their planned cost in their own currency
 	MonthsUSD        []MonthAmount // line items: their spread in USD, by month (007's spread functions)
 	UnspreadUSD      money.Amount  // line items: the USD amount that cannot be spread while the activity has no dates
@@ -89,6 +92,36 @@ type Node struct {
 	ActivityTypeID  string   // activities
 
 	Fields map[string]Value // the level-specific columns (data model §6.2) by column key; missing = empty
+
+	// Feature 016 (data-model §5.1): the plan's year, type and currency, the amounts in the plan currency and the
+	// phased budget. Budget, PlannedCost, MonthsUSD and UnspreadUSD above stay USD.
+	PlanYear        int            // every level: the year of the record's plan (a range spans several years)
+	PlanType        string         // every level: the type of the record's plan (operational, strategic, crossMarket)
+	PlanCurrency    string         // every level: the currency of the record's plan
+	BudgetPlan      *money.Money   // plans, campaigns, initiatives: the budget in the plan currency; nil = none
+	PlannedCostPlan *money.Money   // activities as typed, line items converted, in the plan currency; nil = none
+	PhasingMethod   string         // plans, campaigns, initiatives: none, evenly or custom
+	PhasedPlan      []money.Amount // plans, campaigns, initiatives: the 12 phased budgets of PlanYear in the plan currency; nil = not phased
+	PhasedBudgetUSD []MonthAmount  // the same months in USD (money.ConvertParts); nil = not phased
+	MonthsPlan      []PlanMonth    // line items: their spread in the plan currency, by month
+	UnspreadPlan    money.Amount   // line items: the plan-currency amount not spread while the activity has no dates
+	// Attrs are the record's own Shell attribute values of choice and yes/no attributes by attribute id, for the
+	// attribute filters and the Breakdown (016 FR-039 – FR-041); a missing entry is not filled in.
+	Attrs map[string]AttrValue
+}
+
+// AttrValue is a record's value of a choice or yes/no Shell attribute (016 data-model §5.1): the chosen
+// options in their order, with the shares of a % split, or the yes/no answer (an empty yes/no reads as No).
+type AttrValue struct {
+	OptionIDs []string
+	Shares    map[string]money.Percent // % split only: the share of each option
+	Yes       *bool
+}
+
+// PlanMonth is a line item's amount in one month, in its plan's currency (016 FR-024).
+type PlanMonth struct {
+	Month  string // "2027-03"
+	Amount money.Amount
 }
 
 // Value is the value of a level-specific column of one record, as its owning feature stores it, with the
@@ -111,13 +144,43 @@ type Choice struct {
 	Inactive bool
 }
 
-// Attribute is a Shell attribute as a column of its level's group (data model §6.2).
+// Attribute is a Shell attribute as a column of its level's group (data model §6.2), and, since 016, as an
+// attribute filter and a Breakdown grouping (FR-039, FR-040).
 type Attribute struct {
 	ID     string
 	Label  string
 	Level  Level
 	Number bool // a number attribute; the others show text
 	Active bool
+	// 016: the attribute's type (singleChoice, multipleChoice, multipleChoiceSplit, yesNo, …), the Business
+	// unit options it is shown for (empty: always shown) and its options in Settings' order.
+	Type      string
+	Condition []string
+	Options   []Option
+}
+
+// The attribute types the filters and the Breakdown use (002's AttributeType).
+const (
+	TypeSingleChoice        = "singleChoice"
+	TypeMultipleChoice      = "multipleChoice"
+	TypeMultipleChoiceSplit = "multipleChoiceSplit"
+	TypeYesNo               = "yesNo"
+)
+
+// filterable reports whether the attribute can be a filter or a Breakdown grouping: an active choice or yes/no
+// attribute (FR-039).
+func (a Attribute) filterable() bool {
+	switch a.Type {
+	case TypeSingleChoice, TypeMultipleChoice, TypeMultipleChoiceSplit, TypeYesNo:
+		return a.Active
+	}
+	return false
+}
+
+// shownFor reports whether the attribute is shown for a plan with the Business unit options units: always
+// when it has no condition (002 FR-022).
+func (a Attribute) shownFor(units []string) bool {
+	return len(a.Condition) == 0 || containsAny(a.Condition, units)
 }
 
 // Choices are the values of the filters that do not come from the year's records (FR-004). Each Option
@@ -150,4 +213,5 @@ type Location struct {
 	Name       string
 	PlanID     string
 	ActivityID string // line items
+	Year       int    // plans: their year (016, Budget by month); 0 for the other levels
 }

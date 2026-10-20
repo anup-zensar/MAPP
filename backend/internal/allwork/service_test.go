@@ -205,8 +205,8 @@ func TestOptions_YearsOwnersTeamsMineFirst_FR004(t *testing.T) {
 		t.Errorf("year %d, current %d, years %v", o.Year, o.CurrentYear, o.Years)
 	}
 	want := []PlanOption{
-		{ID: "P-1001", Label: "FY2026 Lubricants Europe", Status: "published"},
-		{ID: "P-1002", Label: "FY2026 Mobility China", Status: "draft"},
+		{ID: "P-1001", Label: "FY2026 Lubricants Europe", Status: "published", Year: 2026}, // 016: each plan with its year
+		{ID: "P-1002", Label: "FY2026 Mobility China", Status: "draft", Year: 2026},
 	}
 	if !reflect.DeepEqual(o.Plans, want) {
 		t.Errorf("plans = %+v", o.Plans)

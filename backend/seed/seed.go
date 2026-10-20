@@ -34,7 +34,7 @@ var ErrNotEmpty = errors.New("seed: the store already has data")
 
 // Loaded says what Load loads, for the seed command's message; a test checks it against the store.
 const Loaded = "6 people, 3 teams, 2 models, 6 activity types, 35 Shell attributes with 110 options, " +
-	"5 currencies, 6 finance budget items, 3 plans, 4 campaigns, 8 initiatives, 10 activities, 8 line items, " +
+	"5 currencies, 6 finance budget items, 4 plans, 5 campaigns, 10 initiatives, 12 activities, 10 line items, " +
 	"2 approval workflows, 8 approval rounds"
 
 // demoPeople are the demo people of docs/product/demo-users-and-data.md, in the order of its table, which
@@ -80,15 +80,18 @@ type demo struct {
 	ids *ids.Generator
 	at  time.Time // the seed time: NorthStar creates every record then
 
-	people      map[string]string // person name → ID
-	settings    SettingsSeed      // Settings records by name
-	rates       money.Rates       // the seeded current rate of every currency (016: the latest dated rates)
-	teams       map[string]string // team name → ID
-	plans       map[string]string // plan name → ID
-	campaigns   map[string]string // "<plan>/<campaign>" → ID
-	initiatives map[string]string // "<campaign>/<initiative>" → ID
-	workflows   map[string]string // approval workflow name → ID
-	activities  map[string]string // "<plan>/<activity>" → ID
+	people   map[string]string // person name → ID
+	settings SettingsSeed      // Settings records by name
+	rates    money.Rates       // the seeded current rate of every currency (016: the latest dated rates)
+	teams    map[string]string // team name → ID
+	plans    map[string]string // plan name → ID
+	// planCurrencies holds each plan's currency by plan name (016): its campaigns', initiatives' and
+	// activities' amounts are in it.
+	planCurrencies map[string]string
+	campaigns      map[string]string // "<plan>/<campaign>" → ID
+	initiatives    map[string]string // "<campaign>/<initiative>" → ID
+	workflows      map[string]string // approval workflow name → ID
+	activities     map[string]string // "<plan>/<activity>" → ID
 }
 
 // next returns the next readable ID of prefix.

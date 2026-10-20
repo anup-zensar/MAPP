@@ -15,11 +15,14 @@ import (
 // never disagree (D-090).
 type PlanRollup struct {
 	Campaigns, Initiatives, Activities, ApprovedActivities, LineItems int
-	AllocatedToCampaigns                                              money.Money  // sum of the campaign budgets (USD)
+	AllocatedToCampaigns                                              money.Money  // sum of the campaign budgets (plan currency, 016)
 	PlannedCost                                                       *money.Money // nil when nothing below has one
 	Goals                                                             rollup.Goals
 	ItemsNeedingAttention                                             int              // incomplete campaigns, initiatives, activities and line items
 	PublishProblems                                                   []RecordProblems // campaigns and initiatives with missing fields, in tree order (004 FR-024)
+	// CampaignBudgetsSet and InitiativeBudgetsSet count the budgets that are set: amounts in the plan currency
+	// that lock it (016 FR-012).
+	CampaignBudgetsSet, InitiativeBudgetsSet int
 }
 
 // RecordProblems is a campaign or initiative with its missing needed-to-publish fields.
@@ -76,6 +79,14 @@ func rollupOf(tree PlanCampaigns) PlanRollup {
 	}
 	goals := make([]rollup.Goals, 0, len(tree.Items))
 	for _, c := range tree.Items {
+		if c.Budget != nil {
+			r.CampaignBudgetsSet++
+		}
+		for _, i := range c.Initiatives {
+			if i.Budget != nil {
+				r.InitiativeBudgetsSet++
+			}
+		}
 		r.ApprovedActivities += c.Counts.ApprovedActivities
 		r.LineItems += c.Counts.LineItems
 		r.ItemsNeedingAttention += c.Completeness.ItemsBelowNeedingAttention

@@ -350,15 +350,6 @@ var notYetServed = []string{
 	"POST /api/financials/imports",
 	"POST /api/financials/imports/check",
 	"GET /api/financials/imports/template",
-	// 016 Planning and currency extensions
-	"PUT /api/plans/{planId}/budget-phasing",
-	"PUT /api/campaigns/{campaignId}/budget-phasing",
-	"PUT /api/initiatives/{initiativeId}/budget-phasing",
-	"GET /api/plans/{planId}/budget-by-month",
-	"GET /api/activities/{activityId}/split-options",
-	"POST /api/activities/{activityId}/split-preview",
-	"POST /api/activities/{activityId}/split",
-	"GET /api/all-work/breakdown",
 	// 017 Approval rules
 	"GET /api/approval-rule-options",
 	"GET /api/approval-delegations",

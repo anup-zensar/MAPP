@@ -19,7 +19,8 @@ import (
 // figure on Home equals the one there (FR-017). The names of those packages appear only here. Every
 // function joins the read transaction of the Home service.
 func homeSources(peopleService *people.Service, plansRepo plans.Repository, planService *plans.Service,
-	campaignsService *campaigns.Service, activitiesService *activities.Service, approvalsService *approvals.Service) home.Sources {
+	campaignsService *campaigns.Service, activitiesService *activities.Service, approvalsService *approvals.Service,
+	rates func(context.Context) (money.Rates, error)) home.Sources {
 	return home.Sources{
 		MyTeams: func(ctx context.Context, a actor.Actor) ([]home.Team, error) {
 			return myTeams(ctx, peopleService, a)
@@ -36,10 +37,18 @@ func homeSources(peopleService *people.Service, plansRepo plans.Repository, plan
 			return list, nil
 		},
 		Containers: func(ctx context.Context, a actor.Actor, ownerID string) ([]home.Container, error) {
-			return ownedContainers(ctx, plansRepo, campaignsService, a, ownerID)
+			current, err := rates(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return ownedContainers(ctx, plansRepo, campaignsService, a, ownerID, current)
 		},
 		Activities: func(ctx context.Context, a actor.Actor, ownerID string) ([]home.Activity, error) {
-			return ownedActivities(ctx, activitiesService, approvalsService, a, ownerID)
+			current, err := rates(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return ownedActivities(ctx, activitiesService, approvalsService, a, ownerID, current)
 		},
 		WaitingForMe: func(ctx context.Context, a actor.Actor) ([]home.Waiting, error) {
 			return waitingFor(ctx, approvalsService, a)
@@ -93,7 +102,7 @@ func homePlan(o plans.Overview) home.Plan {
 // ownedContainers returns the campaigns and initiatives ownerID owns, in every plan, as the plan tree shows
 // them (005): budgets, roll-ups and completeness worked out by the campaigns' own view builder (D-090).
 func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsService *campaigns.Service, a actor.Actor,
-	ownerID string) ([]home.Container, error) {
+	ownerID string, rates money.Rates) ([]home.Container, error) {
 	list := []home.Container{}
 	if ownerID == "" {
 		return list, nil
@@ -114,8 +123,8 @@ func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsS
 			if owns(c.OwnerID) {
 				list = append(list, home.Container{
 					Type: "campaign", ID: c.ID, Name: c.Name, Plan: planRef, Path: []errs.RecordRef{planRef},
-					Budget: amountOf(c.Budget), PlannedCost: amountOf(c.BudgetAndCost.PlannedCost),
-					RemainingBudget: amountOf(c.BudgetAndCost.RemainingForChildren), Missing: c.Completeness.Missing,
+					Budget: usdOf(c.Budget, rates), PlannedCost: usdOf(c.BudgetAndCost.PlannedCost, rates),
+					RemainingBudget: usdOf(c.BudgetAndCost.RemainingForChildren, rates), Missing: c.Completeness.Missing,
 					ItemsBelow: c.Completeness.ItemsBelowNeedingAttention, UpdatedAt: c.UpdatedAt,
 				})
 			}
@@ -123,7 +132,7 @@ func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsS
 				if owns(i.OwnerID) {
 					list = append(list, home.Container{
 						Type: "initiative", ID: i.ID, Name: i.Name, Plan: planRef, Path: []errs.RecordRef{planRef, campaignRef},
-						Budget: amountOf(i.Budget), PlannedCost: amountOf(i.BudgetAndCost.PlannedCost), Missing: i.Completeness.Missing,
+						Budget: usdOf(i.Budget, rates), PlannedCost: usdOf(i.BudgetAndCost.PlannedCost, rates), Missing: i.Completeness.Missing,
 						ItemsBelow: i.Completeness.ItemsBelowNeedingAttention, UpdatedAt: i.UpdatedAt,
 					})
 				}
@@ -136,7 +145,7 @@ func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsS
 // ownedActivities returns the activities ownerID owns, in every plan, as their pages show them (006, 007),
 // each Declined one with the decline its Approval section shows (008).
 func ownedActivities(ctx context.Context, activitiesService *activities.Service, approvalsService *approvals.Service,
-	a actor.Actor, ownerID string) ([]home.Activity, error) {
+	a actor.Actor, ownerID string, rates money.Rates) ([]home.Activity, error) {
 	owned, err := activitiesService.OwnedBy(ctx, a, ownerID)
 	if err != nil {
 		return nil, err
@@ -146,7 +155,7 @@ func ownedActivities(ctx context.Context, activitiesService *activities.Service,
 		act := home.Activity{
 			ID: o.ID, Name: o.Name, Plan: o.Plan, Campaign: o.Campaign, Initiative: o.Initiative,
 			Status: string(o.Status), DisplayStatus: string(o.DisplayStatus), StartDate: o.StartDate, EndDate: o.EndDate,
-			Ongoing: o.Ongoing, PlannedCost: amountOf(o.PlannedCost), Unassigned: amountOf(o.UnassignedPlannedCost),
+			Ongoing: o.Ongoing, PlannedCost: usdOf(o.PlannedCost, rates), Unassigned: usdOf(o.UnassignedPlannedCost, rates),
 			Missing: o.Missing, LineItemsNeedingAttention: o.LineItemsNeedingAttention, UpdatedAt: o.UpdatedAt,
 		}
 		if o.Status == activities.StatusDeclined {
@@ -196,4 +205,17 @@ func amountOf(m *money.Money) *money.Amount {
 	}
 	amount := m.Amount
 	return &amount
+}
+
+// usdOf returns m, an amount of a plan currency, in US dollars at the current rates (016 FR-014): Home adds
+// up records of several plans. nil when there is none; a currency without a rate is read as it is.
+func usdOf(m *money.Money, rates money.Rates) *money.Amount {
+	if m == nil {
+		return nil
+	}
+	usd, err := rates.Convert(*m, money.BaseCurrency)
+	if err != nil {
+		return amountOf(m)
+	}
+	return &usd.Amount
 }

@@ -152,7 +152,8 @@ func TestPeriods_OtherYearsAndNoDatesOnlyWhenUsed_FR022(t *testing.T) {
 	}
 }
 
-// Quarterly shows each quarter as the sum of its three months (FR-022, US4 scenario 3).
+// Quarterly shows each quarter as the sum of its three months (FR-022, US4 scenario 3); since 016 a quarter's
+// key names its year ("Q1-2026", FR-035) and its label does so only over several years.
 func TestPeriods_QuarterIsSumOfMonths_FR022(t *testing.T) {
 	b, a := budgetYear("10000.00")
 	b.lineItem(a, "L-1001", "Evenly", "10000.00")
@@ -163,7 +164,7 @@ func TestPeriods_QuarterIsSumOfMonths_FR022(t *testing.T) {
 	for _, p := range r.Periods {
 		labels = append(labels, p.Key)
 	}
-	if !reflect.DeepEqual(labels, []string{"Q1", "Q2", "Q3", "Q4"}) {
+	if !reflect.DeepEqual(labels, []string{"Q1-2026", "Q2-2026", "Q3-2026", "Q4-2026"}) {
 		t.Fatalf("periods = %q", labels)
 	}
 	if got := periodText(r, rowOf(r.Rows, "L-1001")); got != "Q1 3333.33 · Q2 6666.67 · = 10000.00 USD" {

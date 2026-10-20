@@ -20,9 +20,12 @@ import (
 type Summary struct {
 	Count          int
 	PlannedCostUSD money.Amount // sum of the line items' USD planned costs at today's rates
-	AutoSpread     int          // spread Evenly, First or Last month: follows the activity's dates
-	CustomSpread   int          // custom spread: kept as typed
-	Incomplete     []Incomplete // the line items whose missing list is not empty, in creation order
+	// PlannedCostPlan is the sum of the line items' planned costs in Currency, the plan currency (016 FR-015).
+	PlannedCostPlan money.Amount
+	Currency        string
+	AutoSpread      int          // spread Evenly, First or Last month: follows the activity's dates
+	CustomSpread    int          // custom spread: kept as typed
+	Incomplete      []Incomplete // the line items whose missing list is not empty, in creation order
 }
 
 // Incomplete is a line item that still stops its activity from being submitted, with what it misses (data
@@ -39,7 +42,10 @@ func (s *Service) Summaries(ctx context.Context, activityIDs []string) (map[stri
 	summaries := map[string]Summary{}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		items, err := s.repo.ListByActivities(ctx, activityIDs)
-		if err != nil {
+		if err != nil || len(items) == 0 {
+			return err
+		}
+		if ctx, err = s.withRates(ctx); err != nil { // once for every activity (016: rates are dated records)
 			return err
 		}
 		byActivity := map[string][]LineItem{}
@@ -58,9 +64,10 @@ func (s *Service) Summaries(ctx context.Context, activityIDs []string) (map[stri
 			if err != nil {
 				return err
 			}
-			summary := Summary{Count: len(views), Incomplete: []Incomplete{}}
+			summary := Summary{Count: len(views), Incomplete: []Incomplete{}, Currency: f.planCurrency()}
 			for _, v := range views {
 				summary.PlannedCostUSD = summary.PlannedCostUSD.Add(v.PlannedCostUSD.Amount)
+				summary.PlannedCostPlan = summary.PlannedCostPlan.Add(v.PlannedCostPlan.Amount)
 				if v.Spread.Method == SpreadCustom {
 					summary.CustomSpread++
 				} else {

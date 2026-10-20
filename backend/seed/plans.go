@@ -1,12 +1,14 @@
 package seed
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 
 	"northstar/internal/plans"
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/money"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -22,9 +24,13 @@ type demoPlan struct {
 	goalAmount                       string
 	financeBudget                    string // the default finance budget's name; "" for none
 	description                      string
+	planType                         plans.PlanType       // 016: "" is Operational
+	currency                         string               // 016: the plan currency; "" is USD
+	phasing                          rollup.PhasingMethod // 016: the budget's phasing; "" is not phased
 }
 
-// demoPlans are P-1001 … P-1003. FY2026 Mobility China has no business unit on purpose: it shows what
+// demoPlans are P-1001 … P-1003 and, since 016 (data-model §8), P-1004: a 2027 Cross-market plan planned in
+// GBP with its budget phased evenly. FY2026 Mobility China has no business unit on purpose: it shows what
 // Publish needs.
 var demoPlans = []demoPlan{
 	{name: "FY2026 Lubricants Europe", year: 2026, model: "Lubricants 1.0", team: "Lubricants Europe", owner: "Priya Raman",
@@ -36,14 +42,21 @@ var demoPlans = []demoPlan{
 		financeBudget: "2026 Mobility Budget"},
 	{name: "FY2027 Global Brand", year: 2027, model: "Lubricants 1.0", team: "Global Marketing Ops", owner: "Alex Morgan",
 		budget: "500000.00", status: plans.StatusDraft, businessUnits: []string{"Mobility", "Lubricants"}, smp: true, aop: true,
-		goalStage: plans.StageRevenue, goalAmount: "2000000.00"},
+		goalStage: plans.StageRevenue, goalAmount: "2000000.00", planType: plans.TypeStrategic},
+	{name: ukPlan, year: 2027, model: "Lubricants 1.0", team: "Lubricants Europe", owner: "Priya Raman",
+		budget: "600000.00", status: plans.StatusDraft, businessUnits: []string{"Lubricants"}, goalStage: plans.StageINQ,
+		description: "Lubricants marketing in the United Kingdom and Ireland for 2027, planned in pounds sterling.",
+		planType:    plans.TypeCrossMarket, currency: "GBP", phasing: rollup.MethodEvenly},
 }
+
+// ukPlan is P-1004 of 016's demo data, planned in GBP.
+const ukPlan = "FY2027 Lubricants UK & Ireland"
 
 // addPlans creates the three demo plans through the plans repository, looking up the model, team, owner,
 // finance budget and business unit by name.
 func (d *demo) addPlans(ctx context.Context) error {
 	repo := plans.NewJSONRepository()
-	d.plans = map[string]string{}
+	d.plans, d.planCurrencies = map[string]string{}, map[string]string{}
 	for _, p := range demoPlans {
 		var r resolver
 		values := d.newValues(settings.LevelPlan)
@@ -62,6 +75,8 @@ func (d *demo) addPlans(ctx context.Context) error {
 			TeamIDs: []string{r.id(d.teams, "team", p.team)}, OwnerID: r.id(d.people, "person", p.owner),
 			AOP: p.aop, Description: p.description, DefaultSpread: plans.SpreadEvenly, GoalStage: p.goalStage,
 			GoalAmount: p.goalAmount, Attributes: attributes, Status: p.status, Meta: d.meta(),
+			Currency: cmp.Or(p.currency, money.BaseCurrency), PlanType: cmp.Or(p.planType, plans.TypeOperational),
+			BudgetPhasing: rollup.Phasing{Method: cmp.Or(p.phasing, rollup.MethodNone), Months: []rollup.PhasingMonth{}},
 		}
 		if p.financeBudget != "" {
 			plan.DefaultFinanceBudgetID = r.id(d.settings.Budgets, "finance budget", fmt.Sprintf("%d/%s", p.year, p.financeBudget))
@@ -81,6 +96,7 @@ func (d *demo) addPlans(ctx context.Context) error {
 			return err
 		}
 		d.plans[p.name] = plan.ID
+		d.planCurrencies[p.name] = plan.Currency
 	}
 	return nil
 }

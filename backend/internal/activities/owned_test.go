@@ -16,7 +16,7 @@ import (
 func TestOwnedBy_AsTheirPagesShowThem_FR019_FR022(t *testing.T) {
 	f := newFixture(t)
 	f.lineItems.facts["A-1001"] = activities.LineItemFacts{
-		Count: 2, PlannedCostUSD: money.FromCents(12_120_000), // 121,200.00 USD: 1,200.00 more than the planned cost
+		Count: 2, PlannedCostPlan: money.FromCents(12_120_000), // 121,200.00 USD: 1,200.00 more than the planned cost
 		Problems: []activities.LineItemProblem{{LineItemID: "L-1002", LineItemName: "Film production", Code: "missingField",
 			Field: "attributes.SA-1033", Message: "GL code — needed to submit"}},
 	}
@@ -31,7 +31,7 @@ func TestOwnedBy_AsTheirPagesShowThem_FR019_FR022(t *testing.T) {
 	for _, o := range owned {
 		ids = append(ids, o.ID)
 	}
-	if want := []string{"A-1001", "A-1002", "A-1003", "A-1004", "A-1005", "A-1006", "A-1007"}; !slices.Equal(ids, want) {
+	if want := []string{"A-1001", "A-1002", "A-1003", "A-1004", "A-1005", "A-1006", "A-1007", "A-1011", "A-1012"}; !slices.Equal(ids, want) { // A-1011, A-1012: the GBP plan of 016
 		t.Fatalf("Priya owns %q, want %q", ids, want)
 	}
 	for _, o := range owned {

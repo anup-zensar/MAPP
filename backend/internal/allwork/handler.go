@@ -2,7 +2,6 @@ package allwork
 
 import (
 	"net/http"
-	"strconv"
 
 	"northstar/internal/platform/actor"
 	"northstar/internal/platform/errs"
@@ -32,6 +31,37 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("POST /api/saved-views", signedIn(h.createView))
 	r.Handle("PATCH /api/saved-views/{viewId}", signedIn(h.updateView))
 	r.Handle("DELETE /api/saved-views/{viewId}", signedIn(h.deleteView))
+	r.Handle("GET /api/plans/{planId}/budget-by-month", signedIn(h.budgetByMonth)) // 016 FR-024
+	r.Handle("GET /api/all-work/breakdown", signedIn(h.breakdown))                 // 016 FR-040
+}
+
+// breakdown answers GET /api/all-work/breakdown: the Breakdown of the filter set of the query, by the
+// grouping by and then by thenBy (016 FR-040 - FR-042). Every wrong parameter is reported at once.
+func (h *Handler) breakdown(w http.ResponseWriter, r *http.Request) {
+	q, err := ParseQuery(r.URL.Query())
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	result, err := h.service.Breakdown(r.Context(), a, q)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, result)
+}
+
+// budgetByMonth answers GET /api/plans/{planId}/budget-by-month: the phased budget against the planned cost
+// of the plan and each of its campaigns and initiatives, in the plan currency (016 FR-024).
+func (h *Handler) budgetByMonth(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context())
+	result, err := h.service.BudgetByMonth(r.Context(), a, r.PathValue("planId"))
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, result)
 }
 
 // listViews answers GET /api/saved-views: the signed-in person's saved views.
@@ -118,16 +148,14 @@ func (h *Handler) updatePreferences(w http.ResponseWriter, r *http.Request) {
 // options answers GET /api/all-work/options: the choices of the filter bar for the year of the query (the
 // current year without one) and the column catalogue.
 func (h *Handler) options(w http.ResponseWriter, r *http.Request) {
-	year := 0
-	if text := r.URL.Query().Get("year"); text != "" {
-		var err error
-		if year, err = strconv.Atoi(text); err != nil || year < firstYear || year > lastYear {
-			web.WriteError(w, r, errs.Validation(errs.FieldError{Field: "year", Message: msgChooseYear}))
-			return
-		}
+	var problems errs.Problems
+	from, to := parseRange(r.URL.Query(), &problems) // 016 FR-034: year, or yearFrom and yearTo
+	if err := problems.Err(); err != nil {
+		web.WriteError(w, r, err)
+		return
 	}
 	a, _ := actor.From(r.Context())
-	options, err := h.service.Options(r.Context(), a, year)
+	options, err := h.service.Options(r.Context(), a, from, to)
 	if err != nil {
 		web.WriteError(w, r, err)
 		return

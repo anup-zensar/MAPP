@@ -31,9 +31,9 @@ func TestListApprovalWorkflows_SeededTwo_FR005_FR037(t *testing.T) {
 		china.UsedByCount != 2 || china.WaitingCount != 1 || len(china.Warnings) != 0 {
 		t.Errorf("first = %+v, want China BC approval workflow used by 2, 1 waiting", china)
 	}
-	if lubricants.ID != "WF-1001" || lubricants.LevelsText != "Level 1 · Daniel Okoro" || lubricants.UsedByCount != 7 ||
+	if lubricants.ID != "WF-1001" || lubricants.LevelsText != "Level 1 · Daniel Okoro" || lubricants.UsedByCount != 9 ||
 		lubricants.WaitingCount != 1 {
-		t.Errorf("second = %+v, want Lubricants EU approval used by 7, 1 waiting", lubricants)
+		t.Errorf("second = %+v, want Lubricants EU approval used by 9 (2 in the GBP plan of 016), 1 waiting", lubricants)
 	}
 }
 

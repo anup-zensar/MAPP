@@ -5,44 +5,66 @@ import (
 
 	"northstar/internal/people"
 	"northstar/internal/platform/money"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
-// converter turns USD amounts into the reader's display currency (D-079): usd × rate, half up to the cent.
+// converter turns amounts of one currency into the currency it answers in (D-079, 016 D-261): Convert(amount,
+// from, to), half up to the cent, once. The display converter of a person reads USD amounts (from = 1);
+// reading converts a plan currency's amounts; identity keeps a plan currency's amounts as they are.
 type converter struct {
-	currency string
-	rate     money.Rate
+	currency string     // the currency of the answers
+	from, to money.Rate // the rates per 1 USD of the amounts read and of currency
 }
 
-// usdConverter shows amounts in US dollars.
-var usdConverter = converter{currency: money.BaseCurrency, rate: money.One}
+// usdConverter shows USD amounts in US dollars.
+var usdConverter = converter{currency: money.BaseCurrency, from: money.One, to: money.One}
 
-// converterOf returns the converter of a person's display currency; an unusable rate falls back to USD.
+// converterOf returns the converter of a person's display currency, for USD amounts; an unusable rate falls
+// back to USD.
 func converterOf(d people.DisplayRate) converter {
 	rate, err := money.ParseRate(d.Rate)
 	if err != nil || d.Code == "" {
 		return usdConverter
 	}
-	return converter{currency: d.Code, rate: rate}
+	return converter{currency: d.Code, from: money.One, to: rate}
 }
 
-// of converts usd.
-func (c converter) of(usd money.Amount) money.Money {
-	return money.Money{Amount: money.FromUSD(usd, c.rate), Currency: c.currency}
+// identity answers amounts of code as they are (the plan currency's figures, 016 FR-013).
+func identity(code string) converter {
+	return converter{currency: code, from: money.One, to: money.One}
 }
 
-// optional converts usd, or gives nil when there is no amount.
-func (c converter) optional(usd *money.Amount) *money.Money {
-	if usd == nil {
+// reading returns the display converter c for amounts in the currency code with the rates (016 FR-013): the
+// same amount when code is the display currency; an amount whose currency has no rate stays in its currency.
+func (c converter) reading(code string, rates money.Rates) converter {
+	if code == c.currency {
+		return identity(code)
+	}
+	from, err := rates.Of(code)
+	if err != nil {
+		return identity(code)
+	}
+	return converter{currency: c.currency, from: from, to: c.to}
+}
+
+// of converts an amount.
+func (c converter) of(amount money.Amount) money.Money {
+	return money.Money{Amount: money.Convert(amount, c.from, c.to), Currency: c.currency}
+}
+
+// optional converts an amount, or gives nil when there is none.
+func (c converter) optional(amount *money.Amount) *money.Money {
+	if amount == nil {
 		return nil
 	}
-	converted := c.of(*usd)
+	converted := c.of(*amount)
 	return &converted
 }
 
 // figuresOf works out the plan's money and progress from its budget and what the levels below report
-// (FR-012, domain model §4.1–4.2, D-015, D-026, D-088). Every sum is worked out in USD and converted at
-// the end.
+// (FR-012, domain model §4.1–4.2, D-015, D-026, D-088). Every sum is worked out in the plan currency and
+// converted at the end with c: the display converter reading the plan currency, or identity (016 FR-013).
 //
 //	budget 1,200,000.00, campaign budgets 1,300,000.00 → remaining −100,000.00, over-allocated by 100,000.00
 //	budget 1,200,000.00, planned cost 960,000.00       → budget used 80 %
@@ -124,6 +146,9 @@ func ownMissing(p Plan, ownerOK bool, attributes []settings.MissingField) []sett
 	missing = append(missing, attributes...)
 	if p.GoalStage == "" {
 		missing = append(missing, settings.MissingField{Field: "goalStage", Label: labelGoalStage})
+	}
+	if problem := rollup.PhasingProblem(p.BudgetPhasing, p.Budget, p.Year, p.Currency); problem != nil { // 016 FR-022
+		missing = append(missing, *problem)
 	}
 	return missing
 }

@@ -168,6 +168,7 @@ var levelRank = map[Level]int{LevelPlan: 0, LevelCampaign: 1, LevelInitiative: 2
 type filter struct {
 	levels []Level
 	meets  func(n *Node) bool
+	test   func(t *tnode) bool // when set, tests the record with its children instead of meets (016 line-item attributes)
 }
 
 // progressValues are the Approval progress values of the Campaign / initiative status filter; the others
@@ -200,6 +201,12 @@ func filtersOf(q Query) []filter {
 	case StrategicExclude:
 		filters = append(filters, filter{levels: plans, meets: func(n *Node) bool { return !n.Strategic }})
 	}
+	// 016 FR-037, FR-039: the plan type and plan currency of plans, and the Shell-attribute filters.
+	add(q.PlanTypes, plans, func(n *Node) bool { return slices.Contains(q.PlanTypes, n.PlanType) })
+	add(q.PlanCurrencies, plans, func(n *Node) bool { return slices.Contains(q.PlanCurrencies, n.PlanCurrency) })
+	for _, a := range q.attrs {
+		filters = append(filters, a.filter())
+	}
 	return filters
 }
 
@@ -231,17 +238,25 @@ func containsAny(list, values []string) bool {
 // record below must be a match. Children are marked before their parents, so matchBelow is known.
 func (f filter) holds(t *tnode) bool {
 	if slices.Contains(f.levels, t.n.Level) {
-		return f.meets(t.n)
+		return f.on(t)
 	}
 	if levelRank[f.levels[0]] < levelRank[t.n.Level] {
 		for a := t.parent; a != nil; a = a.parent {
 			if slices.Contains(f.levels, a.n.Level) {
-				return f.meets(a.n)
+				return f.on(a)
 			}
 		}
 		return false
 	}
 	return t.matchBelow
+}
+
+// on tests the record t of a level the filter is tested on.
+func (f filter) on(t *tnode) bool {
+	if f.test != nil {
+		return f.test(t)
+	}
+	return f.meets(t.n)
 }
 
 // applyFilters marks every record of t a match, a context row or hidden, for the filters, the search and

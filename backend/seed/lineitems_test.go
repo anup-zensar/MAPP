@@ -37,7 +37,11 @@ func TestLoad_LineItems_FR009(t *testing.T) {
 		}
 		got = append(got, fmt.Sprintf("%s %s %s %s %s %s[%s] swbs=%v %s", l.ID, activityByID[l.ActivityID].Name, l.Name,
 			l.Currency, l.PlannedCost.Format(), l.Spread.Method, strings.Join(months, " "), l.RequestSwbs, strings.Join(coding, " / ")))
-		if l.OwnerID != activityByID[l.ActivityID].OwnerID || l.FinanceBudgetYear == nil || *l.FinanceBudgetYear != 2026 {
+		year := 2026
+		if strings.HasPrefix(activityByID[l.ActivityID].StartDate.String(), "2027") { // the GBP plan of 016
+			year = 2027
+		}
+		if l.OwnerID != activityByID[l.ActivityID].OwnerID || l.FinanceBudgetYear == nil || *l.FinanceBudgetYear != year {
 			t.Errorf("%s: owner %q, finance budget year %v", l.Name, l.OwnerID, l.FinanceBudgetYear)
 		}
 	}
@@ -51,6 +55,8 @@ func TestLoad_LineItems_FR009(t *testing.T) {
 		"L-1006 Billboard winter wave Stand build EUR 9,200.00 evenly[] swbs=true FBI-1003 / BTL – Event / 7250040 – Events and sponsorship",
 		"L-1007 Grand opening Shanghai Station signage USD 1,000.00 custom[2026-04=450.00 2026-05=450.00] swbs=true FBI-1004 / BTL – Event",
 		"L-1008 Grand opening Shanghai Fleet card promotion CNY 280,450.00 evenly[] swbs=true FBI-1005 / Digital – Platform development / 7250080 – Advertising digital",
+		"L-1009 UK launch event Venue GBP 15,000.00 evenly[] swbs=true  / BTL – Event / 7250040 – Events and sponsorship",
+		"L-1010 UK launch event Agency fee (Ireland) EUR 23,000.00 evenly[] swbs=true  / Agency – Creative / 7250060 – Agency fees",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("line items =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))

@@ -174,7 +174,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 
 	// Home (009): a read-only dashboard over the services of 003–008 (home_sources.go).
 	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
-		approvalsService))
+		approvalsService, settingsService.Rates))
 	home.NewHandler(homeService).Routes(router, signedIn)
 
 	// All work (010): a read-only view of a year over plans (004) and the records below them (005–007),

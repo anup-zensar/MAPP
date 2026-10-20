@@ -64,7 +64,7 @@ func (s *Service) planCampaigns(ctx context.Context, plan PlanFacts) (PlanCampai
 	for _, c := range campaigns {
 		campaignBudgets = append(campaignBudgets, c.Budget)
 	}
-	allocated := rollup.Total(campaignBudgets)
+	allocated := rollup.TotalIn(plan.Currency, campaignBudgets)
 	planRemaining := rollup.Remaining(plan.Budget, allocated)
 
 	views := make([]CampaignView, 0, len(campaigns))
@@ -122,7 +122,7 @@ func (b *viewBuilder) campaign(c Campaign, initiatives []Initiative, activitiesO
 	for _, i := range initiatives {
 		budgets = append(budgets, i.Budget)
 	}
-	remaining := rollup.Remaining(c.Budget, rollup.Total(budgets)) // what the campaign has left for initiatives
+	remaining := rollup.Remaining(c.Budget, rollup.TotalIn(b.plan.Currency, budgets)) // what the campaign has left for initiatives
 	ref := CampaignRef{ID: c.ID, Name: c.Name, StartDate: c.StartDate, EndDate: c.EndDate}
 
 	views := make([]InitiativeView, 0, len(initiatives))
@@ -152,7 +152,7 @@ func (b *viewBuilder) campaign(c Campaign, initiatives []Initiative, activitiesO
 	if err != nil {
 		return CampaignView{}, err
 	}
-	missing, err := b.missing(settings.LevelCampaign, c.OwnerID, c.StartDate, c.Attributes)
+	missing, err := b.missing(settings.LevelCampaign, c.OwnerID, c.StartDate, c.Attributes, c.Budget, c.BudgetPhasing)
 	if err != nil {
 		return CampaignView{}, err
 	}
@@ -171,13 +171,14 @@ func (b *viewBuilder) campaign(c Campaign, initiatives []Initiative, activitiesO
 		Plan:                  PlanRef{ID: b.plan.ID, Name: b.plan.Name, Year: b.plan.Year},
 		OutsidePlanYear:       outsideYear(c.StartDate, c.EndDate, b.plan.Year),
 		ParentRemainingBudget: planRemaining,
-		BudgetAndCost:         budgetAndCost(rollup.Container(c.Budget, budgets, rollup.Sum(plannedCosts))),
+		BudgetAndCost:         budgetAndCost(rollup.ContainerIn(b.plan.Currency, c.Budget, budgets, rollup.Sum(plannedCosts))),
 		ApprovalProgress:      approvalSummary(counts.ApprovedActivities, counts.Activities),
 		Timing:                timing(c.StartDate, c.EndDate, b.today),
 		Completeness:          RecordCompleteness{Missing: missing, ItemsBelowNeedingAttention: itemsBelow},
 		Goals:                 GoalSums{INQ: sum.INQ, MQL: sum.MQL, Revenue: sum.Revenue},
 		Counts:                counts,
 		Initiatives:           views,
+		BudgetPhasing:         b.phasingView(c.BudgetPhasing, c.Budget),
 		Meta:                  c.Meta,
 	}
 	// In USD until the service converts it for the reader (display.go).
@@ -210,7 +211,7 @@ func (b *viewBuilder) initiative(i Initiative, campaign CampaignRef, activities 
 	if err != nil {
 		return InitiativeView{}, err
 	}
-	missing, err := b.missing(settings.LevelInitiative, i.OwnerID, i.StartDate, i.Attributes)
+	missing, err := b.missing(settings.LevelInitiative, i.OwnerID, i.StartDate, i.Attributes, i.Budget, i.BudgetPhasing)
 	if err != nil {
 		return InitiativeView{}, err
 	}
@@ -230,12 +231,13 @@ func (b *viewBuilder) initiative(i Initiative, campaign CampaignRef, activities 
 		Plan:                  PlanRef{ID: b.plan.ID, Name: b.plan.Name, Year: b.plan.Year},
 		Campaign:              campaign,
 		ParentRemainingBudget: campaignRemaining,
-		BudgetAndCost:         budgetAndCost(rollup.Container(i.Budget, nil, rollup.Sum(plannedCosts))),
+		BudgetAndCost:         budgetAndCost(rollup.ContainerIn(b.plan.Currency, i.Budget, nil, rollup.Sum(plannedCosts))),
 		ApprovalProgress:      approvalSummary(counts.ApprovedActivities, counts.Activities),
 		Timing:                timing(i.StartDate, i.EndDate, b.today),
 		Completeness:          RecordCompleteness{Missing: missing, ItemsBelowNeedingAttention: itemsBelow},
 		Goals:                 GoalSums{INQ: sum.INQ, MQL: sum.MQL, Revenue: sum.Revenue},
 		Counts:                counts,
+		BudgetPhasing:         b.phasingView(i.BudgetPhasing, i.Budget),
 		Meta:                  i.Meta,
 	}
 	// In USD until the service converts it for the reader (display.go).
@@ -266,9 +268,10 @@ func (b *viewBuilder) owner(id *string) (*people.PersonRef, error) {
 }
 
 // missing lists a record's own empty needed-to-publish fields in form order (FR-014, data model §4.4): the
-// owner, the dates as one field, then the Shell attributes Settings says are missing.
+// owner, the dates as one field, then the Shell attributes Settings says are missing, then a Budget by month
+// that does not add up to the budget (016 FR-022).
 func (b *viewBuilder) missing(level settings.Level, ownerID *string, start *date.Date,
-	values settings.AttributeValues) ([]settings.MissingField, error) {
+	values settings.AttributeValues, budget *money.Money, phasing rollup.Phasing) ([]settings.MissingField, error) {
 	missing := []settings.MissingField{}
 	if ownerID == nil {
 		missing = append(missing, settings.MissingField{Field: "ownerId", Label: ownerLabel})
@@ -280,7 +283,24 @@ func (b *viewBuilder) missing(level settings.Level, ownerID *string, start *date
 	if err != nil {
 		return nil, err
 	}
-	return append(missing, attributes...), nil
+	missing = append(missing, attributes...)
+	if problem := rollup.PhasingProblem(phasing, amountOf(budget), b.plan.Year, b.plan.Currency); problem != nil {
+		missing = append(missing, *problem)
+	}
+	return missing, nil
+}
+
+// phasingView is a record's phasing as the API answers it, over the plan's year in the plan currency.
+func (b *viewBuilder) phasingView(phasing rollup.Phasing, budget *money.Money) rollup.PhasingView {
+	return rollup.ViewOf(phasing, amountOf(budget), b.plan.Year, b.plan.Currency)
+}
+
+// amountOf returns the amount of a budget; nil without one.
+func amountOf(budget *money.Money) *money.Amount {
+	if budget == nil {
+		return nil
+	}
+	return &budget.Amount
 }
 
 // budgetAndCost returns the roll-up of package rollup as the API returns it.

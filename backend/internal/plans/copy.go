@@ -13,6 +13,7 @@ import (
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/record"
+	"northstar/internal/rollup"
 )
 
 // The messages of a copy (plan "User-visible messages": API validation, copy notes, activity log).
@@ -82,8 +83,9 @@ func (s *Service) Copy(ctx context.Context, a actor.Actor, id string, in CopyReq
 			return err
 		}
 
-		p := copyOfPlan(source)
+		p := copyOfPlan(source) // keeps the plan currency, the type and the phasing (016 FR-018, FR-025)
 		p.Name, p.Year, p.Status = name, source.Year+years, StatusDraft
+		p.BudgetPhasing = rollup.ShiftPhasing(source.BudgetPhasing, years) // a next-year copy: one year later
 		notes := []string{}
 		if years != 0 && p.DefaultFinanceBudgetID != "" {
 			p.DefaultFinanceBudgetID = ""
@@ -169,6 +171,7 @@ func copyOfPlan(p Plan) Plan {
 		budget := *p.Budget
 		dup.Budget = &budget
 	}
+	dup.BudgetPhasing = rollup.ShiftPhasing(p.BudgetPhasing, 0) // its own months
 	return dup
 }
 

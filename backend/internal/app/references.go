@@ -172,7 +172,8 @@ func lineItemReference(li lineitems.LineItem, planID string, inBin bool) setting
 }
 
 // planReferences is Settings' ReferenceSource of plans (004): every plan, stored and in the recycle bin,
-// with its model, default finance budget and Shell attribute values.
+// with its model, default finance budget, Shell attribute values, and its plan currency with its budget in it
+// (016: "Plan currency of n plans", FR-010; the rate impact, FR-005).
 func planReferences(svc *plans.Service) settings.ReferenceSource {
 	return func(ctx context.Context) ([]settings.Reference, error) {
 		list, err := svc.References(ctx, actor.System)
@@ -184,7 +185,7 @@ func planReferences(svc *plans.Service) settings.ReferenceSource {
 			refs = append(refs, settings.Reference{
 				Record: history.RecordRef{Type: "plan", ID: p.PlanID, Name: p.Name}, InBin: p.InRecycleBin,
 				Level: settings.LevelPlan, PlanID: p.PlanID, Attributes: p.Attributes, ModelID: p.ModelID,
-				FinanceBudgetID: p.DefaultFinanceBudgetID,
+				FinanceBudgetID: p.DefaultFinanceBudgetID, Currency: p.Currency, Budget: p.Budget, // 016 FR-005, FR-010
 			})
 		}
 		return refs, nil

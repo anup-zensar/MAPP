@@ -14,8 +14,10 @@ import (
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/ids"
+	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
 	"northstar/internal/platform/store"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -37,7 +39,37 @@ type Service struct {
 // generator, logs their changes and deletes them through hist, works in transactions of tx, reads the time
 // from now and what it needs from other features from deps.
 func NewService(tx store.Transactor, repo Repository, generator *ids.Generator, hist *history.Service, now clock.Clock, deps Deps) *Service {
+	deps.Plans = inPlanCurrency{deps.Plans}
 	return &Service{tx: tx, repo: repo, ids: generator, history: hist, now: now, deps: deps}
+}
+
+// inPlanCurrency reads plans with their plan currency set: USD for a plan known without one (016 data-model
+// §4.5), so every amount of the tree is labelled.
+type inPlanCurrency struct {
+	PlanSource
+}
+
+// Plan returns the plan id with its currency.
+func (p inPlanCurrency) Plan(ctx context.Context, id string) (PlanFacts, bool, error) {
+	plan, found, err := p.PlanSource.Plan(ctx, id)
+	return withCurrency(plan), found, err
+}
+
+// PlansOfYear returns the plans of year with their currencies.
+func (p inPlanCurrency) PlansOfYear(ctx context.Context, year int) ([]PlanFacts, error) {
+	plans, err := p.PlanSource.PlansOfYear(ctx, year)
+	for i := range plans {
+		plans[i] = withCurrency(plans[i])
+	}
+	return plans, err
+}
+
+// withCurrency returns plan with USD as its currency when it has none.
+func withCurrency(plan PlanFacts) PlanFacts {
+	if plan.Currency == "" {
+		plan.Currency = money.BaseCurrency
+	}
+	return plan
 }
 
 // ListPlanCampaigns returns the campaigns of the plan planID, each with its initiatives, in tree order
@@ -110,7 +142,7 @@ func (s *Service) CreateCampaign(ctx context.Context, a actor.Actor, planID stri
 
 		var problems errs.Problems
 		f := checkForm(&problems, form{in.Name, in.Description, in.OwnerID, in.StartDate, in.EndDate, in.Budget, in.Attributes},
-			func(name string) string { return campaignNameTaken(siblings, plan, name, "") })
+			plan.Currency, func(name string) string { return campaignNameTaken(siblings, plan, name, "") })
 		if err := s.checkOwner(ctx, &problems, f.OwnerID, nil); err != nil {
 			return err
 		}
@@ -128,7 +160,7 @@ func (s *Service) CreateCampaign(ctx context.Context, a actor.Actor, planID stri
 		}
 		c := Campaign{
 			ID: id, PlanID: planID, Name: f.Name, Description: f.Description, OwnerID: f.OwnerID,
-			StartDate: f.StartDate, EndDate: f.EndDate, Budget: f.Budget, Attributes: values,
+			StartDate: f.StartDate, EndDate: f.EndDate, Budget: f.Budget, Attributes: values, BudgetPhasing: rollup.NotPhased,
 			Meta: record.NewMeta(a, s.now()),
 		}
 		if err := s.repo.PutCampaign(ctx, c); err != nil {
@@ -181,7 +213,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, a actor.Actor, id string, 
 
 		var problems errs.Problems
 		f := checkForm(&problems, form{in.Name, in.Description, in.OwnerID, in.StartDate, in.EndDate, in.Budget, in.Attributes},
-			func(name string) string { return campaignNameTaken(siblings, plan, name, stored.ID) })
+			plan.Currency, func(name string) string { return campaignNameTaken(siblings, plan, name, stored.ID) })
 		if err := s.checkOwner(ctx, &problems, f.OwnerID, stored.OwnerID); err != nil {
 			return err
 		}
@@ -208,11 +240,15 @@ func (s *Service) UpdateCampaign(ctx context.Context, a actor.Actor, id string, 
 		updated := stored
 		updated.Name, updated.Description, updated.OwnerID = f.Name, f.Description, f.OwnerID
 		updated.StartDate, updated.EndDate, updated.Budget, updated.Attributes = f.StartDate, f.EndDate, f.Budget, values
-		withoutValues := func(c Campaign) Campaign { c.Attributes = nil; return c }
+		if updated.Budget == nil { // a removed budget removes its phasing (016 FR-022)
+			updated.BudgetPhasing = rollup.NotPhased
+		}
+		withoutValues := func(c Campaign) Campaign { c.Attributes, c.BudgetPhasing = nil, rollup.Phasing{}; return c }
 		changes, err := recordChanges(withoutValues(stored), withoutValues(updated), stored.Attributes, updated.Attributes)
 		if err != nil {
 			return err
 		}
+		changes = append(changes, phasingChanges(stored.BudgetPhasing, updated.BudgetPhasing, stored.Budget, updated.Budget, plan)...)
 		if len(changes) > 0 {
 			updated.Touch(a, s.now())
 			if err := s.repo.PutCampaign(ctx, updated); err != nil {
@@ -280,7 +316,7 @@ func (s *Service) CreateInitiative(ctx context.Context, a actor.Actor, campaignI
 
 		var problems errs.Problems
 		f := checkForm(&problems, form{in.Name, in.Description, in.OwnerID, in.StartDate, in.EndDate, in.Budget, in.Attributes},
-			func(name string) string { return initiativeNameTaken(siblings, campaign, name, "") })
+			plan.Currency, func(name string) string { return initiativeNameTaken(siblings, campaign, name, "") })
 		if err := s.checkOwner(ctx, &problems, f.OwnerID, nil); err != nil {
 			return err
 		}
@@ -299,7 +335,7 @@ func (s *Service) CreateInitiative(ctx context.Context, a actor.Actor, campaignI
 		}
 		i := Initiative{
 			ID: id, CampaignID: campaignID, Name: f.Name, Description: f.Description, OwnerID: f.OwnerID,
-			StartDate: f.StartDate, EndDate: f.EndDate, Budget: f.Budget, Attributes: values,
+			StartDate: f.StartDate, EndDate: f.EndDate, Budget: f.Budget, Attributes: values, BudgetPhasing: rollup.NotPhased,
 			Meta: record.NewMeta(a, s.now()),
 		}
 		if err := s.repo.PutInitiative(ctx, i); err != nil {
@@ -358,7 +394,7 @@ func (s *Service) UpdateInitiative(ctx context.Context, a actor.Actor, id string
 
 		var problems errs.Problems
 		f := checkForm(&problems, form{in.Name, in.Description, in.OwnerID, in.StartDate, in.EndDate, in.Budget, in.Attributes},
-			func(name string) string { return initiativeNameTaken(siblings, campaign, name, stored.ID) })
+			plan.Currency, func(name string) string { return initiativeNameTaken(siblings, campaign, name, stored.ID) })
 		if err := s.checkOwner(ctx, &problems, f.OwnerID, stored.OwnerID); err != nil {
 			return err
 		}
@@ -382,11 +418,15 @@ func (s *Service) UpdateInitiative(ctx context.Context, a actor.Actor, id string
 		updated := stored
 		updated.Name, updated.Description, updated.OwnerID = f.Name, f.Description, f.OwnerID
 		updated.StartDate, updated.EndDate, updated.Budget, updated.Attributes = f.StartDate, f.EndDate, f.Budget, values
-		withoutValues := func(i Initiative) Initiative { i.Attributes = nil; return i }
+		if updated.Budget == nil { // a removed budget removes its phasing (016 FR-022)
+			updated.BudgetPhasing = rollup.NotPhased
+		}
+		withoutValues := func(i Initiative) Initiative { i.Attributes, i.BudgetPhasing = nil, rollup.Phasing{}; return i }
 		changes, err := recordChanges(withoutValues(stored), withoutValues(updated), stored.Attributes, updated.Attributes)
 		if err != nil {
 			return err
 		}
+		changes = append(changes, phasingChanges(stored.BudgetPhasing, updated.BudgetPhasing, stored.Budget, updated.Budget, plan)...)
 		if len(changes) > 0 {
 			updated.Touch(a, s.now())
 			if err := s.repo.PutInitiative(ctx, updated); err != nil {

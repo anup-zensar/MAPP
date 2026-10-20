@@ -102,6 +102,9 @@ type CurrencyView struct {
 	Symbol     string     `json:"symbol"`
 	RatePerUSD money.Rate `json:"ratePerUsd"` // current rate in units per 1 USD ("1" for USD)
 	Active     bool       `json:"active"`
+	// The current rate's date and source (016 FR-009): "rate of 19 Oct 2026 · GSAP import"; null for USD.
+	RateDate   *date.Date           `json:"rateDate"`
+	RateSource *settings.RateSource `json:"rateSource"`
 }
 
 // FinanceBudgetItemRef is a finance budget item as line items show it (FinanceBudgetItemRef).
@@ -120,6 +123,7 @@ type SpreadMonth struct {
 	Amount               money.Money `json:"amount"`
 	AmountUSD            money.Money `json:"amountUsd"`
 	OutsideActivityDates bool        `json:"outsideActivityDates"`
+	AmountPlan           money.Money `json:"-"` // in the plan currency (016 FR-015): the spread grid's cell
 }
 
 // SpreadView is a line item's spread as the API returns it (Spread).
@@ -154,6 +158,7 @@ type View struct {
 	PlannedCost        money.Money              `json:"plannedCost"`
 	PlannedCostUSD     money.Money              `json:"plannedCostUsd"`
 	PlannedCostDisplay money.Money              `json:"plannedCostDisplay"` // PlannedCostUSD in the reader's display currency (D-213)
+	PlannedCostPlan    money.Money              `json:"plannedCostPlan"`    // 016 FR-015: in the plan currency at the current rates
 	Spread             SpreadView               `json:"spread"`
 	Attributes         settings.AttributeValues `json:"attributes"`
 	ContractedAmount   *money.Money             `json:"contractedAmount"`
@@ -174,7 +179,7 @@ type ActivityView struct {
 	StartDate             *date.Date       `json:"startDate"`
 	EndDate               *date.Date       `json:"endDate"`
 	Ongoing               bool             `json:"ongoing"`
-	PlannedCost           *money.Money     `json:"plannedCost"` // USD
+	PlannedCost           *money.Money     `json:"plannedCost"` // in the plan currency (016)
 	Path                  []errs.RecordRef `json:"path"`        // plan, campaign, initiative
 	PlanYear              int              `json:"planYear"`
 	DefaultSpreadMethod   SpreadMethod     `json:"defaultSpreadMethod"`
@@ -182,10 +187,10 @@ type ActivityView struct {
 	BusinessUnitOptionIDs []string         `json:"businessUnitOptionIds"` // the plan's Business unit options (D-212)
 }
 
-// UnassignedBalance is the activity's planned cost minus its line items' USD planned costs
-// (UnassignedBalance, Sys_Gen_Balance).
+// UnassignedBalance is the activity's planned cost minus its line items' planned costs in the plan currency
+// (UnassignedBalance, Sys_Gen_Balance; 016 FR-015).
 type UnassignedBalance struct {
-	PlannedCost  *money.Money `json:"plannedCost"` // USD; null while the activity has none
+	PlannedCost  *money.Money `json:"plannedCost"` // in the plan currency; null while the activity has none
 	Assigned     money.Money  `json:"assigned"`
 	Balance      *money.Money `json:"balance"` // negative when exceeded; null without a planned cost
 	State        string       `json:"state"`   // one of the Balance… states

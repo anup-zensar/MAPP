@@ -75,7 +75,7 @@ func TestMissing_CustomNotAddingUp_FR019(t *testing.T) {
 	f := newFakeActivities().facts[launchFilm]
 	li := lineItem("1000.00", SpreadCustom, "2026-03", "450.00", "2026-04", "450.00")
 	li.OwnerID, li.FinanceBudgetYear, li.FinanceBudgetItemID = filledIn().OwnerID, filledIn().FinanceBudgetYear, europeDigital
-	spread := spreadView(li, f, rate("1"))
+	spread := spreadView(li, f, rate("1"), rate("1"))
 
 	got := Missing(li, nil, &budgetItems[0], spread.AddsUp)
 

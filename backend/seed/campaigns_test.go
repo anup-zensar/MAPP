@@ -38,6 +38,9 @@ func TestLoad_CampaignsAndInitiatives_FR002(t *testing.T) {
 		"C-1004 Brand platform P-1003 U-1001 01 Jan 2027 – 31 Mar 2028 300,000.00 USD",
 		"  I-1007 Brand film U-1001 01 Jan – 30 Jun 2027 250,000.00 USD",
 		"  I-1008 Sponsorships U-1001 01 Apr – 31 Dec 2027 100,000.00 USD",
+		"C-1005 Helix UK & Ireland P-1004 U-1002 01 Jan – 31 Dec 2027 400,000.00 GBP",
+		"  I-1009 UK U-1002 01 Jan – 31 Dec 2027 250,000.00 GBP",
+		"  I-1010 Ireland U-1002 01 Jan – 31 Dec 2027 150,000.00 GBP",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("campaigns =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
@@ -59,7 +62,8 @@ func TestLoad_BudgetsFlowDown_FR010(t *testing.T) {
 				children = append(children, *i.Budget)
 			}
 		}
-		want := map[string]string{"C-1001": "150,000.00", "C-1002": "100,000.00", "C-1003": "50,000.00", "C-1004": "-50,000.00"}[c.ID]
+		want := map[string]string{"C-1001": "150,000.00", "C-1002": "100,000.00", "C-1003": "50,000.00", "C-1004": "-50,000.00",
+			"C-1005": "0.00"}[c.ID]
 		if got := remaining(*c.Budget, children); got != want {
 			t.Errorf("%s keeps %s for its initiatives, want %s", c.Name, got, want)
 		}
@@ -71,7 +75,7 @@ func TestLoad_BudgetsFlowDown_FR010(t *testing.T) {
 				children = append(children, *c.Budget)
 			}
 		}
-		want := map[string]string{"P-1001": "50,000.00", "P-1002": "200,000.00", "P-1003": "200,000.00"}[p.ID]
+		want := map[string]string{"P-1001": "50,000.00", "P-1002": "200,000.00", "P-1003": "200,000.00", "P-1004": "200,000.00"}[p.ID]
 		if got := remaining(money.USD(*p.Budget), children); got != want {
 			t.Errorf("%s keeps %s for its campaigns, want %s", p.Name, got, want)
 		}
@@ -129,4 +133,29 @@ func sumOf(values []money.Money) money.Amount {
 		total = total.Add(v.Amount)
 	}
 	return total
+}
+
+// The GBP campaign's budget is phased in four months of 2027 (016 data-model §8); every other record is not
+// phased.
+func TestLoad_CampaignPhasing_016(t *testing.T) {
+	d := loadDemo(t)
+	for _, c := range d.campaigns {
+		var months []string
+		for _, m := range c.BudgetPhasing.Months {
+			months = append(months, m.Month+" "+m.Amount.Format())
+		}
+		want := []string(nil)
+		method := "none"
+		if c.ID == "C-1005" {
+			want, method = []string{"2027-03 100,000.00", "2027-06 100,000.00", "2027-09 100,000.00", "2027-11 100,000.00"}, "custom"
+		}
+		if string(c.BudgetPhasing.Method) != method || !slices.Equal(months, want) {
+			t.Errorf("%s phasing = %s %q", c.ID, c.BudgetPhasing.Method, months)
+		}
+	}
+	for _, i := range d.initiatives {
+		if i.BudgetPhasing.Method != "none" {
+			t.Errorf("%s phasing = %+v", i.ID, i.BudgetPhasing)
+		}
+	}
 }

@@ -12,6 +12,7 @@ import (
 
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -40,7 +41,6 @@ const (
 	msgOwnerNeedsTeams    = "Choose teams first — the owner must belong to one of the plan's teams."
 	msgOwnerNotInTeams    = "%s isn't in any of the chosen teams — choose another owner or clear the field."
 	msgDescriptionTooLong = "Use 2,000 characters or fewer."
-	msgBudgetInUSD        = "Enter the plan budget in USD."
 	msgEnterAmount        = "Enter an amount, for example 1200000 or 1,200,000.00."
 	msgTwoDecimals        = "Use at most 2 decimals."
 	msgBudgetNegative     = "Plan budget can't be negative."
@@ -73,6 +73,8 @@ type form struct {
 	GoalStage              string
 	GoalAmount             *string
 	Attributes             settings.AttributeValues
+	Currency               *string // 016
+	PlanType               *string // 016
 }
 
 // formOf returns the form of a create.
@@ -81,7 +83,7 @@ func formOf(in PlanInput) form {
 		Name: in.Name, Year: in.Year, ModelID: in.ModelID, TeamIDs: in.TeamIDs, OwnerID: in.OwnerID, AOP: in.AOP,
 		Description: in.Description, Budget: in.Budget, DefaultFinanceBudgetID: in.DefaultFinanceBudgetID,
 		DefaultSpread: in.DefaultSpread, BCPIR: in.BCPIR, GoalStage: in.GoalStage, GoalAmount: in.GoalAmount,
-		Attributes: in.Attributes,
+		Attributes: in.Attributes, Currency: in.Currency, PlanType: in.PlanType,
 	}
 }
 
@@ -91,7 +93,7 @@ func formOfUpdate(in PlanUpdate) form {
 		Name: in.Name, ModelID: in.ModelID, TeamIDs: in.TeamIDs, OwnerID: in.OwnerID, AOP: in.AOP,
 		Description: in.Description, Budget: in.Budget, DefaultFinanceBudgetID: in.DefaultFinanceBudgetID,
 		DefaultSpread: in.DefaultSpread, BCPIR: in.BCPIR, GoalStage: in.GoalStage, GoalAmount: in.GoalAmount,
-		Attributes: in.Attributes,
+		Attributes: in.Attributes, Currency: in.Currency, PlanType: in.PlanType,
 	}
 }
 
@@ -110,7 +112,9 @@ func (s *Service) check(ctx context.Context, f form, stored *Plan, problems *err
 	}
 	if stored == nil {
 		p.Year = s.checkYear(f.Year, problems)
+		p.BudgetPhasing = rollup.NotPhased
 	}
+	p.PlanType = checkPlanType(f.PlanType, stored, problems) // 016 FR-032
 	var err error
 	if p.ModelID, err = s.checkModel(ctx, text(f.ModelID), stored, problems); err != nil {
 		return Plan{}, err
@@ -127,7 +131,13 @@ func (s *Service) check(ctx context.Context, f form, stored *Plan, problems *err
 	if utf8.RuneCountInString(p.Description) > maxDescriptionLength {
 		problems.Add("description", msgDescriptionTooLong)
 	}
-	p.Budget = checkBudget(f.Budget, problems)
+	if p.Currency, err = s.checkCurrency(ctx, f.Currency, stored, problems); err != nil { // 016 FR-011
+		return Plan{}, err
+	}
+	p.Budget = checkBudget(f.Budget, p.Currency, problems)
+	if p.Budget == nil { // a removed budget removes its phasing (016 FR-022)
+		p.BudgetPhasing = rollup.NotPhased
+	}
 	p.DefaultFinanceBudgetID = text(f.DefaultFinanceBudgetID)
 	if err := s.checkFinanceBudget(ctx, p.DefaultFinanceBudgetID, p.Year, problems); err != nil {
 		return Plan{}, err
@@ -290,14 +300,14 @@ func (s *Service) checkOwner(ctx context.Context, ownerID string, teamIDs []stri
 
 // checkBudget checks the plan budget, when one is sent: in USD, an amount with at most two decimals, not
 // negative. It returns the budget to store; nil for none or a wrong one.
-func checkBudget(in *money.Input, problems *errs.Problems) *money.Amount {
+func checkBudget(in *money.Input, currency string, problems *errs.Problems) *money.Amount {
 	if in == nil {
 		return nil
 	}
 	amount, err := money.ParseAmount(strings.TrimSpace(in.Amount))
 	switch {
-	case in.Currency != money.BaseCurrency:
-		problems.Add("budget", msgBudgetInUSD)
+	case in.Currency != currency:
+		problems.Add("budget", fmt.Sprintf(msgAmountInPlanCurrency, currency))
 	case errors.Is(err, money.ErrTooManyDecimals):
 		problems.Add("budget", msgTwoDecimals)
 	case err != nil:

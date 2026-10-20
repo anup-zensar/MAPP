@@ -58,7 +58,7 @@ func TestCreateActivity_Contract_FR004(t *testing.T) {
 	var view activities.View
 	assertStatus(t, created, http.StatusCreated)
 	created.Decode(t, &view)
-	if view.ID != "A-1011" || view.Status != activities.StatusCreated || view.PlannedCost.Format() != "25,000.00 USD" {
+	if view.ID != "A-1013" || view.Status != activities.StatusCreated || view.PlannedCost.Format() != "25,000.00 USD" {
 		t.Errorf("created = %+v", view)
 	}
 	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+
