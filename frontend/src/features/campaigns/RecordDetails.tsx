@@ -15,7 +15,8 @@ import {
   Skeleton,
 } from '@/components';
 import type { ActionsMenuItem } from '@/components';
-import { historyHref } from '@/features/activity-log/showHistory';
+import { HistorySection } from '@/features/activity-log/HistorySection';
+import { panelHistoryId, showHistory } from '@/features/activity-log/showHistory';
 import { localDate } from '@/lib/format';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
@@ -58,8 +59,8 @@ export interface RecordDetailsProps {
 
 /**
  * A campaign's or initiative's details (US3, FR-016, design system §6.3): breadcrumb, level tag,
- * chips, facts, budget and cost, goals, description, Shell attributes and what is below it, with
- * **Edit** and **⋯ More**. Selecting a row opens this, never the form.
+ * chips, facts, budget and cost, goals, description, Shell attributes, what is below it and its
+ * History (feature 011), with **Edit** and **⋯ More**. Selecting a row opens this, never the form.
  */
 export function RecordDetails({
   level,
@@ -87,10 +88,8 @@ export function RecordDetails({
         ]
       : []),
     ...recordItems,
-    {
-      label: VIEW_HISTORY,
-      onSelect: () => void navigate(historyHref(record.id)),
-    },
+    // Brings the panel's History part into view and focuses it (feature 011, FR-011).
+    { label: VIEW_HISTORY, onSelect: () => showHistory(panelHistoryId(record.id)) },
     ...(isCampaign
       ? []
       : initiativeExtraActions({ id: record.id, name: record.name, planId }, navigate)),
@@ -198,6 +197,14 @@ export function RecordDetails({
               <InitiativeActivitiesSection planId={planId} initiativeId={record.id} />
             </>
           )}
+          <HistorySection
+            recordType={level}
+            recordId={record.id}
+            recordName={record.name}
+            level={level}
+            id={panelHistoryId(record.id)}
+            variant="panel"
+          />
         </div>
       </SidePanel>
       {dialogs}

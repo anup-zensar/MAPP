@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { SessionProvider } from '@/app/SessionProvider';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { campaignForm } from '@/test/attributeForms';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -22,6 +23,7 @@ const DETAILS = '/plans/P-1001/campaigns/C-1001';
 
 function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
+    ...HISTORY_ANSWERS,
     'GET /api/campaigns/C-1001': { body: campaign() },
     'GET /api/plans/P-1001': { body: planAnswer() },
     'GET /api/shell-attribute-forms/campaign': { body: campaignForm() },
@@ -226,8 +228,29 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     ]);
     await user.click(screen.getByRole('menuitem', { name: 'View history' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/activity-log'));
-    expect(router.state.location.search).toBe('?record=C-1001');
+    // The panel's own History part gets the focus (feature 011, FR-011); the panel stays open.
+    const history = within(panel).getByRole('heading', { level: 3, name: 'History' });
+    await waitFor(() => expect(history).toHaveFocus());
+    expect(history.closest('#history-C-1001')).not.toBeNull();
+    expect(router.state.location.pathname).toBe(DETAILS);
+  });
+
+  it('shows the campaign’s History with Include items inside (011 FR-011 – FR-013)', async () => {
+    const { api } = renderPanel(DETAILS);
+    const panel = await findDetails();
+
+    const history = within(panel).getByRole('region', { name: 'History' });
+    expect(within(history).getByText('Every change to this campaign, newest first')).toBeVisible();
+    expect(
+      within(history).getByRole('checkbox', { name: 'Include items inside' }),
+    ).not.toBeChecked();
+    expect(within(history).getByRole('link', { name: 'Open in activity log' })).toHaveAttribute(
+      'href',
+      '/activity-log?record=C-1001',
+    );
+    expect(await within(history).findByText('No changes recorded yet.')).toBeVisible();
+    const asked = api.requests.find((request) => request.path === '/api/activity-log');
+    expect(new URLSearchParams(asked?.search).get('recordId')).toBe('C-1001');
   });
 
   it('deletes from More, closes the panel and offers Undo (US5, FR-028, FR-029)', async () => {

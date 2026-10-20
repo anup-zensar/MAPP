@@ -77,3 +77,11 @@ export function logSummary(overrides: Partial<ActivityLogSummary> = {}): Activit
     ...overrides,
   };
 }
+
+/**
+ * The History section's request with an empty log (feature 011, FR-011): for the tests of the plan,
+ * campaign, initiative, activity and line item pages, which all show the section.
+ */
+export const HISTORY_ANSWERS = {
+  'GET /api/activity-log': { body: logPage([]) },
+};

@@ -14,8 +14,11 @@ export interface LogEntryListProps {
   hasMore: boolean;
   onLoadMore: () => void;
   isLoadingMore: boolean;
-  /** The level of the day headings: 2 on the log page, 3 inside a History card. */
-  headingLevel?: 2 | 3;
+  /**
+   * The level of the day headings: 2 on the log page, 3 inside a History card, 4 inside the History
+   * part of a side panel (whose own heading is an h3).
+   */
+  headingLevel?: 2 | 3 | 4;
 }
 
 /**
@@ -32,7 +35,7 @@ export function LogEntryList({
   headingLevel = 2,
 }: LogEntryListProps) {
   const today = localDate(new Date());
-  const Heading = headingLevel === 2 ? 'h2' : 'h3';
+  const Heading = (['h2', 'h3', 'h4'] as const)[headingLevel - 2];
 
   return (
     <div className={styles.list}>

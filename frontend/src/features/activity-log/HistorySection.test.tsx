@@ -140,6 +140,34 @@ describe('HistorySection', () => {
 
     showHistory();
 
-    expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
+    );
+  });
+
+  it('draws as a part of a side panel, with an h3 and its own id (FR-011)', async () => {
+    mockApi({ [LOG]: { body: logPage([logEntry()]) } });
+    renderWithProviders(
+      <HistorySection
+        recordType="campaign"
+        recordId="C-1001"
+        recordName="Helix launch"
+        level="campaign"
+        id="history-C-1001"
+        variant="panel"
+      />,
+      { user: testUser() },
+    );
+
+    const heading = screen.getByRole('heading', { level: 3, name: 'History' });
+    expect(screen.getByRole('region', { name: 'History' })).toBeInTheDocument();
+    expect(screen.getByText('Every change to this campaign, newest first')).toBeInTheDocument();
+    // The day headings sit one level below the section's heading.
+    expect(await screen.findByRole('heading', { level: 4, name: /· 1 entry$/ })).toBeVisible();
+
+    showHistory('history-C-1001');
+
+    await waitFor(() => expect(heading).toHaveFocus());
+    expect(heading.closest('#history-C-1001')).not.toBeNull();
   });
 });

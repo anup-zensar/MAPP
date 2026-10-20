@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
 import type { ActionsMenuItem } from '@/components';
-import { historyHref } from '@/features/activity-log/showHistory';
+import { showHistory } from '@/features/activity-log/showHistory';
 import type { Activity } from './activitiesApi';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { CopyActivityDialog } from './CopyActivityDialog';
@@ -16,12 +15,11 @@ export interface ActivityActions {
 
 /**
  * The More actions of an activity (006 plan, "Actions"; FR-029 – FR-032): **Copy** and **Move**,
- * each in its dialog; **View history**, which opens the activity log filtered to the activity;
+ * each in its dialog; **View history**, which brings the page's History section into view;
  * and **Delete**, which asks first, moves the activity and its line items to the recycle bin,
  * opens the plan page and offers **Undo** for 10 seconds.
  */
 export function useActivityActions(activity: Activity): ActivityActions {
-  const navigate = useNavigate();
   const [open, setOpen] = useState<'copy' | 'move' | 'delete' | null>(null);
   const close = () => setOpen(null);
 
@@ -29,10 +27,8 @@ export function useActivityActions(activity: Activity): ActivityActions {
     items: [
       { label: 'Copy', onSelect: () => setOpen('copy') },
       { label: 'Move', onSelect: () => setOpen('move') },
-      {
-        label: 'View history',
-        onSelect: () => void navigate(historyHref(activity.id)),
-      },
+      // Brings the page's History section into view and focuses it (feature 011, FR-011).
+      { label: 'View history', onSelect: () => showHistory() },
       {
         label: 'Delete',
         tone: 'danger',

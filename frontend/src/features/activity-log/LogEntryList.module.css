@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  /* Entries adapt to the width they get (a side panel is narrower than the page), see LogEntry. */
+  container-type: inline-size;
 }
 
 /* A day's heading on the subtle grey of table headers, with its count in grey. */

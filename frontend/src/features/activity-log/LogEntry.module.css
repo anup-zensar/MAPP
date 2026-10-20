@@ -97,8 +97,23 @@
   cursor: default;
 }
 
-/* On a phone the time and chip move under the sentence, so nothing scrolls sideways. */
+/*
+ * On a phone, or in a list narrower than 480 px (a History section in a side panel), the time and
+ * chip move under the sentence, so nothing scrolls sideways and the sentence keeps its width.
+ */
 @media (max-width: 560px) {
+  .entry {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .side {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+@container (max-width: 480px) {
   .entry {
     grid-template-columns: auto minmax(0, 1fr);
   }

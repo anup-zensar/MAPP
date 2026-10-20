@@ -2,7 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 import {
   action,
-  callApi,
   chooseOption,
   escapeRegExp,
   expectNoAxeViolations,
@@ -11,21 +10,22 @@ import {
   uniqueName,
 } from './fixtures';
 import {
+  approveThroughApi,
   createInitiative,
   createPlan,
   createPlanningRecords,
+  decideAs,
   idIn,
   planTree,
   treeRow,
-  type PlanningRecords,
 } from './planning';
 
 // End-to-end journeys through the rest of the Plan module, against the real API with the demo data:
 // copying a plan (004 US6); moving and copying campaigns, initiatives and activities (005 US6, 006 US5);
 // approval restart and the notification bell (008 US5, US6); My profile's display preferences (003 US4);
 // the Home dashboard (009); All work (010); and the Settings screens of 002 US3, US5 and US6. Feature 011
-// (Activity log, Recycle bin) is set aside and 012 (bulk actions and import) is deferred (D-209), so
-// neither is exercised here.
+// (Activity log, Recycle bin) has its own journeys in activity-log.spec.ts and recycle-bin.spec.ts, and
+// 012 (bulk actions and import) is deferred (D-209), so neither is exercised here.
 //
 // Every text and label comes from the "User-visible messages" tables of specs/002–010 plan.md (or the
 // decisions that changed them, such as D-216 for date ranges and D-219 for All work's chip names).
@@ -50,46 +50,6 @@ const SEED_YEAR = 2026;
 
 /** The current year: the default year of a new finance budget item, and the year All work marks Today in. */
 const THIS_YEAR = new Date().getFullYear();
-
-interface ApprovalRound {
-  id: string;
-  currentLevel: number;
-}
-
-/**
- * Signs in as `email` and approves or declines the activity's current level through the API (the screen
- * journeys of deciding are in core-flow.spec.ts).
- */
-async function decideAs(
-  page: Page,
-  email: string,
-  activityId: string,
-  decision: 'approve' | 'decline',
-  comment = '',
-): Promise<void> {
-  await signInAs(page, email);
-  const approval = await callApi<{ rounds: ApprovalRound[] }>(
-    page,
-    'GET',
-    `/api/activities/${activityId}/approval`,
-  );
-  const [round] = approval.rounds;
-  await callApi(page, 'POST', `/api/activities/${activityId}/approval/${decision}`, {
-    roundId: round.id,
-    level: round.currentLevel,
-    comment,
-  });
-}
-
-/** As Mei Lin: submits the activity and has Carlos Mendes and Alex Morgan approve both levels. */
-async function approveThroughApi(page: Page, records: PlanningRecords): Promise<void> {
-  await callApi(page, 'POST', `/api/activities/${records.activityId}/approval/submit`, {
-    version: records.activityVersion,
-    comment: '',
-  });
-  await decideAs(page, CARLOS, records.activityId, 'approve');
-  await decideAs(page, ALEX, records.activityId, 'approve');
-}
 
 /** The notification bell in the top bar; its name says the unread count (008 plan, Bell). */
 function bell(page: Page) {

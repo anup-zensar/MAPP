@@ -2,7 +2,8 @@ import { useNavigate, useOutlet, useParams } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { Button, ErrorState, Skeleton } from '@/components';
 import type { ActionsMenuItem } from '@/components';
-import { historyHref } from '@/features/activity-log/showHistory';
+import { HistorySection } from '@/features/activity-log/HistorySection';
+import { showHistory } from '@/features/activity-log/showHistory';
 import { useCampaignTreeContent } from '@/features/campaigns/useCampaignTreeContent';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { PlanDetails } from './PlanDetails';
@@ -17,7 +18,7 @@ import { usePlanActions } from './usePlanActions';
 
 /**
  * A plan's page (US3, FR-011 – FR-017), the layout route of /plans/:planId: the header, the
- * summary cards, the plan tree, Details and Goals. Feature 005 fills the tree through
+ * summary cards, the plan tree, Details and Goals, then the History (feature 011). Feature 005 fills the tree through
  * `useCampaignTreeContent` and shows its side panels in the `<Outlet />` (child routes); the tab
  * names the plan unless a panel on top names itself.
  */
@@ -43,10 +44,8 @@ export function PlanPage() {
     const data = plan.data;
     const moreItems: ActionsMenuItem[] = [
       actions.copyItem(data),
-      {
-        label: 'View history',
-        onSelect: () => void navigate(historyHref(data.id)),
-      },
+      // Brings the History section below into view and focuses it (feature 011, FR-011).
+      { label: 'View history', onSelect: () => showHistory() },
       actions.deleteItem(data),
     ];
     return (
@@ -78,6 +77,7 @@ export function PlanPage() {
           <PlanDetails plan={data} />
           <PlanGoals plan={data} />
         </div>
+        <HistorySection recordType="plan" recordId={data.id} recordName={data.name} level="plan" />
       </>
     );
   }

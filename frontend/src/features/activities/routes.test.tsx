@@ -1,5 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
 import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
@@ -31,6 +32,7 @@ vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
 
 /** The requests of each page. */
 const ANSWERS: Record<string, MockHandler> = {
+  ...HISTORY_ANSWERS,
   'GET /api/initiatives/I-1001/activity-form': { body: newForm() },
   'GET /api/people': { body: PEOPLE },
   'GET /api/activities/A-1001': { body: launchFilm({ id: 'A-1001' }) },
