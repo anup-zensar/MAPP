@@ -9,7 +9,6 @@ import {
   ErrorState,
   LinkButton,
   PageHeader,
-  SearchField,
   SegmentedFilter,
   Skeleton,
   StatusChip,
@@ -17,6 +16,7 @@ import {
 } from '@/components';
 import { formatWhole } from '@/lib/decimal';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { ListToolbar } from '../shared/ListToolbar';
 import {
   dependsOnText,
   isChoiceType,
@@ -38,11 +38,9 @@ import { useFailureToast } from './useStatusChange';
 
 type StatusFilter = 'active' | 'inactive' | 'all';
 
-const STATUS_WORDS: Record<StatusFilter, string> = {
-  active: 'Active',
-  inactive: 'Inactive',
-  all: 'All',
-};
+type HelpFilter = 'all' | 'missing';
+
+const ATTRIBUTE_NOUN = { one: 'Shell attribute', many: 'Shell attributes' };
 
 const FILTERED_REASON = 'Clear the search and filters to change the order.';
 
@@ -55,6 +53,8 @@ function useFilters() {
   const status: StatusFilter =
     statusParam === 'inactive' || statusParam === 'all' ? statusParam : 'active';
   const q = params.get('q') ?? '';
+  // Only the attributes without help (016 FR-048), as Settings › Field help links here.
+  const help: HelpFilter = params.get('help') === 'missing' ? 'missing' : 'all';
 
   function change(name: string, value: string, defaultValue: string) {
     setParams(
@@ -73,23 +73,66 @@ function useFilters() {
 
   return {
     level,
+    /** The address names a level; without one, the help filter may choose it. */
+    levelGiven: isLevel(levelParam),
     status,
     q,
-    setLevel: (value: AttributeLevel) => change('level', value, 'plan'),
+    help,
+    // With the help filter on, the level stays in the address, so it is not chosen again.
+    setLevel: (value: AttributeLevel) => change('level', value, help === 'missing' ? '' : 'plan'),
+    /**
+     * Turns the help filter on or off. The level on screen (`shown`), which the filter may have
+     * chosen, goes into the address so the list stays on it.
+     */
+    setHelp: (value: HelpFilter, shown: AttributeLevel) =>
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (value === 'all') {
+            next.delete('help');
+          } else {
+            next.set('help', value);
+          }
+          keepLevel(next, shown);
+          return next;
+        },
+        { replace: true },
+      ),
     setStatus: (value: StatusFilter) => change('status', value, 'active'),
     setQ: (value: string) => change('q', value, ''),
-    // Shows every attribute of the level, so the order can be changed again.
-    clear: () =>
+    // Shows every attribute of the level on screen, so the order can be changed again.
+    clear: (shown: AttributeLevel) =>
       setParams(
         (current) => {
           const next = new URLSearchParams(current);
           next.delete('q');
+          next.delete('help');
           next.set('status', 'all');
+          keepLevel(next, shown);
           return next;
         },
         { replace: true },
       ),
   };
+}
+
+/** Puts the level on screen into the address, unless it is the default (plan) level. */
+function keepLevel(params: URLSearchParams, shown: AttributeLevel) {
+  if (shown === 'plan') {
+    params.delete('level');
+  } else {
+    params.set('level', shown);
+  }
+}
+
+/** True when the attribute has no help text, so its ⓘ is missing (016 FR-048). */
+function lacksHelp(attribute: ShellAttribute): boolean {
+  return attribute.helpText.trim() === '';
+}
+
+/** True when the attribute passes the help filter. */
+function hasHelpState(attribute: ShellAttribute, help: HelpFilter): boolean {
+  return help === 'all' || lacksHelp(attribute);
 }
 
 /** True when the attribute has the status the filter asks for. */
@@ -133,7 +176,6 @@ export function ShellAttributesPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Shell attributes' }]}
-        eyebrow="Settings"
         title="Shell attributes"
         description="Shell's own fields on each level's form. Changes apply to every form straight away."
         actions={
@@ -163,7 +205,7 @@ function AttributeList({ filters }: { filters: Filters }) {
   const [announcement, setAnnouncement] = useState('');
   // The move button that was used last: the focus stays on it (SC-009).
   const [focusTarget, setFocusTarget] = useState<string | null>(null);
-  const { level, status, q } = filters;
+  const { status, q, help } = filters;
 
   // A moved row is taken out of the page and put back in its new place, which loses the focus:
   // it goes back to the button that moved it.
@@ -187,10 +229,24 @@ function AttributeList({ filters }: { filters: Filters }) {
   }
 
   const all = attributes.data.items;
+  // Arriving from Field help without a level: the first level with attributes lacking help.
+  const level: AttributeLevel =
+    help === 'missing' && !filters.levelGiven
+      ? (LEVELS.find((each) =>
+          all.some(
+            (attribute) =>
+              attribute.level === each && hasStatus(attribute, status) && lacksHelp(attribute),
+          ),
+        ) ?? filters.level)
+      : filters.level;
   const ofLevel = all.filter((attribute) => attribute.level === level);
   const shown = ofLevel.filter(
-    (attribute) => hasStatus(attribute, status) && matches(attribute, q),
+    (attribute) =>
+      hasStatus(attribute, status) && hasHelpState(attribute, help) && matches(attribute, q),
   );
+  const withoutHelp = ofLevel.filter(
+    (attribute) => hasStatus(attribute, status) && lacksHelp(attribute),
+  ).length;
   // The order can change only while every attribute of the level is in view (SC-009).
   const orderLocked = shown.length < ofLevel.length ? FILTERED_REASON : undefined;
   const levelSections = bySection(ofLevel);
@@ -241,44 +297,50 @@ function AttributeList({ filters }: { filters: Filters }) {
   const levelCounts = LEVELS.map((each) => ({
     value: each,
     label: LEVEL_WORDS[each],
-    count: all.filter((attribute) => attribute.level === each && hasStatus(attribute, status))
-      .length,
+    count: all.filter(
+      (attribute) =>
+        attribute.level === each && hasStatus(attribute, status) && hasHelpState(attribute, help),
+    ).length,
   }));
-  const statusOptions = (['active', 'inactive', 'all'] as const).map((value) => ({
-    value,
-    label: STATUS_WORDS[value],
-    count: ofLevel.filter((attribute) => hasStatus(attribute, value)).length,
-  }));
+  const statusCounts = {
+    active: ofLevel.filter((attribute) => hasStatus(attribute, 'active')).length,
+    inactive: ofLevel.filter((attribute) => hasStatus(attribute, 'inactive')).length,
+    all: ofLevel.length,
+  };
 
   return (
     <div className={styles.stack}>
-      <div className={styles.toolbar}>
-        <SegmentedFilter
-          label="Level"
-          options={levelCounts}
-          value={level}
-          onChange={filters.setLevel}
-        />
-        <div className={styles.toolbarRow}>
-          <SearchField
-            label="Search label or section"
-            placeholder="Search label or section"
-            value={q}
-            onChange={filters.setQ}
-          />
+      {/* The list toolbar sits inside the list's card, as on every Settings list (§2.4 A). */}
+      <Card>
+        <div className={styles.levels}>
           <SegmentedFilter
-            label="Status"
-            options={statusOptions}
-            value={status}
-            onChange={filters.setStatus}
+            label="Level"
+            options={levelCounts}
+            value={level}
+            onChange={filters.setLevel}
           />
-          <p className={styles.count}>
-            {`${formatWhole(shown.length)} of ${formatWhole(ofLevel.length)}`}
-          </p>
         </div>
-      </div>
-
-      <Card title={`${LEVEL_WORDS[level]} form`}>
+        <ListToolbar
+          search={{
+            label: 'Search label or section',
+            placeholder: 'Search label or section',
+            value: q,
+            onChange: filters.setQ,
+          }}
+          status={{ value: status, onChange: filters.setStatus, counts: statusCounts }}
+          filters={
+            <SegmentedFilter
+              label="Help"
+              options={[
+                { value: 'all', label: 'Any help' },
+                { value: 'missing', label: 'No help yet', count: withoutHelp },
+              ]}
+              value={help}
+              onChange={(value) => filters.setHelp(value, level)}
+            />
+          }
+          count={{ shown: shown.length, total: ofLevel.length, noun: ATTRIBUTE_NOUN }}
+        />
         {ofLevel.length === 0 ? (
           <EmptyState
             icon={<ListChecks />}
@@ -292,7 +354,7 @@ function AttributeList({ filters }: { filters: Filters }) {
         ) : shown.length === 0 ? (
           <EmptyState
             title="Nothing matches these filters"
-            action={<Button onClick={filters.clear}>Clear filters</Button>}
+            action={<Button onClick={() => filters.clear(level)}>Clear filters</Button>}
           />
         ) : (
           <div className={styles.tableScroll}>
@@ -303,7 +365,9 @@ function AttributeList({ filters }: { filters: Filters }) {
                   <th scope="col">Label</th>
                   <th scope="col">Type</th>
                   <th scope="col">Marking</th>
-                  <th scope="col">Options</th>
+                  <th scope="col" className={styles.number}>
+                    Options
+                  </th>
                   <th scope="col">Depends on / shown when</th>
                   <th scope="col">Used by</th>
                   <th scope="col">Status</th>
@@ -360,16 +424,21 @@ function AttributeList({ filters }: { filters: Filters }) {
                             />
                           ))}
                         </td>
-                        <th scope="row">
-                          <Link
-                            to={`/settings/shell-attributes/${attribute.id}`}
-                            className={styles.name}
-                          >
-                            {attribute.label}
-                          </Link>
+                        <th scope="row" className={styles.nameCell}>
+                          <span className={styles.nameLine}>
+                            <Link
+                              to={`/settings/shell-attributes/${attribute.id}`}
+                              className={styles.name}
+                            >
+                              {attribute.label}
+                            </Link>
+                            {lacksHelp(attribute) && (
+                              <StatusChip tone="review">No help yet</StatusChip>
+                            )}
+                          </span>
                         </th>
-                        <td>{TYPE_WORDS[attribute.type]}</td>
-                        <td>{MARKING_WORDS[attribute.marking]}</td>
+                        <td className={styles.nowrap}>{TYPE_WORDS[attribute.type]}</td>
+                        <td className={styles.nowrap}>{MARKING_WORDS[attribute.marking]}</td>
                         <td className={styles.number}>
                           {isChoiceType(attribute.type) ? formatWhole(attribute.optionCount) : '—'}
                         </td>
@@ -380,7 +449,7 @@ function AttributeList({ filters }: { filters: Filters }) {
                           <span className={styles.line}>{shownWhenText(attribute)}</span>
                         </td>
                         <td>{attribute.usage.summary}</td>
-                        <td>
+                        <td className={styles.nowrap}>
                           <StatusChip tone={attribute.active ? 'positive' : 'neutral'}>
                             {attribute.active ? 'Active' : 'Inactive'}
                           </StatusChip>

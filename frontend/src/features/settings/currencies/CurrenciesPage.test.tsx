@@ -6,6 +6,7 @@ import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { CURRENCIES, deleted, EUR, JPY, validationFailed, versionConflict } from '../testRecords';
 import { CurrenciesPage } from './CurrenciesPage';
+import { EUR_RATES, NO_IMPORTS, NO_RATES, RECENT_IMPORTS_PAGE } from './rateTestData';
 
 const USD_LOCK = "USD is NorthStar's base currency; its rate is always 1.";
 
@@ -13,7 +14,14 @@ function renderCurrencies(
   answers: Record<string, MockHandler> = {},
   route = '/settings/currencies',
 ) {
-  const api = mockApi({ 'GET /api/currencies': { body: CURRENCIES }, ...answers });
+  const api = mockApi({
+    'GET /api/currencies': { body: CURRENCIES },
+    // Recent imports and EUR's rate history (016 US1).
+    'GET /api/exchange-rates/imports': { body: NO_IMPORTS },
+    'GET /api/currencies/EUR/rates': { body: EUR_RATES },
+    'GET /api/currencies/JPY/rates': { body: NO_RATES },
+    ...answers,
+  });
   const rendered = renderWithProviders(<CurrenciesPage />, {
     route,
     user: testUser(),
@@ -52,7 +60,7 @@ describe('CurrenciesPage: the list (FR-002, FR-028)', () => {
     expect(within(eur).getByText('Active')).toBeInTheDocument();
     // JPY is inactive.
     expect(screen.queryByRole('rowheader', { name: 'JPY' })).not.toBeInTheDocument();
-    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('2 of 3 currencies')).toBeInTheDocument();
   });
 
   it('searches code or name', async () => {
@@ -294,5 +302,55 @@ describe('CurrenciesPage: status and delete (US4 scenario 2, FR-004)', () => {
 
     expect(await findMessages()).toHaveTextContent("Currency 'Japanese yen' reactivated");
     expect(api.bodiesOf('POST /api/currencies/JPY/status')).toEqual([{ active: true, version: 1 }]);
+  });
+});
+
+describe('CurrenciesPage: dated rates and the GSAP import (016 US1)', () => {
+  const EUR_DATED = {
+    ...EUR,
+    rateDate: '2026-10-19',
+    rateSource: 'gsapImport' as const,
+    rateImportFileName: 'gsap_rates_2026-10-19.csv',
+  };
+  const DATED = {
+    ...CURRENCIES,
+    items: CURRENCIES.items.map((c) => (c.code === 'EUR' ? EUR_DATED : c)),
+  };
+
+  it('shows the date and source of each current rate, Import GSAP rates and Recent imports', async () => {
+    renderCurrencies({
+      'GET /api/currencies': { body: DATED },
+      'GET /api/exchange-rates/imports': { body: RECENT_IMPORTS_PAGE },
+    });
+    await screen.findAllByRole('table');
+
+    const eur = row('EUR');
+    expect(eur).toHaveTextContent('19 Oct 2026');
+    expect(eur).toHaveTextContent('GSAP import');
+    expect(screen.getByRole('link', { name: 'Import GSAP rates' })).toHaveAttribute(
+      'href',
+      '/settings/currencies/import',
+    );
+    // Import GSAP rates is a secondary link; New currency stays the one primary button.
+    expect(screen.getByRole('button', { name: 'New currency' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('rowheader', { name: 'gsap_rates_2026-10-20.csv' }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the current rate's date and source and the rate history in the details (US1-1)", async () => {
+    renderCurrencies({ 'GET /api/currencies': { body: DATED } }, '/settings/currencies?id=EUR');
+
+    const panel = await screen.findByRole('dialog', { name: 'Euro (EUR)' });
+    expect(panel).toHaveTextContent('Rate of 19 Oct 2026 · GSAP import');
+    expect(within(panel).getByRole('heading', { name: 'Rate history' })).toBeInTheDocument();
+    expect(await within(panel).findByText('From 01 Jan 2027')).toBeInTheDocument();
+  });
+
+  it('has no rate history for USD, whose rate is always 1 (FR-001)', async () => {
+    renderCurrencies({}, '/settings/currencies?id=USD');
+
+    const panel = await screen.findByRole('dialog', { name: 'US dollar (USD)' });
+    expect(within(panel).queryByRole('heading', { name: 'Rate history' })).not.toBeInTheDocument();
   });
 });

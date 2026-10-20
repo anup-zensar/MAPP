@@ -54,7 +54,6 @@ export function ShellAttributePage() {
           { label: 'Shell attributes', to: '/settings/shell-attributes' },
           { label: notFound ? 'Not found' : 'Shell attribute' },
         ]}
-        eyebrow="Settings"
         title="Shell attribute"
       />
       <Card>
@@ -100,7 +99,6 @@ function AttributeView({ attribute }: { attribute: ShellAttribute }) {
           { label: `${LEVEL_WORDS[attribute.level]} form`, to: listPath },
           { label: attribute.label },
         ]}
-        eyebrow="Settings"
         title={attribute.label}
         actions={
           <>

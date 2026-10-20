@@ -52,12 +52,25 @@ function team(ref: typeof EUROPE) {
 }
 const TEAMS = { items: [team(EUROPE), team(CHINA)], total: 2 };
 
+/** Someone who may not manage access can't read a person's roles: the Roles line is left out. */
+const ROLES_FORBIDDEN = {
+  status: 403,
+  body: { code: 'forbidden', message: "You don't have access to this.", fields: [] },
+};
+const ROLES_OF_EVERYONE = Object.fromEntries(
+  ['U-1001', 'U-1002', 'U-1004', 'U-1006', 'U-1007'].map((id) => [
+    `GET /api/people/${id}/roles`,
+    ROLES_FORBIDDEN,
+  ]),
+);
+
 /** The page at /settings/people (or one person's address) with the answers every test needs. */
 function renderPeople(answers: Record<string, MockHandler> = {}, route = '/settings/people') {
   const api = mockApi({
     'GET /api/me': { body: testUser() },
     'GET /api/people': { body: PEOPLE },
     'GET /api/teams': { body: TEAMS },
+    ...ROLES_OF_EVERYONE,
     ...answers,
   });
   return {
@@ -88,16 +101,29 @@ function rowOf(name: string) {
   return screen.getByRole('row', { name: new RegExp(`^${name}`) });
 }
 
+/** The value next to a label of the details' fact list. */
+function factOf(panel: HTMLElement, label: string) {
+  const term = within(panel).getByText(label, { selector: 'dt' });
+  return term.nextElementSibling as HTMLElement;
+}
+
 const VALIDATION = (fields: { field: string; message: string }[]) => ({
   status: 400,
   body: { code: 'validation_failed', message: 'Check the highlighted fields.', fields },
 });
 
 describe('PeoplePage (feature 003, US1)', () => {
-  it('lists everyone with e-mail, job title, teams and status (FR-001)', async () => {
-    renderPeople();
+  it('lists the active people first, and everyone under All (FR-001)', async () => {
+    const { user } = renderPeople();
 
-    expect(await screen.findByText('5 people')).toBeInTheDocument();
+    expect(await screen.findByText('4 of 5 people')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Active 4' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByRole('row', { name: /^Jane Doe/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'All 5' }));
+    expect(screen.getByText('5 of 5 people')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'People' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Settings');
     const priya = rowOf('Priya Raman');
@@ -135,14 +161,14 @@ describe('PeoplePage (feature 003, US1)', () => {
     expect(rowOf('Alex Morgan')).toBeInTheDocument();
 
     await user.clear(search);
-    await user.click(screen.getByRole('button', { name: 'Inactive' }));
+    await user.click(screen.getByRole('button', { name: /^Inactive/ }));
     expect(screen.getByText('1 of 5 people')).toBeInTheDocument();
     expect(rowOf('Jane Doe')).toBeInTheDocument();
 
     await user.type(search, 'sara');
     expect(screen.getByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
-    expect(screen.getByText('5 people')).toBeInTheDocument();
+    expect(screen.getByText('5 of 5 people')).toBeInTheDocument();
   });
 
   it('shows how to add the first person when there is none', async () => {
@@ -163,7 +189,7 @@ describe('PeoplePage (feature 003, US1)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByText('5 people')).toBeInTheDocument();
+    expect(await screen.findByText('4 of 5 people')).toBeInTheDocument();
   });
 
   it('shows every problem at once, then creates the person with View (US1-1, US1-2)', async () => {
@@ -237,7 +263,25 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('shows a person with their teams, what they own and approve, and the record line (US1-3)', async () => {
     const { user, router } = renderPeople(
-      { 'GET /api/people/U-1001': { body: ALEX_DETAILS } },
+      {
+        'GET /api/people/U-1001': { body: ALEX_DETAILS },
+        'GET /api/people/U-1001/roles': {
+          body: {
+            person: { id: 'U-1001', name: 'Alex Morgan', active: true },
+            teams: [EUROPE],
+            roles: [
+              {
+                id: 'RA-1001',
+                role: { id: 'RL-1003', name: 'Planner', builtIn: 'planner' },
+                scope: { type: 'myTeams', teams: [EUROPE], text: 'My teams' },
+                scopeEmpty: false,
+              },
+            ],
+            permissions: [],
+            version: 1,
+          },
+        },
+      },
       '/settings/people/U-1001',
     );
 
@@ -248,17 +292,24 @@ describe('PeoplePage (feature 003, US1)', () => {
       'href',
       '/settings/teams/T-1001',
     );
-    expect(
-      within(panel).getByText(
-        'Owner of 2 plans and 5 activities · approver in 1 approval workflow',
-      ),
-    ).toBeInTheDocument();
+    // Two plain labels (functional review S-02): what they own, and where they approve.
+    expect(factOf(panel, 'Owns')).toHaveTextContent('2 plans and 5 activities');
+    expect(factOf(panel, 'Approves in')).toHaveTextContent('1 approval workflow');
+    expect(await within(panel).findByText('Planner · My teams')).toBeInTheDocument();
+    expect(within(panel).getByRole('link', { name: 'Change roles' })).toHaveAttribute(
+      'href',
+      '/settings/access?tab=people&person=U-1001',
+    );
     expect(
       within(panel).getByText(/^Created by Alex Morgan on .* · Last changed by Priya Raman on /),
     ).toBeInTheDocument();
-    expect(within(panel).getByRole('button', { name: 'Deactivate' })).toHaveAccessibleDescription(
-      'People are never deleted, so the history keeps their name.',
-    );
+    // The one panel footer: Edit, then ⋯ with Deactivate and its reason.
+    expect(within(panel).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Actions for Alex Morgan' }));
+    expect(
+      within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Deactivate' }),
+    ).toHaveAccessibleDescription('People are never deleted, so the history keeps their name.');
+    await user.keyboard('{Escape}');
 
     await user.click(within(panel).getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/settings/people'));
@@ -433,29 +484,69 @@ describe('PeoplePage (feature 003, US1)', () => {
     expect(api.requests.some((request) => request.method === 'POST')).toBe(false);
   });
 
-  it('keeps Deactivate visible but unusable for yourself in the details (FR-006)', async () => {
+  it('keeps Deactivate in the details for yourself, saying why it does nothing (FR-006)', async () => {
     const { api, user } = renderPeople(
       { 'GET /api/people/U-1002': { body: { ...PRIYA, usage: [] } } },
       '/settings/people/U-1002',
     );
 
     const panel = await screen.findByRole('dialog', { name: 'Priya Raman' });
-    const deactivate = await within(panel).findByRole('button', { name: 'Deactivate' });
-    expect(deactivate).toHaveAttribute('aria-disabled', 'true');
+    expect(await within(panel).findByText('Nothing yet')).toBeInTheDocument();
+    expect(factOf(panel, 'Approves in')).toHaveTextContent('No approval workflows');
+    await user.click(within(panel).getByRole('button', { name: 'Actions for Priya Raman' }));
+    const deactivate = within(screen.getByRole('menu')).getByRole('menuitem', {
+      name: 'Deactivate',
+    });
     expect(deactivate).toHaveAccessibleDescription(
       "You can't deactivate yourself — ask someone else to do it.",
     );
-    expect(within(panel).getByText("Doesn't own or approve anything yet.")).toBeInTheDocument();
     await user.click(deactivate);
 
+    expect(
+      await screen.findByText("You can't deactivate yourself — ask someone else to do it."),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(api.requests.some((request) => request.method === 'POST')).toBe(false);
   });
 
-  it('reactivates an inactive person (US1-7)', async () => {
+  it('deactivates someone who owns nothing at once, with Undo (design system §6.7)', async () => {
+    const saraDetails = { ...SARA, usage: [] };
+    let posts = 0;
     const { api, user } = renderPeople({
-      'POST /api/people/U-1006/status': { body: { ...JANE, active: true, version: 2, usage: [] } },
+      'GET /api/people/U-1004': { body: saraDetails },
+      'POST /api/people/U-1004/status': () => {
+        posts += 1;
+        return posts === 1
+          ? { body: { ...saraDetails, active: false, version: 2 } }
+          : { body: { ...saraDetails, active: true, version: 3 } };
+      },
     });
+
+    await chooseAction(user, 'Sara Novak', 'Deactivate');
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    const messages = await findMessages();
+    expect(
+      await within(messages).findByText("Person 'Sara Novak' deactivated"),
+    ).toBeInTheDocument();
+    await user.click(within(messages).getByRole('button', { name: 'Undo' }));
+
+    expect(await screen.findByText("Person 'Sara Novak' reactivated")).toBeInTheDocument();
+    expect(api.bodiesOf('POST /api/people/U-1004/status')).toEqual([
+      { active: false, version: 1 },
+      { active: true, version: 2 },
+    ]);
+  });
+
+  it('reactivates an inactive person (US1-7)', async () => {
+    const { api, user } = renderPeople(
+      {
+        'POST /api/people/U-1006/status': {
+          body: { ...JANE, active: true, version: 2, usage: [] },
+        },
+      },
+      '/settings/people?status=inactive',
+    );
 
     await chooseAction(user, 'Jane Doe', 'Reactivate');
 
@@ -464,12 +555,15 @@ describe('PeoplePage (feature 003, US1)', () => {
   });
 
   it('says why a status change was refused', async () => {
-    const { user } = renderPeople({
-      'POST /api/people/U-1006/status': {
-        status: 404,
-        body: { code: 'not_found', message: "This person doesn't exist.", fields: [] },
+    const { user } = renderPeople(
+      {
+        'POST /api/people/U-1006/status': {
+          status: 404,
+          body: { code: 'not_found', message: "This person doesn't exist.", fields: [] },
+        },
       },
-    });
+      '/settings/people?status=inactive',
+    );
 
     await chooseAction(user, 'Jane Doe', 'Reactivate');
 

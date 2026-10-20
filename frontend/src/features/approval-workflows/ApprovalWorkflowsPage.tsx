@@ -1,4 +1,4 @@
-import { CircleAlert, Plus, SearchX, Workflow } from 'lucide-react';
+import { CircleAlert, Plus, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { conflictMessage } from '@/api/errors';
@@ -10,19 +10,23 @@ import {
   EmptyState,
   ErrorState,
   PageHeader,
-  SearchField,
-  SegmentedFilter,
   Skeleton,
   StatusChip,
   Tooltip,
   useToast,
 } from '@/components';
 import { asApiError, isSessionLost } from '@/features/approvals/messages';
+import { ListToolbar } from '@/features/settings/shared/ListToolbar';
+import list from '@/features/settings/shared/SettingsTable.module.css';
+import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
+import type { ListFilters } from '@/features/settings/shared/useListFilters';
+import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { workflowMoreItems } from './workflowActions';
+import type { WorkflowActions } from './workflowActions';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
-import type { WorkflowActions } from './WorkflowDetailsPanel';
 import { WorkflowFormPanel } from './WorkflowFormPanel';
 import { cantDeleteText, setInactiveEffects, usedByText } from './workflowTexts';
 import {
@@ -34,7 +38,7 @@ import {
 import type { ApprovalWorkflow } from './workflowsApi';
 import styles from './ApprovalWorkflowsPage.module.css';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+const WORKFLOW_NOUN = { one: 'approval workflow', many: 'approval workflows' };
 
 const LIST_PATH = '/settings/approval-workflows';
 
@@ -43,15 +47,15 @@ type OpenForm = { kind: 'new' } | { kind: 'edit'; workflow: ApprovalWorkflow };
 
 /** The question that waits for its answer. */
 type PendingDialog =
-  | { kind: 'setInactive'; workflow: ApprovalWorkflow }
   | { kind: 'cantDelete'; workflow: ApprovalWorkflow }
   | { kind: 'delete'; workflow: ApprovalWorkflow };
 
 /**
- * Settings › Approval workflows (US4, FR-001 – FR-008): search, All / Active / Inactive, the list
- * with each workflow's levels, use and status, and its "⋯" actions; details at
- * /settings/approval-workflows/:workflowId; create and edit in a side panel; a workflow in use is
- * set inactive instead of deleted.
+ * Settings › Approval workflows (US4, FR-001 – FR-008): the Settings list toolbar (search, Active ·
+ * Inactive · All, "2 of 2 approval workflows"), the list with each workflow's levels, use and
+ * status, and its "⋯" actions; details at /settings/approval-workflows/:workflowId; create and edit
+ * in a side panel; a workflow in use is set inactive instead of deleted, with the one set-inactive
+ * behaviour of Settings (design system §6.7).
  */
 export function ApprovalWorkflowsPage() {
   usePageTitle('Approval workflows');
@@ -61,8 +65,7 @@ export function ApprovalWorkflowsPage() {
   const { dateFormat } = useFormatters();
   const workflows = useWorkflows();
   const setActive = useSetWorkflowActive();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
+  const filters = useListFilters();
   const [form, setForm] = useState<OpenForm | null>(null);
   const [dialog, setDialog] = useState<PendingDialog | null>(null);
 
@@ -79,23 +82,18 @@ export function ApprovalWorkflowsPage() {
     });
   }
 
-  async function changeActive(workflow: ApprovalWorkflow, active: boolean) {
-    if (setActive.isPending) {
-      return;
-    }
-    try {
-      await setActive.mutateAsync({ id: workflow.id, active, version: workflow.version });
-      show({
-        message: active
-          ? `Approval workflow '${workflow.name}' is active again`
-          : `Approval workflow '${workflow.name}' set inactive`,
-      });
-    } catch (error) {
-      showFailure(error);
-    } finally {
-      setDialog(null);
-    }
-  }
+  // In use (activities use it or wait with it), the question lists the effects first (FR-007).
+  const status = useStatusFlow<ApprovalWorkflow>({
+    words: { title: 'Approval workflow', noun: 'approval workflow' },
+    usage: (workflow) =>
+      workflow.usedByCount > 0 || workflow.waitingCount > 0
+        ? setInactiveEffects(workflow.usedByCount, workflow.waitingCount)
+        : [],
+    effect: () => [],
+    request: (workflow, active, version) =>
+      setActive.mutateAsync({ id: workflow.id, active, version }),
+    onFailure: showFailure,
+  });
 
   const actions: WorkflowActions = {
     edit: (workflow) => {
@@ -104,8 +102,8 @@ export function ApprovalWorkflowsPage() {
       }
       setForm({ kind: 'edit', workflow });
     },
-    setInactive: (workflow) => setDialog({ kind: 'setInactive', workflow }),
-    setActive: (workflow) => void changeActive(workflow, true),
+    setInactive: (workflow) => status.setInactive(workflow),
+    setActive: (workflow) => status.reactivate(workflow),
     remove: (workflow) =>
       setDialog({ kind: workflow.usedByCount > 0 ? 'cantDelete' : 'delete', workflow }),
   };
@@ -114,7 +112,6 @@ export function ApprovalWorkflowsPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Approval workflows' }]}
-        eyebrow="Settings"
         title="Approval workflows"
         description="Who approves activities, level by level."
         actions={
@@ -127,10 +124,7 @@ export function ApprovalWorkflowsPage() {
         {workflows.data ? (
           <WorkflowList
             all={workflows.data.items}
-            search={search}
-            status={status}
-            onSearch={setSearch}
-            onStatus={setStatus}
+            filters={filters}
             onNew={() => setForm({ kind: 'new' })}
             actions={actions}
           />
@@ -153,31 +147,17 @@ export function ApprovalWorkflowsPage() {
         <WorkflowFormPanel workflow={form.workflow} onClose={() => setForm(null)} />
       )}
 
-      {dialog?.kind === 'setInactive' && (
-        <ConfirmDialog
-          open
-          onOpenChange={(open) => !open && setDialog(null)}
-          title={`Set '${dialog.workflow.name}' inactive?`}
-          confirmLabel="Set inactive"
-          busy={setActive.isPending}
-          onConfirm={() => void changeActive(dialog.workflow, false)}
-        >
-          {setInactiveEffects(dialog.workflow.usedByCount, dialog.workflow.waitingCount).map(
-            (effect) => (
-              <p key={effect}>{effect}</p>
-            ),
-          )}
-        </ConfirmDialog>
-      )}
       {dialog?.kind === 'cantDelete' && (
         <ConfirmDialog
           open
           onOpenChange={(open) => !open && setDialog(null)}
           title={`Can't delete '${dialog.workflow.name}'`}
           confirmLabel={dialog.workflow.active ? 'Set inactive' : 'Close'}
-          busy={setActive.isPending}
+          busy={status.busy}
           onConfirm={() =>
-            dialog.workflow.active ? void changeActive(dialog.workflow, false) : setDialog(null)
+            dialog.workflow.active
+              ? void status.applyInactive(dialog.workflow).then(() => setDialog(null))
+              : setDialog(null)
           }
         >
           {cantDeleteText(dialog.workflow.usedByCount)}
@@ -195,30 +175,20 @@ export function ApprovalWorkflowsPage() {
           onClose={() => setDialog(null)}
         />
       )}
+      {status.dialog}
     </>
   );
 }
 
 interface WorkflowListProps {
   all: ApprovalWorkflow[];
-  search: string;
-  status: StatusFilter;
-  onSearch: (search: string) => void;
-  onStatus: (status: StatusFilter) => void;
+  filters: ListFilters;
   onNew: () => void;
   actions: WorkflowActions;
 }
 
 /** The toolbar and the table, or what to do when there is nothing to show. */
-function WorkflowList({
-  all,
-  search,
-  status,
-  onSearch,
-  onStatus,
-  onNew,
-  actions,
-}: WorkflowListProps) {
+function WorkflowList({ all, filters, onNew, actions }: WorkflowListProps) {
   if (all.length === 0) {
     return (
       <EmptyState
@@ -232,54 +202,28 @@ function WorkflowList({
       />
     );
   }
-  const text = search.trim().toLowerCase();
-  const shown = all.filter(
-    (workflow) =>
-      workflow.name.toLowerCase().includes(text) &&
-      (status === 'all' || workflow.active === (status === 'active')),
-  );
+  const { shown, counts } = filterRecords(all, filters, (workflow) => workflow.name);
 
   return (
     <>
-      <div className={styles.toolbar}>
-        <div className={styles.search}>
-          <SearchField
-            label="Search name"
-            placeholder="Search name"
-            value={search}
-            onChange={onSearch}
-          />
-        </div>
-        <SegmentedFilter
-          label="Status"
-          value={status}
-          onChange={onStatus}
-          options={[
-            { value: 'all', label: 'All' },
-            { value: 'active', label: 'Active' },
-            { value: 'inactive', label: 'Inactive' },
-          ]}
-        />
-        <p className={styles.count} aria-live="polite">{`${shown.length} of ${all.length}`}</p>
-      </div>
+      <ListToolbar
+        search={{
+          label: 'Search approval workflows',
+          placeholder: 'Search name',
+          value: filters.q,
+          onChange: filters.setQ,
+        }}
+        status={{ value: filters.status, onChange: filters.setStatus, counts }}
+        count={{ shown: shown.length, total: all.length, noun: WORKFLOW_NOUN }}
+      />
       {shown.length === 0 ? (
-        <EmptyState
-          icon={<SearchX />}
-          title="Nothing matches these filters"
-          action={
-            <Button
-              onClick={() => {
-                onSearch('');
-                onStatus('all');
-              }}
-            >
-              Clear filters
-            </Button>
-          }
-        />
+        <div className={list.noMatch}>
+          <p>Nothing matches these filters</p>
+          <Button onClick={filters.clear}>Clear filters</Button>
+        </div>
       ) : (
-        <div className={styles.scroll}>
-          <table className={styles.table}>
+        <div className={list.tableScroll}>
+          <table className={list.table}>
             <thead>
               <tr>
                 <th scope="col">Name</th>
@@ -315,7 +259,7 @@ function WorkflowRow({
 
   return (
     <tr>
-      <th scope="row">
+      <th scope="row" className={list.nameCell}>
         <span className={styles.name}>
           <Link to={details}>{workflow.name}</Link>
           {workflow.warnings.length > 0 && (
@@ -333,28 +277,20 @@ function WorkflowRow({
       </th>
       <td>{workflow.levelsText}</td>
       <td>{usedByText(workflow.usedByCount, workflow.waitingCount)}</td>
-      <td>
+      <td className={list.nowrap}>
         {workflow.active ? (
           <StatusChip tone="positive">Active</StatusChip>
         ) : (
           <StatusChip tone="neutral">Inactive</StatusChip>
         )}
       </td>
-      <td className={styles.actionsCell}>
+      <td className={list.actionsCell}>
         <ActionsMenu
           label={workflow.name}
           items={[
             { label: 'View', onSelect: () => void navigate(details) },
             { label: 'Edit', onSelect: () => actions.edit(workflow) },
-            workflow.active
-              ? { label: 'Set inactive', onSelect: () => actions.setInactive(workflow) }
-              : { label: 'Set active', onSelect: () => actions.setActive(workflow) },
-            {
-              label: 'Delete',
-              tone: 'danger',
-              separatorBefore: true,
-              onSelect: () => actions.remove(workflow),
-            },
+            ...workflowMoreItems(workflow, actions),
           ]}
         />
       </td>

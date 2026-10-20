@@ -8,14 +8,13 @@ import {
   EmptyState,
   ErrorState,
   PageHeader,
-  SearchField,
-  SegmentedFilter,
   Skeleton,
   StatusChip,
 } from '@/components';
 import { formatPercent } from '@/lib/decimal';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { ListToolbar } from '../shared/ListToolbar';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import styles from '../shared/SettingsTable.module.css';
 import { filterRecords, useListFilters } from '../shared/useListFilters';
@@ -28,6 +27,8 @@ import { ModelForm } from './ModelForm';
 import type { ModelFormMode } from './ModelForm';
 import { MODEL_LISTS, setModelStatus, useDeleteModel } from './modelsApi';
 import type { Model } from './modelsApi';
+
+const MODEL_NOUN = { one: 'model', many: 'models' };
 
 /**
  * Models (feature 002, US1, FR-002, FR-009 – FR-012): the rulebooks plans use, as the standard CRUD
@@ -42,7 +43,7 @@ export function ModelsPage() {
   const deleteModel = useDeleteModel();
   const [form, setForm] = useState<ModelFormMode | null>(null);
   const [deleting, setDeleting] = useState<Model | null>(null);
-  const changeStatus = useSettingStatus({
+  const status = useSettingStatus({
     kind: 'model',
     request: setModelStatus,
     invalidate: MODEL_LISTS,
@@ -52,7 +53,7 @@ export function ModelsPage() {
     view: (model) => filters.setOpenId(model.id),
     edit: (model) => setForm({ kind: 'edit', model }),
     duplicate: (model) => setForm({ kind: 'duplicate', model }),
-    setActive: (model, active) => void changeStatus(model, active),
+    setActive: (model, active) => (active ? status.reactivate(model) : status.setInactive(model)),
     remove: (model) => setDeleting(model),
   };
   const newModel = () => setForm({ kind: 'new' });
@@ -66,7 +67,6 @@ export function ModelsPage() {
     <>
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Models' }]}
-        eyebrow="Settings"
         title="Models"
         description="The rulebooks plans use. Changes apply to every plan using the model."
         actions={
@@ -88,7 +88,7 @@ export function ModelsPage() {
           usage={deleting.usage}
           active={deleting.active}
           remove={() => deleteModel.mutateAsync(deleting.id)}
-          setInactive={() => changeStatus(deleting, false)}
+          setInactive={() => status.applyInactive(deleting)}
           invalidate={MODEL_LISTS}
           onDeleted={() => {
             if (filters.openId === deleting.id) {
@@ -98,6 +98,7 @@ export function ModelsPage() {
           onClose={() => setDeleting(null)}
         />
       )}
+      {status.dialog}
     </>
   );
 }
@@ -144,27 +145,16 @@ function ModelsCard({ models, filters, actions, onNew }: ModelsCardProps) {
 
   return (
     <Card>
-      <div className={styles.toolbar}>
-        <SearchField
-          label="Search models"
-          placeholder="Search name"
-          value={filters.q}
-          onChange={filters.setQ}
-        />
-        <SegmentedFilter
-          label="Status"
-          options={[
-            { value: 'active', label: 'Active', count: counts.active },
-            { value: 'inactive', label: 'Inactive', count: counts.inactive },
-            { value: 'all', label: 'All', count: counts.all },
-          ]}
-          value={filters.status}
-          onChange={filters.setStatus}
-        />
-        <p className={styles.resultCount} aria-live="polite">
-          {`${shown.length} of ${all.length}`}
-        </p>
-      </div>
+      <ListToolbar
+        search={{
+          label: 'Search models',
+          placeholder: 'Search name',
+          value: filters.q,
+          onChange: filters.setQ,
+        }}
+        status={{ value: filters.status, onChange: filters.setStatus, counts }}
+        count={{ shown: shown.length, total: all.length, noun: MODEL_NOUN }}
+      />
       {shown.length === 0 ? (
         <div className={styles.noMatch}>
           <p>Nothing matches these filters</p>
@@ -176,9 +166,15 @@ function ModelsCard({ models, filters, actions, onNew }: ModelsCardProps) {
             <thead>
               <tr>
                 <th scope="col">Name</th>
-                <th scope="col">Rates</th>
-                <th scope="col">Average deal size</th>
-                <th scope="col">Allowed activity types</th>
+                <th scope="col" className={styles.number}>
+                  Rates
+                </th>
+                <th scope="col" className={styles.number}>
+                  Average deal size
+                </th>
+                <th scope="col" className={styles.number}>
+                  Allowed activity types
+                </th>
                 <th scope="col">Used by</th>
                 <th scope="col">Status</th>
                 <th scope="col">
@@ -202,18 +198,18 @@ function ModelRow({ model, actions }: { model: Model; actions: ModelActions }) {
   const { money } = useFormatters();
   return (
     <tr>
-      <th scope="row">
+      <th scope="row" className={styles.nameCell}>
         <button type="button" className={styles.nameButton} onClick={() => actions.view(model)}>
           {model.name}
         </button>
       </th>
-      <td className={styles.numeric}>
+      <td className={styles.number}>
         {`${formatPercent(model.inqToMqlRate)} → ${formatPercent(model.mqlToDealRate)}`}
       </td>
-      <td className={styles.numeric}>{money(model.averageDealSize)}</td>
-      <td className={styles.numeric}>{model.activityTypes.length}</td>
+      <td className={styles.number}>{money(model.averageDealSize)}</td>
+      <td className={styles.number}>{model.activityTypes.length}</td>
       <td>{model.usage.summary}</td>
-      <td>
+      <td className={styles.nowrap}>
         <StatusChip tone={model.active ? 'positive' : 'neutral'}>
           {model.active ? 'Active' : 'Inactive'}
         </StatusChip>

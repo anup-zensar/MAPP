@@ -1,6 +1,5 @@
 import { Pencil } from 'lucide-react';
 import { ActionsMenu, Button, LockedNote, SidePanel, StatusChip } from '@/components';
-import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { MetaLine } from '../shared/MetaLine';
 import { SETTING_NOUNS } from '../shared/settingsNouns';
@@ -9,6 +8,11 @@ import { UsageLine } from '../shared/UsageLine';
 import type { Currency } from './currenciesApi';
 import { inverseLine, lockOf, moreActions, rateLine } from './currencyActions';
 import type { CurrencyActions } from './currencyActions';
+import { RateHistorySection } from './RateHistorySection';
+import { rateSourceLine } from './rateWords';
+
+/** NorthStar's base currency: always 1, without a rate history. */
+const BASE_CURRENCY = 'USD';
 
 export interface CurrencyDetailsProps {
   /** The currency; null when it no longer exists. */
@@ -18,9 +22,9 @@ export interface CurrencyDetailsProps {
 }
 
 /**
- * A currency's details in a side panel (US4 scenarios 2 and 4): its rate both ways, who last
- * changed the rate and when, where it is used and its locks; **Edit** and ⋯ (Set inactive or
- * Reactivate, Delete).
+ * A currency's details in a side panel (US4 scenarios 2 and 4): its current rate both ways with
+ * its date and source ("Rate of 19 Oct 2026 · GSAP import", 016 FR-003), where it is used, its
+ * locks and its rate history; **Edit** and ⋯ (Set inactive or Reactivate, Delete).
  */
 export function CurrencyDetails({ currency, actions, onClose }: CurrencyDetailsProps) {
   const { date } = useFormatters();
@@ -84,11 +88,9 @@ export function CurrencyDetails({ currency, actions, onClose }: CurrencyDetailsP
               <span className={styles.secondLine}>
                 {inverseLine(currency.code, currency.inverseRate)}
               </span>
-              <span className={styles.secondLine}>
-                {`Rate last changed by ${currency.rateChangedBy.name} on ${date(localDate(currency.rateChangedAt))}`}
-              </span>
+              <span className={styles.secondLine}>{rateSourceLine(currency, date)}</span>
+              {rateLock && <LockedNote>{rateLock}</LockedNote>}
             </dd>
-            {rateLock && <LockedNote>{rateLock}</LockedNote>}
           </div>
           <div>
             <dt>Used by</dt>
@@ -98,6 +100,8 @@ export function CurrencyDetails({ currency, actions, onClose }: CurrencyDetailsP
           </div>
         </dl>
         <MetaLine record={currency} />
+        {/* USD is always 1 and has no rate history (016 FR-001). */}
+        {currency.code !== BASE_CURRENCY && <RateHistorySection code={currency.code} />}
       </div>
     </SidePanel>
   );

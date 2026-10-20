@@ -71,7 +71,7 @@ describe('ProfilePage (feature 003, US4)', () => {
   it('shows the details with the e-mail lock, the preferences and My teams (US4-1, FR-021)', async () => {
     renderProfile();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Your profile' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'My profile' })).toBeInTheDocument();
     expect(document.title).toBe('My profile · NorthStar');
 
     const details = card('Your details');

@@ -1,12 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useId, useState } from 'react';
+import { Pencil } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { useCurrentUser } from '@/app/useSession';
 import {
+  ActionsMenu,
   Avatar,
   Button,
-  ConfirmDialog,
   ErrorState,
   FormPanel,
   problemOf,
@@ -33,41 +34,31 @@ import type { ImpactWarning, Person, PersonDetails, PersonUpdate } from './peopl
 import { RecordLine } from './RecordLine';
 import { removedIds } from './removedIds';
 import { TeamField } from './TeamField';
-import { DEACTIVATE_TIP, deactivateSentences, SELF_DEACTIVATION, usageText } from './texts';
-import styles from './panels.module.css';
+import { PersonRolesFact } from '@/features/access/PersonRolesFact';
+import styles from '@/features/settings/shared/SettingsTable.module.css';
+import { personStatusItem } from './personActions';
+import type { PersonActions } from './personActions';
+import { approvesInText, ownsText } from './texts';
+import panel from './panels.module.css';
 
 /** Above this many teams, the details offer "Search teams". */
 const SEARCH_ABOVE = 10;
 
-/** What the details panel lets people do with the person. */
-export interface PersonActions {
-  edit: (person: Person | PersonDetails) => void;
-  deactivate: (person: Person | PersonDetails) => void;
-  reactivate: (person: Person | PersonDetails) => void;
-}
-
 export interface PersonDetailsPanelProps {
   personId: string;
   actions: PersonActions;
-  /** A status change is on its way: its button shows it. */
-  statusBusy: boolean;
   onClose: () => void;
 }
 
 /**
  * A person's details (US1-3): avatar, status, e-mail, job title, teams as links, what they own and
- * approve, and who created and last changed the record; Edit and Deactivate or Reactivate. For
- * yourself, Deactivate stays visible with the reason it can't be used (FR-006).
+ * where they approve, and who created and last changed the record. The one panel footer of
+ * Settings: **Edit** (primary) and ⋯ with Deactivate or Reactivate — for yourself, Deactivate stays
+ * in the menu with the reason it can't be used (FR-006).
  */
-export function PersonDetailsPanel({
-  personId,
-  actions,
-  statusBusy,
-  onClose,
-}: PersonDetailsPanelProps) {
+export function PersonDetailsPanel({ personId, actions, onClose }: PersonDetailsPanelProps) {
   const person = usePerson(personId);
   const user = useCurrentUser();
-  const reasonId = useId();
 
   if (person.data) {
     const data = person.data;
@@ -78,31 +69,12 @@ export function PersonDetailsPanel({
         onOpenChange={(open) => !open && onClose()}
         title={data.name}
         footer={
-          <div className={styles.footerActions}>
-            <Button variant="primary" onClick={() => actions.edit(data)}>
+          <>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(data)}>
               Edit
             </Button>
-            {data.active ? (
-              <Button
-                aria-disabled={isYou || undefined}
-                aria-describedby={reasonId}
-                aria-busy={statusBusy || undefined}
-                onClick={() => !isYou && actions.deactivate(data)}
-              >
-                Deactivate
-              </Button>
-            ) : (
-              <Button aria-busy={statusBusy || undefined} onClick={() => actions.reactivate(data)}>
-                Reactivate
-              </Button>
-            )}
-            {data.active && (
-              // Always visible: why you can't deactivate yourself, or why there is no Delete.
-              <p id={reasonId} className={styles.reasonLine}>
-                {isYou ? SELF_DEACTIVATION : DEACTIVATE_TIP}
-              </p>
-            )}
-          </div>
+            <ActionsMenu label={data.name} items={[personStatusItem(data, isYou, actions)]} />
+          </>
         }
       >
         <PersonDetailsBody person={data} />
@@ -116,14 +88,10 @@ export function PersonDetailsPanel({
       open
       onOpenChange={(open) => !open && onClose()}
       title="Person"
-      footer={
-        <Button variant="primary" onClick={onClose}>
-          Close
-        </Button>
-      }
+      footer={<Button onClick={onClose}>Back to People</Button>}
     >
       {person.isPending && <Skeleton lines={6} height="18px" />}
-      {notFound && <p className={styles.notFound}>{person.error?.message}</p>}
+      {notFound && <p className={styles.gone}>{person.error?.message}</p>}
       {person.isError && !notFound && (
         <ErrorState error={person.error} onRetry={() => void person.refetch()} />
       )}
@@ -138,7 +106,7 @@ function PersonDetailsBody({ person }: { person: PersonDetails }) {
 
   return (
     <div className={styles.details}>
-      <div className={styles.top}>
+      <div className={styles.statusRow}>
         <Avatar initials={person.initials} size="lg" />
         <StatusChip tone={person.active ? 'positive' : 'neutral'}>
           {person.active ? 'Active' : 'Inactive'}
@@ -155,7 +123,7 @@ function PersonDetailsBody({ person }: { person: PersonDetails }) {
         </div>
         <div>
           <dt>Teams</dt>
-          <dd className={styles.section}>
+          <dd className={panel.section}>
             {person.teams.length === 0 ? (
               <span className={styles.muted}>
                 Not in any team yet. A person needs a team to own a plan.
@@ -176,9 +144,14 @@ function PersonDetailsBody({ person }: { person: PersonDetails }) {
           </dd>
         </div>
         <div>
-          <dt>Owns and approves</dt>
-          <dd>{usageText(person.usage)}</dd>
+          <dt>Owns</dt>
+          <dd>{ownsText(person.usage)}</dd>
         </div>
+        <div>
+          <dt>Approves in</dt>
+          <dd>{approvesInText(person.usage)}</dd>
+        </div>
+        <PersonRolesFact personId={person.id} />
       </dl>
       <RecordLine record={person} />
     </div>
@@ -362,55 +335,5 @@ export function PersonFormPanel({ person, onClose }: PersonFormPanelProps) {
         onSave={saveAfterWarnings}
       />
     </>
-  );
-}
-
-export interface DeactivateDialogProps {
-  person: Person | PersonDetails;
-  /** Deactivates the person from the version shown; resolves when done. */
-  deactivate: (person: PersonDetails) => Promise<void>;
-  onClose: () => void;
-}
-
-/**
- * "Deactivate <name>?" (US1-5, FR-005): loads what the person owns and approves first — a grey
- * line stands in for it meanwhile, and Deactivate person waits for it — then says who keeps their
- * name. Cancel has the focus.
- */
-export function DeactivateDialog({ person, deactivate, onClose }: DeactivateDialogProps) {
-  const details = usePerson(person.id);
-  const [busy, setBusy] = useState(false);
-  const [first, ...rest] = deactivateSentences({
-    name: person.name,
-    usage: details.data?.usage ?? [],
-  });
-
-  async function confirm() {
-    // Ignored until the person's usage has arrived, and while the change is on its way.
-    if (!details.data || busy) {
-      return;
-    }
-    setBusy(true);
-    await deactivate(details.data);
-    onClose();
-  }
-
-  return (
-    <ConfirmDialog
-      open
-      onOpenChange={(open) => !open && onClose()}
-      title={`Deactivate ${person.name}?`}
-      confirmLabel="Deactivate person"
-      tone="danger"
-      busy={busy}
-      onConfirm={() => void confirm()}
-    >
-      <p>{first}</p>
-      {details.isPending && <Skeleton height="14px" />}
-      {details.isError && (
-        <ErrorState error={details.error} onRetry={() => void details.refetch()} />
-      )}
-      {details.data && rest.map((sentence) => <p key={sentence}>{sentence}</p>)}
-    </ConfirmDialog>
   );
 }

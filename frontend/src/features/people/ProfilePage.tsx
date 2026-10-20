@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/app/useSession';
 import type { CurrentUser } from '@/app/useSession';
 import { Avatar, Button, Card, LockedNote, PageHeader, TeamPills } from '@/components';
 import type { TeamRef } from '@/components';
+import { YourAccessCard } from '@/features/access/YourAccessCard';
 import { DATE_FORMATS } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
@@ -18,8 +19,9 @@ type OpenPanel = 'details' | 'preferences' | null;
 
 /**
  * My profile (feature 003, US4, FR-021 – FR-025), from the account menu: the signed-in person's
- * details, their display preferences and their teams, each card with its own Edit side panel
- * (D-068). Everything comes from the session, so the page shows at once.
+ * details, their display preferences, their teams and their access (014 FR-024), each card that
+ * can change with its own Edit side panel (D-068). Everything comes from the session, so the page
+ * shows at once.
  */
 export function ProfilePage() {
   usePageTitle('My profile');
@@ -29,15 +31,15 @@ export function ProfilePage() {
   return (
     <>
       <PageHeader
-        eyebrow="My profile"
-        title="Your profile"
-        description="Your details and teams, and how NorthStar shows dates and money to you."
+        title="My profile"
+        description="Your details, teams and access, and how NorthStar shows dates and money to you."
       />
       <div className={styles.cards}>
         <DetailsCard user={user} onEdit={() => setOpen('details')} />
         <PreferencesCard onEdit={() => setOpen('preferences')} />
         {/* Older answers have no teams (D-191). */}
         <TeamsCard teams={user.teams ?? []} />
+        <YourAccessCard />
       </div>
 
       {open === 'details' && <EditDetailsPanel onClose={() => setOpen(null)} />}
@@ -137,7 +139,7 @@ function TeamsCard({ teams }: { teams: TeamRef[] }) {
       ) : (
         <div className={styles.teams}>
           <TeamPills teams={teams} linked />
-          <Link to="/settings/teams" className={styles.link}>
+          <Link to="/settings/teams" className={styles.ownLink}>
             Manage teams in Settings › Teams
           </Link>
         </div>

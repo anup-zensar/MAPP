@@ -96,9 +96,3 @@
   color: var(--ink-2);
   font-size: var(--text-xs);
 }
-
-/* Delete in red: it removes something (design system §6.1). */
-button.delete {
-  margin-left: auto;
-  color: var(--status-problem-text);
-}

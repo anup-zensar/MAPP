@@ -32,11 +32,11 @@ function renderPage(route: string, answers: Record<string, MockHandler> = {}) {
 /** The names of the table's rows, section header rows included, top to bottom. */
 function rowNames(): string[] {
   const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-  return rows.map(
-    (row) =>
-      (within(row).queryByRole('rowheader') ?? within(row).getByRole('columnheader')).textContent ??
-      '',
-  );
+  return rows.map((row) => {
+    const header = within(row).queryByRole('rowheader') ?? within(row).getByRole('columnheader');
+    // An attribute's name is its link; a "No help yet" chip may follow it (016 FR-048).
+    return (within(header).queryByRole('link') ?? header).textContent ?? '';
+  });
 }
 
 describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
@@ -100,13 +100,13 @@ describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
     const notes = screen.getByRole('row', { name: /Old notes/ });
     expect(within(notes).getByText('—')).toBeInTheDocument();
     expect(within(notes).getByText('Inactive')).toBeInTheDocument();
-    expect(screen.getByText('4 of 4')).toBeInTheDocument();
+    expect(screen.getByText('4 of 4 Shell attributes')).toBeInTheDocument();
   });
 
   it('searches label or section and filters by status, keeping both in the address', async () => {
     const { user, router } = renderPage('/settings/shell-attributes?level=activity');
 
-    expect(await screen.findByText('3 of 4')).toBeInTheDocument();
+    expect(await screen.findByText('3 of 4 Shell attributes')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Old notes' })).not.toBeInTheDocument();
 
     await user.type(screen.getByRole('searchbox', { name: 'Search label or section' }), 'lubri');
@@ -123,7 +123,7 @@ describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
     expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
 
-    expect(screen.getByText('4 of 4')).toBeInTheDocument();
+    expect(screen.getByText('4 of 4 Shell attributes')).toBeInTheDocument();
   });
 
   it('invites to create the first attribute of an empty level', async () => {
@@ -391,5 +391,51 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
 
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(api.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  });
+});
+
+describe('ShellAttributesPage: attributes without help (016 FR-048)', () => {
+  const WITH_HELP = [
+    { ...BUSINESS_UNIT, helpText: 'The Shell business the plan belongs to.' },
+    { ...MEDIA_CHANNEL, helpText: 'Where the activity reaches its audience.' },
+    PIR,
+    { ...BRANDS, helpText: 'The brands the activity promotes.' },
+    OLD_NOTES,
+  ];
+
+  it('marks each attribute without help with "No help yet"', async () => {
+    renderPage('/settings/shell-attributes?level=activity', { [LIST]: { body: page(WITH_HELP) } });
+    await screen.findByRole('table');
+
+    const pir = screen.getByRole('rowheader', { name: /^PIR/ });
+    expect(within(pir).getByText('No help yet')).toBeInTheDocument();
+    const media = screen.getByRole('rowheader', { name: /^Media channel/ });
+    expect(within(media).queryByText('No help yet')).not.toBeInTheDocument();
+  });
+
+  it('lists only them from the Field help link, on the first level that has any', async () => {
+    const { user, router } = renderPage('/settings/shell-attributes?help=missing', {
+      [LIST]: { body: page(WITH_HELP) },
+    });
+    await screen.findByRole('table');
+
+    // The plan level has none: the activity level opens, with PIR only (Old notes is inactive).
+    expect(rowNames()).toEqual(['Shell attributes', 'PIR']);
+    expect(screen.getByRole('button', { name: /^No help yet/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await user.click(screen.getByRole('button', { name: /^Any help/ }));
+
+    // The list stays on the level it showed, now with every active attribute.
+    expect(router.state.location.search).toBe('?level=activity');
+    expect(rowNames()).toEqual([
+      'Shell attributes',
+      'Media channel',
+      'PIR',
+      'Lubricants attributes',
+      'Brands',
+    ]);
   });
 });

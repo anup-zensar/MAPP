@@ -1,8 +1,12 @@
-/* The section cards: as many columns as fit, one on a phone (design system §2). */
+/*
+ * The Settings hub (design system §2.4 D): link cards, 4 per row from 1280 px, 2 from 600 px, 1 on
+ * a phone. The cards of the last row grow to fill it, so a row never ends in a hole (UI audit
+ * ST-01), and every card in a row has the same height.
+ */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-  gap: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--grid-gap);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -11,6 +15,7 @@
 .card {
   position: relative;
   display: flex;
+  flex: 1 1 100%;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
@@ -18,9 +23,21 @@
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
 }
 
+@media (min-width: 600px) {
+  .card {
+    flex-basis: calc((100% - var(--grid-gap)) / 2);
+  }
+}
+
+@media (min-width: 1280px) {
+  .card {
+    flex-basis: calc((100% - 3 * var(--grid-gap)) / 4);
+  }
+}
+
+/* The whole card is one link: it lifts under the pointer, without moving (§5.3 link card). */
 .linkCard {
   transition:
     box-shadow var(--dur) var(--ease-out),
@@ -28,8 +45,14 @@
 }
 
 .linkCard:hover {
-  border-color: var(--blue);
-  box-shadow: var(--shadow-md);
+  border-color: var(--control-border);
+  box-shadow: var(--shadow-lift);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linkCard {
+    transition: none;
+  }
 }
 
 /* The keyboard focus of the title's link rings the whole card. */
@@ -42,26 +65,40 @@
   outline: none;
 }
 
-.icon {
-  display: inline-flex;
+/* Icon, title and the chevron on one line. */
+.head {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-control);
-  background: var(--hover);
-  color: var(--blue);
+  gap: var(--space-3);
+}
+
+.icon,
+.chevron {
+  display: inline-flex;
+  flex: none;
+  color: var(--ink-2);
 }
 
 .icon svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+}
+
+.chevron {
+  margin-left: auto;
+}
+
+.chevron svg {
+  width: 16px;
+  height: 16px;
 }
 
 .title {
+  min-width: 0;
   color: var(--ink);
+  font-family: var(--font-heading);
   font-size: var(--text-md);
-  font-weight: 600;
+  font-weight: var(--weight-heading);
 }
 
 .title a {
@@ -86,7 +123,7 @@
 .footer {
   display: flex;
   align-items: center;
-  min-height: 22px;
+  min-height: 24px;
 }
 
 .countsFailed {

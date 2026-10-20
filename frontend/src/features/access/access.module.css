@@ -1,0 +1,259 @@
+/*
+ * Roles and access (feature 014): the parts the shared Settings styles don't have — role chips,
+ * the summary of what roles allow, the scope choice, the permission groups and the recent changes.
+ */
+
+/* The page: the tabs card, then Recent access changes. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
+}
+
+/* "Planner · My teams" chips, wrapping between whole chips. */
+.roleChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roleChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-chip);
+  background: var(--chip);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* A scope that covers no team any more: said in words, with the problem colour as a second cue. */
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--status-problem-text);
+  font-size: var(--text-xs);
+}
+
+.flag svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* The plain-language summary: one sentence per line. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+/* The roles panel: one block per role, its scope under it when ticked. */
+.roleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.roleBlock:last-of-type {
+  border-bottom: 0;
+}
+
+.scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 0 var(--space-6);
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 24px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.radio input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ink);
+}
+
+.problem {
+  color: var(--status-problem-text);
+  font-size: var(--text-sm);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--gray-bg);
+}
+
+.previewTitle {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+/* The permission groups of a role: a heading, then one line per permission with its tick. */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.groupTitle {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.permissions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.permission {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.permission svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.granted svg {
+  color: var(--status-positive-text);
+}
+
+.notGranted {
+  color: var(--ink-2);
+}
+
+.scopeTag {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+/* Recent access changes: one line each, newest first. */
+.changes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.changes li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--row-divider);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.changes li:last-child {
+  border-bottom: 0;
+}
+
+.changes a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.changes a:hover,
+.changes a:focus-visible {
+  text-decoration: underline;
+}
+
+.when {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The access rules card: one fact per line. */
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The role page: details card then permissions card. */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
+}
+
+.toolbarEnd {
+  margin-left: auto;
+}
+
+/* A link inside a sentence is underlined, so it stands out by more than its colour (WCAG 1.4.1). */
+.inlineSentenceLink {
+  color: var(--link);
+  text-decoration: underline;
+}

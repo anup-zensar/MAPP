@@ -1,15 +1,17 @@
 /**
- * The cards of the Settings page (feature 002, FR-001), in order: 002's five sections, then the
- * sections other features add from their own folders — People and Teams (003), Approval workflows
- * (008) — so each feature changes only its own file.
+ * The cards of the Settings page (feature 002, FR-001), in order: 002's five sections and Field help
+ * (016), then the sections other features add from their own folders — People and Teams (003),
+ * Approval workflows (008), Roles and access (014) — so each feature changes only its own file.
  */
 import { Calculator, Coins, ListChecks, Shapes, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { components } from '@/api/schema';
 import type { Permission } from '@/lib/access';
+import { ACCESS_SETTINGS_SECTIONS } from '@/features/access/settingsSections';
 import { APPROVAL_WORKFLOW_SETTINGS_SECTIONS } from '@/features/approval-workflows/settingsSections';
 import { PEOPLE_SETTINGS_SECTIONS } from '@/features/people/settingsSections';
+import { FIELD_HELP_SETTINGS_SECTIONS } from './field-help/settingsSections';
 
 /** One card of the Settings page. */
 export interface SettingsSection {
@@ -64,7 +66,8 @@ export const SETTINGS_OWN_SECTIONS: SettingsSection[] = [
   },
   {
     title: 'Currencies',
-    description: 'The currencies line items and people can use, with their rate per 1 USD.',
+    description:
+      'The currencies line items, plans and people can use, with their rate history and GSAP rate import.',
     path: '/settings/currencies',
     icon: Coins,
     overviewKey: 'currencies',
@@ -82,6 +85,8 @@ export const SETTINGS_OWN_SECTIONS: SettingsSection[] = [
 /** Every card of the Settings page, in order. */
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   ...SETTINGS_OWN_SECTIONS,
+  ...FIELD_HELP_SETTINGS_SECTIONS,
   ...PEOPLE_SETTINGS_SECTIONS,
   ...APPROVAL_WORKFLOW_SETTINGS_SECTIONS,
+  ...ACCESS_SETTINGS_SECTIONS,
 ];

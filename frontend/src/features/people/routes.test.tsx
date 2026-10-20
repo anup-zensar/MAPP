@@ -38,6 +38,10 @@ const PRIYA = {
 const PEOPLE: Record<string, MockHandler> = {
   'GET /api/people': { body: { items: [PRIYA], total: 1 } },
   'GET /api/people/U-1002': { body: { ...PRIYA, usage: [] } },
+  'GET /api/people/U-1002/roles': {
+    status: 403,
+    body: { code: 'forbidden', message: 'No access', fields: [] },
+  },
 };
 const CURRENCIES: Record<string, MockHandler> = {
   'GET /api/me/display-currencies': {
@@ -73,7 +77,7 @@ describe('People, teams and profile routes (feature 003)', () => {
     renderApp('/profile', CURRENCIES);
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Your profile' }),
+      await screen.findByRole('heading', { level: 1, name: 'My profile' }),
     ).toBeInTheDocument();
     expect(document.title).toBe('My profile · NorthStar');
     expect(await screen.findByText('USD — US dollar')).toBeInTheDocument();

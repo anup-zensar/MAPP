@@ -7,6 +7,8 @@ export interface SettingsCountProps {
   count: number | undefined;
   /** The count is still on its way: a grey bar holds its place. */
   loading: boolean;
+  /** How the count reads: "<n> active" unless given ("4 roles", "2 edited"). */
+  text?: (count: number) => string;
 }
 
 /**
@@ -15,12 +17,14 @@ export interface SettingsCountProps {
  * workflows (008) cards, whose features count their own records: a grey bar while it loads,
  * nothing when it could not be loaded — the card stays a usable link.
  */
-export function SettingsCount({ count, loading }: SettingsCountProps) {
+export function SettingsCount({ count, loading, text }: SettingsCountProps) {
   if (loading) {
     return <Skeleton width="64px" />;
   }
   if (count === undefined) {
     return null;
   }
-  return <span className={styles.count}>{`${formatWhole(count)} active`}</span>;
+  return (
+    <span className={styles.count}>{text ? text(count) : `${formatWhole(count)} active`}</span>
+  );
 }

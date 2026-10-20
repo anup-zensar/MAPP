@@ -96,7 +96,6 @@ function CreateAttribute() {
           { label: 'Shell attributes', to: `/settings/shell-attributes?level=${level}` },
           { label: 'New Shell attribute' },
         ]}
-        eyebrow="Settings"
         title="New Shell attribute"
       />
       <AttributeForm level={level} />
@@ -125,7 +124,6 @@ function EditAttribute() {
             { label, to: `/settings/shell-attributes/${id}` },
             { label: 'Edit' },
           ]}
-          eyebrow="Settings"
           title={`Edit Shell attribute '${label}'`}
         />
         {/* The edit-form rule: the attribute is copied into the form once, when it opens. */}
@@ -143,7 +141,6 @@ function EditAttribute() {
           { label: 'Shell attributes', to: '/settings/shell-attributes' },
           { label: 'Edit' },
         ]}
-        eyebrow="Settings"
         title="Edit Shell attribute"
       />
       <Card>

@@ -5,21 +5,31 @@
   gap: var(--space-5);
 }
 
-/* The budget years on their own line, then search, status and the count. */
+/* The budget years on their own line, then the list toolbar. */
 .filters {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-4);
+/* The filters card holds only the toolbar: no space under it. */
+.filters > :last-child {
+  margin-bottom: 0;
 }
 
-.toolbar > :first-child {
-  flex: 1 1 220px;
-  max-width: 360px;
+/* One set of column widths for every budget's table, so Code and Status start at the same x. */
+.itemColumn {
+  width: 30%;
+}
+
+.codeColumn {
+  width: 18%;
+}
+
+.statusColumn {
+  width: 120px;
+}
+
+.actionsColumn {
+  width: 48px;
 }

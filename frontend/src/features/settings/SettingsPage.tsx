@@ -1,4 +1,4 @@
-import { CircleAlert, RotateCw } from 'lucide-react';
+import { ChevronRight, CircleAlert, RotateCw } from 'lucide-react';
 import { Link } from 'react-router';
 import { itemsFor } from '@/app/navigation';
 import { useSettingsOverview } from '@/api/settingsQueries';
@@ -36,7 +36,6 @@ export function SettingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Settings"
         title="Settings"
         description="Set up the lists and rules every plan uses. Changes here apply to everyone straight away."
       />
@@ -70,12 +69,19 @@ function SectionCard({ section, counts }: SectionCardProps) {
 
   return (
     <li className={comingSoon ? styles.card : `${styles.card} ${styles.linkCard}`}>
-      <span className={styles.icon} aria-hidden="true">
-        <Icon />
-      </span>
-      <h2 className={styles.title}>
-        {comingSoon ? section.title : <Link to={section.path}>{section.title}</Link>}
-      </h2>
+      <div className={styles.head}>
+        <span className={styles.icon} aria-hidden="true">
+          <Icon />
+        </span>
+        <h2 className={styles.title}>
+          {comingSoon ? section.title : <Link to={section.path}>{section.title}</Link>}
+        </h2>
+        {!comingSoon && (
+          <span className={styles.chevron} aria-hidden="true">
+            <ChevronRight />
+          </span>
+        )}
+      </div>
       <p className={styles.description}>{section.description}</p>
       <div className={styles.footer}>
         {comingSoon ? (

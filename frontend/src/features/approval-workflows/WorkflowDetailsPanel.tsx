@@ -1,22 +1,18 @@
 import { Link } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { Button, ErrorState, SidePanel, Skeleton, StatusChip } from '@/components';
+import { Pencil } from 'lucide-react';
+import { ActionsMenu, Button, ErrorState, SidePanel, Skeleton, StatusChip } from '@/components';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { ApprovalChain } from '@/features/approvals/ApprovalChain';
 import { localDate } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
+import { workflowMoreItems } from './workflowActions';
+import type { WorkflowActions } from './workflowActions';
 import { usedByText, WORKFLOW_GONE } from './workflowTexts';
 import { useWorkflowDetails } from './workflowsApi';
-import type { ApprovalWorkflow, ApprovalWorkflowDetails } from './workflowsApi';
+import type { ApprovalWorkflowDetails } from './workflowsApi';
 import styles from './WorkflowDetailsPanel.module.css';
-
-export interface WorkflowActions {
-  edit: (workflow: ApprovalWorkflow) => void;
-  setInactive: (workflow: ApprovalWorkflow) => void;
-  setActive: (workflow: ApprovalWorkflow) => void;
-  remove: (workflow: ApprovalWorkflow) => void;
-}
 
 export interface WorkflowDetailsPanelProps {
   workflowId: string;
@@ -27,8 +23,8 @@ export interface WorkflowDetailsPanelProps {
 /**
  * One approval workflow (US4, FR-005), at /settings/approval-workflows/:workflowId: its status,
  * who uses it, its levels with their approvers, warnings (a level without active approver), the
- * activities that use it and who created and last changed it; Edit, Set inactive / Set active and
- * Delete at the bottom.
+ * activities that use it and who created and last changed it. The one panel footer of Settings:
+ * **Edit** (primary) and ⋯ with Set inactive or Reactivate, and Delete.
  */
 export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowDetailsPanelProps) {
   const details = useWorkflowDetails(workflowId);
@@ -48,24 +44,13 @@ export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowD
       footer={
         workflow ? (
           <>
-            <Button variant="primary" onClick={() => actions.edit(workflow)}>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(workflow)}>
               Edit
             </Button>
-            {workflow.active ? (
-              <Button onClick={() => actions.setInactive(workflow)}>Set inactive</Button>
-            ) : (
-              <Button onClick={() => actions.setActive(workflow)}>Set active</Button>
-            )}
-            <Button
-              variant="tertiary"
-              className={styles.delete}
-              onClick={() => actions.remove(workflow)}
-            >
-              Delete
-            </Button>
+            <ActionsMenu label={workflow.name} items={workflowMoreItems(workflow, actions)} />
           </>
         ) : (
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>Back to Approval workflows</Button>
         )
       }
     >

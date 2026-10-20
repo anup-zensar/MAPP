@@ -62,7 +62,7 @@ describe('ModelsPage: the list (FR-002)', () => {
     expect(row('Mobility 1.0')).toHaveTextContent('Not used yet');
     // Inactive models are behind the Inactive and All filters.
     expect(within(table()).queryByText('Retail 0.9')).not.toBeInTheDocument();
-    expect(screen.getByText('2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('2 of 3 models')).toBeInTheDocument();
   });
 
   it('filters by status and searches by name, keeping both in the address', async () => {
@@ -82,7 +82,7 @@ describe('ModelsPage: the list (FR-002)', () => {
         .getAllByRole('rowheader')
         .map((cell) => cell.textContent),
     ).toEqual(['Mobility 1.0']);
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 models')).toBeInTheDocument();
     expect(router.state.location.search).toBe('?status=all&q=mob');
   });
 
