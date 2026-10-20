@@ -150,6 +150,7 @@ func TestUpdateApprovalWorkflow_409(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing workflows
 	renamed := alex.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1001", map[string]any{"name": "Lubricants approval", "version": 1})
 	decodeWorkflow(t, renamed, http.StatusOK)
 

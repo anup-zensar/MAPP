@@ -94,6 +94,7 @@ func TestModelsAPI_UpdateConflict_FR007(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing Settings
 	mustCreate(t, alex, "/api/models", lubricants2)
 	server.Advance(90 * time.Minute)
 	daniels := daniel.Do(t, http.MethodPatch, "/api/models/MOD-1003", map[string]any{"mqlToDealRate": "6", "version": 1})
@@ -109,14 +110,26 @@ func TestModelsAPI_UpdateConflict_FR007(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, modelGoneBody)
 }
 
-// Every signed-in person may change Settings (FR-008, D-004): Daniel edits Alex's model.
-func TestSettings_AnySignedInPersonMayChange_FR008(t *testing.T) {
+// Everyone reads Settings, and a person whose role allows "Change Settings lists" changes them (FR-008 as
+// feature 014 rewrote it, D-240): Daniel, a Planner and Approver, is refused with 403 and nothing changes;
+// given the Administrator role, he edits Alex's model.
+func TestSettings_ChangedWithSettingsManage_FR008(t *testing.T) {
 	server := apitest.New(t)
 	mustCreate(t, server.SignIn(t, alexsEmail), "/api/models", lubricants2)
 	daniel := server.SignIn(t, danielsEmail)
 	server.Advance(time.Hour)
+	change := map[string]any{"name": "Lubricants 2.0", "inqToMqlRate": "2.5", "version": 1}
 
-	response := daniel.Do(t, http.MethodPatch, "/api/models/MOD-1003", map[string]any{"name": "Lubricants 2.0", "inqToMqlRate": "2.5", "version": 1})
+	refused := daniel.Do(t, http.MethodPatch, "/api/models/MOD-1003", change)
+	read := daniel.Do(t, http.MethodGet, "/api/models/MOD-1003", nil)
+	server.GrantRole(t, danielsEmail, "administrator", "all")
+	response := daniel.Do(t, http.MethodPatch, "/api/models/MOD-1003", change)
+
+	assertAnswer(t, refused, http.StatusForbidden, `{"code":"forbidden","message":"Changing Settings isn't part of your roles `+
+		`(Approver, Planner). Ask an administrator if you need it.","fields":[]}`)
+	if read.Status != http.StatusOK {
+		t.Errorf("Daniel reading the model = %d %s, want 200", read.Status, read.Body)
+	}
 
 	body := lubricants2Body(2, `"createdAt":"2026-03-12T09:00:00Z","createdBy":{"id":"U-1001","name":"Alex Morgan"},`+
 		`"updatedAt":"2026-03-12T10:00:00Z","updatedBy":{"id":"U-1003","name":"Daniel Okoro"}`)
@@ -256,6 +269,7 @@ func TestActivityTypesAPI_UpdateConflict_FR007(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing Settings
 	mustCreate(t, alex, "/api/activity-types", webinarBody())
 	server.Advance(90 * time.Minute)
 	daniels := daniel.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"defaultPlannedCost": nil, "version": 1})
@@ -1166,6 +1180,7 @@ func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing Settings
 	mustCreate(t, alex, "/api/currencies", jpyBody)
 	server.Advance(90 * time.Minute)
 	var daniels struct {

@@ -62,6 +62,7 @@ const (
 	emailLabel      = "E-mail"
 	jobTitleLabel   = "Job title"
 	teamsLabel      = "Teams"
+	rolesLabel      = "Roles" // a person's roles and scopes (014)
 	membersLabel    = "Members"
 	colourLabel     = "Colour"
 	statusLabel     = "Status"

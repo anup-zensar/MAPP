@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/record"
 )
 
@@ -154,6 +155,9 @@ type CurrentUser struct {
 	Preferences PreferencesView `json:"preferences"`
 	Version     int             `json:"version"`
 	Teams       []TeamRef       `json:"teams"`
+	// Access is the person's roles, permissions, administrators and access rule (014 FR-024); nil only
+	// while access control is not wired (package tests).
+	Access *authz.MyAccess `json:"access,omitempty"`
 }
 
 // DemoPerson is a person as the sign-in page lists them under "Explore as a demo person" (FR-001).

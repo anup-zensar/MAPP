@@ -100,6 +100,11 @@ func (s *Service) CreatePerson(ctx context.Context, a actor.Actor, input PersonI
 		if err := s.applyMemberships(ctx, a, p.ID, add, nil); err != nil {
 			return err
 		}
+		if s.access.NewPerson != nil { // the role for new people, in the same save, logged on the person (014 FR-023)
+			if err := s.access.NewPerson(ctx, a, p.ID); err != nil {
+				return err
+			}
+		}
 		details, err = s.details(ctx, p)
 		return err
 	})
@@ -232,6 +237,11 @@ func (s *Service) SetPersonStatus(ctx context.Context, a actor.Actor, id string,
 		}
 		if p.ID == a.ID && !*update.Active {
 			return errs.NotAllowed(deactivateYourselfMessage)
+		}
+		if p.Active && !*update.Active && s.access.CanDeactivate != nil { // the last administrator (014 FR-021)
+			if err := s.access.CanDeactivate(ctx, p.ID); err != nil {
+				return err
+			}
 		}
 		if err := p.CheckVersion(*update.Version, personSingular); err != nil {
 			return err

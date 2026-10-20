@@ -114,6 +114,8 @@ func (s *Service) describePerson(ctx context.Context, field string, value any) (
 			names = noTeamText
 		}
 		return teamsLabel, names, err
+	case "roles": // logged by access control (014 data model §3): the texts are written when the change is made
+		return rolesLabel, "", nil
 	}
 	return "", "", nil
 }

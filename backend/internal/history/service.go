@@ -569,6 +569,19 @@ func (s *Service) ListLog(ctx context.Context, a actor.Actor, filter LogFilter) 
 	return matching[:min(filter.Limit, len(matching))], len(matching), nil
 }
 
+// Entries returns every activity-log entry, oldest first, without any access filter: for other features
+// that select entries of their own, such as the recent access changes of feature 014. It joins the caller's
+// transaction.
+func (s *Service) Entries(ctx context.Context) ([]Entry, error) {
+	var entries []Entry
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		var err error
+		entries, err = s.repo.Entries(ctx)
+		return err
+	})
+	return entries, err
+}
+
 // invalidLimit is the answer to a limit that is not a number from 1 to 200.
 func invalidLimit() error {
 	return errs.Validation(errs.FieldError{Field: "limit", Message: limitMessage})

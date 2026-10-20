@@ -132,6 +132,7 @@ func TestUsedBy_SeesEveryFeature_FR003(t *testing.T) {
 func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
 	before := summaries(t, priya, settingsPaths)
 
 	planEntry := deletePlan(t, priya, "P-1002") // with its campaign, initiatives, activities and line items
@@ -181,6 +182,7 @@ func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 func TestInUseDelete_RefusedForEveryFeature_FR004(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
 	want := map[string]string{
 		"/api/currencies/GBP":  `{"code":"in_use","message":"'GBP' is in use (used by 1 line item) — set it inactive instead.","fields":[]}`,
 		"/api/models/MOD-1002": `{"code":"in_use","message":"'Mobility 1.0' is in use (used by 1 plan) — set it inactive instead.","fields":[]}`,
@@ -201,6 +203,7 @@ func TestInUseDelete_RefusedForEveryFeature_FR004(t *testing.T) {
 func TestImpact_CountsTheLiveRecords_FR011_FR030(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
 	type warning struct {
 		Kind, Message string
 		Count         int
@@ -236,6 +239,7 @@ func TestImpact_CountsTheLiveRecords_FR011_FR030(t *testing.T) {
 func TestTeamUsedByPlans_InUseDelete_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
 	type team struct {
 		Plans []struct {
 			ID, Name     string
@@ -276,6 +280,7 @@ func TestTeamUsedByPlans_InUseDelete_FR014(t *testing.T) {
 func TestPersonUsage_EveryFeature_FR004(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
 
 	mei := personUsage(t, priya, "U-1004")
 	carlos := personUsage(t, priya, "U-1005")
@@ -306,6 +311,7 @@ func TestPersonUsage_EveryFeature_FR004(t *testing.T) {
 func TestImpact_OwnerNeedsAttention_FR013(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
 	type warning struct {
 		Kind, Message string
 		Count         int

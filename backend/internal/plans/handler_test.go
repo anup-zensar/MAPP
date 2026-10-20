@@ -424,6 +424,7 @@ func TestUnpublish_FR025(t *testing.T) {
 func TestDeletePlan_AndUndo_FR029_FR030(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: deleting plans
 
 	deleted := priya.Do(t, http.MethodDelete, "/api/plans/P-1001", nil)
 	inBin := priya.Do(t, http.MethodGet, "/api/plans/P-1001", nil)
