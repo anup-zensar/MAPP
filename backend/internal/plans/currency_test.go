@@ -188,3 +188,30 @@ func TestPlanDefaults_CurrencyType(t *testing.T) {
 		t.Errorf("Defaults = %+v, %v", defaults, err)
 	}
 }
+
+// A change of the plan type is logged in the plan's ordinary change entry, with the actor and the types as
+// people read them (FR-032, FR-049, data-model §7).
+func TestUpdatePlan_PlanTypeLogged_FR032_FR049(t *testing.T) {
+	f := newFixture(t)
+	plan := f.create(t, priya, input("FY2026 Lubricants Europe"))
+
+	edit := updateOf(f.stored(t, plan.ID))
+	edit.PlanType = ptr(string(TypeStrategic))
+	changed, err := f.service.Update(t.Context(), priya, plan.ID, edit)
+	wrong := updateOf(f.stored(t, plan.ID))
+	wrong.PlanType = ptr("tactical")
+	_, refused := f.service.Update(t.Context(), priya, plan.ID, wrong)
+
+	if err != nil || changed.PlanType != TypeStrategic {
+		t.Fatalf("Update = %s, %v", changed.PlanType, err)
+	}
+	entry := f.entries(t)[0]
+	var got []string
+	for _, c := range entry.Changes {
+		got = append(got, c.Label+": "+c.OldText+" → "+c.NewText)
+	}
+	if entry.Actor != priya || entry.RecordID != plan.ID || !reflect.DeepEqual(got, []string{"Plan type: Operational → Strategic"}) {
+		t.Errorf("log entry by %v on %s: %q", entry.Actor, entry.RecordID, got)
+	}
+	assertError(t, refused, problems("planType", "Choose Operational, Strategic or Cross-market."))
+}

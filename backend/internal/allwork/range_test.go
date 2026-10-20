@@ -355,3 +355,27 @@ func TestViews_OldYearReadAsRange_FR043(t *testing.T) {
 		t.Errorf("a range of 6 years is kept: %v", problems)
 	}
 }
+
+// The Calendar over a range is one timeline (FR-036): the records of every year of the range with their own
+// dates — the web app draws the year and quarter bands and "Continues from / into" at the range's edges from
+// the range the result states — and, as in one year, no line-item or unassigned rows.
+func TestQuery_CalendarOverRange_FR036(t *testing.T) {
+	r := rangeView(twoYears(), Query{View: ViewCalendar}, 2026, 2027).result
+
+	dates := map[string][2]string{}
+	for _, row := range r.Rows {
+		if row.Level == LevelLineItem || row.Level == LevelUnassigned {
+			t.Errorf("calendar row %s on level %s", row.Key, row.Level)
+		}
+		if row.Level == LevelActivity {
+			dates[row.RecordID] = [2]string{row.StartDate.String(), row.EndDate.String()}
+		}
+	}
+	if r.YearFrom != 2026 || r.YearTo != 2027 || r.View != ViewCalendar {
+		t.Errorf("calendar range %d–%d, view %q", r.YearFrom, r.YearTo, r.View)
+	}
+	if dates["A-1"] != [2]string{"2026-03-01", "2026-04-30"} || dates["A-3"] != [2]string{"2027-03-01", "2027-03-31"} ||
+		dates["A-4"] != [2]string{"2027-06-01", "2027-06-30"} || len(dates) != 4 {
+		t.Errorf("activity dates over 2026–2027 = %v", dates)
+	}
+}
