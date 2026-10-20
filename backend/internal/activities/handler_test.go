@@ -35,7 +35,7 @@ func TestNewActivityForm_Contract_FR001(t *testing.T) {
 	assertStatus(t, response, http.StatusOK)
 	response.Decode(t, &form)
 	if form.Context.Initiative.Name != "Digital & social" || form.Defaults == nil || form.Defaults.Owner.Name != "Priya Raman" ||
-		len(form.ActivityTypes) != 5 || len(form.ApprovalWorkflows) != 2 || len(form.Attributes) != 20 {
+		len(form.ActivityTypes) != 5 || len(form.ApprovalWorkflows) != 3 || len(form.Attributes) != 20 {
 		t.Errorf("form = %+v", form)
 	}
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/initiatives/I-9999/activity-form", nil), http.StatusNotFound, initiativeGoneBody)

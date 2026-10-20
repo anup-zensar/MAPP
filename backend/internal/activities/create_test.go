@@ -57,7 +57,7 @@ func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 	d := form.Defaults
 	if d == nil || d.Owner == nil || d.Owner.Name != "Priya Raman" || d.StartDate.String() != "2026-01-01" ||
 		d.EndDate.String() != "2026-06-30" || d.ApprovalWorkflowID != nil {
-		t.Fatalf("defaults = %+v, want Priya Raman, 1 Jan – 30 Jun 2026 and no workflow (two are active)", d)
+		t.Fatalf("defaults = %+v, want Priya Raman, 1 Jan – 30 Jun 2026 and no workflow (three are active)", d)
 	}
 	if form.Context.Initiative.Owner == nil || form.Context.LatestEndDate.String() != "2036-12-31" ||
 		form.Context.Model.Name != "Lubricants 1.0" || len(form.Context.BusinessUnits) != 1 ||
@@ -66,6 +66,7 @@ func TestNewForm_Defaults_FR008_FR009_FR012(t *testing.T) {
 	}
 
 	f.deactivateWorkflow(t, chinaFlow)
+	f.deactivateWorkflow(t, "WF-1003") // 017's Standard marketing approval (017 FR-037)
 	f.deactivatePerson(t, priya.ID)
 	form, err = f.service.NewForm(t.Context(), priya, digitalAndSocial)
 	if err != nil {
