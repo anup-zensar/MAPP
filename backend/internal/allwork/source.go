@@ -137,6 +137,10 @@ type Choices struct {
 	// SeesFinance says whether the person may see financial data (feature 015, FR-028): without it, the
 	// Financials column group and filter are not offered and the figures are not worked out.
 	SeesFinance bool
+	// FinancePlans are the plans whose financial data the person may see (015 consolidation, D-301): nil
+	// for every plan. The rows of other plans show "—" in the Financials columns, never match the
+	// Financials filter and add nothing to the totals.
+	FinancePlans []string
 }
 
 // MonthAmount is a line item's amount in one month, in USD.

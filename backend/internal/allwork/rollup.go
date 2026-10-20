@@ -18,6 +18,9 @@ type figures struct {
 	inq, mql   *int64
 	revenue    *money.Amount
 	finance    *FinanceFacts // the line items' GSAP figures (015); nil when the reader may not see them
+	// financePlanned is the planned cost of the records whose GSAP figures are shown (015): Not yet
+	// committed and "above planned cost" compare with it, so a plan without access adds nothing to them.
+	financePlanned *money.Amount
 }
 
 // activityFigures are an activity's own values.
@@ -28,6 +31,9 @@ func activityFigures(a *tnode) figures {
 	}
 	if a.balance != nil && a.balance.Sign() < 0 {
 		f.negative = 1
+	}
+	if a.finance != nil {
+		f.financePlanned = a.n.PlannedCost
 	}
 	return f
 }
@@ -50,6 +56,7 @@ func (f *figures) addActivity(a figures) {
 	f.mql = addCount(f.mql, a.mql)
 	f.revenue = addAmount(f.revenue, a.revenue)
 	f.finance = addFacts(f.finance, a.finance)
+	f.financePlanned = addAmount(f.financePlanned, a.financePlanned)
 }
 
 // addContainer adds a container's figures to its parent's.
@@ -63,6 +70,7 @@ func (f *figures) addContainer(c figures) {
 	f.mql = addCount(f.mql, c.mql)
 	f.revenue = addAmount(f.revenue, c.revenue)
 	f.finance = addFacts(f.finance, c.finance)
+	f.financePlanned = addAmount(f.financePlanned, c.financePlanned)
 }
 
 // rollUp works out the roll-ups of every record (FR-013): an activity's own values; a container's sums over
@@ -85,6 +93,9 @@ func rollUpNode(n *tnode) {
 		return
 	case LevelLineItem: // its own planned cost and GSAP figures, for the financial columns (015)
 		n.fig = figures{planned: n.n.PlannedCost, finance: n.finance}
+		if n.finance != nil {
+			n.fig.financePlanned = n.n.PlannedCost
+		}
 		n.all = n.fig
 		return
 	}
