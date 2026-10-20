@@ -274,16 +274,21 @@ func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
 	}
 }
 
-// The bin's two entries of binWithParent, as GET /api/recycle-bin answers them: the folder, which the note's
-// entry waits for, and the note, whose folder is in the bin (011 FR-015 – FR-017, FR-028).
+// The bin's two entries of binWithParent, as GET /api/recycle-bin answers them to Priya: the folder, which the
+// note's entry waits for, and the note, whose folder is in the bin (011 FR-015 – FR-017, FR-028), each with what
+// she may do with it — restore it, but not delete it permanently, which her Planner role does not include
+// (014 FR-011).
 const (
+	plannerBinAccess = `"access":{"restore":{"available":true,"reason":""},"deletePermanently":{"available":false,` +
+		`"reason":"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it."}}`
 	folderBinItem = `{"id":"BIN-1002","recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001",` +
 		`"recordName":"Ideas","path":[],"parent":null,"deletedAt":"2026-03-12T09:00:00Z",` +
 		`"deletedBy":{"id":"U-1002","name":"Priya Raman"},"contents":[{"recordType":"sampleNote","label":"sample note","count":1}],` +
 		`"recordTypePlural":"sample folders","restoreState":"restorable","missingParent":null,"parentEntryIds":[],` +
 		`"insideEntryIds":["BIN-1001"],"records":[` +
 		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas","parentId":""},` +
-		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Second idea","parentId":"SF-1001"}]}`
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Second idea","parentId":"SF-1001"}],` +
+		plannerBinAccess + `}`
 	noteBinItem = `{"id":"BIN-1001","recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001",` +
 		`"recordName":"First idea","path":[{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}],` +
 		`"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"},"deletedAt":"2026-03-12T09:00:00Z",` +
@@ -291,7 +296,8 @@ const (
 		`"restoreState":"parentInRecycleBin",` +
 		`"missingParent":{"type":"sampleFolder","typeLabel":"sample folder","id":"SF-1001","name":"Ideas"},` +
 		`"parentEntryIds":["BIN-1002"],"insideEntryIds":[],"records":[` +
-		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"First idea","parentId":"SF-1001"}]}`
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"First idea","parentId":"SF-1001"}],` +
+		plannerBinAccess + `}`
 )
 
 // binWithParent fills the recycle bin as Priya: the note "First idea" (BIN-1001), then its folder "Ideas"
