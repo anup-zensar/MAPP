@@ -4,6 +4,7 @@ import type { SegmentedFilterOption } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { AttentionCard } from './AttentionCard';
 import { CurrencyPicker } from './CurrencyPicker';
+import { FinancialsCard } from './FinancialsCard';
 import { GettingStartedCard } from './GettingStartedCard';
 import { useHomeSummary } from './homeApi';
 import type { HomeScope } from './homeApi';
@@ -24,9 +25,10 @@ const SCOPES: SegmentedFilterOption<HomeScope>[] = [
 /**
  * Home (feature 009) on the dashboard template of design system §2.4 E: the greeting with the My
  * teams / Everything switch (FR-003) and the Currency picker in the header's actions, Getting
- * started for new people (FR-020), the four summary cards (FR-005), Needs your attention (FR-011)
- * and Waiting for my approval (FR-013) side by side at one height, then Plans at a glance (FR-008),
- * My activities (FR-014) and Recent changes (FR-015) across the page. Every card asks its own
+ * started for new people (FR-020), the four summary cards (FR-005), the Financials card right under
+ * them (015 FR-025), Needs your attention (FR-011) and Waiting for my approval (FR-013) side by side
+ * at one height, then Plans at a glance (FR-008), My activities (FR-014) and Recent changes
+ * (FR-015) across the page. Every card asks its own
  * data, so one that fails never hides the others (FR-022). A person without any role sees why and
  * whom to ask instead of the cards (014 edge case "No role").
  */
@@ -71,6 +73,7 @@ export function HomePage() {
         <div className={styles.page}>
           {gettingStarted && <GettingStartedCard reason={gettingStarted} />}
           <SummaryCards scope={scope} />
+          <FinancialsCard scope={scope} />
           <div className={styles.pair}>
             <AttentionCard />
             <WaitingCard />

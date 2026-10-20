@@ -25,3 +25,17 @@ export function waitingForMeHref(activityId?: string): string {
   }
   return `/approvals?${params}`;
 }
+
+/**
+ * All work filtered to the activities committed above planned cost in the year (015 FR-024,
+ * FR-025): the Financials card's first link.
+ */
+export function committedAboveHref(year: number): string {
+  return `/all-work?finance=committedAbovePlanned&year=${year}`;
+}
+
+/** Financials on its Not linked tab (015 FR-025): the Financials card's second link. */
+export const NOT_LINKED_HREF = '/financials?link=notLinked';
+
+/** The Financials page (015). */
+export const FINANCIALS_HREF = '/financials';

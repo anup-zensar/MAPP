@@ -6,6 +6,7 @@ import type { components } from '@/api/schema';
 import type { MockAnswer } from '@/test/mockApi';
 import type {
   ActivityLogEntry,
+  FinancialOverview,
   HomeAttentionItem,
   HomeAttentionReason,
   HomePlanRow,
@@ -196,6 +197,58 @@ export function logEntryOf(overrides: Partial<ActivityLogEntry> = {}): ActivityL
 /** An empty page of a list. */
 export const EMPTY_PAGE = { items: [], total: 0 };
 
+/**
+ * Priya's Financials card with the seed (015 US6 scenario 1): Committed 35,652.17 of 460,000.00
+ * planned (8 %), Invoiced 33,152.17, Paid 30,652.17, Accrued (Sep 2026) 2,500.00; one activity
+ * committed above planned cost and one transaction not linked.
+ */
+export function overviewOf(overrides: Partial<FinancialOverview> = {}): FinancialOverview {
+  return {
+    year: 2026,
+    scope: 'myTeams',
+    figures: {
+      plannedCost: usd('460000.00'),
+      committed: usd('35652.17'),
+      invoiced: usd('33152.17'),
+      paid: usd('30652.17'),
+      accrued: usd('2500.00'),
+      notYetCommitted: usd('424347.83'),
+      committedPercent: 8,
+      committedAbovePlanned: false,
+      lineItemsAbovePlanned: 1,
+      firstLineItemAbovePlanned: null,
+      transactionCount: 9,
+    },
+    activitiesAbovePlanned: 1,
+    notLinked: 1,
+    source: {
+      dataAsOf: '2026-10-19T02:00:00Z',
+      feedName: 'Demo data (simulated GSAP)',
+      fileName: null,
+      accrualMonth: '2026-09',
+    },
+    ...overrides,
+  };
+}
+
+/** A Financials card without any transaction for the scope (015 US6 scenario 3). */
+export function emptyOverview(): FinancialOverview {
+  const overview = overviewOf({ activitiesAbovePlanned: 0, notLinked: 0 });
+  return {
+    ...overview,
+    figures: {
+      ...overview.figures,
+      committed: usd('0.00'),
+      invoiced: usd('0.00'),
+      paid: usd('0.00'),
+      accrued: usd('0.00'),
+      committedPercent: 0,
+      lineItemsAbovePlanned: 0,
+      transactionCount: 0,
+    },
+  };
+}
+
 /** Every request of Home, answered with a dashboard that has nothing in it yet. */
 export const HOME_ANSWERS: Record<string, MockAnswer> = {
   'GET /api/home/summary': {
@@ -217,6 +270,7 @@ export const HOME_ANSWERS: Record<string, MockAnswer> = {
   'GET /api/home/waiting': { body: EMPTY_PAGE },
   'GET /api/home/my-activities': { body: { groups: [], total: 0 } },
   'GET /api/home/recent-changes': { body: EMPTY_PAGE },
+  'GET /api/financials/overview': { body: emptyOverview() },
   'GET /api/me/display-currencies': {
     body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length },
   },
