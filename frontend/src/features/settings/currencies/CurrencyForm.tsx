@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { DecimalField, FormPanel, LockedNote, problemOf, TextField, useToast } from '@/components';
 import type { FieldProblem, SaveFailure } from '@/components';
 import { inverseRate, parseDecimalInput } from '@/lib/decimal';
-import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { ImpactDialog } from '../shared/ImpactDialog';
 import { saveFailureOf } from '../shared/saveFailure';
@@ -15,6 +14,13 @@ import {
 } from './currenciesApi';
 import type { ChangeImpact, Currency, CurrencyCreate, CurrencyUpdate } from './currenciesApi';
 import { inverseLine, lockOf, rateLine } from './currencyActions';
+import { rateSourceLine } from './rateWords';
+
+/** A changed rate becomes today's dated rate (016 FR-004). */
+const TODAYS_RATE_HINT = "A new rate is saved as today's rate; the rate history keeps the others.";
+
+/** A new currency's rate is its first dated rate (016 FR-003). */
+const FIRST_RATE_HINT = "Saved as the currency's first rate, dated today.";
 
 /** The code lock's reason before the API has given one (a new currency is not saved yet). */
 const CODE_LOCKED = "The code can't change once the currency is saved.";
@@ -189,17 +195,14 @@ export function CurrencyForm({ currency, onClose }: CurrencyFormProps) {
               marking="Required"
               decimals={6}
               suffix="per USD"
+              hint={currency ? TODAYS_RATE_HINT : FIRST_RATE_HINT}
               value={values.rate}
               onChange={(text) => set('rate', text)}
               note={liveRate(code, values.rate)}
               error={problemOf(problems, 'rate')}
             />
           )}
-          {currency && (
-            <p className={styles.meta}>
-              {`Rate last changed by ${currency.rateChangedBy.name} on ${date(localDate(currency.rateChangedAt))}`}
-            </p>
-          )}
+          {currency && <p className={styles.meta}>{rateSourceLine(currency, date)}</p>}
         </div>
       </FormPanel>
       {pendingImpact && currency && (

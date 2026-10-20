@@ -32,11 +32,11 @@ function renderPage(route: string, answers: Record<string, MockHandler> = {}) {
 /** The names of the table's rows, section header rows included, top to bottom. */
 function rowNames(): string[] {
   const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-  return rows.map(
-    (row) =>
-      (within(row).queryByRole('rowheader') ?? within(row).getByRole('columnheader')).textContent ??
-      '',
-  );
+  return rows.map((row) => {
+    const header = within(row).queryByRole('rowheader') ?? within(row).getByRole('columnheader');
+    // An attribute's name is its link; a "No help yet" chip may follow it (016 FR-048).
+    return (within(header).queryByRole('link') ?? header).textContent ?? '';
+  });
 }
 
 describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {

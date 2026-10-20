@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useCurrencies } from '@/api/settingsQueries';
 import {
@@ -6,12 +6,12 @@ import {
   Button,
   Card,
   ErrorState,
+  LinkButton,
   PageHeader,
   Skeleton,
   StatusChip,
   useToast,
 } from '@/components';
-import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { ListToolbar } from '../shared/ListToolbar';
@@ -26,6 +26,10 @@ import { inverseLine, moreActions, rateLine } from './currencyActions';
 import type { CurrencyActions } from './currencyActions';
 import { CurrencyDetails } from './CurrencyDetails';
 import { CurrencyForm } from './CurrencyForm';
+import { CURRENCY_IMPORT_PATH } from './currencyPaths';
+import { rateDateOf, SOURCE_WORDS } from './rateWords';
+import styles016 from './rates.module.css';
+import { RecentImports } from './RecentImports';
 
 const CURRENCY_NOUN = { one: 'currency', many: 'currencies' };
 
@@ -33,8 +37,9 @@ const CURRENCY_NOUN = { one: 'currency', many: 'currencies' };
 type OpenForm = { kind: 'new' } | { kind: 'edit'; currency: Currency };
 
 /**
- * Currencies (feature 002, US4, FR-028 – FR-030): the currencies line items and people can use,
- * with their rate per 1 USD both ways, as the standard CRUD pattern — search and status filter in
+ * Currencies (feature 002, US4, FR-028 – FR-030; 016 US1): the currencies line items, plans and
+ * people can use, with their current rate per 1 USD both ways and its date, **Import GSAP rates**
+ * and the recent imports (016 FR-006, FR-007), as the standard CRUD pattern — search and status filter in
  * the address, a table, details in a side panel (`?id=EUR`), New currency and Edit in a side-panel
  * form, Set inactive / Reactivate and Delete (unused currencies only, with Undo). USD's rate,
  * status and delete are locked with their reason.
@@ -79,14 +84,22 @@ export function CurrenciesPage() {
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Currencies' }]}
         title="Currencies"
-        description="Currencies for line items and display, with their rate per 1 USD."
+        description="Currencies for line items, plans and display, with their dated rates per 1 USD."
         actions={
-          <Button variant="primary" icon={<Plus />} onClick={newCurrency}>
-            New currency
-          </Button>
+          <>
+            <LinkButton icon={<Upload />} to={CURRENCY_IMPORT_PATH}>
+              Import GSAP rates
+            </LinkButton>
+            <Button variant="primary" icon={<Plus />} onClick={newCurrency}>
+              New currency
+            </Button>
+          </>
         }
       />
-      <CurrenciesCard currencies={currencies} filters={filters} actions={actions} />
+      <div className={styles016.stack}>
+        <CurrenciesCard currencies={currencies} filters={filters} actions={actions} />
+        <RecentImports />
+      </div>
 
       {form && (
         <CurrencyForm
@@ -180,7 +193,7 @@ function CurrenciesCard({ currencies, filters, actions }: CurrenciesCardProps) {
                   Rate
                 </th>
                 <th scope="col">Used by</th>
-                <th scope="col">Rate last changed</th>
+                <th scope="col">Rate of</th>
                 <th scope="col">Status</th>
                 <th scope="col">
                   <span className="visually-hidden">Actions</span>
@@ -217,7 +230,12 @@ function CurrencyRow({ currency, actions }: { currency: Currency; actions: Curre
         </span>
       </td>
       <td>{currency.usage.summary}</td>
-      <td className={styles.nowrap}>{date(localDate(currency.rateChangedAt))}</td>
+      <td className={styles.nowrap}>
+        {date(rateDateOf(currency))}
+        {currency.rateSource && (
+          <span className={styles.secondLine}>{SOURCE_WORDS[currency.rateSource]}</span>
+        )}
+      </td>
       <td className={styles.nowrap}>
         <StatusChip tone={currency.active ? 'positive' : 'neutral'}>
           {currency.active ? 'Active' : 'Inactive'}

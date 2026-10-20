@@ -87,6 +87,13 @@
   white-space: nowrap;
 }
 
+/* The label and, when it has no help text, the "No help yet" chip after it (016 FR-048). */
+.nameLine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .name {
   color: var(--link);
   text-decoration: none;

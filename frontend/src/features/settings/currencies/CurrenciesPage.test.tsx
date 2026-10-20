@@ -6,6 +6,7 @@ import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { CURRENCIES, deleted, EUR, JPY, validationFailed, versionConflict } from '../testRecords';
 import { CurrenciesPage } from './CurrenciesPage';
+import { EUR_RATES, NO_IMPORTS, NO_RATES } from './rateTestData';
 
 const USD_LOCK = "USD is NorthStar's base currency; its rate is always 1.";
 
@@ -13,7 +14,14 @@ function renderCurrencies(
   answers: Record<string, MockHandler> = {},
   route = '/settings/currencies',
 ) {
-  const api = mockApi({ 'GET /api/currencies': { body: CURRENCIES }, ...answers });
+  const api = mockApi({
+    'GET /api/currencies': { body: CURRENCIES },
+    // Recent imports and EUR's rate history (016 US1).
+    'GET /api/exchange-rates/imports': { body: NO_IMPORTS },
+    'GET /api/currencies/EUR/rates': { body: EUR_RATES },
+    'GET /api/currencies/JPY/rates': { body: NO_RATES },
+    ...answers,
+  });
   const rendered = renderWithProviders(<CurrenciesPage />, {
     route,
     user: testUser(),

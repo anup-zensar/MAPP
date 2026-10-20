@@ -3,12 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { ROLES } from '@/features/access/testData';
 import { CHINA_WORKFLOW, workflowOf } from '@/features/approval-workflows/testData';
 import { mockApi } from '@/test/mockApi';
+import { FIELD_HELP_PAGE } from './field-help/fieldHelpTestData';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { SettingsPage } from './SettingsPage';
 
-// The real list of cards: 002's five, then People and Teams (003), Approval workflows (008) and
-// Roles and access (014), whose features count their own records.
+// The real list of cards: 002's five and Field help (016), then People and Teams (003), Approval
+// workflows (008) and Roles and access (014), whose features count their own records.
 
 const OVERVIEW = {
   models: 3,
@@ -56,6 +57,7 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
         },
       },
       'GET /api/roles': { body: { items: ROLES, total: ROLES.length } },
+      'GET /api/field-help': { body: FIELD_HELP_PAGE },
     });
     renderWithProviders(<SettingsPage />, { route: '/settings', user: testUser() });
 
@@ -84,6 +86,16 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
     expect(within(access).getByRole('link', { name: 'Roles and access' })).toHaveAttribute(
       'href',
       '/settings/access',
+    );
+    // Field help (016) counts the texts administrators changed.
+    const help = card('Field help');
+    expect(
+      within(help).getByText('What each built-in field means, shown as ⓘ tips.'),
+    ).toBeInTheDocument();
+    expect(await within(help).findByText('2 edited')).toBeInTheDocument();
+    expect(within(help).getByRole('link', { name: 'Field help' })).toHaveAttribute(
+      'href',
+      '/settings/field-help',
     );
   });
 });

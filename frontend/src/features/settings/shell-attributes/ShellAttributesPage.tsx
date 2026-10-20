@@ -38,6 +38,8 @@ import { useFailureToast } from './useStatusChange';
 
 type StatusFilter = 'active' | 'inactive' | 'all';
 
+type HelpFilter = 'all' | 'missing';
+
 const ATTRIBUTE_NOUN = { one: 'Shell attribute', many: 'Shell attributes' };
 
 const FILTERED_REASON = 'Clear the search and filters to change the order.';
@@ -51,6 +53,8 @@ function useFilters() {
   const status: StatusFilter =
     statusParam === 'inactive' || statusParam === 'all' ? statusParam : 'active';
   const q = params.get('q') ?? '';
+  // Only the attributes without help (016 FR-048), as Settings › Field help links here.
+  const help: HelpFilter = params.get('help') === 'missing' ? 'missing' : 'all';
 
   function change(name: string, value: string, defaultValue: string) {
     setParams(
@@ -69,9 +73,14 @@ function useFilters() {
 
   return {
     level,
+    /** The address names a level; without one, the help filter may choose it. */
+    levelGiven: isLevel(levelParam),
     status,
     q,
-    setLevel: (value: AttributeLevel) => change('level', value, 'plan'),
+    help,
+    // With the help filter on, the level stays in the address, so it is not chosen again.
+    setLevel: (value: AttributeLevel) => change('level', value, help === 'missing' ? '' : 'plan'),
+    setHelp: (value: HelpFilter) => change('help', value, 'all'),
     setStatus: (value: StatusFilter) => change('status', value, 'active'),
     setQ: (value: string) => change('q', value, ''),
     // Shows every attribute of the level, so the order can be changed again.
@@ -80,12 +89,23 @@ function useFilters() {
         (current) => {
           const next = new URLSearchParams(current);
           next.delete('q');
+          next.delete('help');
           next.set('status', 'all');
           return next;
         },
         { replace: true },
       ),
   };
+}
+
+/** True when the attribute has no help text, so its ⓘ is missing (016 FR-048). */
+function lacksHelp(attribute: ShellAttribute): boolean {
+  return attribute.helpText.trim() === '';
+}
+
+/** True when the attribute passes the help filter. */
+function hasHelpState(attribute: ShellAttribute, help: HelpFilter): boolean {
+  return help === 'all' || lacksHelp(attribute);
 }
 
 /** True when the attribute has the status the filter asks for. */
@@ -158,7 +178,7 @@ function AttributeList({ filters }: { filters: Filters }) {
   const [announcement, setAnnouncement] = useState('');
   // The move button that was used last: the focus stays on it (SC-009).
   const [focusTarget, setFocusTarget] = useState<string | null>(null);
-  const { level, status, q } = filters;
+  const { status, q, help } = filters;
 
   // A moved row is taken out of the page and put back in its new place, which loses the focus:
   // it goes back to the button that moved it.
@@ -182,10 +202,24 @@ function AttributeList({ filters }: { filters: Filters }) {
   }
 
   const all = attributes.data.items;
+  // Arriving from Field help without a level: the first level with attributes lacking help.
+  const level: AttributeLevel =
+    help === 'missing' && !filters.levelGiven
+      ? (LEVELS.find((each) =>
+          all.some(
+            (attribute) =>
+              attribute.level === each && hasStatus(attribute, status) && lacksHelp(attribute),
+          ),
+        ) ?? filters.level)
+      : filters.level;
   const ofLevel = all.filter((attribute) => attribute.level === level);
   const shown = ofLevel.filter(
-    (attribute) => hasStatus(attribute, status) && matches(attribute, q),
+    (attribute) =>
+      hasStatus(attribute, status) && hasHelpState(attribute, help) && matches(attribute, q),
   );
+  const withoutHelp = ofLevel.filter(
+    (attribute) => hasStatus(attribute, status) && lacksHelp(attribute),
+  ).length;
   // The order can change only while every attribute of the level is in view (SC-009).
   const orderLocked = shown.length < ofLevel.length ? FILTERED_REASON : undefined;
   const levelSections = bySection(ofLevel);
@@ -236,8 +270,10 @@ function AttributeList({ filters }: { filters: Filters }) {
   const levelCounts = LEVELS.map((each) => ({
     value: each,
     label: LEVEL_WORDS[each],
-    count: all.filter((attribute) => attribute.level === each && hasStatus(attribute, status))
-      .length,
+    count: all.filter(
+      (attribute) =>
+        attribute.level === each && hasStatus(attribute, status) && hasHelpState(attribute, help),
+    ).length,
   }));
   const statusCounts = {
     active: ofLevel.filter((attribute) => hasStatus(attribute, 'active')).length,
@@ -265,6 +301,17 @@ function AttributeList({ filters }: { filters: Filters }) {
             onChange: filters.setQ,
           }}
           status={{ value: status, onChange: filters.setStatus, counts: statusCounts }}
+          filters={
+            <SegmentedFilter
+              label="Help"
+              options={[
+                { value: 'all', label: 'Any help' },
+                { value: 'missing', label: 'No help yet', count: withoutHelp },
+              ]}
+              value={help}
+              onChange={filters.setHelp}
+            />
+          }
           count={{ shown: shown.length, total: ofLevel.length, noun: ATTRIBUTE_NOUN }}
         />
         {ofLevel.length === 0 ? (
@@ -351,12 +398,17 @@ function AttributeList({ filters }: { filters: Filters }) {
                           ))}
                         </td>
                         <th scope="row" className={styles.nameCell}>
-                          <Link
-                            to={`/settings/shell-attributes/${attribute.id}`}
-                            className={styles.name}
-                          >
-                            {attribute.label}
-                          </Link>
+                          <span className={styles.nameLine}>
+                            <Link
+                              to={`/settings/shell-attributes/${attribute.id}`}
+                              className={styles.name}
+                            >
+                              {attribute.label}
+                            </Link>
+                            {lacksHelp(attribute) && (
+                              <StatusChip tone="review">No help yet</StatusChip>
+                            )}
+                          </span>
                         </th>
                         <td>{TYPE_WORDS[attribute.type]}</td>
                         <td>{MARKING_WORDS[attribute.marking]}</td>
