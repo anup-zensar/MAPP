@@ -6,6 +6,7 @@ import { showHistory } from '@/features/activity-log/showHistory';
 import { ApprovalSection } from '@/features/approvals/ApprovalSection';
 import { useActivityApproval } from '@/features/approvals/approvalsApi';
 import type { ApprovalActivity } from '@/features/approvals/approvalTypes';
+import { ActivityFinancials } from '@/features/line-items/FinancialsSection';
 import { LineItemsSection } from '@/features/line-items/LineItemsSection';
 import { Notice } from '@/features/line-items/Notice';
 import { useAttributeForm } from '@/api/settingsQueries';
@@ -16,13 +17,9 @@ import { ActivityFigures } from './ActivityFigures';
 import { ActivityHeader } from './ActivityHeader';
 import { LoadFailed, PageSkeleton } from './ActivityLoadStates';
 import styles from './ActivityPage.module.css';
-import {
-  ActivityAttributes,
-  ActivityDetails,
-  ActivityGoals,
-  FromFinance,
-} from './ActivitySections';
+import { ActivityAttributes, ActivityDetails, ActivityGoals } from './ActivitySections';
 import { ActivityStatusNotice } from './ActivityStatusNotice';
+import { SplitLinks } from './SplitLinks';
 import { ACTIVITY_TABS, tabOf, tabSearch } from './activityTabs';
 import type { ActivityTab } from './activityTabs';
 import { activityHref, thingsText } from './activityText';
@@ -34,8 +31,9 @@ const ACTIVITY_GONE = 'This activity no longer exists — someone may have delet
 /**
  * An activity's page (feature 006, US2, FR-019 – FR-025), at /plans/:planId/activities/:activityId,
  * on the record template of design system §2.4 B: the header, the notice of a declined or waiting
- * activity, the summary cards, then the tabs **Overview** (Ready to submit while the activity can
- * still be submitted, and the line items of feature 007 in #line-items), **Details** (details,
+ * activity, the split links (016), the summary cards, then the tabs **Overview** (Ready to submit
+ * while the activity can still be submitted, GSAP's Financials of feature 015 in #financials and
+ * the line items of feature 007 in #line-items), **Details** (details,
  * Shell attributes, goals), **Approval** (feature 008, in #approval) and **History** (feature 011,
  * in #history). The tab is kept in the address (?tab=details); a #part opens its tab. An address
  * ending in #ready or #completeness (Home's "Show fields", feature 009) opens Ready to submit. An
@@ -193,6 +191,7 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
             </p>
           </Notice>
         )}
+        <SplitLinks activity={activity} />
         <ActivityStatusNotice activity={activity} approval={approval.data} />
         <ActivityFigures activity={activity} />
         <Tabs label="Activity" tabs={ACTIVITY_TABS} value={tab} onChange={chooseTab}>
@@ -206,7 +205,8 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
                   onOpenChange={setPanelOpen}
                 />
               )}
-              <FromFinance />
+              {/* GSAP's money, open, right after the summary (015 FR-015, D-305). */}
+              <ActivityFinancials activityId={activity.id} />
               <div id="line-items" className={styles.anchor}>
                 <LineItemsSection activityId={activity.id} />
               </div>

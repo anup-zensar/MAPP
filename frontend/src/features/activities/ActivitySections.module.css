@@ -56,31 +56,3 @@
   font-weight: var(--weight-heading);
   line-height: var(--leading-lg);
 }
-
-.finance {
-  padding: var(--space-4) var(--card-padding);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-}
-
-.financeBody {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-
-.summary {
-  color: var(--ink);
-  font-family: var(--font-heading);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-heading);
-  cursor: pointer;
-}
-
-.summary:focus-visible {
-  border-radius: var(--radius-1);
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 4px;
-}

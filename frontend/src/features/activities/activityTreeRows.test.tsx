@@ -99,7 +99,7 @@ describe('activityTreeRows (feature 006)', () => {
     expect(screen.queryByText('Print ads')).not.toBeInTheDocument();
   });
 
-  it('opens the activity page from the row and offers View, Edit, Copy, Move and Delete in its menu', async () => {
+  it('opens the activity page from the row and offers View, Edit, Copy, Move, Split activity and Delete in its menu', async () => {
     const { user, router } = openRows();
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
@@ -108,7 +108,7 @@ describe('activityTreeRows (feature 006)', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['View', 'Edit', 'Copy', 'Move', 'Delete']);
+    ).toEqual(['View', 'Edit', 'Copy', 'Move', 'Split activity', 'Delete']);
     await user.click(within(menu).getByRole('menuitem', { name: 'Edit' }));
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042/edit'),

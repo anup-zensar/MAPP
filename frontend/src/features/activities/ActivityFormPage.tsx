@@ -36,6 +36,7 @@ import {
   fromActivity,
   fromDefaults,
   isDirty,
+  planCurrencyOf,
   reapprovalChanges,
   toCreateBody,
   toUpdateBody,
@@ -157,6 +158,8 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
   const [leaveTo, setLeaveTo] = useState<string | null>(null);
   const { dialog } = useUnsavedChanges(leaveTo === null && isDirty(value, initial));
   const { plan, initiative } = form.context;
+  // The planned cost is typed and sent in the plan currency (016 FR-011).
+  const planCurrency = planCurrencyOf(form, activity);
   const focusField = searchParams.get('field');
   // What the typed dates do to the line items' spreads, for the re-approval question (D-150): the
   // same sentence SpreadEffectNote shows under the dates, from the same request.
@@ -218,7 +221,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
   /** Asks before a change sends a submitted or approved activity back for approval, then saves. */
   async function confirmApproval(addAnother: boolean) {
     const underApproval = activity?.status === 'submitted' || activity?.status === 'approved';
-    const changes = underApproval ? reapprovalChanges(initial, value, date) : [];
+    const changes = underApproval ? reapprovalChanges(initial, value, date, planCurrency) : [];
     if (changes.length > 0) {
       setReapproval(changes);
       return;
@@ -232,7 +235,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
       if (activity) {
         const saved = await update.mutateAsync({
           id: activity.id,
-          body: toUpdateBody(value, version, restartApproval),
+          body: toUpdateBody(value, version, restartApproval, planCurrency),
         });
         setReapproval(null);
         show({ message: `Activity '${saved.name}' saved` });
@@ -241,7 +244,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
       }
       const created = await create.mutateAsync({
         initiativeId: initiative.id,
-        body: toCreateBody(value),
+        body: toCreateBody(value, planCurrency),
       });
       const message = `Activity '${created.name}' created`;
       const href = activityHref(plan.id, created.id);
@@ -321,6 +324,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
             onChange={setValue}
             problems={problems}
             stored={activity}
+            planCurrency={planCurrency}
             attributeForm={{
               data: attributeForm.data,
               error: attributeForm.error,

@@ -132,27 +132,6 @@
   font-weight: 600;
 }
 
-.fromFinance {
-  padding: var(--space-4) 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.fromFinance summary {
-  color: var(--ink);
-  font-size: var(--text-lg);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.fromFinance summary:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-.fromFinance .note {
-  margin-top: var(--space-2);
-}
-
 .facts {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

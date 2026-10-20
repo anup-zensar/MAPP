@@ -2,6 +2,7 @@ import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { approvalOf } from '@/features/approvals/testData';
+import { activityRecord } from '@/features/line-items/testData';
 import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -79,6 +80,9 @@ function openPage(
     'GET /api/activities/A-1042': answer,
     'GET /api/activities/A-1042/approval': approval,
     'GET /api/exchange-rates/current': { body: RATES },
+    'GET /api/financials/records/A-1042': {
+      body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
+    },
     'GET /api/activities/A-1042/form': { body: editForm() },
     'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
   });
@@ -183,17 +187,24 @@ describe('ActivityPage (feature 006, US2)', () => {
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
     ).toEqual(['Overview', 'Details', 'Approval', 'History']);
-    // Overview: Ready to submit, then the line items in #line-items.
+    // Overview: Ready to submit, GSAP's Financials (open, 015 FR-015), then the line items.
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     const ready = screen.getByRole('region', { name: 'Ready to submit' });
+    const financials = screen.getByRole('region', { name: 'Financials' });
     const lineItems = screen.getByRole('region', { name: 'Line items' });
     expect(
       screen.getByRole('region', { name: 'Summary' }).compareDocumentPosition(ready) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      ready.compareDocumentPosition(lineItems) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ready.compareDocumentPosition(financials) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(
+      financials.compareDocumentPosition(lineItems) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(financials.id).toBe('financials');
+    expect(await within(financials).findByText('82,000.00 USD')).toBeVisible();
+    expect(screen.queryByText('From finance (coming later)')).not.toBeInTheDocument();
     expect(lineItems.closest('#line-items')).not.toBeNull();
     expect(screen.queryByRole('region', { name: 'Details' })).not.toBeInTheDocument();
 
@@ -216,6 +227,23 @@ describe('ActivityPage (feature 006, US2)', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Overview' }));
     await waitFor(() => expect(router.state.location.search).toBe(''));
+  });
+
+  it('links the activities of a split, "(deleted)" without a link (016 FR-031)', async () => {
+    openPage({
+      body: launchFilm({
+        splitFrom: { id: 'A-1012', name: 'UK launch event', planId: 'P-1001', deleted: false },
+        splitInto: [{ id: 'A-1014', name: 'Ireland roadshow', planId: 'P-1001', deleted: true }],
+      }),
+    });
+
+    expect(
+      await screen.findByRole('link', { name: "Split from 'UK launch event' (A-1012)" }),
+    ).toHaveAttribute('href', '/plans/P-1001/activities/A-1012');
+    expect(screen.getByText("Split into 'Ireland roadshow' (A-1014) (deleted)")).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: /Split into 'Ireland roadshow'/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('opens the tab of a #part: #approval from Home and the notifications', async () => {

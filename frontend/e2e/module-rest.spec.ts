@@ -245,9 +245,7 @@ test('Approval restart and the bell: changing an approved activity restarts its 
     page.getByText('Approved — changing planned cost or dates will restart approval.'),
   ).toBeVisible();
   await action(page, 'Edit').click();
-  await expect(
-    page.getByRole('heading', { name: `Edit activity '${name}'`, level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Edit activity', level: 1 })).toBeVisible();
   await page.getByRole('textbox', { name: /^Planned cost/ }).fill('25000');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   const restart = page.getByRole('alertdialog', { name: 'This activity will need approval again' });
@@ -263,6 +261,7 @@ test('Approval restart and the bell: changing an approved activity restarts its 
   // Created again; the approval history says why (008 FR-022, FR-025).
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}$`));
   await expect(page.getByText('Created', { exact: true }).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Approval' }).click();
   const approval = page.locator('#approval');
   await expect(approval.getByText(/^Approval restarted/).first()).toBeVisible();
   await expect(
@@ -310,8 +309,13 @@ test('Approval restart and the bell: changing an approved activity restarts its 
   await notice.click();
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}#approval$`));
   await expect(page.getByText('Declined', { exact: true }).first()).toBeVisible();
-  await expect(approval.getByText(/^Declined by Carlos Mendes on /).first()).toBeVisible();
-  await expect(approval.getByText(reason).first()).toBeVisible();
+  // The #approval link opens the Approval tab; who declined and why are in the notice above it.
+  await expect(page.getByRole('tab', { name: 'Approval' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByText(/^Declined by Carlos Mendes on /).first()).toBeVisible();
+  await expect(page.getByText(reason).first()).toBeVisible();
   await bell(page).click();
   await expect(panel.getByRole('button', { name: declined })).not.toHaveAccessibleName(/Unread$/);
 

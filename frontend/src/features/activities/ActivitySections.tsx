@@ -168,24 +168,3 @@ export function ActivityGoals({ activity, model }: { activity: Activity; model?:
     </Card>
   );
 }
-
-/**
- * What the Finance module and GSAP will fill in later (FR-020): collapsed, every total "—".
- */
-export function FromFinance() {
-  return (
-    <section aria-label="From finance (coming later)" className={styles.finance}>
-      <details>
-        <summary className={styles.summary}>From finance (coming later)</summary>
-        <div className={styles.financeBody}>
-          <DetailsList>
-            <Detail label="Total actuals">{null}</Detail>
-            <Detail label="Total invoiced">{null}</Detail>
-            <Detail label="Total purchase requests">{null}</Detail>
-          </DetailsList>
-          <p className={styles.muted}>Filled when the Finance module and GSAP are connected</p>
-        </div>
-      </details>
-    </section>
-  );
-}

@@ -53,6 +53,8 @@ export interface ActivityFormProps {
   stored?: StoredActivity;
   /** The activity level's Shell attribute form (feature 002), as it loads. */
   attributeForm: AttributeFormLoad;
+  /** The plan currency the planned cost is typed in (016 FR-011); USD before 016. */
+  planCurrency?: string;
 }
 
 /** The Shell attribute form while it loads: its data, or the failure and how to try again. */
@@ -89,6 +91,7 @@ export function ActivityForm({
   problems,
   stored,
   attributeForm,
+  planCurrency = 'USD',
 }: ActivityFormProps) {
   const { date } = useFormatters();
   // Whether the planned cost is still the default the chosen type filled in.
@@ -278,14 +281,18 @@ export function ActivityForm({
           label="Planned cost"
           name={fieldId('plannedCost')}
           marking="Needed to submit"
-          hint="0.00 or more"
-          currency="USD"
+          hint={
+            planCurrency === 'USD'
+              ? '0.00 or more'
+              : `0.00 or more, in ${planCurrency}, the plan's currency`
+          }
+          currency={planCurrency}
           value={value.plannedCost}
           onChange={(plannedCost) => {
             setCostFromType(false);
             set({ plannedCost });
           }}
-          note={costFromType ? 'From the activity type' : undefined}
+          note={costFromType ? typeDefaultNote(form, value.activityTypeId) : undefined}
           error={error('plannedCost')}
         />
       </FormCard>
@@ -370,6 +377,20 @@ function attributeErrors(problems: FieldProblem[]): Record<string, string> {
     }
   }
   return errors;
+}
+
+/**
+ * Where a pre-filled planned cost came from: "From the activity type", or with a plan in another
+ * currency "Default 5,000.00 USD = 3,950.00 GBP at today's rate" (016 FR-016).
+ */
+function typeDefaultNote(form: ActivityFormData, typeId: string): string {
+  const type = form.activityTypes.find((option) => option.id === typeId);
+  const usd = type?.defaultPlannedCostUsd;
+  const converted = type?.defaultPlannedCost;
+  if (!usd || !converted || usd.currency === converted.currency) {
+    return 'From the activity type';
+  }
+  return `Default ${formatMoneyText(usd)} = ${formatMoneyText(converted)} at today's rate`;
 }
 
 /** "Event · default 25,000.00 USD"; "Event — not allowed by the plan's model". */

@@ -22,7 +22,7 @@ import { fieldHref, recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { Detail, DetailsList } from './DetailsList';
-import { FromFinanceSection } from './FromFinanceSection';
+import { LineItemFinancials } from './FinancialsSection';
 import styles from './LineItemPage.module.css';
 import { activityBreadcrumb, activityLineItemsHref, planIdOf } from './lineItemLinks';
 import { centsInput, formatMonth, moneyText } from './lineItemMath';
@@ -43,7 +43,6 @@ import {
   OUTSIDE_TIP,
   SECTION_SPREAD,
   SPREAD_LABELS,
-  SWBS_LATER,
   VIEW_HISTORY,
 } from './lineItemText';
 import { RateTip } from './MoneyPair';
@@ -60,8 +59,8 @@ const UNASSIGNED_TIP =
  * system §2.4 B and as wide as its activity's page (UI audit LI-01): the header with the level tag,
  * completeness and SWBS chips, ID and owner in the meta row, ⋯ (Duplicate, View history, Delete)
  * and Edit; the summary cards (planned cost, spread, the activity's unassigned planned cost); the
- * Details and Finance coding cards, each value in the one key–value layout ("—" when empty); then
- * its History (feature 011).
+ * Details and Finance coding cards, each value in the one key–value layout ("—" when empty); GSAP's
+ * Financials (feature 015); the spread; then its History (feature 011).
  */
 export function LineItemPage() {
   const { lineItemId = '' } = useParams();
@@ -136,10 +135,9 @@ export function LineItemPage() {
           <DetailsCard lineItem={lineItem} />
           <FinanceCard lineItem={lineItem} activity={activity} />
         </div>
+        {/* GSAP's money for this line item, open (015 FR-017). */}
+        <LineItemFinancials lineItemId={lineItem.id} />
         <SpreadCard lineItem={lineItem} />
-        <Card>
-          <FromFinanceSection />
-        </Card>
         <HistorySection
           recordType="lineItem"
           recordId={lineItem.id}
@@ -317,7 +315,6 @@ function FinanceCard({ lineItem, activity }: { lineItem: LineItem; activity: Lin
             : null}
         </Detail>
         <Detail label={LABEL.requestSwbs}>{lineItem.requestSwbs ? 'Yes' : 'No'}</Detail>
-        <Detail label={LABEL.swbsCode}>{SWBS_LATER}</Detail>
       </DetailsList>
       {item && !item.active && <p className={styles.problem}>{inactiveItemText(item.name)}</p>}
     </section>

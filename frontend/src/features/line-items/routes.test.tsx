@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
-import { details, formAnswers, formOptions } from './testData';
+import {
+  details,
+  formAnswers,
+  formOptions,
+  lineItemRecord,
+  transaction,
+  transactionPage,
+} from './testData';
 
 const FORM_OPTIONS: Record<string, MockHandler> = {
   ...formAnswers(),
@@ -13,6 +20,8 @@ const DETAILS: Record<string, MockHandler> = {
   ...FORM_OPTIONS,
   ...HISTORY_ANSWERS,
   'GET /api/line-items/L-1001': { body: details() },
+  'GET /api/financials/records/L-1001': { body: lineItemRecord() },
+  'GET /api/financials/transactions': { body: transactionPage([transaction()]) },
 };
 
 // Feature 007's addresses (build guide §5), with the requests each page makes.

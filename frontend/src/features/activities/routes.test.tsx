@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { approvalOf } from '@/features/approvals/testData';
+import { activityRecord } from '@/features/line-items/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
 import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
@@ -47,6 +48,7 @@ const ANSWERS: Record<string, MockHandler> = {
     }),
   },
   'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
+  'GET /api/financials/records/A-1001': { body: activityRecord() },
 };
 
 // Feature 006's addresses (build guide §5, D-194). Feature 006 keeps this file up to date as it

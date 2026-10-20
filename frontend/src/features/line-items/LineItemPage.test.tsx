@@ -8,13 +8,17 @@ import { testUser } from '@/test/users';
 import { LineItemPage } from './LineItemPage';
 import {
   approvedActivity,
+  currentRates,
   deleteResult,
   details,
   filmProduction,
   formAnswers,
   lineItem,
+  lineItemRecord,
   notFound,
-  currentRates,
+  transaction,
+  transactionPage,
+  usd,
 } from './testData';
 
 const GET = 'GET /api/line-items/L-1001';
@@ -26,6 +30,20 @@ function renderPage(answers: Record<string, MockHandler> = {}) {
     ...HISTORY_ANSWERS,
     ...formAnswers(),
     'GET /api/exchange-rates/current': { body: currentRates() },
+    'GET /api/financials/records/L-1001': { body: lineItemRecord() },
+    'GET /api/financials/transactions': {
+      body: transactionPage([
+        transaction({
+          id: 'FT-1003',
+          type: 'invoice',
+          name: 'Invoice 5100002003',
+          postingDate: '2026-04-02',
+          amount: usd('12000.00'),
+          amountDisplay: usd('12000.00'),
+        }),
+        transaction(),
+      ]),
+    },
     [GET]: { body: details() },
     ...answers,
   });
@@ -77,10 +95,15 @@ describe('LineItemPage (US4, FR-026)', () => {
     const march = screen.getByRole('cell', { name: 'Mar 2026' }).closest('tr') as HTMLElement;
     expect(within(march).getAllByRole('cell')[1]).toHaveTextContent('16,666.66 USD');
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
-    expect(screen.getByText('Filled by GSAP later')).toBeInTheDocument();
-    expect(screen.getByText('From finance (coming later)').closest('details')).not.toHaveAttribute(
-      'open',
-    );
+    // GSAP's money, open (015 FR-017): figures, every transaction and the SWBS code.
+    const financials = await screen.findByRole('region', { name: 'Financials' });
+    expect(within(financials).getByText('30,000.00 USD')).toBeInTheDocument();
+    expect(
+      await within(financials).findByRole('table', { name: /transactions, newest first/ }),
+    ).toBeInTheDocument();
+    expect(within(financials).getByText('Invoice 5100002003')).toBeInTheDocument();
+    expect(within(financials).getByText('DE03-M26-0003 (from GSAP data)')).toBeInTheDocument();
+    expect(screen.queryByText('From finance (coming later)')).not.toBeInTheDocument();
   });
 
   it('shows a planned cost in another currency with its USD amount', async () => {

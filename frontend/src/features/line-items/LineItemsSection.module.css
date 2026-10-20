@@ -103,3 +103,15 @@
   background: var(--brand-yellow-tint);
   box-shadow: inset 4px 0 0 var(--brand-yellow);
 }
+
+/* Committed above planned cost (015 FR-013): red, with an icon that names it. */
+.over {
+  color: var(--danger-text);
+}
+
+.overIcon {
+  width: 14px;
+  height: 14px;
+  margin-right: var(--space-1);
+  vertical-align: -2px;
+}

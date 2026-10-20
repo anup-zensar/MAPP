@@ -132,15 +132,6 @@ export const SECTION_SPREAD = 'Spread over time';
 export const SECTION_FINANCE_CODING = 'Finance coding';
 export const SECTION_BUDGET = 'Link to finance budget';
 export const SECTION_GSAP = 'GSAP request';
-export const SECTION_FROM_FINANCE = 'From finance (coming later)';
-export const FROM_FINANCE_FIELDS = [
-  'Total actuals',
-  '% of actual cost',
-  'Actuals at monthly rate',
-  'Total invoiced',
-  'Total purchase requests',
-];
-export const FROM_FINANCE_NOTE = 'Filled when the Finance module and GSAP are connected';
 
 export const LABEL = {
   name: 'Line item name',
