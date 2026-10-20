@@ -13,6 +13,7 @@ import (
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
 	"northstar/internal/platform/store"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -30,11 +31,14 @@ func TestJSONRepository_RoundTrip(t *testing.T) {
 	budget := money.USD(money.FromCents(70_000_000))
 	helix := campaigns.Campaign{
 		ID: "C-1001", PlanID: "P-1001", Name: "Helix launch", OwnerID: &priya, StartDate: &start, EndDate: &end,
-		Budget: &budget, Attributes: settings.AttributeValues{"SA-1005": json.RawMessage(`true`)}, Meta: meta,
+		Budget: &budget, Attributes: settings.AttributeValues{"SA-1005": json.RawMessage(`true`)}, BudgetPhasing: rollup.NotPhased, Meta: meta,
 	}
-	retail := campaigns.Campaign{ID: "C-1003", PlanID: "P-1002", Name: "Retail growth", Attributes: settings.AttributeValues{}, Meta: meta}
-	digital := campaigns.Initiative{ID: "I-1001", CampaignID: "C-1001", Name: "Digital & social", OwnerID: &priya, Attributes: settings.AttributeValues{}, Meta: meta}
-	fleet := campaigns.Initiative{ID: "I-1006", CampaignID: "C-1003", Name: "Fleet cards", Attributes: settings.AttributeValues{}, Meta: meta}
+	retail := campaigns.Campaign{ID: "C-1003", PlanID: "P-1002", Name: "Retail growth", Attributes: settings.AttributeValues{},
+		BudgetPhasing: rollup.NotPhased, Meta: meta}
+	digital := campaigns.Initiative{ID: "I-1001", CampaignID: "C-1001", Name: "Digital & social", OwnerID: &priya, Attributes: settings.AttributeValues{},
+		BudgetPhasing: rollup.NotPhased, Meta: meta}
+	fleet := campaigns.Initiative{ID: "I-1006", CampaignID: "C-1003", Name: "Fleet cards", Attributes: settings.AttributeValues{},
+		BudgetPhasing: rollup.NotPhased, Meta: meta}
 
 	err = db.Write(t.Context(), func(ctx context.Context) error {
 		for _, err := range []error{
@@ -115,5 +119,37 @@ func TestNoActivities_NothingBelow(t *testing.T) {
 	counts, err := activities.CopyAll(t.Context(), actor.System, "I-1001", "I-1009", 0)
 	if err != nil || counts != (campaigns.ActivityCopyCounts{}) {
 		t.Errorf("CopyAll = %+v, %v", counts, err)
+	}
+}
+
+// A campaign or initiative stored before 016 reads as not phased (016 data-model §4.5, T012).
+func TestJSONRepository_PhasingOfOlderRows(t *testing.T) {
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	repo := campaigns.NewJSONRepository()
+	err = db.Write(t.Context(), func(ctx context.Context) error {
+		if err := store.Put(ctx, "campaigns", "C-1001", map[string]any{"id": "C-1001", "planId": "P-1001", "name": "Old"}); err != nil {
+			return err
+		}
+		return store.Put(ctx, "initiatives", "I-1001", map[string]any{"id": "I-1001", "campaignId": "C-1001", "name": "Old"})
+	})
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	err = db.Read(t.Context(), func(ctx context.Context) error {
+		c, _, err := repo.GetCampaign(ctx, "C-1001")
+		if err != nil || c.BudgetPhasing.Method != rollup.MethodNone || c.BudgetPhasing.Months == nil {
+			t.Errorf("campaign phasing = %+v, %v", c.BudgetPhasing, err)
+		}
+		list, err := repo.ListInitiatives(ctx)
+		if err != nil || len(list) != 1 || list[0].BudgetPhasing.Method != rollup.MethodNone {
+			t.Errorf("initiatives = %+v, %v", list, err)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Read: %v", err)
 	}
 }

@@ -6,12 +6,15 @@ import (
 	"context"
 	"encoding/json"
 	"maps"
+	"reflect"
 	"slices"
 
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
 	"northstar/internal/platform/authz"
 	"northstar/internal/platform/errs"
+	"northstar/internal/platform/money"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -39,6 +42,15 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update P
 		checkTeams(ctx, authz.PlansEdit, stored.TeamIDs, AccessFacts(changed), &problems) // 014 FR-013
 		if update.Version == nil || *update.Version < 1 {
 			problems.Add("version", msgReload)
+		}
+		if changed.Currency != stored.Currency { // 016 FR-012: only while nothing below has an amount
+			facts, err := s.facts(ctx, []string{stored.ID})
+			if err != nil {
+				return err
+			}
+			if lock := currencyLock(*facts[stored.ID]); lock != nil {
+				problems.Add("currency", *lock)
+			}
 		}
 		if err := problems.Err(); err != nil {
 			return err
@@ -76,14 +88,21 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update P
 }
 
 // planChanges lists what changed between two versions of a plan, for the activity log: every changed field
-// as history.Diff finds it, then each Shell attribute whose value changed as a field "attributes.<id>",
-// sorted by attribute id (D-048).
+// as history.Diff finds it — the budget as money in the plan currency (016) — then each Shell attribute
+// whose value changed as a field "attributes.<id>", sorted by attribute id (D-048), then the phasing's
+// method and months when the phasing itself changed (016 FR-023).
 func planChanges(before, after Plan) ([]history.Change, error) {
 	withoutBefore, withoutAfter := before, after
 	withoutBefore.Attributes, withoutAfter.Attributes = nil, nil
+	withoutBefore.Budget, withoutAfter.Budget = nil, nil
+	withoutBefore.BudgetPhasing, withoutAfter.BudgetPhasing = rollup.Phasing{}, rollup.Phasing{}
 	changes, err := history.Diff(withoutBefore, withoutAfter)
 	if err != nil {
 		return nil, err
+	}
+	if oldBudget, newBudget := budgetValue(before), budgetValue(after); !bytes.Equal(oldBudget, newBudget) {
+		changes = append(changes, history.Change{Field: "budget", Old: oldBudget, New: newBudget})
+		slices.SortStableFunc(changes, func(x, y history.Change) int { return cmp.Compare(x.Field, y.Field) }) // as Diff orders them
 	}
 	ids := slices.Collect(maps.Keys(before.Attributes))
 	for id := range after.Attributes {
@@ -97,7 +116,20 @@ func planChanges(before, after Plan) ([]history.Change, error) {
 			changes = append(changes, history.Change{Field: "attributes." + id, Old: before.Attributes[id], New: after.Attributes[id]})
 		}
 	}
+	if !reflect.DeepEqual(before.BudgetPhasing.Normalised(), after.BudgetPhasing.Normalised()) {
+		changes = append(changes, rollup.PhasingChanges(before.BudgetPhasing, after.BudgetPhasing, before.Budget, after.Budget,
+			after.Year, after.Currency)...)
+	}
 	return changes, nil
+}
+
+// budgetValue is the logged value of a plan's budget: money in the plan currency, or null (016).
+func budgetValue(p Plan) json.RawMessage {
+	if p.Budget == nil {
+		return json.RawMessage("null")
+	}
+	encoded, _ := json.Marshal(money.Money{Amount: *p.Budget, Currency: p.Currency}) // always encodable
+	return encoded
 }
 
 // sameValue reports whether two stored attribute values are the same: equal JSON, or both missing.

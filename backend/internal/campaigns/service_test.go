@@ -9,6 +9,7 @@ import (
 	"northstar/internal/history"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/record"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -22,7 +23,7 @@ func TestCreateCampaign_OnlyNameRequired_FR005(t *testing.T) {
 
 	stored, _ := f.storedCampaign(t, view.ID)
 	want := Campaign{ID: "C-1001", PlanID: "P-1001", Name: "Helix launch", Attributes: settings.AttributeValues{},
-		Meta: record.NewMeta(priya, start)}
+		BudgetPhasing: rollup.NotPhased, Meta: record.NewMeta(priya, start)}
 	if !reflect.DeepEqual(stored, want) {
 		t.Errorf("stored = %+v\nwant %+v", stored, want)
 	}
@@ -68,7 +69,7 @@ func TestCreateCampaign_EveryProblemAtOnce_FR005(t *testing.T) {
 		{"not a number", CampaignInput{Name: "A", Budget: input("lots")},
 			problems("budget", "Enter an amount in USD with at most 2 decimals, such as 12500 or 12500.50.")},
 		{"not USD", CampaignInput{Name: "A", Budget: &moneyInputEUR},
-			problems("budget", "Enter an amount in USD with at most 2 decimals, such as 12500 or 12500.50.")},
+			problems("budget", "Enter the amount in USD, the plan's currency.")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

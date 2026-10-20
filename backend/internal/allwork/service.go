@@ -66,11 +66,15 @@ func (s *Service) input(ctx context.Context, a actor.Actor, q Query) (input, err
 	if year == 0 {
 		year = today.Year()
 	}
+	if q.YearFrom != 0 {
+		year = q.YearFrom
+	}
+	yearTo := max(q.YearTo, year)
 	currency, err := s.src.Currency(ctx, a.ID)
 	if err != nil {
 		return input{}, err
 	}
-	data, err := s.src.Year(ctx, year, today, shownColumns(q))
+	data, err := s.rangeData(ctx, year, yearTo, today, shownColumns(q))
 	if err != nil {
 		return input{}, err
 	}
@@ -78,15 +82,36 @@ func (s *Service) input(ctx context.Context, a actor.Actor, q Query) (input, err
 	if err != nil {
 		return input{}, err
 	}
-	columns, err := s.catalogue(ctx)
+	attributes, err := s.src.Attributes(ctx)
 	if err != nil {
 		return input{}, err
 	}
-	columns = forReader(columns, choices.SeesFinance)
 	return input{
-		query: q, year: year, today: today, now: now, currency: currency, data: data, choices: choices,
-		catalogue: columns,
+		query: q, year: year, yearFrom: year, yearTo: yearTo, today: today, now: now, currency: currency, data: data,
+		choices: choices, catalogue: forReader(catalogue(attributes), choices.SeesFinance), attributes: attributes,
 	}, nil
+}
+
+// rangeData reads the nodes of every year from from to to (016 FR-034): Source.Year once per year, each node
+// knowing its plan's year.
+func (s *Service) rangeData(ctx context.Context, from, to int, today date.Date, columns []string) (YearData, error) {
+	all := YearData{Nodes: []Node{}}
+	for year := from; year <= to; year++ {
+		data, err := s.src.Year(ctx, year, today, columns)
+		if err != nil {
+			return YearData{}, err
+		}
+		for i := range data.Nodes {
+			if data.Nodes[i].PlanYear == 0 {
+				data.Nodes[i].PlanYear = year
+			}
+		}
+		if from == to { // one year: its nodes as they are, without copying them
+			return data, nil
+		}
+		all.Nodes = append(all.Nodes, data.Nodes...)
+	}
+	return all, nil
 }
 
 // shownColumns returns the column keys the view of q shows or sorts by: its columns (the default ones when
@@ -116,10 +141,14 @@ func (s *Service) catalogue(ctx context.Context) ([]Column, error) {
 // Options returns the choices of the filter bar for year (0: the current year) and the column catalogue
 // (FR-004, FR-018): years, plans of the year, owners, teams with a's own first, business units, activity
 // types, the column groups and the default columns.
-func (s *Service) Options(ctx context.Context, a actor.Actor, year int) (Options, error) {
+func (s *Service) Options(ctx context.Context, a actor.Actor, year int, yearTo ...int) (Options, error) {
 	today := date.Today(s.now())
 	if year == 0 {
 		year = today.Year()
+	}
+	to := year
+	if len(yearTo) > 0 && yearTo[0] > year {
+		to = yearTo[0]
 	}
 	var options Options
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -127,7 +156,7 @@ func (s *Service) Options(ctx context.Context, a actor.Actor, year int) (Options
 		if err != nil {
 			return err
 		}
-		data, err := s.src.Year(ctx, year, today, nil)
+		data, err := s.rangeData(ctx, year, to, today, nil)
 		if err != nil {
 			return err
 		}
@@ -135,10 +164,11 @@ func (s *Service) Options(ctx context.Context, a actor.Actor, year int) (Options
 		if err != nil {
 			return err
 		}
-		columns, err := s.catalogue(ctx)
+		attributes, err := s.src.Attributes(ctx)
 		if err != nil {
 			return err
 		}
+		columns := catalogue(attributes)
 		prefs, err := s.preferences(ctx, a.ID)
 		if err != nil {
 			return err
@@ -158,6 +188,8 @@ func (s *Service) Options(ctx context.Context, a actor.Actor, year int) (Options
 			}
 		}
 		options = optionsOf(year, today.Year(), years, data, choices, offered(forReader(columns, choices.SeesFinance), named))
+		options.YearTo = to
+		options.Attributes = filterableAttributes(attributes)
 		return nil
 	})
 	if err != nil {

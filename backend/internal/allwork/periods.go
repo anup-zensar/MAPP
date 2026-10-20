@@ -2,6 +2,7 @@ package allwork
 
 import (
 	"fmt"
+	"strconv"
 
 	"northstar/internal/platform/money"
 )
@@ -40,15 +41,18 @@ func (b buckets) addAll(o buckets) {
 // periods are the period amounts of one view: per line item, activity and container, per activity's
 // unassigned row, and the footer.
 type periods struct {
-	prefix     string             // the year, "2026": the beginning of its months
+	from, to   int                // the range of years (016 FR-035)
 	of         map[*tnode]buckets // line items, activities and containers
 	unassigned map[*tnode]buckets // the unassigned row of each activity
 	footer     buckets            // the matching activities
 }
 
 // periodsOf works out the period amounts of the shown records of t for year (FR-023, FR-024).
-func periodsOf(t *tree, year int) periods {
-	p := periods{prefix: fmt.Sprintf("%04d", year), of: map[*tnode]buckets{}, unassigned: map[*tnode]buckets{}, footer: buckets{}}
+func periodsOf(t *tree, from, to int) periods {
+	if to < from {
+		to = from
+	}
+	p := periods{from: from, to: to, of: map[*tnode]buckets{}, unassigned: map[*tnode]buckets{}, footer: buckets{}}
 	for _, plan := range t.plans {
 		p.addNode(plan)
 	}
@@ -115,12 +119,16 @@ func (p periods) unassignedBuckets(a *tnode) buckets {
 	return b
 }
 
-// bucketOf returns the bucket of a month ("2026-03"): itself in the plan's year, Other years otherwise.
+// bucketOf returns the bucket of a month ("2026-03"): itself in the range's years, Other years otherwise.
 func (p periods) bucketOf(month string) string {
-	if len(month) == 7 && month[:4] == p.prefix {
-		return month
+	if len(month) != 7 {
+		return periodOther
 	}
-	return periodOther
+	year, err := strconv.Atoi(month[:4])
+	if err != nil || year < p.from || year > p.to {
+		return periodOther
+	}
+	return month
 }
 
 // columns returns the period columns of the view (FR-022) — the months of the year or its quarters, then
@@ -128,16 +136,33 @@ func (p periods) bucketOf(month string) string {
 // adds up: a month its own, a quarter its three months.
 func (p periods) columns(period string) ([]Period, [][]string) {
 	columns, buckets := []Period{}, [][]string{}
-	month := func(m int) string { return fmt.Sprintf("%s-%02d", p.prefix, m) }
-	if period == PeriodQuarter {
-		for q := 1; q <= 4; q++ {
-			columns = append(columns, Period{Key: fmt.Sprintf("Q%d", q), Label: fmt.Sprintf("Q%d", q)})
-			buckets = append(buckets, []string{month(3*q - 2), month(3*q - 1), month(3 * q)})
+	several := p.to > p.from // labels name their year only over several years ("Mar 2026", "Q1 2026")
+	for year := p.from; year <= p.to; year++ {
+		month := func(m int) string { return fmt.Sprintf("%04d-%02d", year, m) }
+		withYear := func(label string) string {
+			if several {
+				return fmt.Sprintf("%s %d", label, year)
+			}
+			return label
 		}
-	} else {
-		for m, label := range monthLabels {
-			columns = append(columns, Period{Key: month(m + 1), Label: label})
-			buckets = append(buckets, []string{month(m + 1)})
+		switch period {
+		case PeriodYear: // 016 FR-035
+			keys := make([]string, 0, 12)
+			for m := 1; m <= 12; m++ {
+				keys = append(keys, month(m))
+			}
+			columns = append(columns, Period{Key: strconv.Itoa(year), Label: strconv.Itoa(year)})
+			buckets = append(buckets, keys)
+		case PeriodQuarter:
+			for q := 1; q <= 4; q++ {
+				columns = append(columns, Period{Key: fmt.Sprintf("Q%d-%d", q, year), Label: withYear(fmt.Sprintf("Q%d", q))})
+				buckets = append(buckets, []string{month(3*q - 2), month(3*q - 1), month(3 * q)})
+			}
+		default:
+			for m, label := range monthLabels {
+				columns = append(columns, Period{Key: month(m + 1), Label: withYear(label)})
+				buckets = append(buckets, []string{month(m + 1)})
+			}
 		}
 	}
 	for _, extra := range []Period{{Key: periodOther, Label: "Other years"}, {Key: periodNoDates, Label: "No dates"}} {
@@ -168,4 +193,35 @@ func (p periods) amounts(b buckets, columns [][]string, cur Currency) ([]*money.
 		total = addAmount(total, &a)
 	}
 	return amounts, cur.optional(total)
+}
+
+// phased returns the phased budget of the container t in each period column (016 FR-038), converted once to
+// the display currency — nil in periods outside its plan's year and for a container that is not phased — and
+// the indexes of the periods where the planned cost planned is above it.
+func (p periods) phased(t *tnode, planned buckets, columns [][]string, cur Currency) ([]*money.Money, []int) {
+	amounts := make([]*money.Money, len(columns))
+	over := []int{}
+	if len(t.n.PhasedBudgetUSD) == 0 {
+		return amounts, over
+	}
+	phased := buckets{}
+	for _, m := range t.n.PhasedBudgetUSD {
+		phased.add(p.bucketOf(m.Month), m.USD)
+	}
+	for i, keys := range columns {
+		var budget, cost *money.Amount
+		for _, key := range keys {
+			if a, found := phased[key]; found {
+				budget = addAmount(budget, &a)
+			}
+			if a, found := planned[key]; found {
+				cost = addAmount(cost, &a)
+			}
+		}
+		amounts[i] = cur.optional(budget)
+		if budget != nil && cost != nil && cost.Cmp(*budget) > 0 {
+			over = append(over, i)
+		}
+	}
+	return amounts, over
 }

@@ -73,11 +73,15 @@ func (s *Service) form(ctx context.Context, a actor.Actor, pc planContext, curre
 	if err != nil {
 		return FormView{}, err
 	}
+	rates, err := s.settings.Rates(ctx)
+	if err != nil {
+		return FormView{}, err
+	}
 	for _, t := range types {
 		allowed := pc.model.Allows(t.ID)
 		if (t.Active && allowed) || (current != nil && current.ActivityTypeID == t.ID) {
-			form.ActivityTypes = append(form.ActivityTypes,
-				TypeOption{ID: t.ID, Name: t.Name, DefaultPlannedCost: t.DefaultPlannedCost, Active: t.Active, Allowed: allowed})
+			form.ActivityTypes = append(form.ActivityTypes, TypeOption{ID: t.ID, Name: t.Name, Active: t.Active, Allowed: allowed,
+				DefaultPlannedCost: inPlanCurrency(t.DefaultPlannedCost, pc.plan.Currency, rates), DefaultPlannedCostUSD: t.DefaultPlannedCost})
 		}
 	}
 
@@ -189,4 +193,17 @@ func (s *Service) defaults(ctx context.Context, pc planContext, active []Workflo
 		defaults.ApprovalWorkflowID = &active[0].ID
 	}
 	return defaults, nil
+}
+
+// inPlanCurrency converts an activity type's USD default planned cost into the plan currency at the current
+// rate (016 FR-016): 5,000.00 USD → 3,950.00 GBP at 0.79. nil stays nil; a currency without a rate keeps USD.
+func inPlanCurrency(usd *money.Money, currency string, rates money.Rates) *money.Money {
+	if usd == nil {
+		return nil
+	}
+	converted, err := rates.Convert(*usd, currency)
+	if err != nil {
+		return usd
+	}
+	return &converted
 }

@@ -24,15 +24,30 @@ type LineItems interface {
 	CopyAll(ctx context.Context, a actor.Actor, fromActivityID, toActivityID string, yearShift int) (int, error)
 	// DatesChanged is told after the activity's dates or ongoing changed, inside the same Write (007 FR-022).
 	DatesChanged(ctx context.Context, a actor.Actor, before, after Activity) error
+	// Items returns the line items of the activity activityID in creation order, with their planned costs in
+	// their own currency and in the plan currency (016 FR-026, the Split dialog).
+	Items(ctx context.Context, activityID string) ([]LineItemBrief, error)
+	// MoveToActivity moves the line items lineItemIDs to the activity toActivityID keeping their IDs, values
+	// and spreads, logging each as moved, inside the caller's Write (016 FR-028, FR-030).
+	MoveToActivity(ctx context.Context, a actor.Actor, lineItemIDs []string, toActivityID string) error
+}
+
+// LineItemBrief is a line item in short (016 FR-026): its planned cost in its own currency and in the plan
+// currency.
+type LineItemBrief struct {
+	ID, Name        string
+	PlannedCost     money.Money
+	PlannedCostPlan money.Money
 }
 
 // LineItemFacts are one activity's line items in short.
 type LineItemFacts struct {
-	Count          int
-	PlannedCostUSD money.Amount // sum of the line items' USD planned costs
-	AutoSpread     int          // spread Evenly, First or Last month: re-spread on a date change
-	CustomSpread   int          // custom spread: kept on a date change
-	Problems       []LineItemProblem
+	Count           int
+	PlannedCostPlan money.Amount // sum of the line items' planned costs in Currency, the plan currency (016 FR-015)
+	Currency        string       // the plan currency of PlannedCostPlan; "" when there are no line items
+	AutoSpread      int          // spread Evenly, First or Last month: re-spread on a date change
+	CustomSpread    int          // custom spread: kept on a date change
+	Problems        []LineItemProblem
 }
 
 // LineItemProblem is one problem of a line item that blocks submitting its activity.

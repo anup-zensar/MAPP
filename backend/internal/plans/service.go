@@ -19,6 +19,7 @@ import (
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
 	"northstar/internal/platform/store"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -58,7 +59,7 @@ func (s *Service) Defaults(ctx context.Context, a actor.Actor) (Defaults, error)
 	first, last := s.years()
 	defaults := Defaults{
 		CurrentYear: s.now().Year(), Year: s.now().Year(), Years: []int{}, TeamIDs: []string{},
-		DefaultSpread: SpreadEvenly, GoalStage: StageINQ,
+		DefaultSpread: SpreadEvenly, GoalStage: StageINQ, Currency: money.BaseCurrency, PlanType: TypeOperational,
 	}
 	for year := first; year <= last; year++ {
 		defaults.Years = append(defaults.Years, year)
@@ -149,7 +150,8 @@ const (
 	msgChooseListYear = "Choose a year such as 2026."
 )
 
-// filterProblems checks the team scope and the status of a list filter; empty means every plan.
+// filterProblems checks the team scope, the status, the year range and the plan types of a list filter;
+// empty means every plan.
 func filterProblems(filter ListFilter) errs.Problems {
 	var problems errs.Problems
 	if !slices.Contains([]string{"", ScopeAll, ScopeMyTeams}, filter.Scope) {
@@ -158,14 +160,41 @@ func filterProblems(filter ListFilter) errs.Problems {
 	if !slices.Contains([]string{"", string(StatusDraft), string(StatusPublished)}, filter.Status) {
 		problems.Add("status", msgChooseStatus)
 	}
+	if filter.YearFrom != nil && filter.YearTo != nil && *filter.YearTo < *filter.YearFrom { // 016 FR-033
+		problems.Add("yearTo", msgYearToBeforeFrom)
+	}
+	for _, t := range filter.Types {
+		if !slices.Contains(planTypes, PlanType(t)) {
+			problems.Add("type", msgChoosePlanType)
+			break
+		}
+	}
 	return problems
+}
+
+// msgYearToBeforeFrom refuses a year range that ends before it starts (016 FR-033).
+const msgYearToBeforeFrom = "Choose a last year that is not before the first year."
+
+// inRange reports whether p matches the year range and the plan types of filter (016 FR-033): year is the
+// alias of a one-year range.
+func (filter ListFilter) inRange(p Plan) bool {
+	from, to := filter.YearFrom, filter.YearTo
+	if filter.Year != nil {
+		from, to = filter.Year, filter.Year
+	}
+	if (from != nil && p.Year < *from) || (to != nil && p.Year > *to) {
+		return false
+	}
+	return len(filter.Types) == 0 || slices.Contains(filter.Types, string(p.PlanType))
 }
 
 // List returns the plans of the Plans page (FR-001 – FR-004, D-080): only the plans a may see (014 FR-007).
 // The team scope comes next: All plans, or My teams — plans with one of a's teams, which only narrows the
-// list (Q-006). Total counts the plans in the scope; the summary covers the scope and the year, whatever the status and the search; the
-// items match every filter — the search is any part of the name or the ID, ignoring letter case — newest
-// year first, then by name. Each level below is asked once for all the plans (SC-009).
+// list (Q-006). Total counts the plans in the scope; the summary covers the scope, the year range and the
+// plan types (016 FR-033), whatever the status and the search; the items match every filter — the search is
+// any part of the name or the ID, ignoring letter case — newest year first, then by name. Each level below
+// is asked once for all the plans (SC-009). Each plan's amounts are in its plan currency with the display
+// currency beside; the summary converts each plan's totals to USD before adding them (016 FR-014).
 func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (PlanList, error) {
 	if err := filterProblems(filter).Err(); err != nil {
 		return PlanList{}, err
@@ -197,15 +226,19 @@ func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (P
 		if err != nil {
 			return err
 		}
+		rates, err := s.settings.Rates(ctx)
+		if err != nil {
+			return err
+		}
 		l, err := s.lookupsFor(ctx, scoped)
 		if err != nil {
 			return err
 		}
 
-		var budgets, plannedCosts []money.Amount
+		var budgets, plannedCosts []money.Amount // in USD, each plan converted once
 		query := strings.ToLower(strings.TrimSpace(filter.Q))
 		for _, p := range scoped {
-			if filter.Year != nil && p.Year != *filter.Year {
+			if !filter.inRange(p) {
 				continue
 			}
 			f := *facts[p.ID]
@@ -216,23 +249,25 @@ func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (P
 				list.Summary.Draft++
 			}
 			if p.Budget != nil {
-				budgets = append(budgets, *p.Budget)
+				budgets = append(budgets, usdOf(*p.Budget, p.Currency, rates))
 			}
 			if f.PlannedCost != nil {
-				plannedCosts = append(plannedCosts, *f.PlannedCost)
+				plannedCosts = append(plannedCosts, usdOf(*f.PlannedCost, p.Currency, rates))
 			}
 			if (filter.Status != "" && string(p.Status) != filter.Status) ||
 				!(strings.Contains(strings.ToLower(p.Name), query) || strings.Contains(strings.ToLower(p.ID), query)) {
 				continue
 			}
-			sh, err := s.shownOf(ctx, p, f, l, c)
+			sh, err := s.shownOf(ctx, p, f, l, c.reading(p.Currency, rates))
 			if err != nil {
 				return err
 			}
+			own := identity(p.Currency)
 			list.Items = append(list.Items, PlanSummary{
 				ID: p.ID, Name: p.Name, Year: p.Year, Status: p.Status, AOP: p.AOP, Owner: sh.owner, Teams: sh.teams,
 				BusinessUnit: sh.businessUnit, Figures: sh.figures, Completeness: sh.completeness,
-				Access: authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
+				Access:   authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
+				PlanType: p.PlanType, Currency: p.Currency, PlanBudget: own.optional(p.Budget), PlanPlannedCost: own.optional(f.PlannedCost),
 			})
 		}
 		list.Summary.Budget = c.optional(sumOf(budgets))
@@ -379,10 +414,16 @@ func ReferencesFromSnapshot(data json.RawMessage) (References, error) {
 
 // referencesOf returns what the plan p uses; inBin says whether it is in the recycle bin.
 func referencesOf(p Plan, inBin bool) References {
-	return References{
+	p = p.Normalised() // a snapshot of before 016 has no currency
+	refs := References{
 		PlanID: p.ID, Name: p.Name, ModelID: p.ModelID, OwnerID: p.OwnerID, DefaultFinanceBudgetID: p.DefaultFinanceBudgetID,
-		TeamIDs: slices.Clone(p.TeamIDs), Attributes: maps.Clone(p.Attributes), InRecycleBin: inBin,
+		TeamIDs: slices.Clone(p.TeamIDs), Attributes: maps.Clone(p.Attributes), InRecycleBin: inBin, Currency: p.Currency,
 	}
+	if p.Budget != nil {
+		budget := *p.Budget
+		refs.Budget = &budget
+	}
+	return refs
 }
 
 // converter returns the converter of a's display currency (FR-015, D-079).
@@ -503,8 +544,8 @@ func sortedTeams(teams []people.TeamRef) []people.TeamRef {
 }
 
 // view returns p as the API returns it, inside the caller's transaction: its references by name, its
-// figures, goals and completeness in a's display currency, and its contents, from one call per level
-// below (FR-011 – FR-017, SC-009).
+// figures, goals and completeness in a's display currency, its figures in the plan currency too (016
+// FR-013), and its contents, from one call per level below (FR-011 – FR-017, SC-009).
 func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, error) {
 	facts, err := s.facts(ctx, []string{p.ID})
 	if err != nil {
@@ -515,11 +556,15 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 	if err != nil {
 		return PlanView{}, err
 	}
+	rates, err := s.settings.Rates(ctx)
+	if err != nil {
+		return PlanView{}, err
+	}
 	l, err := s.lookupsFor(ctx, []Plan{p})
 	if err != nil {
 		return PlanView{}, err
 	}
-	sh, err := s.shownOf(ctx, p, f, l, c)
+	sh, err := s.shownOf(ctx, p, f, l, c.reading(p.Currency, rates))
 	if err != nil {
 		return PlanView{}, err
 	}
@@ -540,13 +585,15 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 		DefaultSpread: p.DefaultSpread, BCPIR: p.BCPIR, GoalStage: p.GoalStage, Attributes: p.Attributes,
 		BusinessUnit: sh.businessUnit, Figures: sh.figures, Goals: goalsOf(p, m, f.ActivityGoals, c),
 		Completeness: sh.completeness, Contents: contentsOf(f), Meta: p.Meta,
-		Access: authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
+		Access:   authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
+		Currency: p.Currency, PlanType: p.PlanType, BudgetPhasing: rollup.ViewOf(p.BudgetPhasing, p.Budget, p.Year, p.Currency),
+		PlanFigures: figuresOf(p, f, identity(p.Currency)), CurrencyLock: currencyLock(f),
 	}
 	if view.Attributes == nil {
 		view.Attributes = settings.AttributeValues{}
 	}
 	if p.Budget != nil {
-		budget := money.USD(*p.Budget)
+		budget := money.Money{Amount: *p.Budget, Currency: p.Currency}
 		view.Budget = &budget
 	}
 	if p.GoalAmount != "" {

@@ -58,8 +58,9 @@ func TestCreateActivity_Contract_FR004(t *testing.T) {
 	var view activities.View
 	assertStatus(t, created, http.StatusCreated)
 	created.Decode(t, &view)
-	// A-1011 is the activity of the demo history's deleted initiative, in the recycle bin (011 T019).
-	if view.ID != "A-1012" || view.Status != activities.StatusCreated || view.PlannedCost.Format() != "25,000.00 USD" {
+	// A-1013 is the activity of the demo history's deleted initiative, in the recycle bin (011 T019); A-1011 and
+	// A-1012 are 016's GBP plan.
+	if view.ID != "A-1014" || view.Status != activities.StatusCreated || view.PlannedCost.Format() != "25,000.00 USD" {
 		t.Errorf("created = %+v", view)
 	}
 	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+

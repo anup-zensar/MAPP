@@ -1,6 +1,7 @@
 package activities
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strings"
@@ -84,7 +85,7 @@ func check(in checkInput) SubmitCheck {
 	balance := unassigned(a, in.lineItems)
 	if balance != nil && balance.Amount.Sign() < 0 {
 		result.LineItems = append(result.LineItems, SubmitProblem{Code: ProblemNegativeUnassigned, Field: "lineItems",
-			Message: fmt.Sprintf(negativeUnassignedFormat, money.USD(balance.Amount.Neg()).Format())})
+			Message: fmt.Sprintf(negativeUnassignedFormat, money.Money{Amount: balance.Amount.Neg(), Currency: balance.Currency}.Format())})
 	}
 	for _, p := range in.lineItems.Problems {
 		id, name := p.LineItemID, p.LineItemName
@@ -130,16 +131,18 @@ func missingFields(c SubmitCheck, attributes []settings.MissingField) []errs.Mis
 	return fields
 }
 
-// unassigned is the activity's unassigned planned cost (domain model §4.3): its planned cost (0.00 when
-// empty) minus its line items' USD planned costs; nil when there is neither a planned cost nor a line item.
+// unassigned is the activity's unassigned planned cost (domain model §4.3, 016 FR-015): its planned cost
+// (0.00 when empty) minus its line items' planned costs in the plan currency; nil when there is neither a
+// planned cost nor a line item.
 func unassigned(a Activity, li LineItemFacts) *money.Money {
 	if a.PlannedCost == nil && li.Count == 0 {
 		return nil
 	}
 	var planned money.Amount
+	currency := cmp.Or(li.Currency, money.BaseCurrency)
 	if a.PlannedCost != nil {
-		planned = a.PlannedCost.Amount
+		planned, currency = a.PlannedCost.Amount, a.PlannedCost.Currency
 	}
-	balance := money.USD(planned.Sub(li.PlannedCostUSD))
+	balance := money.Money{Amount: planned.Sub(li.PlannedCostPlan), Currency: currency}
 	return &balance
 }

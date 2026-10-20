@@ -18,7 +18,9 @@ import (
 	"northstar/internal/people"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/date"
 	"northstar/internal/platform/ids"
+	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
 	"northstar/internal/platform/store"
 	"northstar/internal/settings"
@@ -66,9 +68,10 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixPerson: "U-1007", ids.PrefixActivityType: "AT-1007", ids.PrefixModel: "MOD-1003",
 		ids.PrefixShellAttribute: "SA-1036", ids.PrefixShellOption: "SO-1111", ids.PrefixFinanceBudget: "FB-1003",
 		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1009",
-		ids.PrefixPlan: "P-1004", ids.PrefixCampaign: "C-1005", ids.PrefixInitiative: "I-1010", ids.PrefixActivity: "A-1012",
-		ids.PrefixLineItem: "L-1010", ids.PrefixLogEntry: "LOG-1047", ids.PrefixBinEntry: "BIN-1002",
+		ids.PrefixPlan: "P-1005", ids.PrefixCampaign: "C-1006", ids.PrefixInitiative: "I-1012", ids.PrefixActivity: "A-1014",
+		ids.PrefixLineItem: "L-1012", ids.PrefixLogEntry: "LOG-1047", ids.PrefixBinEntry: "BIN-1002",
 		ids.PrefixApprovalWorkflow: "WF-1004", ids.PrefixApprovalRound: "AR-1009",
+		ids.PrefixExchangeRate: "XR-1125", ids.PrefixRateImport: "RI-1002",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 		ids.PrefixFinancialTransaction: "FT-1012", ids.PrefixFinancialImport: "FIM-1002",
 		ids.PrefixApprovalDelegation: "DLG-1002",
@@ -248,6 +251,8 @@ type demoData struct {
 	teams         []people.Team
 	memberships   []people.Membership
 	currencies    []settings.Currency
+	rates         []settings.ExchangeRate // 016: the dated rates
+	rateImports   []settings.RateImport
 	activityTypes []settings.ActivityType
 	models        []settings.Model
 	budgets       []settings.FinanceBudget
@@ -290,6 +295,10 @@ func loadDemo(t *testing.T) demoData {
 		d.memberships, err = peopleRepo.ListMemberships(ctx)
 		collect(err)
 		d.currencies, err = settingsRepo.ListCurrencies(ctx)
+		collect(err)
+		d.rates, err = settingsRepo.ListRates(ctx)
+		collect(err)
+		d.rateImports, err = settingsRepo.ListRateImports(ctx)
 		collect(err)
 		d.activityTypes, err = settingsRepo.ListActivityTypes(ctx)
 		collect(err)
@@ -415,4 +424,18 @@ func storedPeople(t *testing.T, db *store.DB) []people.Person {
 		return err
 	})
 	return list
+}
+
+// currentRates returns the rate of every currency current on the seed day: its latest dated rate on or
+// before it (016 FR-002); USD is 1.
+func (d demoData) currentRates() money.Rates {
+	rates := money.Rates{money.BaseCurrency: money.One}
+	latest := map[string]date.Date{}
+	today := date.Today(loadedAt)
+	for _, r := range d.rates {
+		if !r.Date.After(today) && (latest[r.Currency].IsZero() || r.Date.After(latest[r.Currency])) {
+			rates[r.Currency], latest[r.Currency] = r.Rate, r.Date
+		}
+	}
+	return rates
 }

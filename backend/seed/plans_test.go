@@ -37,6 +37,7 @@ func TestLoad_Plans_US2(t *testing.T) {
 		"P-1001 FY2026 Lubricants Europe 2026 MOD-1001 T-1001 U-1002 1,200,000.00 published Lubricants inq:250000 fb=FB-1001 aop=false smp= spread=evenly",
 		"P-1002 FY2026 Mobility China 2026 MOD-1002 T-1002 U-1004 800,000.00 draft  inq:150000 fb=FB-1002 aop=false smp= spread=evenly",
 		"P-1003 FY2027 Global Brand 2027 MOD-1001 T-1003 U-1001 500,000.00 draft Mobility+Lubricants revenue:2000000.00 fb= aop=true smp=true spread=evenly",
+		"P-1004 FY2027 Lubricants UK & Ireland 2027 MOD-1001 T-1001 U-1002 600,000.00 draft Lubricants inq: fb= aop=false smp= spread=evenly",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("plans =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
@@ -57,4 +58,18 @@ func TestLoad_Plans_US2(t *testing.T) {
 // raw writes a stored attribute value as its JSON, "" when there is none.
 func raw(value json.RawMessage) string {
 	return string(value)
+}
+
+// 016's plan type and plan currency (data-model §8): P-1001 and P-1002 Operational, P-1003 Strategic, all USD and
+// not phased; P-1004 Cross-market, planned in GBP, its 600,000.00 GBP budget phased evenly.
+func TestLoad_PlanTypesAndCurrencies_016(t *testing.T) {
+	d := loadDemo(t)
+	var got []string
+	for _, p := range d.plans {
+		got = append(got, fmt.Sprintf("%s %s %s %s", p.ID, p.PlanType, p.Currency, p.BudgetPhasing.Method))
+	}
+	want := []string{"P-1001 operational USD none", "P-1002 operational USD none", "P-1003 strategic USD none", "P-1004 crossMarket GBP evenly"}
+	if !slices.Equal(got, want) {
+		t.Errorf("plans = %q, want %q", got, want)
+	}
 }

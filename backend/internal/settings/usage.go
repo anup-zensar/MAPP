@@ -25,8 +25,9 @@ type Reference struct {
 	Attributes          AttributeValues   // its Shell attribute values; nil when none
 	ModelID             string            // plans
 	ActivityTypeID      string            // activities
-	Currency            string            // line items: their currency; people: their display currency
+	Currency            string            // line items: their currency; people: their display currency; plans: their plan currency (016)
 	PlannedCost         *money.Amount     // line items: planned cost in Currency
+	Budget              *money.Amount     // plans: the plan budget in Currency (016 FR-005)
 	FinanceBudgetID     string            // plans: default finance budget
 	FinanceBudgetItemID string            // line items: linked finance budget item
 }
@@ -98,6 +99,7 @@ type usageIndex struct {
 	linkedOptions      map[string]map[string]*tally // parent option id → dependent attribute id → its options linked to it
 	lineItemsByCurr    map[string]*tally
 	peopleByCurr       map[string]*tally
+	plansByCurr        map[string]*tally // plans planned in a currency (016 FR-010)
 	lineItemsByItem    map[string]*tally
 	plansByBudget      map[string]*tally
 }
@@ -111,7 +113,7 @@ func (s *Service) usage(ctx context.Context) (*usageIndex, error) {
 		valuesByAttribute: map[string]*tally{}, valuesByOption: map[string]*tally{},
 		dependents: map[string][]binned[Attribute]{}, conditionsByOption: map[string]*tally{},
 		linkedOptions:   map[string]map[string]*tally{},
-		lineItemsByCurr: map[string]*tally{}, peopleByCurr: map[string]*tally{}, lineItemsByItem: map[string]*tally{},
+		lineItemsByCurr: map[string]*tally{}, peopleByCurr: map[string]*tally{}, plansByCurr: map[string]*tally{}, lineItemsByItem: map[string]*tally{},
 		plansByBudget: map[string]*tally{},
 	}
 	refs, err := s.references(ctx)
@@ -180,9 +182,12 @@ func (u *usageIndex) addReference(ref Reference) {
 		count(u.activitiesByType, ref.ActivityTypeID, ref.InBin)
 	}
 	if ref.Currency != "" {
-		if ref.Level == "" {
+		switch ref.Level {
+		case "":
 			count(u.peopleByCurr, ref.Currency, ref.InBin)
-		} else {
+		case LevelPlan:
+			count(u.plansByCurr, ref.Currency, ref.InBin)
+		default:
 			count(u.lineItemsByCurr, ref.Currency, ref.InBin)
 		}
 	}
@@ -368,8 +373,8 @@ func (u *usageIndex) option(o Option, a Attribute) Usage {
 	return newUsage(parts, nil)
 }
 
-// currency returns the usage of the currency code: the line items in it and the people showing amounts in
-// it.
+// currency returns the usage of the currency code: the line items in it, the people showing amounts in it
+// and the plans planned in it (016 FR-010), with those plans as records.
 func (u *usageIndex) currency(code string) Usage {
 	var parts []UsagePart
 	if p, used := usedBy(u.lineItemsByCurr, code, string(LevelLineItem), "line item", "line items"); used {
@@ -378,7 +383,12 @@ func (u *usageIndex) currency(code string) Usage {
 	if t := u.peopleByCurr[code]; t != nil {
 		parts = append(parts, part(usedByPerson, *t, "Display currency of "+plural(t.count, "person", "people")))
 	}
-	return newUsage(parts, nil)
+	var plans []history.RecordRef
+	if t := u.plansByCurr[code]; t != nil {
+		parts = append(parts, part(string(LevelPlan), *t, "Plan currency of "+plural(t.count, "plan", "plans")))
+		plans = u.livePlans(func(ref Reference) bool { return ref.Currency == code })
+	}
+	return newUsage(parts, plans)
 }
 
 // item returns the usage of the finance budget item id: the line items linked to it.

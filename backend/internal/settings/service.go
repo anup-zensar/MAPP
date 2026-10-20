@@ -54,6 +54,7 @@ type Service struct {
 	history *history.Service
 	now     clock.Clock
 	sources []ReferenceSource
+	feed    RateFeed // how rate files are read (016 FR-008); nil reads the GSAP daily rate file
 }
 
 // NewService returns the Settings service. It keeps the records in repo, gives them IDs with generator,

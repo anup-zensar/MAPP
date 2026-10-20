@@ -36,18 +36,23 @@ type DisplayAmounts struct {
 	Goals                 GoalSums      `json:"goals"`
 }
 
-// displayFor returns the display currency of the person a, read in a transaction of its own.
+// displayFor returns the display currency of the person a, read in a transaction of its own, converting the
+// plan currencies' amounts with the current rates (016 FR-013): each amount once, from its own currency.
 func (s *Service) displayFor(ctx context.Context, a actor.Actor) (money.Display, error) {
-	if s.displayRates == nil {
-		return money.DisplayUSD, nil
-	}
 	d := money.DisplayUSD
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		rate, err := s.displayRates.DisplayRateOf(ctx, a.ID)
+		rates, err := s.deps.Settings.Rates(ctx)
 		if err != nil {
 			return err
 		}
-		d = money.DisplayIn(rate.Code, rate.Rate)
+		if s.displayRates != nil {
+			rate, err := s.displayRates.DisplayRateOf(ctx, a.ID)
+			if err != nil {
+				return err
+			}
+			d = money.DisplayIn(rate.Code, rate.Rate)
+		}
+		d = d.WithRates(rates)
 		return nil
 	})
 	return d, err
@@ -148,7 +153,7 @@ func displayAmounts(d money.Display, budget, parentRemaining *money.Money, bc Bu
 			RemainingForChildren: d.Optional(bc.RemainingForChildren),
 			OverAllocatedBy:      d.Optional(bc.OverAllocatedBy),
 			PlannedCost:          d.Optional(bc.PlannedCost),
-			BudgetUsedPercent:    bc.BudgetUsedPercent, // worked out in USD
+			BudgetUsedPercent:    bc.BudgetUsedPercent, // worked out in the plan currency
 			OverBudget:           bc.OverBudget,
 			LeftToPlan:           d.Optional(bc.LeftToPlan),
 		},

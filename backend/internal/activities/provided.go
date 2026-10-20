@@ -131,6 +131,7 @@ func (s *Service) addFacts(ctx context.Context, inPlan planActivities, lineItems
 				sum = f.PlannedCost.Add(sum)
 			}
 			f.PlannedCost = &sum
+			f.AmountsSet++ // an amount in the plan currency, which locks it (016 FR-012)
 		}
 		goals := goalsOf(a, inPlan.base.model)
 		if goals.INQ != nil {
@@ -248,6 +249,7 @@ func (s *Service) copyActivities(ctx context.Context, a actor.Actor, newInitiati
 // copyOf returns a copy of the activity a that shares no pointer or map with it, its dates moved years on.
 func copyOf(a Activity, years int) Activity {
 	dup := a
+	dup.SplitFromID = "" // copies never carry the split link (016 FR-031)
 	dup.StartDate, dup.EndDate = shiftDate(a.StartDate, years), shiftDate(a.EndDate, years)
 	dup.PlannedCost, dup.Revenue = clonePtr(a.PlannedCost), clonePtr(a.Revenue)
 	dup.INQ, dup.MQL = clonePtr(a.INQ), clonePtr(a.MQL)

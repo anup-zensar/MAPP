@@ -45,6 +45,7 @@ const (
 	initiativeMoveNameTaken    = "'%s' already has an initiative called '%s' — rename it first."
 	datesDontFitMessage        = "Dates don't fit (%s) — change the initiative's dates first."
 	campaignCopyOtherYear      = "Campaigns can be copied only into plans of the same year (%d)."
+	otherCurrencyReason        = "Planned in %s — this campaign's amounts are in %s." // 016 FR-017
 	initiativeCopyOtherPlan    = "Initiatives can be copied only into campaigns of the same plan."
 	copiedFromDetails          = "Copied from '%s' (%s)" // + ", with 2 initiatives, 7 activities and …" when records came along
 	copySuffix                 = " (copy)"
@@ -104,7 +105,10 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 			status := p.Status
 			d := Destination{ID: p.ID, Name: p.Name, Current: current, Available: true, PlanStatus: &status}
 			d.RemainingAfter, d.OverAllocatedBy = remainingAfter(p.Budget, campaignBudgets(siblings), c.Budget)
-			if purpose == PurposeMove {
+			if p.Currency != plan.Currency { // 016 FR-017: amounts are never converted silently
+				d.RemainingAfter, d.OverAllocatedBy = nil, nil
+				unavailable(&d, fmt.Sprintf(otherCurrencyReason, p.Currency, plan.Currency))
+			} else if purpose == PurposeMove {
 				if other, taken := campaignNamed(siblings, c.Name, c.ID); taken {
 					unavailable(&d, fmt.Sprintf(campaignNameTakenReason, other.Name))
 				}
@@ -248,6 +252,8 @@ func (s *Service) MoveCampaign(ctx context.Context, a actor.Actor, id string, in
 			problems.Add("planId", fmt.Sprintf(campaignOtherYearMessage, plan.Year))
 		case target.ID == plan.ID:
 			problems.Add("planId", fmt.Sprintf(alreadyInMessage, c.Name, plan.Name))
+		case target.Currency != plan.Currency: // 016 FR-017
+			problems.Add("planId", fmt.Sprintf(otherCurrencyReason, target.Currency, plan.Currency))
 		default:
 			siblings, err := s.repo.CampaignsOfPlan(ctx, target.ID)
 			if err != nil {
@@ -387,6 +393,8 @@ func (s *Service) CopyCampaign(ctx context.Context, a actor.Actor, id string, in
 			targetProblem = planGoneChooseMessage
 		case target.Year != plan.Year:
 			targetProblem = fmt.Sprintf(campaignCopyOtherYear, plan.Year)
+		case target.Currency != plan.Currency: // 016 FR-017
+			targetProblem = fmt.Sprintf(otherCurrencyReason, target.Currency, plan.Currency)
 		default:
 			if siblings, err = s.repo.CampaignsOfPlan(ctx, target.ID); err != nil {
 				return err
@@ -566,6 +574,7 @@ func (s *Service) putCampaignCopy(ctx context.Context, a actor.Actor, c Campaign
 	dup.OwnerID, dup.Budget = clonePtr(c.OwnerID), clonePtr(c.Budget)
 	dup.StartDate, dup.EndDate = shiftDate(c.StartDate, shiftYears), shiftDate(c.EndDate, shiftYears)
 	dup.Attributes = maps.Clone(orEmpty(c.Attributes))
+	dup.BudgetPhasing = rollup.ShiftPhasing(c.BudgetPhasing, shiftYears) // copies keep their phasing (016 FR-025)
 	dup.Meta = record.NewMeta(a, s.now())
 	var err error
 	if dup.ID, err = s.ids.Next(ctx, ids.PrefixCampaign); err != nil {
@@ -582,6 +591,7 @@ func (s *Service) putInitiativeCopy(ctx context.Context, a actor.Actor, i Initia
 	dup.OwnerID, dup.Budget = clonePtr(i.OwnerID), clonePtr(i.Budget)
 	dup.StartDate, dup.EndDate = shiftDate(i.StartDate, shiftYears), shiftDate(i.EndDate, shiftYears)
 	dup.Attributes = maps.Clone(orEmpty(i.Attributes))
+	dup.BudgetPhasing = rollup.ShiftPhasing(i.BudgetPhasing, shiftYears) // copies keep their phasing (016 FR-025)
 	dup.Meta = record.NewMeta(a, s.now())
 	var err error
 	if dup.ID, err = s.ids.Next(ctx, ids.PrefixInitiative); err != nil {

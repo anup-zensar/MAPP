@@ -53,18 +53,44 @@ func (s *Service) Option(ctx context.Context, id string) (Option, bool, error) {
 	return get(ctx, s, func(ctx context.Context) (Option, bool, error) { return s.repo.GetOption(ctx, id) })
 }
 
-// Currency returns the currency with the ISO code, and false when there is none.
+// Currency returns the currency with the ISO code, and false when there is none. Its Rate is its current
+// rate (016 FR-002), with who recorded it and when.
 func (s *Service) Currency(ctx context.Context, code string) (Currency, bool, error) {
-	return get(ctx, s, func(ctx context.Context) (Currency, bool, error) { return s.repo.GetCurrency(ctx, code) })
+	return get(ctx, s, func(ctx context.Context) (Currency, bool, error) {
+		c, found, err := s.repo.GetCurrency(ctx, code)
+		if err != nil || !found {
+			return c, found, err
+		}
+		book, err := s.rateBook(ctx)
+		return withRate(c, book, s.today()), true, err
+	})
 }
 
-// Currencies returns every currency, active and inactive: USD first, then by code.
+// Currencies returns every currency, active and inactive: USD first, then by code; each with its current
+// rate (016 FR-002).
 func (s *Service) Currencies(ctx context.Context) ([]Currency, error) {
-	return list(ctx, s, s.repo.ListCurrencies, compareCurrencies)
+	return list(ctx, s, s.currenciesWithRates, compareCurrencies)
 }
 
-// Rates returns the current rate of every currency, active or not (FR-029, D-027), for conversions with
-// money.Rates.ToUSD and FromUSD at read time (D-041).
+// currenciesWithRates reads every currency with its current rate, inside the caller's transaction.
+func (s *Service) currenciesWithRates(ctx context.Context) ([]Currency, error) {
+	currencies, err := s.repo.ListCurrencies(ctx)
+	if err != nil {
+		return nil, err
+	}
+	book, err := s.rateBook(ctx)
+	if err != nil {
+		return nil, err
+	}
+	today := s.today()
+	for i, c := range currencies {
+		currencies[i] = withRate(c, book, today)
+	}
+	return currencies, nil
+}
+
+// Rates returns the current rate of every currency, active or not (FR-029; 016 FR-002: the latest dated rate
+// on or before today), for conversions with money.Rates at read time (D-041).
 func (s *Service) Rates(ctx context.Context) (money.Rates, error) {
 	currencies, err := s.Currencies(ctx)
 	if err != nil {

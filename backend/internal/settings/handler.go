@@ -71,6 +71,8 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("DELETE /api/currencies/{code}", signedIn(h.deleteCurrency))
 	r.Handle("POST /api/currencies/{code}/impact", signedIn(h.currencyImpact))
 	r.Handle("POST /api/currencies/{code}/status", signedIn(h.setCurrencyStatus))
+	h.rateRoutes(r, signedIn)      // 016: rate history, current rates, GSAP rate import
+	h.fieldHelpRoutes(r, signedIn) // 016: Field help
 
 	r.Handle("GET /api/finance-budgets", signedIn(h.listFinanceBudgets))
 	r.Handle("PATCH /api/finance-budgets/{budgetId}", signedIn(h.renameFinanceBudget))

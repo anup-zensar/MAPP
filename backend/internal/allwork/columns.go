@@ -57,7 +57,16 @@ var standardColumns = []Column{
 	standard("revenue", "Revenue", KindMoney, rolledLevels),
 	standard("createdAt", "Created", KindDateTime, recordLevels),
 	standard("updatedAt", "Last changed", KindDateTime, recordLevels),
+	// 016 FR-037: the plan's year, type and currency, and the amounts in the plan currency.
+	standard("year", "Year", KindNumber, recordLevels),
+	standard("planType", "Plan type", KindText, recordLevels),
+	standard("planCurrency", "Plan currency", KindText, recordLevels),
+	standard("planBudgetPlan", "Plan budget (plan currency)", KindMoney, containerLevels),
+	standard("plannedCostPlan", "Planned cost (plan currency)", KindMoney, []Level{LevelActivity, LevelLineItem}),
 }
+
+// planTypeWords are the plan types as people read them (016 FR-032).
+var planTypeWords = map[string]string{"operational": "Operational", "strategic": "Strategic", "crossMarket": "Cross-market"}
 
 // DefaultColumns are the columns of the standard view, in order (FR-019).
 var DefaultColumns = []string{
@@ -271,6 +280,17 @@ func recordCell(key string, r cellRow, cur Currency) *Cell {
 		return dateTimeCell(n.CreatedAt)
 	case "updatedAt":
 		return dateTimeCell(n.UpdatedAt)
+	case "year": // 016 FR-037
+		year := int64(r.year)
+		return numberCell(&year)
+	case "planType":
+		return textCell(planTypeWords[planOf(r.t).n.PlanType]) // of the record's plan
+	case "planCurrency":
+		return textCell(planOf(r.t).n.PlanCurrency)
+	case "planBudgetPlan":
+		return planMoneyCell(n.BudgetPlan)
+	case "plannedCostPlan":
+		return planMoneyCell(n.PlannedCostPlan)
 	}
 	if slices.Contains(rolledColumns, key) { // an activity's own values
 		return rolledCell(key, r.t, r.t.fig, cur)
@@ -420,6 +440,19 @@ func moneyCell(cur Currency, usd *money.Amount) *Cell {
 	m := cur.money(*usd)
 	cell := &Cell{Kind: KindMoney, Money: &m}
 	if m.Amount.Sign() < 0 {
+		cell.Tone = ToneProblem
+	}
+	return cell
+}
+
+// planMoneyCell is an amount in its plan's currency, as it is (016 FR-037); red when negative, "—" for none.
+func planMoneyCell(m *money.Money) *Cell {
+	if m == nil {
+		return emptyCell()
+	}
+	shown := *m
+	cell := &Cell{Kind: KindMoney, Money: &shown}
+	if shown.Amount.Sign() < 0 {
 		cell.Tone = ToneProblem
 	}
 	return cell

@@ -31,6 +31,7 @@ func TestDefaults_FR006(t *testing.T) {
 		CurrentYear: 2026, Years: []int{2025, 2026, 2027, 2028, 2029, 2030, 2031}, Year: 2026,
 		TeamIDs: []string{teamLubricants}, OwnerID: ptr(priya.ID), // Closed team is inactive
 		DefaultSpread: SpreadEvenly, GoalStage: StageINQ, // two active models: none chosen
+		Currency: "USD", PlanType: TypeOperational, // 016 FR-011, FR-032
 	}
 	if err != nil || !reflect.DeepEqual(defaults, want) {
 		t.Errorf("Defaults = %+v, %v\nwant       %+v", defaults, err, want)
@@ -133,7 +134,7 @@ func TestCreate_DescriptionBudgetGoalChecks_FR010(t *testing.T) {
 		{"description of 2,001 characters", func(in *PlanInput) { in.Description = strings.Repeat("d", 2001) },
 			problems("description", "Use 2,000 characters or fewer.")},
 		{"budget in EUR", func(in *PlanInput) { in.Budget = &money.Input{Amount: "100", Currency: "EUR"} },
-			problems("budget", "Enter the plan budget in USD.")},
+			problems("budget", "Enter the amount in USD, the plan's currency.")},
 		{"budget not a number", func(in *PlanInput) { in.Budget = &money.Input{Amount: "lots", Currency: "USD"} },
 			problems("budget", "Enter an amount, for example 1200000 or 1,200,000.00.")},
 		{"budget with 3 decimals", func(in *PlanInput) { in.Budget = &money.Input{Amount: "1.234", Currency: "USD"} },
@@ -681,9 +682,9 @@ func TestLookupAndReferences(t *testing.T) {
 	}
 	want := []References{
 		{PlanID: kept.ID, Name: "FY2026 Lubricants Test", ModelID: lubricantsModel, OwnerID: priya.ID,
-			TeamIDs: []string{teamLubricants}, Attributes: attributesOf(lubricants)},
+			TeamIDs: []string{teamLubricants}, Attributes: attributesOf(lubricants), Currency: "USD"},
 		{PlanID: deleted.ID, Name: "FY2026 Mobility Test", ModelID: mobilityModel, TeamIDs: []string{teamMobility},
-			Attributes: attributesOf(lubricants), InRecycleBin: true},
+			Attributes: attributesOf(lubricants), InRecycleBin: true, Currency: "USD"},
 	}
 	if got, expected := asJSON(t, refs), asJSON(t, want); refsErr != nil || got != expected {
 		t.Errorf("References = %s, %v\nwant         %s", got, refsErr, expected)

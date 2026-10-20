@@ -44,6 +44,8 @@ func TestLoad_Activities_FR003(t *testing.T) {
 		`A-1008 Grand opening Shanghai I-1005 created AT-1002 "U-1004" 01 Apr – 30 Jun 2026 40,000.00 USD "WF-1002"`,
 		`A-1009 Fleet card launch I-1006 submitted AT-1006 "U-1004" 01 May – 31 Dec 2026 150,000.00 USD "WF-1002"`,
 		`A-1010 Lunar new year promo I-1005 created AT-1003 "" no dates no cost ""`,
+		`A-1011 UK launch event I-1009 created AT-1002 "U-1002" 01 Mar – 31 May 2027 40,000.00 GBP "WF-1001"`,
+		`A-1012 Dealer conference I-1010 created AT-1002 "U-1002" 01 Sep – 30 Sep 2027 25,000.00 GBP "WF-1001"`,
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("activities =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))

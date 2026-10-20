@@ -41,7 +41,7 @@ func (p campaignPlans) PlansOfYear(ctx context.Context, year int) ([]campaigns.P
 }
 
 // planFacts turns a stored plan into campaigns' PlanFacts: no owner and no budget become nil, the budget
-// USD money.
+// money in the plan currency (016).
 func planFacts(p plans.Plan) campaigns.PlanFacts {
 	facts := campaigns.PlanFacts{
 		ID: p.ID, Name: p.Name, Year: p.Year, Status: string(p.Status), ModelID: p.ModelID, Attributes: p.Attributes,
@@ -51,8 +51,9 @@ func planFacts(p plans.Plan) campaigns.PlanFacts {
 		owner := p.OwnerID
 		facts.OwnerID = &owner
 	}
+	facts.Currency = p.Currency // 016 FR-011: every amount of the plan is in it
 	if p.Budget != nil {
-		budget := money.USD(*p.Budget)
+		budget := money.Money{Amount: *p.Budget, Currency: p.Currency}
 		facts.Budget = &budget
 	}
 	return facts
@@ -74,8 +75,10 @@ func campaignLevels(svc *campaigns.Service) []plans.Level {
 				if level == "campaign" {
 					f.Campaigns += r.Campaigns
 					f.CampaignBudgets = f.CampaignBudgets.Add(r.AllocatedToCampaigns.Amount)
+					f.AmountsSet += r.CampaignBudgetsSet // 016 FR-012
 				} else {
 					f.Initiatives += r.Initiatives
+					f.AmountsSet += r.InitiativeBudgetsSet
 				}
 				for _, p := range r.PublishProblems {
 					if p.Record.Type == level {

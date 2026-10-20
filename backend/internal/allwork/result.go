@@ -15,14 +15,18 @@ const unassignedName = "Unassigned planned cost (Sys_Gen_Balance)"
 
 // input is everything one view is worked out from.
 type input struct {
-	query     Query
-	year      int
-	today     date.Date
-	now       time.Time
-	currency  Currency
-	data      YearData
-	choices   Choices  // the teams, business units, activity types and people that exist
-	catalogue []Column // the columns the grid offers
+	query      Query
+	year       int // the first year of the range
+	yearFrom   int // 016: the range (0: year)
+	yearTo     int
+	attributes []Attribute // 016: every Shell attribute, for the attribute filters and the Breakdown
+	rateNotes  []string    // 016: the rates used, for an export's notes (FR-009)
+	today      date.Date
+	now        time.Time
+	currency   Currency
+	data       YearData
+	choices    Choices  // the teams, business units, activity types and people that exist
+	catalogue  []Column // the columns the grid offers
 }
 
 // built is a worked-out view: the answer, the tree it came from and the query as it applied, without the
@@ -37,7 +41,17 @@ type built struct {
 // roll-ups, sorts, and makes the rows — with the period amounts of Budget & cost — the cards, the count and
 // the totals row. Filter values and columns that no longer exist are ignored and listed in leftOut (FR-031).
 func build(in input) built {
+	if in.yearFrom == 0 {
+		in.yearFrom = in.year
+	}
+	if in.yearTo < in.yearFrom {
+		in.yearTo = in.yearFrom
+	}
 	q, leftOut := knownValues(in.query, in.data, in.choices)
+	q.attrs = resolveAttrs(q.Attributes, in.attributes, in.data.Nodes) // 016 FR-039
+	if q.View == ViewBreakdown {                                       // its rows are the Grid's; the groups come from GET /api/all-work/breakdown
+		q.View = ViewGrid
+	}
 	in.query = q
 	t := buildTree(in.data.Nodes)
 	if in.choices.SeesFinance {
@@ -56,12 +70,14 @@ func build(in input) built {
 	m := matchesOf(t)
 	b := rowBuilder{in: in, columns: columns, periodColumns: []Period{}}
 	if q.View == ViewBudget {
-		p := periodsOf(t, in.year)
+		p := periodsOf(t, in.yearFrom, in.yearTo)
 		b.periods = &p
 		b.periodColumns, b.periodBuckets = p.columns(q.Period)
 	}
 	result := Result{
-		Year:            in.year,
+		Year:            in.yearFrom,
+		YearFrom:        in.yearFrom,
+		YearTo:          in.yearTo,
 		Today:           in.today,
 		View:            q.View,
 		DisplayCurrency: in.currency.Code,
@@ -187,8 +203,8 @@ func (b rowBuilder) recordRow(t *tnode) Row {
 	}
 	row := Row{
 		Key: n.ID, Level: n.Level, RecordID: n.ID, PlanID: n.PlanID, Depth: t.depth, Name: n.Name,
-		Role: roleOf.role(), SearchHit: t.hit, Status: statusOf(n), Owner: n.Owner,
-		Cells: b.cells(cellRow{level: n.Level, t: t, year: b.in.year}),
+		Role: roleOf.role(), SearchHit: t.hit, Status: statusOf(n), Owner: n.Owner, PlanType: n.PlanType,
+		Cells: b.cells(cellRow{level: n.Level, t: t, year: yearOf(planOf(t).n, b.in.year)}),
 	}
 	if t.parent != nil {
 		parent := t.parent.n.ID
@@ -196,8 +212,8 @@ func (b rowBuilder) recordRow(t *tnode) Row {
 	}
 	switch n.Level {
 	case LevelPlan:
-		strategic := n.Strategic
-		row.Strategic = &strategic
+		strategic, year := n.Strategic, yearOf(n, b.in.year)
+		row.Strategic, row.Year = &strategic, &year
 	case LevelCampaign, LevelInitiative:
 		row.Timing = timingOf(n)
 	case LevelActivity:
@@ -221,8 +237,19 @@ func (b rowBuilder) recordRow(t *tnode) Row {
 	}
 	if b.periods != nil {
 		b.withPeriods(&row, b.periods.of[t])
+		if b.in.query.ComparePhased && t.isContainer() { // 016 FR-038
+			row.PhasedBudget, row.OverPeriods = b.periods.phased(t, b.periods.of[t], b.periodBuckets, b.in.currency)
+		}
 	}
 	return row
+}
+
+// yearOf is the year of the record's plan: its PlanYear, or year when the source did not say.
+func yearOf(n *Node, year int) int {
+	if n.PlanYear != 0 {
+		return n.PlanYear
+	}
+	return year
 }
 
 // unassignedRow returns the unassigned planned cost row of the activity a (FR-012): it opens its activity
@@ -233,7 +260,7 @@ func (b rowBuilder) unassignedRow(a *tnode) Row {
 		Key: a.n.ID + ":unassigned", ParentKey: &parent, Level: LevelUnassigned, RecordID: a.n.ID,
 		PlanID: a.n.PlanID, ActivityID: a.n.ID, Depth: a.depth + 1, Name: unassignedName, Role: a.role(),
 		PlannedCost: b.in.currency.optional(a.balance),
-		Cells:       b.cells(cellRow{level: LevelUnassigned, t: a, year: b.in.year}),
+		Cells:       b.cells(cellRow{level: LevelUnassigned, t: a, year: yearOf(planOf(a).n, b.in.year)}),
 	}
 	if b.periods != nil {
 		b.withPeriods(&row, b.periods.unassigned[a])

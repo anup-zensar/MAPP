@@ -468,7 +468,7 @@ func (h *demoHistory) addDeletedInitiative(ctx context.Context, priya actor.Acto
 	created := h.at.Add(-binCreatedAgo)
 	meta := record.NewMeta(priya, created)
 
-	initiative, err := h.initiativeOf(binInitiative, campaignID)
+	initiative, err := h.initiativeOf(binInitiative, campaignID, h.planCurrencies[binActivity.plan])
 	if err != nil {
 		return history.BinEntry{}, err
 	}

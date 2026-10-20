@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"northstar/internal/people"
+	"northstar/internal/platform/money"
 	"northstar/internal/settings"
 )
 
@@ -37,6 +38,10 @@ type Settings interface {
 	// DescribeAttribute gives the label of a field "attributes.<id>" and the text of its value, for the
 	// activity log; "", "" for other fields.
 	DescribeAttribute(ctx context.Context, field string, value any) (label, text string, err error)
+	// Currency returns the currency with the ISO code, active or not, and false when there is none (016).
+	Currency(ctx context.Context, code string) (settings.Currency, bool, error)
+	// Rates returns the current rate of every currency, active or not (016 FR-002).
+	Rates(ctx context.Context) (money.Rates, error)
 }
 
 // Directory is what plans reads from people and teams.

@@ -59,9 +59,9 @@ func lubricantsActivity(country, companyCode, costCentre, brand, fit4ID string) 
 	}
 }
 
-// demoActivities are A-1001 … A-1010, in ID order. A-1011 "Fleet expo stand", which is in the recycle bin
-// with its initiative "Trade shows", is written by feature 011's seed step (history.go) together with that
-// initiative.
+// demoActivities are A-1001 … A-1012, in ID order (A-1011 and A-1012 are the GBP plan's of 016). A-1013
+// "Fleet expo stand", which is in the recycle bin with its initiative "Trade shows", is written by feature
+// 011's seed step (history.go) together with that initiative.
 var demoActivities = []demoActivity{
 	{plan: lubricantsPlan, campaign: "Helix launch", initiative: "Digital & social", name: "Launch film",
 		status: activities.StatusCreated, activityType: "Content production", owner: "Priya Raman",
@@ -125,6 +125,15 @@ var demoActivities = []demoActivity{
 	// Deliberately incomplete: owner, dates, planned cost, workflow and attributes empty.
 	{plan: mobilityPlan, campaign: "Retail growth", initiative: "Station promotions", name: "Lunar new year promo",
 		status: activities.StatusCreated, activityType: "Digital media"},
+	// 016 (data-model §8): the GBP plan's activities, planned costs in GBP.
+	{plan: ukPlan, campaign: "Helix UK & Ireland", initiative: "UK", name: "UK launch event",
+		status: activities.StatusCreated, activityType: "Event", owner: "Priya Raman",
+		start: "2027-03-01", end: "2027-05-31", plannedCost: "40000.00", workflow: lubricantsFlow,
+		attributes: lubricantsActivity("United Kingdom", "GB01", "GB01000105", "Helix", "FIT4-0049")},
+	{plan: ukPlan, campaign: "Helix UK & Ireland", initiative: "Ireland", name: "Dealer conference",
+		status: activities.StatusCreated, activityType: "Event", owner: "Priya Raman",
+		start: "2027-09-01", end: "2027-09-30", plannedCost: "25000.00", workflow: lubricantsFlow,
+		attributes: lubricantsActivity("United Kingdom", "GB01", "GB01000118", "Helix", "FIT4-0050")},
 }
 
 // addActivities creates the two approval workflows through the approvals repository, then the demo
@@ -177,7 +186,7 @@ func (d *demo) activityOf(a demoActivity, initiativeID string) (activities.Activ
 	if r.err != nil {
 		return activities.Activity{}, r.err
 	}
-	start, end, cost, attributes, err := d.planningFields(a.start, a.end, a.plannedCost, settings.LevelActivity, a.attributes)
+	start, end, cost, attributes, err := d.planningFields(a.start, a.end, a.plannedCost, d.planCurrencies[a.plan], settings.LevelActivity, a.attributes)
 	if err != nil {
 		return activities.Activity{}, fmt.Errorf("seed: activity %s: %w", a.name, err)
 	}

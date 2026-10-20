@@ -1,6 +1,7 @@
 package lineitems
 
 import (
+	"cmp"
 	"context"
 
 	"northstar/internal/people"
@@ -43,13 +44,19 @@ type ActivityFacts struct {
 	Status               string // stored status: "created", "submitted", "declined" or "approved"
 	StartDate, EndDate   *date.Date
 	Ongoing              bool
-	PlannedCost          *money.Amount    // USD; nil when not set
+	PlannedCost          *money.Amount    // in PlanCurrency (016); nil when not set
 	Path                 []errs.RecordRef // plan, campaign, initiative, top level first
 	PlanYear             int
 	DefaultSpread        SpreadMethod    // the plan's default line-item spread
 	DefaultFinanceBudget string          // the name of the plan's default finance budget; "" when none
 	BusinessUnit         []string        // the plan's Business unit option ids: which Shell attributes are shown
 	Access               authz.PlanFacts // the plan as access decisions need it (feature 014)
+	PlanCurrency         string          // 016 FR-011: the plan currency; "" reads as USD
+}
+
+// planCurrency is the plan currency of the activity's amounts: USD when the facts have none (016).
+func (f ActivityFacts) planCurrency() string {
+	return cmp.Or(f.PlanCurrency, money.BaseCurrency)
 }
 
 // restartsApproval reports whether a change that matters for approval sends the activity back to Created
@@ -64,6 +71,10 @@ type Currencies interface {
 	Currency(ctx context.Context, code string) (settings.Currency, bool, error)
 	// Currencies returns every currency, active or not.
 	Currencies(ctx context.Context) ([]settings.Currency, error)
+	// Rates returns the current rate of every currency (016 FR-002).
+	Rates(ctx context.Context) (money.Rates, error)
+	// CurrentRates returns every currency's current rate with its date and source (016 FR-009).
+	CurrentRates(ctx context.Context) ([]settings.RateInfo, error)
 }
 
 // BudgetItem is a finance budget item with its budget's year and name (feature 002).

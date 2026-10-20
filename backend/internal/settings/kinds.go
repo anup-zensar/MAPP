@@ -66,6 +66,23 @@ func (s *Service) Kinds() []history.Kind {
 			Describe: describeCurrency, PrepareRestore: s.prepareCurrencyRestore,
 		},
 		{
+			// 016: a currency's dated rates, deleted with it or one by one (D-272).
+			Name: exchangeRateKind, Singular: exchangeRateNoun, Plural: "exchange rates", Parent: currencyKind,
+			Snapshot: s.rateSnapshot, ChildIDs: s.rateIDs, Remove: s.repo.DeleteRate, Put: putRecord(s.repo.PutRate),
+			Describe: describeRate, PrepareRestore: s.prepareRateRestore,
+		},
+		{
+			// 016: GSAP rate imports, logged and never deleted.
+			Name: rateImportKind, Singular: rateImportNoun, Plural: "rate imports",
+			Snapshot: s.rateImportSnapshot, Remove: neverRemoved, Put: putRecord(s.repo.PutRateImport),
+		},
+		{
+			// 016: edited Field help texts, logged and never in the recycle bin.
+			Name: fieldHelpKind, Singular: fieldHelpNoun, Plural: "field help texts",
+			Snapshot: s.fieldHelpSnapshot, Remove: neverRemoved, Put: putRecord(s.repo.PutFieldHelp),
+			Describe: describeFieldHelp,
+		},
+		{
 			Name: budgetKind, Singular: budgetNoun, Plural: "finance budgets",
 			Snapshot: s.budgetSnapshot, Remove: s.repo.DeleteFinanceBudget, Put: putRecord(s.repo.PutFinanceBudget),
 			Describe: describeBudget,

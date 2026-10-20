@@ -6,6 +6,7 @@ import (
 
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
@@ -408,11 +409,15 @@ type CurrencyView struct {
 	Symbol        string      `json:"symbol"`
 	Rate          money.Rate  `json:"rate"`
 	InverseRate   money.Rate  `json:"inverseRate"`
-	RateChangedAt time.Time   `json:"rateChangedAt"`
+	RateChangedAt time.Time   `json:"rateChangedAt"` // when the current rate was recorded (016)
 	RateChangedBy actor.Actor `json:"rateChangedBy"`
-	Active        bool        `json:"active"`
-	Usage         Usage       `json:"usage"`
-	Locks         []Lock      `json:"locks"`
+	// The current rate's date and source (016 FR-003): "rate of 19 Oct 2026 · GSAP import".
+	RateDate           date.Date  `json:"rateDate"`
+	RateSource         RateSource `json:"rateSource"`
+	RateImportFileName *string    `json:"rateImportFileName"`
+	Active             bool       `json:"active"`
+	Usage              Usage      `json:"usage"`
+	Locks              []Lock     `json:"locks"`
 	record.Meta
 }
 

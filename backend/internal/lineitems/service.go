@@ -140,7 +140,7 @@ func (s *Service) FormOptions(ctx context.Context, a actor.Actor, activityID str
 func (s *Service) defaults(ctx context.Context, f ActivityFacts, items []LineItem, balance UnassignedBalance) (Defaults, error) {
 	d := Defaults{
 		Name:              uniqueName(f.Name, defaultNameSuffix, items, maxNameLength),
-		Currency:          money.BaseCurrency,
+		Currency:          f.planCurrency(), // 016: amounts are typed in the plan currency first
 		PlannedCostSource: SourceNoActivityPlannedCost,
 		SpreadMethod:      defaultSpread(f),
 		FinanceBudgetYear: f.PlanYear,
@@ -638,8 +638,12 @@ func (s *Service) shownView(ctx context.Context, a actor.Actor, f ActivityFacts,
 	return d.view(v), nil
 }
 
-// views returns the views of the activity's line items, in the order given.
+// views returns the views of the activity's line items, in the order given, with the rates read once.
 func (s *Service) views(ctx context.Context, f ActivityFacts, items []LineItem) ([]View, error) {
+	ctx, err := s.withRates(ctx)
+	if err != nil {
+		return nil, err
+	}
 	views := make([]View, 0, len(items))
 	for _, li := range items {
 		v, err := s.view(ctx, f, li)
@@ -655,19 +659,22 @@ func (s *Service) views(ctx context.Context, f ActivityFacts, items []LineItem) 
 // its currency with the current rate, its USD planned cost, its spread in the currency and in USD, its owner,
 // its finance budget item, what is missing and its SWBS request status.
 func (s *Service) view(ctx context.Context, f ActivityFacts, li LineItem) (View, error) {
-	currency, found, err := s.deps.Currencies.Currency(ctx, li.Currency)
+	rates, err := s.rates(ctx)
 	if err != nil {
 		return View{}, err
 	}
+	currency, found := rates.currencies[li.Currency]
 	if !found { // Settings never deletes a currency in use (domain model §6)
 		return View{}, fmt.Errorf("lineitems: line item %s has the unknown currency %q", li.ID, li.Currency)
 	}
-	spread := spreadView(li, f, currency.Rate)
+	planRate := rates.rateOf(f.planCurrency())
+	spread := spreadView(li, f, currency.Rate, planRate)
 	v := View{
 		ID: li.ID, ActivityID: li.ActivityID, Name: li.Name, Description: li.Description,
-		Currency:          currencyView(currency),
+		Currency:          rates.view(currency),
 		PlannedCost:       money.Money{Amount: li.PlannedCost, Currency: li.Currency},
 		PlannedCostUSD:    money.USD(PlannedCostUSD(li, currency.Rate)),
+		PlannedCostPlan:   money.Money{Amount: money.Convert(li.PlannedCost, currency.Rate, planRate), Currency: f.planCurrency()},
 		Spread:            spread,
 		Attributes:        orNoValues(li.Attributes),
 		RequestSwbs:       li.RequestSwbs,
@@ -707,12 +714,14 @@ func (s *Service) view(ctx context.Context, f ActivityFacts, li LineItem) (View,
 	return v, nil
 }
 
-// spreadView returns the spread of li as the API shows it: the months in its currency and in USD at rate,
-// each marked when it lies outside the activity's dates, and for a custom spread its total and whether it
-// adds up to the planned cost (FR-017 – FR-020).
-func spreadView(li LineItem, f ActivityFacts, rate money.Rate) SpreadView {
+// spreadView returns the spread of li as the API shows it: the months in its currency and in USD at rate —
+// and, for the grid, in the plan currency at planRate (016 FR-015) — each marked when it lies outside the
+// activity's dates, and for a custom spread its total and whether it adds up to the planned cost (FR-017 –
+// FR-020).
+func spreadView(li LineItem, f ActivityFacts, rate, planRate money.Rate) SpreadView {
 	months, spread := SpreadMonths(li, f)
 	usd := USDMonths(months, rate)
+	plan := ConvertMonths(months, rate, planRate)
 	view := SpreadView{Method: li.Spread.Method, State: StateSpread, Months: []SpreadMonth{}, AddsUp: true}
 	if !spread {
 		view.State = StateNotSpread
@@ -724,6 +733,7 @@ func spreadView(li LineItem, f ActivityFacts, rate money.Rate) SpreadView {
 			Amount:               money.Money{Amount: m.Amount, Currency: li.Currency},
 			AmountUSD:            money.USD(usd[i]),
 			OutsideActivityDates: OutsideActivityDates(m.Month, f),
+			AmountPlan:           money.Money{Amount: plan[i], Currency: f.planCurrency()},
 		})
 		total = total.Add(m.Amount)
 	}
@@ -736,13 +746,13 @@ func spreadView(li LineItem, f ActivityFacts, rate money.Rate) SpreadView {
 
 // balanceOf returns the unassigned planned cost of the activity f whose line items are views.
 func balanceOf(f ActivityFacts, views []View) UnassignedBalance {
-	usd := make([]money.Amount, 0, len(views))
+	planned := make([]money.Amount, 0, len(views))
 	currencies := make([]string, 0, len(views))
 	for _, v := range views {
-		usd = append(usd, v.PlannedCostUSD.Amount)
+		planned = append(planned, v.PlannedCostPlan.Amount)
 		currencies = append(currencies, v.Currency.Code)
 	}
-	return Balance(f, usd, currencies)
+	return Balance(f, planned, currencies)
 }
 
 // activityView returns what the line-item screens show of the activity f (LineItemActivity).
@@ -754,7 +764,7 @@ func activityView(f ActivityFacts) ActivityView {
 		BusinessUnitOptionIDs: orEmpty(f.BusinessUnit),
 	}
 	if f.PlannedCost != nil {
-		planned := money.USD(*f.PlannedCost)
+		planned := money.Money{Amount: *f.PlannedCost, Currency: f.planCurrency()}
 		v.PlannedCost = &planned
 	}
 	if f.DefaultFinanceBudget != "" {

@@ -108,12 +108,12 @@ func TestUsedBy_SeesEveryFeature_FR003(t *testing.T) {
 	want := map[string]string{
 		"/api/models/MOD-1002":               "Used by 1 plan",
 		"/api/activity-types/AT-1006":        "Used by 1 activity · Allowed in 1 model",
-		"/api/shell-attributes/SA-1001":      "Used by 2 plans · Condition of 11 attributes",
-		"/api/shell-attributes/SA-1003":      "Used by 3 campaigns · Region depends on it",
-		"/api/shell-attributes/SA-1011":      "Used by 9 initiatives (1 in the recycle bin)",
-		"/api/shell-attributes/SA-1012":      "Used by 10 activities (1 in the recycle bin)",
-		"/api/shell-attributes/SA-1033":      "Used by 7 line items (1 in the recycle bin)",
-		"/api/currencies/USD":                "Used by 5 line items (1 in the recycle bin) · Display currency of 6 people",
+		"/api/shell-attributes/SA-1001":      "Used by 3 plans · Condition of 11 attributes",
+		"/api/shell-attributes/SA-1003":      "Used by 4 campaigns · Region depends on it",
+		"/api/shell-attributes/SA-1011":      "Used by 11 initiatives (1 in the recycle bin)",
+		"/api/shell-attributes/SA-1012":      "Used by 12 activities (1 in the recycle bin)",
+		"/api/shell-attributes/SA-1033":      "Used by 9 line items (1 in the recycle bin)",
+		"/api/currencies/USD":                "Used by 5 line items (1 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans",
 		"/api/currencies/CNY":                "Used by 1 line item",
 		"/api/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}
@@ -148,12 +148,12 @@ func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 	want := map[string]string{
 		"/api/models/MOD-1002":               "Used by 1 plan (1 in the recycle bin)",
 		"/api/activity-types/AT-1006":        "Used by 1 activity (1 in the recycle bin) · Allowed in 1 model",
-		"/api/shell-attributes/SA-1001":      "Used by 2 plans · Condition of 11 attributes", // P-1002 has no business unit
-		"/api/shell-attributes/SA-1003":      "Used by 3 campaigns (1 in the recycle bin) · Region depends on it",
-		"/api/shell-attributes/SA-1011":      "Used by 9 initiatives (5 in the recycle bin)",
-		"/api/shell-attributes/SA-1012":      "Used by 10 activities (6 in the recycle bin)",
-		"/api/shell-attributes/SA-1033":      "Used by 7 line items (2 in the recycle bin)",
-		"/api/currencies/USD":                "Used by 5 line items (2 in the recycle bin) · Display currency of 6 people",
+		"/api/shell-attributes/SA-1001":      "Used by 3 plans · Condition of 11 attributes", // P-1002 has no business unit
+		"/api/shell-attributes/SA-1003":      "Used by 4 campaigns (1 in the recycle bin) · Region depends on it",
+		"/api/shell-attributes/SA-1011":      "Used by 11 initiatives (5 in the recycle bin)",
+		"/api/shell-attributes/SA-1012":      "Used by 12 activities (6 in the recycle bin)",
+		"/api/shell-attributes/SA-1033":      "Used by 9 line items (2 in the recycle bin)",
+		"/api/currencies/USD":                "Used by 5 line items (2 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans (1 in the recycle bin)",
 		"/api/currencies/CNY":                "Used by 1 line item (1 in the recycle bin)",
 		"/api/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}
@@ -185,7 +185,7 @@ func TestInUseDelete_RefusedForEveryFeature_FR004(t *testing.T) {
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
 	server.GrantRole(t, "priya.raman@northstar.demo", "administrator", "all") // 014: Settings, people and every plan
 	want := map[string]string{
-		"/api/currencies/GBP":  `{"code":"in_use","message":"'GBP' is in use (used by 1 line item) — set it inactive instead.","fields":[]}`,
+		"/api/currencies/GBP":  `{"code":"in_use","message":"'GBP' is in use (used by 2 line items · Plan currency of 1 plan) — set it inactive instead.","fields":[]}`,
 		"/api/models/MOD-1002": `{"code":"in_use","message":"'Mobility 1.0' is in use (used by 1 plan) — set it inactive instead.","fields":[]}`,
 	}
 
@@ -223,13 +223,13 @@ func TestImpact_CountsTheLiveRecords_FR011_FR030(t *testing.T) {
 	model := impact("/api/models/MOD-1001/impact", map[string]any{"inqToMqlRate": "3.00", "version": 1})
 	currency := impact("/api/currencies/EUR/impact", map[string]any{"rate": "0.80", "version": 1})
 
-	wantModel := []warning{{Kind: "goalsRecalculated", Count: 2,
-		Message: "Used by 2 plans (7 activities). Their calculated MQL and revenue goals will be recalculated; typed goals ('Set later stages myself') are kept."}}
+	wantModel := []warning{{Kind: "goalsRecalculated", Count: 3, // with P-1004 of 016
+		Message: "Used by 3 plans (9 activities). Their calculated MQL and revenue goals will be recalculated; typed goals ('Set later stages myself') are kept."}}
 	if !reflect.DeepEqual(model, wantModel) {
 		t.Errorf("model impact = %+v\nwant %+v", model, wantModel)
 	}
-	wantCurrency := []warning{{Kind: "amountsRecalculated", Count: 2,
-		Message: "2 line items in 2 activities use EUR. Their EUR amounts stay the same; their USD amounts will be recalculated (60,000.00 → 69,000.00 USD). Unassigned planned cost of these activities will change. No activity goes back for approval."}}
+	wantCurrency := []warning{{Kind: "amountsRecalculated", Count: 3, // with L-1010 of 016's GBP plan: 23,000.00 EUR
+		Message: "3 line items in 3 activities use EUR. Their EUR amounts stay the same; their USD amounts will be recalculated (85,000.00 → 97,750.00 USD). Unassigned planned cost of these activities will change. No activity goes back for approval."}}
 	if !reflect.DeepEqual(currency, wantCurrency) {
 		t.Errorf("currency impact = %+v\nwant %+v", currency, wantCurrency)
 	}
@@ -383,8 +383,8 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 	}
 
 	want := map[string]string{
-		"/api/currencies/USD": "Used by 5 line items (1 in the recycle bin) · Display currency of 5 people",
-		"/api/currencies/EUR": "Used by 2 line items · Display currency of 1 person",
+		"/api/currencies/USD": "Used by 5 line items (1 in the recycle bin) · Display currency of 5 people · Plan currency of 3 plans",
+		"/api/currencies/EUR": "Used by 3 line items · Display currency of 1 person",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Used by =\n%v\nwant\n%v", got, want)

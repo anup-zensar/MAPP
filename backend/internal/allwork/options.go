@@ -29,6 +29,8 @@ func optionsOf(year, currentYear int, years []int, data YearData, c Choices, cat
 		Year: year, CurrentYear: currentYear, Years: []int{currentYear}, Plans: []PlanOption{}, Owners: []Option{},
 		Teams: slices.Clone(c.Teams), BusinessUnits: orNone(c.BusinessUnits), ActivityTypes: orNone(c.ActivityTypes),
 		ColumnGroups: columnGroupsOf(catalogue), DefaultColumns: defaultColumnsIn(catalogueOf(catalogue)),
+		YearFrom: year, YearTo: year, PlanTypes: slices.Clone(planTypeValues), PlanCurrencies: []string{},
+		Attributes: []FilterableAttribute{},
 	}
 	for _, y := range years {
 		if !slices.Contains(o.Years, y) {
@@ -39,7 +41,11 @@ func optionsOf(year, currentYear int, years []int, data YearData, c Choices, cat
 	owners := map[string]bool{}
 	for _, n := range data.Nodes {
 		if n.Level == LevelPlan {
-			o.Plans = append(o.Plans, PlanOption{ID: n.ID, Label: n.Name, Status: n.Status, Strategic: n.Strategic})
+			o.Plans = append(o.Plans, PlanOption{ID: n.ID, Label: n.Name, Status: n.Status, Strategic: n.Strategic,
+				Year: yearOf(&n, year), PlanType: n.PlanType, Currency: n.PlanCurrency})
+			if n.PlanCurrency != "" && !slices.Contains(o.PlanCurrencies, n.PlanCurrency) {
+				o.PlanCurrencies = append(o.PlanCurrencies, n.PlanCurrency)
+			}
 		}
 		if n.Level != LevelLineItem && n.Owner != nil && !owners[n.Owner.ID] {
 			owners[n.Owner.ID] = true
@@ -47,6 +53,7 @@ func optionsOf(year, currentYear int, years []int, data YearData, c Choices, cat
 		}
 	}
 	slices.SortFunc(o.Plans, func(x, y PlanOption) int { return compareNames(x.Label, x.ID, y.Label, y.ID) })
+	slices.Sort(o.PlanCurrencies)
 	slices.SortFunc(o.Owners, func(x, y Option) int { return compareNames(x.Label, x.ID, y.Label, y.ID) })
 	if o.Teams == nil {
 		o.Teams = []Option{}
@@ -61,6 +68,28 @@ func optionsOf(year, currentYear int, years []int, data YearData, c Choices, cat
 		return compareNames(x.Label, x.ID, y.Label, y.ID)
 	})
 	return o
+}
+
+// filterableAttributes are the Shell attributes the attribute filters offer (016 FR-039): every active choice
+// or yes/no attribute, level by level top-down in Settings' order, with its active options, or Yes and No.
+func filterableAttributes(attributes []Attribute) []FilterableAttribute {
+	list := []FilterableAttribute{}
+	for _, a := range attributes {
+		if !a.filterable() {
+			continue
+		}
+		f := FilterableAttribute{ID: a.ID, Label: a.Label, Level: a.Level, Type: a.Type, Values: []Option{}}
+		if a.Type == TypeYesNo {
+			f.Values = append(f.Values, Option{ID: AttrYes, Label: "Yes"}, Option{ID: AttrNo, Label: "No"})
+		}
+		for _, o := range a.Options {
+			if !o.Inactive {
+				f.Values = append(f.Values, o)
+			}
+		}
+		list = append(list, f)
+	}
+	return list
 }
 
 // columnGroupsOf returns the catalogue in the groups of the chooser; a group without columns is left out.

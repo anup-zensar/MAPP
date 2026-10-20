@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -279,8 +280,10 @@ func (f *fixture) deactivatePerson(t *testing.T, id string) {
 // fakeLineItems are feature 007's line items as the tests set them.
 type fakeLineItems struct {
 	facts        map[string]activities.LineItemFacts
-	datesChanged []string // the activities whose dates changed, in order
-	copies       []string // the CopyAll calls, "<from> → <to> +<years>", in order
+	datesChanged []string                              // the activities whose dates changed, in order
+	copies       []string                              // the CopyAll calls, "<from> → <to> +<years>", in order
+	items        map[string][]activities.LineItemBrief // 016: the line items of each activity, for Split
+	moves        []string                              // 016: the MoveToActivity calls, "<ids> → <to>"
 }
 
 func (l *fakeLineItems) Facts(_ context.Context, activityIDs []string) (map[string]activities.LineItemFacts, error) {
@@ -302,6 +305,49 @@ func (l *fakeLineItems) CopyAll(_ context.Context, _ actor.Actor, from, to strin
 func (l *fakeLineItems) DatesChanged(_ context.Context, _ actor.Actor, _, after activities.Activity) error {
 	l.datesChanged = append(l.datesChanged, after.ID)
 	return nil
+}
+
+// Items answers the line items the test set for the activity (016 Split).
+func (l *fakeLineItems) Items(_ context.Context, activityID string) ([]activities.LineItemBrief, error) {
+	return append([]activities.LineItemBrief{}, l.items[activityID]...), nil
+}
+
+// MoveToActivity records the move, "<ids> → <activity>", and moves the line items between the activities'
+// facts and items as the real line items would.
+func (l *fakeLineItems) MoveToActivity(_ context.Context, _ actor.Actor, ids []string, to string) error {
+	l.moves = append(l.moves, fmt.Sprintf("%v → %s", ids, to))
+	if l.items == nil {
+		return nil
+	}
+	for from, items := range l.items {
+		kept := []activities.LineItemBrief{}
+		for _, li := range items {
+			if slices.Contains(ids, li.ID) && from != to {
+				l.items[to] = append(l.items[to], li)
+				l.shift(from, to, li.PlannedCostPlan)
+				continue
+			}
+			kept = append(kept, li)
+		}
+		l.items[from] = kept
+	}
+	return nil
+}
+
+// shift moves one line item's count and plan-currency amount from one activity's facts to another's.
+func (l *fakeLineItems) shift(from, to string, amount money.Money) {
+	if l.facts == nil {
+		l.facts = map[string]activities.LineItemFacts{}
+	}
+	f := l.facts[from]
+	f.Count--
+	f.PlannedCostPlan = f.PlannedCostPlan.Sub(amount.Amount)
+	l.facts[from] = f
+	t := l.facts[to]
+	t.Count++
+	t.PlannedCostPlan = t.PlannedCostPlan.Add(amount.Amount)
+	t.Currency = amount.Currency
+	l.facts[to] = t
 }
 
 // fakeHooks record what feature 008 is told.

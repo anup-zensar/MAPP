@@ -406,6 +406,11 @@ func (f *fakeSource) Year(_ context.Context, year int, _ date.Date, _ []string) 
 	return data, nil
 }
 
+// RatesUsed answers the rates of the fixtures (016 FR-009).
+func (f *fakeSource) RatesUsed(context.Context) ([]string, error) {
+	return []string{"1 USD = 0.92 EUR · rate of 18 Oct 2026 · GSAP import", "1 USD = 0.79 GBP · rate of 18 Oct 2026 · Entered by hand"}, nil
+}
+
 func (f *fakeSource) Currency(_ context.Context, personID string) (Currency, error) {
 	if c, found := f.currencies[personID]; found {
 		return c, nil
@@ -460,7 +465,7 @@ func viewOf(data YearData, q Query, cur ...Currency) built {
 	}
 	return build(input{
 		query: q, year: 2026, today: fixtureToday, now: fixtureNow, currency: c, data: data,
-		choices: fixtureChoices(priya.ID), catalogue: catalogue(fixtureAttributes),
+		choices: fixtureChoices(priya.ID), catalogue: catalogue(fixtureAttributes), attributes: fixtureAttributes,
 	})
 }
 

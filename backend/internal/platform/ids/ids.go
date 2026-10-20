@@ -62,6 +62,10 @@ const (
 	PrefixRoleAssignment   = "RA" // role assignments
 	PrefixGlobalBudget     = "GB" // global budgets
 	PrefixBudgetAllocation = "BA" // budget allocations
+
+	// Feature 016, exchange rates (internal ids, never shown on screens).
+	PrefixExchangeRate = "XR" // dated exchange rates
+	PrefixRateImport   = "RI" // GSAP rate imports
 )
 
 // Prefixes lists every prefix above, in that order.
@@ -75,6 +79,7 @@ var Prefixes = []string{
 	PrefixFinancialTransaction, PrefixFinancialImport,
 	PrefixApprovalDelegation,
 	PrefixRole, PrefixRoleAssignment, PrefixGlobalBudget, PrefixBudgetAllocation,
+	PrefixExchangeRate, PrefixRateImport,
 }
 
 // firstNumber is the number of the first ID of every prefix: "P-1001".

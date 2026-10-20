@@ -309,28 +309,6 @@ var notYetServed = []string{
 	"GET /api/plans/{planId}/import-template",
 	"GET /api/imports/{importId}",
 	"POST /api/imports/{importId}/undo",
-	// 016 Planning and currency extensions
-	"GET /api/currencies/{code}/rates",
-	"POST /api/currencies/{code}/rates",
-	"POST /api/currencies/{code}/rates/impact",
-	"PATCH /api/exchange-rates/{rateId}",
-	"DELETE /api/exchange-rates/{rateId}",
-	"POST /api/exchange-rates/{rateId}/impact",
-	"GET /api/exchange-rates/current",
-	"POST /api/exchange-rates/import-check",
-	"POST /api/exchange-rates/import",
-	"GET /api/exchange-rates/imports",
-	"GET /api/exchange-rates/import-sample",
-	"GET /api/field-help",
-	"PATCH /api/field-help/{helpKey}",
-	"PUT /api/plans/{planId}/budget-phasing",
-	"PUT /api/campaigns/{campaignId}/budget-phasing",
-	"PUT /api/initiatives/{initiativeId}/budget-phasing",
-	"GET /api/plans/{planId}/budget-by-month",
-	"GET /api/activities/{activityId}/split-options",
-	"POST /api/activities/{activityId}/split-preview",
-	"POST /api/activities/{activityId}/split",
-	"GET /api/all-work/breakdown",
 }
 
 // The list of operations not yet served stays accurate: every entry is an operation of the contract, none

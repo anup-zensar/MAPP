@@ -157,8 +157,15 @@ func (s *Service) describe(ctx context.Context, field string, value any) (label,
 	}
 	stored, _ := value.(string)
 	switch field {
-	case "activityId":
-		return "Activity", "", nil
+	case "activityId": // a split's move (016 FR-030): "'UK launch event' (A-1011)"
+		if stored == "" {
+			return "Activity", "", nil
+		}
+		f, found, err := s.deps.Activities.Facts(ctx, stored)
+		if err != nil || !found {
+			return "Activity", stored, nil
+		}
+		return "Activity", fmt.Sprintf("'%s' (%s)", f.Name, stored), nil
 	case "ownerId":
 		if stored == "" {
 			return "Owner", "", nil

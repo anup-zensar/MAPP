@@ -1170,7 +1170,7 @@ var jpyBody = map[string]any{"code": "jpy", "name": "Japanese yen", "symbol": "Â
 // Alex created it at the start.
 func jpyAnswer(version int, rateChanged string, active bool) string {
 	return `{"code":"JPY","name":"Japanese yen","symbol":"Â¥","rate":"150","inverseRate":"0.006667",` + rateChanged +
-		`,"active":` + strconv.FormatBool(active) + `,"usage":` + unusedBody +
+		`,"rateDate":"2026-03-12","rateSource":"manual","rateImportFileName":null,"active":` + strconv.FormatBool(active) + `,"usage":` + unusedBody +
 		`,"locks":[{"field":"code","reason":"The code can't change once the currency is saved."}],"version":` + itoa(version) + `,` + alexAtStart + `}`
 }
 
@@ -1249,7 +1249,7 @@ func TestCurrenciesAPI_DeleteAndUndo_FR004(t *testing.T) {
 
 	assertAnswer(t, deleted, http.StatusOK, `{"recycleBinEntry":{"id":"BIN-1001","recordType":"currency","recordTypeLabel":"currency",`+
 		`"recordId":"JPY","recordName":"JPY","path":[],"parent":null,"deletedAt":"2026-03-12T09:00:00Z",`+
-		`"deletedBy":{"id":"U-1001","name":"Alex Morgan"},"contents":[]}}`)
+		`"deletedBy":{"id":"U-1001","name":"Alex Morgan"},"contents":[{"recordType":"exchangeRate","label":"exchange rate","count":1}]}}`)
 	assertAnswer(t, afterDelete, http.StatusNotFound, currencyGoneBody)
 	assertAnswer(t, undone, http.StatusOK, `{"recordType":"currency","recordTypeLabel":"currency","recordId":"JPY","recordName":"JPY","details":""}`)
 	assertAnswer(t, gone, http.StatusNotFound, currencyGoneBody)

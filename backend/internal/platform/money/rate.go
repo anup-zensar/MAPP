@@ -105,15 +105,13 @@ func (r *Rate) UnmarshalJSON(data []byte) error {
 // ToUSD converts an amount in a currency to USD with the currency's rate r: local ÷ r, rounded half-up to
 // the cent (domain model §4.3). 1,000.00 EUR at 0.92 → 1,086.96 USD. r must be a rate (above 0).
 func ToUSD(local Amount, r Rate) Amount {
-	num := new(big.Int).Mul(big.NewInt(local.cents), big.NewInt(microsPerUnit))
-	return Amount{cents: roundDiv(num, big.NewInt(r.micros))}
+	return Convert(local, r, One)
 }
 
 // FromUSD converts an amount in USD to a currency with its rate r: usd × r, rounded half-up to the cent
 // (display currencies, feature 003). 1,086.96 USD at 0.92 → 1,000.00 EUR.
 func FromUSD(usd Amount, r Rate) Amount {
-	num := new(big.Int).Mul(big.NewInt(usd.cents), big.NewInt(r.micros))
-	return Amount{cents: roundDiv(num, big.NewInt(microsPerUnit))}
+	return Convert(usd, One, r)
 }
 
 // ConvertSpread converts month amounts in a currency to USD so that they add up to the USD value of their
@@ -121,17 +119,7 @@ func FromUSD(usd Amount, r Rate) Amount {
 // 10,000.00 EUR as 3,333.33 + 3,333.33 + 3,333.34 at 0.92 → 3,623.18 + 3,623.18 + 3,623.21 = 10,869.57 USD.
 // An empty list gives an empty list.
 func ConvertSpread(parts []Amount, r Rate) []Amount {
-	converted := make([]Amount, len(parts))
-	if len(parts) == 0 {
-		return converted
-	}
-	var others Amount
-	for i, part := range parts[:len(parts)-1] {
-		converted[i] = ToUSD(part, r)
-		others = others.Add(converted[i])
-	}
-	converted[len(parts)-1] = ToUSD(Sum(parts...), r).Sub(others)
-	return converted
+	return ConvertParts(parts, r, One)
 }
 
 // Rates is the current rate of every currency, active or not, by ISO code (D-027: one current rate per

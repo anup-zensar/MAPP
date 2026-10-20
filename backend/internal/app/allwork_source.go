@@ -23,6 +23,7 @@ import (
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -72,8 +73,11 @@ func (s allWorkSource) Year(ctx context.Context, year int, today date.Date, colu
 	if len(yearPlans) == 0 {
 		return data, nil
 	}
-	y := yearReader{s: s, owners: map[string]*allwork.Owner{}, columns: columns}
+	y := yearReader{s: s, owners: map[string]*allwork.Owner{}, columns: columns, plans: map[string]plans.Plan{}}
 	if err := y.loadAttributes(ctx); err != nil {
+		return allwork.YearData{}, err
+	}
+	if y.rates, err = s.settings.Rates(ctx); err != nil { // 016: each plan currency's amounts converted to USD once
 		return allwork.YearData{}, err
 	}
 	missing := map[string]int{}
@@ -125,6 +129,53 @@ type yearReader struct {
 	initiativeIDs []string
 	activities    map[string]int    // activity id → index of its node
 	stored        map[string]string // activity id → its stored status (for the SWBS request status)
+	rates         money.Rates       // the current rates (016)
+	plans         map[string]plans.Plan
+}
+
+// planRate returns the current rate of the plan currency of the plan planID (016 FR-014); 1 for USD.
+func (y *yearReader) planRate(planID string) money.Rate {
+	if rate, err := y.rates.Of(y.plans[planID].Currency); err == nil {
+		return rate
+	}
+	return money.One
+}
+
+// usd converts an amount of the plan planID's currency to USD (016 FR-014): once, half up; nil stays nil.
+func (y *yearReader) usd(planID string, amount *money.Amount) *money.Amount {
+	if amount == nil {
+		return nil
+	}
+	usd := money.Convert(*amount, y.planRate(planID), money.One)
+	return &usd
+}
+
+// inPlan returns an amount of the plan planID's currency as money; nil stays nil.
+func (y *yearReader) inPlan(planID string, amount *money.Amount) *money.Money {
+	if amount == nil {
+		return nil
+	}
+	return &money.Money{Amount: *amount, Currency: y.plans[planID].Currency}
+}
+
+// phased returns the 12 phased monthly budgets of the plan planID's year, in the plan currency and in USD
+// (016 FR-024, FR-038); nil, nil when not phased.
+func (y *yearReader) phased(planID string, monthly []money.Amount) ([]money.Amount, []allwork.MonthAmount) {
+	if len(monthly) != 12 {
+		return nil, nil
+	}
+	keys := rollup.MonthKeys(y.plans[planID].Year)
+	usd := make([]allwork.MonthAmount, 0, 12)
+	for i, amount := range money.ConvertParts(monthly, y.planRate(planID), money.One) {
+		usd = append(usd, allwork.MonthAmount{Month: keys[i], USD: amount})
+	}
+	return monthly, usd
+}
+
+// planFacts sets the plan fields every node of the plan planID carries (016 data-model §5.1).
+func (y *yearReader) planFacts(node *allwork.Node) {
+	p := y.plans[node.PlanID]
+	node.PlanYear, node.PlanType, node.PlanCurrency = p.Year, string(p.PlanType), p.Currency
 }
 
 // needs reports whether the view shows or sorts by one of the columns keys.
@@ -147,12 +198,18 @@ func (y *yearReader) addPlan(ctx context.Context, p plans.Plan, missing int) err
 	if err != nil {
 		return err
 	}
-	y.nodes = append(y.nodes, allwork.Node{
+	y.plans[p.ID] = p
+	planNode := allwork.Node{
 		Level: allwork.LevelPlan, ID: p.ID, PlanID: p.ID, Name: p.Name, Description: p.Description, Owner: owner,
-		Status: string(p.Status), Missing: missing, Budget: p.Budget, CreatedAt: p.CreatedAt,
-		UpdatedAt: p.UpdatedAt, Strategic: p.AOP, TeamIDs: append([]string{}, p.TeamIDs...), BusinessUnitIDs: units,
-		Fields: fields,
-	})
+		Status: string(p.Status), Missing: missing, Budget: y.usd(p.ID, p.Budget), BudgetPlan: y.inPlan(p.ID, p.Budget),
+		CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt, Strategic: p.AOP, TeamIDs: append([]string{}, p.TeamIDs...),
+		BusinessUnitIDs: units, Fields: fields,
+	}
+	y.planFacts(&planNode)
+	planNode.Attrs = y.attrValues(settings.LevelPlan, p.Attributes)
+	planNode.PhasingMethod = string(p.BudgetPhasing.Normalised().Method)
+	planNode.PhasedPlan, planNode.PhasedBudgetUSD = y.phased(p.ID, p.BudgetPhasing.MonthAmounts(p.Budget, p.Year))
+	y.nodes = append(y.nodes, planNode)
 	tree, err := y.s.campaigns.ListPlanCampaigns(ctx, actor.System, p.ID)
 	if err != nil {
 		return err
@@ -162,7 +219,7 @@ func (y *yearReader) addPlan(ctx context.Context, p plans.Plan, missing int) err
 			level: allwork.LevelCampaign, id: c.ID, parentID: p.ID, planID: p.ID, order: ci, name: c.Name,
 			description: c.Description, ownerID: c.OwnerID, start: c.StartDate, end: c.EndDate, budget: c.Budget,
 			progress: c.ApprovalProgress, timing: c.Timing, completeness: c.Completeness, meta: c.Meta,
-			attributes: c.Attributes,
+			attributes: c.Attributes, phasing: c.BudgetPhasing,
 		})
 		if err != nil {
 			return err
@@ -172,7 +229,7 @@ func (y *yearReader) addPlan(ctx context.Context, p plans.Plan, missing int) err
 				level: allwork.LevelInitiative, id: i.ID, parentID: c.ID, planID: p.ID, order: ii, name: i.Name,
 				description: i.Description, ownerID: i.OwnerID, start: i.StartDate, end: i.EndDate, budget: i.Budget,
 				progress: i.ApprovalProgress, timing: i.Timing, completeness: i.Completeness, meta: i.Meta,
-				attributes: i.Attributes,
+				attributes: i.Attributes, phasing: i.BudgetPhasing,
 			})
 			if err != nil {
 				return err
@@ -188,7 +245,7 @@ func (y *yearReader) addPlan(ctx context.Context, p plans.Plan, missing int) err
 		y.activities = map[string]int{}
 	}
 	for order, a := range summaries {
-		var planned *money.Amount
+		var planned *money.Amount // in the plan currency
 		if a.PlannedCost != nil {
 			planned = &a.PlannedCost.Amount
 		}
@@ -197,13 +254,14 @@ func (y *yearReader) addPlan(ctx context.Context, p plans.Plan, missing int) err
 		y.nodes = append(y.nodes, allwork.Node{
 			Level: allwork.LevelActivity, ID: a.ID, ParentID: a.InitiativeID, PlanID: p.ID, Order: order, Name: a.Name,
 			Owner: ownerOf(a.Owner), StartDate: a.StartDate, EndDate: a.EndDate, Ongoing: a.Ongoing, Months: months,
-			Status: string(a.DisplayStatus), Missing: a.Completeness.MissingFields, PlannedCost: planned,
-			ActivityTypeID: a.ActivityType.ID,
+			Status: string(a.DisplayStatus), Missing: a.Completeness.MissingFields, PlannedCost: y.usd(p.ID, planned),
+			PlannedCostPlan: y.inPlan(p.ID, planned), ActivityTypeID: a.ActivityType.ID,
 			Fields: map[string]allwork.Value{
 				"activity.type":    {Text: a.ActivityType.Name, Inactive: !a.ActivityType.Active},
 				"activity.ongoing": {Yes: &a.Ongoing},
 			},
 		})
+		y.planFacts(&y.nodes[len(y.nodes)-1])
 	}
 	return nil
 }
@@ -357,6 +415,49 @@ func (y *yearReader) addAttributes(fields map[string]allwork.Value, level settin
 	}
 }
 
+// attrValues returns the values of the choice and yes/no Shell attributes of level that values has, by
+// attribute id, for the attribute filters and the Breakdown of 016 (FR-039 – FR-041): the options in their
+// order (with the shares of a % split), or the yes/no answer — an empty yes/no reads as No.
+func (y *yearReader) attrValues(level settings.Level, values settings.AttributeValues) map[string]allwork.AttrValue {
+	attrs := map[string]allwork.AttrValue{}
+	for _, a := range y.attributes[level] {
+		raw := values[a.ID]
+		var v allwork.AttrValue
+		switch a.Type {
+		case settings.TypeSingleChoice:
+			var id string
+			if !emptyValue(raw) && json.Unmarshal(raw, &id) == nil && id != "" {
+				v.OptionIDs = []string{id}
+			}
+		case settings.TypeMultipleChoice:
+			if !emptyValue(raw) {
+				_ = json.Unmarshal(raw, &v.OptionIDs)
+			}
+		case settings.TypeMultipleChoiceSplit:
+			var shares []settings.SplitShare
+			if !emptyValue(raw) && json.Unmarshal(raw, &shares) == nil {
+				v.Shares = map[string]money.Percent{}
+				for _, share := range shares {
+					v.OptionIDs = append(v.OptionIDs, share.OptionID)
+					v.Shares[share.OptionID] = share.Share
+				}
+			}
+		case settings.TypeYesNo:
+			yes := false
+			if !emptyValue(raw) {
+				_ = json.Unmarshal(raw, &yes)
+			}
+			v.Yes = &yes
+		default:
+			continue
+		}
+		if len(v.OptionIDs) > 0 || v.Yes != nil {
+			attrs[a.ID] = v
+		}
+	}
+	return attrs
+}
+
 // choice returns the option id as a choice; an option that no longer resolves shows its id.
 func (y *yearReader) choice(id string) allwork.Choice {
 	o, found := y.options[id]
@@ -390,6 +491,7 @@ type container struct {
 	completeness         campaigns.RecordCompleteness
 	meta                 record.Meta
 	attributes           settings.AttributeValues
+	phasing              rollup.PhasingView // 016: the budget by month, in the plan currency
 }
 
 // addContainer adds the node of a campaign or initiative.
@@ -411,14 +513,22 @@ func (y *yearReader) addContainer(ctx context.Context, c container) error {
 		node.Timing = *c.timing
 	}
 	if c.budget != nil {
-		node.Budget = &c.budget.Amount
+		node.Budget, node.BudgetPlan = y.usd(c.planID, &c.budget.Amount), c.budget
 	}
+	y.planFacts(&node)
+	monthly := make([]money.Amount, 0, len(c.phasing.Monthly))
+	for _, m := range c.phasing.Monthly {
+		monthly = append(monthly, m.Amount)
+	}
+	node.PhasingMethod = string(c.phasing.Method)
+	node.PhasedPlan, node.PhasedBudgetUSD = y.phased(c.planID, monthly)
 	level := settings.LevelCampaign
 	if c.level == allwork.LevelInitiative {
 		level = settings.LevelInitiative
 	}
 	node.Fields = map[string]allwork.Value{string(c.level) + ".description": {Text: c.description}}
 	y.addAttributes(node.Fields, level, c.attributes)
+	node.Attrs = y.attrValues(level, c.attributes)
 	y.nodes = append(y.nodes, node)
 	return nil
 }
@@ -456,6 +566,7 @@ func (y *yearReader) addActivityDetails(ctx context.Context) error {
 			}
 		}
 		y.addAttributes(n.Fields, settings.LevelActivity, a.Attributes)
+		n.Attrs = y.attrValues(settings.LevelActivity, a.Attributes)
 	}
 	if !y.needs("inq", "mql", "revenue") {
 		return nil
@@ -533,12 +644,14 @@ func (y *yearReader) lineItemNode(ctx context.Context, li lineitems.LineItem, f 
 		return allwork.Node{}, err
 	}
 	plannedUSD := lineitems.PlannedCostUSD(li, rate)
+	planRate := y.planRate(planID)
+	plannedPlan := money.Convert(li.PlannedCost, rate, planRate) // 016 FR-015
 	node := allwork.Node{
 		Level: allwork.LevelLineItem, ID: li.ID, ParentID: li.ActivityID, PlanID: planID, Name: li.Name,
 		Description: li.Description, Owner: owner, PlannedCost: &plannedUSD,
 		LocalPlannedCost: &money.Money{Amount: li.PlannedCost, Currency: li.Currency},
 		Swbs:             string(lineitems.SwbsStatusOf(li, f)), CreatedAt: li.CreatedAt, UpdatedAt: li.UpdatedAt,
-		MonthsUSD: []allwork.MonthAmount{},
+		MonthsUSD: []allwork.MonthAmount{}, MonthsPlan: []allwork.PlanMonth{}, PlannedCostPlan: y.inPlan(planID, &plannedPlan),
 		Fields: map[string]allwork.Value{
 			"lineItem.description":      {Text: li.Description},
 			"lineItem.localPlannedCost": {Money: &money.Money{Amount: li.PlannedCost, Currency: li.Currency}},
@@ -564,13 +677,18 @@ func (y *yearReader) lineItemNode(ctx context.Context, li lineitems.LineItem, f 
 		}
 	}
 	y.addAttributes(node.Fields, settings.LevelLineItem, li.Attributes)
+	node.Attrs = y.attrValues(settings.LevelLineItem, li.Attributes)
+	y.planFacts(&node)
 	months, spread := lineitems.SpreadMonths(li, f)
 	if !spread {
-		node.UnspreadUSD = plannedUSD
+		node.UnspreadUSD, node.UnspreadPlan = plannedUSD, plannedPlan
 		return node, nil
 	}
 	for i, amount := range lineitems.USDMonths(months, rate) {
 		node.MonthsUSD = append(node.MonthsUSD, allwork.MonthAmount{Month: months[i].Month, USD: amount})
+	}
+	for i, amount := range lineitems.ConvertMonths(months, rate, planRate) {
+		node.MonthsPlan = append(node.MonthsPlan, allwork.PlanMonth{Month: months[i].Month, Amount: amount})
 	}
 	return node, nil
 }
@@ -683,13 +801,51 @@ func (s allWorkSource) Attributes(ctx context.Context) ([]allwork.Attribute, err
 			return nil, err
 		}
 		for _, a := range attributes {
-			list = append(list, allwork.Attribute{
+			attribute := allwork.Attribute{
 				ID: a.ID, Label: a.Label, Level: allwork.Level(level), Number: a.Type == settings.TypeNumber, Active: a.Active,
-			})
+				Type: string(a.Type), Condition: slices.Clone(a.Condition), Options: []allwork.Option{},
+			}
+			if a.IsChoice() { // 016: the options of the attribute filters and the Breakdown, in Settings' order
+				options, err := s.settings.Options(ctx, a.ID)
+				if err != nil {
+					return nil, err
+				}
+				for _, o := range options {
+					attribute.Options = append(attribute.Options, allwork.Option{ID: o.ID, Label: o.Label, Inactive: !o.Active})
+				}
+			}
+			list = append(list, attribute)
 		}
 	}
 	return list, nil
 }
+
+// RatesUsed states the current rate of every currency other than USD, with its date and source (016 FR-009):
+// "1 USD = 0.79 GBP · rate of 19 Oct 2026 · GSAP import".
+func (s allWorkSource) RatesUsed(ctx context.Context) ([]string, error) {
+	infos, err := s.settings.CurrentRates(ctx)
+	if err != nil {
+		return nil, err
+	}
+	lines := []string{}
+	for _, info := range infos {
+		if info.Currency == money.BaseCurrency {
+			continue
+		}
+		line := fmt.Sprintf("1 USD = %s %s", info.Rate.String(), info.Currency)
+		if info.RateDate != nil {
+			line += " · rate of " + date.Format(*info.RateDate)
+		}
+		if info.Source != nil {
+			line += " · " + rateSourceWords[*info.Source]
+		}
+		lines = append(lines, line)
+	}
+	return lines, nil
+}
+
+// rateSourceWords are the sources of a rate as people read them (016 FR-001).
+var rateSourceWords = map[settings.RateSource]string{settings.RateManual: "Entered by hand", settings.RateGSAPImport: "GSAP import"}
 
 // Currency returns the person's display currency and its current rate (003's DisplayRateOf); an unusable
 // rate shows US dollars.
@@ -715,7 +871,7 @@ func (s allWorkSource) Locate(ctx context.Context, recordID string) (allwork.Loc
 		if err != nil || !found {
 			return allwork.Location{}, false, err
 		}
-		return allwork.Location{Level: allwork.LevelPlan, Name: p.Name, PlanID: p.ID}, true, nil
+		return allwork.Location{Level: allwork.LevelPlan, Name: p.Name, PlanID: p.ID, Year: p.Year}, true, nil
 	case ids.PrefixCampaign:
 		c, found, err := s.campaignsRepo.GetCampaign(ctx, recordID)
 		if err != nil || !found {

@@ -82,9 +82,13 @@ func (s *Service) viewOf(ctx context.Context, a Activity, pc planContext) (View,
 		PlannedCost: a.PlannedCost, ApprovalWorkflow: d.workflow, Description: a.Description, Attributes: attributes,
 		Goals: goalsOf(a, pc.model), Status: a.Status, DisplayStatus: d.displayStatus, UnassignedPlannedCost: d.unassigned,
 		LineItems: LineItemTotals{
-			Count: li.Count, PlannedCost: money.USD(li.PlannedCostUSD), AutoSpread: li.AutoSpread, CustomSpread: li.CustomSpread,
+			Count: li.Count, PlannedCost: money.Money{Amount: li.PlannedCostPlan, Currency: pc.plan.Currency},
+			AutoSpread: li.AutoSpread, CustomSpread: li.CustomSpread,
 		},
 		Completeness: d.completeness, Readiness: d.readiness, Meta: a.Meta,
+	}
+	if view.SplitFrom, view.SplitInto, err = s.splitLinks(ctx, a, pc.plan.ID); err != nil {
+		return View{}, err
 	}
 	return displayView(money.DisplayUSD, view), nil // in USD until the service converts it for the reader
 }

@@ -1,12 +1,14 @@
 package seed
 
 import (
+	"cmp"
 	"context"
 
 	"northstar/internal/campaigns"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/money"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -16,6 +18,7 @@ type demoCampaign struct {
 	plan, name, owner, start, end, budget string
 	attributes                            func(v *values)
 	initiatives                           []demoInitiative
+	phasing                               []string // 016: a custom phasing as month, amount pairs; nil for not phased
 }
 
 // demoInitiative is one initiative of 005 data model §9.
@@ -36,7 +39,8 @@ func notFIT4(v *values) {
 	v.yesNo("FIT4 initiative", false)
 }
 
-// demoCampaigns are C-1001 … C-1004 with I-1001 … I-1008, in ID order. Retail growth has no cluster and no
+// demoCampaigns are C-1001 … C-1005 with I-1001 … I-1010, in ID order; C-1005 "Helix UK & Ireland" is in
+// the GBP plan of 016 with its budget phased in four months. Retail growth has no cluster and no
 // region on purpose ("2 fields needed", 004's publish example); Fleet cards has no dates; Brand platform
 // ends after its plan's year (R4) and its initiatives' budgets exceed its own (over-allocated by 50,000.00).
 var demoCampaigns = []demoCampaign{
@@ -67,6 +71,13 @@ var demoCampaigns = []demoCampaign{
 			{name: "Brand film", owner: "Alex Morgan", start: "2027-01-01", end: "2027-06-30", budget: "250000.00", attributes: notFIT4},
 			{name: "Sponsorships", owner: "Alex Morgan", start: "2027-04-01", end: "2027-12-31", budget: "100000.00", attributes: notFIT4},
 		}},
+	{plan: ukPlan, name: "Helix UK & Ireland", owner: "Priya Raman", start: "2027-01-01", end: "2027-12-31",
+		budget: "400000.00", attributes: clusterAndRegion("LUBES – UK & IRELAND"),
+		phasing: []string{"2027-03", "100000.00", "2027-06", "100000.00", "2027-09", "100000.00", "2027-11", "100000.00"},
+		initiatives: []demoInitiative{
+			{name: "UK", owner: "Priya Raman", start: "2027-01-01", end: "2027-12-31", budget: "250000.00", attributes: notFIT4},
+			{name: "Ireland", owner: "Priya Raman", start: "2027-01-01", end: "2027-12-31", budget: "150000.00", attributes: notFIT4},
+		}},
 }
 
 // addCampaigns creates the four demo campaigns and their eight initiatives through the campaigns
@@ -81,7 +92,8 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 		if r.err != nil {
 			return r.err
 		}
-		start, end, budget, attributes, err := d.planningFields(c.start, c.end, c.budget, settings.LevelCampaign, c.attributes)
+		currency := d.planCurrencies[c.plan]
+		start, end, budget, attributes, err := d.planningFields(c.start, c.end, c.budget, currency, settings.LevelCampaign, c.attributes)
 		if err != nil {
 			return err
 		}
@@ -89,9 +101,13 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		phasing, err := customPhasing(c.phasing)
+		if err != nil {
+			return err
+		}
 		campaign := campaigns.Campaign{
 			ID: id, PlanID: planID, Name: c.name, OwnerID: &ownerID, StartDate: start, EndDate: end,
-			Budget: budget, Attributes: attributes, Meta: d.meta(),
+			Budget: budget, Attributes: attributes, BudgetPhasing: phasing, Meta: d.meta(),
 		}
 		if err := repo.PutCampaign(ctx, campaign); err != nil {
 			return err
@@ -99,7 +115,7 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 		d.campaigns[c.plan+"/"+c.name] = id
 
 		for _, i := range c.initiatives {
-			initiative, err := d.initiativeOf(i, id)
+			initiative, err := d.initiativeOf(i, id, currency)
 			if err != nil {
 				return err
 			}
@@ -117,24 +133,24 @@ func (d *demo) addCampaigns(ctx context.Context) error {
 
 // initiativeOf builds the stored initiative i of the campaign campaignID, without its ID, looking up its
 // owner by name. NorthStar creates it at the seed time.
-func (d *demo) initiativeOf(i demoInitiative, campaignID string) (campaigns.Initiative, error) {
+func (d *demo) initiativeOf(i demoInitiative, campaignID, currency string) (campaigns.Initiative, error) {
 	ownerID, err := find(d.people, "person", i.owner)
 	if err != nil {
 		return campaigns.Initiative{}, err
 	}
-	start, end, budget, attributes, err := d.planningFields(i.start, i.end, i.budget, settings.LevelInitiative, i.attributes)
+	start, end, budget, attributes, err := d.planningFields(i.start, i.end, i.budget, currency, settings.LevelInitiative, i.attributes)
 	if err != nil {
 		return campaigns.Initiative{}, err
 	}
 	return campaigns.Initiative{
 		CampaignID: campaignID, Name: i.name, OwnerID: &ownerID, StartDate: start, EndDate: end,
-		Budget: budget, Attributes: attributes, Meta: d.meta(),
+		Budget: budget, Attributes: attributes, BudgetPhasing: rollup.NotPhased, Meta: d.meta(),
 	}, nil
 }
 
-// planningFields turns the texts of a seeded campaign or initiative into its stored dates, USD budget and
-// Shell attribute values ("" dates or budget: none).
-func (d *demo) planningFields(start, end, budget string, level settings.Level, attributes func(v *values)) (
+// planningFields turns the texts of a seeded campaign, initiative or activity into its stored dates, budget or
+// planned cost in the plan currency currency (016) and Shell attribute values ("" dates or budget: none).
+func (d *demo) planningFields(start, end, budget, currency string, level settings.Level, attributes func(v *values)) (
 	*date.Date, *date.Date, *money.Money, settings.AttributeValues, error) {
 	startDate, endDate, err := dates(start, end)
 	if err != nil {
@@ -146,6 +162,7 @@ func (d *demo) planningFields(start, end, budget string, level settings.Level, a
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
+		m.Currency = cmp.Or(currency, money.BaseCurrency)
 		amount = &m
 	}
 	v := d.newValues(level)
@@ -170,4 +187,20 @@ func dates(start, end string) (*date.Date, *date.Date, error) {
 		parsed[i] = &d
 	}
 	return parsed[0], parsed[1], nil
+}
+
+// customPhasing is a custom budget phasing of month, amount pairs (016 FR-020); not phased without pairs.
+func customPhasing(pairs []string) (rollup.Phasing, error) {
+	if len(pairs) == 0 {
+		return rollup.NotPhased, nil
+	}
+	phasing := rollup.Phasing{Method: rollup.MethodCustom, Months: []rollup.PhasingMonth{}}
+	for i := 0; i+1 < len(pairs); i += 2 {
+		amount, err := money.ParseAmount(pairs[i+1])
+		if err != nil {
+			return rollup.Phasing{}, err
+		}
+		phasing.Months = append(phasing.Months, rollup.PhasingMonth{Month: pairs[i], Amount: amount})
+	}
+	return phasing, nil
 }

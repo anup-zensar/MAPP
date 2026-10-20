@@ -3,8 +3,10 @@
 // progress, timing and goal sums. The functions are pure: no storage and no clock of their own. Every
 // value is computed on read and never stored, so a change below shows on the next read (FR-012).
 //
-// All amounts are USD (budgets and planned costs are stored in USD), so sums are exact and need no
-// rounding; the only rounding is the whole-percent budget used, half up.
+// All amounts of one plan are in its plan currency (016 FR-011: budgets and planned costs are typed and
+// stored in it), so sums are exact and need no rounding; the only rounding is the whole-percent budget
+// used, half up. Results keep the currency of their inputs; TotalIn and ContainerIn name it for a total of
+// nothing. Goal revenue is always USD.
 package rollup
 
 import (
@@ -28,9 +30,6 @@ const (
 	Finished   = "finished"
 )
 
-// zero is 0.00 USD.
-var zero = money.USD(money.Amount{})
-
 // Sum adds the amounts that are present. It is nil when none is: nothing below has a planned cost, which
 // is shown as "—" (0.00 is a real value).
 func Sum(amounts []*money.Money) *money.Money {
@@ -40,7 +39,7 @@ func Sum(amounts []*money.Money) *money.Money {
 			continue
 		}
 		if total == nil {
-			sum := zero
+			sum := money.Money{Currency: a.Currency} // the currency of the amounts, all of one plan
 			total = &sum
 		}
 		total.Amount = total.Amount.Add(a.Amount)
@@ -50,10 +49,15 @@ func Sum(amounts []*money.Money) *money.Money {
 
 // Total adds the amounts that are present; 0.00 USD when none is (budgets allocated to children).
 func Total(amounts []*money.Money) money.Money {
+	return TotalIn(money.BaseCurrency, amounts)
+}
+
+// TotalIn adds the amounts that are present; 0.00 in currency when none is.
+func TotalIn(currency string, amounts []*money.Money) money.Money {
 	if sum := Sum(amounts); sum != nil {
 		return *sum
 	}
-	return zero
+	return money.Money{Currency: currency}
 }
 
 // Remaining is budget − allocated: what is left to give to the children. It is nil when there is no
@@ -62,7 +66,7 @@ func Remaining(budget *money.Money, allocated money.Money) *money.Money {
 	if budget == nil {
 		return nil
 	}
-	left := money.USD(budget.Amount.Sub(allocated.Amount))
+	left := money.Money{Amount: budget.Amount.Sub(allocated.Amount), Currency: budget.Currency}
 	return &left
 }
 
@@ -72,7 +76,7 @@ func OverBy(remaining *money.Money) *money.Money {
 	if remaining == nil || remaining.Amount.Sign() >= 0 {
 		return nil
 	}
-	over := money.USD(remaining.Amount.Neg())
+	over := money.Money{Amount: remaining.Amount.Neg(), Currency: remaining.Currency}
 	return &over
 }
 
@@ -104,7 +108,7 @@ func LeftToPlan(budget, planned *money.Money) *money.Money {
 	if budget == nil {
 		return nil
 	}
-	used := zero
+	used := money.Money{Currency: budget.Currency}
 	if planned != nil {
 		used = *planned
 	}
@@ -191,7 +195,13 @@ type BudgetAndCost struct {
 // Container combines the rules above for one record with budget, the budgets of its children and its
 // planned cost (the sum of the planned costs below it).
 func Container(budget *money.Money, childBudgets []*money.Money, plannedCost *money.Money) BudgetAndCost {
-	allocated := Total(childBudgets)
+	return ContainerIn(money.BaseCurrency, budget, childBudgets, plannedCost)
+}
+
+// ContainerIn is Container for a record of a plan planned in currency (016 FR-011): the allocation to
+// children is 0.00 in that currency when it has none.
+func ContainerIn(currency string, budget *money.Money, childBudgets []*money.Money, plannedCost *money.Money) BudgetAndCost {
+	allocated := TotalIn(currency, childBudgets)
 	remaining := Remaining(budget, allocated)
 	return BudgetAndCost{
 		AllocatedToChildren:  allocated,

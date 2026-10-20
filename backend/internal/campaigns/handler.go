@@ -6,6 +6,7 @@ import (
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
 	"northstar/internal/platform/web"
+	"northstar/internal/rollup"
 )
 
 // Handler answers the HTTP requests about campaigns and initiatives.
@@ -36,6 +37,8 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("GET /api/initiatives/{initiativeId}/destinations", signedIn(h.initiativeDestinations))
 	r.Handle("POST /api/initiatives/{initiativeId}/move", signedIn(h.moveInitiative))
 	r.Handle("POST /api/initiatives/{initiativeId}/copy", signedIn(h.copyInitiative))
+	r.Handle("PUT /api/campaigns/{campaignId}/budget-phasing", signedIn(h.setCampaignBudgetPhasing))       // 016 FR-020
+	r.Handle("PUT /api/initiatives/{initiativeId}/budget-phasing", signedIn(h.setInitiativeBudgetPhasing)) // 016 FR-020
 }
 
 // listPlanCampaigns answers GET /api/plans/{planId}/campaigns: the plan's campaigns with their initiatives
@@ -246,4 +249,38 @@ func (h *Handler) copyInitiative(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	web.WriteJSON(w, http.StatusCreated, initiative)
+}
+
+// setCampaignBudgetPhasing answers PUT /api/campaigns/{campaignId}/budget-phasing with the campaign after the
+// save (016 FR-020).
+func (h *Handler) setCampaignBudgetPhasing(w http.ResponseWriter, r *http.Request) {
+	var input rollup.PhasingInput
+	if err := web.ReadJSON(w, r, &input); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	campaign, err := h.service.SetCampaignBudgetPhasing(r.Context(), a, r.PathValue("campaignId"), input)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, campaign)
+}
+
+// setInitiativeBudgetPhasing answers PUT /api/initiatives/{initiativeId}/budget-phasing with the initiative
+// after the save (016 FR-020).
+func (h *Handler) setInitiativeBudgetPhasing(w http.ResponseWriter, r *http.Request) {
+	var input rollup.PhasingInput
+	if err := web.ReadJSON(w, r, &input); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context())
+	initiative, err := h.service.SetInitiativeBudgetPhasing(r.Context(), a, r.PathValue("initiativeId"), input)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, initiative)
 }

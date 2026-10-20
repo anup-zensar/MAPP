@@ -1,6 +1,7 @@
 package seed
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -26,9 +27,11 @@ type demoLineItem struct {
 	spendType, glCode    string                                                       // "" when empty
 	budget, item         string                                                       // finance budget and item names; "" when empty
 	requestSwbs          bool
+	budgetYear           int // the finance budget year; 0 for demoBudgetYear (016: the 2027 plan's are 2027)
 }
 
-// demoLineItems are L-1001 … L-1008, in ID order. Every one has its activity's owner and the finance budget
+// demoLineItems are L-1001 … L-1010, in ID order (L-1009 and L-1010 are the GBP plan's of 016: 15,000.00 GBP and
+// 23,000.00 EUR = 19,750.00 GBP, leaving 5,250.00 GBP of "UK launch event" unassigned). Every one has its activity's owner and the finance budget
 // year 2026. The Declined activity (Fleet roadshow) has none: it shows the empty state.
 var demoLineItems = []demoLineItem{
 	{plan: lubricantsPlan, activity: "Launch film", name: "Agency fee", currency: "USD", plannedCost: "50000.00",
@@ -61,6 +64,12 @@ var demoLineItems = []demoLineItem{
 		computeCost: exceedBy("500.00", "1000.00"), method: lineitems.SpreadEvenly,
 		spendType: "Digital – Platform development", glCode: "7250080 – Advertising digital",
 		budget: "2026 Mobility Budget", item: "China – Fleet", requestSwbs: true},
+	{plan: ukPlan, activity: "UK launch event", name: "Venue", currency: "GBP", plannedCost: "15000.00",
+		method: lineitems.SpreadEvenly, spendType: "BTL – Event", glCode: "7250040 – Events and sponsorship",
+		requestSwbs: true, budgetYear: 2027},
+	{plan: ukPlan, activity: "UK launch event", name: "Agency fee (Ireland)", currency: "EUR", plannedCost: "23000.00",
+		method: lineitems.SpreadEvenly, spendType: "Agency – Creative", glCode: "7250060 – Agency fees",
+		requestSwbs: true, budgetYear: 2027},
 }
 
 // addLineItems creates the demo line items through the line-items repository, looking up their activities
@@ -69,7 +78,6 @@ var demoLineItems = []demoLineItem{
 func (d *demo) addLineItems(ctx context.Context) error {
 	repo := lineitems.NewJSONRepository()
 	activityRepo := activities.NewJSONRepository()
-	currencies := settings.NewJSONRepository()
 	for _, l := range demoLineItems {
 		activityID, err := find(d.activities, "activity", l.plan+"/"+l.activity)
 		if err != nil {
@@ -79,11 +87,11 @@ func (d *demo) addLineItems(ctx context.Context) error {
 		if err != nil || !found {
 			return cmpErr(err, fmt.Errorf("seed: activity %s is not stored", activityID))
 		}
-		currency, found, err := currencies.GetCurrency(ctx, l.currency)
-		if err != nil || !found {
-			return cmpErr(err, fmt.Errorf("seed: there is no currency %s", l.currency))
+		rate, found := d.rates[l.currency]
+		if !found {
+			return fmt.Errorf("seed: there is no currency %s", l.currency)
 		}
-		item, err := d.lineItemFields(l, activity, currency.Rate)
+		item, err := d.lineItemFields(l, activity, rate)
 		if err != nil {
 			return fmt.Errorf("seed: line item %s: %w", l.name, err)
 		}
@@ -99,7 +107,7 @@ func (d *demo) addLineItems(ctx context.Context) error {
 
 // lineItemFields builds the stored line item of l under activity, whose currency has rate.
 func (d *demo) lineItemFields(l demoLineItem, activity activities.Activity, rate money.Rate) (lineitems.LineItem, error) {
-	year := demoBudgetYear
+	year := cmp.Or(l.budgetYear, demoBudgetYear)
 	item := lineitems.LineItem{
 		ActivityID: activity.ID, Name: l.name, OwnerID: activity.OwnerID, Currency: l.currency,
 		Spread:      lineitems.Spread{Method: l.method, Months: []lineitems.MonthAmount{}},

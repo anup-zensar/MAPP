@@ -165,8 +165,9 @@ func TestCreateLineItem_Contract(t *testing.T) {
 	assertAnswer(t, created, http.StatusCreated, "")
 	var v lineitems.View
 	created.Decode(t, &v)
-	// L-1009 is the line item of the demo history's deleted initiative, in the recycle bin (011 T019).
-	if v.ID != "L-1010" || v.Name != "Music rights" || v.PlannedCost.Format() != "10,000.00 EUR" ||
+	// L-1011 is the line item of the demo history's deleted initiative, in the recycle bin (011 T019); L-1009 and
+	// L-1010 are 016's GBP plan.
+	if v.ID != "L-1012" || v.Name != "Music rights" || v.PlannedCost.Format() != "10,000.00 EUR" ||
 		v.PlannedCostUSD.Format() != "10,869.57 USD" || v.SwbsStatus != "waitingForApproval" || len(v.Spread.Months) != 3 ||
 		v.Owner == nil || v.Version != 1 || v.CreatedBy.Name != "Priya Raman" {
 		t.Errorf("created = %+v", v)
@@ -251,7 +252,7 @@ func TestDuplicateLineItem_Contract(t *testing.T) {
 	assertAnswer(t, copied, http.StatusCreated, "")
 	var v lineitems.View
 	copied.Decode(t, &v)
-	if v.ID != "L-1010" || v.Name != "Agency fee (copy)" || v.PlannedCost.Format() != "50,000.00 USD" || len(v.Missing) != 0 {
+	if v.ID != "L-1012" || v.Name != "Agency fee (copy)" || v.PlannedCost.Format() != "50,000.00 USD" || len(v.Missing) != 0 {
 		t.Errorf("copy = %+v", v)
 	}
 	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
@@ -294,4 +295,35 @@ func TestDeleteLineItem_Contract(t *testing.T) {
 		`"message":"NorthStar couldn't read this request. Reload the page and try again.","fields":[]}`)
 	assertAnswer(t, confirmed, http.StatusOK, "")
 	assertAnswer(t, unknown, http.StatusNotFound, lineItemGoneBody)
+}
+
+// The line items of A-1011 "UK launch event" in the GBP plan P-1004 (016 FR-015): each keeps its own currency
+// and shows its planned cost in the plan currency; the unassigned planned cost and the spread grid are worked
+// out in GBP — 40,000.00 − (15,000.00 + 19,750.00) = 5,250.00 GBP — and answered in Priya's display currency,
+// each amount converted once from GBP (contract UnassignedBalance and SpreadGrid, D-213): 5,250.00 GBP =
+// 6,645.57 USD, 34,750.00 GBP = 43,987.34 USD, 40,000.00 GBP = 50,632.91 USD.
+func TestListActivityLineItems_PlanCurrency_Contract_FR015(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	response := priya.Do(t, http.MethodGet, "/api/activities/A-1011/line-items", nil)
+
+	assertAnswer(t, response, http.StatusOK, "")
+	var section lineitems.Section
+	response.Decode(t, &section)
+	if len(section.Items) != 2 {
+		t.Fatalf("items = %+v", section.Items)
+	}
+	venue, agency := section.Items[0], section.Items[1]
+	if venue.PlannedCostPlan.Format() != "15,000.00 GBP" || agency.PlannedCost.Format() != "23,000.00 EUR" ||
+		agency.PlannedCostPlan.Format() != "19,750.00 GBP" || agency.PlannedCostUSD.Format() != "25,000.00 USD" {
+		t.Errorf("venue %v; agency %v = %v = %v", venue.PlannedCostPlan, agency.PlannedCost, agency.PlannedCostPlan, agency.PlannedCostUSD)
+	}
+	if b := section.Balance; b.State != "left" || b.Balance.Format() != "6,645.57 USD" || b.Assigned.Format() != "43,987.34 USD" ||
+		b.PlannedCost.Format() != "50,632.91 USD" {
+		t.Errorf("balance = %v of %v, assigned %v, %s", b.Balance, b.PlannedCost, b.Assigned, b.State)
+	}
+	if g := section.Grid; g.Total.Format() != "43,987.34 USD" || len(g.Columns) != 3 || g.Columns[0].Key != "2027-03" {
+		t.Errorf("grid total %v, columns %+v", g.Total, g.Columns)
+	}
 }

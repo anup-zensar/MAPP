@@ -8,6 +8,7 @@ import (
 	"northstar/internal/people"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/money"
 	"northstar/internal/settings"
 )
 
@@ -58,6 +59,9 @@ type SettingsReader interface {
 	MissingAttributes(ctx context.Context, level settings.Level, values settings.AttributeValues, businessUnit []string) ([]settings.MissingField, error)
 	// DescribeAttribute gives the label and the text of an "attributes.<id>" field for the activity log.
 	DescribeAttribute(ctx context.Context, field string, value any) (label, text string, err error)
+	// Rates returns the current rate of every currency (016 FR-002): planned costs in a plan currency are shown
+	// in the display currency, and the types' USD defaults converted into the plan currency, with them.
+	Rates(ctx context.Context) (money.Rates, error)
 }
 
 // Deps are the readers of earlier features the activities service works with.
@@ -81,6 +85,14 @@ func (noLineItems) CopyAll(context.Context, actor.Actor, string, string, int) (i
 }
 
 func (noLineItems) DatesChanged(context.Context, actor.Actor, Activity, Activity) error {
+	return nil
+}
+
+func (noLineItems) Items(context.Context, string) ([]LineItemBrief, error) {
+	return []LineItemBrief{}, nil
+}
+
+func (noLineItems) MoveToActivity(context.Context, actor.Actor, []string, string) error {
 	return nil
 }
 

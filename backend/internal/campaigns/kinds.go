@@ -10,6 +10,7 @@ import (
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
+	"northstar/internal/rollup"
 )
 
 // The history kinds of this package (data model §7), and the kind of their parent, feature 004's plan.
@@ -239,6 +240,9 @@ func (s *Service) describer(parentLabel string) func(ctx context.Context, field 
 		}
 		if strings.HasPrefix(field, "attributes.") {
 			return s.deps.Settings.DescribeAttribute(ctx, field, value)
+		}
+		if label, text, ok := rollup.DescribePhasing(field, value); ok { // 016 FR-023
+			return label, text, nil
 		}
 		return "", "", nil
 	}

@@ -26,7 +26,8 @@ type PlanFacts struct {
 	Year       int
 	Status     string                   // "draft" or "published"
 	OwnerID    *string                  // the default owner of a new campaign (R2); nil when none
-	Budget     *money.Money             // USD; nil when none
+	Budget     *money.Money             // in Currency; nil when none
+	Currency   string                   // the plan currency (016 FR-011): every budget and planned cost of the plan is in it
 	ModelID    string                   // the plan's model
 	Attributes settings.AttributeValues // the plan's Shell attribute values, Business unit included (R9)
 	Access     authz.PlanFacts          // what access decisions need: teams, owner, creator (feature 014)
@@ -74,4 +75,7 @@ type Settings interface {
 	Attributes(ctx context.Context, level settings.Level) ([]settings.Attribute, error)
 	// Option returns the Shell attribute option with id, active or not, and false when there is none.
 	Option(ctx context.Context, id string) (settings.Option, bool, error)
+	// Rates returns the current rate of every currency (016 FR-002): the plan currencies' amounts are shown in
+	// the reader's display currency with them.
+	Rates(ctx context.Context) (money.Rates, error)
 }

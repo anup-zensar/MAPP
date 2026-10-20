@@ -36,17 +36,22 @@ type Display struct {
 
 // displayFor returns the display currency of the person a, read in a transaction of its own (or the
 // caller's).
+// The planned costs are in their plan currency (016 FR-013): they are converted from it with the current rates.
 func (s *Service) displayFor(ctx context.Context, a actor.Actor) (money.Display, error) {
-	if s.displayRates == nil {
-		return money.DisplayUSD, nil
-	}
 	d := money.DisplayUSD
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		rate, err := s.displayRates.DisplayRateOf(ctx, a.ID)
+		rates, err := s.settings.Rates(ctx)
 		if err != nil {
 			return err
 		}
-		d = money.DisplayIn(rate.Code, rate.Rate)
+		if s.displayRates != nil {
+			rate, err := s.displayRates.DisplayRateOf(ctx, a.ID)
+			if err != nil {
+				return err
+			}
+			d = money.DisplayIn(rate.Code, rate.Rate)
+		}
+		d = d.WithRates(rates)
 		return nil
 	})
 	return d, err

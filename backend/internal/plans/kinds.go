@@ -10,6 +10,7 @@ import (
 	"northstar/internal/history"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
+	"northstar/internal/rollup"
 )
 
 // The history kind of plans (data model §4). Features 005–007 register their kinds below it.
@@ -35,6 +36,8 @@ const (
 	labelGoalStage     = "Goal stage"
 	labelGoalAmount    = "Goal amount"
 	labelStatus        = "Status"
+	labelCurrency      = "Plan currency" // 016
+	labelPlanType      = "Plan type"     // 016
 )
 
 // The words of the plan's choices (plan "User-visible messages").
@@ -45,6 +48,8 @@ var (
 	}
 	stageWords  = map[string]string{string(StageINQ): "INQ", string(StageMQL): "MQL", string(StageRevenue): "Revenue"}
 	statusWords = map[string]string{string(StatusDraft): "Draft", string(StatusPublished): "Published"}
+	// planTypeWords are the plan types as people read them (016 FR-032).
+	planTypeWords = map[PlanType]string{TypeOperational: "Operational", TypeStrategic: "Strategic", TypeCrossMarket: "Cross-market"}
 )
 
 // Messages about bringing a plan back from the recycle bin (plan "Restore notes").
@@ -100,6 +105,9 @@ func (s *Service) describe(ctx context.Context, field string, value any) (label,
 	if strings.HasPrefix(field, "attributes.") {
 		return s.settings.DescribeAttribute(ctx, field, value)
 	}
+	if label, text, ok := rollup.DescribePhasing(field, value); ok { // 016 FR-023
+		return label, text, nil
+	}
 	stored, _ := value.(string) // most fields are stored as text
 	switch field {
 	case "name":
@@ -123,10 +131,14 @@ func (s *Service) describe(ctx context.Context, field string, value any) (label,
 	case "description":
 		return labelDescription, "", nil
 	case "budget":
-		if amount, err := money.ParseAmount(stored); err == nil {
+		if amount, err := money.ParseAmount(stored); err == nil { // logged before 016: USD
 			return labelBudget, money.USD(amount).Format(), nil
 		}
-		return labelBudget, "", nil
+		return labelBudget, rollup.MoneyText(value), nil // 016: money in the plan currency
+	case "currency":
+		return labelCurrency, stored, nil
+	case "planType":
+		return labelPlanType, planTypeWords[PlanType(stored)], nil
 	case "defaultFinanceBudgetId":
 		b, found, err := s.settings.FinanceBudget(ctx, stored)
 		if err != nil || !found {

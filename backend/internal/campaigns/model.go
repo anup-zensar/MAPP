@@ -14,6 +14,7 @@ import (
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
+	"northstar/internal/rollup"
 	"northstar/internal/settings"
 )
 
@@ -26,8 +27,11 @@ type Campaign struct {
 	OwnerID     *string                  `json:"ownerId"`     // a person; nil when none
 	StartDate   *date.Date               `json:"startDate"`   // both dates or neither
 	EndDate     *date.Date               `json:"endDate"`
-	Budget      *money.Money             `json:"budget"`     // USD, 0.00 or more; nil when none
+	Budget      *money.Money             `json:"budget"`     // in the plan currency (016 FR-011), 0.00 or more; nil when none
 	Attributes  settings.AttributeValues `json:"attributes"` // campaign-level Shell attribute values; never nil
+	// BudgetPhasing is the budget by month of the plan's year (016 FR-020); missing in older data reads as not
+	// phased. Changed only by SetCampaignBudgetPhasing and by removing the budget.
+	BudgetPhasing rollup.Phasing `json:"budgetPhasing"`
 	record.Meta
 }
 
@@ -41,8 +45,10 @@ type Initiative struct {
 	OwnerID     *string                  `json:"ownerId"`
 	StartDate   *date.Date               `json:"startDate"` // inside the campaign's dates when the campaign has both (R3)
 	EndDate     *date.Date               `json:"endDate"`
-	Budget      *money.Money             `json:"budget"`
+	Budget      *money.Money             `json:"budget"`     // in the plan currency (016 FR-011)
 	Attributes  settings.AttributeValues `json:"attributes"` // initiative-level Shell attribute values; never nil
+	// BudgetPhasing is the budget by month of the plan's year (016 FR-020), as on a campaign.
+	BudgetPhasing rollup.Phasing `json:"budgetPhasing"`
 	record.Meta
 }
 
@@ -87,7 +93,7 @@ type CampaignRef struct {
 }
 
 // BudgetAndCost is budget flowing down and cost rolling up for one campaign or initiative (BudgetAndCost):
-// in USD, or in the reader's display currency inside DisplayAmounts (D-220).
+// in the plan currency (016), or in the reader's display currency inside DisplayAmounts (D-220).
 type BudgetAndCost struct {
 	AllocatedToChildren  money.Money  `json:"allocatedToChildren"`
 	RemainingForChildren *money.Money `json:"remainingForChildren"` // null without a budget; may be negative
@@ -158,6 +164,7 @@ type InitiativeView struct {
 	Goals                 GoalSums                 `json:"goals"`
 	Counts                InitiativeCounts         `json:"counts"`
 	Access                *authz.ContainerAccess   `json:"access,omitempty"` // what the reader may do (014 FR-011)
+	BudgetPhasing         rollup.PhasingView       `json:"budgetPhasing"`    // 016 FR-020, in the plan currency
 	record.Meta
 }
 
@@ -185,6 +192,7 @@ type CampaignView struct {
 	Counts                CampaignCounts           `json:"counts"`
 	Initiatives           []InitiativeView         `json:"initiatives"`      // by start date, then name; undated last
 	Access                *authz.ContainerAccess   `json:"access,omitempty"` // what the reader may do (014 FR-011)
+	BudgetPhasing         rollup.PhasingView       `json:"budgetPhasing"`    // 016 FR-020, in the plan currency
 	record.Meta
 }
 
@@ -219,7 +227,7 @@ type CampaignInput struct {
 	OwnerID     *string                  `json:"ownerId"`
 	StartDate   *date.Date               `json:"startDate"`
 	EndDate     *date.Date               `json:"endDate"`
-	Budget      *money.Input             `json:"budget"` // USD only
+	Budget      *money.Input             `json:"budget"` // in the plan currency only (016 FR-011)
 	Attributes  settings.AttributeValues `json:"attributes"`
 }
 

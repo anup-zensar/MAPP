@@ -17,14 +17,22 @@ func NewJSONRepository() Repository {
 	return jsonRepository{}
 }
 
-// Get reads one plan.
+// Get reads one plan, with the defaults of older data (016 data-model §4.5).
 func (jsonRepository) Get(ctx context.Context, id string) (Plan, bool, error) {
-	return store.Get[Plan](ctx, plansTable, id)
+	p, found, err := store.Get[Plan](ctx, plansTable, id)
+	if !found {
+		return p, found, err
+	}
+	return p.Normalised(), found, err
 }
 
-// List reads the whole plans table.
+// List reads the whole plans table, each plan with the defaults of older data.
 func (jsonRepository) List(ctx context.Context) ([]Plan, error) {
-	return store.List[Plan](ctx, plansTable)
+	plans, err := store.List[Plan](ctx, plansTable)
+	for i, p := range plans {
+		plans[i] = p.Normalised()
+	}
+	return plans, err
 }
 
 // PlansOfYear reads every plan to find those of one year: quick for the plans of a demo. PostgreSQL would

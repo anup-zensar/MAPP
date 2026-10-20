@@ -314,6 +314,29 @@ func (c *fakeCurrencies) Currencies(_ context.Context) ([]settings.Currency, err
 	return list, nil
 }
 
+// Rates returns every currency's rate (016).
+func (c *fakeCurrencies) Rates(_ context.Context) (money.Rates, error) {
+	rates := money.Rates{}
+	for code, currency := range c.byCode {
+		rates[code] = currency.Rate
+	}
+	return rates, nil
+}
+
+// CurrentRates returns every currency's rate, dated 19 Oct 2026 and imported from GSAP but USD (016 FR-009).
+func (c *fakeCurrencies) CurrentRates(_ context.Context) ([]settings.RateInfo, error) {
+	infos := []settings.RateInfo{}
+	day, source := date.MustParse("2026-10-19"), settings.RateGSAPImport
+	for _, code := range []string{"USD", "CNY", "EUR", "GBP", "INR"} {
+		info := settings.RateInfo{Currency: code, Rate: c.byCode[code].Rate}
+		if code != "USD" {
+			info.RateDate, info.Source = &day, &source
+		}
+		infos = append(infos, info)
+	}
+	return infos, nil
+}
+
 // budgetItems are the finance budget items of these tests; 2027 has none.
 var budgetItems = []BudgetItem{
 	{ID: europeDigital, Year: 2026, BudgetName: "2026 Lubricants Budget", Name: "Europe – Digital", Code: "LUB-EU-DIG", Active: true},

@@ -195,7 +195,7 @@ func TestCreateCampaign_Contract201(t *testing.T) {
 	assertStatus(t, response, http.StatusCreated)
 	var created campaign
 	response.Decode(t, &created)
-	if created.ID != "C-1005" || created.PlanID != "P-1002" || !created.OutsidePlanYear ||
+	if created.ID != "C-1006" || created.PlanID != "P-1002" || !created.OutsidePlanYear || // C-1005 is the GBP plan's (016)
 		*created.ParentRemainingBudget != usd("-100000.00") || created.Version != 1 {
 		t.Errorf("created = %+v", created)
 	}
@@ -277,8 +277,9 @@ func TestCreateInitiative_Contract201(t *testing.T) {
 	assertStatus(t, response, http.StatusCreated)
 	var created initiative
 	response.Decode(t, &created)
-	// I-1009 is the demo history's deleted initiative "Trade shows", in the recycle bin (011 T019).
-	if created.ID != "I-1010" || created.CampaignID != "C-1001" || created.PlanID != "P-1001" || created.Timing != nil ||
+	// I-1011 is the demo history's deleted initiative "Trade shows", in the recycle bin (011 T019); I-1009 and
+	// I-1010 are 016's GBP plan.
+	if created.ID != "I-1012" || created.CampaignID != "C-1001" || created.PlanID != "P-1001" || created.Timing != nil ||
 		*created.ParentRemainingBudget != usd("150000.00") {
 		t.Errorf("created = %+v", created)
 	}

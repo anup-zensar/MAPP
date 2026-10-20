@@ -3,6 +3,7 @@
 package app
 
 import (
+	"context"
 	"net/http"
 	"slices"
 
@@ -97,6 +98,12 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
+	// 016: rates are dated records; a store of before 016 gets each currency's stored rate as its first dated
+	// rate, once. GSAP daily rates are simulated with a file import behind the rate feed seam (D-259).
+	if err := settingsService.MigrateRates(context.Background()); err != nil {
+		return nil, err
+	}
+	settingsService.UseRateFeed(settings.GSAPRateFile{})
 	// Features 003–007 tell Settings where its records are used at the end of New, once they are built.
 	settings.NewHandler(settingsService).Routes(router, signedIn)
 
@@ -191,7 +198,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// activity, and Submit runs 006's ready-to-submit check, line items included.
 	approvalsService := approvals.NewService(db, approvalsRepo, peopleRepo, &approvalsActivities{
 		activities: activitiesRepo, lineItems: lineItemsRepo, campaigns: campaignsRepo,
-		plans: plansRepo, settings: settingsRepo, check: activitiesService.SubmitCheck, now: now,
+		plans: plansRepo, settings: settingsRepo, rates: settingsService.Rates, check: activitiesService.SubmitCheck, now: now,
 	}, generator, historyService, now)
 	for _, kind := range approvalsService.Kinds() {
 		if err := historyService.Register(kind); err != nil {
@@ -233,7 +240,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 
 	// Home (009): a read-only dashboard over the services of 003–008 and 011's activity log (home_sources.go).
 	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
-		approvalsService, historyService))
+		approvalsService, historyService, settingsService.Rates))
 	home.NewHandler(homeService).Routes(router, signedIn)
 
 	// All work (010): a read-only view of a year over plans (004) and the records below them (005–007),
