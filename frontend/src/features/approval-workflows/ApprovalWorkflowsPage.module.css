@@ -92,6 +92,11 @@
   min-width: 240px;
 }
 
+/* "Used by 7 activities (1 waiting for approval)" stays on one or two lines on a phone. */
+.usedByCol {
+  min-width: 220px;
+}
+
 .nowrap {
   white-space: nowrap;
 }

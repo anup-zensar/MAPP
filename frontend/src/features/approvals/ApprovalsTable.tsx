@@ -101,7 +101,11 @@ function Row({ row, decided, onOpen }: RowProps) {
       <td className={styles.nowrap}>
         <SubmittedCell row={row} format={format} />
       </td>
-      {decided && <td className={styles.nowrap}>{decisionText(row, format)}</td>}
+      {decided && (
+        <td className={styles.nowrap}>
+          <DecisionCell row={row} format={format} />
+        </td>
+      )}
       {decided && (
         <td className={styles.nowrap}>
           <ActivityStatusChip status={row.activity.displayStatus} />
@@ -144,7 +148,11 @@ function RowCard({ row, decided, onOpen }: RowProps) {
         <Fact label="Submitted">
           <SubmittedCell row={row} format={format} />
         </Fact>
-        {decided && <Fact label="My decision">{decisionText(row, format)}</Fact>}
+        {decided && (
+          <Fact label="My decision">
+            <DecisionCell row={row} format={format} />
+          </Fact>
+        )}
       </dl>
     </li>
   );
@@ -215,8 +223,15 @@ function workflowText(row: ApprovalRow): string {
   return `${row.workflow.name}${row.workflow.active ? '' : ' (inactive)'}`;
 }
 
-function decisionText(row: ApprovalRow, format: Formatters): string {
-  return row.myDecision
-    ? `${row.myDecision.action === 'approved' ? 'Approved' : 'Declined'} · ${format.date(localDate(row.myDecision.at))}`
-    : '—';
+/** My decision over its date ("Approved" over "12 Mar 2026"), so the Decided table fits its card. */
+function DecisionCell({ row, format }: { row: ApprovalRow; format: Formatters }) {
+  if (!row.myDecision) {
+    return <>—</>;
+  }
+  return (
+    <span className={styles.stack}>
+      <span>{row.myDecision.action === 'approved' ? 'Approved' : 'Declined'}</span>{' '}
+      <span className={styles.secondary}>{format.date(localDate(row.myDecision.at))}</span>
+    </span>
+  );
 }

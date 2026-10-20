@@ -82,7 +82,7 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     expect(headers()).toContain('My decision');
     expect(headers()).toContain('Status');
     const row = screen.getByRole('row', { name: /Launch film/ });
-    expect(row).toHaveTextContent('Approved · 12 Mar 2026');
+    expect(row).toHaveTextContent('Approved 12 Mar 2026');
     expect(row).toHaveTextContent('In progress');
     expect(row).not.toHaveTextContent('Level 1 of 2');
     expect(row).not.toHaveTextContent('waiting');
@@ -107,7 +107,7 @@ describe('ApprovalsTable (feature 008, US3)', () => {
     );
 
     const row = screen.getByRole('row', { name: /Launch film/ });
-    expect(row).toHaveTextContent('Approved · 11 Mar 2026');
+    expect(row).toHaveTextContent('Approved 11 Mar 2026');
     expect(row).toHaveTextContent('Created');
     expect(row).not.toHaveTextContent('Level 2 of 2');
     expect(row).not.toHaveTextContent('waiting');

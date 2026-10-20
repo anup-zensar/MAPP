@@ -311,7 +311,9 @@ function WorkflowList({
                 <th scope="col" className={styles.levelsCol}>
                   Levels
                 </th>
-                <th scope="col">Used by</th>
+                <th scope="col" className={styles.usedByCol}>
+                  Used by
+                </th>
                 <th scope="col">Status</th>
                 <th scope="col" className={styles.actionsCell}>
                   <span className="visually-hidden">Actions</span>
