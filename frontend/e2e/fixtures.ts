@@ -31,10 +31,10 @@ export function uniqueName(prefix: string): string {
   return `${prefix} ${Date.now().toString(36)}`;
 }
 
-/** Checks the page against WCAG 2.1 A and AA with axe and expects no violations (SC-006). */
+/** Checks the page against WCAG 2.2 A and AA with axe and expects no violations (SC-006). */
 export async function expectNoAxeViolations(page: Page): Promise<void> {
   const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
   const summary = results.violations.map(
     (v) => `${v.id}: ${v.nodes.map((node) => node.target.join(' ')).join(', ')}`,

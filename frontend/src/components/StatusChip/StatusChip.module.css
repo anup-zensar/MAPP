@@ -1,13 +1,17 @@
-/* The word uses the darker -text shade: 4.5:1 or more on the 12 % tint (research R17). */
+/* A status word on a 12 % tint of its family's colour: 24 px high, 4 px corners, 12 px bold.
+   The word uses the darker -text shade, 4.5:1 or more on the tint (design system §4). */
 .chip {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  min-height: 24px;
+  padding: 0 var(--space-2);
   border-radius: var(--radius-chip);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.5;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
   white-space: nowrap;
+  /* Always the text face, also inside a heading. */
+  font-family: var(--font);
 }
 
 .neutral {

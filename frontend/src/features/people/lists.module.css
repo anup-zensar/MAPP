@@ -4,8 +4,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .search {
@@ -16,12 +16,13 @@
 .count {
   margin-left: auto;
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
 
 /* Wide content scrolls sideways inside its card, never the whole page (design system §2). */
 .tableScroll {
+  position: relative;
   overflow-x: auto;
 }
 
@@ -29,12 +30,12 @@
   width: 100%;
   border-collapse: collapse;
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .table th,
 .table td {
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--hairline);
   font-weight: 400;
   text-align: left;
@@ -43,10 +44,10 @@
 
 /* The header row on the subtle grey of table headers (design system §3). */
 .table thead th {
-  padding-block: 8px;
+  padding-block: var(--space-2);
   background: var(--gray-bg);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -79,13 +80,13 @@
 }
 
 .open:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
 .secondary {
   color: var(--ink-2);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* At most two lines of a team's description; the details show all of it. */
@@ -103,7 +104,7 @@
 .members {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
@@ -115,7 +116,7 @@
 }
 
 .avatars li + li {
-  margin-left: -6px;
+  margin-left: -8px;
 }
 
 .avatars li {

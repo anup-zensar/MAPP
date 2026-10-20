@@ -57,7 +57,7 @@ export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowD
               <Button onClick={() => actions.setActive(workflow)}>Set active</Button>
             )}
             <Button
-              variant="ghost"
+              variant="tertiary"
               className={styles.delete}
               onClick={() => actions.remove(workflow)}
             >

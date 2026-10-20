@@ -4,7 +4,6 @@ import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { useAttributeForm } from '@/api/settingsQueries';
 import {
-  Breadcrumb,
   Button,
   Card,
   ChoiceField,
@@ -91,14 +90,15 @@ function CreateAttribute() {
 
   return (
     <>
-      <Breadcrumb
-        items={[
+      <PageHeader
+        breadcrumb={[
           { label: 'Settings', to: '/settings' },
           { label: 'Shell attributes', to: `/settings/shell-attributes?level=${level}` },
           { label: 'New Shell attribute' },
         ]}
+        eyebrow="Settings"
+        title="New Shell attribute"
       />
-      <PageHeader eyebrow="Settings" title="New Shell attribute" />
       <AttributeForm level={level} />
     </>
   );
@@ -114,8 +114,8 @@ function EditAttribute() {
     const { id, label, level } = attribute.data;
     return (
       <>
-        <Breadcrumb
-          items={[
+        <PageHeader
+          breadcrumb={[
             { label: 'Settings', to: '/settings' },
             { label: 'Shell attributes', to: '/settings/shell-attributes' },
             {
@@ -125,8 +125,9 @@ function EditAttribute() {
             { label, to: `/settings/shell-attributes/${id}` },
             { label: 'Edit' },
           ]}
+          eyebrow="Settings"
+          title={`Edit Shell attribute '${label}'`}
         />
-        <PageHeader eyebrow="Settings" title={`Edit Shell attribute '${label}'`} />
         {/* The edit-form rule: the attribute is copied into the form once, when it opens. */}
         <AttributeForm key={id} level={level} attribute={attribute.data} />
       </>
@@ -136,14 +137,15 @@ function EditAttribute() {
   const notFound = attribute.error instanceof ApiError && attribute.error.kind === 'notFound';
   return (
     <>
-      <Breadcrumb
-        items={[
+      <PageHeader
+        breadcrumb={[
           { label: 'Settings', to: '/settings' },
           { label: 'Shell attributes', to: '/settings/shell-attributes' },
           { label: 'Edit' },
         ]}
+        eyebrow="Settings"
+        title="Edit Shell attribute"
       />
-      <PageHeader eyebrow="Settings" title="Edit Shell attribute" />
       <Card>
         {notFound ? (
           <AttributeNotFound />

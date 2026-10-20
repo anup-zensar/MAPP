@@ -1,5 +1,5 @@
 import { Navigate, useLocation, useParams } from 'react-router';
-import { Breadcrumb, PageHeader } from '@/components';
+import { PageHeader } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useActivity } from './activitiesApi';
 import { LoadFailed, PageSkeleton } from './ActivityLoadStates';
@@ -22,8 +22,11 @@ export function ActivityShortLink() {
   }
   return (
     <>
-      <Breadcrumb items={[{ label: 'Plans', to: '/plans' }, { label: 'Activity' }]} />
-      <PageHeader eyebrow="Activity" title="Activity" />
+      <PageHeader
+        breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: 'Activity' }]}
+        eyebrow="Activity"
+        title="Activity"
+      />
       {query.isPending ? (
         <PageSkeleton />
       ) : (

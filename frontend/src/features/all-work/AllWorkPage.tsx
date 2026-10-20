@@ -9,11 +9,11 @@ import {
   ErrorState,
   LinkButton,
   PageHeader,
-  PillTabs,
+  Tabs,
   Skeleton,
   useToast,
 } from '@/components';
-import type { PillTab } from '@/components';
+import type { TabItem } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import {
   useAllWork,
@@ -50,7 +50,7 @@ import {
 } from './viewState';
 
 /** The views as pill tabs (FR-001). */
-const TABS: PillTab<ViewType>[] = [
+const TABS: TabItem<ViewType>[] = [
   { value: 'grid', label: VIEW_LABELS.grid },
   { value: 'calendar', label: VIEW_LABELS.calendar },
   { value: 'budget', label: VIEW_LABELS.budget },
@@ -163,7 +163,7 @@ export function AllWorkPage() {
               />
             )}
             {state ? (
-              <PillTabs
+              <Tabs
                 label="All work views"
                 tabs={TABS}
                 value={state.view}
@@ -238,7 +238,7 @@ export function AllWorkPage() {
                     />
                   )}
                 </div>
-              </PillTabs>
+              </Tabs>
             ) : (
               <div className={styles.card}>
                 <GridSkeleton />

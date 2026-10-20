@@ -1,5 +1,5 @@
 .panel {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -7,7 +7,7 @@
 }
 
 .panel:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -15,28 +15,28 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 12px;
+  gap: var(--space-1) var(--space-3);
   cursor: pointer;
 }
 
 .summary:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-1);
 }
 
 .title,
 .readyTitle {
   display: inline;
   color: var(--ink);
-  font-size: 17px;
+  font-size: var(--text-lg);
   font-weight: 600;
 }
 
 .readyTitle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .readyTitle svg {
@@ -47,21 +47,21 @@
 
 .count {
   color: var(--status-problem-text);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .groups {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 16px;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
 }
 
 .group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .groups .group {
@@ -70,20 +70,18 @@
 
 .groupTitle {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
-  padding-left: 18px;
+  padding-left: var(--space-5);
 }
 
 .list a {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }

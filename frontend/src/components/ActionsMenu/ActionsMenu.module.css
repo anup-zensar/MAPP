@@ -1,7 +1,9 @@
+/* A white menu with 8 px corners and a soft shadow; items 40 px high (Shell). */
 .menu {
   z-index: 50;
-  min-width: 180px;
-  padding: 6px;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
   background: var(--surface);
@@ -9,10 +11,15 @@
 }
 
 .item {
-  padding: 7px 10px;
-  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-chip);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   cursor: pointer;
   outline: none;
 }
@@ -28,15 +35,17 @@
   max-width: 260px;
   margin-top: 2px;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 
+/* Delete and other destructive actions: red words, last after a line. */
 .danger {
-  color: var(--status-problem-text);
+  color: var(--danger-text);
 }
 
 .separator {
   height: 1px;
-  margin: 6px 4px;
-  background: var(--hairline);
+  margin: var(--space-1) 0;
+  background: var(--row-divider);
 }

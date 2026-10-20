@@ -17,7 +17,7 @@
   flex-direction: column;
   width: min(600px, calc(100vw - 32px));
   max-height: calc(100vh - 48px);
-  padding: 24px;
+  padding: var(--space-6);
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
@@ -31,36 +31,36 @@
 
 .title {
   color: var(--ink);
-  font-size: 17px;
+  font-size: var(--text-lg);
   font-weight: 600;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .text {
-  margin-top: 8px;
+  margin-top: var(--space-2);
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .body {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   min-height: 0;
-  margin-top: 20px;
+  margin-top: var(--space-5);
   overflow-y: auto;
 }
 
 .fileField {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .label {
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -68,12 +68,12 @@
   max-width: 100%;
   color: var(--ink);
   font: inherit;
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .problem {
   color: var(--status-problem-text);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .checking {
@@ -84,9 +84,9 @@
 .review {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .nothing {
@@ -103,7 +103,7 @@
 }
 
 .summary {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-weight: 600;
   cursor: pointer;
 }
@@ -112,7 +112,7 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  padding: 0 12px 8px;
+  padding: 0 var(--space-3) var(--space-2);
   list-style: none;
 }
 
@@ -120,8 +120,8 @@
 .row {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 12px;
-  padding: 6px 0;
+  gap: 2px var(--space-3);
+  padding: var(--space-1) 0;
   border-top: 1px solid var(--hairline);
 }
 
@@ -132,7 +132,7 @@
 }
 
 .rowLabel {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .parent {
@@ -148,7 +148,7 @@
 }
 
 .more {
-  padding: 0 12px 8px;
+  padding: 0 var(--space-3) var(--space-2);
   color: var(--ink-2);
 }
 
@@ -156,8 +156,8 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
 }
 
 .spinner {

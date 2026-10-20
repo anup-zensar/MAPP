@@ -1,30 +1,30 @@
-/* White initials on the strong gradient read at 5.4:1 or more (research R17). */
+/* White initials on Shell dark blue: 10.5:1 (8:1 on the dark-mode shade). */
 .avatar {
   display: inline-grid;
   flex: none;
   place-items: center;
   border-radius: 50%;
-  background: var(--brand-gradient-strong);
+  background: var(--avatar-bg);
   color: var(--on-accent);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-family: var(--font);
+  font-weight: var(--weight-bold);
   line-height: 1;
 }
 
 .sm {
   width: 28px;
   height: 28px;
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .md {
   width: 32px;
   height: 32px;
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .lg {
   width: 40px;
   height: 40px;
-  font-size: 15px;
+  font-size: var(--text-sm);
 }

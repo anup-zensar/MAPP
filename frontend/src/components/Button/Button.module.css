@@ -1,29 +1,26 @@
-/* ZenReach's compact button (.btn-pill): 10 px corners, 8 × 16 px padding, 13.5 px medium text. */
+/* Shell's button: 8 px corners, bold 14 px Arial, one fixed height per size (32 / 40 / 48 px). */
 .button {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-2);
   border: 1px solid transparent;
   border-radius: var(--radius-control);
-  font-weight: 500;
-  line-height: 1.2;
+  font-family: var(--font);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
   white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.12s var(--ease-out);
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .button:hover {
   text-decoration: none;
-}
-
-/* A small press, so a click is felt. */
-.button:active {
-  transform: scale(0.97);
 }
 
 .button:disabled {
@@ -33,67 +30,109 @@
 
 .button svg {
   flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.sm {
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.sm svg {
   width: 16px;
   height: 16px;
 }
 
 .md {
-  min-height: 36px;
-  padding: 8px 16px;
-  font-size: 13.5px;
+  height: var(--control-md);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
 }
 
-.sm {
-  min-height: 30px;
-  padding: 5px 12px;
-  font-size: 12.5px;
+.lg {
+  height: var(--control-lg);
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
 }
 
-/* An icon without a label is a square. */
-.iconOnly.md {
-  width: 36px;
-  padding: 0;
+.lg svg {
+  width: 20px;
+  height: 20px;
 }
 
+/* An icon without a label is a square of the same height. */
 .iconOnly.sm {
-  width: 30px;
+  width: var(--control-sm);
   padding: 0;
 }
 
+.iconOnly.md {
+  width: var(--control-md);
+  padding: 0;
+}
+
+.iconOnly.lg {
+  width: var(--control-lg);
+  padding: 0;
+}
+
+/* The one main action: Shell yellow with dark text (6.7:1). */
 .primary {
+  border-color: var(--button-primary-bg);
   background: var(--button-primary-bg);
-  color: var(--on-accent);
+  color: var(--button-primary-text);
 }
 
 .primary:hover {
+  border-color: var(--button-primary-bg-hover);
   background: var(--button-primary-bg-hover);
 }
 
+.primary:active {
+  border-color: var(--button-primary-bg-pressed);
+  background: var(--button-primary-bg-pressed);
+}
+
+/* Everything else: white, outlined in the control border (3:1), ink text. */
 .secondary {
-  border-color: var(--hairline);
+  border-color: var(--control-border);
   background: var(--surface);
   color: var(--ink);
 }
 
 .secondary:hover {
+  border-color: var(--control-border-hover);
   background: var(--gray-bg);
 }
 
-.danger {
-  border-color: color-mix(in srgb, var(--status-problem) 45%, transparent);
-  background: var(--surface);
-  color: var(--status-problem-text);
+.secondary:active {
+  background: var(--chip);
 }
 
-.danger:hover {
-  background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
-}
-
-.ghost {
+/* Quiet actions and icon buttons: no frame until hovered. */
+.tertiary {
   background: transparent;
   color: var(--ink);
 }
 
-.ghost:hover {
+.tertiary:hover {
   background: var(--hover);
+}
+
+.tertiary:active {
+  background: var(--chip);
+}
+
+/* The confirm button of a destructive action: Shell red with white text (4.9:1). */
+.danger {
+  border-color: var(--danger-bg);
+  background: var(--danger-bg);
+  color: var(--on-accent);
+}
+
+.danger:hover {
+  border-color: var(--danger-bg-hover);
+  background: var(--danger-bg-hover);
 }

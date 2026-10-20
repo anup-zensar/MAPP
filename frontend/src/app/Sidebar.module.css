@@ -1,18 +1,20 @@
-/* The sidebar fills its column from top to bottom; AppLayout and NavDrawer place it. */
+/* The sidebar fills its column from top to bottom; AppLayout and NavDrawer place it. White, as
+   every Shell surface; the grey page shows beside it. */
 .sidebar {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--gray-bg);
+  background: var(--surface);
 }
 
-/* The header: the logo, 56 px high. */
+/* The drawer's header: the logo, 56 px high like the top bar (Close menu sits on its right). */
 .brand {
   display: flex;
   flex: none;
   align-items: center;
-  height: 56px;
-  padding: 0 16px;
+  height: var(--topbar);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--row-divider);
 }
 
 .homeLink {
@@ -27,115 +29,104 @@
 .nav {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 12px;
+  padding: var(--space-3) var(--space-2);
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* A section: a 19 px icon and a 13.5 px label (ZenReach). */
+/* A section: 40 px high, a 20 px icon and a 14 px label in ink. */
 .item {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  color: var(--ink-2);
-  font-size: 13.5px;
+  gap: var(--space-3);
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-chip);
+  color: var(--ink);
+  font-size: var(--text-sm);
   text-decoration: none;
-  transition:
-    background-color 0.2s var(--ease-out),
-    color 0.2s var(--ease-out),
-    transform 0.2s var(--ease-out);
+  transition: background-color 0.15s ease;
 }
 
-/* Hovered: a light fill, and a 2 px move to the right. */
 .item:hover {
   background: var(--hover);
-  color: var(--ink);
   text-decoration: none;
-  transform: translateX(2px);
 }
 
 .icon {
   flex: none;
-  width: 19px;
-  height: 19px;
+  width: 20px;
+  height: 20px;
+  color: var(--ink-2);
 }
 
-/* The section on screen, which NavLink marks with aria-current="page": semibold, a blue icon, a
-   soft blue fill and a 3 px blue bar on the left. */
+.label {
+  min-width: 0;
+}
+
+/* "You are here" (Shell): the section on screen, marked with aria-current="page", has a 4 px
+   yellow bar at its start, bold text and a yellow tint, so colour is never the only signal. */
 .item[aria-current='page'],
 .item[aria-current='page']:hover {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--blue) 15%, transparent),
-    color-mix(in srgb, var(--blue) 4%, transparent)
-  );
-  color: var(--ink);
-  font-weight: 600;
-  transform: none;
+  background: var(--brand-yellow-tint);
+  font-weight: var(--weight-bold);
 }
 
 .item[aria-current='page'] .icon {
-  color: var(--blue);
+  color: var(--ink);
 }
 
 .item[aria-current='page']::before {
   content: '';
   position: absolute;
-  top: 50%;
+  top: 0;
+  bottom: 0;
   left: 0;
-  width: 3px;
-  height: 16px;
-  border-radius: 0 3px 3px 0;
-  background: var(--blue);
-  transform: translateY(-50%);
+  width: 4px;
+  border-radius: var(--radius-chip) 0 0 var(--radius-chip);
+  background: var(--brand-yellow);
 }
 
-/* The MORE label. */
+/* The "More" group label: 12 px bold, sentence case (no upper case, Shell). */
 .groupLabel {
-  padding: 16px 12px 4px;
+  padding: var(--space-5) var(--space-3) var(--space-1);
   color: var(--ink-2);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
 }
 
-/* In the icon rail the MORE label becomes this hairline. */
+/* In the icon rail the More label becomes this hairline. */
 .divider {
-  margin: 12px;
-  border-top: 1px solid var(--hairline);
+  margin: var(--space-3) var(--space-2);
+  border-top: 1px solid var(--row-divider);
 }
 
 .footer {
-  display: flex;
   flex: none;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-top: 1px solid var(--hairline);
+  padding: var(--space-2);
+  border-top: 1px solid var(--row-divider);
 }
 
 .collapse {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 8px 12px;
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-chip);
   background: transparent;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -149,52 +140,17 @@
 
 .collapse svg {
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
-/* The account button on the left; the bell and the theme switch on the right. */
-.controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
+/* The icon rail: 64 px, everything centred. */
+.rail .nav {
+  padding-inline: var(--space-2);
 }
 
-.icons {
-  display: flex;
-  flex: none;
-  align-items: center;
-}
-
-/* The icon rail: everything centred, the footer controls stacked with 8 px gaps. */
-.rail .brand,
 .rail .item,
 .rail .collapse {
   justify-content: center;
   padding-inline: 0;
-}
-
-.rail .item:hover {
-  transform: none;
-}
-
-.rail .controls,
-.rail .icons {
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* The menu drawer: the account button and the named controls under each other. */
-.drawer .controls,
-.drawer .icons {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-/* People who ask for less motion get no movement on hover. */
-@media (prefers-reduced-motion: reduce) {
-  .item:hover {
-    transform: none;
-  }
 }

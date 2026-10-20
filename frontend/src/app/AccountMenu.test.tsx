@@ -29,13 +29,13 @@ afterEach(() => {
 
 describe('AccountMenu', () => {
   it('is the avatar and first name, named "<first name> — account menu" (FR-012)', () => {
-    renderWithProviders(<AccountMenu variant="full" />, { user: PRIYA });
+    renderWithProviders(<AccountMenu />, { user: PRIYA });
 
     expect(accountButton()).toHaveTextContent('PRPriya');
   });
 
   it('opens a menu with the person’s name, e-mail and job title, My profile and Sign out (FR-012)', async () => {
-    const { user } = renderWithProviders(<AccountMenu variant="full" />, { user: PRIYA });
+    const { user } = renderWithProviders(<AccountMenu />, { user: PRIYA });
 
     await user.click(accountButton());
 
@@ -51,7 +51,7 @@ describe('AccountMenu', () => {
   });
 
   it('shows a long name and job title in full in a tooltip, on focus (edge case)', async () => {
-    const { user } = renderWithProviders(<AccountMenu variant="full" />, { user: LONG });
+    const { user } = renderWithProviders(<AccountMenu />, { user: LONG });
 
     await user.tab();
 
@@ -62,7 +62,7 @@ describe('AccountMenu', () => {
   });
 
   it('writes the full name and job title out in the menu, never cut off (edge case)', async () => {
-    const { user } = renderWithProviders(<AccountMenu variant="full" />, { user: LONG });
+    const { user } = renderWithProviders(<AccountMenu />, { user: LONG });
 
     await user.click(accountButton(LONG_FIRST_NAME));
 
@@ -72,7 +72,7 @@ describe('AccountMenu', () => {
   });
 
   it('opens My profile (FR-012)', async () => {
-    const { user, router } = renderWithProviders(<AccountMenu variant="full" />, { user: PRIYA });
+    const { user, router } = renderWithProviders(<AccountMenu />, { user: PRIYA });
 
     await user.click(accountButton());
     await user.click(screen.getByRole('menuitem', { name: 'My profile' }));
@@ -82,7 +82,7 @@ describe('AccountMenu', () => {
 
   it('signs out and opens the sign-in page with the notice (US4 scenario 1)', async () => {
     mockApi({ 'POST /api/auth/sign-out': { status: 204 } });
-    const { user, router } = renderWithProviders(<AccountMenu variant="full" />, {
+    const { user, router } = renderWithProviders(<AccountMenu />, {
       user: PRIYA,
       route: '/plans',
     });
@@ -99,7 +99,7 @@ describe('AccountMenu', () => {
     const api = mockApi({
       'POST /api/auth/sign-out': () => Promise.reject(new TypeError('Failed to fetch')),
     });
-    const { user, router } = renderWithProviders(<AccountMenu variant="full" />, {
+    const { user, router } = renderWithProviders(<AccountMenu />, {
       user: PRIYA,
       route: '/plans',
     });
@@ -115,23 +115,5 @@ describe('AccountMenu', () => {
 
     await user.click(within(messages).getByRole('button', { name: 'Try again' }));
     await waitFor(() => expect(api.requests).toHaveLength(2));
-  });
-
-  it('is the avatar alone in the icon rail, with the same name (FR-011)', () => {
-    renderWithProviders(<AccountMenu variant="rail" />, { user: PRIYA });
-
-    expect(accountButton()).toHaveTextContent('PR');
-    // The first name is still part of the button's name, but only screen readers get it.
-    expect(within(accountButton()).getByText('Priya')).toHaveClass('visually-hidden');
-  });
-
-  it('writes the full name out in the menu drawer, with no tooltip (plan "Layout")', async () => {
-    const { user } = renderWithProviders(<AccountMenu variant="drawer" />, { user: PRIYA });
-
-    const button = screen.getByRole('button', { name: 'Priya Raman — account menu' });
-    expect(button).toHaveTextContent('Priya Raman');
-    await user.hover(button);
-
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 });

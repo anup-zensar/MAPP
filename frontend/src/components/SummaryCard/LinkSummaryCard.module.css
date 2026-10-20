@@ -2,7 +2,8 @@
 .card {
   position: relative;
   min-width: 0;
-  padding: 18px;
+  min-height: 104px;
+  padding: var(--space-5);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -13,13 +14,13 @@
 }
 
 .card:hover {
-  border-color: color-mix(in srgb, var(--tint) 35%, transparent);
-  box-shadow: var(--shadow-md);
+  border-color: var(--control-border);
+  box-shadow: var(--shadow-lift);
 }
 
 /* The keyboard focus ring goes round the whole card, not only round the value. */
 .card:has(.link:focus-visible) {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -29,25 +30,28 @@
   }
 }
 
+/* Room for a label of two lines, so the values of a row of cards line up. */
 .label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
+  min-height: calc(2 * var(--leading-xs));
   color: var(--ink-2);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
 }
 
-/* The ZenReach icon tile: the icon on a 12 % tint of its colour. */
+/* The icon in the ink colour on a light tint of the card's colour. */
 .icon {
   display: grid;
   flex: none;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: var(--control-sm);
+  height: var(--control-sm);
   border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--tint) 12%, transparent);
-  color: var(--tint);
+  background: color-mix(in srgb, var(--tint) 14%, transparent);
+  color: var(--ink);
 }
 
 .icon svg {
@@ -59,17 +63,17 @@
 .tip {
   position: relative;
   z-index: 1;
-  margin-left: -8px;
+  margin-left: calc(-1 * var(--space-1));
 }
 
 .value {
-  margin-top: 14px;
+  margin-top: var(--space-2);
   color: var(--ink);
-  font-size: 28px;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-2xl);
 }
 
 .link {
@@ -97,10 +101,10 @@
 .detail {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .review {

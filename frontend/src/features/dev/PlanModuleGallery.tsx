@@ -20,7 +20,7 @@ import {
   MoneyField,
   PersonLabel,
   PersonPicker,
-  PillTabs,
+  Tabs,
   ProgressBar,
   SearchField,
   SegmentedFilter,
@@ -163,8 +163,8 @@ function ListToolbarExample() {
 function TabsExample() {
   const [tab, setTab] = useState<'waiting' | 'open' | 'decided'>('waiting');
   return (
-    <Card title="PillTabs and CountBadge">
-      <PillTabs
+    <Card title="Tabs and CountBadge">
+      <Tabs
         label="Approvals"
         value={tab}
         onChange={setTab}
@@ -179,7 +179,7 @@ function TabsExample() {
         ]}
       >
         <p>The {tab} tab.</p>
-      </PillTabs>
+      </Tabs>
     </Card>
   );
 }

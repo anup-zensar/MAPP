@@ -1,9 +1,9 @@
-/* ZenReach's sign-in sits on the grey page background. */
+/* The pages without sign-in look like the signed-in ones: the grey page under a white bar. */
 .layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--gray-bg);
+  background: var(--page-bg);
 }
 
 /* The logo on the left; the theme switch, the header's second item, goes to the right. */
@@ -11,14 +11,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  min-height: 56px;
-  padding: 0 20px;
+  gap: var(--space-3);
+  min-height: var(--topbar);
+  padding: 0 var(--space-3) 0 var(--space-4);
+  border-bottom: 1px solid var(--card-border);
+  background: var(--surface);
 }
 
 .main {
   flex: 1;
-  padding: 16px 16px 48px;
+  padding: var(--space-10) var(--gutter) var(--space-12);
 }
 
 /* The focus lands here only through the skip link; the main area needs no ring. */

@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { PillTabs } from './PillTabs';
+import { Tabs } from './Tabs';
 
 type Tab = 'waiting' | 'open' | 'decided';
 
 function Example() {
   const [tab, setTab] = useState<Tab>('waiting');
   return (
-    <PillTabs
+    <Tabs
       label="Approvals"
       value={tab}
       onChange={setTab}
@@ -20,11 +20,11 @@ function Example() {
       ]}
     >
       <p>Showing {tab}</p>
-    </PillTabs>
+    </Tabs>
   );
 }
 
-describe('PillTabs', () => {
+describe('Tabs', () => {
   it('is a tab list whose chosen tab labels the panel (feature 004)', async () => {
     const user = userEvent.setup();
     render(<Example />);

@@ -118,3 +118,29 @@ Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
   `react-refresh/only-export-components` (a file with components exports only components). That is why
   a React context and its hook live in a `.ts` file (`useSession.ts`, `useToast.ts`) and the provider in
   a `.tsx` file.
+
+## Look and feel
+
+NorthStar looks like a Shell enterprise tool (product owner decisions of 20 October 2026; design system
+§2–§5): a white 56 px top bar and a white 240 px sidebar on a light grey page (`#F5F5F5`), white cards,
+Shell yellow (`#FFC800`, dark text) for the one primary button of a page or dialog and for the "you are
+here" bar, red only for danger and errors, Jost for headings and Arial for text. Every colour, size and
+space is a token in `src/styles/tokens.css` (light and dark); components use `var(--token)` and never
+raw colours, font sizes or off-grid spacing:
+
+- type: `--text-xs` 12 px … `--text-3xl` 32 px (14 px base), headings in `--font-heading`;
+- spacing: `--space-1` (4 px) … `--space-16` (64 px), the 4 px grid; 1–2 px only for borders;
+- controls: `--control-sm` 32 px (toolbars, tables), `--control-md` 40 px (default), `--control-lg` 48 px;
+- radii: 4 / 8 / 12 / 16 px (`--radius-chip`, `--radius-control` and `--radius-card`, `--radius-dialog`);
+- layout: `--content-max` 1300 px, breakpoints 600 and 960 px (written as numbers in media queries).
+
+A box that scrolls sideways (a wide table) must be `position: relative`, so the visually hidden labels
+inside it cannot widen the whole page.
+
+## Third-party notices
+
+- **Jost** (headings), from `@fontsource/jost` 5.3.0: Copyright 2020 The Jost Project Authors
+  (<https://github.com/indestructible-type/Jost>), licensed under the SIL Open Font License, Version 1.1
+  (OFL-1.1). The full licence text ships with the package (`node_modules/@fontsource/jost/LICENSE`) and is
+  at <https://openfontlicense.org>. Only the Latin 600 and 700 weights are bundled, by `src/main.tsx`.
+- No Shell logo (pecten) or Shell typeface is used: both need Shell's written consent.

@@ -1,7 +1,7 @@
 .noTiming {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--ink-2);
 }
 
@@ -9,10 +9,10 @@
 .warning {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .warning svg,
@@ -27,8 +27,8 @@
 .warningIcon {
   display: inline-flex;
   vertical-align: middle;
-  margin-left: 6px;
-  border-radius: 4px;
+  margin-left: var(--space-2);
+  border-radius: var(--radius-1);
 }
 
 .warningIcon svg {
@@ -36,6 +36,6 @@
 }
 
 .warningIcon:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }

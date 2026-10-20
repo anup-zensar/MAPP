@@ -22,8 +22,8 @@
 }
 
 .cut:focus-visible {
-  border-radius: 4px;
-  outline: 2px solid var(--blue);
+  border-radius: var(--radius-1);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -31,24 +31,24 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
 /* The Filtered mark of a roll-up (FR-013): a small outlined word that explains itself in a tip. */
 .filtered {
-  padding: 1px 6px;
+  padding: 1px var(--space-2);
   border: 1px dashed var(--hairline);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   background: transparent;
   color: var(--ink-2);
   font: inherit;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: help;
 }
 
 .filtered:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }

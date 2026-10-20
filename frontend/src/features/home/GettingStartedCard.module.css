@@ -1,11 +1,11 @@
 /* The no-team sentence above the steps, on a soft blue band. */
 .notice {
-  margin-bottom: 8px;
-  padding: 10px 12px;
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--blue) 8%, transparent);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .steps {
@@ -17,15 +17,15 @@
 .step {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 12px 0;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
 }
 
 .step + .step {
   border-top: 1px solid var(--hairline);
 }
 
-/* The step number in a small circle on the strong brand gradient (white text, research R17). */
+/* The step number in a small ink circle with white text. */
 .number {
   display: grid;
   flex: none;
@@ -33,20 +33,20 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--brand-gradient-strong);
-  color: var(--on-accent);
-  font-size: 13px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 /* A standalone link: underlined on hover (global.css). */
 .link {
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .text {
   margin-top: 2px;
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }

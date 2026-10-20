@@ -1,26 +1,21 @@
-.select {
-  appearance: auto;
-  cursor: pointer;
-}
-
 .boxes {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .box {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .box input {
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin: 0;
   accent-color: var(--blue);
 }

@@ -1,6 +1,7 @@
 /*
- * Base styles for every page (feature 001 research R13 and R17). Colours come from tokens.css;
- * everything else is styled by each component's own Name.module.css.
+ * Base styles for every page (feature 001 research R13 and R17, Shell-aligned look of
+ * 2026-10-20). Values come from tokens.css; everything else is styled by each component's own
+ * Name.module.css.
  */
 
 *,
@@ -14,9 +15,8 @@ body {
   background: var(--page-bg);
   color: var(--ink);
   font-family: var(--font);
-  font-size: 14px;
+  font-size: var(--text-sm);
   line-height: 1.5;
-  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -25,8 +25,19 @@ body {
 h1,
 h2,
 h3,
+h4,
 p {
   margin: 0;
+}
+
+/* Headings use the heading face (Jost, standing in for Shell's typeface); text stays Arial. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  font-weight: var(--weight-heading);
+  line-height: 1.3;
 }
 
 /* Form controls use the page's font instead of the browser's. */
@@ -52,13 +63,23 @@ p a {
   text-decoration: underline;
 }
 
-/* Keyboard focus is always visible: a 2 px blue ring with a 2 px gap (design system §9). */
+/* Numbers in tables line up: Arial's digits have one width, and so does every other face here. */
+table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keyboard focus is always visible: a 2 px navy ring (yellow in dark mode) with a 2 px gap. */
 :focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-/* Hidden on screen, still read by screen readers (collapsed sidebar labels, "Loading…"). */
+/*
+ * Hidden on screen, still read by screen readers (collapsed sidebar labels, table column names,
+ * "Loading…"). It is absolutely positioned, so every box that scrolls sideways around it must be
+ * `position: relative`: otherwise the 1 px label escapes the box and widens the whole page.
+ */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -74,13 +95,14 @@ p a {
 /* "Skip to main content": the first thing a keyboard user reaches; visible only while focused. */
 .skip-link {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: var(--space-2);
+  left: var(--space-2);
   z-index: 1000;
-  padding: 8px 16px;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-control);
-  background: var(--surface);
-  color: var(--link);
+  background: var(--brand-yellow);
+  color: var(--on-brand-yellow);
+  font-weight: var(--weight-bold);
   box-shadow: var(--shadow-md);
   transform: translateY(-200%);
 }

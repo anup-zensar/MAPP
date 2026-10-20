@@ -4,7 +4,6 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { ApiError, conflictMessage } from '@/api/errors';
 import { useAttributeForm } from '@/api/settingsQueries';
 import {
-  Breadcrumb,
   Button,
   ClearValuesDialog,
   FailureMessage,
@@ -384,8 +383,7 @@ function FormHeader({ title, form, activity }: FormHeaderProps) {
   items.push({ label: activity || title.startsWith('Edit') ? 'Edit activity' : title });
   return (
     <>
-      <Breadcrumb items={items} />
-      <PageHeader eyebrow="Activity" title={title} description={description} />
+      <PageHeader breadcrumb={items} eyebrow="Activity" title={title} description={description} />
     </>
   );
 }

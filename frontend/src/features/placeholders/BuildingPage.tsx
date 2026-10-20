@@ -2,7 +2,7 @@ import { Construction } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { Breadcrumb, Button, Card, EmptyState, PageHeader, SidePanel } from '@/components';
+import { Button, Card, EmptyState, PageHeader, SidePanel } from '@/components';
 import type { BreadcrumbItem } from '@/components';
 import { usePageTitle } from '@/lib/usePageTitle';
 import styles from './BuildingPage.module.css';
@@ -42,8 +42,13 @@ export function BuildingPage({
   usePageTitle(tabTitle === undefined ? title : tabTitle);
   return (
     <>
-      {breadcrumb && <Breadcrumb items={breadcrumb} />}
-      <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
+      <PageHeader
+        breadcrumb={breadcrumb}
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        actions={actions}
+      />
       <div className={styles.stack}>
         <Card>
           <EmptyState icon={<Construction />} title={BEING_BUILT} />

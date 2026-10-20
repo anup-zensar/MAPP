@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   ActionsMenu,
-  Breadcrumb,
   Button,
   Card,
   EmptyState,
@@ -102,10 +101,8 @@ export function FinanceBudgetItemsPage() {
 
   return (
     <>
-      <Breadcrumb
-        items={[{ label: 'Settings', to: '/settings' }, { label: 'Finance budget items' }]}
-      />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Finance budget items' }]}
         eyebrow="Settings"
         title="Finance budget items"
         description="The finance budget items line items link to. A simple list until the Finance module arrives."

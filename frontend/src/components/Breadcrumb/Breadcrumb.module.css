@@ -1,34 +1,65 @@
+/* 12 px, chevron separators, 8 px above the title (Shell). */
 .breadcrumb {
-  margin-bottom: 12px;
-  font-size: 13px;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 
 .list {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: 0 var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.item {
+.item,
+.parent {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .separator {
-  margin: 0 8px;
+  flex: none;
   color: var(--muted);
 }
 
+/* Links are at least 24 px tall, so they are easy to tap (WCAG 2.5.8). */
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: var(--link);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .text {
   color: var(--ink-2);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+/* The back chevron shows only on phones, where the parent stands alone. */
+.back {
+  display: none;
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 599px) {
+  .item {
+    display: none;
+  }
+
+  .parent .separator {
+    display: none;
+  }
+
+  .back {
+    display: inline;
+  }
 }

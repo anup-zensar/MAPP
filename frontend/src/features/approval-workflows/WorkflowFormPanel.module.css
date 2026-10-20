@@ -1,12 +1,12 @@
 /* The open-rounds note: neutral information above the fields (FR-006). */
 .note {
   display: flex;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   background: var(--gray-bg);
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .note svg {
@@ -20,6 +20,6 @@
 /* A problem with the levels as a whole ("Add at least one level."). */
 .error {
   color: var(--status-problem-text);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
 }

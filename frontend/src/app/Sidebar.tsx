@@ -1,28 +1,26 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useId } from 'react';
 import { Link, useLocation, useMatch } from 'react-router';
 import { Logo, Tooltip } from '@/components';
 import { cx } from '@/lib/cx';
-import { AccountMenu } from './AccountMenu';
 import { MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import type { NavItem } from './navigation';
-import { NotificationBell } from './NotificationBell';
 import styles from './Sidebar.module.css';
-import { ThemeToggle } from './ThemeToggle';
 import { useCurrentUser, useSession } from './useSession';
 
 export interface SidebarProps {
   /**
-   * Inside the menu drawer of narrow screens: always expanded, without Collapse, and with
-   * written-out names instead of tooltips, so one Escape always closes the drawer.
+   * Inside the menu drawer of narrow screens: always expanded, with the logo at the top and
+   * without Collapse, so one Escape always closes the drawer.
    */
   inDrawer?: boolean;
 }
 
 /**
- * The left sidebar (FR-010, FR-011, design system §2): the logo, the sections with a MORE group,
- * and at the bottom Collapse, the account button, the bell and the light/dark switch. Collapsed,
- * it is a 72 px icon rail; the person's choice is saved for them.
+ * The left sidebar (FR-010, FR-011, design system §2): the sections, a "More" group, and Collapse
+ * at the bottom. It is white, 240 px wide, with 40 px items; the current section has the 4 px
+ * yellow "you are here" bar, bold text and a yellow tint (Shell). Collapsed, it is a 64 px icon
+ * rail; the person's choice is saved for them. The logo, bell and account menu sit in the top bar.
  */
 export function Sidebar({ inDrawer = false }: SidebarProps) {
   const person = useCurrentUser();
@@ -37,15 +35,17 @@ export function Sidebar({ inDrawer = false }: SidebarProps) {
 
   return (
     <div className={cx(styles.sidebar, styles[variant])}>
-      <div className={styles.brand}>
-        <Link to="/" className={styles.homeLink} aria-label="NorthStar home">
-          <Logo withWordmark={!collapsed} />
-        </Link>
-      </div>
+      {inDrawer && (
+        <div className={styles.brand}>
+          <Link to="/" className={styles.homeLink} aria-label="NorthStar home">
+            <Logo withWordmark />
+          </Link>
+        </div>
+      )}
 
       <nav aria-label="Main" className={styles.nav}>
         <NavItems items={MAIN_ITEMS} collapsed={collapsed} />
-        {/* In the icon rail the MORE label becomes a hairline; screen readers still hear it. */}
+        {/* In the icon rail the More label becomes a hairline; screen readers still hear it. */}
         <p id={moreId} className={collapsed ? 'visually-hidden' : styles.groupLabel}>
           More
         </p>
@@ -53,16 +53,11 @@ export function Sidebar({ inDrawer = false }: SidebarProps) {
         <NavItems items={MORE_ITEMS} collapsed={collapsed} labelledBy={moreId} />
       </nav>
 
-      <div className={styles.footer}>
-        {!inDrawer && <CollapseButton collapsed={collapsed} onToggle={toggleCollapsed} />}
-        <div className={styles.controls}>
-          <AccountMenu variant={variant} />
-          <div className={styles.icons}>
-            <NotificationBell withLabel={inDrawer} />
-            <ThemeToggle withLabel={inDrawer} />
-          </div>
+      {!inDrawer && (
+        <div className={styles.footer}>
+          <CollapseButton collapsed={collapsed} onToggle={toggleCollapsed} />
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -101,9 +96,9 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
   // names as text.
   const link = (
     <Link to={item.path} className={styles.item} aria-current={current ? 'page' : undefined}>
-      <item.icon className={styles.icon} />
+      <item.icon className={styles.icon} aria-hidden="true" />
       {/* Hidden on screen in the icon rail, never removed: the link keeps its name. */}
-      <span className={collapsed ? 'visually-hidden' : undefined}>{item.label}</span>
+      <span className={collapsed ? 'visually-hidden' : styles.label}>{item.label}</span>
       {/* A count after the label, inside the link, so it is part of the link's name (feature 008). */}
       {item.Badge && (
         <>
@@ -124,7 +119,7 @@ function NavItemLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
   );
 }
 
-/** "Collapse" (chevron and word), or in the icon rail the chevron alone with "Expand sidebar". */
+/** "Collapse" (chevrons and word), or in the icon rail the chevrons alone with "Expand sidebar". */
 function CollapseButton({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   if (collapsed) {
     return (
@@ -135,14 +130,14 @@ function CollapseButton({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           aria-label="Expand sidebar"
           onClick={onToggle}
         >
-          <ChevronRight />
+          <ChevronsRight aria-hidden="true" />
         </button>
       </Tooltip>
     );
   }
   return (
     <button type="button" className={styles.collapse} onClick={onToggle}>
-      <ChevronLeft />
+      <ChevronsLeft aria-hidden="true" />
       Collapse
     </button>
   );

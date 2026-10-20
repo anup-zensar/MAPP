@@ -82,7 +82,7 @@ function ActivityGroup({ group }: { group: MyActivityGroup }) {
         </ul>
         {group.count > SHOWN && (
           <Button
-            variant="ghost"
+            variant="tertiary"
             size="sm"
             className={styles.more}
             aria-expanded={showAll}

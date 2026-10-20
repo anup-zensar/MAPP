@@ -239,7 +239,7 @@ function SignInForm({ signingIn, onSignIn }: SignInFormProps) {
         onChange={setPassword}
         error={problemOf('password')}
       />
-      <Button type="submit" variant="primary" className={styles.submit}>
+      <Button type="submit" variant="primary" size="lg" className={styles.submit}>
         {signingIn ? 'Signing in…' : 'Sign in'}
       </Button>
     </form>

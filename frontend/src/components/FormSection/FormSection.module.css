@@ -1,8 +1,8 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 0 24px;
+  gap: var(--space-4);
+  padding: var(--space-5) 0 var(--space-6);
   border-top: 1px solid var(--hairline);
 }
 
@@ -13,19 +13,19 @@
 
 .title {
   color: var(--ink);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
 }
 
 .description {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .fields {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-5);
 }

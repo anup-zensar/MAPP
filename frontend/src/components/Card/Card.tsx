@@ -11,7 +11,10 @@ export interface CardProps {
   children: ReactNode;
 }
 
-/** A rounded white content card with an optional header (design system §2). */
+/**
+ * A white content card on the grey page (design system §2): an optional header with the title on
+ * the left and its actions on the right, then 24 px of padding around the content.
+ */
 export function Card({ title, subtitle, actions, children }: CardProps) {
   const titleId = useId();
   const hasHeader = Boolean(title || subtitle || actions);
@@ -20,7 +23,7 @@ export function Card({ title, subtitle, actions, children }: CardProps) {
     <section className={styles.card} aria-labelledby={title ? titleId : undefined}>
       {hasHeader && (
         <div className={styles.header}>
-          <div>
+          <div className={styles.heading}>
             {title && (
               <h2 id={titleId} className={styles.title}>
                 {title}

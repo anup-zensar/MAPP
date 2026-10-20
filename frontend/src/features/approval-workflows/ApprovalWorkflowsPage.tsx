@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { conflictMessage } from '@/api/errors';
 import {
   ActionsMenu,
-  Breadcrumb,
   Button,
   Card,
   ConfirmDialog,
@@ -113,10 +112,8 @@ export function ApprovalWorkflowsPage() {
 
   return (
     <>
-      <Breadcrumb
-        items={[{ label: 'Settings', to: '/settings' }, { label: 'Approval workflows' }]}
-      />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Approval workflows' }]}
         eyebrow="Settings"
         title="Approval workflows"
         description="Who approves activities, level by level."

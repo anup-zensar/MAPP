@@ -1,7 +1,7 @@
 .label {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -11,23 +11,24 @@
   min-width: 0;
 }
 
-/* The full name wraps; it is never cut short (feature 003, FR-017). */
+/* The full name wraps between words; it is never cut short (feature 003, FR-017), and never
+   broken letter by letter, so a table column cannot shrink below the longest word. */
 .name {
   color: var(--ink);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .sm .name {
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .md .name {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
 }
 
 .detail {
   color: var(--ink-2);
-  font-size: 12px;
-  overflow-wrap: anywhere;
+  font-size: var(--text-xs);
+  overflow-wrap: break-word;
 }

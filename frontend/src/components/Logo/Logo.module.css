@@ -1,14 +1,17 @@
+/* NorthStar's own mark (no Shell logo, which needs Shell's consent): a white star on a navy
+   tile, and the name in the heading face. */
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .tile {
   display: grid;
   flex: none;
   place-items: center;
-  background: var(--brand-gradient);
+  border-radius: var(--radius-control);
+  background: var(--brand-mark);
 }
 
 .tile svg {
@@ -19,26 +22,25 @@
 
 .wordmark {
   color: var(--ink);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-family: var(--font-heading);
+  font-weight: var(--weight-heading);
+  line-height: 1;
 }
 
 .md .tile {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
 }
 
 .md .wordmark {
-  font-size: 16px;
+  font-size: var(--text-lg);
 }
 
 .lg .tile {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
 }
 
 .lg .wordmark {
-  font-size: 17px;
+  font-size: var(--text-xl);
 }

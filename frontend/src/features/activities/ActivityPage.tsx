@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router';
-import { ActionsMenu, Breadcrumb, LinkButton, PageHeader } from '@/components';
+import { ActionsMenu, LinkButton, PageHeader } from '@/components';
 import { ApprovalSection } from '@/features/approvals/ApprovalSection';
 import { ApprovalStatusAction } from '@/features/approvals/ApprovalStatusAction';
 import type { ApprovalActivity } from '@/features/approvals/approvalTypes';
@@ -41,8 +41,11 @@ export function ActivityPage() {
   if (query.isPending || query.isError) {
     return (
       <>
-        <Breadcrumb items={[{ label: 'Plans', to: '/plans' }, { label: 'Activity' }]} />
-        <PageHeader eyebrow="Activity" title="Activity" />
+        <PageHeader
+          breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: 'Activity' }]}
+          eyebrow="Activity"
+          title="Activity"
+        />
         {query.isPending ? (
           <PageSkeleton />
         ) : (

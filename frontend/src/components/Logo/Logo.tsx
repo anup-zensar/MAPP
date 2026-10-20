@@ -9,7 +9,8 @@ export interface LogoProps {
 }
 
 /**
- * The NorthStar mark: a white four-point star on the brand-gradient tile, the same as the favicon.
+ * The NorthStar mark: a white four-point star on a navy tile, the same as the favicon (never the
+ * Shell pecten, which needs Shell's consent).
  * The tile itself is decoration; without the wordmark, give the link around it a name
  * (aria-label="NorthStar home").
  */

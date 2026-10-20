@@ -51,7 +51,7 @@ export function AttentionCard() {
           </ul>
           {attention.data.items.length > SHOWN && (
             <Button
-              variant="ghost"
+              variant="tertiary"
               size="sm"
               className={styles.more}
               aria-expanded={showAll}

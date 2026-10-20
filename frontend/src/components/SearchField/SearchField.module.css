@@ -1,3 +1,5 @@
+/* A 40 px input with 8 px corners like every other field (no pill), a magnifier on the left
+   and Clear search on the right. */
 .search {
   position: relative;
   width: 100%;
@@ -7,7 +9,7 @@
 .icon {
   position: absolute;
   top: 50%;
-  left: 12px;
+  left: var(--space-3);
   width: 16px;
   height: 16px;
   color: var(--ink-2);
@@ -17,14 +19,18 @@
 
 .input {
   width: 100%;
-  min-height: 36px;
-  padding: 7px 40px 7px 36px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-pill);
+  height: var(--control-md);
+  padding: 0 var(--space-10) 0 var(--space-9);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   transition: border-color 0.15s ease;
+}
+
+.input:hover {
+  border-color: var(--control-border-hover);
 }
 
 .input:focus {
@@ -43,14 +49,14 @@
 .clear {
   position: absolute;
   top: 50%;
-  right: 4px;
+  right: var(--space-1);
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: var(--control-sm);
+  height: var(--control-sm);
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   background: transparent;
   color: var(--ink-2);
   cursor: pointer;
@@ -65,4 +71,11 @@
 .clear svg {
   width: 16px;
   height: 16px;
+}
+
+/* Phones and tablets: 16 px text, so the browser does not zoom into the field (Shell). */
+@media (max-width: 959px) {
+  .input {
+    font-size: var(--text-md);
+  }
 }

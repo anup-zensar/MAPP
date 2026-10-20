@@ -2,26 +2,26 @@
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
 .muted {
   margin: 0;
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -32,7 +32,7 @@
   margin-bottom: 2px;
   padding: 0;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -49,8 +49,8 @@
 .option {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
 }
 
 .option + .option {
@@ -72,9 +72,9 @@
 
 .name {
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   cursor: pointer;
 }
 
@@ -88,18 +88,18 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .error {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
   color: var(--status-problem-text);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .error svg,
@@ -113,7 +113,7 @@
 .notes {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .notes:empty {
@@ -123,29 +123,29 @@
 .warning {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
   color: var(--status-problem-text);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .consequences {
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-control);
   background: var(--gray-bg);
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .consequencesTitle {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-1);
   font-weight: 600;
 }
 
 .consequenceList {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 0;
-  padding-left: 18px;
+  padding-left: var(--space-5);
 }

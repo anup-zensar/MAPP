@@ -1,34 +1,57 @@
-/* The table scrolls sideways inside its card on narrow screens. */
+/*
+ * The table standard (design system §5): a 40 px grey header band with 12 px bold headings,
+ * 40 px rows with 8 × 12 px cells, hairlines between rows, numbers right-aligned with figures of
+ * one width. Wide tables scroll sideways inside this box, never the page: the box is
+ * position: relative, so the hidden "Actions" heading stays inside it.
+ */
 .scroll {
+  position: relative;
+  max-width: 100%;
   overflow-x: auto;
+  /* A soft shadow at an edge with more columns beyond it, so a cut-off table says it scrolls:
+     the white covers scroll with the table, the shadows stay with the box. */
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent) left center / 32px 100% no-repeat
+      local,
+    linear-gradient(to left, var(--surface) 30%, transparent) right center / 32px 100% no-repeat
+      local,
+    radial-gradient(farthest-side at 0 50%, var(--scroll-shadow), transparent) left center / 12px
+      100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--scroll-shadow), transparent) right center /
+      12px 100% no-repeat scroll;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
 }
 
 .table th {
-  padding: 8px 12px;
+  height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--hairline);
-  color: var(--ink-2);
-  font-size: 12px;
-  font-weight: 600;
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   text-align: left;
   white-space: nowrap;
 }
 
 .table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--hairline);
+  height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
   color: var(--ink);
   vertical-align: middle;
 }
 
+/* Money and counts: right-aligned, never broken over two lines. */
 .end {
-  font-variant-numeric: tabular-nums;
   text-align: right;
+  white-space: nowrap;
 }
 
 .table th.end {
@@ -41,18 +64,19 @@
 
 /* The row with the keyboard focus: the ring sits inside the row. */
 .row:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 
+/* The record just created, moved or copied: the yellow tint of "you are here". */
 .highlighted,
 .highlighted:hover {
-  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  background: var(--brand-yellow-tint);
 }
 
 /* The 4 px level bar beside the name (design system §4). */
 .nameCell {
-  min-width: 260px;
+  min-width: 280px;
   border-left: 4px solid transparent;
 }
 
@@ -79,7 +103,7 @@
 .name {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chevron,
@@ -94,7 +118,7 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-chip);
   background: transparent;
   color: var(--ink-2);
   cursor: pointer;
@@ -116,12 +140,13 @@
   min-width: 0;
 }
 
+/* Names wrap between words only: a column never shrinks below its longest word. */
 .link,
 .linkButton,
 .text {
   color: var(--ink);
-  font-weight: 600;
-  overflow-wrap: anywhere;
+  font-weight: var(--weight-bold);
+  overflow-wrap: break-word;
 }
 
 .link {
@@ -134,7 +159,7 @@
   background: none;
   color: var(--link);
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--weight-bold);
   text-align: left;
   cursor: pointer;
 }
@@ -145,7 +170,7 @@
 
 .extra {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .actionsColumn,
@@ -167,13 +192,14 @@
 }
 
 .empty {
-  padding: 24px 12px;
+  padding: var(--space-6) var(--space-3);
   color: var(--ink-2);
   text-align: center;
 }
 
+/* The totals row: bold, under a 2 px ink line. */
 .footer td {
-  border-top: 2px solid var(--hairline);
+  border-top: 2px solid var(--ink);
   border-bottom: 0;
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }

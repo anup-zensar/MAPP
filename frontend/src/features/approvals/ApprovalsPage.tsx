@@ -9,12 +9,12 @@ import {
   ErrorState,
   FilterChips,
   PageHeader,
-  PillTabs,
+  Tabs,
   SearchField,
   Skeleton,
   SummaryCard,
 } from '@/components';
-import type { PillTab } from '@/components';
+import type { TabItem } from '@/components';
 import type { components } from '@/api/schema';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useFormatters } from '@/lib/useFormatters';
@@ -85,7 +85,7 @@ export function ApprovalsPage() {
   }
 
   const counts = summary.data;
-  const tabs: PillTab<ApprovalTab>[] = [
+  const tabs: TabItem<ApprovalTab>[] = [
     {
       value: 'waiting',
       label: 'Waiting for me',
@@ -109,7 +109,7 @@ export function ApprovalsPage() {
       <div className={styles.sections}>
         <SummaryCards counts={counts} failed={summary.isError} />
 
-        <PillTabs
+        <Tabs
           label="Approvals"
           tabs={tabs}
           value={tab}
@@ -173,7 +173,7 @@ export function ApprovalsPage() {
               <Skeleton lines={6} height="18px" />
             )}
           </Card>
-        </PillTabs>
+        </Tabs>
       </div>
 
       {previewId && (

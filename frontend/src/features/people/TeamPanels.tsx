@@ -101,9 +101,7 @@ export function TeamDetailsPanel({ teamId, actions, statusBusy, onClose }: TeamD
             >
               {data.active ? 'Set team inactive' : 'Reactivate'}
             </Button>
-            <Button variant="danger" onClick={() => actions.remove(data)}>
-              Delete
-            </Button>
+            <Button onClick={() => actions.remove(data)}>Delete</Button>
           </>
         }
       >

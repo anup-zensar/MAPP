@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useModels } from '@/api/settingsQueries';
 import {
   ActionsMenu,
-  Breadcrumb,
   Button,
   Card,
   EmptyState,
@@ -65,8 +64,8 @@ export function ModelsPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'Models' }]} />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Models' }]}
         eyebrow="Settings"
         title="Models"
         description="The rulebooks plans use. Changes apply to every plan using the model."

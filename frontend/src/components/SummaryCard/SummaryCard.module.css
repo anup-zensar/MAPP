@@ -1,48 +1,55 @@
+/* A white KPI card: label 12 px bold, value Jost 28 px with numbers of one width (Shell). */
 .card {
-  padding: 16px;
+  min-width: 0;
+  min-height: 104px;
+  padding: var(--space-5);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
 
+/* Room for a label of two lines, so the values of a row of cards line up. */
 .label {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-height: calc(2 * var(--leading-xs));
   color: var(--ink-2);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
 }
 
 .value {
-  margin-top: 8px;
+  margin-top: var(--space-1);
   color: var(--ink);
-  font-size: 27px;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-2xl);
+  overflow-wrap: break-word;
 }
 
 /* A line under the value: a reason, an over-allocation, a progress bar. */
 .detail {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 /* The shortened value looks like the plain value; only its focus ring shows it is a control. */
 .fullValue {
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-chip);
   background: none;
   color: inherit;
   font: inherit;
-  letter-spacing: inherit;
   cursor: default;
 }
 

@@ -5,21 +5,21 @@
 .owner {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .budget {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .budget p {
   margin: 0;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 

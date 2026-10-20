@@ -1,7 +1,7 @@
 .editor {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .methods {
@@ -11,7 +11,7 @@
 }
 
 .methods:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 4px;
   border-radius: var(--radius-control);
 }
@@ -20,16 +20,16 @@
 .radios {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
+  gap: var(--space-2) var(--space-5);
 }
 
 .radio {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 32px;
+  gap: var(--space-2);
+  min-height: var(--control-sm);
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
@@ -41,27 +41,27 @@
 }
 
 .note {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .error {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--status-problem-text);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .preview {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  gap: var(--space-2) var(--space-4);
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   background: var(--gray-bg);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
   list-style: none;
 }
@@ -70,22 +70,22 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* One cell per month; as many per row as fit, so the page never scrolls sideways. */
 .monthGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
 }
 
 .month {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px;
+  gap: var(--space-1);
+  padding: var(--space-2);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-control);
   background: var(--surface);
@@ -99,19 +99,19 @@
 
 .monthName {
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .addMonths {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .total {
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
 

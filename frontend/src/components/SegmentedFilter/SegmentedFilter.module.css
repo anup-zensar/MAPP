@@ -1,39 +1,58 @@
+/* Joined buttons, 32 px high like the toolbar buttons: the chosen one is filled in ink. */
 .group {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 4px;
-  padding: 3px;
-  border-radius: var(--radius-pill);
-  background: var(--chip);
+  max-width: 100%;
 }
 
 .pill {
-  min-height: 30px;
-  padding: 4px 12px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--ink-2);
-  font-size: 13px;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-sm);
+  margin-left: -1px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
   cursor: pointer;
   white-space: nowrap;
 }
 
-.pill:hover {
-  color: var(--ink);
+.pill:first-child {
+  margin-left: 0;
+  border-radius: var(--radius-control) 0 0 var(--radius-control);
 }
 
-/* The chosen pill: white with a shadow, as ZenReach's segmented pills. */
-.pressed {
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  color: var(--ink);
-  font-weight: 600;
+.pill:last-child {
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+}
+
+.pill:only-child {
+  border-radius: var(--radius-control);
+}
+
+.pill:hover {
+  background: var(--gray-bg);
+}
+
+/* The focus ring sits above the neighbouring buttons. */
+.pill:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* The chosen choice: ink fill and white text, also told by aria-pressed (never colour alone). */
+.pressed,
+.pressed:hover {
+  position: relative;
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: var(--weight-bold);
 }
 
 .count {
-  color: var(--ink-2);
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
 }

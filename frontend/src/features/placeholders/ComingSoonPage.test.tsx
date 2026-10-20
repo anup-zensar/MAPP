@@ -33,10 +33,11 @@ describe('ComingSoonPage', () => {
     expect(COMING_SOON_SECTIONS.map((item) => item.label)).toEqual(['Recycle bin', 'Activity log']);
   });
 
-  it('says that the section is coming soon, with the section name as the eyebrow (FR-015)', () => {
+  it('says that the section is coming soon, under the section name as the title (FR-015)', () => {
     renderWithProviders(<ComingSoonPage section={section('Recycle bin')} />);
 
-    expect(screen.getAllByText('Recycle bin')).toHaveLength(2);
+    // The eyebrow is the title itself, so it is shown once (Shell look).
+    expect(screen.getAllByText('Recycle bin')).toHaveLength(1);
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
     expect(screen.getByText("This part of NorthStar isn't built yet.")).toBeInTheDocument();
   });

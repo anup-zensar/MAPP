@@ -1,40 +1,40 @@
 .details {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .created {
   margin: 0;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .text {
   margin: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   white-space: pre-line;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .muted {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .empty {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .children {
@@ -50,10 +50,10 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px 12px;
-  padding: 10px 0;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--hairline);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .child:last-child {
@@ -70,11 +70,11 @@
 .childMain a {
   color: var(--link);
   font-weight: 500;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .childSide {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }

@@ -6,7 +6,7 @@
   animation: fade-in var(--dur) var(--ease-out);
 }
 
-/* 480–560 px wide on large screens; the whole width below 640 px. */
+/* 480–560 px wide on large screens; the whole width on phones. */
 .panel {
   position: fixed;
   top: 0;
@@ -17,6 +17,7 @@
   flex-direction: column;
   width: clamp(480px, 40vw, 560px);
   max-width: 100%;
+  border-left: 1px solid var(--card-border);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
   animation: slide-in var(--dur) var(--ease-out);
@@ -26,48 +27,67 @@
   outline: none;
 }
 
+/* The header: the title on the left, Close on the right, at least 64 px high. */
 .header {
   display: flex;
-  align-items: flex-start;
+  flex: none;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px 16px 12px 24px;
-  border-bottom: 1px solid var(--hairline);
+  gap: var(--space-3);
+  min-height: var(--space-16);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--card-padding);
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.heading {
+  min-width: 0;
 }
 
 .title {
-  padding-top: 6px;
   color: var(--ink);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
+  overflow-wrap: break-word;
 }
 
 .description {
   margin-top: 2px;
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
 }
 
-/* Only the body scrolls, so the title and the Save button stay in view. */
+/* Only the body scrolls, so the title and the buttons stay in view. */
 .body {
+  position: relative;
   flex: 1;
   overflow-y: auto;
-  padding: 20px 24px;
+  padding: var(--card-padding);
 }
 
+/*
+ * One footer for every panel: the buttons come in order of importance (the primary first) and
+ * line up from the right edge, so the primary sits rightmost, Cancel next to it, and the More menu
+ * (destructive actions) further left.
+ */
 .footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 24px;
-  border-top: 1px solid var(--hairline);
+  flex: none;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--card-padding);
+  border-top: 1px solid var(--row-divider);
   background: var(--surface);
 }
 
-@media (max-width: 639px) {
+@media (max-width: 599px) {
   .panel {
     width: 100%;
+    border-left: 0;
   }
 }
 

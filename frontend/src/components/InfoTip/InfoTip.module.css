@@ -1,40 +1,43 @@
-/* A small, muted ⓘ that turns blue on hover, as in ZenReach. */
+/* A small ⓘ next to a label: 24 × 24 px to tap (WCAG 2.5.8), the icon 16 px. */
 .button {
   display: inline-grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
-  margin-left: 2px;
+  width: 24px;
+  height: 24px;
+  margin: -4px 0;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: 50%;
   background: transparent;
-  color: var(--muted);
+  color: var(--ink-2);
   vertical-align: middle;
   cursor: help;
-  transition: color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .button:hover,
 .button[data-state='open'] {
-  color: var(--blue);
+  background: var(--hover);
+  color: var(--ink);
 }
 
 .button svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 .bubble {
   z-index: 60;
-  max-width: 260px;
-  padding: 7px 10px;
+  max-width: 280px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-chip);
   background: var(--tooltip-bg);
   color: var(--tooltip-text);
   box-shadow: var(--shadow-md);
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   animation: fade-in 0.15s var(--ease-out);
 }
 

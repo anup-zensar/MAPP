@@ -1,7 +1,7 @@
 .values {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px 24px;
+  gap: var(--space-4) var(--space-6);
 }
 
 .pair {
@@ -14,17 +14,17 @@
 
 .pair dt {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .pair dd {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 8px;
-  margin: 4px 0 0;
+  gap: var(--space-1) var(--space-2);
+  margin: var(--space-1) 0 0;
   color: var(--ink);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .muted {
@@ -33,7 +33,7 @@
 
 .problem {
   color: var(--status-problem-text);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .description {
@@ -41,25 +41,25 @@
 }
 
 .finance {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
 }
 
 .finance details[open] .values {
-  margin: 16px 0 12px;
+  margin: var(--space-4) 0 var(--space-3);
 }
 
 .summary {
   color: var(--ink);
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 600;
   cursor: pointer;
 }
 
 .summary:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-1);
 }

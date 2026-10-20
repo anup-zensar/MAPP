@@ -7,7 +7,7 @@ import styles from './NavDrawer.module.css';
 import { Sidebar } from './Sidebar';
 
 /** From this width on the sidebar is shown, so the drawer is not needed (plan "Layout"). */
-const SIDEBAR_SHOWN = '(min-width: 768px)';
+const SIDEBAR_SHOWN = '(min-width: 960px)';
 
 /**
  * "Open menu" on narrow screens and the drawer it opens (FR-011, US2 scenario 4): the whole
@@ -37,7 +37,7 @@ export function NavDrawer() {
     <Dialog.Root open={open} onOpenChange={(isOpen) => setOpenOn(isOpen ? location.key : null)}>
       <Tooltip content="Open menu">
         <Dialog.Trigger asChild>
-          <Button variant="ghost" icon={<Menu />} aria-label="Open menu" />
+          <Button variant="tertiary" icon={<Menu />} aria-label="Open menu" />
         </Dialog.Trigger>
       </Tooltip>
       <Dialog.Portal>
@@ -47,7 +47,12 @@ export function NavDrawer() {
           <Dialog.Title className="visually-hidden">Menu</Dialog.Title>
           {/* No tooltip: inside a dialog it would swallow the first Escape (research R14). */}
           <Dialog.Close asChild>
-            <Button variant="ghost" icon={<X />} aria-label="Close menu" className={styles.close} />
+            <Button
+              variant="tertiary"
+              icon={<X />}
+              aria-label="Close menu"
+              className={styles.close}
+            />
           </Dialog.Close>
           <Sidebar inDrawer />
         </Dialog.Content>

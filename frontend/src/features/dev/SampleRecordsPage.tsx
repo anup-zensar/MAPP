@@ -275,7 +275,7 @@ function NoteList({ notes, onDelete }: NoteListProps) {
           <span>{note.title}</span>
           <Tooltip content={`Delete note '${note.title}'`}>
             <Button
-              variant="ghost"
+              variant="tertiary"
               size="sm"
               icon={<Trash2 />}
               aria-label={`Delete note '${note.title}'`}

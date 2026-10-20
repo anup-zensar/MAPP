@@ -1,72 +1,101 @@
 /*
- * NorthStar design tokens (design system §3–§4, feature 001 plan "Tokens", research R17).
+ * NorthStar design tokens: the Shell-aligned look (product owner decisions of 2026-10-20, which
+ * replace the visual part of D-005 and D-022; docs/reports/ux-research-shell-brand.md §10 and
+ * ux-research-shell-ui-patterns.md §9).
  *
- * Every colour of the web app is defined here and nowhere else: components use var(--token).
- * Light values sit on :root. When <html data-theme="dark"> is set (index.html and theme.ts set
- * it), the dark values below replace them.
+ * Every colour, size and space of the web app is defined here and nowhere else: components use
+ * var(--token). Light values sit on :root. When <html data-theme="dark"> is set (index.html and
+ * theme.ts set it, following the computer's setting or the person's switch), the dark values
+ * below replace them.
+ *
+ * Contrast (WCAG 2.2 AA, checked for both themes): every text token is 4.5:1 or more on --page-bg,
+ * --surface and --gray-bg; control borders, the focus ring and status dots are 3:1 or more.
+ * Yellow is a fill only: never text or a thin line on a light background (1.55:1).
  */
 
 :root {
   /* Native scrollbars and form controls follow the theme too. */
   color-scheme: light;
 
-  /* Surfaces */
-  --page-bg: #ffffff;
-  --surface: #ffffff; /* cards, dialogs, menus */
-  --gray-bg: #f5f5f7; /* sidebar, footer, subtle fills */
+  /* ── Surfaces: a light grey page with white cards and panels (Shell paper2 / paper1) ── */
+  --page-bg: #f5f5f5; /* the canvas behind cards */
+  --surface: #ffffff; /* cards, panels, dialogs, menus, the top bar and the sidebar */
+  --gray-bg: #f5f5f5; /* table headers and subtle fills inside white surfaces */
 
-  /* Text. --muted is too light for small text (3.6:1): icons, placeholders and decoration only. */
-  --ink: #1d1d1f;
-  --ink-2: #6e6e73;
-  --muted: #86868b;
+  /* ── Text: Shell greys. All three are 4.5:1 or more on white and on #f5f5f5. ── */
+  --ink: #404040; /* main text, headings and icons (10.4:1) */
+  --ink-2: #595959; /* secondary text (7.0:1) */
+  --muted: #6e6e6e; /* hints, placeholders, timestamps (5.1:1) */
 
-  /* Lines and fills */
-  --hairline: #d2d2d7; /* dividers, input borders */
-  --card-border: rgba(0, 0, 0, 0.07);
-  --chip: rgba(0, 0, 0, 0.05); /* neutral chips, progress tracks, loading shapes */
-  --hover: rgba(0, 0, 0, 0.05); /* background of a hovered item */
+  /* ── Lines and fills ── */
+  --hairline: #d9d9d9; /* dividers (decoration) */
+  --row-divider: #e8e8e8; /* lines between table rows */
+  --control-border: #8c8c8c; /* inputs, selects, check boxes, outlined buttons: 3.4:1 (WCAG 1.4.11) */
+  --control-border-hover: #404040;
+  --card-border: #e0e0e0; /* the edge of a white card on the grey page */
+  --chip: rgba(64, 64, 64, 0.08); /* neutral chips, progress tracks, loading shapes */
+  --hover: rgba(64, 64, 64, 0.06); /* background of a hovered row or item */
 
-  /* Blue: --blue for selection, focus ring and eyebrows; --link for link text */
-  --blue: #0071e3;
-  --link: #0066cc;
+  /* ── Brand: Shell yellow means "act here" and "you are here", nothing else ── */
+  --brand-yellow: #ffc800; /* primary button fill, current-place bar, skip link */
+  --brand-yellow-hover: #f2b800;
+  --brand-yellow-pressed: #e0a800;
+  --on-brand-yellow: #404040; /* text and icons on yellow: 6.7:1 */
+  --brand-yellow-tint: #fff4cc; /* selected row, current sidebar item */
+  --brand-mark: #092949; /* the NorthStar mark's tile (Shell system navy; no Shell logo) */
+  --avatar-bg: #003c88; /* initials circles, white initials 10.5:1 */
 
-  /* Buttons. White text stays at 4.5:1 or more on these in both themes. */
-  --button-primary-bg: #0071e3;
-  --button-primary-bg-hover: #0062c4;
-  --danger-bg: #d03b3b;
-  --on-accent: #ffffff; /* text and icons on blue, red and brand-gradient surfaces */
+  /* ── Interaction ── */
+  --button-primary-bg: var(--brand-yellow);
+  --button-primary-bg-hover: var(--brand-yellow-hover);
+  --button-primary-bg-pressed: var(--brand-yellow-pressed);
+  --button-primary-text: var(--on-brand-yellow);
+  --focus-ring: #092949; /* Shell system navy: 9.5:1 even against yellow */
+  --blue: #003c88; /* Shell dark blue: checked controls, selection tints, the info colour */
+  --link: #003c88; /* 10.5:1; links in sentences are also underlined */
+  --danger-bg: #dd1d21; /* Shell red: destructive buttons only; white text 4.9:1 */
+  --danger-bg-hover: #b8171b;
+  --on-accent: #ffffff; /* text and icons on navy, dark blue and red */
 
-  /* Brand. The strong gradient carries white text (sign-in header, avatars). */
-  --brand-gradient: linear-gradient(135deg, #2a78d6, #9f4bd6);
-  --brand-gradient-strong: linear-gradient(135deg, #256abc, #8c42bc);
+  /* ── Feedback: one meaning per colour (messages, inline alerts, toasts) ── */
+  --info: #336094; /* information */
+  --info-text: #2b5482;
+  --success: #008557; /* done well */
+  --success-text: #00704a;
+  --warning: #c77700; /* needs attention or waits for someone; amber, never brand yellow */
+  --warning-text: #8f5400;
+  --danger: #dd1d21; /* errors and danger only */
+  --danger-text: #b8171b;
 
-  /* Status families (design system §4): the colour for dots, bars and tints; -text for words. */
-  --status-neutral: #86868b;
-  --status-neutral-text: #636366;
-  --status-review: #c77700;
-  --status-review-text: #8f5400;
-  --status-positive: #0ca30c;
-  --status-positive-text: #077307;
-  --status-active: #0071e3;
-  --status-active-text: #0060c0;
+  /* ── Status families (design system §4): one colour per meaning, the -text shade for words.
+        neutral = not started or inactive · review = waiting for a decision · positive = approved
+        or published · active = running · done = finished · problem = declined, missing, over.
+        Every -text shade is 4.5:1 or more on its own 12 % tint. ── */
+  --status-neutral: #6e6e6e;
+  --status-neutral-text: #595959;
+  --status-review: var(--warning);
+  --status-review-text: var(--warning-text);
+  --status-positive: var(--success);
+  --status-positive-text: var(--success-text);
+  --status-active: var(--info);
+  --status-active-text: var(--info-text);
   --status-done: #5b6b7a;
   --status-done-text: #4d5c6a;
-  --status-problem: #d03b3b;
-  --status-problem-text: #b42c2c;
+  --status-problem: var(--danger);
+  --status-problem-text: var(--danger-text);
 
-  /* Demo-environment banner (FR-016) */
-  --banner-bg: #fff4ce;
-  --banner-text: #1d1d1f;
+  /* ── Demo-environment banner (FR-016): Shell's navy system message ── */
+  --banner-bg: #092949;
+  --banner-text: #ffffff;
 
-  /* Planning levels: the bar beside a name in trees (used from feature 004) */
-  --level-plan: #2a78d6;
-  --level-campaign: #4a3aa7;
-  --level-initiative: #1baf7a;
-  --level-activity: #e87ba4;
-  --level-line-item: #86868b;
+  /* ── Planning levels: the 4 px bar and the level tag. Never yellow (yellow means "here"). ── */
+  --level-plan: #003c88;
+  --level-campaign: #87217d;
+  --level-initiative: #008192;
+  --level-activity: #a3195b;
+  --level-line-item: #6e6e6e;
 
-  /* Team colours (feature 003, D-025): the decorative dot of a team pill, the same in both themes.
-     The team's name is always written next to it. */
+  /* ── Team colours (feature 003, D-025): a decorative dot; the team's name is always written ── */
   --team-blue: #2a78d6;
   --team-violet: #6e56cf;
   --team-teal: #12a594;
@@ -76,67 +105,160 @@
   --team-slate: #5b6b7a;
   --team-gold: #c79400;
 
-  /* Layers above the page */
-  --overlay: rgba(0, 0, 0, 0.3); /* behind dialogs, side panels and the menu drawer */
-  --tooltip-bg: #1d1d1f;
+  /* ── Layers above the page ── */
+  --overlay: rgba(0, 0, 0, 0.45); /* behind dialogs, side panels and the menu drawer */
+  --tooltip-bg: #262626;
   --tooltip-text: #ffffff;
 
-  /* Depth */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 10px 24px -10px rgba(0, 0, 0, 0.16), 0 3px 8px -4px rgba(0, 0, 0, 0.09);
-  --shadow-lg: 0 28px 60px -18px rgba(0, 0, 0, 0.26), 0 10px 24px -10px rgba(0, 0, 0, 0.14);
+  /* ── Elevation: cards are flat (a border on the grey page); only floating layers cast shadows ── */
+  --shadow-sm: none; /* cards at rest */
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.16); /* menus, popovers, toasts */
+  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.2); /* dialogs and side panels */
+  --shadow-lift: 0 4px 12px rgba(0, 0, 0, 0.12); /* a clickable card under the pointer */
+  --scroll-shadow: rgba(0, 0, 0, 0.16); /* the edge of a table that scrolls sideways */
 
-  /* Shape and size */
-  --radius-card: 16px;
-  --radius-control: 10px; /* inputs and buttons */
-  --radius-chip: 8px;
-  --radius-pill: 999px;
-  --content-max: 1120px;
-  --sidebar: 244px;
-  --sidebar-collapsed: 72px;
+  /* ── Shape: four radii, no pill-shaped controls ── */
+  --radius-1: 4px;
+  --radius-2: 8px;
+  --radius-3: 12px;
+  --radius-4: 16px;
+  --radius-chip: var(--radius-1); /* chips, tags, tooltips, menu items */
+  --radius-control: var(--radius-2); /* buttons, inputs, selects, search, menus */
+  --radius-card: var(--radius-2); /* cards and panels on the page */
+  --radius-dialog: var(--radius-3); /* dialogs */
+  --radius-pill: 999px; /* avatars, count badges and switches only */
 
-  /* Motion and type */
+  /* ── Control heights: one height per size, everywhere ── */
+  --control-sm: 32px; /* toolbars, filters, chips, buttons inside tables */
+  --control-md: 40px; /* the default: buttons, inputs, selects, search */
+  --control-lg: 48px; /* sign-in and touch layouts */
+
+  /* ── Spacing: Shell's 4 px grid (the number is the multiple of 4). 1–2 px only for borders. ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+
+  /* ── Type: Jost (open licence, standing in for Shell's own typeface) for headings and big
+        numbers, Shell's Arial stack for everything else. Seven sizes; 14 px base, 12 px minimum. ── */
+  --font: Arial, Roboto, Helvetica, sans-serif;
+  --font-heading: 'Jost', Arial, Roboto, Helvetica, sans-serif;
+  --text-xs: 12px; /* captions, hints, chips, table headers, breadcrumbs */
+  --text-sm: 14px; /* the base: body, labels, inputs, buttons, table cells, menus */
+  --text-md: 16px; /* lead text, card titles */
+  --text-lg: 18px; /* dialog, panel and form-section titles */
+  --text-xl: 20px; /* section headings, empty-state titles */
+  --text-2xl: 28px; /* page titles, summary values */
+  --text-3xl: 32px; /* the Home greeting */
+  --leading-xs: 18px;
+  --leading-sm: 20px;
+  --leading-md: 24px;
+  --leading-lg: 24px;
+  --leading-xl: 28px;
+  --leading-2xl: 36px;
+  --leading-3xl: 40px;
+  --weight-regular: 400;
+  --weight-bold: 700;
+  --weight-heading: 600;
+
+  /* ── Layout: 12 columns, 20 px gaps, at most 1300 px; breakpoints 600 and 960 px (media
+        queries cannot read custom properties, so they write the numbers). ── */
+  --content-max: 1300px;
+  --form-max: 720px;
+  --grid-gap: 20px;
+  --gutter: 24px; /* page side padding: 24 px, 16 px below 600 px (see the end of this file) */
+  --card-padding: 24px; /* inside cards and panels: 24 px, 16 px below 600 px */
+  --topbar: 56px;
+  --sidebar: 240px;
+  --sidebar-collapsed: 64px;
+
+  /* ── Motion ── */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --dur: 0.24s;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  --dur: 0.25s;
 }
 
+/* Dark mode: Shell's own dark palette (theme-base.css), checked for the same contrast. */
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --page-bg: #0b0b0d;
-  --surface: #1c1c1e;
-  --gray-bg: #161618;
+  --page-bg: #14191f;
+  --surface: #1d232a;
+  --gray-bg: #252c34;
 
-  --ink: #f5f5f7;
-  --ink-2: #a1a1a6;
-  --muted: #8a8a8e;
+  --ink: #e0e0e0;
+  --ink-2: #b0b8c1;
+  --muted: #949fab;
 
-  --hairline: #38383a;
-  --card-border: rgba(255, 255, 255, 0.1);
+  --hairline: #38414b;
+  --row-divider: #2c343c;
+  --control-border: #76818d;
+  --control-border-hover: #b0b8c1;
+  --card-border: #2f3741;
   --chip: rgba(255, 255, 255, 0.09);
-  --hover: rgba(255, 255, 255, 0.06);
+  --hover: rgba(255, 255, 255, 0.07);
 
-  --blue: #2a91ff;
-  --link: #59a8ff;
+  /* Shell dims its yellow in dark mode and writes dark text on it (7.5:1). */
+  --brand-yellow: #d6a100;
+  --brand-yellow-hover: #ffc800;
+  --brand-yellow-pressed: #b88a00;
+  --on-brand-yellow: #14191f;
+  --brand-yellow-tint: #3b3723;
+  --brand-mark: #0d3a66;
+  --avatar-bg: #2b5482;
 
-  /* The button colours stay as in light mode: white text on #2a91ff would be only 3.2:1. */
+  --focus-ring: #ffc800; /* yellow reads at 10:1 on the dark surfaces */
+  --blue: #8cb4e6;
+  --link: #8cb4e6;
+  --danger-bg: #c42b2f;
+  --danger-bg-hover: #a82326;
 
-  --status-neutral-text: #b0b0b5;
-  --status-review-text: #f0a640;
-  --status-positive-text: #46d246;
-  --status-active-text: #5aa9ff;
+  --info: #6f9bd1;
+  --info-text: #8fb4e3;
+  --success: #3dbb8c;
+  --success-text: #4cc79a;
+  --warning: #e09a2a;
+  --warning-text: #f0a640;
+  --danger: #ff5c5f;
+  --danger-text: #ff7b7e;
+
+  --status-neutral: #8e99a4;
+  --status-neutral-text: #b0b8c1;
+  --status-done: #8696a6;
   --status-done-text: #a9b8c6;
-  --status-problem-text: #ff7b7b;
 
-  --banner-bg: #3a2f00;
-  --banner-text: #f5f5f7;
+  --banner-bg: #092949;
+  --banner-text: #ffffff;
+
+  --level-plan: #6f9bd1;
+  --level-campaign: #c96bbf;
+  --level-initiative: #3fb6c5;
+  --level-activity: #e06a9f;
+  --level-line-item: #8e99a4;
 
   --overlay: rgba(0, 0, 0, 0.6);
-  --tooltip-bg: #3a3a3c;
-  --tooltip-text: #f5f5f7;
+  --tooltip-bg: #3a434d;
+  --tooltip-text: #f2f2f2;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 12px 28px -10px rgba(0, 0, 0, 0.62), 0 4px 10px -6px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 30px 66px -18px rgba(0, 0, 0, 0.8), 0 12px 26px -10px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lift: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --scroll-shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* Phones (below 600 px): narrower page gutters and card padding. */
+@media (max-width: 599px) {
+  :root {
+    --gutter: 16px;
+    --card-padding: 16px;
+  }
 }

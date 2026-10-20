@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router';
 import { ApiError } from '@/api/errors';
 import {
   ActionsMenu,
-  Breadcrumb,
   Card,
   ErrorState,
   LevelTag,
@@ -49,14 +48,15 @@ export function ShellAttributePage() {
   const notFound = attribute.error instanceof ApiError && attribute.error.kind === 'notFound';
   return (
     <>
-      <Breadcrumb
-        items={[
+      <PageHeader
+        breadcrumb={[
           { label: 'Settings', to: '/settings' },
           { label: 'Shell attributes', to: '/settings/shell-attributes' },
           { label: notFound ? 'Not found' : 'Shell attribute' },
         ]}
+        eyebrow="Settings"
+        title="Shell attribute"
       />
-      <PageHeader eyebrow="Settings" title="Shell attribute" />
       <Card>
         {notFound ? (
           <AttributeNotFound />
@@ -93,15 +93,13 @@ function AttributeView({ attribute }: { attribute: ShellAttribute }) {
 
   return (
     <>
-      <Breadcrumb
-        items={[
+      <PageHeader
+        breadcrumb={[
           { label: 'Settings', to: '/settings' },
           { label: 'Shell attributes', to: '/settings/shell-attributes' },
           { label: `${LEVEL_WORDS[attribute.level]} form`, to: listPath },
           { label: attribute.label },
         ]}
-      />
-      <PageHeader
         eyebrow="Settings"
         title={attribute.label}
         actions={

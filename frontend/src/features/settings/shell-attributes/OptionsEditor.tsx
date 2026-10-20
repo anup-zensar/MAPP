@@ -199,7 +199,7 @@ function RowButton({ label, icon, disabledReason, onClick }: RowButtonProps) {
   return (
     <Tooltip content={disabledReason ?? label}>
       <Button
-        variant="ghost"
+        variant="tertiary"
         size="sm"
         icon={icon}
         aria-label={label}

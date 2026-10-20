@@ -1,7 +1,7 @@
 .nameExtra {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 /* The row's quick action: faded until the row is hovered or has the focus, never hidden. */
@@ -26,7 +26,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .nowrap {
@@ -42,5 +42,5 @@
 
 .left {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }

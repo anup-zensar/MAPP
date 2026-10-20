@@ -9,13 +9,13 @@ const PRIYA: CurrentUser = testUser({
   preferences: { ...testUser().preferences, sidebarCollapsed: true },
 });
 
-/** Pretends the window is narrower than 768 px; widen() makes it 768 px or wider. */
+/** Pretends the window is narrower than 960 px; widen() makes it 960 px or wider. */
 function fakeWindowWidth() {
   let wide = false;
   const listeners = new Set<() => void>();
   vi.stubGlobal('matchMedia', (query: string) => ({
     get matches() {
-      return query === '(min-width: 768px)' && wide;
+      return query === '(min-width: 960px)' && wide;
     },
     media: query,
     addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
@@ -64,23 +64,18 @@ describe('NavDrawer', () => {
     expect(within(drawer).getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
   });
 
-  it('writes out the person’s full name and the footer controls’ names instead of tooltips (plan "Layout")', async () => {
+  it('shows the logo, which leads Home, above the sections (plan "Layout")', async () => {
     const { drawer } = await openDrawer();
 
-    expect(
-      within(drawer).getByRole('button', { name: 'Priya Raman — account menu' }),
-    ).toHaveTextContent('Priya Raman');
-    expect(within(drawer).getByRole('button', { name: 'Notifications' })).toHaveTextContent(
-      'Notifications',
-    );
-    expect(within(drawer).getByRole('button', { name: 'Switch to dark mode' })).toHaveTextContent(
-      'Dark mode',
+    expect(within(drawer).getByRole('link', { name: 'NorthStar home' })).toHaveAttribute(
+      'href',
+      '/',
     );
   });
 
-  it('closes with one Escape, also with the focus on a footer control (US2 scenario 4)', async () => {
+  it('closes with one Escape, also with the focus on a section link (US2 scenario 4)', async () => {
     const { user, drawer } = await openDrawer();
-    act(() => within(drawer).getByRole('button', { name: 'Switch to dark mode' }).focus());
+    act(() => within(drawer).getByRole('link', { name: 'Settings' }).focus());
 
     await user.keyboard('{Escape}');
 

@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useCurrentUser } from '@/app/useSession';
 import {
   ActionsMenu,
-  Breadcrumb,
   Button,
   Card,
   EmptyState,
@@ -81,8 +80,8 @@ export function PeoplePage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'People' }]} />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'People' }]}
         eyebrow="Settings"
         title="People"
         description="Everyone who can sign in to NorthStar, with their job title and teams."

@@ -41,7 +41,7 @@ export function LevelsEditor({ levels, onChange, problems }: LevelsEditorProps) 
                 <div className={styles.tools}>
                   {index > 0 && (
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       size="sm"
                       icon={<ArrowUp />}
                       aria-label={`Move level ${number} up`}
@@ -50,7 +50,7 @@ export function LevelsEditor({ levels, onChange, problems }: LevelsEditorProps) 
                   )}
                   {index < levels.length - 1 && (
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       size="sm"
                       icon={<ArrowDown />}
                       aria-label={`Move level ${number} down`}
@@ -59,7 +59,7 @@ export function LevelsEditor({ levels, onChange, problems }: LevelsEditorProps) 
                   )}
                   {levels.length > 1 && (
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       size="sm"
                       icon={<Trash2 />}
                       aria-label={`Remove level ${number}`}

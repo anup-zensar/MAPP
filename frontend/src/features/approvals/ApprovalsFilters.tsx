@@ -76,7 +76,7 @@ export function ApprovalsFilters({ filters, options, onChange }: ApprovalsFilter
           </div>
           {inUse > 0 && (
             <div className={styles.footer}>
-              <Button variant="ghost" size="sm" onClick={() => onChange(NO_FILTERS)}>
+              <Button variant="tertiary" size="sm" onClick={() => onChange(NO_FILTERS)}>
                 Clear filters
               </Button>
             </div>
