@@ -37,6 +37,14 @@ plan wins and the difference is reported.
   rule is on). `NamedIn` is ready for 014's `activities.Approvers.NamedIn` adapter.
 - Contract: no change. A level without `approverType` reads as named people (contract "Default people"), not the
   data model's "choose who approves" problem; an unknown value is the problem.
+- **T050 (backend part)**: every FR-001 – FR-037 has a passing backend test named with it (FR-016 in `people`,
+  FR-010 and FR-001 also in `internal/app`, FR-037 in `seed`); SC-001, SC-002, SC-004 – SC-007 too (SC-003 is a web
+  measure). The documents the Consolidation leaves to 017 (domain model §2.3, §6, §7, §8; demo-users-and-data)
+  are updated. The web tests (T031 – T049) and the 014 FR-019 rule label remain.
+- **When 014 is merged**: rewrite `internal/app/approvals_access.go` over `internal/access` (`CanApprove`,
+  `RoleHolders`, `ApprovingRoles`, grants from the request context, `Rules.NoSelfApproval`); 014's lane already
+  has the six Table C rows; both lanes add `internal/approvals/authority.go` (keep 017's, which is 014's order
+  extended, data-model §6).
 
 ## Format: `[ID] [P?] [Story] Description`
 
