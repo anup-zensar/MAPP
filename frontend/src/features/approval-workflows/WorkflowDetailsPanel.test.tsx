@@ -161,7 +161,7 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
       .getAllByRole('listitem')
       .filter((item) => item.closest('ol'));
     const first = items.find((item) => item.textContent?.startsWith('L1')) as HTMLElement;
-    expect(first).toHaveTextContent('Line manager');
+    expect(first).toHaveTextContent("The owner's line manager");
     expect(first).toHaveTextContent('Approved automatically when planned cost is below $10,000.00');
     expect(first).toHaveTextContent('Backup approver: Alex Morgan');
     const second = items.find((item) => item.textContent?.startsWith('L2')) as HTMLElement;

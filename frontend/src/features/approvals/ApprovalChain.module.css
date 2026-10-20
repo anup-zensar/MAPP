@@ -116,9 +116,11 @@
   color: var(--ink-2);
 }
 
+/* The state column is only as wide as its state (at most 20rem), and takes nothing on levels
+   without one (a workflow's levels), so the level's rules keep the width. */
 @media (min-width: 600px) {
   .level {
-    grid-template-columns: auto minmax(0, 1fr) minmax(0, 20rem);
+    grid-template-columns: auto minmax(0, 1fr) fit-content(20rem);
   }
 
   .state {

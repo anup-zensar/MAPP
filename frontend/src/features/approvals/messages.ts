@@ -171,15 +171,15 @@ export function timingsText(
 }
 
 /**
- * The rules of a workflow level in words (017 FR-009), one line each: "Line manager" or "Role:
- * Approver", "All must approve", "Only needed when planned cost is at least $100,000.00",
+ * The rules of a workflow level in words (017 FR-009), one line each: "The owner's line manager"
+ * or "Role: Approver", "All must approve", "Only needed when planned cost is at least $100,000.00",
  * "Approved automatically when planned cost is below $10,000.00", "Backup approver: Alex Morgan".
  * A level stored before the rules has none.
  */
 export function levelRuleLines(level: ApprovalWorkflowLevel): string[] {
   const lines: string[] = [];
   if (level.approverType === 'manager') {
-    lines.push('Line manager');
+    lines.push("The owner's line manager");
   } else if (level.approverType === 'role') {
     lines.push(`Role: ${level.role?.name ?? '—'}`);
   }

@@ -7,6 +7,7 @@ import { useApprovalMonitoring } from './approvalsApi';
 import type { ApprovalMonitoring } from './approvalsApi';
 import { ApprovalsTable } from './ApprovalsTable';
 import { RunEscalationsButton } from './RunEscalationsButton';
+import { useIsPhone } from './useIsPhone';
 import styles from './MonitoringView.module.css';
 
 export interface MonitoringViewProps {
@@ -101,7 +102,9 @@ function MonitoringBody({ data, onOpen }: { data: ApprovalMonitoring } & Monitor
             {data.overdue.length === 0 ? (
               <p className={styles.empty}>Nothing is overdue.</p>
             ) : (
-              <ApprovalsTable rows={data.overdue} tab="open" onOpen={onOpen} />
+              <div className={styles.flush}>
+                <ApprovalsTable rows={data.overdue} tab="open" onOpen={onOpen} />
+              </div>
             )}
           </Card>
         </>
@@ -110,11 +113,40 @@ function MonitoringBody({ data, onOpen }: { data: ApprovalMonitoring } & Monitor
   );
 }
 
-/** Workflow · Level · Waiting · Overdue · Oldest waiting; the counts right-aligned. */
+/**
+ * Workflow · Level · Waiting · Overdue · Oldest waiting; the counts right-aligned. Below 600 px each
+ * level is a stacked card instead, so nothing scrolls sideways on a phone (design system §5.4).
+ */
 function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
   const format = useFormatters();
+  const phone = useIsPhone();
   if (data.byLevel.length === 0) {
     return <p className={styles.empty}>Nothing is waiting for approval.</p>;
+  }
+  const oldest = (since: string) => (
+    <span className={styles.stack}>
+      <span>{format.date(localDate(since))}</span>{' '}
+      <span className={styles.secondary}>{`waiting ${formatWaitingTime(since)}`}</span>
+    </span>
+  );
+  if (phone) {
+    return (
+      <ul role="list" className={styles.levels}>
+        {data.byLevel.map((row) => (
+          <li key={`${row.workflow.id}-${row.level}`} className={styles.levelCard}>
+            <p className={styles.levelName}>{`${row.workflow.name} · ${row.levelLabel}`}</p>
+            <dl className={styles.facts}>
+              <dt>Waiting</dt>
+              <dd>{row.waiting}</dd>
+              <dt>Overdue</dt>
+              <dd>{row.overdue}</dd>
+              <dt>Oldest waiting</dt>
+              <dd>{oldest(row.oldestWaitingSince)}</dd>
+            </dl>
+          </li>
+        ))}
+      </ul>
+    );
   }
   return (
     // Focusable, so the keyboard can scroll it sideways when it is wider than the card.
@@ -147,14 +179,7 @@ function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
               <td className={styles.nowrap}>{row.levelLabel}</td>
               <td className={styles.number}>{row.waiting}</td>
               <td className={styles.number}>{row.overdue}</td>
-              <td className={styles.nowrap}>
-                <span className={styles.stack}>
-                  <span>{format.date(localDate(row.oldestWaitingSince))}</span>{' '}
-                  <span className={styles.secondary}>
-                    {`waiting ${formatWaitingTime(row.oldestWaitingSince)}`}
-                  </span>
-                </span>
-              </td>
+              <td className={styles.nowrap}>{oldest(row.oldestWaitingSince)}</td>
             </tr>
           ))}
         </tbody>

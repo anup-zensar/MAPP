@@ -1,4 +1,4 @@
-import { Pencil, Plus, UserRoundX } from 'lucide-react';
+import { CalendarX, Pencil, Plus, UserRoundX } from 'lucide-react';
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
@@ -208,6 +208,7 @@ function Item({ delegation, onEdit, onCancel }: ItemProps) {
           <Button
             variant="tertiary"
             size="sm"
+            icon={<CalendarX />}
             aria-label={`Cancel delegation ${who}`}
             onClick={onCancel}
           >

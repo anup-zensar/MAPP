@@ -1,5 +1,5 @@
 import { CircleCheckBig, SearchX, UserRoundCog } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   Button,
@@ -36,6 +36,7 @@ import { DelegationPanel } from './DelegationPanel';
 import { activitiesCount } from './messages';
 import { MonitoringView } from './MonitoringView';
 import { useApprovalSummary } from './useApprovalSummary';
+import { useChosenTabInView } from './useChosenTabInView';
 import styles from './ApprovalsPage.module.css';
 
 type ApprovalCounts = components['schemas']['ApprovalCounts'];
@@ -84,6 +85,8 @@ export function ApprovalsPage() {
   );
   const allRows = rows.data?.items ?? [];
   const visible = applyFilters(allRows, search, filters);
+  const tabsArea = useRef<HTMLDivElement>(null);
+  useChosenTabInView(tabsArea, tab);
 
   function changeParams(change: Record<string, string | null>, replace = false) {
     const next = new URLSearchParams(params);
@@ -134,71 +137,73 @@ export function ApprovalsPage() {
         <DelegationBanner />
         <SummaryCards counts={counts} failed={summary.isError} />
 
-        <Tabs
-          label="Approvals"
-          tabs={tabs}
-          value={tab}
-          onChange={(value) => changeParams({ tab: value })}
-        >
-          {tab === 'monitoring' ? (
-            <MonitoringView onOpen={openPreview} />
-          ) : (
-            <Card>
-              <div className={styles.toolbar}>
-                <div className={styles.search}>
-                  <SearchField
-                    label="Search activity name or ID"
-                    placeholder="Search activity name or ID"
-                    value={search}
-                    onChange={setSearch}
+        <div ref={tabsArea}>
+          <Tabs
+            label="Approvals"
+            tabs={tabs}
+            value={tab}
+            onChange={(value) => changeParams({ tab: value })}
+          >
+            {tab === 'monitoring' ? (
+              <MonitoringView onOpen={openPreview} />
+            ) : (
+              <Card>
+                <div className={styles.toolbar}>
+                  <div className={styles.search}>
+                    <SearchField
+                      label="Search activity name or ID"
+                      placeholder="Search activity name or ID"
+                      value={search}
+                      onChange={setSearch}
+                    />
+                  </div>
+                  <ApprovalsFilters
+                    filters={filters}
+                    options={filterOptions(allRows)}
+                    onChange={setFilters}
                   />
+                  {rows.data && (
+                    <p className={styles.count} aria-live="polite">
+                      {`${visible.length} of ${activitiesCount(allRows.length)}`}
+                    </p>
+                  )}
                 </div>
-                <ApprovalsFilters
+                <Chips
                   filters={filters}
-                  options={filterOptions(allRows)}
+                  rows={allRows}
                   onChange={setFilters}
+                  onClearAll={() => setFilters(NO_FILTERS)}
                 />
-                {rows.data && (
-                  <p className={styles.count} aria-live="polite">
-                    {`${visible.length} of ${activitiesCount(allRows.length)}`}
-                  </p>
-                )}
-              </div>
-              <Chips
-                filters={filters}
-                rows={allRows}
-                onChange={setFilters}
-                onClearAll={() => setFilters(NO_FILTERS)}
-              />
-              {rows.data ? (
-                visible.length > 0 ? (
-                  <ApprovalsTable rows={visible} tab={listTab} onOpen={openPreview} />
-                ) : allRows.length > 0 ? (
-                  <EmptyState
-                    icon={<SearchX />}
-                    title="Nothing matches these filters"
-                    action={
-                      <Button
-                        onClick={() => {
-                          setSearch('');
-                          setFilters(NO_FILTERS);
-                        }}
-                      >
-                        Clear filters
-                      </Button>
-                    }
-                  />
+                {rows.data ? (
+                  visible.length > 0 ? (
+                    <ApprovalsTable rows={visible} tab={listTab} onOpen={openPreview} />
+                  ) : allRows.length > 0 ? (
+                    <EmptyState
+                      icon={<SearchX />}
+                      title="Nothing matches these filters"
+                      action={
+                        <Button
+                          onClick={() => {
+                            setSearch('');
+                            setFilters(NO_FILTERS);
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <EmptyState icon={<CircleCheckBig />} title={EMPTY_TAB[listTab]} />
+                  )
+                ) : rows.isError ? (
+                  <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />
                 ) : (
-                  <EmptyState icon={<CircleCheckBig />} title={EMPTY_TAB[listTab]} />
-                )
-              ) : rows.isError ? (
-                <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />
-              ) : (
-                <Skeleton lines={6} height="18px" />
-              )}
-            </Card>
-          )}
-        </Tabs>
+                  <Skeleton lines={6} height="18px" />
+                )}
+              </Card>
+            )}
+          </Tabs>
+        </div>
       </div>
 
       {previewId && (

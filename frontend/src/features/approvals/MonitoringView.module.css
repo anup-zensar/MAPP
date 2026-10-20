@@ -41,10 +41,64 @@
   font-size: var(--text-sm);
 }
 
-/* The data table standard (design system §5.4), touching the card's edges. */
+/* The data table standard (design system §5.4), touching the card's edges and starting right
+   under the card's header divider. */
 .scroll {
   overflow-x: auto;
-  margin: 0 calc(-1 * var(--card-padding)) calc(-1 * var(--card-padding));
+  margin: calc(-1 * var(--card-padding));
+}
+
+/* The overdue rows start right under the card's header divider too, without a second line. */
+.flush {
+  margin-top: calc(-1 * var(--card-padding));
+}
+
+.flush li:first-child {
+  border-top: 0;
+}
+
+/* Waiting by level on a phone: one stacked card per level. */
+.levels {
+  display: flex;
+  flex-direction: column;
+  margin: calc(-1 * var(--card-padding));
+  padding: 0;
+  list-style: none;
+}
+
+.levelCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--card-padding);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.levelCard + .levelCard {
+  border-top: 1px solid var(--row-divider);
+}
+
+.levelName {
+  font-weight: var(--weight-bold);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: minmax(0, 112px) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--ink-2);
+}
+
+.facts dd {
+  min-width: 0;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .table {
