@@ -65,3 +65,15 @@
     transition: none;
   }
 }
+
+/* Below 600 px only the short words show; the rest stays in the name. */
+@media (max-width: 599px) {
+  .rest {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

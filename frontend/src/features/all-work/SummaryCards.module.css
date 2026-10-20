@@ -21,15 +21,25 @@
   }
 
   .cards > * {
-    flex: 0 0 152px;
+    flex: 0 0 160px;
     min-height: 0;
     padding: var(--space-3) var(--space-4);
     scroll-snap-align: start;
   }
 
   .cards > * > p:nth-child(2) {
+    margin-top: 0;
     font-size: var(--text-xl);
     line-height: var(--leading-xl);
+  }
+
+  /* A card's reason keeps to one line in the row; screen readers read all of it. */
+  .cards > * > div {
+    display: block;
+    margin-top: var(--space-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

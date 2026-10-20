@@ -34,3 +34,29 @@
     padding-inline: var(--space-4);
   }
 }
+
+/* The Phased budget row under a plan, campaign or initiative (016 FR-038): quieter, in italics. */
+.phasedRow th,
+.phasedRow td {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+.phasedName {
+  display: inline-block;
+  font-style: italic;
+}
+
+.amount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.overIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}

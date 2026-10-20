@@ -544,11 +544,7 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   // The demo plans' year, named in the address (D-122), so the journey holds in any year.
   await page.goto(`/all-work?year=${SEED_YEAR}`);
   await expect(page.getByRole('heading', { name: 'All work', level: 1 })).toBeVisible();
-  await expect(
-    page.getByText(
-      'Every campaign, initiative, activity and line item of your plans: filter, compare and export.',
-    ),
-  ).toBeVisible();
+  await expect(page.getByText('Filter, compare and export all planned work.')).toBeVisible();
   const filters = page.getByRole('group', { name: 'Filters' });
   await expect(filters.getByRole('button', { name: `Year · ${SEED_YEAR}` })).toBeVisible();
   const count = page.getByText(/^\d+ of \d+ activit(y|ies)$/);

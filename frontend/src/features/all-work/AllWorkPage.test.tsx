@@ -67,11 +67,7 @@ describe('AllWorkPage (US1)', () => {
     const { api } = renderPage();
 
     expect(screen.getByRole('heading', { level: 1, name: 'All work' })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Every campaign, initiative, activity and line item of your plans: filter, compare and export.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Filter, compare and export all planned work.')).toBeInTheDocument();
     expect(document.title).toBe('All work · NorthStar');
     // Nothing is created here: Views and Export are the page's only actions (FR-002).
     expect(await screen.findByRole('button', { name: 'Export' })).toBeInTheDocument();

@@ -29,6 +29,10 @@
 }
 
 @media (max-width: 599px) {
+  .view {
+    gap: var(--space-3);
+  }
+
   .state {
     padding: var(--space-4);
   }

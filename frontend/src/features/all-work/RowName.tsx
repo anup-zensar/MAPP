@@ -67,6 +67,10 @@ export function RowName({ visible, search, showStatus, onToggle, onOpen, childre
         <div className={styles.line}>
           {row.level !== 'unassigned' && <LevelTag level={row.level} />}
           {row.name.length > LONG_NAME ? <Tooltip content={row.name}>{link}</Tooltip> : link}
+          {row.level === 'plan' && row.year !== undefined && (
+            // Plan rows show their year: All work may show several (016 FR-034).
+            <span className={styles.year}>{row.year}</span>
+          )}
           {row.strategic && <span className={styles.aop}>AOP</span>}
           {showStatus && row.status && (
             <StatusChip tone={row.status.tone}>

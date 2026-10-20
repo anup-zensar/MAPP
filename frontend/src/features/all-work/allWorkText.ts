@@ -4,11 +4,12 @@
  */
 import { formatWhole } from '@/lib/decimal';
 import { plural } from '@/lib/text';
-import type { Filters } from './allWorkTypes';
+import type { FinanceFilter, Filters, PlanType } from './allWorkTypes';
 
 /** The filters of the filter bar (FR-004), by their place in the filter set. */
 export const FILTER_LABELS = {
   year: 'Year',
+  years: 'Years',
   plans: 'Plan',
   planStatuses: 'Plan status',
   containerStatuses: 'Campaign / initiative status',
@@ -22,7 +23,34 @@ export const FILTER_LABELS = {
   attributes: 'Shell attribute',
   planTypes: 'Plan type',
   planCurrencies: 'Plan currency',
+  finance: 'Financials',
 } as const;
+
+/** The plan types (016 FR-032), in the plan form's order. */
+export const PLAN_TYPE_LABELS: Record<PlanType, string> = {
+  operational: 'Operational',
+  strategic: 'Strategic',
+  crossMarket: 'Cross-market',
+};
+
+/** The Financials filter (015 FR-024): tested on activities; values combine with OR. */
+export const FINANCE_LABELS: Record<FinanceFilter, string> = {
+  hasPurchaseOrder: 'Has a PO',
+  noPurchaseOrder: 'No PO yet',
+  invoiced: 'Invoiced',
+  committedAbovePlanned: 'Committed above planned cost',
+};
+
+/** The longest range of years All work shows at once (016 FR-034). */
+export const MAX_YEARS = 5;
+
+/** Said when a range of more than five years is chosen (016 FR-034). */
+export const TOO_MANY_YEARS = 'Choose at most 5 years.';
+
+/** "2026" for one year, "2026–2028" for a range. */
+export function yearsText(from: number, to: number): string {
+  return to > from ? `${from}–${to}` : String(from);
+}
 
 export const PLAN_STATUS_LABELS: Record<Filters['planStatuses'][number], string> = {
   draft: 'Draft',
@@ -65,8 +93,7 @@ export const SHOW_LEVELS_LABELS: Record<Filters['showLevels'], string> = {
 };
 
 /** The one sentence under the title "All work" (design system §2.3: the title is the menu name). */
-export const ALL_WORK_DESCRIPTION =
-  'Every campaign, initiative, activity and line item of your plans: filter, compare and export.';
+export const ALL_WORK_DESCRIPTION = 'Filter, compare and export all planned work.';
 
 /** The three views, as the tabs name them (FR-001). */
 export const VIEW_LABELS = {
@@ -74,6 +101,18 @@ export const VIEW_LABELS = {
   calendar: 'Calendar',
   budget: 'Budget & cost',
 } as const;
+
+/** The periods of Budget & cost (FR-022, 016 FR-035). */
+export const PERIOD_LABELS = {
+  month: 'Monthly',
+  quarter: 'Quarterly',
+  year: 'Yearly',
+} as const;
+
+/** Budget & cost's switch and sub-rows (016 FR-038). */
+export const COMPARE_PHASED = 'Compare with phased budget';
+export const PHASED_BUDGET_ROW = 'Phased budget';
+export const NOT_PHASED = 'Not phased';
 
 /**
  * Tips on Grid headings whose sums need explaining. Unassigned planned cost adds positive balances

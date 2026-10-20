@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
-import type { AllWorkResult, ViewState } from './allWorkTypes';
+import type { AllWorkOptions, AllWorkResult, ViewState } from './allWorkTypes';
 import { FilterBar } from './FilterBar';
 import { allWorkOptions, standard2026 } from './testData';
 
@@ -12,17 +12,19 @@ function Harness({
   initial = standard2026(),
   count = { shown: 3, total: 3, noun: 'activities' },
   updating = false,
+  options = allWorkOptions(),
 }: {
   initial?: ViewState;
   count?: AllWorkResult['count'];
   updating?: boolean;
+  options?: AllWorkOptions;
 }) {
   const [state, setState] = useState(initial);
   return (
     <>
       <FilterBar
         state={state}
-        options={allWorkOptions()}
+        options={options}
         count={count}
         updating={updating}
         onChange={(change) => setState(change)}
@@ -41,7 +43,7 @@ function current(): ViewState {
 }
 
 describe('FilterBar (US2)', () => {
-  it('offers exactly the filters of FR-004 and nothing else (FR-004, FR-010)', () => {
+  it('offers the filters of FR-004 with Years, Plan type and Financials (FR-004, FR-010, 016 FR-034, FR-037, 015 FR-024)', () => {
     renderBar();
 
     const filters = screen.getByRole('group', { name: 'Filters' });
@@ -50,15 +52,17 @@ describe('FilterBar (US2)', () => {
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toEqual([
-      'Year · 2026',
+      'Years · 2026',
       'Plan',
       'Plan status',
+      'Plan type',
       'Campaign / initiative status',
       'Activity status',
       'Owner',
       'Team',
       'Business unit',
       'Activity type',
+      'Financials',
       'Strategic / AOP plans',
       'Show levels',
     ]);
@@ -139,14 +143,84 @@ describe('FilterBar (US2)', () => {
     };
     const { user } = renderBar({ initial });
 
-    await user.click(screen.getByRole('button', { name: 'Year · 2026' }));
-    const menu = await screen.findByRole('dialog', { name: 'Year' });
-    await user.click(within(menu).getByRole('radio', { name: '2027' }));
+    await user.click(screen.getByRole('button', { name: 'Years · 2026' }));
+    const menu = await screen.findByRole('dialog', { name: 'Years' });
+    await user.selectOptions(within(menu).getByRole('combobox', { name: 'From' }), '2027');
 
     expect(current().year).toBe(2027);
+    expect(current()).not.toHaveProperty('yearTo');
     expect(current().filters.plans).toEqual([]);
     // The year is never a chip (FR-008).
     expect(screen.queryByRole('button', { name: /Remove filter: Year/ })).not.toBeInTheDocument();
+  });
+
+  it('chooses a range of at most five years, which opens Budget & cost on Yearly (016 FR-034, FR-035)', async () => {
+    const { user } = renderBar({
+      options: allWorkOptions({ years: [2030, 2029, 2028, 2027, 2026, 2025] }),
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Years · 2026' }));
+    const menu = await screen.findByRole('dialog', { name: 'Years' });
+    const to = within(menu).getByRole('combobox', { name: 'To' });
+    // 2031 would be a sixth year: To offers 2026 to 2030 only.
+    expect(
+      within(to)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['2026', '2027', '2028', '2029', '2030']);
+    expect(to).toHaveAccessibleDescription('Choose at most 5 years.');
+    await user.selectOptions(to, '2028');
+
+    expect(current()).toMatchObject({ year: 2026, yearFrom: 2026, yearTo: 2028, period: 'year' });
+    expect(screen.getByRole('button', { name: 'Years · 2026–2028' })).toBeInTheDocument();
+  });
+
+  it('filters by plan type and by Financials, with a chip per value (016 FR-037, 015 FR-024)', async () => {
+    const { user } = renderBar();
+
+    await user.click(screen.getByRole('button', { name: 'Plan type' }));
+    const types = await screen.findByRole('dialog', { name: 'Plan type' });
+    expect(
+      within(types)
+        .getAllByRole('checkbox')
+        .map((box) => box.closest('label')?.textContent),
+    ).toEqual(['Operational', 'Strategic', 'Cross-market']);
+    await user.click(within(types).getByRole('checkbox', { name: 'Cross-market' }));
+    await user.keyboard('{Escape}');
+
+    await user.click(screen.getByRole('button', { name: 'Financials' }));
+    const finance = await screen.findByRole('dialog', { name: 'Financials' });
+    expect(
+      within(finance)
+        .getAllByRole('checkbox')
+        .map((box) => box.closest('label')?.textContent),
+    ).toEqual(['Has a PO', 'No PO yet', 'Invoiced', 'Committed above planned cost']);
+    await user.click(
+      within(finance).getByRole('checkbox', { name: 'Committed above planned cost' }),
+    );
+
+    expect(current().filters).toMatchObject({
+      planTypes: ['crossMarket'],
+      finance: ['committedAbovePlanned'],
+    });
+    expect(
+      screen.getByRole('button', { name: 'Remove filter: Plan type: Cross-market' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'Remove filter: Financials: Committed above planned cost',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('offers Plan currency once the API names the currencies of the range (016 FR-037)', async () => {
+    const { user } = renderBar({ options: allWorkOptions({ planCurrencies: ['EUR', 'USD'] }) });
+
+    await user.click(screen.getByRole('button', { name: 'Plan currency' }));
+    const menu = await screen.findByRole('dialog', { name: 'Plan currency' });
+    await user.click(within(menu).getByRole('checkbox', { name: 'EUR' }));
+
+    expect(current().filters.planCurrencies).toEqual(['EUR']);
   });
 
   it('chooses Strategic / AOP plans and Show levels, one value each', async () => {

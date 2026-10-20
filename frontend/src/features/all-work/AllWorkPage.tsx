@@ -47,6 +47,7 @@ import {
   toQueryParams,
   visibleRows,
   withoutRefused,
+  yearRange,
 } from './viewState';
 
 /** The views as pill tabs (FR-001). */
@@ -67,7 +68,11 @@ export function AllWorkPage() {
   const session = useAllWorkSession();
   const { state, entry, setState } = session;
   const query = useAllWork(state ? toQueryParams(state) : null);
-  const options = useAllWorkOptions(state ? state.year : null, state !== null);
+  const options = useAllWorkOptions(
+    state ? state.year : null,
+    state !== null,
+    state ? yearRange(state).to : undefined,
+  );
   const preferences = useAllWorkPreferences();
   const open = useOpenRecord(session.rememberScroll);
   const savePreferences = usePreferencesSaver();

@@ -9,7 +9,9 @@ import {
   CONTAINER_STATUS_LABELS,
   countText,
   FILTER_LABELS,
+  FINANCE_LABELS,
   PLAN_STATUS_LABELS,
+  PLAN_TYPE_LABELS,
   SHOW_LEVELS_LABELS,
   STRATEGIC_LABELS,
 } from './allWorkText';
@@ -22,8 +24,17 @@ import type {
 } from './allWorkTypes';
 import { FilterMenu } from './FilterMenu';
 import type { FilterChoice } from './FilterMenu';
-import { chipsOf, choicesOf, clearAll, hasFilters, removeChip } from './viewState';
+import {
+  chipsOf,
+  choicesOf,
+  clearAll,
+  hasFilters,
+  removeChip,
+  withYears,
+  yearRange,
+} from './viewState';
 import type { IdFilter } from './viewState';
+import { YearRangeMenu } from './YearRangeMenu';
 
 /** How long the search waits after the last key before the view follows (plan "Page layout"). */
 const SEARCH_DELAY_MS = 300;
@@ -45,8 +56,9 @@ export interface FilterBarProps {
 
 /**
  * The one filter bar of the three views (US2, FR-004 – FR-010): the search box with the count at
- * the row's end, exactly the filters of FR-004 — no Shell-attribute filters (FR-010, D-207) —
- * which apply as soon as they change, and a removable chip per value with Clear all. Below 600 px
+ * the row's end, the filters of FR-004 — Years as a range (016 FR-034), Plan type and Plan currency
+ * (016 FR-037) and Financials (015 FR-024) added — which apply as soon as they change, and a
+ * removable chip per value with Clear all. Below 600 px
  * the filter buttons fold into a Filters (n) drawer, so the data starts higher (UI audit AW-03,
  * PH-04).
  */
@@ -104,13 +116,17 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
     };
   }
 
-  /** The menu of a filter that holds statuses. */
-  function valueMenu<K extends 'planStatuses' | 'containerStatuses' | 'activityStatuses'>(
-    filter: K,
-    labels: Record<Filters[K][number], string>,
-    groupOf?: (value: string) => string,
-  ) {
-    const chosen = filters[filter] as string[];
+  /** The menu of a filter that holds fixed values. */
+  function valueMenu<
+    K extends
+      | 'planStatuses'
+      | 'containerStatuses'
+      | 'activityStatuses'
+      | 'planTypes'
+      | 'planCurrencies'
+      | 'finance',
+  >(filter: K, labels: Record<string, string>, groupOf?: (value: string) => string) {
+    const chosen = (filters[filter] ?? []) as string[];
     return {
       label: FILTER_LABELS[filter],
       multiple: true,
@@ -126,26 +142,16 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
   }
 
   const years = options ? options.years : [];
+  const range = yearRange(state);
+  // The plan currencies of the range, once the API names them (016 FR-037).
+  const currencies = options?.planCurrencies ?? [];
   const menus = [
-    {
-      label: FILTER_LABELS.year,
-      multiple: false,
-      choices: (years.includes(state.year) ? years : [state.year, ...years]).map((year) => ({
-        value: String(year),
-        label: String(year),
-      })),
-      selected: [String(state.year)],
-      summary: String(state.year),
-      // The plans of another year cannot be chosen any more.
-      onChange: ([year]: string[]) =>
-        onChange((current) => ({
-          ...current,
-          year: Number(year),
-          filters: { ...current.filters, plans: [] },
-        })),
-    },
     idMenu('plans'),
     valueMenu('planStatuses', PLAN_STATUS_LABELS),
+    valueMenu('planTypes', PLAN_TYPE_LABELS),
+    ...(currencies.length > 0 || (filters.planCurrencies?.length ?? 0) > 0
+      ? [valueMenu('planCurrencies', Object.fromEntries(currencies.map((code) => [code, code])))]
+      : []),
     valueMenu('containerStatuses', CONTAINER_STATUS_LABELS, (value) =>
       APPROVAL_PROGRESS.includes(value) ? 'Approval progress' : 'Timing',
     ),
@@ -161,6 +167,7 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
     },
     idMenu('businessUnits'),
     idMenu('activityTypes'),
+    valueMenu('finance', FINANCE_LABELS),
     {
       label: FILTER_LABELS.strategic,
       multiple: false,
@@ -220,6 +227,13 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
         role="group"
         aria-label="Filters"
       >
+        {/* Another year range: the plans of other years cannot be chosen any more. */}
+        <YearRangeMenu
+          years={years}
+          from={range.from}
+          to={range.to}
+          onChange={(from, to) => onChange((current) => withYears(current, from, to))}
+        />
         {menus.map((menu) => (
           <FilterMenu key={menu.label} {...menu} />
         ))}
