@@ -97,7 +97,9 @@ func (s *Service) approval(ctx context.Context, a actor.Actor, facts ActivityFac
 			decide := ActionAvailability{Available: au.allowed, Reason: au.shown}
 			view.Actions.Approve, view.Actions.Decline = decide, decide
 		}
+		limitDecisions(ctx, &view.Actions, facts, open) // 014 FR-025 – FR-027
 	}
+	limitSubmit(ctx, &view.Actions, facts) // 014 FR-027
 	if facts.Status == StatusDeclined {
 		view.LatestDecline = latestDecline(entries)
 	}
@@ -252,7 +254,7 @@ func chainLevel(round Round, l RoundLevel, entries []Action, rc ruleContext) Cha
 		level.State = LevelWaiting
 		if !level.NoApprover && len(l.Approvers) > 0 {
 			level.NoApprover = !slices.ContainsFunc(waitingOn(l, entries), func(a actor.Actor) bool {
-				return d[a.ID].Active && rc.canApprove[a.ID]
+				return d.byID[a.ID].Active && rc.canApprove[a.ID]
 			})
 		}
 	case l.Number == round.CurrentLevel: // recalled, restarted or cancelled while it waited

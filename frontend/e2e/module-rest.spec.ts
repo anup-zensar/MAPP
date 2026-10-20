@@ -441,17 +441,13 @@ test('Home: the summary cards and sections for a planner and an approver, with w
   await expect(mine.getByRole('link', { name: 'Billboard winter wave' })).toBeVisible();
   await expect(mine).toContainText(`05 Jan – 28 Feb ${SEED_YEAR}`);
 
-  // The scope switch: Everything counts every plan, including other teams' (FR-003).
-  // Each card's value is the link's text.
-  const teamPlanCount = Number(await teamPlans.textContent());
+  // The scope switch: Everything counts every plan Priya may see — for her, the plans of her team
+  // (FR-003, 014 FR-007); a Global planner's Everything is checked at the end.
   await scope.getByRole('button', { name: 'Everything' }).click();
-  const allPlans = summary.getByRole('link', { name: /^All plans: \d+ — open the Plans list$/ });
-  await expect(allPlans).toBeVisible();
+  await expect(
+    summary.getByRole('link', { name: /^All plans: \d+ — open the Plans list$/ }),
+  ).toBeVisible();
   await expect(glance.getByText('Live roll-up across all plans')).toBeVisible();
-  // Polled: the label changes at once, the count when the new scope's figures arrive.
-  await expect
-    .poll(async () => Number(await allPlans.textContent()))
-    .toBeGreaterThan(teamPlanCount);
   await scope.getByRole('button', { name: 'My teams' }).click();
   await expect(teamPlans).toBeVisible();
 
@@ -534,6 +530,24 @@ test('Home: the summary cards and sections for a planner and an approver, with w
   await expect(page).toHaveURL(/\/approvals\?tab=waiting$/);
   await expect(page.getByRole('heading', { name: 'Approvals', level: 1 })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Trade magazine ads', exact: true })).toBeVisible();
+
+  // A Global planner: Carlos Mendes sees every market, so Everything counts more plans than his teams'
+  // (FR-003, 014 FR-007). Each card's value is the link's text.
+  await signInAs(page, CARLOS);
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { name: 'Welcome back, Carlos.', level: 1 }),
+  ).toBeVisible();
+  const teamPlanCount = Number(await teamPlans.textContent());
+  await scope.getByRole('button', { name: 'Everything' }).click();
+  const allPlans = summary.getByRole('link', { name: /^All plans: \d+ — open the Plans list$/ });
+  await expect(allPlans).toBeVisible();
+  // Polled: the label changes at once, the count when the new scope's figures arrive.
+  await expect
+    .poll(async () => Number(await allPlans.textContent()))
+    .toBeGreaterThan(teamPlanCount);
+  await scope.getByRole('button', { name: 'My teams' }).click();
+  await expect(teamPlans).toBeVisible();
 });
 
 test('All work: filter and search the grid, the calendar, budget and cost by month, a saved view and a CSV export (010)', async ({

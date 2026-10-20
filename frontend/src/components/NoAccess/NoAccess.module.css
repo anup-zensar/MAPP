@@ -1,0 +1,38 @@
+/* Like the not-found page: a centred icon, title, sentence and Go to Home (feature 014, FR-008). */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 32rem;
+  margin: var(--space-16) auto 0;
+  text-align: center;
+}
+
+/* The icon sits in a soft blue circle, like the empty states. */
+.icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  color: var(--blue);
+}
+
+.icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.title {
+  color: var(--ink);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+}
+
+.text {
+  margin-bottom: var(--space-1);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}

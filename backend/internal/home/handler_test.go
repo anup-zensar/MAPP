@@ -79,7 +79,9 @@ func sameMoney(x, y *money.Money) bool {
 func TestHomeSummary_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "globalPlanner", "all") // 014: every market's plans
 
 	got := get[home.SummaryView](t, priya, "/api/home/summary?scope=myTeams")
 	everything := get[home.SummaryView](t, priya, "/api/home/summary?scope=everything")
@@ -217,6 +219,7 @@ func samePercent(x, y *int) bool {
 func TestHomePlans_Contract(t *testing.T) {
 	server := apitest.New(t)
 	sara := server.SignIn(t, sarasEmail)
+	server.GrantRole(t, sarasEmail, "viewer", "all") // 014: every market's plans
 
 	mine := get[home.PlanPage](t, sara, "/api/home/plans?scope=myTeams")
 	all := get[home.PlanPage](t, sara, "/api/home/plans?scope=everything")
@@ -483,6 +486,7 @@ type recentChangesPage struct {
 // FR-016, 011 FR-008).
 func TestHomeRecentChanges_Contract(t *testing.T) {
 	server := apitest.New(t)
+	server.GrantRole(t, meisEmail, "globalPlanner", "all") // 014: every market's plans, for Everything
 	priya := server.SignIn(t, priyasEmail)
 	mei := server.SignIn(t, meisEmail)
 

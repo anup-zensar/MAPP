@@ -190,6 +190,7 @@ func (p *approvalsActivities) facts(ctx context.Context, act activities.Activity
 		// 017: what the approval rules and 014's scopes look at (data-model §3).
 		Plan:           approvals.PlanFacts{ID: plan.ID, TeamIDs: slices.Clone(plan.TeamIDs), OwnerID: plan.OwnerID, CreatedByID: plan.CreatedBy.ID},
 		ActivityTypeID: act.ActivityTypeID, BusinessUnits: units,
+		Access: plans.AccessFacts(plan), // 014: who sees the activity and who may submit, recall or decide
 	}
 	if act.ActivityTypeID != "" {
 		activityType, found, err := p.settings.GetActivityType(ctx, act.ActivityTypeID)
@@ -219,7 +220,7 @@ func displayStatus(act activities.Activity, today date.Date) string {
 }
 
 // path returns the plan, campaign and initiative of the initiative initiativeID, top level first, and the
-// plan.
+// plan itself.
 func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]errs.RecordRef, plans.Plan, error) {
 	initiative, found, err := p.campaigns.GetInitiative(ctx, initiativeID)
 	if err != nil {

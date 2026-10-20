@@ -11,6 +11,7 @@ import (
 	"northstar/internal/people"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
 )
@@ -95,8 +96,8 @@ func homePlan(o plans.Overview) home.Plan {
 	return p
 }
 
-// ownedContainers returns the campaigns and initiatives ownerID owns, in every plan, as the plan tree shows
-// them (005): budgets, roll-ups and completeness worked out by the campaigns' own view builder (D-090).
+// ownedContainers returns the campaigns and initiatives ownerID owns, in every plan the person may see, as
+// the plan tree shows them (005): budgets, roll-ups and completeness worked out by the campaigns' own view builder (D-090).
 func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsService *campaigns.Service, a actor.Actor,
 	ownerID string) ([]home.Container, error) {
 	list := []home.Container{}
@@ -109,6 +110,9 @@ func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsS
 	}
 	owns := func(id *string) bool { return id != nil && *id == ownerID }
 	for _, p := range all {
+		if !authz.CanView(ctx, plans.AccessFacts(p)) { // only plans the person may see (014 FR-007)
+			continue
+		}
 		tree, err := campaignsService.ListPlanCampaigns(ctx, a, p.ID)
 		if err != nil {
 			return nil, err

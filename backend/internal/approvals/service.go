@@ -41,6 +41,8 @@ type Service struct {
 	// (UseRuleChoices). NewService starts with everyone allowed and no choices (017 plan, Ports).
 	access  Access
 	choices RuleChoices
+	// approvers says who may approve (UseApprovers, feature 014); nil: everyone.
+	approvers Approvers
 }
 
 // NewService returns the approvals service. It keeps its records in repo, reads people from peopleRepo
@@ -106,35 +108,54 @@ func (s *Service) activity(ctx context.Context, id string) (ActivityFacts, error
 }
 
 // directory is every person by id, read once per operation: names, initials and the live active flag.
-type directory map[string]people.Person
+type directory struct {
+	byID      map[string]people.Person
+	approving map[string]bool // who may approve (feature 014, FR-028); nil: access control is not wired
+}
 
-// directory reads every person.
+// directory reads every person, and who of them may approve.
 func (s *Service) directory(ctx context.Context) (directory, error) {
 	list, err := s.people.List(ctx)
 	if err != nil {
-		return nil, err
+		return directory{}, err
 	}
-	d := directory{}
+	d := directory{byID: map[string]people.Person{}}
+	ids := make([]string, 0, len(list))
 	for _, p := range list {
-		d[p.ID] = p
+		d.byID[p.ID] = p
+		ids = append(ids, p.ID)
 	}
-	return d, nil
+	if s.approvers != nil {
+		d.approving, err = s.approvers.CanApprove(ctx, ids)
+	}
+	return d, err
 }
 
 // person returns the person id as the API shows them, with their name now. An id nobody has is shown as
 // itself and inactive.
 func (d directory) person(id string) PersonView {
-	p, found := d[id]
+	p, found := d.byID[id]
 	if !found {
 		return PersonView{ID: id, Name: id, Initials: people.Person{Name: id}.Initials(), Active: false}
 	}
-	return PersonView{ID: p.ID, Name: p.Name, Initials: p.Initials(), Active: p.Active}
+	return PersonView{ID: p.ID, Name: p.Name, Initials: p.Initials(), Active: p.Active, CanApprove: d.canApprove(p.ID)}
 }
 
 // copied returns a person copied into a round or history entry (with their name at the time) as the API
 // shows them: that name, with the live active flag (FR-024 "(inactive)").
 func (d directory) copied(a actor.Actor) PersonView {
-	return PersonView{ID: a.ID, Name: a.Name, Initials: people.Person{Name: a.Name}.Initials(), Active: d[a.ID].Active}
+	return PersonView{ID: a.ID, Name: a.Name, Initials: people.Person{Name: a.Name}.Initials(), Active: d.byID[a.ID].Active,
+		CanApprove: d.canApprove(a.ID)}
+}
+
+// canApprove says whether the person id may approve (feature 014, FR-028); nil while access control is not
+// wired.
+func (d directory) canApprove(id string) *bool {
+	if d.approving == nil {
+		return nil
+	}
+	can := d.approving[id]
+	return &can
 }
 
 // copiedAll returns copied for each of actors; never nil.

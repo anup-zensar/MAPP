@@ -5,6 +5,7 @@ import (
 
 	"northstar/internal/people"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/money"
 )
 
@@ -64,7 +65,9 @@ func (s *Service) shownTree(ctx context.Context, a actor.Actor, tree PlanCampaig
 	}
 	tree.Items = items
 	tree.DisplayTotals = displayTotals(d, tree.Totals)
-	return tree, nil
+	facts, err := s.planAccess(ctx, tree.Plan.ID)
+	tree.Access = authz.ContentAccessOf(ctx, facts) // 014 FR-011
+	return tree, err
 }
 
 // shownCampaign returns the campaign with its amounts also in a's display currency.
@@ -73,7 +76,9 @@ func (s *Service) shownCampaign(ctx context.Context, a actor.Actor, view Campaig
 	if err != nil {
 		return CampaignView{}, err
 	}
-	return displayCampaign(d, view), nil
+	facts, err := s.planAccess(ctx, view.PlanID)
+	view.Access = authz.CampaignAccessOf(ctx, facts) // 014 FR-011
+	return displayCampaign(d, view), err
 }
 
 // shownInitiative returns the initiative with its amounts also in a's display currency.
@@ -82,7 +87,21 @@ func (s *Service) shownInitiative(ctx context.Context, a actor.Actor, view Initi
 	if err != nil {
 		return InitiativeView{}, err
 	}
-	return displayInitiative(d, view), nil
+	facts, err := s.planAccess(ctx, view.PlanID)
+	view.Access = authz.InitiativeAccessOf(ctx, facts) // 014 FR-011
+	return displayInitiative(d, view), err
+}
+
+// planAccess returns the access facts of the plan planID, read in a transaction of its own (feature 014);
+// zero facts when the plan is gone.
+func (s *Service) planAccess(ctx context.Context, planID string) (authz.PlanFacts, error) {
+	var facts authz.PlanFacts
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		plan, _, err := s.deps.Plans.Plan(ctx, planID)
+		facts = plan.Access
+		return err
+	})
+	return facts, err
 }
 
 // shownDestinations returns the destinations with what the budget would leave there in a's display

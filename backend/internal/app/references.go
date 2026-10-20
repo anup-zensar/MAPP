@@ -15,6 +15,7 @@ import (
 	"northstar/internal/people"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/settings"
 )
 
@@ -87,7 +88,8 @@ func (p planningRecords) stored(ctx context.Context) ([]settings.Reference, erro
 // inBin lists the references of the records in the recycle bin. Everything in one bin entry belongs to the
 // plan of its deleted record: the first record of the entry's path, or the deleted plan itself.
 func (p planningRecords) inBin(ctx context.Context) ([]settings.Reference, error) {
-	entries, err := p.history.ListBin(ctx, actor.System) // entries undone or restored are left out
+	// Every record in the bin counts, whoever asks (014): entries undone or restored are left out.
+	entries, err := p.history.ListBin(authz.Unrestricted(ctx), actor.System)
 	if err != nil {
 		return nil, err
 	}

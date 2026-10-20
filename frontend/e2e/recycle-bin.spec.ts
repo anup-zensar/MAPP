@@ -11,10 +11,11 @@ import { approveThroughApi, createPlanningRecords } from './planning';
 // (FY2026 Lubricants Europe) two days before the seed time, with its activity "Fleet expo stand" and that
 // activity's line item "Stand build". Other tests set the stage through the API as Mei Lin (records
 // deleted there land in the bin as they would from their pages). The last test empties the bin, so it
-// stays last.
+// stays last; it deletes permanently as Alex Morgan, whose Administrator role holds that (014).
 
 const PRIYA = 'priya.raman@northstar.demo';
 const MEI = 'mei.lin@northstar.demo';
+const ALEX = 'alex.morgan@northstar.demo';
 
 interface BinRecord {
   recordType: string;
@@ -196,7 +197,9 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   await callApi(page, 'DELETE', `/api/activities/${records.activityId}`);
   const name = records.activityName;
 
-  // Delete permanently: Cancel has the focus; the red button deletes it for good (FR-028).
+  // Delete permanently: Cancel has the focus; the red button deletes it for good (FR-028). Alex's
+  // Administrator role holds "Delete permanently and empty the recycle bin" (014).
+  await signInAs(page, ALEX);
   await searchBin(page, name);
   await binRow(page, name)
     .getByRole('button', { name: `Actions for activity '${name}'` })
@@ -228,16 +231,16 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Empty recycle bin' })).toHaveCount(0);
 
-  // Both are in the activity log, with Mei as the actor (FR-030, SC-007).
+  // Both are in the activity log, with Alex as the actor (FR-030, SC-007).
   await page.goto('/activity-log');
   await expect(
-    page.getByText(/^Mei Lin emptied the recycle bin \(\d+ items?\)/).first(),
+    page.getByText(/^Alex Morgan emptied the recycle bin \(\d+ items?\)/).first(),
   ).toBeVisible();
   await expect(
     page
       .getByText(
         new RegExp(
-          `^Mei Lin permanently deleted activity '${escapeRegExp(name)}' \\(permanently deleted\\)`,
+          `^Alex Morgan permanently deleted activity '${escapeRegExp(name)}' \\(permanently deleted\\)`,
         ),
       )
       .first(),

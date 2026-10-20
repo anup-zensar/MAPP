@@ -141,4 +141,34 @@ describe('ActionsMenu', () => {
       'People are never deleted, so the history keeps their name.',
     );
   });
+
+  it('shows an action the person may not take as disabled, with its reason, and never runs it (feature 014, FR-011)', async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    render(
+      <ActionsMenu
+        label="FY2026 Lubricants Europe"
+        items={[
+          {
+            label: 'Delete',
+            tone: 'danger',
+            disabled: true,
+            hint: "Deleting plans isn't part of your role (Planner). Ask an administrator if you need it.",
+            onSelect: onDelete,
+          },
+        ]}
+      />,
+      { wrapper: TooltipProvider },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Actions for FY2026 Lubricants Europe' }));
+    const item = screen.getByRole('menuitem', { name: 'Delete' });
+    await user.click(item);
+
+    expect(item).toHaveAttribute('aria-disabled', 'true');
+    expect(item).toHaveAccessibleDescription(
+      "Deleting plans isn't part of your role (Planner). Ask an administrator if you need it.",
+    );
+    expect(onDelete).not.toHaveBeenCalled();
+  });
 });

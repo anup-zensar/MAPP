@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"slices"
 
+	"northstar/internal/access"
 	"northstar/internal/activities"
 	"northstar/internal/allwork"
 	"northstar/internal/approvals"
@@ -53,7 +54,16 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
 	peopleService := people.NewService(db, peopleRepo, generator, historyService, now)
 	authService := auth.NewService(db, auth.NewJSONRepository(), peopleRepo, cfg.DemoMode(), cfg.DemoPassword, now)
-	signedIn := authService.RequireSignIn // wraps every route that needs a signed-in person
+
+	// Access control (014), built right after people: every route that needs a signed-in person passes
+	// the sign-in check, then the access middleware, which builds the person's Grants and applies the
+	// operation's rule of access/routes.go (fail closed).
+	accessService := access.NewService(db, access.NewJSONRepository(), generator, historyService,
+		accessDirectory{people: peopleService}, now)
+	peopleService.UseAccess(peopleAccessHooks(accessService))
+	signedIn := func(next http.HandlerFunc) http.HandlerFunc {
+		return authService.RequireSignIn(accessService.Authorize(next))
+	}
 
 	// The kinds of people, teams and team memberships (feature 003), registered before any other business
 	// kind, so that history can log their changes and delete teams with their memberships. A kind that
@@ -64,11 +74,19 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 
+	// The kinds of roles and the access rules (014), top level.
+	for _, kind := range accessService.Kinds() {
+		if err := historyService.Register(kind); err != nil {
+			return nil, err
+		}
+	}
+
 	router := web.NewRouter()
 	router.Handle("GET /api/health", health(cfg))
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
 	history.NewHandler(historyService).Routes(router, signedIn)
+	access.NewHandler(accessService).Routes(router, signedIn)
 
 	// Settings (feature 002) exist in every environment. Their kinds are registered with history, parents
 	// first, so that their deletes can be undone and restored.
@@ -93,6 +111,8 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	plans.NewHandler(planService).Routes(router, signedIn)
+	// Who sees which log and recycle-bin entries and may restore them follows the plans' visibility (014).
+	historyService.UseAccess(historyAccess{plans: plansRepo, history: historyService})
 
 	// Activities (006) are built before campaigns, which roll their summaries up (campaigns.Activities), and
 	// line items (007) next to them: each reads the other (activities.LineItems, lineitems.Activities).
@@ -185,6 +205,12 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// 017: who may approve and the roles (a stand-in until 014 is merged), and what rule conditions may name.
 	approvalsService.UseAccess(approvalsAccess{people: peopleRepo})
 	approvalsService.UseRuleChoices(approvalRuleChoices{settings: settingsService})
+	// The roles impact check of access control reads approval workflows and rounds (014 FR-022); the access
+	// middleware finds the plan of every planning record an operation names in its path (access_targets.go).
+	accessService.UseApprovalFacts(accessApprovals{repo: approvalsRepo})
+	approvalsService.UseApprovers(accessService) // who may be named and flagged as an approver (014 FR-028)
+	accessService.UseTargets(planningTargets{db: db, plans: plansRepo, campaigns: campaignsRepo, activities: activitiesRepo,
+		lineItems: lineItemsRepo, approvals: approvalsRepo}.finders())
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
 
 	// Financial transactions (015): GSAP's POs, invoices, payments and accruals, read-only, from the

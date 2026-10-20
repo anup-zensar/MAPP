@@ -123,7 +123,9 @@ func TestUpdateInitiative_Contract(t *testing.T) {
 func TestUpdateInitiative_Conflict409(t *testing.T) {
 	server := apitest.New(t)
 	meiLin := server.SignIn(t, meiLinsEmail)
+	server.GrantRole(t, meiLinsEmail, "globalPlanner", "all") // 014: every market's plans
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "globalPlanner", "all") // 014: every market's plans
 	server.Advance(2 * time.Hour)
 	first := digitalForm(1)
 	first["description"] = "Social first"

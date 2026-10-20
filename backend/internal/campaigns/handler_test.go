@@ -229,6 +229,7 @@ func TestCreateCampaign_AllProblems400(t *testing.T) {
 func TestGetCampaign_Contract(t *testing.T) {
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "globalPlanner", "all") // 014: every market's plans
 
 	response := daniel.Do(t, http.MethodGet, "/api/campaigns/C-1004", nil)
 

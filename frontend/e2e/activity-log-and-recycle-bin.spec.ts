@@ -10,9 +10,11 @@ import { changeActivityPlannedCost, createInitiative, createPlanningRecords } fr
 // Every text and label comes from the "User-visible messages" tables of specs/011 and specs/009 plan.md.
 // Tests create their own records (names from uniqueName) as Mei Lin and never assert global counts, so
 // they run in any order with the other files; none of them empties the bin or restores the demo's
-// "Trade shows" (recycle-bin.spec.ts relies on both).
+// "Trade shows" (recycle-bin.spec.ts relies on both). Deleting permanently is Alex Morgan's, whose
+// Administrator role holds it (014).
 
 const MEI = 'mei.lin@northstar.demo';
+const ALEX = 'alex.morgan@northstar.demo';
 
 /** The list item of an entry whose sentence holds `sentence` (the avatar's initials come first). */
 function entry(scope: Page | Locator, sentence: string): Locator {
@@ -66,6 +68,17 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await changeActivityPlannedCost(page, records.activityId, '21000.00');
   const name = records.activityName;
   const place = `${records.planName} › ${records.campaignName} › ${records.initiativeName}`;
+  // Mei's recycle bin lists only entries of plans she can see (014 FR-007) — the demo's "Trade shows" is
+  // in Lubricants Europe — so an initiative of her own waits there too, and the bin is not empty once the
+  // activity is restored.
+  const binned = await createInitiative(
+    page,
+    records.campaignId,
+    'Life other',
+    records.year,
+    '1000.00',
+  );
+  await callApi(page, 'DELETE', `/api/initiatives/${binned.id}`);
 
   // Delete it from its page.
   await page.goto(records.activityPath);
@@ -171,6 +184,8 @@ test('Delete permanently: the activity leaves the bin for good and the log keeps
   // Deleted from its page as in the journey above; here through the API.
   await callApi(page, 'DELETE', `/api/activities/${records.activityId}`);
 
+  // Deleting permanently needs "Delete permanently and empty the recycle bin": Alex's (014).
+  await signInAs(page, ALEX);
   await page.goto('/recycle-bin');
   await page.getByRole('searchbox', { name: 'Search name or ID' }).fill(name);
   const row = binRow(page, name);
@@ -196,7 +211,7 @@ test('Delete permanently: the activity leaves the bin for good and the log keeps
   await expect(page.getByText(/^Showing 3 of [\d,]+ entries$/)).toBeVisible();
   await expectEntries(page.getByRole('main').locator('ol[role="list"]'), [
     {
-      text: `Mei Lin permanently deleted activity '${name}' (permanently deleted)`,
+      text: `Alex Morgan permanently deleted activity '${name}' (permanently deleted)`,
       chip: 'Permanently deleted',
     },
     { text: `Mei Lin deleted activity '${name}' (permanently deleted)`, chip: 'Deleted' },

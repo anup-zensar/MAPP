@@ -5,6 +5,7 @@ import (
 
 	"northstar/internal/people"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
@@ -45,9 +46,10 @@ type ActivityFacts struct {
 	PlannedCost          *money.Amount    // USD; nil when not set
 	Path                 []errs.RecordRef // plan, campaign, initiative, top level first
 	PlanYear             int
-	DefaultSpread        SpreadMethod // the plan's default line-item spread
-	DefaultFinanceBudget string       // the name of the plan's default finance budget; "" when none
-	BusinessUnit         []string     // the plan's Business unit option ids: which Shell attributes are shown
+	DefaultSpread        SpreadMethod    // the plan's default line-item spread
+	DefaultFinanceBudget string          // the name of the plan's default finance budget; "" when none
+	BusinessUnit         []string        // the plan's Business unit option ids: which Shell attributes are shown
+	Access               authz.PlanFacts // the plan as access decisions need it (feature 014)
 }
 
 // restartsApproval reports whether a change that matters for approval sends the activity back to Created

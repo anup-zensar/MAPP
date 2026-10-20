@@ -10,6 +10,7 @@ package campaigns
 
 import (
 	"northstar/internal/people"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
@@ -156,6 +157,7 @@ type InitiativeView struct {
 	Completeness          RecordCompleteness       `json:"completeness"`
 	Goals                 GoalSums                 `json:"goals"`
 	Counts                InitiativeCounts         `json:"counts"`
+	Access                *authz.ContainerAccess   `json:"access,omitempty"` // what the reader may do (014 FR-011)
 	record.Meta
 }
 
@@ -181,7 +183,8 @@ type CampaignView struct {
 	Completeness          RecordCompleteness       `json:"completeness"`
 	Goals                 GoalSums                 `json:"goals"`
 	Counts                CampaignCounts           `json:"counts"`
-	Initiatives           []InitiativeView         `json:"initiatives"` // by start date, then name; undated last
+	Initiatives           []InitiativeView         `json:"initiatives"`      // by start date, then name; undated last
+	Access                *authz.ContainerAccess   `json:"access,omitempty"` // what the reader may do (014 FR-011)
 	record.Meta
 }
 
@@ -205,6 +208,8 @@ type PlanCampaigns struct {
 	Total         int                `json:"total"`
 	Totals        PlanCampaignTotals `json:"totals"`
 	DisplayTotals PlanCampaignTotals `json:"displayTotals"` // Totals in the reader's display currency (D-220)
+	// Access is what the reader may do with the records of the plan (014 FR-011).
+	Access *authz.PlanContentAccess `json:"access,omitempty"`
 }
 
 // CampaignInput is the body of POST /api/plans/{planId}/campaigns (CampaignCreate).

@@ -29,6 +29,7 @@ type Service struct {
 	plans      PlanSource     // nil until feature 004: no plan uses a team or has an owner
 	usages     []PersonUsage  // in registration order
 	currencies CurrencySource // OnlyUSD until feature 002
+	access     AccessHooks    // feature 014 (access.go); unset: no roles
 }
 
 // NewService returns the people service. It keeps the records in repo, gives them readable IDs with
@@ -274,7 +275,11 @@ func (s *Service) currentUser(ctx context.Context, p Person) (CurrentUser, error
 	if err != nil {
 		return CurrentUser{}, err
 	}
-	return p.currentUser(prefs, d.teamRefs(d.teamIDsOf(p.ID))), nil
+	user := p.currentUser(prefs, d.teamRefs(d.teamIDsOf(p.ID)))
+	if user.Access, err = s.accessOf(ctx, p.ID); err != nil {
+		return CurrentUser{}, err
+	}
+	return user, nil
 }
 
 // preferences returns the saved preferences of a person, or the defaults when they have saved none. A

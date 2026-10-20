@@ -48,6 +48,7 @@ var startTime = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 // must not run while a request is being served.
 type Server struct {
 	handler      http.Handler
+	db           *store.DB // the data folder, for GrantRole
 	contract     validator.Validator
 	now          time.Time
 	demoPassword string // what SignIn sends
@@ -112,7 +113,7 @@ func New(t testing.TB, opts ...Option) *Server {
 		t.Fatalf("apitest: opening the data folder: %v", err)
 	}
 
-	server := &Server{contract: newContractValidator(t), now: startTime, demoPassword: cfg.DemoPassword}
+	server := &Server{db: db, contract: newContractValidator(t), now: startTime, demoPassword: cfg.DemoPassword}
 	if !s.withoutSeed {
 		var seedOptions []seed.Option
 		if s.withoutHistory {

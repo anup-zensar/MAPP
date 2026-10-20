@@ -309,9 +309,11 @@ func TestSeed_History_ApprovalActions_011(t *testing.T) {
 
 // The demo history comes out of the API as the Activity log and Home's Recent changes read it: the deleted
 // initiative's entries point at the recycle bin, the summary counts the seeded entries (011 FR-002,
-// FR-008; 009 FR-015).
+// FR-008; 009 FR-015). Priya reads every market's plans here (014: the log covers only what the reader may
+// see), so the summary counts the whole seeded history.
 func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 	server := apitest.New(t)
+	server.GrantRole(t, "priya.raman@northstar.demo", "viewer", "all")
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
 
 	response := priya.Do(t, http.MethodGet, "/api/activity-log?recordId=I-1009&limit=10", nil)

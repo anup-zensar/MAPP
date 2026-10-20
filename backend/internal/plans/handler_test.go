@@ -154,6 +154,7 @@ func listIDs(list plans.PlanList) []string {
 func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	all := listOf(t, priya.Do(t, http.MethodGet, "/api/plans", nil))
 	draft2026 := listOf(t, priya.Do(t, http.MethodGet, "/api/plans?status=draft&year=2026", nil))
@@ -200,6 +201,7 @@ func TestListPlans_MyTeams_FR004(t *testing.T) {
 func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	europe := priya.Do(t, http.MethodGet, "/api/plans/P-1001", nil)
 	china := priya.Do(t, http.MethodGet, "/api/plans/P-1002", nil)
@@ -312,6 +314,7 @@ func TestUpdatePlan_200_409_404_FR018_FR023(t *testing.T) {
 func TestChangeEffects_FR019_FR020(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	effects := priya.Do(t, http.MethodPost, "/api/plans/P-1003/change-effects",
 		map[string]any{"modelId": "MOD-1002", "attributes": map[string]any{"SA-1001": []string{"SO-1001"}}})
@@ -359,6 +362,7 @@ func formOf(p plans.PlanView) map[string]any {
 func TestPublish_NotReadyThenPublished_FR024(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	refused := priya.Do(t, http.MethodPost, "/api/plans/P-1002/publish", nil)
 	var china plans.PlanView
@@ -425,6 +429,7 @@ func TestUnpublish_FR025(t *testing.T) {
 func TestDeletePlan_AndUndo_FR029_FR030(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: deleting plans
 
 	deleted := priya.Do(t, http.MethodDelete, "/api/plans/P-1001", nil)
 	inBin := priya.Do(t, http.MethodGet, "/api/plans/P-1001", nil)

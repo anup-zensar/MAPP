@@ -57,6 +57,11 @@ const (
 
 	// Feature 017, approval rules (D-291).
 	PrefixApprovalDelegation = "DLG" // approval delegations
+	// Feature 014, access control and global budgets.
+	PrefixRole             = "RL" // roles
+	PrefixRoleAssignment   = "RA" // role assignments
+	PrefixGlobalBudget     = "GB" // global budgets
+	PrefixBudgetAllocation = "BA" // budget allocations
 )
 
 // Prefixes lists every prefix above, in that order.
@@ -69,6 +74,7 @@ var Prefixes = []string{
 	PrefixSavedView,
 	PrefixFinancialTransaction, PrefixFinancialImport,
 	PrefixApprovalDelegation,
+	PrefixRole, PrefixRoleAssignment, PrefixGlobalBudget, PrefixBudgetAllocation,
 }
 
 // firstNumber is the number of the first ID of every prefix: "P-1001".

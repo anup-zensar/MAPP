@@ -313,7 +313,7 @@ func (s *Service) checkDelegation(ctx context.Context, a actor.Actor, d director
 		dl.DelegateID, dl.Note = form.delegateID, strings.TrimSpace(form.note)
 	}
 
-	person, personKnown := d[dl.PersonID]
+	person, personKnown := d.byID[dl.PersonID]
 	switch {
 	case !personKnown:
 		problems.Add("personId", choosePersonMessage)
@@ -321,7 +321,7 @@ func (s *Service) checkDelegation(ctx context.Context, a actor.Actor, d director
 		problems.Add("personId", fmt.Sprintf(personInactiveMessage, person.Name))
 	}
 
-	delegate, delegateKnown := d[dl.DelegateID]
+	delegate, delegateKnown := d.byID[dl.DelegateID]
 	delegateChanged := stored == nil || stored.DelegateID != dl.DelegateID
 	switch {
 	case dl.DelegateID == "":

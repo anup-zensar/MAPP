@@ -82,12 +82,15 @@ func TestCreateTeam_CreatedOrRefused_FR010_FR011(t *testing.T) {
 
 // A change from the current version answers the team with its new version; one from an out-of-date copy
 // answers 409, naming who changed the team and when; an unknown team answers 404 (FR-011, 001 FR-029).
-// Anyone may change any team: there are no permission checks yet (FR-027).
+// Someone else than the creator changes a team (FR-011); Daniel and Priya hold the Administrator role for it
+// (014 FR-009).
 func TestUpdateTeam_ChangedConflictOrNotFound_FR011(t *testing.T) {
 	server := apitest.New(t)
 	asia := createTeam(t, server.SignIn(t, alexsEmail), map[string]any{"name": "Lubricants Asia", "memberIds": []string{"U-1002"}})
 	daniel := server.SignIn(t, danielsEmail)
+	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing teams
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing teams
 	server.Advance(time.Hour)
 	update := map[string]any{"name": "Lubricants Asia Pacific", "description": "", "colour": asia.Colour,
 		"memberIds": []string{"U-1002", "U-1003"}, "version": 1}

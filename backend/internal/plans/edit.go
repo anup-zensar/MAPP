@@ -10,6 +10,7 @@ import (
 
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/errs"
 	"northstar/internal/settings"
 )
@@ -35,6 +36,7 @@ func (s *Service) Update(ctx context.Context, a actor.Actor, id string, update P
 		if err != nil {
 			return err
 		}
+		checkTeams(ctx, authz.PlansEdit, stored.TeamIDs, AccessFacts(changed), &problems) // 014 FR-013
 		if update.Version == nil || *update.Version < 1 {
 			problems.Add("version", msgReload)
 		}

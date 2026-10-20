@@ -129,6 +129,7 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail})
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing people
 	server.Advance(time.Hour)
 	update := map[string]any{"name": "Jane Smith", "email": "jane.smith@northstar.demo", "jobTitle": "Marketer",
 		"teamIds": []string{"T-1001"}, "version": 1}
@@ -276,15 +277,27 @@ func TestReactivatedPersonCanSignIn_FR007_SC004(t *testing.T) {
 	}
 }
 
-// Anyone signed in manages people: Daniel edits, deactivates and reactivates a person Alex created — there
-// are no permission checks yet (FR-027).
-func TestAnyoneManagesPeople_FR027(t *testing.T) {
+// Everyone sees people, and a person whose role allows "Add and change people and teams" manages them (FR-027
+// as feature 014 rewrote it): Daniel, a Planner and Approver, is refused with 403 and nothing changes; given
+// the Administrator role, he edits, deactivates and reactivates a person Alex created.
+func TestPeopleManagedWithPeopleManage_FR027(t *testing.T) {
 	server := apitest.New(t)
 	jane := createPerson(t, server.SignIn(t, alexsEmail), map[string]any{"name": "Jane Doe", "email": janesEmail})
 	daniel := server.SignIn(t, danielsEmail)
+	change := map[string]any{"name": "Jane Doe", "email": janesEmail, "jobTitle": "Brand manager", "teamIds": []string{"T-1002"}, "version": 1}
 
-	edited := daniel.Do(t, http.MethodPatch, "/api/people/"+jane.ID, map[string]any{"name": "Jane Doe",
-		"email": janesEmail, "jobTitle": "Brand manager", "teamIds": []string{"T-1002"}, "version": 1})
+	refused := daniel.Do(t, http.MethodPatch, "/api/people/"+jane.ID, change)
+	read := daniel.Do(t, http.MethodGet, "/api/people/"+jane.ID, nil)
+	assertAnswer(t, refused, http.StatusForbidden, `{"code":"forbidden","message":"Changing people and teams isn't part of `+
+		`your roles (Approver, Planner). Ask an administrator if you need it.","fields":[]}`)
+	var unchanged people.PersonDetails
+	read.Decode(t, &unchanged)
+	if read.Status != http.StatusOK || unchanged.Version != 1 || unchanged.JobTitle != "" {
+		t.Errorf("after the refusal Daniel reads %d %s, want Jane unchanged at version 1", read.Status, read.Body)
+	}
+
+	server.GrantRole(t, danielsEmail, "administrator", "all")
+	edited := daniel.Do(t, http.MethodPatch, "/api/people/"+jane.ID, change)
 	inactive := setStatus(t, daniel, jane.ID, false, 2)
 	active := setStatus(t, daniel, jane.ID, true, 3)
 

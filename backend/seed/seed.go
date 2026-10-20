@@ -3,13 +3,14 @@
 // and the API's contract tests start from it.
 //
 // Load writes the steps in the order of decision D-202, one file per feature: people (this file), Settings
-// (settings.go, 002), teams (teams.go, 003), plans (plans.go, 004), campaigns and initiatives
-// (campaigns.go, 005), approval workflows and activities (activities.go, 006), line items (lineitems.go,
-// 007), approval rounds and notifications (approvals.go, 008), the demo GSAP transactions (financials.go,
-// 015); then saved views (allwork.go, 010), personal settings rather than records; and last the demo history
-// (history.go, 011). Every step writes through its feature's repository with IDs from the generator and looks
-// up earlier records by name. Only the last step writes activity-log and recycle-bin entries (D-188): it
-// writes them in time order, so the log's sequence numbers follow time.
+// (settings.go, 002), teams (teams.go, 003), roles, role assignments and the access rules (access.go, 014,
+// D-306), plans (plans.go, 004), campaigns and initiatives (campaigns.go, 005), approval workflows and
+// activities (activities.go, 006), line items (lineitems.go, 007), approval rounds and notifications
+// (approvals.go, 008), the demo GSAP transactions (financials.go, 015); then saved views (allwork.go, 010),
+// personal settings rather than records; and last the demo history (history.go, 011). Every step writes
+// through its feature's repository with IDs from the generator and looks up earlier records by name. Only
+// the last step writes activity-log and recycle-bin entries (D-188): it writes them in time order, so the
+// log's sequence numbers follow time.
 package seed
 
 import (
@@ -36,7 +37,8 @@ var ErrNotEmpty = errors.New("seed: the store already has data")
 // Loaded says what Load loads, for the seed command's message; a test checks it against the store.
 const Loaded = "6 people, 3 teams, 2 models, 6 activity types, 35 Shell attributes with 110 options, " +
 	"5 currencies, 6 finance budget items, 3 plans, 4 campaigns, 8 initiatives, 10 activities, 8 line items, " +
-	"3 approval workflows, 8 approval rounds, 1 approval delegation, 46 activity-log entries, 1 recycle-bin entry"
+	"3 approval workflows, 8 approval rounds, 1 approval delegation, 5 roles, 7 role assignments, 46 activity-log entries, " +
+	"1 recycle-bin entry"
 
 // demoPeople are the demo people of docs/product/demo-users-and-data.md, in the order of its table, which
 // gives them the IDs U-1001 to U-1006.
@@ -81,7 +83,7 @@ func Load(ctx context.Context, db *store.DB, now clock.Clock, opts ...Option) er
 	d := &demo{ids: ids.NewGenerator(ids.NewJSONCounters()), at: now()}
 	return db.Write(ctx, func(ctx context.Context) error {
 		steps := []func(context.Context) error{
-			d.addPeople, d.addSettings, d.addTeams, d.addPlans,
+			d.addPeople, d.addSettings, d.addTeams, d.addAccess, d.addPlans,
 			d.addGlobalBudgets, // 014's global budget and its allocations, after the plans (budgets.go, D-306)
 			d.addCampaigns, d.addActivities,
 			d.addLineItems, d.addApprovals,

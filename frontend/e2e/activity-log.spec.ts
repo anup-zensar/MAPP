@@ -15,9 +15,11 @@ import {
 // and their buttons are 004's FilterChips ("Remove filter: <chip>", D-197).
 //
 // Tests create their own records (names from uniqueName) as Mei Lin and never assert global counts; the
-// demo history (seed/history.go) gives the log more than one page of entries.
+// demo history (seed/history.go) gives the log more than one page of entries. The whole log is read as
+// Alex Morgan, whose Administrator role sees every entry; Mei's own log holds only her market's (014).
 
 const MEI = 'mei.lin@northstar.demo';
+const ALEX = 'alex.morgan@northstar.demo';
 
 /** One entry of a list of log entries, found by the words of its sentence. */
 function entry(scope: Page | Locator, sentence: string): Locator {
@@ -50,6 +52,8 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   );
   await callApi(page, 'DELETE', `/api/initiatives/${binned.id}`);
 
+  // The whole log, with more than one page of entries: Alex sees every entry (014).
+  await signInAs(page, ALEX);
   await page.goto('/activity-log');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Every change, on the record.' }),

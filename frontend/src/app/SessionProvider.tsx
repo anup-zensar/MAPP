@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { ReactNode } from 'react';
 import { matchPath, useLocation, useNavigate } from 'react-router';
 import type { Path } from 'react-router';
-import { api, call, setSessionLostHandler } from '@/api/client';
+import { api, call, setForbiddenHandler, setSessionLostHandler } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/components';
 import type { ToastOptions } from '@/components';
@@ -128,6 +128,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setSessionLostHandler(() => endSession('sessionLost'));
     return () => setSessionLostHandler(null);
   }, [endSession]);
+
+  // A call refused by the person's roles: their access may have changed since GET /api/me, so it is
+  // asked again and navigation and page gates follow at once (feature 014, FR-020).
+  useEffect(() => {
+    setForbiddenHandler(refetch);
+    return () => setForbiddenHandler(null);
+  }, [refetch]);
 
   // While someone is signed in, their saved choice counts and a visitor's earlier choice is
   // forgotten. A signed-out page then shows this browser's last theme — after signing out, the

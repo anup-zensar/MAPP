@@ -22,11 +22,32 @@ const (
 // team Lubricants Europe.
 const (
 	defaultPreferencesBody = `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false}`
-	priyasTeamsBody        = `[{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}]`
+	lubricantsEuropeBody   = `{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}`
+	priyasTeamsBody        = `[` + lubricantsEuropeBody + `]`
 )
 
+// priyasAccessBody is Priya's access as the seed gives it (feature 014, FR-024): the Planner role for her
+// teams, its twelve permissions in Lubricants Europe, the administrator to ask, and segregation of duties on.
+var priyasAccessBody = `{"roles":[{"id":"RA-1005","role":{"id":"RL-1003","name":"Planner","builtIn":"planner"},` +
+	`"scope":{"type":"myTeams","teams":` + priyasTeamsBody + `,"text":"My teams"},"scopeEmpty":false}],` +
+	`"permissions":[` + inLubricantsEurope("plans.view", "plans.create", "plans.edit", "plans.publish", "campaigns.edit",
+	"campaigns.delete", "activities.edit", "activities.delete", "activities.submit", "data.export", "finance.view",
+	"finance.link") + `],` +
+	`"administrators":[{"id":"U-1001","name":"Alex Morgan","initials":"AM","jobTitle":"Marketing administrator","active":true}],` +
+	`"noSelfApproval":true}`
+
+// inLubricantsEurope writes permissions held for Lubricants Europe only, as MyAccess lists them.
+func inLubricantsEurope(keys ...string) string {
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, `{"key":"`+key+`","all":false,"teams":[`+lubricantsEuropeBody+`]}`)
+	}
+	return strings.Join(parts, ",")
+}
+
 // GET /api/me answers who is signed in, with everything the sidebar and the account menu show (FR-012),
-// and what My profile shows: the version, the five preferences and the person's teams (003 FR-021, FR-026).
+// and what My profile shows: the version, the five preferences, the person's teams (003 FR-021, FR-026) and
+// their access (014 FR-024).
 func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
@@ -35,7 +56,7 @@ func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Raman","firstName":"Priya",`+
 		`"email":"priya.raman@northstar.demo","jobTitle":"Marketer","initials":"PR",`+
-		`"preferences":`+defaultPreferencesBody+`,"version":1,"teams":`+priyasTeamsBody+`}`)
+		`"preferences":`+defaultPreferencesBody+`,"version":1,"teams":`+priyasTeamsBody+`,"access":`+priyasAccessBody+`}`)
 }
 
 // Without a session cookie, the API asks the person to sign in (FR-005).
@@ -140,7 +161,7 @@ func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Sharma","firstName":"Priya",`+
 		`"email":"priya.raman@northstar.demo","jobTitle":"Senior marketer","initials":"PS",`+
-		`"preferences":`+defaultPreferencesBody+`,"version":2,"teams":`+priyasTeamsBody+`}`)
+		`"preferences":`+defaultPreferencesBody+`,"version":2,"teams":`+priyasTeamsBody+`,"access":`+priyasAccessBody+`}`)
 	var me people.CurrentUser
 	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
 	var details people.PersonDetails

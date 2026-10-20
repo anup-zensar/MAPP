@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/errs"
 )
 
@@ -123,8 +124,8 @@ func (s *Service) singular(name string) string {
 // ListBinItems returns what is in the recycle bin as the recycle bin page lists it (FR-014 – FR-017,
 // FR-028): the unresolved entries, newest first, each with its restore state, the entries Restore both /
 // all N brings back first, the entries that depend on it and the records it holds. Entries holding a kind
-// this API does not know are left out (D-186). Every signed-in person may see the bin, so a is not used
-// yet; it is where a permission check will go when roles arrive.
+// this API does not know are left out (D-186), and so are the entries the person acting may not see; each
+// item says what they may do with it (014 FR-007, FR-011, D-238).
 func (s *Service) ListBinItems(ctx context.Context, a actor.Actor) ([]BinListItem, error) {
 	var items []BinListItem
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -141,19 +142,23 @@ func (s *Service) ListBinItems(ctx context.Context, a actor.Actor) ([]BinListIte
 	return items, nil
 }
 
-// binItems lists the unresolved entries of index whose kinds are all registered, newest first, as
-// ListBinItems describes them. The list is never nil.
+// binItems lists the unresolved entries of index whose kinds are all registered and that the person acting
+// may see, newest first, as ListBinItems describes them. The list is never nil.
 func (s *Service) binItems(ctx context.Context, index binIndex) ([]BinListItem, error) {
 	items := []BinListItem{}
 	for _, entry := range slices.Backward(index.entries) { // the repository lists them oldest first
-		if entry.Resolution != nil || !s.knowsKindsOf(entry) {
+		if entry.Resolution != nil || !s.knowsKindsOf(entry) || !s.canSeeBinEntry(ctx, entry) {
 			continue
 		}
 		state, err := s.restoreStateOf(ctx, entry, index)
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, s.listItem(entry, state))
+		item := s.listItem(entry, state)
+		if item.Access, err = s.binEntryAccess(ctx, entry); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
 	}
 	// An entry waiting for this one to come back first can no longer be restored once this one is
 	// deleted permanently (FR-028).
@@ -251,6 +256,9 @@ func (s *Service) PreviewRestore(ctx context.Context, a actor.Actor, entryID str
 		}
 		state, err := s.restoreStateOf(ctx, entry, index)
 		if err != nil {
+			return err
+		}
+		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil { // the person's roles (014 D-238)
 			return err
 		}
 		preview = RestorePreview{
@@ -377,6 +385,9 @@ func (s *Service) RestoreWithParents(ctx context.Context, a actor.Actor, entryID
 				return errs.NotFound(kindUnknownMessage)
 			}
 		}
+		if err := s.canRestoreAll(ctx, append(state.chain, entry)); err != nil { // the person's roles (014 D-238)
+			return err
+		}
 		done, err := s.restoreChain(ctx, a, append(state.chain, entry), s.now())
 		if err != nil {
 			return err
@@ -402,6 +413,9 @@ func (s *Service) Purge(ctx context.Context, a actor.Actor, entryID string) (Pur
 		entry, err := s.unresolvedEntry(ctx, entryID)
 		if err != nil {
 			return err
+		}
+		if !s.canSeeBinEntry(ctx, entry) { // 014 D-238: an entry the person cannot see names nothing of it
+			return errs.Forbidden(authz.NoAccessMessage(entry.RecordTypeLabel))
 		}
 		if err := s.purge(ctx, a, entry, s.now()); err != nil {
 			return err
@@ -461,8 +475,8 @@ func (s *Service) EmptyBin(ctx context.Context, a actor.Actor, entryIDs []string
 			if err != nil {
 				return err
 			}
-			if !found || entry.Resolution != nil || !s.knowsKindsOf(entry) {
-				continue
+			if !found || entry.Resolution != nil || !s.knowsKindsOf(entry) || !s.canSeeBinEntry(ctx, entry) {
+				continue // 014: an entry the person cannot see was not in their confirmation either
 			}
 			if err := s.purge(ctx, a, entry, now); err != nil {
 				return err

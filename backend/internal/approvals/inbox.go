@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 )
@@ -195,6 +196,9 @@ func (s *Service) board(ctx context.Context) (*board, error) {
 	for id := range b.rounds {
 		slices.SortFunc(b.rounds[id], func(x, y Round) int { return x.Number - y.Number })
 	}
+	// Only the activities the person may see: of plans they see, their own, or named to approve (014 FR-007);
+	// every tab and count is worked out over them.
+	b.activities = slices.DeleteFunc(b.activities, func(f ActivityFacts) bool { return !canView(ctx, f, b.rounds[f.ID]) })
 	for _, e := range entries {
 		b.entries[e.ActivityID] = append(b.entries[e.ActivityID], e)
 	}
@@ -330,7 +334,7 @@ func (b *board) row(facts ActivityFacts, round Round) Row {
 		row.EscalatedTo = &backup
 	}
 	row.NoApprover = level.NoApprover || (len(level.Approvers) > 0 && !slices.ContainsFunc(waiting, func(a actor.Actor) bool {
-		return b.people[a.ID].Active && b.canApprove[a.ID]
+		return b.people.byID[a.ID].Active && b.canApprove[a.ID]
 	}))
 	return row
 }
@@ -370,4 +374,18 @@ func nonNilPath(path []errs.RecordRef) []errs.RecordRef {
 		return []errs.RecordRef{}
 	}
 	return path
+}
+
+// canView reports whether the person acting sees the activity f with its rounds (014 FR-006): its plan, as its
+// owner, or as an approver named in any level of any round. An internal call sees everything.
+func canView(ctx context.Context, f ActivityFacts, rounds []Round) bool {
+	var approverIDs []string
+	for _, r := range rounds {
+		for _, level := range r.Levels {
+			for _, approver := range level.Approvers {
+				approverIDs = append(approverIDs, approver.ID)
+			}
+		}
+	}
+	return authz.CanViewActivity(ctx, authz.ActivityFacts{Plan: f.Access, OwnerID: f.OwnerID, ApproverIDs: approverIDs})
 }

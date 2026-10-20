@@ -40,11 +40,12 @@ const (
 
 // Service holds the rules of the activity log and the recycle bin.
 type Service struct {
-	tx    store.Transactor
-	repo  Repository
-	ids   *ids.Generator
-	now   clock.Clock
-	kinds []Kind // the registered kinds, parents before children
+	tx     store.Transactor
+	repo   Repository
+	ids    *ids.Generator
+	now    clock.Clock
+	kinds  []Kind // the registered kinds, parents before children
+	access Access // feature 014 (access.go); nil: no restriction
 }
 
 // NewService returns the history service. It keeps the log and the bin in repo, gives out readable IDs with
@@ -429,6 +430,9 @@ func (s *Service) putBack(ctx context.Context, a actor.Actor, entryID string, un
 		if !found {
 			return errs.NotFound(entryUnknownMessage)
 		}
+		if err := s.canRestore(ctx, entry); err != nil { // the person's roles (014 D-238)
+			return err
+		}
 		now := s.now()
 		if err := s.checkCanComeBack(ctx, entry, undo, now); err != nil {
 			return err
@@ -609,10 +613,9 @@ func restoreDetails(how string, contents []ContentCount, notes []string) string 
 	return details
 }
 
-// ListLog returns the newest activity-log entries that match filter, at most filter.Limit of them, and how
-// many entries match in all. The limit must be from 1 to 200. It is QueryLog with fewer filters, kept for
-// the callers of feature 001. Every signed-in person may read the whole log (FR-008), so a is not used
-// yet; it is where a permission check will go when roles arrive.
+// ListLog returns the newest activity-log entries that match filter and that a may see (014 FR-007, FR-038,
+// D-238), at most filter.Limit of them, and how many entries match in all. The limit must be from 1 to 200.
+// It is QueryLog with fewer filters, kept for the callers of feature 001.
 func (s *Service) ListLog(ctx context.Context, a actor.Actor, filter LogFilter) ([]Entry, int, error) {
 	q := LogQuery{RecordID: filter.RecordID, Limit: filter.Limit}
 	if filter.RecordType != "" {
@@ -629,30 +632,43 @@ func (s *Service) ListLog(ctx context.Context, a actor.Actor, filter LogFilter) 
 	return entries, page.Total, nil
 }
 
+// Entries returns every activity-log entry, oldest first, without any access filter: for other features
+// that select entries of their own, such as the recent access changes of feature 014. It joins the caller's
+// transaction.
+func (s *Service) Entries(ctx context.Context) ([]Entry, error) {
+	var entries []Entry
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		var err error
+		entries, err = s.repo.Entries(ctx)
+		return err
+	})
+	return entries, err
+}
+
 // invalidLimit is the answer to a limit that is not a number from 1 to 200.
 func invalidLimit() error {
 	return errs.Validation(errs.FieldError{Field: "limit", Message: limitMessage})
 }
 
-// ListBin returns what is in the recycle bin, newest first (data model §6): the entries that were not yet
-// undone or restored. Every signed-in person may see it (FR-008), so a is not used yet; it is where a
-// permission check will go when roles arrive.
+// ListBin returns what is in the recycle bin that a may see, newest first (data model §6, 014 D-238): the
+// entries that were not yet undone or restored. Features that must count every record in the bin, whoever
+// asks, call it with a context without a person (authz.Unrestricted).
 func (s *Service) ListBin(ctx context.Context, a actor.Actor) ([]BinEntry, error) {
-	var all []BinEntry
+	inBin := []BinEntry{}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		var err error
-		all, err = s.repo.BinEntries(ctx)
-		return err
+		all, err := s.repo.BinEntries(ctx)
+		if err != nil {
+			return err
+		}
+		for _, e := range slices.Backward(all) { // the repository lists them oldest first
+			if e.Resolution == nil && s.canSeeBinEntry(ctx, e) {
+				inBin = append(inBin, e)
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	inBin := []BinEntry{}
-	for _, e := range slices.Backward(all) { // the repository lists them oldest first
-		if e.Resolution == nil {
-			inBin = append(inBin, e)
-		}
 	}
 	return inBin, nil
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"northstar/internal/access"
 	"northstar/internal/activities"
 	"northstar/internal/approvals"
 	"northstar/internal/campaigns"
@@ -71,6 +72,7 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 		ids.PrefixFinancialTransaction: "FT-1012", ids.PrefixFinancialImport: "FIM-1002",
 		ids.PrefixApprovalDelegation: "DLG-1002",
+		ids.PrefixRole:               "RL-1006", ids.PrefixRoleAssignment: "RA-1008",
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -152,10 +154,12 @@ func TestLoaded_SaysWhatIsLoaded_FR028(t *testing.T) {
 	entries, bin := demoLog(t, loadedStore(t))
 	got := fmt.Sprintf("%d people, %d teams, %d models, %d activity types, %d Shell attributes with %d options, "+
 		"%d currencies, %d finance budget items, %d plans, %d campaigns, %d initiatives, %d activities, %d line items, "+
-		"%d approval workflows, %d approval rounds, %d approval delegation, %d activity-log entries, %d recycle-bin entry",
+		"%d approval workflows, %d approval rounds, %d approval delegation, %d roles, %d role assignments, "+
+		"%d activity-log entries, %d recycle-bin entry",
 		len(d.people), len(d.teams), len(d.models), len(d.activityTypes), len(d.attributes), activeOptions,
 		len(d.currencies), len(d.items), len(d.plans), len(d.campaigns), len(d.initiatives), len(d.activities),
-		len(d.lineItems), len(d.workflows), len(d.rounds), len(d.delegations), len(entries), len(bin))
+		len(d.lineItems), len(d.workflows), len(d.rounds), len(d.delegations), len(d.roles), len(d.assignments),
+		len(entries), len(bin))
 	if got != seed.Loaded {
 		t.Errorf("stored: %s\nseed.Loaded: %s", got, seed.Loaded)
 	}
@@ -257,6 +261,9 @@ type demoData struct {
 	lineItems     []lineitems.LineItem
 	workflows     []approvals.Workflow
 	rounds        []approvals.Round
+	roles         []access.Role
+	assignments   []access.Assignment
+	accessRules   access.Rules
 	actions       []approvals.Action
 	notifications map[string][]approvals.Notification // by recipient id
 	delegations   []approvals.Delegation
@@ -309,6 +316,13 @@ func loadDemo(t *testing.T) demoData {
 		d.workflows, err = approvalsRepo.ListWorkflows(ctx)
 		collect(err)
 		d.rounds, err = approvalsRepo.ListRounds(ctx)
+		collect(err)
+		accessRepo := access.NewJSONRepository()
+		d.roles, err = accessRepo.ListRoles(ctx)
+		collect(err)
+		d.assignments, err = accessRepo.ListAssignments(ctx)
+		collect(err)
+		d.accessRules, _, err = accessRepo.GetRules(ctx)
 		collect(err)
 		d.actions, err = approvalsRepo.ListActions(ctx)
 		collect(err)

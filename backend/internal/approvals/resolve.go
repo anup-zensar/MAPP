@@ -92,7 +92,7 @@ func (s *Service) resolve(ctx context.Context, plans []levelPlan, facts Activity
 		switch l.ApproverType {
 		case SourceManager:
 			level.Source = "line manager of " + ownerName
-			if manager := d[facts.OwnerID].ManagerID; manager != "" {
+			if manager := d.byID[facts.OwnerID].ManagerID; manager != "" {
 				candidates = []string{manager}
 			} else if facts.OwnerID != "" {
 				problem = fmt.Sprintf(noLineManagerProblem, plan.number, ownerName)
@@ -129,7 +129,7 @@ func (s *Service) resolve(ctx context.Context, plans []levelPlan, facts Activity
 		}
 		reasonOf := func(id string) string {
 			switch {
-			case !d[id].Active:
+			case !d.byID[id].Active:
 				return ReasonInactive
 			case !can[id]:
 				return ReasonCannotApprove

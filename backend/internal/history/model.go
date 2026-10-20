@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/errs"
 )
 
@@ -271,6 +272,8 @@ type BinListItem struct {
 	ParentEntryIDs   []string     `json:"parentEntryIds"`   // the entries Restore both / all N brings back first, top-most first
 	InsideEntryIDs   []string     `json:"insideEntryIds"`   // the other entries that can't be restored once this one is purged
 	Records          []BinRecord  `json:"records"`          // the record, then everything inside it, parents before children
+	// Access is what the person may do with the entry (014 FR-011, D-238); left out for an internal call.
+	Access *authz.BinEntryAccess `json:"access,omitempty"`
 }
 
 // LabelledRef is a record with the mid-sentence name of its kind.

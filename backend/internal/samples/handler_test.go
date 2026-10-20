@@ -134,15 +134,21 @@ func TestDeleteFolder_MovesItToTheRecycleBin_FR024(t *testing.T) {
 		`"recordId":"SF-1002","recordName":"Plans","path":[],"parent":null,` +
 		`"deletedAt":"2026-03-12T09:00:00Z","deletedBy":{"id":"U-1002","name":"Priya Raman"},` +
 		`"contents":[{"recordType":"sampleNote","label":"sample notes","count":2}]}`
-	// The recycle bin lists each entry with its restore state and the records it holds (011 FR-015 – FR-017).
+	// The recycle bin lists each entry with its restore state and the records it holds (011 FR-015 – FR-017),
+	// and what Priya may do with it: restore it, but not delete it permanently, which her Planner role does
+	// not include (014 FR-011).
+	plannerAccess := `"access":{"restore":{"available":true,"reason":""},"deletePermanently":{"available":false,` +
+		`"reason":"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it."}}`
 	ideasRow := strings.TrimSuffix(ideasEntry, "}") + `,"recordTypePlural":"sample folders","restoreState":"restorable",` +
 		`"missingParent":null,"parentEntryIds":[],"insideEntryIds":[],"records":[` +
-		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas","parentId":""}]}`
+		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas","parentId":""}],` +
+		plannerAccess + `}`
 	plansRow := strings.TrimSuffix(plansEntry, "}") + `,"recordTypePlural":"sample folders","restoreState":"restorable",` +
 		`"missingParent":null,"parentEntryIds":[],"insideEntryIds":[],"records":[` +
 		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1002","recordName":"Plans","parentId":""},` +
 		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"Budget","parentId":"SF-1002"},` +
-		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Dates","parentId":"SF-1002"}]}`
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Dates","parentId":"SF-1002"}],` +
+		plannerAccess + `}`
 	assertAnswer(t, empty, http.StatusOK, `{"recycleBinEntry":`+ideasEntry+`}`)
 	assertAnswer(t, withNotes, http.StatusOK, `{"recycleBinEntry":`+plansEntry+`}`)
 	assertAnswer(t, gone, http.StatusNotFound, folderGoneBody)

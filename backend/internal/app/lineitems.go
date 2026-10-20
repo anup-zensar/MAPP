@@ -74,6 +74,7 @@ func (x lineItemActivities) Facts(ctx context.Context, id string) (lineitems.Act
 		},
 		PlanYear:      plan.Year,
 		DefaultSpread: lineitems.SpreadMethod(plan.DefaultSpread),
+		Access:        plans.AccessFacts(plan),
 	}
 	if act.PlannedCost != nil {
 		planned := act.PlannedCost.Amount

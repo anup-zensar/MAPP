@@ -62,8 +62,9 @@ func (q LogQuery) problems() errs.Problems {
 // applies to the whole log, the entries come newest first by sequence number, and Load more passes the
 // sequence number of the last entry it has as BeforeSeq. Total counts every matching entry, ignoring
 // BeforeSeq and Limit, and UnfilteredTotal the whole log. Each entry says where its record is now (FR-008).
-// Nothing is written: entries cannot be changed (FR-010). Every signed-in person may read the whole log, so
-// a is not used yet; it is where a permission check will go when roles arrive.
+// Nothing is written: entries cannot be changed (FR-010). The log is the part the person acting may see
+// (014 FR-007, FR-038, D-238): the entries the access hook hides are left out of the items and of both
+// counts.
 func (s *Service) QueryLog(ctx context.Context, a actor.Actor, q LogQuery) (LogPage, error) {
 	if err := q.problems().Err(); err != nil {
 		return LogPage{}, err
@@ -74,6 +75,7 @@ func (s *Service) QueryLog(ctx context.Context, a actor.Actor, q LogQuery) (LogP
 		if err != nil {
 			return err
 		}
+		entries = s.visibleEntries(ctx, entries) // 014: only what the person may see
 		matches := newLogMatcher(q, entries)
 		// Newest first. The sequence number orders entries, also those saved in the same millisecond. The
 		// log is appended in that order, so going through it backwards mostly finds them sorted already;
@@ -250,8 +252,8 @@ func (s *Service) recordOf(ctx context.Context, id string, entries []Entry) (*Re
 // LogSummary returns the summary cards of the activity log and the choices of its filters (FR-002,
 // FR-003), over the whole log, whatever the filters: todayStart is midnight today and weekStart midnight
 // of this week's Monday, both in the person's time zone, which only the browser knows (D-179). Both are
-// required, and the week cannot start after today. Every signed-in person may read the whole log, so a is
-// not used yet.
+// required, and the week cannot start after today. Like QueryLog, it covers only the entries the person
+// acting may see (014 FR-007, D-238).
 func (s *Service) LogSummary(ctx context.Context, a actor.Actor, todayStart, weekStart time.Time) (LogSummary, error) {
 	var problems errs.Problems
 	if todayStart.IsZero() {
@@ -265,8 +267,8 @@ func (s *Service) LogSummary(ctx context.Context, a actor.Actor, todayStart, wee
 	}
 	var entries []Entry
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		var err error
-		entries, err = s.repo.Entries(ctx)
+		all, err := s.repo.Entries(ctx)
+		entries = s.visibleEntries(ctx, all) // 014: only what the person may see
 		return err
 	})
 	if err != nil {
@@ -341,4 +343,26 @@ func orEmpty[T any](list []T) []T {
 		return []T{}
 	}
 	return list
+}
+
+// EntryViews returns entries as the API returns them (ActivityLogEntry), each with where its record is now,
+// in the same order: for other features that select entries of their own, such as the recent access changes
+// of feature 014. It joins the caller's transaction.
+func (s *Service) EntryViews(ctx context.Context, entries []Entry) ([]EntryView, error) {
+	views := make([]EntryView, 0, len(entries))
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		index, err := s.binIndex(ctx)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			now, err := s.recordNow(ctx, e, index)
+			if err != nil {
+				return err
+			}
+			views = append(views, EntryView{Entry: e, Items: orEmpty(e.Items), RecordNow: now})
+		}
+		return nil
+	})
+	return views, err
 }

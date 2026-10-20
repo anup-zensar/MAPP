@@ -74,6 +74,7 @@ func TestCreateActivity_Contract_FR004(t *testing.T) {
 func TestListPlanActivities_Contract_FR033(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	response := priya.Do(t, http.MethodGet, "/api/plans/P-1002/activities", nil)
 

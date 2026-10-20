@@ -18,6 +18,7 @@ import {
   LevelTag,
   LockedNote,
   MoneyField,
+  NoAccess,
   PersonLabel,
   PersonPicker,
   Tabs,
@@ -34,6 +35,7 @@ import {
   TextField,
   TreeTable,
   valuesToClear,
+  ViewOnlyNote,
 } from '@/components';
 import type { AttributeValues, SplitShare } from '@/components';
 import { CAMPAIGN_FORM, COST_CENTRES, PEOPLE, PLAN_TREE, TEAMS } from './galleryData';
@@ -103,6 +105,15 @@ export function PlanModuleGallery() {
       </Card>
       <Card title="LockedNote">
         <LockedNote>The code can't change once the currency is saved.</LockedNote>
+      </Card>
+      <Card title="ViewOnlyNote (feature 014)">
+        <div className={styles.stack}>
+          <ViewOnlyNote area="plan" />
+          <ViewOnlyNote area="settings" />
+        </div>
+      </Card>
+      <Card title="NoAccess (feature 014)">
+        <NoAccess message="You don't have access to this plan. Ask an administrator if you need it." />
       </Card>
       <NumberFieldsExample />
       <TextFieldsExample />

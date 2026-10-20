@@ -445,7 +445,7 @@ func checkLevel(problems *errs.Problems, rc ruleContext, n int, l, before Level,
 		}
 		seen, unknown := map[string]bool{}, false
 		for _, id := range l.ApproverIDs {
-			p, found := d[id]
+			p, found := d.byID[id]
 			added := !slices.Contains(before.ApproverIDs, id)
 			switch {
 			case !found:
@@ -502,7 +502,7 @@ func checkLevel(problems *errs.Problems, rc ruleContext, n int, l, before Level,
 		}
 		return
 	}
-	p, found := d[l.BackupApproverID]
+	p, found := d.byID[l.BackupApproverID]
 	changed := l.BackupApproverID != before.BackupApproverID
 	switch {
 	case !found:
@@ -655,8 +655,8 @@ func (s *Service) ruleContext(ctx context.Context) (ruleContext, error) {
 	if err != nil {
 		return ruleContext{}, err
 	}
-	everyone := make([]string, 0, len(d))
-	for id := range d {
+	everyone := make([]string, 0, len(d.byID))
+	for id := range d.byID {
 		everyone = append(everyone, id)
 	}
 	slices.Sort(everyone)

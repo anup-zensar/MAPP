@@ -87,13 +87,13 @@ func TestRun_ResetDeletesOnlyDataFiles_FR028(t *testing.T) {
 		t.Fatalf("run: %v", err)
 	}
 	want := []string{
-		"activities.json", "activity_log.jsonl", "activity_types.json", "approval_actions.json",
+		"access_rules.json", "activities.json", "activity_log.jsonl", "activity_types.json", "approval_actions.json",
 		"approval_delegations.json", "approval_rounds.json", "approval_workflows.json", "backup.json",
 		"budget_allocations.json", "campaigns.json", "counters.json", "currencies.json", "finance_budget_items.json",
 		"finance_budgets.json", "financial_imports.json", "financial_transactions.json", // 015's demo GSAP data
 		"global_budgets.json", "initiatives.json", "line_items.json", "models.json", "notes.txt", "notifications.json",
-		"people.json", "plans.json", "recycle_bin.json", "saved_views.json", "shell_attribute_options.json",
-		"shell_attributes.json", "team_memberships.json", "teams.json",
+		"people.json", "plans.json", "recycle_bin.json", "role_assignments.json", "roles.json", "saved_views.json",
+		"shell_attribute_options.json", "shell_attributes.json", "team_memberships.json", "teams.json",
 	}
 	if got := fileNames(t, dir); !slices.Equal(got, want) {
 		t.Errorf("files = %q, want %q", got, want)

@@ -132,6 +132,7 @@ func TestGetApprovalWorkflow_404(t *testing.T) {
 // keeps the levels it was submitted with (FR-006).
 func TestUpdateApprovalWorkflow_OpenRoundUnchanged_FR006(t *testing.T) {
 	server := apitest.New(t)
+	server.GrantRole(t, "sara.novak@northstar.demo", "approver", "all") // 014: a role that approves, to be named an approver
 	alex := server.SignIn(t, alexsEmail)
 
 	response := alex.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1002", map[string]any{
@@ -154,6 +155,7 @@ func TestUpdateApprovalWorkflow_409(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: changing workflows
 	renamed := alex.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1001", map[string]any{"name": "Lubricants approval", "version": 1})
 	decodeWorkflow(t, renamed, http.StatusOK)
 

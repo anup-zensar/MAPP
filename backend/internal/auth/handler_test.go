@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,12 +23,35 @@ const (
 	demoPassword = "northstar"
 )
 
+// lubricantsEurope is the team T-1001 as answers show it.
+const lubricantsEurope = `{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}`
+
+// priyaBody is Priya Raman as the API answers her: with her access (feature 014, FR-024) — the Planner role
+// for her teams, its twelve permissions in Lubricants Europe, the administrator to ask and the
+// segregation-of-duties rule.
+var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email":"priya.raman@northstar.demo",` +
+	`"jobTitle":"Marketer","initials":"PR",` +
+	`"preferences":{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false},` +
+	`"version":1,"teams":[` + lubricantsEurope + `],` +
+	`"access":{"roles":[{"id":"RA-1005","role":{"id":"RL-1003","name":"Planner","builtIn":"planner"},` +
+	`"scope":{"type":"myTeams","teams":[` + lubricantsEurope + `],"text":"My teams"},"scopeEmpty":false}],` +
+	`"permissions":[` + inLubricantsEurope("plans.view", "plans.create", "plans.edit", "plans.publish", "campaigns.edit",
+	"campaigns.delete", "activities.edit", "activities.delete", "activities.submit", "data.export", "finance.view",
+	"finance.link") + `],` +
+	`"administrators":[{"id":"U-1001","name":"Alex Morgan","initials":"AM","jobTitle":"Marketing administrator","active":true}],` +
+	`"noSelfApproval":true}}`
+
+// inLubricantsEurope writes permissions held for Lubricants Europe only, as MyAccess lists them.
+func inLubricantsEurope(keys ...string) string {
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, `{"key":"`+key+`","all":false,"teams":[`+lubricantsEurope+`]}`)
+	}
+	return strings.Join(parts, ",")
+}
+
 // The bodies of the API's answers, as the web app receives them.
 const (
-	priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email":"priya.raman@northstar.demo",` +
-		`"jobTitle":"Marketer","initials":"PR",` +
-		`"preferences":{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false},` +
-		`"version":1,"teams":[{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}]}`
 	signInRequiredBody = `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`
 	incorrectBody      = `{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}`
 )

@@ -110,6 +110,7 @@ func TestCodes_MatchTheContract(t *testing.T) {
 		errs.CodeCannotRestore:        "cannot_restore",
 		errs.CodeNotAllowed:           "not_allowed",
 		errs.CodeNotReady:             "not_ready",
+		errs.CodeForbidden:            "forbidden",
 	}
 	for got, want := range codes {
 		if got != want {
@@ -266,6 +267,21 @@ func TestPlanModuleErrors_409_D043(t *testing.T) {
 	}
 	if got := encode(t, notReady); got != want {
 		t.Errorf("NotReady JSON =\n%s\nwant\n%s", got, want)
+	}
+}
+
+// A refusal by role or scope is 403 forbidden with the message the caller gives and no field problems
+// (014 FR-010, D-227).
+func TestForbidden_403WithMessage_FR010(t *testing.T) {
+	message := "Changing activities and line items isn't part of your role (Viewer). Ask an administrator if you need it."
+	err := errs.Forbidden(message)
+
+	if err.Status != http.StatusForbidden || err.Code != errs.CodeForbidden || err.Message != message {
+		t.Errorf("Forbidden = %d %q %q, want 403 forbidden with the message", err.Status, err.Code, err.Message)
+	}
+	want := fmt.Sprintf(`{"code":"forbidden","message":%q,"fields":[]}`, message)
+	if got := encode(t, err); got != want {
+		t.Errorf("JSON =\n%s\nwant\n%s", got, want)
 	}
 }
 

@@ -35,11 +35,12 @@ const (
 	CodeNotAllowed    = "not_allowed"    // the person may not do this, such as deactivate themselves (003)
 	CodeNotReady      = "not_ready"      // needed fields are missing for publish or submit; Missing lists them (004)
 
+	// Code of feature 014, access control: the person's roles do not allow the action (D-227).
+	CodeForbidden = "forbidden"
+
 	// CodeParentDeletedPermanently refuses a restore whose parent, or a record above it, was deleted
 	// permanently; Parent names that record (011, D-182).
 	CodeParentDeletedPermanently = "parent_deleted_permanently"
-	// CodeForbidden refuses what the person's access does not allow (014, D-227, D-299).
-	CodeForbidden = "forbidden"
 )
 
 // Error is an API failure. Status is the HTTP status and is not part of the JSON.
@@ -195,8 +196,8 @@ func NotAllowed(message string) *Error {
 	return newError(http.StatusConflict, CodeNotAllowed, message)
 }
 
-// Forbidden refuses an action the person's access does not allow, or a record outside it, with a message
-// for the user (403 forbidden, D-227, D-299).
+// Forbidden refuses an action the person's roles do not allow, or a record outside their access, with a
+// message for the user that says what to do (403 forbidden, feature 014 D-227). Nothing is changed.
 func Forbidden(message string) *Error {
 	return newError(http.StatusForbidden, CodeForbidden, message)
 }

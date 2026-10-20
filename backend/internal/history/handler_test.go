@@ -274,16 +274,21 @@ func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
 	}
 }
 
-// The bin's two entries of binWithParent, as GET /api/recycle-bin answers them: the folder, which the note's
-// entry waits for, and the note, whose folder is in the bin (011 FR-015 – FR-017, FR-028).
+// The bin's two entries of binWithParent, as GET /api/recycle-bin answers them to Priya: the folder, which the
+// note's entry waits for, and the note, whose folder is in the bin (011 FR-015 – FR-017, FR-028), each with what
+// she may do with it — restore it, but not delete it permanently, which her Planner role does not include
+// (014 FR-011).
 const (
+	plannerBinAccess = `"access":{"restore":{"available":true,"reason":""},"deletePermanently":{"available":false,` +
+		`"reason":"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it."}}`
 	folderBinItem = `{"id":"BIN-1002","recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001",` +
 		`"recordName":"Ideas","path":[],"parent":null,"deletedAt":"2026-03-12T09:00:00Z",` +
 		`"deletedBy":{"id":"U-1002","name":"Priya Raman"},"contents":[{"recordType":"sampleNote","label":"sample note","count":1}],` +
 		`"recordTypePlural":"sample folders","restoreState":"restorable","missingParent":null,"parentEntryIds":[],` +
 		`"insideEntryIds":["BIN-1001"],"records":[` +
 		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas","parentId":""},` +
-		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Second idea","parentId":"SF-1001"}]}`
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1002","recordName":"Second idea","parentId":"SF-1001"}],` +
+		plannerBinAccess + `}`
 	noteBinItem = `{"id":"BIN-1001","recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001",` +
 		`"recordName":"First idea","path":[{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}],` +
 		`"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"},"deletedAt":"2026-03-12T09:00:00Z",` +
@@ -291,7 +296,8 @@ const (
 		`"restoreState":"parentInRecycleBin",` +
 		`"missingParent":{"type":"sampleFolder","typeLabel":"sample folder","id":"SF-1001","name":"Ideas"},` +
 		`"parentEntryIds":["BIN-1002"],"insideEntryIds":[],"records":[` +
-		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"First idea","parentId":"SF-1001"}]}`
+		`{"recordType":"sampleNote","recordTypeLabel":"sample note","recordId":"SN-1001","recordName":"First idea","parentId":"SF-1001"}],` +
+		plannerBinAccess + `}`
 )
 
 // binWithParent fills the recycle bin as Priya: the note "First idea" (BIN-1001), then its folder "Ideas"
@@ -386,6 +392,7 @@ func TestRestore_WithParents_Contract(t *testing.T) {
 // parent (011 FR-023, FR-024).
 func TestRestore_ParentCodes_409(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 	parent := `"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}`
@@ -406,6 +413,7 @@ func TestRestore_ParentCodes_409(t *testing.T) {
 // the bin, no longer restorable (011 FR-028, FR-030).
 func TestPurge_Contract(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
@@ -433,6 +441,7 @@ func TestPurge_Contract(t *testing.T) {
 // bin, the conflict already_resolved with how, by whom and when (011 FR-032).
 func TestPurge_404_409(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")   // SF-1001
 	deleteFolder(t, priya, "SF-1001") // BIN-1001
@@ -451,6 +460,7 @@ func TestPurge_404_409(t *testing.T) {
 // and writes nothing (011 FR-029, FR-030, FR-032).
 func TestEmptyRecycleBin_Contract(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 	body := map[string][]string{"entryIds": {"BIN-1002", "BIN-1001"}}
@@ -479,6 +489,7 @@ func TestEmptyRecycleBin_Contract(t *testing.T) {
 // Empty recycle bin needs at least one entry: an empty list is refused next to entryIds (011 FR-029).
 func TestEmptyRecycleBin_EmptyList_400(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
+	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
 	priya := server.SignIn(t, priyasEmail)
 
 	response := priya.Do(t, http.MethodPost, "/api/recycle-bin/empty", map[string][]string{"entryIds": {}},

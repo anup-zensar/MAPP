@@ -27,32 +27,32 @@ built with 012.
 
 ## Phase 2: Backend foundation (blocks every story)
 
-- [ ] T002 [P] `backend/internal/platform/errs/errs.go`: `CodeForbidden = "forbidden"`, `Forbidden(message) *Error`
+- [x] T002 [P] `backend/internal/platform/errs/errs.go`: `CodeForbidden = "forbidden"`, `Forbidden(message) *Error`
   (403); test in `errs_test.go` (FR-010).
-- [ ] T003 [P] `backend/internal/platform/ids/ids.go`: `PrefixRole = "RL"`, `PrefixRoleAssignment = "RA"`,
+- [x] T003 [P] `backend/internal/platform/ids/ids.go`: `PrefixRole = "RL"`, `PrefixRoleAssignment = "RA"`,
   `PrefixGlobalBudget = "GB"`, `PrefixBudgetAllocation = "BA"`.
-- [ ] T004 New package `backend/internal/platform/authz` (`catalogue.go`, `grants.go`, `context.go`, `check.go`,
+- [x] T004 New package `backend/internal/platform/authz` (`catalogue.go`, `grants.go`, `context.go`, `check.go`,
   `messages.go`, `api.go` with `MyAccess`, `MyPermission`, `Availability`) exactly as plan *platform/authz*; tests
   `grants_test.go`, `check_test.go`, `messages_test.go`: union of roles, scope merge, live My teams, Chosen teams,
   `InScope` incl. the team-less plan of its creator, `CanViewPlan` incl. owner, Administrator = every permission,
   no Grants in context = unrestricted, messages 1–4 word for word (FR-001–FR-006, FR-010).
-- [ ] T005 `backend/internal/access`: `model.go`, `repository.go`, `store_json.go` for tables `roles`,
+- [x] T005 `backend/internal/access`: `model.go`, `repository.go`, `store_json.go` for tables `roles`,
   `role_assignments`, `access_rules` (data-model §1.1–§1.3); `store_json_test.go`.
-- [ ] T006 `backend/internal/access/service.go`: `NewService`, `Directory` interface, `GrantsFor` (data-model §2.1),
+- [x] T006 `backend/internal/access/service.go`: `NewService`, `Directory` interface, `GrantsFor` (data-model §2.1),
   `Summary` (`authz.MyAccess`: roles, merged permissions, administrators, rule); `service_test.go` (FR-002, FR-004,
   FR-024).
-- [ ] T007 `backend/internal/access/routes.go` (the complete Table C of plan.md as `routeRules`, 012's rows
+- [x] T007 `backend/internal/access/routes.go` (the complete Table C of plan.md as `routeRules`, 012's rows
   included) and `middleware.go` (`Authorize`: Grants into context, `Need`/`InPlan` pre-checks, unknown pattern
   refused and logged, technical log line `forbidden` with operation and person ID only); `middleware_test.go`
   (FR-009, FR-010, FR-039).
-- [ ] T008 `backend/internal/app/app.go`: build the access service after people; `signedIn` = `RequireSignIn ∘
+- [x] T008 `backend/internal/app/app.go`: build the access service after people; `signedIn` = `RequireSignIn ∘
   Authorize`; `app/access_adapters.go` (`Directory` over people); new `app/access_routes_test.go`: every pattern in
   `App.Routes` has a rule and every rule pattern is served (SC-001).
-- [ ] T009 [P] `backend/internal/platform/apitest/apitest.go`: `(*Server).GrantRole(t, email, builtIn, scope string,
+- [x] T009 [P] `backend/internal/platform/apitest/apitest.go`: `(*Server).GrantRole(t, email, builtIn, scope string,
   teamNames ...string)`; test.
-- [ ] T010 `backend/seed/access.go` (`addAccess` after `addTeams` in `seed.Load`): five roles, six people's roles,
+- [x] T010 `backend/seed/access.go` (`addAccess` after `addTeams` in `seed.Load`): five roles, six people's roles,
   access rules (plan *Demo data*); `seed/access_test.go` (FR-040).
-- [ ] T011 Run `go test ./...`; for every failing existing test that is not about access, grant the role it needs
+- [x] T011 Run `go test ./...`; for every failing existing test that is not about access, grant the role it needs
   with `GrantRole` at its start (plan *Tests*, existing tests); no assertion changes. Record the list of changed
   test files in the lane report.
 
@@ -62,83 +62,83 @@ built with 012.
 
 ### US1 — local and global visibility (P1)
 
-- [ ] T012 [US1] `backend/internal/plans`: `AccessFacts(Plan) authz.PlanFacts`; `List` filtered by `CanViewPlan`
+- [x] T012 [US1] `backend/internal/plans`: `AccessFacts(Plan) authz.PlanFacts`; `List` filtered by `CanViewPlan`
   (cards and "n of m" over visible plans); `Get`, `CopyOptions`, `ChangeEffects` call `RequireView`; tests US1
   scenarios 1–3, 6 (FR-005–FR-008).
-- [ ] T013 [P] [US1] `backend/internal/campaigns`: `RequireView` on `ListPlanCampaigns`, `GetCampaign`,
+- [x] T013 [P] [US1] `backend/internal/campaigns`: `RequireView` on `ListPlanCampaigns`, `GetCampaign`,
   `GetInitiative`; destination lists keep only plans where `campaigns.edit` is in scope; tests (FR-006, FR-014).
-- [ ] T014 [P] [US1] `backend/internal/activities`: view rule (plan, owner, named approver through new consumer
+- [x] T014 [P] [US1] `backend/internal/activities`: view rule (plan, owner, named approver through new consumer
   interface `Approvers.NamedIn(ctx, activityID) ([]string, error)`, adapter in `app/approvals_adapter.go`) on
   `Get`, `ListForPlan`; destinations filtered with `activities.edit`; tests (FR-006, FR-014).
-- [ ] T015 [P] [US1] `backend/internal/lineitems`: view of the activity on `Section`, `Get`; tests (FR-006).
-- [ ] T016 [P] [US1] `backend/internal/approvals`: `Inbox` All open filtered by activity view; `Summary` counts after
+- [x] T015 [P] [US1] `backend/internal/lineitems`: view of the activity on `Section`, `Get`; tests (FR-006).
+- [x] T016 [P] [US1] `backend/internal/approvals`: `Inbox` All open filtered by activity view; `Summary` counts after
   filtering; `GetActivityApproval` and `Preview` view checks; tests (FR-007).
-- [ ] T017 [P] [US1] `backend/internal/app/home_sources.go`: every Home source filters plans and activities by
+- [x] T017 [P] [US1] `backend/internal/app/home_sources.go`: every Home source filters plans and activities by
   visibility before counting; recent changes through the history access adapter; tests: Priya's totals equal the
   Lubricants plan only (FR-007, SC-004).
-- [ ] T018 [P] [US1] `backend/internal/app/allwork_source.go`: rows, totals, Budget & cost, Calendar, options, record
+- [x] T018 [P] [US1] `backend/internal/app/allwork_source.go`: rows, totals, Budget & cost, Calendar, options, record
   location (403 for an invisible record) and export filtered; tests incl. export content (FR-007, FR-016, SC-004).
-- [ ] T019 [US1] `backend/internal/history`: `Access` interface and `UseAccess`; `ListLog`, the log summary, record
+- [x] T019 [US1] `backend/internal/history`: `Access` interface and `UseAccess`; `ListLog`, the log summary, record
   History and `ListBin` filter with it; `backend/internal/app/history_access.go` implements it (D-A16: plan from the
   entry's path, else the bin snapshot, else All markets only; administration kinds need `activityLog.viewAll`);
   tests US1 scenario 5 (FR-007, FR-038).
 
 ### US2 — view versus edit (P1)
 
-- [ ] T020 [US2] `backend/internal/plans`: `Create` (`plans.create` against the chosen teams), `Update`
+- [x] T020 [US2] `backend/internal/plans`: `Create` (`plans.create` against the chosen teams), `Update`
   (`plans.edit`), `Delete` (`plans.delete`), `Publish`/`Unpublish` (`plans.publish`), `Copy` (view source,
   `plans.create` for the copy's teams), `Defaults`; FR-013 team rules with messages 20–21 on `teamIds`;
   `Plan.access` and `PlanSummary.access` (`PlanAccess` with `content`); tests US2 scenarios 3–4 (FR-009, FR-011,
   FR-013).
-- [ ] T021 [P] [US2] `backend/internal/campaigns`: `campaigns.edit` on create, update, move (source and destination),
+- [x] T021 [P] [US2] `backend/internal/campaigns`: `campaigns.edit` on create, update, move (source and destination),
   copy (destination); `campaigns.delete` on delete; `PlanCampaigns.access`, `Campaign.access`,
   `Initiative.access`; tests (FR-009, FR-014).
-- [ ] T022 [P] [US2] `backend/internal/activities`: `activities.edit` on `NewForm`, `EditForm`, `Create`, `Update`,
+- [x] T022 [P] [US2] `backend/internal/activities`: `activities.edit` on `NewForm`, `EditForm`, `Create`, `Update`,
   `Move` (both ends), `Copy` (destination); `activities.delete` on `Delete`; `Activity.access` (incl. `seeFinance`
   from `finance.view`) and `ActivitySummaryPage.access`; tests US2 scenario 2 (FR-009, FR-015).
-- [ ] T023 [P] [US2] `backend/internal/lineitems`: `activities.edit` on `FormOptions`, `Create`, `Update`,
+- [x] T023 [P] [US2] `backend/internal/lineitems`: `activities.edit` on `FormOptions`, `Create`, `Update`,
   `Duplicate`; `activities.delete` on `Delete`; `LineItemSection.access`, `LineItemDetails.access`; tests (FR-009,
   FR-015).
-- [ ] T024 [P] [US2] `backend/internal/history` + `app/history_access.go`: `CanRestore` on Undo, Restore and the
+- [x] T024 [P] [US2] `backend/internal/history` + `app/history_access.go`: `CanRestore` on Undo, Restore and the
   restore preview (level's delete permission in the plan; managing permission for administration kinds, plan
   D-A16); `RecycleBinListItem.access`; tests (FR-009).
-- [ ] T025 [US2] `backend/internal/app/access_matrix_test.go`: one row per non-public operation of Table C (built
+- [x] T025 [US2] `backend/internal/app/access_matrix_test.go`: one row per non-public operation of Table C (built
   from the seed): Mei on Lubricants records → 403 for View and InPlan rows; Sara → 403 for every change operation;
   Priya → 403 for administration `Need` rows; every answer validated against the contract; 012 rows skipped while
   012 is not served (SC-001, FR-009, FR-010).
 
 ### US3 — administrators give roles (P1)
 
-- [ ] T026 [US3] `backend/internal/access/assignments.go`: `ListPeopleAccess`, `PersonRoles`, `SetPersonRoles` (whole
+- [x] T026 [US3] `backend/internal/access/assignments.go`: `ListPeopleAccess`, `PersonRoles`, `SetPersonRoles` (whole
   set, person version via `Directory.TouchPerson`, one `changed` entry "Roles" on the person), Administrator scope
   rule (message 12), teams rule (message 16), last-administrator guard (message 10), `CheckRolesImpact` (messages
   18–19; approver data through `access.ApprovalFacts` interface implemented in `app/access_adapters.go` over
   approvals); tests US3 scenarios 2, 4, 5 (FR-017, FR-021, FR-022, FR-037).
-- [ ] T027 [P] [US3] `backend/internal/people`: hooks `UseAccessSummary` (`CurrentUser.access`), `NewPerson`
+- [x] T027 [P] [US3] `backend/internal/people`: hooks `UseAccessSummary` (`CurrentUser.access`), `NewPerson`
   (default role, same Write, logged), `CanDeactivate` (last administrator), `TeamDeleted` (team leaves every
   scope); `kinds.go` `Describe` label "Roles"; tests US3 scenario 6 (FR-020, FR-021, FR-023, FR-024).
-- [ ] T028 [US3] `backend/internal/access/handler.go`: `listPermissions`, `listPeopleAccess`, `getPersonRoles`,
+- [x] T028 [US3] `backend/internal/access/handler.go`: `listPermissions`, `listPeopleAccess`, `getPersonRoles`,
   `setPersonRoles`, `checkPersonRolesImpact`; contract-validated handler tests; remove them from `notYetServed`
   (FR-017, FR-022).
 
 ### US4 — roles and rules (P2)
 
-- [ ] T029 [US4] `backend/internal/access/roles.go`, `kinds.go` (`role`): list, get (people who hold it, `locks`),
+- [x] T029 [US4] `backend/internal/access/roles.go`, `kinds.go` (`role`): list, get (people who hold it, `locks`),
   create, update (changed fields, permissions logged as added/removed), delete (409 `in_use`, Administrator 409
   `not_allowed`, bin + Undo + name rule); handler `listRoles`, `createRole`, `getRole`, `updateRole`, `deleteRole`;
   tests US4 scenarios 1–5, messages 11, 13–15 (FR-018, FR-037).
-- [ ] T030 [P] [US4] `backend/internal/access/rules.go`, `kinds.go` (`accessRules`): get (defaults with version 0 when
+- [x] T030 [P] [US4] `backend/internal/access/rules.go`, `kinds.go` (`accessRules`): get (defaults with version 0 when
   missing), update (message 17), `newPersonRoleId` cleared when its role is deleted (logged); handler
   `getAccessRules`, `updateAccessRules`; tests (FR-019, FR-023, FR-037).
 
 ### US5 — approvals follow roles (P2)
 
-- [ ] T031 [US5] `backend/internal/approvals`: approve/decline in the plan's check order (messages 5, 6a, 6b,
+- [x] T031 [US5] `backend/internal/approvals`: approve/decline in the plan's check order (messages 5, 6a, 6b,
   on-behalf history text), `noSelfApproval` read from Grants rules (owner and submitter); `Submission`, `Submit`
   need `activities.submit`; `Recall` for the owner or submitter with `activities.submit`, or
   `approvals.decideOnBehalf`; submit advice 7 when the owner or submitter is a level's only approver;
   `actions.*.reason` from the same checks; tests US5 scenarios 1–5, 7 (FR-025–FR-027).
-- [ ] T032 [P] [US5] `backend/internal/approvals`: consumer interface `Approvers.CanApprove(ctx, personIDs)` + `UseApprovers`
+- [x] T032 [P] [US5] `backend/internal/approvals`: consumer interface `Approvers.CanApprove(ctx, personIDs)` + `UseApprovers`
   (adapter over `access`); workflow create/update refuse new approvers without `approvals.decide` (message 8 on
   `levels.<n>.approverIds`); `ApprovalPerson.canApprove`; `access.RoleHolders` hook for 017; tests US5 scenario 6
   (FR-028).
@@ -165,23 +165,25 @@ built with 012.
 
 ### US7 — audit trail (P3)
 
-- [ ] T038 [US7] `backend/internal/access/changes.go` + handler `listAccessChanges`; one test per row of data-model §3
+- [x] T038 [US7] `backend/internal/access/changes.go` + handler `listAccessChanges`; one test per row of data-model §3
   checking the exact entry (kind, verb, field labels, texts, comment) for roles, people's roles, rules, global
   budgets, allocations and plan budgets; access-related entries hidden from Priya in the log (FR-037, FR-038).
 
 ## Phase 4: Frontend foundation (after T001; uses `mockApi`, can run beside Phase 3)
 
-- [ ] T039 `frontend/src/api/errors.ts` (`forbidden`), `frontend/src/app/SessionProvider.tsx` and the QueryClient
+- [x] T039 `frontend/src/api/errors.ts` (`forbidden`), `frontend/src/app/SessionProvider.tsx` and the QueryClient
   set-up: on 403 refetch the session, invalidate the page's queries, toast the message for actions and render
   `NoAccess` for page loads; refetch the session on window focus; tests (FR-008, FR-020).
-- [ ] T040 [P] `frontend/src/lib/access.ts`: `useAccess`, `availabilityProps`, `permissionLabel`, `summariseAccess`;
+- [x] T040 [P] `frontend/src/lib/access.ts`: `useAccess`, `availabilityProps`, `permissionLabel`, `summariseAccess`;
   tests (FR-011, FR-017, FR-024).
-- [ ] T041 [P] `frontend/src/components/ViewOnlyNote/`, `frontend/src/components/NoAccess/` (+ `index.ts` exports,
+- [x] T041 [P] `frontend/src/components/ViewOnlyNote/`, `frontend/src/components/NoAccess/` (+ `index.ts` exports,
   gallery entries, tests; texts 33–36 and FR-008) (FR-008, FR-011).
 - [ ] T042 `frontend/src/app/RequirePermission.tsx`; `frontend/src/app/navigation.ts` (`NavItem.permission`,
   `GLOBAL_BUDGETS` after Plans), `Sidebar.tsx`, `NavDrawer.tsx` filtering; `frontend/src/features/settings/sections.ts`
   (`SettingsSection.permission`, `ACCESS_SETTINGS_SECTIONS`); router entries for the 6 new routes with stub pages;
-  tests (FR-012, FR-036).
+  tests (FR-012, FR-036). *Build state (lane 014 core):* `RequirePermission`, `NavItem.permission`,
+  `SettingsSection.permission` and `itemsFor` (Sidebar, so also NavDrawer, and the Settings cards) are done with
+  tests; `GLOBAL_BUDGETS`, `ACCESS_SETTINGS_SECTIONS` and the routes come with the pages' lanes (T052, T057).
 
 ## Phase 5: Frontend by user story
 
@@ -228,7 +230,7 @@ built with 012.
 
 - [ ] T061 New `frontend/e2e/access-control.spec.ts`: journeys 1–5 of plan *Tests* with an axe check on every page
   (US1–US3, US5, US6; SC-002, SC-003, SC-007).
-- [ ] T062 Update `frontend/e2e/core-flow.spec.ts`, `module-rest.spec.ts`, `smoke.spec.ts`: each step signs in as the
+- [x] T062 Update `frontend/e2e/core-flow.spec.ts`, `module-rest.spec.ts`, `smoke.spec.ts`: each step signs in as the
   persona whose seeded roles allow it (plan *Tests*); only actor names in expected texts change.
 
 ## Phase 7: Documents and checks

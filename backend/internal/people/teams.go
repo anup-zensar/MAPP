@@ -277,8 +277,13 @@ func (s *Service) DeleteTeam(ctx context.Context, a actor.Actor, id string) (his
 		case uses > 1:
 			return errs.InUse(fmt.Sprintf(teamInUseManyMessage, team.Name, uses))
 		}
-		entry, err = s.history.MoveToBin(ctx, a, teamKind, team.ID)
-		return err
+		if entry, err = s.history.MoveToBin(ctx, a, teamKind, team.ID); err != nil {
+			return err
+		}
+		if s.access.TeamDeleted != nil { // the team leaves every Chosen teams scope (014 data model §1.2)
+			return s.access.TeamDeleted(ctx, a, team.ID)
+		}
+		return nil
 	})
 	if err != nil {
 		return history.BinEntry{}, err

@@ -85,7 +85,7 @@ func (s *Service) escalate(ctx context.Context, a actor.Actor, b *board, rule bo
 	switch {
 	case round.EscalationDays != nil && days >= *round.EscalationDays && level.EscalatedAt == nil:
 		backup := level.Backup
-		usable := backup != nil && b.people[backup.ID].Active && b.canApprove[backup.ID] && !includes(level.Approvers, backup.ID) &&
+		usable := backup != nil && b.people.byID[backup.ID].Active && b.canApprove[backup.ID] && !includes(level.Approvers, backup.ID) &&
 			!(rule && (backup.ID == facts.OwnerID || backup.ID == round.SubmittedBy.ID))
 		if !usable {
 			event.Action = EventNotEscalated

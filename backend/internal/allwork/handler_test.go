@@ -24,6 +24,7 @@ const (
 func TestGetAllWork_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	response := priya.Do(t, http.MethodGet, "/api/all-work", nil)
 
@@ -219,6 +220,7 @@ func TestGetAllWork_InvalidParameters_FR004(t *testing.T) {
 func TestGetOptions_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	response := priya.Do(t, http.MethodGet, "/api/all-work/options", nil)
 	wrongYear := priya.Do(t, http.MethodGet, "/api/all-work/options?year=3000", nil, apitest.SkipRequestValidation())
@@ -251,6 +253,7 @@ func TestGetOptions_Contract(t *testing.T) {
 func TestPreferences_GetPut_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 	daniel := server.SignIn(t, danielsEmail)
 	defaults := `{"columns":["id","status","owner","startDate","endDate","planBudget","plannedCost","lineItems","unassigned",` +
 		`"committed","invoiced"],"sort":null}`
@@ -376,6 +379,7 @@ func TestViews_NotLogged_D121(t *testing.T) {
 func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
+	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	xlsx := priya.Do(t, http.MethodGet, "/api/all-work/export?format=xlsx&activityStatus=declined", nil)
 	csv := priya.Do(t, http.MethodGet, "/api/all-work/export?format=csv&view=budget&unassigned=false", nil)

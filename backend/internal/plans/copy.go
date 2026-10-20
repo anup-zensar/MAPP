@@ -10,6 +10,7 @@ import (
 
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/ids"
 	"northstar/internal/platform/record"
@@ -70,6 +71,10 @@ func (s *Service) Copy(ctx context.Context, a actor.Actor, id string, in CopyReq
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
 		source, err := s.stored(ctx, id)
 		if err != nil {
+			return err
+		}
+		// The copy has the source's teams and a as its creator: a needs "Create and copy plans" there (014).
+		if err := authz.RequireIn(ctx, authz.PlansCreate, authz.PlanFacts{TeamIDs: source.TeamIDs, CreatedByID: a.ID}); err != nil {
 			return err
 		}
 		var problems errs.Problems
