@@ -1,7 +1,8 @@
+/* The record template (design system §2.4 B): one column of cards, 20 px apart. */
 .sections {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--grid-gap);
   min-width: 0;
 }
 
@@ -10,11 +11,28 @@
   scroll-margin-top: 80px;
 }
 
-.alert {
-  margin-bottom: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--status-problem);
-  border-radius: var(--radius-control);
-  background: var(--surface);
-  color: var(--ink);
+/* Summary cards: three in a row from 600 px (4 of 12 columns each), stacked on phones. Cards in a
+   row share their row tracks, so labels, values and details line up (design system §5.3). */
+.figures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gap);
+}
+
+@media (min-width: 600px) {
+  .figures {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.problem {
+  color: var(--danger-text);
+}
+
+/* "≈ 15,822.78 USD ⓘ" under a card's value. */
+.beside {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
 }

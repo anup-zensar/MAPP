@@ -1,0 +1,64 @@
+/* Design system §5.6 InlineAlert: padding 12 16, radius 8, the feedback colour at 8 % (12 % in
+   dark mode), a 4 px start bar and a 20 px icon in the feedback colour, text in ink. */
+.notice {
+  --tone: var(--info);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--tone);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--tone) 8%, var(--surface));
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  overflow-wrap: break-word;
+}
+
+:global(:root[data-theme='dark']) .notice {
+  background: color-mix(in srgb, var(--tone) 12%, var(--surface));
+}
+
+.info {
+  --tone: var(--info);
+}
+
+.warning {
+  --tone: var(--warning);
+}
+
+.success {
+  --tone: var(--success);
+}
+
+.danger {
+  --tone: var(--danger);
+}
+
+.icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--tone);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title {
+  font-weight: var(--weight-bold);
+}
+
+/* Forced colours: the bar and the edge stay visible. */
+@media (forced-colors: active) {
+  .notice {
+    border: 1px solid CanvasText;
+    border-left-width: 4px;
+  }
+}

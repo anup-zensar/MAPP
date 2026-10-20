@@ -62,7 +62,7 @@ describe('ApprovalSection (feature 008, US2)', () => {
     expect(within(card()).getByRole('button', { name: 'Decline' })).toBeInTheDocument();
   });
 
-  it('puts the latest decline on top, with its comment, and offers Re-submit (FR-016)', async () => {
+  it('offers Re-submit after a decline and leaves the reason to the page notice (FR-016, UI audit AC-02)', async () => {
     const declined: ActivityApproval = approvalOf({
       status: 'declined',
       displayStatus: 'declined',
@@ -78,13 +78,15 @@ describe('ApprovalSection (feature 008, US2)', () => {
     });
     renderSection({ body: declined });
 
-    const by = await screen.findByText(
-      'Declined by Daniel Okoro on behalf of Carlos Mendes on 11 Mar 2026, 14:32',
-    );
-    expect(by.parentElement).toHaveTextContent('The agency fee is missing its GL code.');
     expect(
-      within(card()).getByRole('button', { name: 'Re-submit for approval' }),
+      await within(card()).findByRole('button', { name: 'Re-submit for approval' }),
     ).toBeInTheDocument();
+    // The activity page's notice under the header shows who declined and why (ActivityStatusNotice).
+    expect(
+      screen.queryByText(
+        'Declined by Daniel Okoro on behalf of Carlos Mendes on 11 Mar 2026, 14:32',
+      ),
+    ).not.toBeInTheDocument();
     expect(within(card()).queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
   });
 

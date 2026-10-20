@@ -1,6 +1,7 @@
 import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { approvalOf } from '@/features/approvals/testData';
 import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -20,8 +21,8 @@ vi.mock('@/features/line-items/LineItemsSection', () => ({
 vi.mock('@/features/approvals/ApprovalSection', () => ({
   ApprovalSection: () => <section aria-label="Approval">Approval</section>,
 }));
-vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
-  ApprovalStatusAction: ({ onShowProblems }: { onShowProblems: ShowSubmitProblems }) => (
+vi.mock('@/features/approvals/SubmitButton', () => ({
+  SubmitButton: ({ onShowProblems }: { onShowProblems: ShowSubmitProblems }) => (
     <button type="button" onClick={() => onShowProblems(5)}>
       Submit for approval
     </button>
@@ -30,10 +31,54 @@ vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
 
 const PATH = '/plans/:planId/activities/:activityId';
 
-function openPage(answer: MockHandler, route = '/plans/P-1001/activities/A-1042') {
+/** The approval of a Created activity the viewer owns: nothing to decide (feature 008). */
+const NOT_SUBMITTED = approvalOf({
+  status: 'created',
+  displayStatus: 'created',
+  rounds: [],
+  actions: {
+    submit: { available: true, reason: '' },
+    resubmit: { available: false, reason: '' },
+    approve: { available: false, reason: '' },
+    decline: { available: false, reason: '' },
+    recall: { available: false, reason: '' },
+  },
+});
+
+/** Today's rates, for the ⓘ beside an amount in another currency (016 FR-009). */
+const RATES = {
+  today: '2026-03-12',
+  total: 2,
+  items: [
+    {
+      currency: 'USD',
+      rate: '1',
+      inverseRate: '1',
+      rateDate: null,
+      source: null,
+      importFileName: null,
+    },
+    {
+      currency: 'EUR',
+      rate: '0.92',
+      inverseRate: '1.086957',
+      rateDate: '2026-03-01',
+      source: 'settings',
+      importFileName: null,
+    },
+  ],
+};
+
+function openPage(
+  answer: MockHandler,
+  route = '/plans/P-1001/activities/A-1042',
+  approval: MockHandler = { body: NOT_SUBMITTED },
+) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
     'GET /api/activities/A-1042': answer,
+    'GET /api/activities/A-1042/approval': approval,
+    'GET /api/exchange-rates/current': { body: RATES },
     'GET /api/activities/A-1042/form': { body: editForm() },
     'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
   });
@@ -57,11 +102,12 @@ describe('ActivityPage (feature 006, US2)', () => {
     expect(screen.getByRole('button', { name: '3 fields needed' })).toBeVisible();
     expect(screen.getByRole('button', { name: '1 line item needs attention' })).toBeVisible();
     expect(screen.getByText('A-1042')).toBeVisible();
-    const facts = screen.getByText('Unassigned planned cost').closest('dl') as HTMLElement;
-    expect(within(facts).getByText('Priya Raman')).toBeVisible();
-    expect(within(facts).getByText('01 Mar – 31 May 2026')).toBeVisible();
-    expect(within(facts).getByText('$120,000.00')).toBeVisible();
-    expect(within(facts).getByText('$20,000.00')).toBeVisible();
+    const header = screen.getByRole('banner');
+    expect(within(header).getByText('Priya Raman')).toBeVisible();
+    expect(within(header).getByText('01 Mar – 31 May 2026')).toBeVisible();
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText('120,000.00 USD')).toBeVisible();
+    expect(within(summary).getByText('20,000.00 USD')).toBeVisible();
     expect(
       screen.getByText(
         'Created by Alex Morgan on 01 Mar 2026, last changed by Priya Raman on 12 Mar 2026',
@@ -86,10 +132,11 @@ describe('ActivityPage (feature 006, US2)', () => {
     });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Launch film' })).toBeVisible();
-    const facts = screen.getByText('Unassigned planned cost').closest('dl') as HTMLElement;
-    expect(within(facts).getByText('110,400.00 EUR')).toBeVisible();
-    expect(within(facts).getByText('18,400.00 EUR')).toBeVisible();
-    expect(within(facts).queryByText('$120,000.00')).not.toBeInTheDocument();
+    // The plan currency first, the reader's currency beside it (016 FR-013).
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText('120,000.00 USD')).toBeVisible();
+    expect(within(summary).getByText(/≈ 110,400.00 EUR/)).toBeVisible();
+    expect(within(summary).getByText(/≈ 18,400.00 EUR/)).toBeVisible();
   });
 
   it('marks an unassigned planned cost below zero in red words', async () => {
@@ -98,7 +145,7 @@ describe('ActivityPage (feature 006, US2)', () => {
     });
 
     expect(
-      await screen.findByText("Line items exceed the activity's planned cost by $500.00"),
+      await screen.findByText('Line items exceed the planned cost by 500.00 USD'),
     ).toBeVisible();
   });
 

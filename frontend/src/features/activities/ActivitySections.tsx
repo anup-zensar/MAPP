@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import {
   Card,
   ErrorState,
@@ -8,7 +7,11 @@ import {
   Skeleton,
 } from '@/components';
 import type { AttributeForm } from '@/components';
+import { Detail, DetailsList } from '@/features/line-items/DetailsList';
+import { moneyText } from '@/features/line-items/lineItemMath';
+import { MoneyPair } from '@/features/line-items/MoneyPair';
 import { formatWhole } from '@/lib/decimal';
+import { localDate } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import type { Activity } from './activitiesApi';
@@ -16,56 +19,67 @@ import styles from './ActivitySections.module.css';
 import { EMPTY, goalsFormula } from './activityText';
 import type { ModelFacts } from './activityText';
 
-/** The Details card of an activity's page (FR-020): every value, "—" when empty. */
+/**
+ * The Details card of an activity's page (FR-020): every value in the one key–value layout, "—"
+ * when empty, then who created and last changed it (design system §6.3).
+ */
 export function ActivityDetails({ activity }: { activity: Activity }) {
-  const { date, money } = useFormatters();
+  const { date } = useFormatters();
   const type = activity.activityType;
   const workflow = activity.approvalWorkflow;
 
   return (
     <Card title="Details">
-      <dl className={styles.values}>
-        <Pair label="Activity name">{activity.name}</Pair>
-        <Pair label="External name">
-          {activity.externalName || (
-            <>
-              {EMPTY} <span className={styles.muted}>(the activity name is used)</span>
-            </>
-          )}
-        </Pair>
-        <Pair label="Campaign">{activity.campaign.name}</Pair>
-        <Pair label="Initiative">{activity.initiative.name}</Pair>
-        <Pair label="Activity type">
-          {type.name}
-          {!type.active && ' (inactive)'}
-          {!type.allowed && (
-            <span className={styles.problem}>Not allowed by the plan&apos;s model</span>
-          )}
-        </Pair>
-        <Pair label="Owner">
-          {activity.owner ? <PersonLabel person={activity.owner} /> : EMPTY}
-        </Pair>
-        <Pair label="Start date">{activity.startDate ? date(activity.startDate) : EMPTY}</Pair>
-        <Pair label="End date">
-          {activity.ongoing
-            ? 'Ongoing (no end date)'
-            : activity.endDate
-              ? date(activity.endDate)
-              : EMPTY}
-        </Pair>
-        {/* In the reader's display currency (D-220). */}
-        <Pair label="Planned cost">{money(activity.display.plannedCost)}</Pair>
-        <Pair label="Approval workflow">
-          {workflow ? `${workflow.name}${workflow.active ? '' : ' (inactive)'}` : EMPTY}
-        </Pair>
-        <Pair label="Description" wide>
-          {activity.description ? (
-            <span className={styles.description}>{activity.description}</span>
-          ) : (
-            EMPTY
-          )}
-        </Pair>
-      </dl>
+      <div className={styles.stack}>
+        <DetailsList>
+          <Detail label="Activity name">{activity.name}</Detail>
+          <Detail label="External name">
+            {activity.externalName || (
+              <>
+                {EMPTY} <span className={styles.muted}>(the activity name is used)</span>
+              </>
+            )}
+          </Detail>
+          <Detail label="Campaign">{activity.campaign.name}</Detail>
+          <Detail label="Initiative">{activity.initiative.name}</Detail>
+          <Detail label="Activity type">
+            {type.name}
+            {!type.active && ' (inactive)'}
+            {!type.allowed && (
+              <span className={styles.problem}>Not allowed by the plan&apos;s model</span>
+            )}
+          </Detail>
+          <Detail label="Owner">
+            {activity.owner ? <PersonLabel person={activity.owner} /> : null}
+          </Detail>
+          <Detail label="Start date">{activity.startDate ? date(activity.startDate) : null}</Detail>
+          <Detail label="End date">
+            {activity.ongoing
+              ? 'Ongoing (no end date)'
+              : activity.endDate
+                ? date(activity.endDate)
+                : null}
+          </Detail>
+          {/* In the plan currency, with the reader's display currency beside it (016 FR-013). */}
+          <Detail label="Planned cost" numeric>
+            {activity.plannedCost ? (
+              <MoneyPair primary={activity.plannedCost} secondary={activity.display.plannedCost} />
+            ) : null}
+          </Detail>
+          <Detail label="Approval workflow">
+            {workflow ? `${workflow.name}${workflow.active ? '' : ' (inactive)'}` : null}
+          </Detail>
+          <Detail label="Description">
+            {activity.description ? (
+              <span className={styles.description}>{activity.description}</span>
+            ) : null}
+          </Detail>
+        </DetailsList>
+        <p className={styles.changed}>
+          Created by {activity.createdBy.name} on {date(localDate(activity.createdAt))}, last
+          changed by {activity.updatedBy.name} on {date(localDate(activity.updatedAt))}
+        </p>
+      </div>
     </Card>
   );
 }
@@ -83,7 +97,9 @@ export interface ActivityAttributesProps {
 
 /**
  * The Shell attributes card (FR-014, FR-015): feature 002's read-only values, the groups shown for
- * the plan's business unit with the reason, "—" when empty.
+ * the plan's business unit with the reason, "—" when empty. The form's own section names are the
+ * card's headings ("Shell attributes", "Lubricants attributes"), so no heading repeats its parent
+ * (UI audit AF-02, functional review P-08).
  */
 export function ActivityAttributes({
   activity,
@@ -93,20 +109,22 @@ export function ActivityAttributes({
   onRetry,
 }: ActivityAttributesProps) {
   return (
-    <Card title="Shell attributes">
+    <section aria-label="Shell attributes" className={styles.attributes}>
       {form && businessUnits ? (
         <ShellAttributeValues
           form={form}
           values={activity.attributes}
           businessUnit={businessUnits}
           planLink={recordHref('plan', activity.plan.id)}
+          sectionHeading="h2"
         />
-      ) : error ? (
-        <ErrorState error={error} onRetry={onRetry} />
       ) : (
-        <Skeleton lines={4} />
+        <>
+          <h2 className={styles.heading}>Shell attributes</h2>
+          {error ? <ErrorState error={error} onRetry={onRetry} /> : <Skeleton lines={4} />}
+        </>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -115,41 +133,38 @@ export function ActivityAttributes({
  * model (the formula in an ⓘ once the model is known) or "Typed"; "—" when empty.
  */
 export function ActivityGoals({ activity, model }: { activity: Activity; model?: ModelFacts }) {
-  const { money } = useFormatters();
   const { goals } = activity;
   const origin = (stage: string) =>
     goals.calculated ? (
-      <span className={styles.muted}>
+      <span className={styles.origin}>
         Calculated
         {model && <InfoTip label={`${stage} calculation`} text={goalsFormula(model)} />}
       </span>
     ) : (
-      <span className={styles.muted}>Typed</span>
+      <span className={styles.origin}>Typed</span>
     );
 
   return (
     <Card title="Goals">
-      <dl className={styles.values}>
-        <Pair label="INQ">{goals.inq === null ? EMPTY : formatWhole(goals.inq)}</Pair>
-        <Pair label="MQL">
-          {goals.mql === null ? (
-            EMPTY
-          ) : (
+      <DetailsList>
+        <Detail label="INQ" numeric>
+          {goals.inq === null ? null : formatWhole(goals.inq)}
+        </Detail>
+        <Detail label="MQL" numeric>
+          {goals.mql === null ? null : (
             <>
               {formatWhole(goals.mql)} {origin('MQL')}
             </>
           )}
-        </Pair>
-        <Pair label="Revenue">
-          {activity.display.revenue === null ? (
-            EMPTY
-          ) : (
+        </Detail>
+        <Detail label="Revenue" numeric>
+          {activity.display.revenue === null ? null : (
             <>
-              {money(activity.display.revenue)} {origin('Revenue')}
+              {moneyText(activity.display.revenue)} {origin('Revenue')}
             </>
           )}
-        </Pair>
-      </dl>
+        </Detail>
+      </DetailsList>
     </Card>
   );
 }
@@ -162,22 +177,15 @@ export function FromFinance() {
     <section aria-label="From finance (coming later)" className={styles.finance}>
       <details>
         <summary className={styles.summary}>From finance (coming later)</summary>
-        <dl className={styles.values}>
-          <Pair label="Total actuals">{EMPTY}</Pair>
-          <Pair label="Total invoiced">{EMPTY}</Pair>
-          <Pair label="Total purchase requests">{EMPTY}</Pair>
-        </dl>
-        <p className={styles.muted}>Filled when the Finance module and GSAP are connected</p>
+        <div className={styles.financeBody}>
+          <DetailsList>
+            <Detail label="Total actuals">{null}</Detail>
+            <Detail label="Total invoiced">{null}</Detail>
+            <Detail label="Total purchase requests">{null}</Detail>
+          </DetailsList>
+          <p className={styles.muted}>Filled when the Finance module and GSAP are connected</p>
+        </div>
       </details>
     </section>
-  );
-}
-
-function Pair({ label, wide, children }: { label: string; wide?: boolean; children: ReactNode }) {
-  return (
-    <div className={wide ? `${styles.pair} ${styles.wide}` : styles.pair}>
-      <dt>{label}</dt>
-      <dd>{children}</dd>
-    </div>
   );
 }

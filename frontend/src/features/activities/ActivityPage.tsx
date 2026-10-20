@@ -1,16 +1,17 @@
-import { Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router';
-import { ActionsMenu, LinkButton, PageHeader } from '@/components';
+import { PageHeader } from '@/components';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { ApprovalSection } from '@/features/approvals/ApprovalSection';
-import { ApprovalStatusAction } from '@/features/approvals/ApprovalStatusAction';
+import { useActivityApproval } from '@/features/approvals/approvalsApi';
 import type { ApprovalActivity } from '@/features/approvals/approvalTypes';
 import { LineItemsSection } from '@/features/line-items/LineItemsSection';
+import { Notice } from '@/features/line-items/Notice';
 import { useAttributeForm } from '@/api/settingsQueries';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useActivity, useEditActivityForm } from './activitiesApi';
 import type { Activity } from './activitiesApi';
+import { ActivityFigures } from './ActivityFigures';
 import { ActivityHeader } from './ActivityHeader';
 import { LoadFailed, PageSkeleton } from './ActivityLoadStates';
 import styles from './ActivityPage.module.css';
@@ -20,19 +21,21 @@ import {
   ActivityGoals,
   FromFinance,
 } from './ActivitySections';
-import { activityEditHref, activityHref, thingsText } from './activityText';
+import { ActivityStatusNotice } from './ActivityStatusNotice';
+import { activityHref, thingsText } from './activityText';
 import { ReadyToSubmitPanel } from './ReadyToSubmitPanel';
 import { useActivityActions } from './useActivityActions';
 
 const ACTIVITY_GONE = 'This activity no longer exists — someone may have deleted it.';
 
 /**
- * An activity's page (feature 006, US2, FR-019 – FR-025), at /plans/:planId/activities/:activityId:
- * the header with status, completeness and the facts, Ready to submit, the details, then the line
- * items (feature 007, in #line-items), the approval (feature 008, in #approval) and the History
- * (feature 011, in #history). An address
- * ending in #ready or #completeness (Home's "Show fields", feature 009) opens Ready to submit. An
- * address with another plan's ID is replaced by the right one.
+ * An activity's page (feature 006, US2, FR-019 – FR-025), at /plans/:planId/activities/:activityId,
+ * on the record template of design system §2.4 B: the header, the notice of a declined or waiting
+ * activity, Ready to submit (while it can still be submitted), the summary cards, Details, Shell
+ * attributes, Goals, then the line items (feature 007, in #line-items), the approval
+ * (feature 008, in #approval) and the History (feature 011, in #history). An address ending in
+ * #ready or #completeness (Home's "Show fields", feature 009) opens Ready to submit. An address
+ * with another plan's ID is replaced by the right one.
  */
 export function ActivityPage() {
   const { planId = '', activityId = '' } = useParams();
@@ -45,7 +48,6 @@ export function ActivityPage() {
       <>
         <PageHeader
           breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: 'Activity' }]}
-          eyebrow="Activity"
           title="Activity"
         />
         {query.isPending ? (
@@ -86,16 +88,19 @@ interface ActivityViewProps {
 }
 
 function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
-  const planId = activity.plan.id;
   // The plan's business units and model, which the activity itself does not carry.
   const context = useEditActivityForm(activity.id);
   const attributeForm = useAttributeForm('activity');
+  // Who may decide and the latest decline (feature 008); shared with the Approval section.
+  const approval = useActivityApproval(activity.id);
   const [panelOpen, setPanelOpen] = useState(activity.readiness.problemCount > 0 || openReadyFirst);
   // How many things Submit for approval found missing; null before anyone tried.
   const [submitProblems, setSubmitProblems] = useState<number | null>(null);
   const panel = useRef<HTMLElement>(null);
   // Each request to show the panel moves the focus there once it is open.
   const [focusRequests, setFocusRequests] = useState(openReadyFirst ? 1 : 0);
+  // Ready to submit only while the activity can still be submitted (functional review P-10).
+  const canSubmit = activity.status === 'created' || activity.status === 'declined';
 
   useEffect(() => {
     if (focusRequests > 0) {
@@ -125,42 +130,38 @@ function ActivityView({ activity, openReadyFirst }: ActivityViewProps) {
     <>
       <ActivityHeader
         activity={activity}
+        approval={approval.data}
+        moreActions={more.items}
         onOpenReady={openReady}
-        actions={
-          <>
-            <LinkButton
-              to={activityEditHref(planId, activity.id)}
-              variant="primary"
-              icon={<Pencil />}
-            >
-              Edit
-            </LinkButton>
-            <ApprovalStatusAction activity={approvalActivity} onShowProblems={showSubmitProblems} />
-            <ActionsMenu label={activity.name} items={more.items} />
-          </>
-        }
+        onShowProblems={showSubmitProblems}
       />
-      {submitProblems !== null && (
-        <p role="alert" className={styles.alert}>
-          Submitting needs {thingsText(submitProblems)} —{' '}
-          <a
-            href="#ready"
-            onClick={(event) => {
-              event.preventDefault();
-              openReady();
-            }}
-          >
-            view list
-          </a>
-        </p>
-      )}
       <div className={styles.sections}>
-        <ReadyToSubmitPanel
-          ref={panel}
-          activity={activity}
-          open={panelOpen}
-          onOpenChange={setPanelOpen}
-        />
+        {submitProblems !== null && (
+          <Notice tone="danger" role="alert">
+            <p>
+              Submitting needs {thingsText(submitProblems)} —{' '}
+              <a
+                href="#ready"
+                onClick={(event) => {
+                  event.preventDefault();
+                  openReady();
+                }}
+              >
+                view list
+              </a>
+            </p>
+          </Notice>
+        )}
+        <ActivityStatusNotice activity={activity} approval={approval.data} />
+        {canSubmit && (
+          <ReadyToSubmitPanel
+            ref={panel}
+            activity={activity}
+            open={panelOpen}
+            onOpenChange={setPanelOpen}
+          />
+        )}
+        <ActivityFigures activity={activity} />
         <ActivityDetails activity={activity} />
         <ActivityAttributes
           activity={activity}

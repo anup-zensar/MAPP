@@ -24,7 +24,7 @@ describe('ActivityDetails (feature 006, FR-013, FR-020)', () => {
     expect(value('Owner')).toHaveTextContent('—');
     expect(value('Start date')).toHaveTextContent('—');
     expect(value('End date')).toHaveTextContent('—');
-    expect(value('Planned cost')).toHaveTextContent('$120,000.00');
+    expect(value('Planned cost')).toHaveTextContent('120,000.00 USD');
     expect(value('Approval workflow')).toHaveTextContent('Lubricants EU approval');
     expect(value('Description')).toHaveTextContent('—');
   });
@@ -89,7 +89,7 @@ describe('ActivityAttributes and ActivityGoals (feature 006, FR-014, FR-015, FR-
 
     expect(value('INQ')).toHaveTextContent('250,000');
     expect(value('MQL')).toHaveTextContent('5,000 Calculated');
-    expect(value('Revenue')).toHaveTextContent('$2,500,000.00 Calculated');
+    expect(value('Revenue')).toHaveTextContent('2,500,000.00 USD Calculated');
     await user.click(screen.getByRole('button', { name: 'About MQL calculation' }));
     expect(await screen.findByText(/MQL = INQ × 2.00 %/)).toBeVisible();
   });

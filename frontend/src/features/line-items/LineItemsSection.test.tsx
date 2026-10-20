@@ -200,7 +200,7 @@ describe('LineItemsSection (US1)', () => {
     expect(screen.getByText('92,000.00 of 110,400.00 EUR assigned')).toBeInTheDocument();
     // Agency fee: 50,000.00 USD typed, shown as 46,000.00 EUR in the display-currency column.
     const fee = screen.getByRole('link', { name: 'Agency fee' }).closest('tr') as HTMLElement;
-    expect(within(fee).getAllByRole('cell')[3]).toHaveTextContent('46,000.00 EUR');
+    expect(within(fee).getAllByRole('cell')[2]).toHaveTextContent('46,000.00 EUR');
   });
 
   it('highlights the row just created (FR-010)', async () => {

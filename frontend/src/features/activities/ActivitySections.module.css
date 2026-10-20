@@ -1,30 +1,7 @@
-.values {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-4) var(--space-6);
-}
-
-.pair {
-  min-width: 0;
-}
-
-.wide {
-  grid-column: 1 / -1;
-}
-
-.pair dt {
-  color: var(--ink-2);
-  font-size: var(--text-xs);
-}
-
-.pair dd {
+.stack {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
-  margin: var(--space-1) 0 0;
-  color: var(--ink);
-  overflow-wrap: break-word;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .muted {
@@ -32,34 +9,78 @@
 }
 
 .problem {
-  color: var(--status-problem-text);
-  font-size: var(--text-xs);
+  color: var(--danger-text);
+  font-size: var(--text-sm);
 }
 
 .description {
   white-space: pre-line;
 }
 
-.finance {
-  padding: var(--space-4) var(--space-5);
+/* "Created by … last changed by …", at the end of the Details card (design system §6.3). */
+.changed {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--row-divider);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+/* "Calculated" / "Typed" after a goal: a small grey label with its formula in a tip. */
+.origin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+/* The Shell attributes card: a white card whose headings are the form's section names, drawn
+   like card titles (design system §5.3), each section 24 px from the next. */
+.attributes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--card-padding);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
 }
 
-.finance details[open] .values {
-  margin: var(--space-4) 0 var(--space-3);
+.heading,
+.attributes h2 {
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
+}
+
+.finance {
+  padding: var(--space-4) var(--card-padding);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.financeBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .summary {
   color: var(--ink);
-  font-size: var(--text-md);
-  font-weight: 600;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
   cursor: pointer;
 }
 
 .summary:focus-visible {
+  border-radius: var(--radius-1);
   outline: 2px solid var(--focus-ring);
   outline-offset: 4px;
-  border-radius: var(--radius-1);
 }

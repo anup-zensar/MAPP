@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { approvalOf } from '@/features/approvals/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
 import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
@@ -26,8 +27,8 @@ vi.mock('@/features/approvals/ApprovalSection', () => ({
     <section aria-label="Approval">{`Approval of ${activity.id}`}</section>
   ),
 }));
-vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
-  ApprovalStatusAction: () => <button type="button">Submit for approval</button>,
+vi.mock('@/features/approvals/SubmitButton', () => ({
+  SubmitButton: () => <button type="button">Submit for approval</button>,
 }));
 
 /** The requests of each page. */
@@ -37,6 +38,14 @@ const ANSWERS: Record<string, MockHandler> = {
   'GET /api/people': { body: PEOPLE },
   'GET /api/activities/A-1001': { body: launchFilm({ id: 'A-1001' }) },
   'GET /api/activities/A-1001/form': { body: editForm() },
+  'GET /api/activities/A-1001/approval': {
+    body: approvalOf({
+      activityId: 'A-1001',
+      status: 'created',
+      displayStatus: 'created',
+      rounds: [],
+    }),
+  },
   'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
 };
 

@@ -22,7 +22,6 @@ import {
   DUPLICATE,
   EDIT,
   EMPTY_SECTION,
-  LABEL,
   SECTION_SUBTITLE,
   SECTION_TITLE,
   SPREAD_LABELS,
@@ -95,15 +94,22 @@ export function LineItemsSection({ activityId }: LineItemsSectionProps) {
         {items.length === 0 ? (
           <EmptyState icon={<ReceiptText />} title={EMPTY_SECTION} action={addButton} />
         ) : (
-          <div className={styles.scroll}>
+          // The rows scroll sideways inside the card on narrow screens, never the page.
+          <div
+            className={styles.scroll}
+            role="region"
+            aria-label="Line items table, scrolls sideways"
+            tabIndex={0}
+          >
             <table className={styles.table}>
               <caption className="visually-hidden">{SECTION_TITLE}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">{LABEL.currency}</th>
+                  <th scope="col" className={styles.nameColumn}>
+                    Name
+                  </th>
                   <th scope="col" className={styles.number}>
-                    {LABEL.plannedCost}
+                    Planned cost
                   </th>
                   <th scope="col" className={styles.number}>
                     {usdColumn(displayCode)}
@@ -167,16 +173,15 @@ function Row({
 }: RowProps) {
   return (
     <tr id={rowId(item.id)} className={cx(highlighted && styles.highlight)}>
-      <td>
+      <td className={styles.nameColumn}>
         <Link to={recordHref('lineItem', item.id)} className={styles.name}>
           {item.name}
         </Link>
         <span className={styles.id}>{item.id}</span>
       </td>
-      <td>{item.currency.code}</td>
       <td className={styles.number}>{moneyText(item.plannedCost)}</td>
       <td className={styles.number}>{moneyText(item.plannedCostDisplay)}</td>
-      <td>{SPREAD_LABELS[item.spread.method]}</td>
+      <td className={styles.text}>{SPREAD_LABELS[item.spread.method]}</td>
       <td>
         <CompletenessChip
           missing={item.missing.map((field) => ({ id: field.field, label: field.label }))}
