@@ -1,63 +1,73 @@
-.summary {
+/* The record template (design system §2.4 B) at the full content width, like the activity page
+   (UI audit LI-01): the summary cards, then cards 20 px apart. */
+.page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  gap: var(--grid-gap);
+  min-width: 0;
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-/* ID · Owner · Planned cost · Spread, side by side; they wrap on narrow screens. */
-.factsRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-8);
-}
-
-.bookkeeping {
+/* The meta row's plain facts (ID): 14 px, ink-2, never broken inside a number. */
+.fact {
   color: var(--ink-2);
   font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.sections {
+/* Summary cards: three in a row from 600 px, stacked on phones. */
+.figures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gap);
+}
+
+@media (min-width: 600px) {
+  .figures {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* "= 46,000.00 GBP · ≈ 50,000.00 USD ⓘ" under the planned cost. */
+.beside {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Details and Finance coding side by side from 960 px, equal heights (design system §2.2). */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gap);
+  align-items: stretch;
+}
+
+@media (min-width: 960px) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.stack {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: 720px;
 }
 
-/* The History card under the values, as wide as they are (feature 011). */
-.history {
-  max-width: 720px;
-  margin-top: 16px;
+.description {
+  white-space: pre-line;
 }
 
-.facts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.fact {
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.fact dt {
+/* "Created by … last changed by …", at the end of the Details card (design system §6.3). */
+.bookkeeping {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--row-divider);
   color: var(--ink-2);
   font-size: var(--text-xs);
-}
-
-.fact dd {
-  margin: 2px 0 0;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: break-word;
+  line-height: var(--leading-xs);
 }
 
 .note {
@@ -66,20 +76,55 @@
 }
 
 .problem {
-  color: var(--status-problem-text);
+  color: var(--danger-text);
   font-size: var(--text-sm);
 }
 
+/* The spread's months: the data table standard (design system §5.4), at most 480 px wide so the
+   amounts stay close to their months. */
 .months {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
+  width: 100%;
+  max-width: 480px;
+  border-collapse: collapse;
   color: var(--ink);
   font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.months th,
+.months td {
+  height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.months th:first-child,
+.months td:first-child {
+  padding-left: 0;
+}
+
+.months th:last-child,
+.months td:last-child {
+  padding-right: 0;
+}
+
+.months thead th {
+  border-bottom-color: var(--hairline);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+}
+
+.months th.number,
+.months td.number {
+  text-align: right;
   font-variant-numeric: tabular-nums;
-  list-style: none;
+  white-space: nowrap;
 }
 
 .outside {

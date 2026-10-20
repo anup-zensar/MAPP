@@ -14,8 +14,10 @@
 
 .title {
   color: var(--ink);
+  font-family: var(--font);
   font-size: var(--text-md);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
 }
 
 .note {
@@ -55,16 +57,20 @@
 
 .table thead th {
   background: var(--gray-bg);
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
   vertical-align: bottom;
 }
 
+/* Totals row: bold on grey, with a 2 px ink line above (design system §5.4). */
 .table tfoot th,
 .table tfoot td {
+  border-top: 2px solid var(--ink);
   border-bottom: 0;
-  font-weight: 600;
+  background: var(--gray-bg);
+  font-weight: var(--weight-bold);
 }
 
 /* The line-item names stay in view while the months scroll (design system §2). */
@@ -78,7 +84,8 @@
   text-overflow: ellipsis;
 }
 
-.table thead .sticky {
+.table thead .sticky,
+.table tfoot .sticky {
   background: var(--gray-bg);
 }
 
@@ -106,5 +113,5 @@
 }
 
 .strong {
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }

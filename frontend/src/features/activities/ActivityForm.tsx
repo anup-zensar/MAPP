@@ -3,13 +3,11 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import type { components } from '@/api/schema';
 import {
-  Card,
   CheckboxField,
   ErrorState,
   ChoiceField,
   ConfirmDialog,
   DateRangeField,
-  FormSection,
   LockedNote,
   MoneyField,
   problemOf,
@@ -28,6 +26,8 @@ import type { ActivityFormData, ActivityTypeOption, Money } from './activitiesAp
 import { fieldId, usdOf } from './activityFormState';
 import type { FormState } from './activityFormState';
 import styles from './ActivityForm.module.css';
+import { ACTIVITY_SECTION } from './activityFormProgress';
+import { FormCard, FormCardFrame } from './FormRail';
 import { GoalsFields } from './GoalsFields';
 
 type ActivityStatus = components['schemas']['ActivityStatus'];
@@ -53,6 +53,8 @@ export interface ActivityFormProps {
   stored?: StoredActivity;
   /** The activity level's Shell attribute form (feature 002), as it loads. */
   attributeForm: AttributeFormLoad;
+  /** The plan currency the planned cost is typed in (016 FR-011); USD before 016. */
+  planCurrency?: string;
 }
 
 /** The Shell attribute form while it loads: its data, or the failure and how to try again. */
@@ -89,6 +91,7 @@ export function ActivityForm({
   problems,
   stored,
   attributeForm,
+  planCurrency = 'USD',
 }: ActivityFormProps) {
   const { date } = useFormatters();
   // Whether the planned cost is still the default the chosen type filled in.
@@ -150,7 +153,7 @@ export function ActivityForm({
     <div className={styles.form}>
       {noTypes && <NoTypesNotice model={context.model.name} />}
 
-      <FormSection title="Basics">
+      <FormCard id={ACTIVITY_SECTION.basics} title="Basics">
         <TextField
           label="Activity name"
           name={fieldId('name')}
@@ -225,9 +228,9 @@ export function ActivityForm({
           note={form.approvalWorkflows.length === 0 ? NO_WORKFLOW : undefined}
           error={error('approvalWorkflowId')}
         />
-      </FormSection>
+      </FormCard>
 
-      <FormSection title="Dates & cost">
+      <FormCard id={ACTIVITY_SECTION.dates} title="Dates & cost">
         <DateRangeField
           label="Start and end dates"
           idPrefix="field"
@@ -278,21 +281,32 @@ export function ActivityForm({
           label="Planned cost"
           name={fieldId('plannedCost')}
           marking="Needed to submit"
-          hint="0.00 or more"
-          currency="USD"
+          hint={
+            planCurrency === 'USD'
+              ? '0.00 or more'
+              : `0.00 or more, in ${planCurrency}, the plan's currency`
+          }
+          currency={planCurrency}
           value={value.plannedCost}
           onChange={(plannedCost) => {
             setCostFromType(false);
             set({ plannedCost });
           }}
-          note={costFromType ? 'From the activity type' : undefined}
+          note={costFromType ? typeDefaultNote(form, value.activityTypeId) : undefined}
           error={error('plannedCost')}
         />
-      </FormSection>
+      </FormCard>
 
-      <FormSection title="Shell attributes">
+      {/* The attribute groups' own names are the card's headings ("Shell attributes",
+          "Lubricants attributes"), so no heading repeats its parent (UI audit AF-02, X-09). */}
+      <FormCardFrame
+        id={ACTIVITY_SECTION.attributes}
+        label="Shell attributes"
+        className={styles.attributes}
+      >
         {attributeForm.data ? (
           <ShellAttributeFields
+            sectionHeading="h2"
             form={attributeForm.data}
             values={value.attributes}
             onChange={(attributes) => set({ attributes })}
@@ -304,22 +318,27 @@ export function ActivityForm({
         ) : attributeForm.error ? (
           <ErrorState error={attributeForm.error} onRetry={attributeForm.refetch} />
         ) : (
-          <Skeleton lines={4} height="36px" />
+          <>
+            <h2>Shell attributes</h2>
+            <Skeleton lines={4} height="36px" />
+          </>
         )}
-      </FormSection>
+      </FormCardFrame>
 
-      <GoalsFields
-        value={value.goals}
-        onChange={(goals) => set({ goals })}
-        model={context.model}
-        errors={{
-          inq: error('goals.inq'),
-          mql: error('goals.mql'),
-          revenue: error('goals.revenue'),
-        }}
-      />
+      <FormCardFrame id={ACTIVITY_SECTION.goals}>
+        <GoalsFields
+          value={value.goals}
+          onChange={(goals) => set({ goals })}
+          model={context.model}
+          errors={{
+            inq: error('goals.inq'),
+            mql: error('goals.mql'),
+            revenue: error('goals.revenue'),
+          }}
+        />
+      </FormCardFrame>
 
-      <FormSection title="More details">
+      <FormCard id={ACTIVITY_SECTION.more} title="More details">
         <TextAreaField
           label="Description"
           name={fieldId('description')}
@@ -328,13 +347,8 @@ export function ActivityForm({
           onChange={(description) => set({ description })}
           error={error('description')}
         />
-      </FormSection>
-
-      {!stored && (
-        <Card title="Line items">
-          <p className={styles.muted}>Save the activity to add its line items</p>
-        </Card>
-      )}
+        {!stored && <p className={styles.muted}>Save the activity to add its line items</p>}
+      </FormCard>
 
       <ConfirmDialog
         open={question !== null}
@@ -363,6 +377,20 @@ function attributeErrors(problems: FieldProblem[]): Record<string, string> {
     }
   }
   return errors;
+}
+
+/**
+ * Where a pre-filled planned cost came from: "From the activity type", or with a plan in another
+ * currency "Default 5,000.00 USD = 3,950.00 GBP at today's rate" (016 FR-016).
+ */
+function typeDefaultNote(form: ActivityFormData, typeId: string): string {
+  const type = form.activityTypes.find((option) => option.id === typeId);
+  const usd = type?.defaultPlannedCostUsd;
+  const converted = type?.defaultPlannedCost;
+  if (!usd || !converted || usd.currency === converted.currency) {
+    return 'From the activity type';
+  }
+  return `Default ${formatMoneyText(usd)} = ${formatMoneyText(converted)} at today's rate`;
 }
 
 /** "Event · default 25,000.00 USD"; "Event — not allowed by the plan's model". */

@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/components';
+import { useFinancialRecord } from '@/features/line-items/gsapFinancials';
 import { useUndoableDelete } from '@/lib/useUndoableDelete';
 import { ACTIVITY_PLANNING_KEYS, useDeleteActivity } from './activitiesApi';
 import type { Activity } from './activitiesApi';
@@ -27,6 +28,9 @@ export function ActivityDeleteQuestion({
   const { pathname } = useLocation();
   const { show } = useToast();
   const remove = useDeleteActivity();
+  // The GSAP transactions linked to its line items (015 FR-029): the Financials card's query, so an
+  // open activity page answers from what it has; without figures the dialog says nothing of them.
+  const financials = useFinancialRecord(activity.id, open);
   // Undo brings the activity back into every list it left.
   const afterDelete = useUndoableDelete({ invalidate: ACTIVITY_PLANNING_KEYS });
 
@@ -53,6 +57,7 @@ export function ActivityDeleteQuestion({
       activity={activity}
       onConfirm={() => void confirm()}
       busy={remove.isPending}
+      linkedTransactions={financials.data?.figures.transactionCount ?? 0}
     />
   );
 }

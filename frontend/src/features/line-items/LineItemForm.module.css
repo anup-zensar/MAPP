@@ -1,19 +1,57 @@
-/* One column of at most 720 px (007 plan, "Line-item form"). */
+/* The form page (design system §2.4 C): the form column of section cards with the rail from
+   1280 px; the sticky footer spans the content column under both. */
 .page {
-  max-width: 720px;
+  min-width: 0;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  min-width: 0;
 }
 
 .stack {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  margin-bottom: var(--space-4);
+}
+
+/* The Finance coding card: its attribute group's name is drawn as the card's title. */
+.codingCard > div:first-child {
+  gap: var(--space-5);
+}
+
+.codingCard h2 {
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
+}
+
+.codingCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* The activity's context in the rail (from 1280 px): one fact per row, amounts right-aligned. */
+.summaryRail {
+  padding: var(--space-5);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.summaryRail .summaryList {
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.summaryRail .summaryList div {
+  justify-content: space-between;
 }
 
 /* The activity's context stays in view while the form scrolls (FR-006). */
@@ -21,7 +59,6 @@
   position: sticky;
   top: 0;
   z-index: 4;
-  margin-bottom: var(--space-5);
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
@@ -93,27 +130,6 @@
 .readOnlyLabel {
   color: var(--ink);
   font-weight: 600;
-}
-
-.fromFinance {
-  padding: var(--space-4) 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.fromFinance summary {
-  color: var(--ink);
-  font-size: var(--text-lg);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.fromFinance summary:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-.fromFinance .note {
-  margin-top: var(--space-2);
 }
 
 .facts {

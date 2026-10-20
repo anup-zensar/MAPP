@@ -12,7 +12,7 @@ import { editFormState } from './lineItemFormState';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
 import { useLineItem, useLineItemFormOptions, useUpdateLineItem } from './lineItemsApi';
 import type { LineItemDetails, LineItemFormOptions } from './lineItemsApi';
-import { editTitle, savedToast } from './lineItemText';
+import { EDIT_TITLE, savedToast } from './lineItemText';
 
 const LOADING_TITLE = 'Edit line item';
 
@@ -81,7 +81,7 @@ function EditForm({ details, options, attributeForm, focusField }: EditFormProps
       businessUnit={details.activity.businessUnitOptionIds}
       initial={initial}
       stored={lineItem}
-      title={editTitle(lineItem.name)}
+      title={EDIT_TITLE}
       breadcrumbEnd={lineItem.name}
       focusField={focusField}
       onSave={async (body) => {

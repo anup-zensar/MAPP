@@ -1,21 +1,42 @@
+/* The funnel on one row: INQ, then MQL and Revenue (calculated or typed), three equal columns. */
+.funnel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+  align-items: start;
+}
+
+/* The calculated stages take the two columns after INQ. */
 .stages {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-3) var(--space-6);
+  grid-column: span 2;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 .stage dt {
   color: var(--ink);
   font-size: var(--text-sm);
   font-weight: 600;
+  line-height: var(--leading-sm);
 }
 
+/* The value sits level with INQ's input beside it. */
 .stage dd {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1) var(--space-3);
-  margin: var(--space-1) 0 0;
+  min-height: var(--control-md);
+  margin: 0;
 }
 
 .value {
@@ -34,4 +55,15 @@
 .note {
   color: var(--ink);
   font-size: var(--text-sm);
+}
+
+/* Below 600 px: INQ on its own row, MQL and Revenue under it. */
+@media (max-width: 599px) {
+  .funnel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stages {
+    grid-column: auto;
+  }
 }

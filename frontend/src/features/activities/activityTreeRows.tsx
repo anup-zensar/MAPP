@@ -14,6 +14,8 @@ import { activityEditHref, activityHref, datesText, EMPTY, newActivityHref } fro
 import type { DateWriters } from './activityText';
 import { CopyActivityDialog } from './CopyActivityDialog';
 import { MoveActivityDialog } from './MoveActivityDialog';
+import { SplitActivityDialog } from './SplitActivityDialog';
+import { SPLIT_ACTIVITY } from './splitText';
 
 /** What an initiative row or panel tells feature 006 about itself. */
 export interface InitiativeRow {
@@ -23,9 +25,12 @@ export interface InitiativeRow {
 }
 
 /** The dialogs a row's ⋯ menu opens (FR-029 – FR-031). */
-export type RowDialog = 'copy' | 'move' | 'delete';
+export type RowDialog = 'copy' | 'move' | 'split' | 'delete';
 
-/** Copy, Move and Delete of the rows' ⋯ menus: the open dialog, and how to open and close it. */
+/**
+ * Copy, Move, Split activity and Delete of the rows' ⋯ menus: the open dialog, and how to open and
+ * close it.
+ */
 export interface RowActions {
   /** The open dialog and its activity as stored now; null when none is open. */
   open: { dialog: RowDialog; activity: Activity } | null;
@@ -87,6 +92,8 @@ export function activityRowsByInitiative(
       actions.push(
         { label: 'Copy', onSelect: () => rowActions.ask('copy', activity.id) },
         { label: 'Move', onSelect: () => rowActions.ask('move', activity.id) },
+        // Split off line items and planned cost into a new activity (016 FR-026).
+        { label: SPLIT_ACTIVITY, onSelect: () => rowActions.ask('split', activity.id) },
         {
           label: 'Delete',
           tone: 'danger',
@@ -122,6 +129,9 @@ export function activityRowsByInitiative(
             )}
             {opened && rowActions && opened.dialog === 'move' && (
               <MoveActivityDialog activity={opened.activity} onClose={rowActions.close} />
+            )}
+            {opened && rowActions && opened.dialog === 'split' && (
+              <SplitActivityDialog activity={opened.activity} onClose={rowActions.close} />
             )}
           </>
         ),

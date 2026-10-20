@@ -1,0 +1,177 @@
+/* The Financials card (015 FR-015, FR-017): a white card like every other (design system §5.3),
+   its title with an ⓘ; links to #financials land below the sticky top bar. */
+.card {
+  min-width: 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 80px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--space-16);
+  padding: var(--space-3) var(--card-padding);
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.title {
+  color: var(--ink);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
+}
+
+.body {
+  padding: var(--card-padding);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.note {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.source {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+.swbs {
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.swbsLabel {
+  font-weight: var(--weight-bold);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.subheading {
+  color: var(--ink);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
+}
+
+/* The data table standard (design system §5.4): the table scrolls sideways inside the card. */
+.scroll {
+  overflow-x: auto;
+}
+
+.scroll:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.table th,
+.table td {
+  height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: 0;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 0;
+}
+
+.table thead th {
+  border-bottom-color: var(--hairline);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+  white-space: nowrap;
+}
+
+/* Numbers: right-aligned header and values, tabular figures, no wrapping. */
+.table th.number,
+.table td.number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table td.date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.name {
+  min-width: 200px;
+}
+
+.rowName {
+  display: block;
+}
+
+.rowMeta {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+.negative {
+  color: var(--danger-text);
+}
+
+/* "Above planned cost" under a red amount: an icon and words, never colour alone (FR-013). */
+.flag {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  color: var(--danger-text);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+.flag svg {
+  width: 14px;
+  height: 14px;
+}
+
+.more {
+  font-size: var(--text-sm);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}

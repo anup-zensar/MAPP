@@ -1,0 +1,171 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Every problem at once, in the danger colour with an icon (design system §5.6). */
+.problems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  color: var(--danger-text);
+  font-size: var(--text-sm);
+}
+
+.problems p,
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.problems svg,
+.warning svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.warning {
+  color: var(--warning-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+}
+
+.hint {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One line item: the box, its name, and its amount right-aligned in tabular figures. */
+.item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: 40px;
+  border-bottom: 1px solid var(--row-divider);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.item input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.item label {
+  cursor: pointer;
+}
+
+.amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.local {
+  color: var(--ink-2);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@media (min-width: 600px) {
+  .sides {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-control);
+}
+
+.sideName {
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.sideInitiative {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.facts div {
+  display: flex;
+  flex-direction: column;
+}
+
+.facts dt {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.negative {
+  color: var(--danger-text);
+}

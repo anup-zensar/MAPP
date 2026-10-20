@@ -1,6 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { approvalOf } from '@/features/approvals/testData';
+import { activityRecord } from '@/features/line-items/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 import type { MockHandler } from '@/test/mockApi';
 import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
@@ -26,8 +28,8 @@ vi.mock('@/features/approvals/ApprovalSection', () => ({
     <section aria-label="Approval">{`Approval of ${activity.id}`}</section>
   ),
 }));
-vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
-  ApprovalStatusAction: () => <button type="button">Submit for approval</button>,
+vi.mock('@/features/approvals/SubmitButton', () => ({
+  SubmitButton: () => <button type="button">Submit for approval</button>,
 }));
 
 /** The requests of each page. */
@@ -37,7 +39,16 @@ const ANSWERS: Record<string, MockHandler> = {
   'GET /api/people': { body: PEOPLE },
   'GET /api/activities/A-1001': { body: launchFilm({ id: 'A-1001' }) },
   'GET /api/activities/A-1001/form': { body: editForm() },
+  'GET /api/activities/A-1001/approval': {
+    body: approvalOf({
+      activityId: 'A-1001',
+      status: 'created',
+      displayStatus: 'created',
+      rounds: [],
+    }),
+  },
   'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
+  'GET /api/financials/records/A-1001': { body: activityRecord() },
 };
 
 // Feature 006's addresses (build guide §5, D-194). Feature 006 keeps this file up to date as it
@@ -46,7 +57,7 @@ describe('Activity routes (feature 006)', () => {
   it.each([
     ['/plans/P-1001/initiatives/I-1001/activities/new', 'New activity', 'New activity'],
     ['/plans/P-1001/activities/A-1001', 'Launch film', 'Launch film'],
-    ['/plans/P-1001/activities/A-1001/edit', "Edit activity 'Launch film'", 'Edit Launch film'],
+    ['/plans/P-1001/activities/A-1001/edit', 'Edit activity', 'Edit Launch film'],
   ])('opens %s: "%s", with Plans current in the sidebar', async (path, heading, tab) => {
     renderApp(path, ANSWERS);
 
@@ -66,12 +77,13 @@ describe('Activity routes (feature 006)', () => {
   });
 
   it('places the line items (007) and the approval (008) on the activity page', async () => {
-    renderApp('/plans/P-1001/activities/A-1001', ANSWERS);
+    const { user } = renderApp('/plans/P-1001/activities/A-1001', ANSWERS);
 
     const lineItems = await screen.findByRole('region', { name: 'Line items' });
     expect(lineItems).toHaveTextContent('Line items of A-1001');
     expect(lineItems.closest('#line-items')).not.toBeNull();
-    const approval = screen.getByRole('region', { name: 'Approval' });
+    await user.click(screen.getByRole('tab', { name: 'Approval' }));
+    const approval = await screen.findByRole('region', { name: 'Approval' });
     expect(approval).toHaveTextContent('Approval of A-1001');
     expect(approval.closest('#approval')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();

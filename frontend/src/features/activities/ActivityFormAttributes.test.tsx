@@ -57,7 +57,7 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
 
     expect(await screen.findByLabelText('Cluster')).toBeVisible();
     expect(screen.getByRole('heading', { level: 2, name: 'Shell attributes' })).toBeVisible();
-    expect(screen.getByRole('heading', { level: 3, name: 'Lubricants' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 2, name: 'Lubricants' })).toBeVisible();
     expect(
       screen.getByText("Shown because the plan's business unit includes Lubricants."),
     ).toBeVisible();

@@ -5,12 +5,25 @@ import type { MockHandler } from '@/test/mockApi';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { LineItemsSection } from './LineItemsSection';
-import { activity, deleteResult, launchFilmSection, lineItem, usd } from './testData';
+import {
+  activity,
+  activityRecord,
+  deleteResult,
+  launchFilmSection,
+  lineItem,
+  lineItemRecord,
+  usd,
+} from './testData';
 
 const SECTION = 'GET /api/activities/A-1001/line-items';
+const FINANCIALS = 'GET /api/financials/records/A-1001';
 
-function renderSection(answer: MockHandler, state?: unknown) {
-  mockApi({ [SECTION]: answer });
+function renderSection(
+  answer: MockHandler,
+  state?: unknown,
+  financials: MockHandler = { body: activityRecord() },
+) {
+  mockApi({ [SECTION]: answer, [FINANCIALS]: financials });
   return renderWithProviders(<LineItemsSection activityId="A-1001" />, {
     route: { pathname: '/plans/P-1001/activities/A-1001', state },
     user: testUser(),
@@ -41,6 +54,43 @@ describe('LineItemsSection (US1)', () => {
     expect(
       within(table).getByRole('columnheader', { name: 'Planned cost (USD)' }),
     ).toBeInTheDocument();
+  });
+
+  it('shows Committed and Invoiced from GSAP on every row, a commitment above planned cost in red words (015 FR-016)', async () => {
+    renderSection({ body: launchFilmSection() });
+
+    const table = await screen.findByRole('table', { name: 'Line items' });
+    const heads = within(table)
+      .getAllByRole('columnheader')
+      .map((head) => head.textContent);
+    expect(heads.slice(1, 5)).toEqual([
+      'Planned cost',
+      'Planned cost (USD)',
+      'Committed (USD)',
+      'Invoiced (USD)',
+    ]);
+    const [, fee, film] = within(table).getAllByRole('row');
+    await waitFor(() =>
+      expect(within(fee).getAllByRole('cell')[3]).toHaveTextContent('30,000.00 USD'),
+    );
+    expect(within(fee).getAllByRole('cell')[4]).toHaveTextContent('12,000.00 USD');
+    expect(within(film).getAllByRole('cell')[3]).toHaveTextContent('52,000.00 USD');
+    expect(
+      within(within(film).getAllByRole('cell')[3]).getByRole('img', {
+        name: 'Committed above planned cost',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows "—" in the GSAP columns when the figures cannot be read', async () => {
+    renderSection({ body: launchFilmSection() }, undefined, {
+      status: 409,
+      body: { code: 'not_allowed', message: 'Not allowed', fields: [] },
+    });
+
+    const table = await screen.findByRole('table', { name: 'Line items' });
+    const [, fee] = within(table).getAllByRole('row');
+    await waitFor(() => expect(within(fee).getAllByRole('cell')[3]).toHaveTextContent('—'));
   });
 
   it('shows the unassigned planned cost with its meter (scenario 1, FR-002)', async () => {
@@ -200,7 +250,7 @@ describe('LineItemsSection (US1)', () => {
     expect(screen.getByText('92,000.00 of 110,400.00 EUR assigned')).toBeInTheDocument();
     // Agency fee: 50,000.00 USD typed, shown as 46,000.00 EUR in the display-currency column.
     const fee = screen.getByRole('link', { name: 'Agency fee' }).closest('tr') as HTMLElement;
-    expect(within(fee).getAllByRole('cell')[3]).toHaveTextContent('46,000.00 EUR');
+    expect(within(fee).getAllByRole('cell')[2]).toHaveTextContent('46,000.00 EUR');
   });
 
   it('highlights the row just created (FR-010)', async () => {
@@ -226,6 +276,8 @@ describe('LineItemsSection (US1)', () => {
   it('deletes from the row and offers Undo, staying on the activity (FR-030)', async () => {
     mockApi({
       [SECTION]: { body: launchFilmSection() },
+      [FINANCIALS]: { body: activityRecord() },
+      'GET /api/financials/records/L-1001': { body: lineItemRecord() },
       'DELETE /api/line-items/L-1001': { body: deleteResult() },
     });
     const { user, router } = renderWithProviders(<LineItemsSection activityId="A-1001" />, {
@@ -238,6 +290,10 @@ describe('LineItemsSection (US1)', () => {
     const dialog = await screen.findByRole('alertdialog', {
       name: "Delete line item 'Agency fee'?",
     });
+    // The GSAP transactions linked to it stay (015 FR-029).
+    expect(
+      await within(dialog).findByText(/^2 GSAP transactions are linked to it\./),
+    ).toBeVisible();
     await user.click(within(dialog).getByRole('button', { name: 'Delete line item' }));
 
     expect(

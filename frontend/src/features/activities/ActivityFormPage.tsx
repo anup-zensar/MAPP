@@ -30,11 +30,13 @@ import {
 } from './activitiesApi';
 import type { Activity, ActivityFormData } from './activitiesApi';
 import { ActivityForm } from './ActivityForm';
+import { activityRailSections } from './activityFormProgress';
 import {
   fieldId,
   fromActivity,
   fromDefaults,
   isDirty,
+  planCurrencyOf,
   reapprovalChanges,
   toCreateBody,
   toUpdateBody,
@@ -44,6 +46,7 @@ import type { ReapprovalChange } from './activityFormState';
 import styles from './ActivityFormPage.module.css';
 import { FormSkeleton, LoadFailed } from './ActivityLoadStates';
 import { activityHref } from './activityText';
+import { FormLayout } from './FormRail';
 import { ReapprovalDialog } from './ReapprovalDialog';
 
 export interface ActivityFormPageProps {
@@ -155,6 +158,8 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
   const [leaveTo, setLeaveTo] = useState<string | null>(null);
   const { dialog } = useUnsavedChanges(leaveTo === null && isDirty(value, initial));
   const { plan, initiative } = form.context;
+  // The planned cost is typed and sent in the plan currency (016 FR-011).
+  const planCurrency = planCurrencyOf(form, activity);
   const focusField = searchParams.get('field');
   // What the typed dates do to the line items' spreads, for the re-approval question (D-150): the
   // same sentence SpreadEffectNote shows under the dates, from the same request.
@@ -216,7 +221,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
   /** Asks before a change sends a submitted or approved activity back for approval, then saves. */
   async function confirmApproval(addAnother: boolean) {
     const underApproval = activity?.status === 'submitted' || activity?.status === 'approved';
-    const changes = underApproval ? reapprovalChanges(initial, value, date) : [];
+    const changes = underApproval ? reapprovalChanges(initial, value, date, planCurrency) : [];
     if (changes.length > 0) {
       setReapproval(changes);
       return;
@@ -230,7 +235,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
       if (activity) {
         const saved = await update.mutateAsync({
           id: activity.id,
-          body: toUpdateBody(value, version, restartApproval),
+          body: toUpdateBody(value, version, restartApproval, planCurrency),
         });
         setReapproval(null);
         show({ message: `Activity '${saved.name}' saved` });
@@ -239,7 +244,7 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
       }
       const created = await create.mutateAsync({
         initiativeId: initiative.id,
-        body: toCreateBody(value),
+        body: toCreateBody(value, planCurrency),
       });
       const message = `Activity '${created.name}' created`;
       const href = activityHref(plan.id, created.id);
@@ -288,11 +293,16 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
   const cancelTo = activity
     ? activityHref(plan.id, activity.id)
     : `/plans/${encodeURIComponent(plan.id)}`;
+  const railSections = activityRailSections(
+    value,
+    attributeForm.data,
+    form.context.businessUnits.map((unit) => unit.id),
+  );
 
   return (
     <>
       <FormHeader
-        title={activity ? `Edit activity '${activity.name}'` : 'New activity'}
+        title={activity ? 'Edit activity' : 'New activity'}
         form={form}
         activity={activity}
       />
@@ -305,20 +315,23 @@ function ActivityEditor({ form, activity }: ActivityEditorProps) {
           void save();
         }}
       >
-        {failure && <FailureMessage failure={failure} />}
-        <FormErrorSummary errors={problems} fieldId={fieldId} />
-        <ActivityForm
-          form={form}
-          value={value}
-          onChange={setValue}
-          problems={problems}
-          stored={activity}
-          attributeForm={{
-            data: attributeForm.data,
-            error: attributeForm.error,
-            refetch: () => void attributeForm.refetch(),
-          }}
-        />
+        <FormLayout sections={railSections}>
+          {failure && <FailureMessage failure={failure} />}
+          <FormErrorSummary errors={problems} fieldId={fieldId} />
+          <ActivityForm
+            form={form}
+            value={value}
+            onChange={setValue}
+            problems={problems}
+            stored={activity}
+            planCurrency={planCurrency}
+            attributeForm={{
+              data: attributeForm.data,
+              error: attributeForm.error,
+              refetch: () => void attributeForm.refetch(),
+            }}
+          />
+        </FormLayout>
         <FormFooter>
           <Button type="submit" variant="primary">
             {saving ? 'Saving…' : 'Save'}
@@ -362,12 +375,12 @@ interface FormHeaderProps {
 }
 
 /**
- * The form's breadcrumb and header: "Plans › <plan> › <campaign> › <initiative>", eyebrow
- * "Activity", the title and "In initiative '<initiative>' of campaign '<campaign>' · <plan>".
+ * The form's breadcrumb and title (design system §2.3): "Plans › <plan> › <campaign> ›
+ * <initiative> › <activity> › Edit activity" and "New activity" or "Edit activity" — the breadcrumb
+ * names where it lives, so no eyebrow or description line repeats it (UI audit X-03).
  */
 function FormHeader({ title, form, activity }: FormHeaderProps) {
   const items: BreadcrumbItem[] = [{ label: 'Plans', to: '/plans' }];
-  let description: string | undefined;
   if (form) {
     const { plan, campaign, initiative } = form.context;
     items.push(
@@ -378,12 +391,7 @@ function FormHeader({ title, form, activity }: FormHeaderProps) {
     if (activity) {
       items.push({ label: activity.name, to: activityHref(plan.id, activity.id) });
     }
-    description = `In initiative '${initiative.name}' of campaign '${campaign.name}' · ${plan.name}`;
   }
-  items.push({ label: activity || title.startsWith('Edit') ? 'Edit activity' : title });
-  return (
-    <>
-      <PageHeader breadcrumb={items} eyebrow="Activity" title={title} description={description} />
-    </>
-  );
+  items.push({ label: activity || title.startsWith('Edit') ? 'Edit' : title });
+  return <PageHeader breadcrumb={items} title={title} />;
 }

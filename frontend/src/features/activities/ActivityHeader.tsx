@@ -1,114 +1,168 @@
-import { CircleAlert } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { Breadcrumb, CompletenessChip, InfoTip, LevelTag, PersonLabel } from '@/components';
-import { localDate } from '@/lib/format';
+import {
+  ActionsMenu,
+  CompletenessChip,
+  LevelTag,
+  LinkButton,
+  PageHeader,
+  PersonLabel,
+} from '@/components';
+import type { ActionsMenuItem } from '@/components';
+import type { ActivityApproval } from '@/features/approvals/approvalsApi';
+import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
+import { DecisionButton } from '@/features/approvals/DecisionButton';
+import { DecisionDialog } from '@/features/approvals/DecisionDialog';
+import { SubmitButton } from '@/features/approvals/SubmitButton';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
 import type { Activity } from './activitiesApi';
-import { activityBannerText } from './activityStatus';
-import { ActivityStatusChip } from './ActivityStatusChip';
 import styles from './ActivityHeader.module.css';
-import { activityEditHref, datesText, EMPTY, lineItemsAttentionText } from './activityText';
+import { ActivityStatusChip } from './ActivityStatusChip';
+import { activityEditHref, datesText, lineItemsAttentionText } from './activityText';
 
 export interface ActivityHeaderProps {
   activity: Activity;
-  /** Edit, the status action and More. */
-  actions: ReactNode;
+  /** The activity's approval (feature 008), once loaded: who may decide, and how. */
+  approval: ActivityApproval | undefined;
+  /** The More menu's actions of feature 006 (Copy, Move, View history, Delete). */
+  moreActions: ActionsMenuItem[];
   /** Opens the Ready to submit panel and moves the focus there. */
   onOpenReady: () => void;
+  /** Submit found problems: show how many and list them. */
+  onShowProblems: ShowSubmitProblems;
 }
 
+/** What the owner sees in More when the rules let them approve their own activity (FR·A-01). */
+const OWN_APPROVAL_HINT =
+  'You own this activity — approving it yourself skips an independent check.';
+
 /**
- * The top of an activity's page (FR-019 – FR-021, 006 plan "Activity page"): where it sits, its
- * level, name, status and completeness, ID, owner, dates, planned cost and unassigned planned
- * cost, who created and last changed it, the actions, and the banner of an activity under approval.
+ * The top of an activity's page (FR-019, design system §2.3, §6.3) through the one page header:
+ * breadcrumb, name, and the meta row — level tag, status, completeness, ID, owner, dates. The
+ * actions follow the person's main job here, with one primary button (UI audit X-04, AC-01, AC-03):
+ *
+ * - an approver of the current level, on a submitted activity they don't own: **Approve** (primary)
+ *   and **Decline** side by side, Edit in More;
+ * - everyone else: **Edit** (primary), and **Submit for approval** / **Re-submit for approval**
+ *   while the activity is Created or Declined;
+ * - the owner of a submitted activity is never offered Approve as a button; where the rules let
+ *   them approve (D-020) it is in More with a warning (functional review A-01).
  */
-export function ActivityHeader({ activity, actions, onOpenReady }: ActivityHeaderProps) {
+export function ActivityHeader({
+  activity,
+  approval,
+  moreActions,
+  onOpenReady,
+  onShowProblems,
+}: ActivityHeaderProps) {
   const navigate = useNavigate();
   const format = useFormatters();
-  const { date, money } = format;
+  const [ownApproval, setOwnApproval] = useState(false);
   const { plan, campaign, initiative } = activity;
-  const banner = activityBannerText(activity.displayStatus);
-  // Amounts in the reader's display currency (D-220).
-  const { plannedCost, unassignedPlannedCost: unassigned } = activity.display;
-  const overspent = unassigned?.amount.startsWith('-') ?? false;
+  const editHref = activityEditHref(plan.id, activity.id);
+  const approvalActivity = {
+    id: activity.id,
+    name: activity.name,
+    status: activity.status,
+    version: activity.version,
+  };
+
+  const canDecide =
+    activity.status === 'submitted' &&
+    approval !== undefined &&
+    approval.actions.approve.available &&
+    !approval.viewer.isOwner;
+  const ownerMayApprove =
+    activity.status === 'submitted' &&
+    approval !== undefined &&
+    approval.actions.approve.available &&
+    approval.viewer.isOwner;
+
+  const edit = (
+    <LinkButton to={editHref} variant="primary" icon={<Pencil />}>
+      Edit
+    </LinkButton>
+  );
+  let actions: ReactNode = edit;
+  let more = moreActions;
+  if (canDecide && approval) {
+    actions = (
+      <>
+        <DecisionButton mode="decline" approval={approval} />
+        <DecisionButton mode="approve" approval={approval} variant="primary" />
+      </>
+    );
+    more = [{ label: 'Edit', onSelect: () => void navigate(editHref) }, ...moreActions];
+  } else if (activity.status === 'created' || activity.status === 'declined') {
+    actions = (
+      <>
+        <SubmitButton
+          activity={approvalActivity}
+          onShowProblems={onShowProblems}
+          variant="secondary"
+        />
+        {edit}
+      </>
+    );
+  } else if (ownerMayApprove) {
+    more = [
+      { label: 'Approve', hint: OWN_APPROVAL_HINT, onSelect: () => setOwnApproval(true) },
+      ...moreActions,
+    ];
+  }
 
   return (
     <>
-      <Breadcrumb
-        items={[
+      <PageHeader
+        breadcrumb={[
           { label: 'Plans', to: '/plans' },
           { label: plan.name, to: recordHref('plan', plan.id) },
           { label: campaign.name, to: recordHref('campaign', campaign.id, plan.id) },
           { label: initiative.name, to: recordHref('initiative', initiative.id, plan.id) },
           { label: activity.name },
         ]}
-      />
-      <header className={styles.header}>
-        <div className={styles.titleRow}>
-          <div className={styles.text}>
+        title={activity.name}
+        meta={
+          <>
             <LevelTag level="activity" />
-            <h1 className={styles.title}>{activity.name}</h1>
-            <div className={styles.chips}>
-              <ActivityStatusChip status={activity.displayStatus} />
-              <CompletenessChip
-                missing={activity.readiness.activity.map((problem) => ({
-                  id: problem.field,
-                  label: problem.message,
-                }))}
-                onSelectField={(field) =>
-                  void navigate(activityEditHref(plan.id, activity.id, field))
-                }
-                itemsBelow={activity.completeness.lineItemsNeedingAttention}
-                itemsBelowText={lineItemsAttentionText}
-                onItemsBelowSelect={onOpenReady}
-              />
-              <span className={styles.id}>{activity.id}</span>
-            </div>
-          </div>
-          <div className={styles.actions}>{actions}</div>
-        </div>
-
-        <dl className={styles.facts}>
-          <div className={styles.fact}>
-            <dt>Owner</dt>
-            <dd>{activity.owner ? <PersonLabel person={activity.owner} /> : EMPTY}</dd>
-          </div>
-          <div className={styles.fact}>
-            <dt>Dates</dt>
-            <dd>{datesText(activity.startDate, activity.endDate, activity.ongoing, format)}</dd>
-          </div>
-          <div className={styles.fact}>
-            <dt>Planned cost</dt>
-            <dd className={styles.money}>{money(plannedCost)}</dd>
-          </div>
-          <div className={styles.fact}>
-            <dt className={styles.withTip}>
-              Unassigned planned cost
-              <InfoTip
-                label="Unassigned planned cost"
-                text="Planned cost minus the line items' planned costs in USD."
-              />
-            </dt>
-            <dd className={overspent ? styles.problem : styles.money}>
-              {money(unassigned)}
-              {overspent && unassigned && (
-                <span className={styles.problemNote}>
-                  <CircleAlert aria-hidden="true" />
-                  Line items exceed the activity&apos;s planned cost by{' '}
-                  {money({ ...unassigned, amount: unassigned.amount.slice(1) })}
-                </span>
-              )}
-            </dd>
-          </div>
-        </dl>
-        <p className={styles.changed}>
-          Created by {activity.createdBy.name} on {date(localDate(activity.createdAt))}, last
-          changed by {activity.updatedBy.name} on {date(localDate(activity.updatedAt))}
-        </p>
-      </header>
-      {banner && <p className={styles.banner}>{banner}</p>}
+            <ActivityStatusChip status={activity.displayStatus} />
+            <CompletenessChip
+              missing={activity.readiness.activity.map((problem) => ({
+                id: problem.field,
+                label: problem.message,
+              }))}
+              onSelectField={(field) =>
+                void navigate(activityEditHref(plan.id, activity.id, field))
+              }
+              itemsBelow={activity.completeness.lineItemsNeedingAttention}
+              itemsBelowText={lineItemsAttentionText}
+              onItemsBelowSelect={onOpenReady}
+            />
+            <span className={styles.fact}>{activity.id}</span>
+            {activity.owner ? (
+              <PersonLabel person={activity.owner} />
+            ) : (
+              <span className={styles.fact}>No owner yet</span>
+            )}
+            <span className={styles.fact}>
+              {datesText(activity.startDate, activity.endDate, activity.ongoing, format)}
+            </span>
+          </>
+        }
+        actions={
+          <>
+            {/* ⋯ first, then the secondary button, the primary last (design system §2.3). */}
+            {more.length > 0 && <ActionsMenu label={activity.name} items={more} />}
+            {actions}
+          </>
+        }
+      />
+      {ownApproval && approval && (
+        <DecisionDialog mode="approve" approval={approval} onClose={() => setOwnApproval(false)} />
+      )}
     </>
   );
 }

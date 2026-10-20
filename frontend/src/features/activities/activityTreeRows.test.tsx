@@ -5,6 +5,7 @@ import { ActionsMenu, TreeTable } from '@/components';
 import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
+import { activityRecord } from '@/features/line-items/testData';
 import { activityActionsForInitiative, useActivityRows } from './activityTreeRows';
 import { destinations, launchFilm, launchFilmRow } from './testData';
 
@@ -69,6 +70,11 @@ function openRows(answers: Parameters<typeof mockApi>[0] = {}) {
         total: 2,
       },
     },
+    // No GSAP data yet: a delete question says nothing of transactions (015 FR-029).
+    'GET /api/financials/records/A-1042': {
+      status: 404,
+      body: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+    },
     ...answers,
   });
   const rendered = renderWithProviders(<ActivityRows />, {
@@ -99,7 +105,43 @@ describe('activityTreeRows (feature 006)', () => {
     expect(screen.queryByText('Print ads')).not.toBeInTheDocument();
   });
 
-  it('opens the activity page from the row and offers View, Edit, Copy, Move and Delete in its menu', async () => {
+  it('shows the planned cost in the plan currency with the display currency under it (016 FR-013)', async () => {
+    openRows({
+      'GET /api/plans/P-1001/activities': {
+        body: {
+          items: [
+            launchFilmRow({
+              plannedCost: { amount: '3950.00', currency: 'GBP' },
+              unassignedPlannedCost: { amount: '0.00', currency: 'GBP' },
+              display: {
+                plannedCost: { amount: '5000.00', currency: 'USD' },
+                unassignedPlannedCost: { amount: '0.00', currency: 'USD' },
+                revenue: null,
+              },
+            }),
+          ],
+          total: 1,
+        },
+      },
+    });
+
+    const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
+      'tr',
+    ) as HTMLElement;
+    expect(within(row).getByText(/3,950\.00/)).toHaveTextContent(/GBP|£/);
+    expect(within(row).getByText(/≈/)).toHaveTextContent(/5,000\.00/);
+  });
+
+  it('shows only the display currency when the plan is planned in it', async () => {
+    openRows();
+
+    const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
+      'tr',
+    ) as HTMLElement;
+    expect(within(row).queryByText(/≈/)).not.toBeInTheDocument();
+  });
+
+  it('opens the activity page from the row and offers View, Edit, Copy, Move, Split activity and Delete in its menu', async () => {
     const { user, router } = openRows();
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
@@ -108,7 +150,7 @@ describe('activityTreeRows (feature 006)', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['View', 'Edit', 'Copy', 'Move', 'Delete']);
+    ).toEqual(['View', 'Edit', 'Copy', 'Move', 'Split activity', 'Delete']);
     await user.click(within(menu).getByRole('menuitem', { name: 'Edit' }));
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042/edit'),
@@ -122,6 +164,9 @@ describe('activityTreeRows (feature 006)', () => {
       },
       'DELETE /api/activities/A-1042': { body: DELETED },
       'POST /api/recycle-bin/BIN-1001/undo': { body: {} },
+      'GET /api/financials/records/A-1042': {
+        body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
+      },
     });
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
@@ -130,6 +175,12 @@ describe('activityTreeRows (feature 006)', () => {
       name: "Delete activity 'Launch film'?",
     });
     expect(within(question).getByText('2 line items go with it.')).toBeVisible();
+    // The GSAP transactions linked to its line items stay (015 FR-029).
+    expect(
+      await within(question).findByText(
+        '3 GSAP transactions are linked to it. They stay in NorthStar and leave the figures until it is restored.',
+      ),
+    ).toBeVisible();
     expect(within(question).getByRole('button', { name: 'Cancel' })).toHaveFocus();
     expect(api.bodiesOf('DELETE /api/activities/A-1042')).toEqual([]);
 

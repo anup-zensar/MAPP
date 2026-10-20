@@ -1,13 +1,20 @@
 import { CircleAlert } from 'lucide-react';
 import { ApiError } from '@/api/errors';
 import { Card, EmptyState, ErrorState, LinkButton, PageHeader, Skeleton } from '@/components';
-import { ACTIVITY_GONE, EYEBROW, GO_TO_BIN, GO_TO_PLANS } from './lineItemText';
+import { ACTIVITY_GONE, GO_TO_BIN, GO_TO_PLANS } from './lineItemText';
+
+/** While the line item is not known: the breadcrumb row is kept, so the title never moves. */
+function Header({ title }: { title: string }) {
+  return (
+    <PageHeader breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: title }]} title={title} />
+  );
+}
 
 /** The page's header while it loads, or when what it shows is gone. */
 export function LineItemLoading({ title }: { title: string }) {
   return (
     <>
-      <PageHeader eyebrow={EYEBROW} title={title} />
+      <Header title={title} />
       <Card>
         <Skeleton lines={6} />
       </Card>
@@ -31,7 +38,7 @@ export function LineItemLoadFailed({
   const gone = error instanceof ApiError && error.kind === 'notFound';
   return (
     <>
-      <PageHeader eyebrow={EYEBROW} title={title} />
+      <Header title={title} />
       <Card>
         {gone ? (
           <EmptyState

@@ -8,12 +8,17 @@ import { testUser } from '@/test/users';
 import { LineItemPage } from './LineItemPage';
 import {
   approvedActivity,
+  currentRates,
   deleteResult,
   details,
   filmProduction,
   formAnswers,
   lineItem,
+  lineItemRecord,
   notFound,
+  transaction,
+  transactionPage,
+  usd,
 } from './testData';
 
 const GET = 'GET /api/line-items/L-1001';
@@ -24,6 +29,21 @@ function renderPage(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
     ...formAnswers(),
+    'GET /api/exchange-rates/current': { body: currentRates() },
+    'GET /api/financials/records/L-1001': { body: lineItemRecord() },
+    'GET /api/financials/transactions': {
+      body: transactionPage([
+        transaction({
+          id: 'FT-1003',
+          type: 'invoice',
+          name: 'Invoice 5100002003',
+          postingDate: '2026-04-02',
+          amount: usd('12000.00'),
+          amountDisplay: usd('12000.00'),
+        }),
+        transaction(),
+      ]),
+    },
     [GET]: { body: details() },
     ...answers,
   });
@@ -38,7 +58,7 @@ function renderPage(answers: Record<string, MockHandler> = {}) {
 }
 
 async function openMore(user: ReturnType<typeof renderPage>['user'], item: string) {
-  await user.click(screen.getByRole('button', { name: 'More' }));
+  await user.click(screen.getByRole('button', { name: 'Actions for Agency fee' }));
   await user.click(await screen.findByRole('menuitem', { name: item }));
 }
 
@@ -71,28 +91,40 @@ describe('LineItemPage (US4, FR-026)', () => {
       'href',
       '/line-items/L-1001/edit',
     );
-    expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
-    expect(screen.getByText('Mar 2026 · 16,666.66 USD')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actions for Agency fee' })).toBeInTheDocument();
+    const march = screen.getByRole('cell', { name: 'Mar 2026' }).closest('tr') as HTMLElement;
+    expect(within(march).getAllByRole('cell')[1]).toHaveTextContent('16,666.66 USD');
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
-    expect(screen.getByText('Filled by GSAP later')).toBeInTheDocument();
-    expect(screen.getByText('From finance (coming later)').closest('details')).not.toHaveAttribute(
-      'open',
-    );
+    // Details and Finance coding: two cards with the same header, no heading repeated (LI-03).
+    expect(screen.getByRole('region', { name: 'Details' })).toBeInTheDocument();
+    const coding = await screen.findByRole('region', { name: 'Finance coding' });
+    expect(within(coding).getAllByRole('heading')).toHaveLength(1);
+    expect(within(coding).getByText('Request SWBS code from GSAP')).toBeInTheDocument();
+    // GSAP's money, open (015 FR-017): figures, every transaction and the SWBS code.
+    const financials = await screen.findByRole('region', { name: 'Financials' });
+    expect(within(financials).getAllByText('30,000.00 USD').length).toBeGreaterThan(0);
+    expect(
+      await within(financials).findByRole('table', { name: /transactions, newest first/ }),
+    ).toBeInTheDocument();
+    expect(within(financials).getByText('Invoice 5100002003')).toBeInTheDocument();
+    expect(within(financials).getByText('DE03-M26-0003 (from GSAP data)')).toBeInTheDocument();
+    expect(screen.queryByText('From finance (coming later)')).not.toBeInTheDocument();
   });
 
   it('shows a planned cost in another currency with its USD amount', async () => {
     renderPage({ [GET]: { body: details({ lineItem: { ...filmProduction(), id: 'L-1001' } }) } });
 
-    expect(
-      (await screen.findAllByText('46,000.00 EUR = 50,000.00 USD at 0.92 EUR per USD')).length,
-    ).toBeGreaterThan(0);
+    // The summary card: the amount in its currency, the USD amount and the rate used under it.
+    const summary = await screen.findByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText('46,000.00 EUR')).toBeInTheDocument();
+    expect(within(summary).getByText('= 50,000.00 USD at 0.92 EUR per USD')).toBeInTheDocument();
   });
 
   it('offers Duplicate, View history and Delete under More', async () => {
     const { user, router } = renderPage();
     await screen.findByRole('heading', { level: 1, name: 'Agency fee' });
 
-    await user.click(screen.getByRole('button', { name: 'More' }));
+    await user.click(screen.getByRole('button', { name: 'Actions for Agency fee' }));
     const items = (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
     expect(items).toEqual(['Duplicate', 'View history', 'Delete']);
     await user.click(screen.getByRole('menuitem', { name: 'View history' }));
@@ -176,6 +208,10 @@ describe('LineItemPage (US4, FR-026)', () => {
       "The activity's unassigned planned cost goes up by 50,000.00 USD.",
     );
     expect(dialog).toHaveTextContent('It moves to the recycle bin; you can restore it.');
+    // The GSAP transactions linked to it stay (015 FR-029), from the Financials section's query.
+    expect(dialog).toHaveTextContent(
+      '2 GSAP transactions are linked to it. They stay in NorthStar and leave the figures until it is restored.',
+    );
     expect(dialog).not.toHaveTextContent('This activity will need approval again.');
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus();
 

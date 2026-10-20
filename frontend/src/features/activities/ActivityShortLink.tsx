@@ -18,7 +18,9 @@ export function ActivityShortLink() {
 
   if (query.isSuccess) {
     const { plan, id } = query.data;
-    return <Navigate replace to={`${activityHref(plan.id, id)}${location.hash}`} />;
+    return (
+      <Navigate replace to={`${activityHref(plan.id, id)}${location.search}${location.hash}`} />
+    );
   }
   return (
     <>

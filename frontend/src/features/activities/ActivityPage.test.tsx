@@ -1,6 +1,8 @@
 import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { approvalOf } from '@/features/approvals/testData';
+import { activityRecord } from '@/features/line-items/testData';
 import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
@@ -20,8 +22,8 @@ vi.mock('@/features/line-items/LineItemsSection', () => ({
 vi.mock('@/features/approvals/ApprovalSection', () => ({
   ApprovalSection: () => <section aria-label="Approval">Approval</section>,
 }));
-vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
-  ApprovalStatusAction: ({ onShowProblems }: { onShowProblems: ShowSubmitProblems }) => (
+vi.mock('@/features/approvals/SubmitButton', () => ({
+  SubmitButton: ({ onShowProblems }: { onShowProblems: ShowSubmitProblems }) => (
     <button type="button" onClick={() => onShowProblems(5)}>
       Submit for approval
     </button>
@@ -30,10 +32,57 @@ vi.mock('@/features/approvals/ApprovalStatusAction', () => ({
 
 const PATH = '/plans/:planId/activities/:activityId';
 
-function openPage(answer: MockHandler, route = '/plans/P-1001/activities/A-1042') {
+/** The approval of a Created activity the viewer owns: nothing to decide (feature 008). */
+const NOT_SUBMITTED = approvalOf({
+  status: 'created',
+  displayStatus: 'created',
+  rounds: [],
+  actions: {
+    submit: { available: true, reason: '' },
+    resubmit: { available: false, reason: '' },
+    approve: { available: false, reason: '' },
+    decline: { available: false, reason: '' },
+    recall: { available: false, reason: '' },
+  },
+});
+
+/** Today's rates, for the ⓘ beside an amount in another currency (016 FR-009). */
+const RATES = {
+  today: '2026-03-12',
+  total: 2,
+  items: [
+    {
+      currency: 'USD',
+      rate: '1',
+      inverseRate: '1',
+      rateDate: null,
+      source: null,
+      importFileName: null,
+    },
+    {
+      currency: 'EUR',
+      rate: '0.92',
+      inverseRate: '1.086957',
+      rateDate: '2026-03-01',
+      source: 'settings',
+      importFileName: null,
+    },
+  ],
+};
+
+function openPage(
+  answer: MockHandler,
+  route = '/plans/P-1001/activities/A-1042',
+  approval: MockHandler = { body: NOT_SUBMITTED },
+) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
     'GET /api/activities/A-1042': answer,
+    'GET /api/activities/A-1042/approval': approval,
+    'GET /api/exchange-rates/current': { body: RATES },
+    'GET /api/financials/records/A-1042': {
+      body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
+    },
     'GET /api/activities/A-1042/form': { body: editForm() },
     'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
   });
@@ -57,16 +106,13 @@ describe('ActivityPage (feature 006, US2)', () => {
     expect(screen.getByRole('button', { name: '3 fields needed' })).toBeVisible();
     expect(screen.getByRole('button', { name: '1 line item needs attention' })).toBeVisible();
     expect(screen.getByText('A-1042')).toBeVisible();
-    const facts = screen.getByText('Unassigned planned cost').closest('dl') as HTMLElement;
-    expect(within(facts).getByText('Priya Raman')).toBeVisible();
-    expect(within(facts).getByText('01 Mar – 31 May 2026')).toBeVisible();
-    expect(within(facts).getByText('$120,000.00')).toBeVisible();
-    expect(within(facts).getByText('$20,000.00')).toBeVisible();
-    expect(
-      screen.getByText(
-        'Created by Alex Morgan on 01 Mar 2026, last changed by Priya Raman on 12 Mar 2026',
-      ),
-    ).toBeVisible();
+    const header = screen.getByRole('banner');
+    expect(within(header).getByText('Priya Raman')).toBeVisible();
+    expect(within(header).getByText('01 Mar – 31 May 2026')).toBeVisible();
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText('120,000.00 USD')).toBeVisible();
+    expect(within(summary).getByText('20,000.00 USD')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Edit' })).toBeVisible();
     expect(screen.getByRole('link', { name: 'Edit' })).toHaveAttribute(
       'href',
       '/plans/P-1001/activities/A-1042/edit',
@@ -86,10 +132,11 @@ describe('ActivityPage (feature 006, US2)', () => {
     });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Launch film' })).toBeVisible();
-    const facts = screen.getByText('Unassigned planned cost').closest('dl') as HTMLElement;
-    expect(within(facts).getByText('110,400.00 EUR')).toBeVisible();
-    expect(within(facts).getByText('18,400.00 EUR')).toBeVisible();
-    expect(within(facts).queryByText('$120,000.00')).not.toBeInTheDocument();
+    // The plan currency first, the reader's currency beside it (016 FR-013).
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText('120,000.00 USD')).toBeVisible();
+    expect(within(summary).getByText(/≈ 110,400.00 EUR/)).toBeVisible();
+    expect(within(summary).getByText(/≈ 18,400.00 EUR/)).toBeVisible();
   });
 
   it('marks an unassigned planned cost below zero in red words', async () => {
@@ -98,7 +145,7 @@ describe('ActivityPage (feature 006, US2)', () => {
     });
 
     expect(
-      await screen.findByText("Line items exceed the activity's planned cost by $500.00"),
+      await screen.findByText('Line items exceed the planned cost by 500.00 USD'),
     ).toBeVisible();
   });
 
@@ -130,30 +177,92 @@ describe('ActivityPage (feature 006, US2)', () => {
     await waitFor(() => expect(panel).toHaveFocus());
   });
 
-  it('shows the sections in order: Ready to submit, details, line items, approval, from finance, history (FR-020, 011 FR-011)', async () => {
-    openPage({ body: launchFilm({ externalName: '' }) });
+  it('shows the summary, then the tabs Overview · Details · Approval · History (design system §2.4 B, FR-020)', async () => {
+    const { user, router } = openPage({ body: launchFilm({ externalName: '' }) });
 
     await screen.findByRole('heading', { level: 1, name: 'Launch film' });
-    const names = [
-      screen.getByRole('region', { name: 'Ready to submit' }),
-      screen.getByRole('region', { name: 'Details' }),
-      screen.getByRole('region', { name: 'Line items' }),
-      screen.getByRole('region', { name: 'Approval' }),
-      screen.getByRole('region', { name: 'From finance (coming later)' }),
-      screen.getByRole('region', { name: 'History' }),
-    ];
-    for (let index = 1; index < names.length; index += 1) {
-      expect(
-        names[index - 1].compareDocumentPosition(names[index]) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-    }
+    const tabs = screen.getByRole('tablist', { name: 'Activity' });
     expect(
-      screen.getByRole('region', { name: 'Line items' }).closest('#line-items'),
+      within(tabs)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual(['Overview', 'Details', 'Approval', 'History']);
+    // Overview: Ready to submit, GSAP's Financials (open, 015 FR-015), then the line items.
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+    const ready = screen.getByRole('region', { name: 'Ready to submit' });
+    const financials = screen.getByRole('region', { name: 'Financials' });
+    const lineItems = screen.getByRole('region', { name: 'Line items' });
+    expect(
+      screen.getByRole('region', { name: 'Summary' }).compareDocumentPosition(ready) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      ready.compareDocumentPosition(financials) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      financials.compareDocumentPosition(lineItems) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(financials.id).toBe('financials');
+    expect(await within(financials).findByText('82,000.00 USD')).toBeVisible();
+    expect(screen.queryByText('From finance (coming later)')).not.toBeInTheDocument();
+    expect(lineItems.closest('#line-items')).not.toBeNull();
+    expect(screen.queryByRole('region', { name: 'Details' })).not.toBeInTheDocument();
+
+    // Details: details, Shell attributes and goals; the tab is kept in the address.
+    await user.click(screen.getByRole('tab', { name: 'Details' }));
+    expect(await screen.findByRole('region', { name: 'Details' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Shell attributes' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Goals' })).toBeVisible();
+    expect(router.state.location.search).toBe('?tab=details');
+
+    await user.click(screen.getByRole('tab', { name: 'Approval' }));
+    expect(
+      (await screen.findByRole('region', { name: 'Approval' })).closest('#approval'),
     ).not.toBeNull();
-    expect(screen.getByRole('region', { name: 'Approval' }).closest('#approval')).not.toBeNull();
-    expect(screen.getByRole('region', { name: 'History' }).closest('#history')).not.toBeNull();
+
+    await user.click(screen.getByRole('tab', { name: 'History' }));
+    const history = await screen.findByRole('region', { name: 'History' });
+    expect(history.closest('#history')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Include line items' })).not.toBeChecked();
-    expect(screen.getByText('Total actuals')).not.toBeVisible();
+
+    await user.click(screen.getByRole('tab', { name: 'Overview' }));
+    await waitFor(() => expect(router.state.location.search).toBe(''));
+  });
+
+  it('links the activities of a split, "(deleted)" without a link (016 FR-031)', async () => {
+    openPage({
+      body: launchFilm({
+        splitFrom: { id: 'A-1012', name: 'UK launch event', planId: 'P-1001', deleted: false },
+        splitInto: [{ id: 'A-1014', name: 'Ireland roadshow', planId: 'P-1001', deleted: true }],
+      }),
+    });
+
+    expect(
+      await screen.findByRole('link', { name: "Split from 'UK launch event' (A-1012)" }),
+    ).toHaveAttribute('href', '/plans/P-1001/activities/A-1012');
+    expect(screen.getByText("Split into 'Ireland roadshow' (A-1014) (deleted)")).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: /Split into 'Ireland roadshow'/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('opens the tab of a #part: #approval from Home and the notifications', async () => {
+    openPage({ body: launchFilm() }, '/plans/P-1001/activities/A-1042#approval');
+
+    expect(await screen.findByRole('region', { name: 'Approval' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Approval' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('opens the History tab and focuses its heading for View history', async () => {
+    const { user, router } = openPage({ body: launchFilm() });
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
+
+    await waitFor(() => expect(router.state.location.search).toBe('?tab=history'));
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
+    );
   });
 
   it('replaces an address with another plan by the right one', async () => {

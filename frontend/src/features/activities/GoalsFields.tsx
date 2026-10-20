@@ -47,41 +47,36 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
 
   return (
     <FormSection title="Goals">
-      <DecimalField
-        label="INQ"
-        name={fieldId('goals.inq')}
-        decimals={0}
-        value={value.inq}
-        onChange={(inq) => set({ inq })}
-        error={errors.inq ?? (isWholeOrEmpty(value.inq) ? undefined : WHOLE_NUMBER)}
-      />
-      <CheckboxField
-        label="Set later stages myself"
-        name={fieldId('goals.setLaterStagesMyself')}
-        checked={typedNow}
-        onChange={turnTyping}
-      />
-      {typedNow ? (
-        <>
-          <DecimalField
-            label="MQL"
-            name={fieldId('goals.mql')}
-            decimals={0}
-            value={value.mql}
-            onChange={(mql) => set({ mql })}
-            error={errors.mql ?? (isWholeOrEmpty(value.mql) ? undefined : WHOLE_NUMBER)}
-          />
-          <MoneyField
-            label="Revenue"
-            name={fieldId('goals.revenue')}
-            currency="USD"
-            value={value.revenue}
-            onChange={(revenue) => set({ revenue })}
-            error={errors.revenue}
-          />
-        </>
-      ) : (
-        <>
+      {/* The funnel on one row, INQ → MQL → Revenue, so the form stays short (UI audit AF-01). */}
+      <div className={styles.funnel}>
+        <DecimalField
+          label="INQ"
+          name={fieldId('goals.inq')}
+          decimals={0}
+          value={value.inq}
+          onChange={(inq) => set({ inq })}
+          error={errors.inq ?? (isWholeOrEmpty(value.inq) ? undefined : WHOLE_NUMBER)}
+        />
+        {typedNow ? (
+          <>
+            <DecimalField
+              label="MQL"
+              name={fieldId('goals.mql')}
+              decimals={0}
+              value={value.mql}
+              onChange={(mql) => set({ mql })}
+              error={errors.mql ?? (isWholeOrEmpty(value.mql) ? undefined : WHOLE_NUMBER)}
+            />
+            <MoneyField
+              label="Revenue"
+              name={fieldId('goals.revenue')}
+              currency="USD"
+              value={value.revenue}
+              onChange={(revenue) => set({ revenue })}
+              error={errors.revenue}
+            />
+          </>
+        ) : (
           <dl className={styles.stages}>
             <CalculatedStage stage="MQL" text={stageText(calculated, 'mql')} model={model} />
             <CalculatedStage
@@ -90,14 +85,20 @@ export function GoalsFields({ value, onChange, model, errors }: GoalsFieldsProps
               model={model}
             />
           </dl>
-          {typedKept && (
-            <p role="status" className={styles.note}>
-              These typed values will be replaced when you save: MQL {value.mql || EMPTY} →{' '}
-              {stageText(calculated, 'mql')}; Revenue {revenueText(value.revenue)} →{' '}
-              {stageText(calculated, 'revenue')}.
-            </p>
-          )}
-        </>
+        )}
+      </div>
+      <CheckboxField
+        label="Set later stages myself"
+        name={fieldId('goals.setLaterStagesMyself')}
+        checked={typedNow}
+        onChange={turnTyping}
+      />
+      {typedKept && (
+        <p role="status" className={styles.note}>
+          These typed values will be replaced when you save: MQL {value.mql || EMPTY} →{' '}
+          {stageText(calculated, 'mql')}; Revenue {revenueText(value.revenue)} →{' '}
+          {stageText(calculated, 'revenue')}.
+        </p>
       )}
     </FormSection>
   );

@@ -51,7 +51,11 @@ describe('LineItemCreatePage (US2)', () => {
     expect(await findForm()).toHaveValue('Launch film – line item');
     expect(document.title).toBe('New line item · NorthStar');
     expect(screen.getByRole('heading', { level: 1, name: 'New line item' })).toBeInTheDocument();
-    expect(screen.getByText("In activity 'Launch film' (A-1001)")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', {
+        name: 'Launch film',
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText("From the activity's name")).toBeInTheDocument();
     expect(screen.getByLabelText('Currency')).toHaveValue('USD');
     expect(screen.getByLabelText('Planned cost')).toHaveValue('20,000.00');
@@ -82,7 +86,7 @@ describe('LineItemCreatePage (US2)', () => {
     expect(within(breadcrumb).getByText('New line item')).toHaveAttribute('aria-current', 'page');
   });
 
-  it('shows the sections in order, From finance closed (FR-007, FR-025)', async () => {
+  it('shows the sections in order, each a card, without a finance section (FR-007, 015 FR-017)', async () => {
     renderPage();
     await findForm();
 
@@ -95,12 +99,9 @@ describe('LineItemCreatePage (US2)', () => {
       'Link to finance budget',
       'GSAP request',
     ]);
-    const fromFinance = screen.getByText('From finance (coming later)').closest('details');
-    expect(fromFinance).not.toHaveAttribute('open');
-    expect(within(fromFinance!).getByText('Total actuals')).toBeInTheDocument();
-    expect(
-      within(fromFinance!).getByText('Filled when the Finance module and GSAP are connected'),
-    ).toBeInTheDocument();
+    expect(screen.queryByText('From finance (coming later)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total actuals')).not.toBeInTheDocument();
+    expect(screen.getByText(/of \d+ needed fields? filled$/)).toBeInTheDocument();
   });
 
   it('converts the balance when the currency changes and shows the USD amount live (scenario 2, FR-011, FR-012)', async () => {
@@ -114,9 +115,49 @@ describe('LineItemCreatePage (US2)', () => {
 
     await user.clear(cost);
     await user.type(cost, '10000');
-    expect(screen.getByText('= 10,869.57 USD at 0.92 EUR per USD')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/^= 10,869\.57 USD at 0\.92 EUR per USD \(rate of 0?1 Mar 2026\)$/),
+    ).toBeInTheDocument();
     expect(screen.getByText('Calculated')).toBeInTheDocument();
     expect(screen.getByLabelText('Activity summary')).toHaveTextContent('After saving9,130.43 USD');
+  });
+
+  it('calculates in the plan currency of a GBP plan, with both rates and their date (016 FR-009, FR-015)', async () => {
+    const gbp = (amount: string) => ({ amount, currency: 'GBP' });
+    const { user } = renderPage({
+      'GET /api/activities/A-1001/line-items/form-options': {
+        body: formOptions({
+          balance: {
+            plannedCost: gbp('40000.00'),
+            assigned: gbp('15000.00'),
+            balance: gbp('25000.00'),
+            state: 'left',
+            roundingHint: false,
+          },
+          defaults: {
+            ...formOptions().defaults,
+            currency: 'GBP',
+            plannedCost: gbp('25000.00'),
+          },
+        }),
+      },
+    });
+    await findForm();
+
+    // The pre-filled balance keeps its plan-currency value in another currency.
+    await user.selectOptions(screen.getByLabelText('Currency'), 'EUR');
+    const cost = screen.getByLabelText('Planned cost');
+    expect(cost).toHaveValue('29,113.92');
+    expect(screen.getByText('Changed to 29,113.92 EUR = 25,000.00 GBP')).toBeInTheDocument();
+
+    await user.clear(cost);
+    await user.type(cost, '23000');
+    expect(
+      await screen.findByText(
+        /^= 19,750\.00 GBP at 0\.92 EUR and 0\.79 GBP per USD \(rates of 0?1 Mar 2026\)$/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Activity summary')).toHaveTextContent('After saving5,250.00 GBP');
   });
 
   it('makes the GL code depend on the spend type (scenarios 3 and 4, FR-014)', async () => {

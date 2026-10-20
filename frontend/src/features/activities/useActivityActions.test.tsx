@@ -41,6 +41,11 @@ function openMenu(answers: Parameters<typeof mockApi>[0] = {}) {
   const api = mockApi({
     'DELETE /api/activities/A-1042': { body: DELETED },
     'POST /api/recycle-bin/BIN-1001/undo': { body: {} },
+    // No GSAP data for it yet: the delete question says nothing of transactions (015 FR-029).
+    'GET /api/financials/records/A-1042': {
+      status: 404,
+      body: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+    },
     ...answers,
   });
   const rendered = renderWithProviders(<More activity={launchFilm()} />, {
@@ -51,13 +56,14 @@ function openMenu(answers: Parameters<typeof mockApi>[0] = {}) {
 }
 
 describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
-  it('offers Copy, Move, View history and Delete, last after a line', async () => {
+  it('offers Copy, Move, Split activity, View history and Delete, last after a line', async () => {
     const { user } = openMenu();
 
     await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
     expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
       'Copy',
       'Move',
+      'Split activity',
       'View history',
       'Delete',
     ]);

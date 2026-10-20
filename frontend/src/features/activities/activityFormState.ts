@@ -40,7 +40,7 @@ export interface FormState {
   startDate: string;
   endDate: string;
   ongoing: boolean;
-  /** The planned cost in USD as typed ("120,000.00"), "" for none. */
+  /** The planned cost in the plan currency as typed ("120,000.00"), "" for none (016 FR-011). */
   plannedCost: string;
   approvalWorkflowId: string;
   description: string;
@@ -271,8 +271,29 @@ function length(text: string): number {
 
 /** A typed amount in USD as the API takes it; null when empty. Call after validate. */
 export function usdOf(text: string): Money | null {
+  return amountOf(text, 'USD');
+}
+
+/** A typed amount in a currency as the API takes it; null when empty. Call after validate. */
+export function amountOf(text: string, currency: string): Money | null {
   const parsed = text.trim() === '' ? null : parseMoneyInput(text);
-  return parsed ? { amount: parsed.amount, currency: 'USD' } : null;
+  return parsed ? { amount: parsed.amount, currency } : null;
+}
+
+/**
+ * The plan currency the planned cost is typed and kept in (016 FR-011): the stored planned cost's,
+ * else the activity types' defaults' (the API converts them into it, FR-016), else USD. The form's
+ * context does not name it (contract gap, reported).
+ */
+export function planCurrencyOf(
+  form: { activityTypes: { defaultPlannedCost: Money | null }[] },
+  stored?: { plannedCost: Money | null },
+): string {
+  return (
+    stored?.plannedCost?.currency ??
+    form.activityTypes.find((type) => type.defaultPlannedCost)?.defaultPlannedCost?.currency ??
+    'USD'
+  );
 }
 
 function wholeOf(text: string): number | null {
@@ -280,8 +301,8 @@ function wholeOf(text: string): number | null {
   return value === null ? null : Number(value);
 }
 
-/** The new activity's request body. */
-export function toCreateBody(state: FormState): ActivityCreate {
+/** The new activity's request body; the planned cost in the plan currency (016 FR-011). */
+export function toCreateBody(state: FormState, planCurrency = 'USD'): ActivityCreate {
   return {
     name: state.name.trim(),
     externalName: state.externalName.trim(),
@@ -290,7 +311,7 @@ export function toCreateBody(state: FormState): ActivityCreate {
     startDate: state.startDate || null,
     endDate: endOf(state) || null,
     ongoing: state.ongoing,
-    plannedCost: usdOf(state.plannedCost),
+    plannedCost: amountOf(state.plannedCost, planCurrency),
     approvalWorkflowId: state.approvalWorkflowId || null,
     description: state.description,
     attributes: state.attributes,
@@ -303,8 +324,13 @@ export function toUpdateBody(
   state: FormState,
   version: number,
   restartApproval: boolean,
+  planCurrency = 'USD',
 ): ActivityUpdate {
-  return { ...(toCreateBody(state) as Required<ActivityCreate>), version, restartApproval };
+  return {
+    ...(toCreateBody(state, planCurrency) as Required<ActivityCreate>),
+    version,
+    restartApproval,
+  };
 }
 
 function goalsBody(goals: GoalsState): ActivityCreate['goals'] {
@@ -332,10 +358,11 @@ export function reapprovalChanges(
   original: FormState,
   state: FormState,
   date: (date: string) => string,
+  planCurrency = 'USD',
 ): ReapprovalChange[] {
   const changes: ReapprovalChange[] = [];
-  const oldCost = usdOf(original.plannedCost);
-  const newCost = usdOf(state.plannedCost);
+  const oldCost = amountOf(original.plannedCost, planCurrency);
+  const newCost = amountOf(state.plannedCost, planCurrency);
   if (oldCost?.amount !== newCost?.amount) {
     changes.push({ label: 'Planned cost', old: moneyText(oldCost), new: moneyText(newCost) });
   }

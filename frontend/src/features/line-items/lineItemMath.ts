@@ -94,6 +94,17 @@ export function fromUsd(usdCents: bigint, rate: string): bigint {
 }
 
 /**
+ * An amount from one currency into another (016 data model §3.1, `money.Convert`): amount × to ÷
+ * from, both rates in units of the currency per 1 USD, rounded half-up to the cent; the same rate on
+ * both sides returns it unchanged. 23,000.00 EUR at 0.92 → 19,750.00 GBP at 0.79.
+ */
+export function convert(cents: bigint, fromRate: string, toRate: string): bigint {
+  const from = rateMicros(fromRate);
+  const to = rateMicros(toRate);
+  return from === to ? cents : divideHalfUp(cents * to, from);
+}
+
+/**
  * The months of the activity's dates (data model §3.2): every month from the start month to the end
  * month; only the start month for an ongoing activity; none without dates ("No dates yet").
  */

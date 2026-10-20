@@ -1,25 +1,46 @@
-/* One column, at most 720 px wide (design system §7). */
+/* One column of section cards, 20 px apart, at most 720 px wide (design system §2.4 C, §7). */
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  max-width: 720px;
+  gap: var(--grid-gap);
+  max-width: var(--form-max);
   min-width: 0;
 }
 
-.readOnly {
+/* The Shell attributes card: its groups' names are drawn as card titles, 24 px apart. */
+.attributes {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-6);
+}
+
+.attributes h2 {
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-lg);
+}
+
+/* Where the activity sits, on one line: "Campaign Helix launch · Initiative Digital & social",
+   and the lock that says how to change it (UI audit AF-01: a shorter form). */
+.readOnly {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-6);
 }
 
 .pairs {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-3) var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-6);
+  margin: 0;
 }
 
 .pair {
+  display: flex;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -30,7 +51,7 @@
 }
 
 .pair dd {
-  margin: 2px 0 0;
+  margin: 0;
   color: var(--ink-2);
   overflow-wrap: break-word;
 }

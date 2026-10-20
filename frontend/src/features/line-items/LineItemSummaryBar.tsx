@@ -11,6 +11,8 @@ export interface LineItemSummaryBarProps {
   balance: UnassignedBalance;
   /** What saving changes in the assigned amount, in cents of the balance's currency. */
   change: bigint;
+  /** A strip above the form (below 1280 px), or a card in the form's rail (design system §2.4 C). */
+  layout?: 'bar' | 'rail';
 }
 
 /**
@@ -18,10 +20,11 @@ export interface LineItemSummaryBarProps {
  * · Unassigned now 20,000.00 USD · After saving 0.00 USD", red when negative; the no-planned-cost
  * sentence instead while the activity has none (D-144).
  */
-export function LineItemSummaryBar({ balance, change }: LineItemSummaryBarProps) {
+export function LineItemSummaryBar({ balance, change, layout = 'bar' }: LineItemSummaryBarProps) {
+  const frame = layout === 'rail' ? styles.summaryRail : styles.summaryBar;
   if (!balance.plannedCost || !balance.balance) {
     return (
-      <div className={styles.summaryBar}>
+      <div className={frame}>
         <p>{SUMMARY_NO_COST}</p>
       </div>
     );
@@ -30,7 +33,7 @@ export function LineItemSummaryBar({ balance, change }: LineItemSummaryBarProps)
   const after = now - change;
   const code = balance.balance.currency;
   return (
-    <div className={styles.summaryBar} aria-label="Activity summary" role="group">
+    <div className={frame} aria-label="Activity summary" role="group">
       <dl className={styles.summaryList}>
         <div>
           <dt>Activity planned cost</dt>

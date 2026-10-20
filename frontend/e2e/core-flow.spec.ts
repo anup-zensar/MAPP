@@ -149,7 +149,10 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   await action(page, 'Add line item').click();
   await expect(page).toHaveURL(new RegExp(`/activities/${activityId}/line-items/new$`));
   await expect(page.getByRole('heading', { name: 'New line item', level: 1 })).toBeVisible();
-  await expect(page.getByText(`In activity '${activityName}' (${activityId})`)).toBeVisible();
+  // The breadcrumb names the activity the line item goes into (design system §2.3).
+  await expect(
+    page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: activityName }),
+  ).toBeVisible();
   await page.getByRole('textbox', { name: /^Line item name/ }).fill(lineItemName);
   // Currency (5 active currencies) is a native select with options such as "EUR – Euro".
   await chooseOption(page.getByLabel(/^Currency/), 'EUR');
@@ -262,9 +265,7 @@ test('B: the planner completes and submits an activity; Carlos Mendes and Alex M
   await expect(page).toHaveURL(
     new RegExp(`/activities/${records.activityId}/edit\\?field=approvalWorkflowId$`),
   );
-  await expect(
-    page.getByRole('heading', { name: `Edit activity '${name}'`, level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Edit activity', level: 1 })).toBeVisible();
   // Approval workflow is a native select (two active workflows, no default). Multiple-choice
   // attributes with up to 10 options are check-box groups; these option names are unique on the
   // activity form ("External" of Channel / audience, "China" of Country / OU).
@@ -328,7 +329,8 @@ test('B: the planner completes and submits an activity; Carlos Mendes and Alex M
   await expect(
     page.getByText('Approved — changing planned cost or dates will restart approval.'),
   ).toBeVisible();
-  // 008's ApprovalSection is the page's #approval anchor.
+  // 008's ApprovalSection is the Approval tab's #approval anchor.
+  await page.getByRole('tab', { name: 'Approval' }).click();
   const approval = page.locator('#approval');
   await expect(approval.getByText(/^Approved by Carlos Mendes on /).first()).toBeVisible();
   await expect(approval.getByText(/^Approved by Alex Morgan on /).first()).toBeVisible();
@@ -372,9 +374,9 @@ test('B: a declined activity shows the approver and the reason to the planner', 
   await page.goto(records.activityPath);
   await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
   await expect(page.getByText('Declined', { exact: true }).first()).toBeVisible();
-  const approval = page.locator('#approval');
-  await expect(approval.getByText(/^Declined by Carlos Mendes on /).first()).toBeVisible();
-  await expect(approval.getByText(reason).first()).toBeVisible();
+  // Who declined and why, in the notice under the header (UI audit AC-02).
+  await expect(page.getByText(/^Declined by Carlos Mendes on /).first()).toBeVisible();
+  await expect(page.getByText(reason).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Re-submit for approval' }).first()).toBeVisible();
   // The bell's notice of the decline (008 US6, FR-035) is proven in module-rest.spec.ts.
 });

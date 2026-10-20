@@ -6,23 +6,6 @@
   font-size: var(--text-sm);
 }
 
-/* The latest decline, on the problem tint (design system §4). */
-.decline {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--status-problem);
-  border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--status-problem) 10%, transparent);
-  overflow-wrap: break-word;
-}
-
-.declineBy {
-  color: var(--status-problem-text);
-  font-weight: 600;
-}
-
 .status {
   display: flex;
   flex-wrap: wrap;
