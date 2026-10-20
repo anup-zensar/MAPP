@@ -60,7 +60,7 @@ func (f *fixture) today() date.Date {
 
 // The submit confirmation says what will happen to every level, and lists the problems of approver sources
 // with every other problem; asking changes nothing (017 FR-012, FR-013, FR-036).
-func TestSubmission_OutcomesAndProblems_FR012_FR013(t *testing.T) {
+func TestSubmission_OutcomesAndProblems_FR012_FR013_FR036(t *testing.T) {
 	f := newFixture(t)
 	f.addStandardFlow(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, standardFlow)
