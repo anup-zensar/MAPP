@@ -5,6 +5,7 @@ import { Button, FormPanel, problemOf, TextAreaField, useToast } from '@/compone
 import type { FieldProblem, SaveFailure } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import { CONFLICT_NEXT_STEP } from '../shared/saveFailure';
+import { useCloseAfterSave } from '../shared/useCloseAfterSave';
 import { fetchFieldHelp, HELP_MAX_LENGTH, useUpdateFieldHelp } from './fieldHelpApi';
 import type { FieldHelpEntry } from './fieldHelpApi';
 import { entryName, TOO_LONG } from './fieldHelpWords';
@@ -32,6 +33,8 @@ export function FieldHelpPanel({ entry, onClose }: FieldHelpPanelProps) {
   const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [askReset, setAskReset] = useState(false);
+  // The panel is open while the address names the entry: it closes once the save is known.
+  const { saved, closeAfterSave } = useCloseAfterSave(onClose);
   const name = `'${entry.label}'`;
 
   async function save() {
@@ -43,14 +46,15 @@ export function FieldHelpPanel({ entry, onClose }: FieldHelpPanelProps) {
       return;
     }
     if (typed === start.trim()) {
-      onClose();
+      // Only spaces or line breaks changed: nothing to save.
+      closeAfterSave();
       return;
     }
     setSaving(true);
     try {
       await update.mutateAsync({ key: entry.key, body: { text: typed, version } });
       show({ message: `Help of ${name} saved` });
-      onClose();
+      closeAfterSave();
     } catch (error) {
       await showFailure(error);
     } finally {
@@ -88,7 +92,7 @@ export function FieldHelpPanel({ entry, onClose }: FieldHelpPanelProps) {
       <FormPanel
         title="Edit field help"
         description={entryName(entry.level, entry.label)}
-        isDirty={text !== start}
+        isDirty={!saved && text !== start}
         saving={saving}
         problems={problems}
         failure={failure}
@@ -132,7 +136,7 @@ export function FieldHelpPanel({ entry, onClose }: FieldHelpPanelProps) {
         <ResetHelpDialog
           entry={entry}
           version={version}
-          onDone={onClose}
+          onDone={closeAfterSave}
           onCancel={() => setAskReset(false)}
         />
       )}

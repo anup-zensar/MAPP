@@ -393,3 +393,49 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
     expect(api.requests.filter((request) => request.method !== 'GET')).toEqual([]);
   });
 });
+
+describe('ShellAttributesPage: attributes without help (016 FR-048)', () => {
+  const WITH_HELP = [
+    { ...BUSINESS_UNIT, helpText: 'The Shell business the plan belongs to.' },
+    { ...MEDIA_CHANNEL, helpText: 'Where the activity reaches its audience.' },
+    PIR,
+    { ...BRANDS, helpText: 'The brands the activity promotes.' },
+    OLD_NOTES,
+  ];
+
+  it('marks each attribute without help with "No help yet"', async () => {
+    renderPage('/settings/shell-attributes?level=activity', { [LIST]: { body: page(WITH_HELP) } });
+    await screen.findByRole('table');
+
+    const pir = screen.getByRole('rowheader', { name: /^PIR/ });
+    expect(within(pir).getByText('No help yet')).toBeInTheDocument();
+    const media = screen.getByRole('rowheader', { name: /^Media channel/ });
+    expect(within(media).queryByText('No help yet')).not.toBeInTheDocument();
+  });
+
+  it('lists only them from the Field help link, on the first level that has any', async () => {
+    const { user, router } = renderPage('/settings/shell-attributes?help=missing', {
+      [LIST]: { body: page(WITH_HELP) },
+    });
+    await screen.findByRole('table');
+
+    // The plan level has none: the activity level opens, with PIR only (Old notes is inactive).
+    expect(rowNames()).toEqual(['Shell attributes', 'PIR']);
+    expect(screen.getByRole('button', { name: /^No help yet/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await user.click(screen.getByRole('button', { name: /^Any help/ }));
+
+    // The list stays on the level it showed, now with every active attribute.
+    expect(router.state.location.search).toBe('?level=activity');
+    expect(rowNames()).toEqual([
+      'Shell attributes',
+      'Media channel',
+      'PIR',
+      'Lubricants attributes',
+      'Brands',
+    ]);
+  });
+});

@@ -16,6 +16,7 @@ import {
 import type { FieldProblem, SaveFailure, TeamRef } from '@/components';
 import { useTeams } from '@/features/people/peopleApi';
 import { firstName } from '@/features/people/texts';
+import { useCloseAfterSave } from '@/features/settings/shared/useCloseAfterSave';
 import { useFormatters } from '@/lib/useFormatters';
 import {
   useCheckPersonRolesImpact,
@@ -108,6 +109,8 @@ function RolesForm({ person, roles, allTeams, isYou, onClose }: RolesFormProps) 
   const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [warnings, setWarnings] = useState<ImpactWarning[]>([]);
+  // The panel is open while the address names the person: it closes once the save is known.
+  const { saved, closeAfterSave } = useCloseAfterSave(onClose);
   const name = person.person.name;
   // Drafts follow the order of the roles list, so problems "roles.<i>…" find their role.
   const ordered = roles.flatMap((role) => drafts.filter((draft) => draft.roleId === role.id));
@@ -161,7 +164,7 @@ function RolesForm({ person, roles, allTeams, isYou, onClose }: RolesFormProps) 
     try {
       await save.mutateAsync({ personId: person.person.id, body });
       show({ message: `Roles of ${name} saved` });
-      onClose();
+      closeAfterSave();
     } catch (error) {
       setWarnings([]);
       fail(error);
@@ -205,7 +208,7 @@ function RolesForm({ person, roles, allTeams, isYou, onClose }: RolesFormProps) 
             ? `Teams: ${person.teams.map((team) => team.name).join(', ')}`
             : 'Not in any team yet: My teams covers no plan.'
         }
-        isDirty={isDirty}
+        isDirty={isDirty && !saved}
         saving={saving}
         problems={problems}
         failure={failure}

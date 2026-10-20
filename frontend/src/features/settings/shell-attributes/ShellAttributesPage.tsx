@@ -80,22 +80,49 @@ function useFilters() {
     help,
     // With the help filter on, the level stays in the address, so it is not chosen again.
     setLevel: (value: AttributeLevel) => change('level', value, help === 'missing' ? '' : 'plan'),
-    setHelp: (value: HelpFilter) => change('help', value, 'all'),
+    /**
+     * Turns the help filter on or off. The level on screen (`shown`), which the filter may have
+     * chosen, goes into the address so the list stays on it.
+     */
+    setHelp: (value: HelpFilter, shown: AttributeLevel) =>
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (value === 'all') {
+            next.delete('help');
+          } else {
+            next.set('help', value);
+          }
+          keepLevel(next, shown);
+          return next;
+        },
+        { replace: true },
+      ),
     setStatus: (value: StatusFilter) => change('status', value, 'active'),
     setQ: (value: string) => change('q', value, ''),
-    // Shows every attribute of the level, so the order can be changed again.
-    clear: () =>
+    // Shows every attribute of the level on screen, so the order can be changed again.
+    clear: (shown: AttributeLevel) =>
       setParams(
         (current) => {
           const next = new URLSearchParams(current);
           next.delete('q');
           next.delete('help');
           next.set('status', 'all');
+          keepLevel(next, shown);
           return next;
         },
         { replace: true },
       ),
   };
+}
+
+/** Puts the level on screen into the address, unless it is the default (plan) level. */
+function keepLevel(params: URLSearchParams, shown: AttributeLevel) {
+  if (shown === 'plan') {
+    params.delete('level');
+  } else {
+    params.set('level', shown);
+  }
 }
 
 /** True when the attribute has no help text, so its ⓘ is missing (016 FR-048). */
@@ -309,7 +336,7 @@ function AttributeList({ filters }: { filters: Filters }) {
                 { value: 'missing', label: 'No help yet', count: withoutHelp },
               ]}
               value={help}
-              onChange={filters.setHelp}
+              onChange={(value) => filters.setHelp(value, level)}
             />
           }
           count={{ shown: shown.length, total: ofLevel.length, noun: ATTRIBUTE_NOUN }}
@@ -327,7 +354,7 @@ function AttributeList({ filters }: { filters: Filters }) {
         ) : shown.length === 0 ? (
           <EmptyState
             title="Nothing matches these filters"
-            action={<Button onClick={filters.clear}>Clear filters</Button>}
+            action={<Button onClick={() => filters.clear(level)}>Clear filters</Button>}
           />
         ) : (
           <div className={styles.tableScroll}>

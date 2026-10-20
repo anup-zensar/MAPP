@@ -144,6 +144,9 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Roles of Sara Novak saved')).toBeInTheDocument();
+    // The panel closes at once: the saved roles are not "unsaved changes".
+    await waitFor(() => expect(router.state.location.search).toBe(''));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(api.bodiesOf('PUT /api/people/U-1006/roles')).toEqual([
       {
         roles: [
