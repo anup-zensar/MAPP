@@ -18,7 +18,7 @@ export interface ApprovalsTableProps {
 
 /**
  * The rows of the approvals page (FR-030), in the order served: the activity (its name opens the
- * preview; "Start date passed" as a problem chip), plan › campaign, owner, planned cost, workflow,
+ * preview; its problems in one chip), plan › campaign, owner, planned cost, workflow,
  * the level it waits at and since when. **Decided by me** adds my decision and the current status,
  * and shows the level only while the round is open.
  *
@@ -89,6 +89,7 @@ function Row({ row, decided, onOpen }: RowProps) {
       <th scope="row">
         <OpenButton row={row} onOpen={onOpen} />
         <span className={styles.id}>{row.activity.id}</span>
+        <DelegateNote row={row} />
         {chips && <span className={styles.chips}>{chips}</span>}
       </th>
       <td>{pathText(row)}</td>
@@ -126,6 +127,7 @@ function RowCard({ row, decided, onOpen }: RowProps) {
       <div className={styles.cardHead}>
         <OpenButton row={row} onOpen={onOpen} />
         <span className={styles.id}>{row.activity.id}</span>
+        <DelegateNote row={row} />
       </div>
       {(decided || chips) && (
         <div className={styles.chips}>
@@ -216,26 +218,21 @@ function SubmittedCell({ row, format }: { row: ApprovalRow; format: Formatters }
 }
 
 /**
- * The chips of a row, most pressing first (008, 017 FR-031): "No approver" and "Overdue" (problem),
- * "Start date passed" (problem), "Escalated to <name>" (waiting) and "as delegate of <names>"
- * (running: the person decides for someone else); null when it has none.
+ * The chips of a row (008, 017 FR-031), at most two (design system §4.1): one problem chip with the
+ * row's problems most pressing first — "No approver", "Overdue", "Start date passed" — and
+ * "Escalated to <name>" (waiting); null when it has none.
  */
 function rowChips(row: ApprovalRow): ReactNode {
   const open = row.round.outcome === 'open';
+  const problems = [
+    open && row.noApprover && 'No approver',
+    open && row.overdue && 'Overdue',
+    row.startDatePassed && 'Start date passed',
+  ].filter((word): word is string => Boolean(word));
   const chips = [
-    open && row.noApprover && (
-      <StatusChip key="none" tone="problem">
-        No approver
-      </StatusChip>
-    ),
-    open && row.overdue && (
-      <StatusChip key="overdue" tone="problem">
-        Overdue
-      </StatusChip>
-    ),
-    row.startDatePassed && (
-      <StatusChip key="start" tone="problem">
-        Start date passed
+    problems.length > 0 && (
+      <StatusChip key="problem" tone="problem">
+        {problems.join(' · ')}
       </StatusChip>
     ),
     open && row.escalatedTo && (
@@ -243,13 +240,19 @@ function rowChips(row: ApprovalRow): ReactNode {
         {`Escalated to ${row.escalatedTo.name}`}
       </StatusChip>
     ),
-    open && row.asDelegateOf && row.asDelegateOf.length > 0 && (
-      <StatusChip key="delegate" tone="active">
-        {`as delegate of ${names(row.asDelegateOf)}`}
-      </StatusChip>
-    ),
   ].filter(Boolean);
   return chips.length > 0 ? chips : null;
+}
+
+/**
+ * "as delegate of <names>" when the person decides this row for someone else (017 FR-031): a note
+ * under the activity's ID, not a chip, as it says who decides rather than how the approval stands.
+ */
+function DelegateNote({ row }: { row: ApprovalRow }) {
+  if (row.round.outcome !== 'open' || !row.asDelegateOf || row.asDelegateOf.length === 0) {
+    return null;
+  }
+  return <span className={styles.delegate}>{`as delegate of ${names(row.asDelegateOf)}`}</span>;
 }
 
 function pathText(row: ApprovalRow): string {

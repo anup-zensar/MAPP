@@ -23,6 +23,7 @@ import { DecisionButton } from './DecisionButton';
 import { OwnerDecisionMenu } from './DecisionActions';
 import { decisionRole } from './decisionRole';
 import { ACTIVITY_GONE, roundOutcomeText } from './messages';
+import { useIsPhone } from './useIsPhone';
 import styles from './ApprovalPreviewPanel.module.css';
 
 export interface ApprovalPreviewPanelProps {
@@ -178,45 +179,7 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
         {lineItems.length === 0 ? (
           <p className={styles.muted}>No line items yet.</p>
         ) : (
-          // Focusable, so the keyboard can scroll it sideways when it is wider than the panel.
-          <div
-            className={styles.scroll}
-            role="region"
-            aria-label="Line items, scrolls sideways"
-            tabIndex={0}
-          >
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th scope="col">Line item</th>
-                  <th scope="col" className={styles.amount}>
-                    Planned cost
-                  </th>
-                  <th scope="col" className={styles.amount}>
-                    {`Planned cost (${format.displayCurrency})`}
-                  </th>
-                  <th scope="col">Spend type</th>
-                  <th scope="col">GL code</th>
-                  <th scope="col">Finance budget item</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lineItems.map((item) => (
-                  <tr key={item.id}>
-                    <th scope="row">
-                      {item.name}
-                      <span className={styles.id}>{item.id}</span>
-                    </th>
-                    <td className={styles.amount}>{format.money(item.plannedCost)}</td>
-                    <td className={styles.amount}>{format.money(item.plannedCostDisplay)}</td>
-                    <td>{item.spendType || '—'}</td>
-                    <td>{item.glCode || '—'}</td>
-                    <td>{item.financeBudgetItem || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <LineItems items={lineItems} />
         )}
         {unassignedPlannedCost && (
           <p className={styles.unassigned}>
@@ -230,6 +193,88 @@ function PreviewBody({ preview }: { preview: ApprovalPreview }) {
 
       {round && <ApprovalChain round={round} />}
       <ApprovalHistory rounds={approval.rounds} compact />
+    </div>
+  );
+}
+
+type PreviewLineItem = ApprovalPreview['lineItems'][number];
+
+/**
+ * The activity's line items: a table that scrolls sideways inside the panel when it is wider, and
+ * below 600 px one stacked card per line item, so nothing scrolls sideways on a phone (design
+ * system §5.4).
+ */
+function LineItems({ items }: { items: PreviewLineItem[] }) {
+  const format = useFormatters();
+  const phone = useIsPhone();
+  const converted = `Planned cost (${format.displayCurrency})`;
+
+  if (phone) {
+    return (
+      <ul role="list" className={styles.items}>
+        {items.map((item) => (
+          <li key={item.id} className={styles.item}>
+            <p className={styles.itemName}>
+              {item.name}
+              <span className={styles.id}>{item.id}</span>
+            </p>
+            <dl className={styles.itemFacts}>
+              <dt>Planned cost</dt>
+              <dd className={styles.amountText}>{format.money(item.plannedCost)}</dd>
+              <dt>{converted}</dt>
+              <dd className={styles.amountText}>{format.money(item.plannedCostDisplay)}</dd>
+              <dt>Spend type</dt>
+              <dd>{item.spendType || '—'}</dd>
+              <dt>GL code</dt>
+              <dd>{item.glCode || '—'}</dd>
+              <dt>Finance budget item</dt>
+              <dd>{item.financeBudgetItem || '—'}</dd>
+            </dl>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    // Focusable, so the keyboard can scroll it sideways when it is wider than the panel.
+    <div
+      className={styles.scroll}
+      role="region"
+      aria-label="Line items, scrolls sideways"
+      tabIndex={0}
+    >
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Line item</th>
+            <th scope="col" className={styles.amount}>
+              Planned cost
+            </th>
+            <th scope="col" className={styles.amount}>
+              {converted}
+            </th>
+            <th scope="col">Spend type</th>
+            <th scope="col">GL code</th>
+            <th scope="col">Finance budget item</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <th scope="row">
+                {item.name}
+                <span className={styles.id}>{item.id}</span>
+              </th>
+              <td className={styles.amount}>{format.money(item.plannedCost)}</td>
+              <td className={styles.amount}>{format.money(item.plannedCostDisplay)}</td>
+              <td>{item.spendType || '—'}</td>
+              <td>{item.glCode || '—'}</td>
+              <td>{item.financeBudgetItem || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -188,4 +188,18 @@ describe('ApprovalsTable rules (feature 017, US4 and US6)', () => {
     expect(second).toHaveTextContent('No approver');
     expect(second).not.toHaveTextContent('Overdue');
   });
+
+  it('shows at most two chips: one problem chip with every problem, and the escalation (design system §4.1)', () => {
+    renderTable([
+      rowOf({ overdue: true, startDatePassed: true, escalatedTo: ALEX, asDelegateOf: [CARLOS] }),
+    ]);
+
+    const name = screen.getByRole('rowheader', { name: /Launch film/ });
+    const chips = [...(name.querySelector('[class*="chips"]')?.children ?? [])].map(
+      (chip) => chip.textContent,
+    );
+    expect(chips).toEqual(['Overdue · Start date passed', 'Escalated to Alex Morgan']);
+    // Who decides is a note under the ID, not a chip.
+    expect(within(name).getByText('as delegate of Carlos Mendes').className).toMatch(/delegate/);
+  });
 });
