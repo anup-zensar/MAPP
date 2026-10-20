@@ -22,7 +22,7 @@ describe('App', () => {
     render(<App />);
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Welcome back' }),
+      await screen.findByRole('heading', { level: 1, name: 'Sign in to NorthStar' }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('Demo environment — sign-in and data are for demonstration only'),

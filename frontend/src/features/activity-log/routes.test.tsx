@@ -12,7 +12,7 @@ describe('Activity log route (feature 011)', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Every change, on the record.' }),
+      await screen.findByRole('heading', { level: 1, name: 'Activity log' }),
     ).toBeInTheDocument();
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
     expect(document.title).toBe('Activity log · NorthStar');

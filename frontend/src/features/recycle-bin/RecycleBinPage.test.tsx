@@ -31,32 +31,28 @@ function rowNames(): string[] {
 }
 
 describe('RecycleBinPage', () => {
-  it('shows the header with the count line and Empty recycle bin, and every row (FR-014, FR-015)', async () => {
-    renderPage({ [BIN]: { body: binPage([binItem(), lineItemEntry()]) } });
+  it('shows the header with the count and Empty recycle bin in More, and every row (FR-014, FR-015)', async () => {
+    const { user } = renderPage({ [BIN]: { body: binPage([binItem(), lineItemEntry()]) } });
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Deleted, not gone.' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Recycle bin' })).toBeInTheDocument();
     expect(document.title).toBe('Recycle bin · NorthStar');
-    expect(
-      await screen.findByText(
-        '2 items in the recycle bin · Items stay here until you restore or delete them',
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Empty recycle bin' })).toBeInTheDocument();
+    expect(await screen.findByText('2 of 2 items')).toBeInTheDocument();
     expect(rowNames()).toEqual(['Trade shows', 'Print ads']);
+    // Destructive and rare: a menu item, never a red button on the page (design system §5.1).
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    expect(await screen.findByRole('menuitem', { name: 'Empty recycle bin' })).toBeInTheDocument();
   });
 
   it('says so when the bin is empty, without Empty recycle bin (FR-014)', async () => {
     renderPage({ [BIN]: { body: binPage([]) } });
 
+    expect(await screen.findByText('Nothing in the recycle bin')).toBeInTheDocument();
     expect(
-      await screen.findByText(
-        'Nothing in the recycle bin — when you delete a plan, campaign, initiative, activity or line item, it comes here so you can bring it back.',
+      screen.getByText(
+        'When you delete a plan, campaign, initiative, activity or line item, it comes here so you can bring it back.',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText(/^0 items in the recycle bin/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Empty recycle bin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'More' })).not.toBeInTheDocument();
   });
 
   it('searches the contents of each entry too, and counts what it shows (FR-016)', async () => {
@@ -66,7 +62,7 @@ describe('RecycleBinPage', () => {
 
     expect(rowNames()).toEqual(['Trade shows']);
     expect(screen.getByText("Contains A-1042 'Fleet expo stand'")).toBeInTheDocument();
-    expect(screen.getByText('Showing 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText('1 of 2 items')).toBeInTheDocument();
   });
 
   it('filters by record type with the pills (FR-016)', async () => {
@@ -76,7 +72,7 @@ describe('RecycleBinPage', () => {
     await user.click(within(pills).getByRole('button', { name: 'Line items' }));
 
     expect(rowNames()).toEqual(['Print ads']);
-    expect(screen.getByText('Showing 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText('1 of 2 items')).toBeInTheDocument();
   });
 
   it('says when the filters hide everything, with Clear filters', async () => {
@@ -209,7 +205,8 @@ describe('RecycleBinPage', () => {
     });
 
     await user.type(await screen.findByRole('searchbox', { name: 'Search name or ID' }), 'print');
-    await user.click(screen.getByRole('button', { name: 'Empty recycle bin' }));
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Empty recycle bin' }));
     expect(screen.getByRole('alertdialog', { name: 'Empty the recycle bin?' })).toHaveTextContent(
       'This permanently deletes 2 items',
     );

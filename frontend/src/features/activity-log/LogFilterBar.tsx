@@ -1,6 +1,7 @@
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, CircleAlert } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { useEffect, useEffectEvent, useId, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { components } from '@/api/schema';
 import { FilterChips, SearchField, SegmentedFilter } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
@@ -30,13 +31,15 @@ export interface LogFilterBarProps {
   summary: ActivityLogSummary | undefined;
   /** The record of the Record filter, for its chip. */
   record: RecordRef | null;
+  /** The result count ("12 of 1,204 entries"), at the end of the date row (design system §5.2). */
+  count?: ReactNode;
 }
 
 /**
  * The activity log's filters (FR-003): search, Person, Record type, Action (several), Plan and the
  * date range (with Custom dates), then every filter in use as a removable chip and Clear filters.
  */
-export function LogFilterBar({ filters, onChange, summary, record }: LogFilterBarProps) {
+export function LogFilterBar({ filters, onChange, summary, record, count }: LogFilterBarProps) {
   const { date } = useFormatters();
   const ids = useId();
   const people = summary?.people ?? [];
@@ -99,12 +102,17 @@ export function LogFilterBar({ filters, onChange, summary, record }: LogFilterBa
       </div>
 
       <div className={styles.row}>
-        <SegmentedFilter<DateRangeKey | ''>
-          label="Date"
-          options={DATE_RANGES}
-          value={filters.range}
-          onChange={(range) => set(range === 'custom' ? { range } : { range, from: '', to: '' })}
-        />
+        <div className={styles.date}>
+          <span className={styles.dateLabel} aria-hidden="true">
+            Date
+          </span>
+          <SegmentedFilter<DateRangeKey | ''>
+            label="Date"
+            options={DATE_RANGES}
+            value={filters.range}
+            onChange={(range) => set(range === 'custom' ? { range } : { range, from: '', to: '' })}
+          />
+        </div>
         {filters.range === 'custom' && (
           <div className={styles.dates}>
             <div className={styles.field}>
@@ -132,11 +140,13 @@ export function LogFilterBar({ filters, onChange, summary, record }: LogFilterBa
             </div>
             {rangeError && (
               <p id={`${ids}-to-error`} className={styles.error} role="alert">
+                <CircleAlert aria-hidden="true" />
                 {rangeError}
               </p>
             )}
           </div>
         )}
+        {count && <div className={styles.count}>{count}</div>}
       </div>
 
       <FilterChips
@@ -175,7 +185,7 @@ function Select({ id, label, value, onChange, options }: SelectProps) {
       <label htmlFor={id}>{label}</label>
       <select
         id={id}
-        className={styles.control}
+        className={`${styles.control} ${styles.select}`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >

@@ -193,9 +193,9 @@ describe('day headings and counts (FR-004, FR-003, FR-009)', () => {
   });
 
   it('counts all entries, or the matching ones of all while a filter is in use', () => {
-    expect(countLine(1204, 1204, false)).toBe('1,204 entries');
-    expect(countLine(1, 1, false)).toBe('1 entry');
-    expect(countLine(12, 1204, true)).toBe('Showing 12 of 1,204 entries');
+    expect(countLine(1204, 1204)).toBe('1,204 of 1,204 entries');
+    expect(countLine(1, 1)).toBe('1 of 1 entry');
+    expect(countLine(12, 1204)).toBe('12 of 1,204 entries');
   });
 
   it('says how many entries are loaded of all', () => {

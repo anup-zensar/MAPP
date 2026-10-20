@@ -10,6 +10,7 @@ import { formatDate, formatTime, localDate } from '@/lib/format';
 import type { DateFormat } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
+import { formatWhole } from '@/lib/decimal';
 import { joinWithAnd, plural } from '@/lib/text';
 
 export type BinItem = components['schemas']['RecycleBinListItem'];
@@ -32,10 +33,13 @@ function titled(typeLabel: string, name: string): string {
 
 // ── The page ──────────────────────────────────────────────────────────────────────────────
 
-/** The header's count line (FR-014). */
-export function binCountLine(count: number): string {
-  return `${plural(count, 'item')} in the recycle bin · Items stay here until you restore or delete them`;
-}
+/** The header's description (FR-014); the count is at the end of the toolbar. */
+export const BIN_DESCRIPTION =
+  'Deleted records stay here until you restore them or delete them permanently.';
+
+/** What the empty recycle bin says under its title (FR-014). */
+export const EMPTY_BIN_TEXT =
+  'When you delete a plan, campaign, initiative, activity or line item, it comes here so you can bring it back.';
 
 /** "2 activities and 5 line items"; '' when nothing was inside. */
 export function contentsText(contents: ContentCount[]): string {
@@ -129,9 +133,12 @@ export function typePills(items: BinItem[]): { value: string; label: string }[] 
   return pills;
 }
 
-/** "Showing 3 of 12" while the search or a type pill hides some entries (FR-016). */
+/**
+ * "3 of 12 items" at the end of the toolbar (FR-016), written as every list writes its count
+ * (design system §11, rule 14).
+ */
 export function showingLine(shown: number, total: number): string {
-  return `Showing ${shown} of ${total}`;
+  return `${formatWhole(shown)} of ${plural(total, 'item')}`;
 }
 
 // ── Restore ───────────────────────────────────────────────────────────────────────────────

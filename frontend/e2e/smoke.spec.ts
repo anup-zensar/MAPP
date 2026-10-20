@@ -10,7 +10,7 @@ test('US1: a visitor is sent to sign in and comes back after choosing a demo per
 
   await expect(page).toHaveURL(/\/sign-in\?next=%2Fplans$/);
   await expect(page).toHaveTitle('Sign in · NorthStar');
-  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to NorthStar' })).toBeVisible();
   await expect(
     page.getByText('Demo environment — sign-in and data are for demonstration only'),
   ).toBeVisible();
@@ -145,7 +145,7 @@ test('US5: create, rename, delete and Undo a sample folder; the activity log rec
 
 test('SC-006: the sign-in page and Home pass the automated WCAG 2.1 AA check', async ({ page }) => {
   await page.goto('/sign-in');
-  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to NorthStar' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sign in as/ }).first()).toBeVisible();
   await expectNoAxeViolations(page);
 

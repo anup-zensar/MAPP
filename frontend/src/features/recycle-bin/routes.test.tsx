@@ -8,7 +8,7 @@ describe('Recycle bin route (feature 011)', () => {
     renderApp('/recycle-bin', { 'GET /api/recycle-bin': { body: { items: [], total: 0 } } });
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Deleted, not gone.' }),
+      await screen.findByRole('heading', { level: 1, name: 'Recycle bin' }),
     ).toBeInTheDocument();
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
     expect(document.title).toBe('Recycle bin · NorthStar');

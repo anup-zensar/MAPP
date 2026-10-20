@@ -45,10 +45,7 @@ describe('ActivityLogPage', () => {
   it('shows the header and names the tab, with no create or edit action (FR-001, FR-010)', async () => {
     renderPage('/activity-log', { [LOG]: { body: logPage([logEntry()]) } });
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Every change, on the record.' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Activity log')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Activity log' })).toBeInTheDocument();
     expect(
       screen.getByText("See who changed what, and when. Entries can't be edited or removed."),
     ).toBeInTheDocument();
@@ -103,7 +100,7 @@ describe('ActivityLogPage', () => {
       [LOG]: { body: logPage([logEntry()], { total: 1, unfilteredTotal: 140 }) },
     });
 
-    expect(await screen.findByText('Showing 1 of 140 entries')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 140 entries')).toBeInTheDocument();
     const search = logSearches(api)[0];
     expect(search.get('actorId')).toBe('U-1003');
     expect(search.getAll('action')).toEqual(['deleted']);
@@ -120,7 +117,7 @@ describe('ActivityLogPage', () => {
       [LOG]: { body: logPage([logEntry()], { total: 140, unfilteredTotal: 140 }) },
     });
 
-    expect(await screen.findByText('140 entries')).toBeInTheDocument();
+    expect(await screen.findByText('140 of 140 entries')).toBeInTheDocument();
   });
 
   it('shows the Record filter of a History link as a chip named after the record (FR-013)', async () => {
@@ -212,7 +209,7 @@ describe('ActivityLogPage', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByText('1 entry')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 1 entry')).toBeInTheDocument();
   });
 
   it('says when the log is still empty', async () => {

@@ -97,7 +97,7 @@ describe('RequireSignIn', () => {
     // The protected address is replaced, so Back does not return to it.
     expect(router.state.historyAction).toBe('REPLACE');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Welcome back' }),
+      await screen.findByRole('heading', { level: 1, name: 'Sign in to NorthStar' }),
     ).toBeInTheDocument();
   });
 

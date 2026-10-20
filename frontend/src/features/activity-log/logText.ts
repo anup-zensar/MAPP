@@ -193,13 +193,11 @@ export function entriesText(count: number): string {
 }
 
 /**
- * The count line above the list (FR-003): "Showing 12 of 1,204 entries" while a filter is in use,
- * otherwise "1,204 entries".
+ * The count at the end of the toolbar (FR-003), written as every list writes it (design system
+ * §11, rule 14): "12 of 1,204 entries", and "1,204 of 1,204 entries" when no filter is in use.
  */
-export function countLine(total: number, unfilteredTotal: number, filtered: boolean): string {
-  return filtered
-    ? `Showing ${formatWhole(total)} of ${entriesText(unfilteredTotal)}`
-    : entriesText(total);
+export function countLine(total: number, unfilteredTotal: number): string {
+  return `${formatWhole(total)} of ${entriesText(unfilteredTotal)}`;
 }
 
 /** "Showing the last 50 of 1,204" under the list while more entries can be loaded (FR-009). */
