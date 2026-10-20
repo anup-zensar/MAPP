@@ -30,6 +30,8 @@ import { CURRENCY_IMPORT_PATH } from './currencyPaths';
 import { rateDateOf, SOURCE_WORDS } from './rateWords';
 import styles016 from './rates.module.css';
 import { RecentImports } from './RecentImports';
+import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
+import { useCanChange } from '../shared/useCanChange';
 
 const CURRENCY_NOUN = { one: 'currency', many: 'currencies' };
 
@@ -86,16 +88,19 @@ export function CurrenciesPage() {
         title="Currencies"
         description="Currencies for line items, plans and display, with their dated rates per 1 USD."
         actions={
-          <>
-            <LinkButton icon={<Upload />} to={CURRENCY_IMPORT_PATH}>
-              Import GSAP rates
-            </LinkButton>
-            <Button variant="primary" icon={<Plus />} onClick={newCurrency}>
-              New currency
-            </Button>
-          </>
+          <CanChange permission="exchangeRates.manage">
+            <>
+              <LinkButton icon={<Upload />} to={CURRENCY_IMPORT_PATH}>
+                Import GSAP rates
+              </LinkButton>
+              <Button variant="primary" icon={<Plus />} onClick={newCurrency}>
+                New currency
+              </Button>
+            </>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote permission="exchangeRates.manage" />
       <div className={styles016.stack}>
         <CurrenciesCard currencies={currencies} filters={filters} actions={actions} />
         <RecentImports />
@@ -213,6 +218,7 @@ function CurrenciesCard({ currencies, filters, actions }: CurrenciesCardProps) {
 }
 
 function CurrencyRow({ currency, actions }: { currency: Currency; actions: CurrencyActions }) {
+  const canChange = useCanChange('exchangeRates.manage');
   const { date } = useFormatters();
   return (
     <tr>
@@ -246,8 +252,12 @@ function CurrencyRow({ currency, actions }: { currency: Currency; actions: Curre
           label={currency.code}
           items={[
             { label: 'View', onSelect: () => actions.view(currency) },
-            { label: 'Edit', onSelect: () => actions.edit(currency) },
-            ...moreActions(currency, actions),
+            ...(canChange
+              ? [
+                  { label: 'Edit', onSelect: () => actions.edit(currency) },
+                  ...moreActions(currency, actions),
+                ]
+              : []),
           ]}
         />
       </td>

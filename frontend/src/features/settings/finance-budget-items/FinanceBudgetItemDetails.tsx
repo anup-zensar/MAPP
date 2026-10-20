@@ -7,6 +7,7 @@ import { UsageLine } from '../shared/UsageLine';
 import type { FinanceBudget, FinanceBudgetItem } from './financeBudgetsApi';
 import { moreActions } from './financeItemActions';
 import type { FinanceItemActions } from './financeItemActions';
+import { CanChange } from '../shared/CanChange';
 
 export interface FinanceBudgetItemDetailsProps {
   /** The item; null when it no longer exists. */
@@ -49,12 +50,14 @@ export function FinanceBudgetItemDetails({
       onOpenChange={(open) => !open && onClose()}
       title={item.name}
       footer={
-        <>
-          <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(item)}>
-            Edit
-          </Button>
-          <ActionsMenu label={item.name} items={moreActions(item, actions)} />
-        </>
+        <CanChange otherwise={<Button onClick={onClose}>Close</Button>}>
+          <>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(item)}>
+              Edit
+            </Button>
+            <ActionsMenu label={item.name} items={moreActions(item, actions)} />
+          </>
+        </CanChange>
       }
     >
       <div className={styles.details}>

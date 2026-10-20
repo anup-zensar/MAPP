@@ -10,6 +10,7 @@ import { inverseLine, lockOf, moreActions, rateLine } from './currencyActions';
 import type { CurrencyActions } from './currencyActions';
 import { RateHistorySection } from './RateHistorySection';
 import { rateSourceLine } from './rateWords';
+import { CanChange } from '../shared/CanChange';
 
 /** NorthStar's base currency: always 1, without a rate history. */
 const BASE_CURRENCY = 'USD';
@@ -53,12 +54,17 @@ export function CurrencyDetails({ currency, actions, onClose }: CurrencyDetailsP
       onOpenChange={(open) => !open && onClose()}
       title={`${currency.name} (${currency.code})`}
       footer={
-        <>
-          <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(currency)}>
-            Edit
-          </Button>
-          <ActionsMenu label={currency.code} items={moreActions(currency, actions)} />
-        </>
+        <CanChange
+          permission="exchangeRates.manage"
+          otherwise={<Button onClick={onClose}>Close</Button>}
+        >
+          <>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(currency)}>
+              Edit
+            </Button>
+            <ActionsMenu label={currency.code} items={moreActions(currency, actions)} />
+          </>
+        </CanChange>
       }
     >
       <div className={styles.details}>

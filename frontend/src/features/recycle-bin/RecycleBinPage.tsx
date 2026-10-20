@@ -26,6 +26,7 @@ import { PurgeDialog } from './PurgeDialog';
 import { useRecycleBin } from './recycleBinApi';
 import { RestoreDialog } from './RestoreDialog';
 import styles from './RecycleBinPage.module.css';
+import { useAccess } from '@/lib/access';
 
 /** The dialog the page shows, if any. */
 type OpenDialog =
@@ -42,6 +43,8 @@ type OpenDialog =
 export function RecycleBinPage() {
   usePageTitle('Recycle bin');
   const bin = useRecycleBin();
+  // Emptying the bin deletes for good: only for roles with recycleBin.purge (feature 014).
+  const { has } = useAccess();
   const [params] = useSearchParams();
   const [search, setSearch] = useState('');
   const [type, setType] = useState('all');
@@ -56,7 +59,7 @@ export function RecycleBinPage() {
         description={BIN_DESCRIPTION}
         // Destructive and rare: in More, never a red button on the page (design system §5.1).
         moreActions={
-          items.length > 0
+          items.length > 0 && has('recycleBin.purge')
             ? [
                 {
                   label: 'Empty recycle bin',

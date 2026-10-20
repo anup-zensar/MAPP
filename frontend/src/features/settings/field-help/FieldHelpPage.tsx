@@ -32,6 +32,7 @@ import {
 } from './fieldHelpWords';
 import { ResetHelpDialog } from './ResetHelpDialog';
 import styles from './fieldHelp.module.css';
+import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
 
 const FIELD_NOUN = { one: 'field', many: 'fields' };
 
@@ -114,6 +115,7 @@ export function FieldHelpPage() {
         title="Field help"
         description="What each built-in field means, shown in the ⓘ beside it. A change shows on the next page anyone opens."
       />
+      <SettingsViewOnlyNote />
       {!entries.data ? (
         <Card>
           {entries.isError ? (
@@ -288,17 +290,19 @@ function HelpRow({ entry, onEdit, onReset }: HelpRowProps) {
         )}
       </td>
       <td className={settingsStyles.actionsCell}>
-        <ActionsMenu
-          label={entry.label}
-          items={[
-            { label: 'Edit', onSelect: onEdit },
-            {
-              label: 'Reset to default',
-              hint: entry.isDefault ? ALREADY_DEFAULT : undefined,
-              onSelect: () => (entry.isDefault ? show({ message: ALREADY_DEFAULT }) : onReset()),
-            },
-          ]}
-        />
+        <CanChange>
+          <ActionsMenu
+            label={entry.label}
+            items={[
+              { label: 'Edit', onSelect: onEdit },
+              {
+                label: 'Reset to default',
+                hint: entry.isDefault ? ALREADY_DEFAULT : undefined,
+                onSelect: () => (entry.isDefault ? show({ message: ALREADY_DEFAULT }) : onReset()),
+              },
+            ]}
+          />
+        </CanChange>
       </td>
     </tr>
   );

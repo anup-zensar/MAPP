@@ -29,6 +29,8 @@ import {
   useDeleteActivityType,
 } from './activityTypesApi';
 import type { ActivityType } from './activityTypesApi';
+import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
+import { useCanChange } from '../shared/useCanChange';
 
 const TYPE_NOUN = { one: 'activity type', many: 'activity types' };
 
@@ -74,11 +76,14 @@ export function ActivityTypesPage() {
         title="Activity types"
         description="The kinds of work activities can be."
         actions={
-          <Button variant="primary" icon={<Plus />} onClick={newType}>
-            New activity type
-          </Button>
+          <CanChange>
+            <Button variant="primary" icon={<Plus />} onClick={newType}>
+              New activity type
+            </Button>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote />
       <ActivityTypesCard types={types} filters={filters} actions={actions} onNew={newType} />
 
       {form && (
@@ -145,9 +150,11 @@ function ActivityTypesCard({ types, filters, actions, onNew }: ActivityTypesCard
           icon={<Shapes />}
           title="No activity types yet — create your first activity type"
           action={
-            <Button icon={<Plus />} onClick={onNew}>
-              New activity type
-            </Button>
+            <CanChange>
+              <Button icon={<Plus />} onClick={onNew}>
+                New activity type
+              </Button>
+            </CanChange>
           }
         />
       </Card>
@@ -203,6 +210,7 @@ function ActivityTypesCard({ types, filters, actions, onNew }: ActivityTypesCard
 }
 
 function ActivityTypeRow({ type, actions }: { type: ActivityType; actions: ActivityTypeActions }) {
+  const canChange = useCanChange();
   const { money } = useFormatters();
   return (
     <tr>
@@ -226,8 +234,12 @@ function ActivityTypeRow({ type, actions }: { type: ActivityType; actions: Activ
           label={type.name}
           items={[
             { label: 'View', onSelect: () => actions.view(type) },
-            { label: 'Edit', onSelect: () => actions.edit(type) },
-            ...moreActions(type, actions),
+            ...(canChange
+              ? [
+                  { label: 'Edit', onSelect: () => actions.edit(type) },
+                  ...moreActions(type, actions),
+                ]
+              : []),
           ]}
         />
       </td>

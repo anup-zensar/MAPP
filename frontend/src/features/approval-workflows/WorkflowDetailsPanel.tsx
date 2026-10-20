@@ -14,6 +14,7 @@ import type { WorkflowActions } from './workflowActions';
 import { usedByText, WORKFLOW_GONE } from './workflowTexts';
 import { useWorkflowDetails } from './workflowsApi';
 import type { ApprovalWorkflowDetails } from './workflowsApi';
+import { CanChange } from '../settings/shared/CanChange';
 import styles from './WorkflowDetailsPanel.module.css';
 
 export interface WorkflowDetailsPanelProps {
@@ -47,12 +48,16 @@ export function WorkflowDetailsPanel({ workflowId, actions, onClose }: WorkflowD
         workflow ? (
           // The one panel footer (design system §5.3): listed primary first, as the footer lines
           // its buttons up from the right — Edit, Close, then ⋯ with Set inactive and Delete.
-          <>
+          // People who may not change workflows only close it (feature 014, FR-011).
+          <CanChange
+            permission="workflows.manage"
+            otherwise={<Button onClick={onClose}>Close</Button>}
+          >
             <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(workflow)}>
               Edit
             </Button>
             <ActionsMenu label={workflow.name} items={workflowMoreItems(workflow, actions)} />
-          </>
+          </CanChange>
         ) : (
           <Button onClick={onClose}>Back to Approval workflows</Button>
         )

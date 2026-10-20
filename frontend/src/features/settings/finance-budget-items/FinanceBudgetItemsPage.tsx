@@ -33,6 +33,8 @@ import type { FinanceBudget, FinanceBudgetItem, FinanceBudgetPage } from './fina
 import { moreActions } from './financeItemActions';
 import type { FinanceItemActions } from './financeItemActions';
 import { RenameBudgetDialog } from './RenameBudgetDialog';
+import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
+import { useCanChange } from '../shared/useCanChange';
 
 const ITEM_NOUN = { one: 'finance budget item', many: 'finance budget items' };
 
@@ -108,11 +110,14 @@ export function FinanceBudgetItemsPage() {
         title="Finance budget items"
         description="The finance budget items line items link to. A simple list until the Finance module arrives."
         actions={
-          <Button variant="primary" icon={<Plus />} onClick={newItem}>
-            New finance budget item
-          </Button>
+          <CanChange>
+            <Button variant="primary" icon={<Plus />} onClick={newItem}>
+              New finance budget item
+            </Button>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote />
       {!data ? (
         <Card>
           {budgets.isError ? (
@@ -236,9 +241,11 @@ function BudgetCards({
             icon={<Wallet />}
             title={`No finance budget items for ${data.year} yet — create the first one`}
             action={
-              <Button icon={<Plus />} onClick={onNew}>
-                New finance budget item
-              </Button>
+              <CanChange>
+                <Button icon={<Plus />} onClick={onNew}>
+                  New finance budget item
+                </Button>
+              </CanChange>
             }
           />
         </Card>
@@ -274,19 +281,22 @@ interface BudgetCardProps {
 
 /** One finance budget: its name, item count and the plans using it, with Rename budget. */
 function BudgetCard({ budget, items, actions, onRename }: BudgetCardProps) {
+  const canChange = useCanChange();
   return (
     <Card
       title={budget.name}
       subtitle={`${plural(budget.items.length, 'item')} · ${budget.usage.summary}`}
       actions={
-        <Button
-          size="sm"
-          icon={<Pencil />}
-          aria-label={`Rename budget '${budget.name}'`}
-          onClick={onRename}
-        >
-          Rename budget
-        </Button>
+        canChange ? (
+          <Button
+            size="sm"
+            icon={<Pencil />}
+            aria-label={`Rename budget '${budget.name}'`}
+            onClick={onRename}
+          >
+            Rename budget
+          </Button>
+        ) : undefined
       }
     >
       <div className={styles.tableScroll}>
@@ -334,8 +344,12 @@ function BudgetCard({ budget, items, actions, onRename }: BudgetCardProps) {
                     label={item.name}
                     items={[
                       { label: 'View', onSelect: () => actions.view(item) },
-                      { label: 'Edit', onSelect: () => actions.edit(item) },
-                      ...moreActions(item, actions),
+                      ...(canChange
+                        ? [
+                            { label: 'Edit', onSelect: () => actions.edit(item) },
+                            ...moreActions(item, actions),
+                          ]
+                        : []),
                     ]}
                   />
                 </td>

@@ -29,6 +29,8 @@ import { personStatusItem } from './personActions';
 import type { PersonActions } from './personActions';
 import { PersonDetailsPanel, PersonFormPanel } from './PersonPanels';
 import { deactivateSentences, isInUse, SELF_DEACTIVATION } from './texts';
+import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
+import { useCanChange } from '../settings/shared/useCanChange';
 
 const PERSON_NOUN = { one: 'person', many: 'people' };
 
@@ -64,11 +66,14 @@ export function PeoplePage() {
         title="People"
         description="Everyone who can sign in to NorthStar, with their job title and teams."
         actions={
-          <Button variant="primary" icon={<Plus />} onClick={() => setForm({ kind: 'new' })}>
-            New person
-          </Button>
+          <CanChange permission="people.manage">
+            <Button variant="primary" icon={<Plus />} onClick={() => setForm({ kind: 'new' })}>
+              New person
+            </Button>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote permission="people.manage" />
       <PeopleCard
         currentUserId={user.id}
         onNew={() => setForm({ kind: 'new' })}
@@ -226,6 +231,7 @@ interface PersonRowProps {
 }
 
 function PersonRow({ person, isYou, onOpen, actions }: PersonRowProps) {
+  const canChange = useCanChange('people.manage');
   return (
     <tr>
       <th scope="row" className={`${styles.nameCell} ${styles.nowrap}`}>
@@ -255,8 +261,12 @@ function PersonRow({ person, isYou, onOpen, actions }: PersonRowProps) {
           label={person.name}
           items={[
             { label: 'View', onSelect: () => onOpen(person) },
-            { label: 'Edit', onSelect: () => actions.edit(person) },
-            personStatusItem(person, isYou, actions),
+            ...(canChange
+              ? [
+                  { label: 'Edit', onSelect: () => actions.edit(person) },
+                  personStatusItem(person, isYou, actions),
+                ]
+              : []),
           ]}
         />
       </td>

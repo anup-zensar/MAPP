@@ -10,6 +10,7 @@ import { moreActions } from './modelActions';
 import type { ModelActions } from './modelActions';
 import type { Model } from './modelsApi';
 import { WaterfallExample } from './WaterfallExample';
+import { CanChange } from '../shared/CanChange';
 
 export interface ModelDetailsProps {
   /** The model; null when it no longer exists. */
@@ -47,12 +48,14 @@ export function ModelDetails({ model, actions, onClose }: ModelDetailsProps) {
       onOpenChange={(open) => !open && onClose()}
       title={model.name}
       footer={
-        <>
-          <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(model)}>
-            Edit
-          </Button>
-          <ActionsMenu label={model.name} items={moreActions(model, actions)} />
-        </>
+        <CanChange otherwise={<Button onClick={onClose}>Close</Button>}>
+          <>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(model)}>
+              Edit
+            </Button>
+            <ActionsMenu label={model.name} items={moreActions(model, actions)} />
+          </>
+        </CanChange>
       }
     >
       <div className={styles.details}>

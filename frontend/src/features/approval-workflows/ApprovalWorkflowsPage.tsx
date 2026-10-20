@@ -37,6 +37,8 @@ import {
 } from './workflowsApi';
 import type { ApprovalWorkflow } from './workflowsApi';
 import styles from './ApprovalWorkflowsPage.module.css';
+import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
+import { useCanChange } from '../settings/shared/useCanChange';
 
 const WORKFLOW_NOUN = { one: 'approval workflow', many: 'approval workflows' };
 
@@ -115,11 +117,14 @@ export function ApprovalWorkflowsPage() {
         title="Approval workflows"
         description="Who approves activities, level by level."
         actions={
-          <Button variant="primary" icon={<Plus />} onClick={() => setForm({ kind: 'new' })}>
-            New approval workflow
-          </Button>
+          <CanChange permission="workflows.manage">
+            <Button variant="primary" icon={<Plus />} onClick={() => setForm({ kind: 'new' })}>
+              New approval workflow
+            </Button>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote permission="workflows.manage" />
       <Card>
         {workflows.data ? (
           <WorkflowList
@@ -195,9 +200,11 @@ function WorkflowList({ all, filters, onNew, actions }: WorkflowListProps) {
         icon={<Workflow />}
         title="No approval workflows yet — create your first approval workflow"
         action={
-          <Button icon={<Plus />} onClick={onNew}>
-            New approval workflow
-          </Button>
+          <CanChange permission="workflows.manage">
+            <Button icon={<Plus />} onClick={onNew}>
+              New approval workflow
+            </Button>
+          </CanChange>
         }
       />
     );
@@ -260,6 +267,7 @@ function WorkflowRow({
   workflow: ApprovalWorkflow;
   actions: WorkflowActions;
 }) {
+  const canChange = useCanChange('workflows.manage');
   const navigate = useNavigate();
   const details = `${LIST_PATH}/${workflow.id}`;
 
@@ -295,8 +303,12 @@ function WorkflowRow({
           label={workflow.name}
           items={[
             { label: 'View', onSelect: () => void navigate(details) },
-            { label: 'Edit', onSelect: () => actions.edit(workflow) },
-            ...workflowMoreItems(workflow, actions),
+            ...(canChange
+              ? [
+                  { label: 'Edit', onSelect: () => actions.edit(workflow) },
+                  ...workflowMoreItems(workflow, actions),
+                ]
+              : []),
           ]}
         />
       </td>

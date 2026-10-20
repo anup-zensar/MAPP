@@ -27,6 +27,8 @@ import type { TeamActions } from './teamActions';
 import { DeleteTeamDialog, TeamDetailsPanel, TeamFormPanel } from './TeamPanels';
 import { usedByText } from './texts';
 import page from './lists.module.css';
+import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
+import { useCanChange } from '../settings/shared/useCanChange';
 
 const TEAM_NOUN = { one: 'team', many: 'teams' };
 
@@ -70,11 +72,14 @@ export function TeamsPage() {
         title="Teams"
         description="Groups of people that plans are assigned to. A plan's owner must belong to one of its teams."
         actions={
-          <Button variant="primary" icon={<Plus />} onClick={() => setForm({ kind: 'new' })}>
-            New team
-          </Button>
+          <CanChange permission="people.manage">
+            <Button variant="primary" icon={<Plus />} onClick={() => setForm({ kind: 'new' })}>
+              New team
+            </Button>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote permission="people.manage" />
       <TeamsCard onNew={() => setForm({ kind: 'new' })} onOpen={openDetails} actions={actions} />
 
       {teamId && !form && (
@@ -227,6 +232,7 @@ interface TeamRowProps {
 }
 
 function TeamRow({ team, onOpen, actions }: TeamRowProps) {
+  const canChange = useCanChange('people.manage');
   return (
     <tr>
       <th scope="row" className={`${styles.nameCell} ${styles.nowrap}`}>
@@ -260,8 +266,12 @@ function TeamRow({ team, onOpen, actions }: TeamRowProps) {
           label={team.name}
           items={[
             { label: 'View', onSelect: () => onOpen(team) },
-            { label: 'Edit', onSelect: () => actions.edit(team) },
-            ...teamMoreItems(team, actions),
+            ...(canChange
+              ? [
+                  { label: 'Edit', onSelect: () => actions.edit(team) },
+                  ...teamMoreItems(team, actions),
+                ]
+              : []),
           ]}
         />
       </td>

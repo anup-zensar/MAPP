@@ -28,6 +28,7 @@ import { useShellAttribute } from './shellAttributesApi';
 import type { ShellAttribute } from './shellAttributesApi';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
+import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
 
 const NOT_FOUND = 'This Shell attribute no longer exists — someone may have deleted it.';
 
@@ -101,7 +102,7 @@ function AttributeView({ attribute }: { attribute: ShellAttribute }) {
         ]}
         title={attribute.label}
         actions={
-          <>
+          <CanChange>
             <LinkButton
               variant="primary"
               icon={<Pencil />}
@@ -124,9 +125,10 @@ function AttributeView({ attribute }: { attribute: ShellAttribute }) {
                 },
               ]}
             />
-          </>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote />
       <div className={styles.facts}>
         <LevelTag level={attribute.level} />
         <StatusChip tone={attribute.active ? 'positive' : 'neutral'}>

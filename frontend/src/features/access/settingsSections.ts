@@ -14,5 +14,6 @@ export const ACCESS_SETTINGS_SECTIONS: SettingsSection[] = [
     path: ACCESS_PATH,
     icon: ShieldCheck,
     ActiveCount: RolesCount,
+    permission: 'access.manage',
   },
 ];

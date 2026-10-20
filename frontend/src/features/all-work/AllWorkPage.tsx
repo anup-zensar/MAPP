@@ -34,6 +34,7 @@ import { MonthCalendar } from './MonthCalendar';
 import { Pager } from './Pager';
 import { SummaryCards } from './SummaryCards';
 import { useAllWorkSession } from './useAllWorkSession';
+import { useAccess } from '@/lib/access';
 import { useOpenRecord } from './useOpenRecord';
 import { ViewsControl } from './ViewsControl';
 import { ViewToolbar } from './ViewToolbar';
@@ -64,6 +65,7 @@ const TABS: TabItem<ViewType>[] = [
  * record (FR-016).
  */
 export function AllWorkPage() {
+  const { has } = useAccess();
   usePageTitle('All work');
   const session = useAllWorkSession();
   const { state, entry, setState } = session;
@@ -218,7 +220,8 @@ export function AllWorkPage() {
               onSaved={(saved) => session.setAppliedView(saved.id)}
               onStandard={session.applyStandard}
             />
-            {state && <ExportMenu state={state} result={result} />}
+            {/* Export needs data.export (feature 014, FR-012); the server checks it too. */}
+            {state && has('data.export') && <ExportMenu state={state} result={result} />}
           </>
         }
       />

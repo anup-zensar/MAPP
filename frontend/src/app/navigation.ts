@@ -61,7 +61,12 @@ const PLANS: NavItem = {
 };
 
 /** Feature 014 US6: global budgets shared out to market plans (FR-036). */
-const GLOBAL_BUDGETS: NavItem = { label: 'Global budgets', path: '/budgets', icon: Landmark };
+const GLOBAL_BUDGETS: NavItem = {
+  label: 'Global budgets',
+  path: '/budgets',
+  icon: Landmark,
+  permission: 'globalBudgets.view',
+};
 
 const APPROVALS: NavItem = {
   label: 'Approvals',
@@ -73,7 +78,12 @@ const APPROVALS: NavItem = {
 const ALL_WORK: NavItem = { label: 'All work', path: '/all-work', icon: LayoutGrid };
 
 /** Feature 015: purchase orders, invoices, payments and accruals from GSAP (FR-020). */
-const FINANCIALS: NavItem = { label: 'Financials', path: '/financials', icon: ReceiptText };
+const FINANCIALS: NavItem = {
+  label: 'Financials',
+  path: '/financials',
+  icon: ReceiptText,
+  permission: 'finance.view',
+};
 
 const SETTINGS: NavItem = { label: 'Settings', path: '/settings', icon: Settings };
 

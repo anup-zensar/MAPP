@@ -42,6 +42,7 @@ import { removedIds } from './removedIds';
 import { deleteTeamText, teamInUseText, usedByText } from './texts';
 import list from '@/features/settings/shared/SettingsTable.module.css';
 import styles from './panels.module.css';
+import { CanChange } from '../settings/shared/CanChange';
 
 /** The team palette (D-025), in the order of the Colour field. */
 const COLOURS: { id: TeamColour; label: string }[] = [
@@ -83,12 +84,17 @@ export function TeamDetailsPanel({ teamId, actions, onClose }: TeamDetailsPanelP
         onOpenChange={(open) => !open && onClose()}
         title={data.name}
         footer={
-          <>
-            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(data)}>
-              Edit
-            </Button>
-            <ActionsMenu label={data.name} items={teamMoreItems(data, actions)} />
-          </>
+          <CanChange
+            permission="people.manage"
+            otherwise={<Button onClick={onClose}>Close</Button>}
+          >
+            <>
+              <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(data)}>
+                Edit
+              </Button>
+              <ActionsMenu label={data.name} items={teamMoreItems(data, actions)} />
+            </>
+          </CanChange>
         }
       >
         <TeamDetails team={data} />

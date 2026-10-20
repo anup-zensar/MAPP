@@ -5,6 +5,7 @@ import { mockApi } from '@/test/mockApi';
 import { renderRoutes } from '@/test/render';
 import { routes } from './router';
 import type { CurrentUser } from './useSession';
+import { NO_DELEGATIONS } from '@/features/approvals/testData';
 import { testUser } from '@/test/users';
 
 const PRIYA: CurrentUser = testUser();
@@ -38,7 +39,11 @@ const NO_PLANS = {
 };
 
 /** The Approvals page's request, answered with no rows. */
-const NO_APPROVALS = { 'GET /api/approvals': { body: { items: [], total: 0 } } };
+const NO_APPROVALS = {
+  'GET /api/approvals': { body: { items: [], total: 0 } },
+  // The Approvals page lists the person's delegations too (feature 017).
+  'GET /api/approval-delegations': NO_DELEGATIONS,
+};
 
 afterEach(() => {
   localStorage.clear();

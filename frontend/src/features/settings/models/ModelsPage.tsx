@@ -27,6 +27,8 @@ import { ModelForm } from './ModelForm';
 import type { ModelFormMode } from './ModelForm';
 import { MODEL_LISTS, setModelStatus, useDeleteModel } from './modelsApi';
 import type { Model } from './modelsApi';
+import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
+import { useCanChange } from '../shared/useCanChange';
 
 const MODEL_NOUN = { one: 'model', many: 'models' };
 
@@ -70,11 +72,14 @@ export function ModelsPage() {
         title="Models"
         description="The rulebooks plans use. Changes apply to every plan using the model."
         actions={
-          <Button variant="primary" icon={<Plus />} onClick={newModel}>
-            New model
-          </Button>
+          <CanChange>
+            <Button variant="primary" icon={<Plus />} onClick={newModel}>
+              New model
+            </Button>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote />
       <ModelsCard models={models} filters={filters} actions={actions} onNew={newModel} />
 
       {form && <ModelForm mode={form} onView={filters.setOpenId} onClose={() => setForm(null)} />}
@@ -132,9 +137,11 @@ function ModelsCard({ models, filters, actions, onNew }: ModelsCardProps) {
           icon={<Calculator />}
           title="No models yet — create your first model"
           action={
-            <Button icon={<Plus />} onClick={onNew}>
-              New model
-            </Button>
+            <CanChange>
+              <Button icon={<Plus />} onClick={onNew}>
+                New model
+              </Button>
+            </CanChange>
           }
         />
       </Card>
@@ -195,6 +202,7 @@ function ModelsCard({ models, filters, actions, onNew }: ModelsCardProps) {
 }
 
 function ModelRow({ model, actions }: { model: Model; actions: ModelActions }) {
+  const canChange = useCanChange();
   const { money } = useFormatters();
   return (
     <tr>
@@ -219,8 +227,12 @@ function ModelRow({ model, actions }: { model: Model; actions: ModelActions }) {
           label={model.name}
           items={[
             { label: 'View', onSelect: () => actions.view(model) },
-            { label: 'Edit', onSelect: () => actions.edit(model) },
-            ...moreActions(model, actions),
+            ...(canChange
+              ? [
+                  { label: 'Edit', onSelect: () => actions.edit(model) },
+                  ...moreActions(model, actions),
+                ]
+              : []),
           ]}
         />
       </td>

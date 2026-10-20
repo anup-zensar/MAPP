@@ -8,6 +8,7 @@ import { UsageLine } from '../shared/UsageLine';
 import { moreActions } from './activityTypeActions';
 import type { ActivityTypeActions } from './activityTypeActions';
 import type { ActivityType } from './activityTypesApi';
+import { CanChange } from '../shared/CanChange';
 
 export interface ActivityTypeDetailsProps {
   /** The activity type; null when it no longer exists. */
@@ -45,12 +46,14 @@ export function ActivityTypeDetails({ type, actions, onClose }: ActivityTypeDeta
       onOpenChange={(open) => !open && onClose()}
       title={type.name}
       footer={
-        <>
-          <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(type)}>
-            Edit
-          </Button>
-          <ActionsMenu label={type.name} items={moreActions(type, actions)} />
-        </>
+        <CanChange otherwise={<Button onClick={onClose}>Close</Button>}>
+          <>
+            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(type)}>
+              Edit
+            </Button>
+            <ActionsMenu label={type.name} items={moreActions(type, actions)} />
+          </>
+        </CanChange>
       }
     >
       <div className={styles.details}>

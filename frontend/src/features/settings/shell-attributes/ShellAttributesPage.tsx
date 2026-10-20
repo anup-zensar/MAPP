@@ -35,6 +35,8 @@ import type { AttributeMove, ShellAttribute } from './shellAttributesApi';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
 import { useFailureToast } from './useStatusChange';
+import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
+import { useCanChange } from '../shared/useCanChange';
 
 type StatusFilter = 'active' | 'inactive' | 'all';
 
@@ -179,15 +181,18 @@ export function ShellAttributesPage() {
         title="Shell attributes"
         description="Shell's own fields on each level's form. Changes apply to every form straight away."
         actions={
-          <LinkButton
-            variant="primary"
-            icon={<Plus />}
-            to={`/settings/shell-attributes/new?level=${filters.level}`}
-          >
-            New Shell attribute
-          </LinkButton>
+          <CanChange>
+            <LinkButton
+              variant="primary"
+              icon={<Plus />}
+              to={`/settings/shell-attributes/new?level=${filters.level}`}
+            >
+              New Shell attribute
+            </LinkButton>
+          </CanChange>
         }
       />
+      <SettingsViewOnlyNote />
       <AttributeList filters={filters} />
     </>
   );
@@ -200,6 +205,7 @@ function AttributeList({ filters }: { filters: Filters }) {
   const attributes = useAllShellAttributes();
   const navigate = useNavigate();
   const actions = useAttributeActions();
+  const canChange = useCanChange();
   const move = useMoveAttribute();
   const showFailure = useFailureToast('Shell attribute');
   const [announcement, setAnnouncement] = useState('');
@@ -346,9 +352,11 @@ function AttributeList({ filters }: { filters: Filters }) {
             icon={<ListChecks />}
             title={`No ${levelMidSentence(level)} attributes yet — create the first one`}
             action={
-              <LinkButton icon={<Plus />} to={`/settings/shell-attributes/new?level=${level}`}>
-                New Shell attribute
-              </LinkButton>
+              <CanChange>
+                <LinkButton icon={<Plus />} to={`/settings/shell-attributes/new?level=${level}`}>
+                  New Shell attribute
+                </LinkButton>
+              </CanChange>
             }
           />
         ) : shown.length === 0 ? (
@@ -463,21 +471,26 @@ function AttributeList({ filters }: { filters: Filters }) {
                                 onSelect: () =>
                                   navigate(`/settings/shell-attributes/${attribute.id}`),
                               },
-                              {
-                                label: 'Edit',
-                                onSelect: () =>
-                                  navigate(`/settings/shell-attributes/${attribute.id}/edit`),
-                              },
-                              {
-                                label: attribute.active ? 'Set inactive' : 'Reactivate',
-                                onSelect: () => actions.setActive(attribute, !attribute.active),
-                              },
-                              {
-                                label: 'Delete',
-                                tone: 'danger',
-                                separatorBefore: true,
-                                onSelect: () => actions.askDelete(attribute),
-                              },
+                              ...(canChange
+                                ? [
+                                    {
+                                      label: 'Edit',
+                                      onSelect: () =>
+                                        navigate(`/settings/shell-attributes/${attribute.id}/edit`),
+                                    },
+                                    {
+                                      label: attribute.active ? 'Set inactive' : 'Reactivate',
+                                      onSelect: () =>
+                                        actions.setActive(attribute, !attribute.active),
+                                    },
+                                    {
+                                      label: 'Delete',
+                                      tone: 'danger',
+                                      separatorBefore: true,
+                                      onSelect: () => actions.askDelete(attribute),
+                                    } as const,
+                                  ]
+                                : []),
                             ]}
                           />
                         </td>

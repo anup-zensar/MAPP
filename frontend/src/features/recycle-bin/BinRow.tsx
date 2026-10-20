@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { ActionsMenu, Avatar, Button, LevelTag, StatusChip, Tooltip } from '@/components';
-import type { PlanningLevel } from '@/components';
+import type { ActionsMenuItem, PlanningLevel } from '@/components';
+import { availabilityProps, isShown } from '@/lib/access';
 import { initialsOf } from '@/features/activity-log/logText';
 import { useFormatters } from '@/lib/useFormatters';
 import { capitalise, insideRecords, restoreStateLine, rowContentsText, wasInText } from './binText';
@@ -35,6 +36,24 @@ export function BinRow({
   onPurge,
 }: BinRowProps) {
   const { dateTime, relativeTime } = useFormatters();
+  // What the person's roles allow here (feature 014, FR-011): an action they may not take moves
+  // into the menu, shown with the server's reason; one without a reason is left out.
+  const restoreOk = !item.access || item.access.restore.available;
+  const menu: ActionsMenuItem[] = [
+    ...(!restoreOk && isShown(item.access?.restore)
+      ? [{ label: 'Restore', onSelect: onRestore, ...availabilityProps(item.access?.restore) }]
+      : []),
+    ...(isShown(item.access?.deletePermanently)
+      ? [
+          {
+            label: 'Delete permanently',
+            tone: 'danger' as const,
+            onSelect: onPurge,
+            ...availabilityProps(item.access?.deletePermanently),
+          },
+        ]
+      : []),
+  ];
   const [open, setOpen] = useState(highlightInside);
   const heading = useRef<HTMLHeadingElement>(null);
   const contentsId = useId();
@@ -102,13 +121,12 @@ export function BinRow({
         )}
       </div>
       <div className={styles.actions}>
-        <Button size="sm" aria-label={`Restore ${record}`} onClick={onRestore}>
-          Restore
-        </Button>
-        <ActionsMenu
-          label={record}
-          items={[{ label: 'Delete permanently', tone: 'danger', onSelect: onPurge }]}
-        />
+        {restoreOk && (
+          <Button size="sm" aria-label={`Restore ${record}`} onClick={onRestore}>
+            Restore
+          </Button>
+        )}
+        {menu.length > 0 && <ActionsMenu label={record} items={menu} />}
       </div>
     </li>
   );

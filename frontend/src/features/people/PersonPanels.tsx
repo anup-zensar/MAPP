@@ -40,6 +40,7 @@ import { personStatusItem } from './personActions';
 import type { PersonActions } from './personActions';
 import { approvesInText, ownsText } from './texts';
 import panel from './panels.module.css';
+import { CanChange } from '../settings/shared/CanChange';
 
 /** Above this many teams, the details offer "Search teams". */
 const SEARCH_ABOVE = 10;
@@ -69,12 +70,17 @@ export function PersonDetailsPanel({ personId, actions, onClose }: PersonDetails
         onOpenChange={(open) => !open && onClose()}
         title={data.name}
         footer={
-          <>
-            <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(data)}>
-              Edit
-            </Button>
-            <ActionsMenu label={data.name} items={[personStatusItem(data, isYou, actions)]} />
-          </>
+          <CanChange
+            permission="people.manage"
+            otherwise={<Button onClick={onClose}>Close</Button>}
+          >
+            <>
+              <Button variant="primary" icon={<Pencil />} onClick={() => actions.edit(data)}>
+                Edit
+              </Button>
+              <ActionsMenu label={data.name} items={[personStatusItem(data, isYou, actions)]} />
+            </>
+          </CanChange>
         }
       >
         <PersonDetailsBody person={data} />
