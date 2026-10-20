@@ -34,10 +34,16 @@ func TestSubmission_ListsLevelsAndNote_FR011(t *testing.T) {
 		RoundNumber: 1, Ready: true, Problems: []SubmitProblem{},
 		Workflow: &WorkflowRef{ID: chinaFlow, Name: "China BC approval workflow", Active: true},
 		Levels: []LevelView{
-			{Number: 1, Label: "Level 1", Approvers: []PersonView{{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}},
-			{Number: 2, Label: "Level 2", Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}},
+			{Number: 1, Label: "Level 1", Approvers: []PersonView{PersonView{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}, ApproverType: SourcePeople, Mode: ModeAny,
+				Summary: "Level 1 · Carlos Mendes"},
+			{Number: 2, Label: "Level 2", Approvers: []PersonView{PersonView{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, ApproverType: SourcePeople, Mode: ModeAny,
+				Summary: "Level 2 · Alex Morgan"},
 		},
 		UnassignedPlannedCost: &note,
+		Outcomes: []SubmissionLevel{ // 017 FR-013: both levels need a decision
+			{Number: 1, Label: "Level 1", Outcome: ResolutionDecide, Approvers: []PersonView{PersonView{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
+			{Number: 2, Label: "Level 2", Outcome: ResolutionDecide, Approvers: []PersonView{PersonView{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
+		},
 	}
 	if !reflect.DeepEqual(submission, want) {
 		t.Errorf("submission =\n%+v\nwant\n%+v", submission, want)
@@ -151,13 +157,11 @@ func TestSubmit_StartsRound1_FR011(t *testing.T) {
 	}
 	wantRound := Round{
 		ID: "AR-1001", ActivityID: "A-1009", Number: 1, WorkflowID: chinaFlow, WorkflowName: "China BC approval workflow",
-		Levels: []RoundLevel{
-			{Number: 1, Approvers: []actor.Actor{carlos}},
-			{Number: 2, Approvers: []actor.Actor{alex}},
-		},
+		Levels:       []RoundLevel{decideLevel(1, carlos), decideLevel(2, alex)},
 		CurrentLevel: 1, Outcome: OutcomeOpen, SubmittedAt: start, SubmittedBy: mei, Comment: "Ready for your review.",
-		Meta: record.NewMeta(mei, start),
+		Facts: fixtureFacts(t), Meta: record.NewMeta(mei, start),
 	}
+	wantRound.Levels[0].StartedAt = &start // 017 FR-029: level 1 waits from the submission
 	if rounds := f.rounds(t, "A-1009"); len(rounds) != 1 || !reflect.DeepEqual(rounds[0], wantRound) {
 		t.Errorf("rounds =\n%+v\nwant\n%+v", rounds, wantRound)
 	}
@@ -285,8 +289,10 @@ func TestResubmit_NewRoundWithCurrentLevels_FR020(t *testing.T) {
 		t.Errorf("submission: kind %s, round %d, available %v; want resubmit, 2, true", submission.Kind, submission.RoundNumber, submission.Available)
 	}
 	rounds := f.rounds(t, "A-1004")
+	level := decideLevel(1, daniel, sara)
+	level.Name, level.StartedAt = "Team leaders", &rounds[1].SubmittedAt
 	if len(rounds) != 2 || rounds[0].Levels[0].Name != "" || rounds[1].Number != 2 || rounds[1].CurrentLevel != 1 ||
-		!reflect.DeepEqual(rounds[1].Levels, []RoundLevel{{Number: 1, Name: "Team leaders", Approvers: []actor.Actor{daniel, sara}}}) {
+		!reflect.DeepEqual(rounds[1].Levels, []RoundLevel{level}) {
 		t.Errorf("rounds = %+v, want round 1 unchanged and round 2 with the current levels", rounds)
 	}
 	actions := f.actions(t, "A-1004")
@@ -403,7 +409,8 @@ func TestApprove_MovesToNextLevel_FR015(t *testing.T) {
 	if states := chainStates(approval.Rounds[0]); states != "L1 approved, L2 waiting" {
 		t.Errorf("chain = %s, want L1 approved, L2 waiting", states)
 	}
-	wantDecision := &Decision{Action: "approved", Actor: carlos, OnBehalfOf: []actor.Actor{}, At: approvedAt, Comment: "Looks good."}
+	wantDecision := &Decision{Action: "approved", Actor: carlos, OnBehalfOf: []actor.Actor{}, At: approvedAt, Comment: "Looks good.",
+		Capacity: CapacityApprover}
 	if got := approval.Rounds[0].Levels[0].Decision; !reflect.DeepEqual(got, wantDecision) {
 		t.Errorf("decision = %+v, want %+v", got, wantDecision)
 	}
@@ -514,7 +521,8 @@ func TestDecline_EndsRoundAtAnyLevel_FR016(t *testing.T) {
 	if ended.Outcome != OutcomeDeclined || ended.CurrentLevel != 2 || ended.EndedAt == nil || f.activities.facts["A-1009"].Status != StatusDeclined {
 		t.Errorf("round %+v, activity %s; want declined at level 2", ended, f.activities.facts["A-1009"].Status)
 	}
-	wantNote := &DeclineNote{RoundNumber: 1, Level: 2, LevelLabel: "Level 2", Actor: alex, OnBehalfOf: []actor.Actor{}, At: f.clock.Now(), Comment: comment}
+	wantNote := &DeclineNote{RoundNumber: 1, Level: 2, LevelLabel: "Level 2", Actor: alex, OnBehalfOf: []actor.Actor{}, At: f.clock.Now(),
+		Comment: comment, Capacity: CapacityApprover}
 	if !reflect.DeepEqual(atLevel2.LatestDecline, wantNote) {
 		t.Errorf("latest decline = %+v, want %+v", atLevel2.LatestDecline, wantNote)
 	}
@@ -559,10 +567,11 @@ func TestDecide_OnBehalfOf_FR017(t *testing.T) {
 	}
 }
 
-// The owner may approve a level they are an approver of, and is not told about their own decision; a
-// person on two levels decides each level separately; an inactive approver stays on the chain, shown
-// inactive, and others decide on their behalf (spec edge cases, D-020).
-func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_EdgeCases(t *testing.T) {
+// The owner of an activity is left out of its levels and may not decide it while 014's access rule is on
+// (017 FR-011, FR-018); a person on two levels decides each level separately; an inactive approver stays
+// on the chain, shown inactive, and someone allowed to decide on behalf decides for them (spec edge cases,
+// 017 FR-017).
+func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testing.T) {
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", daniel.ID, lubricantsFlow)
 	f.addWorkflow(t, "WF-1003", "Carlos twice", []string{carlos.ID}, []string{carlos.ID})
@@ -572,20 +581,21 @@ func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_EdgeCases(t *testing.T) {
 		f.submit(t, priya, id, "")
 	}
 
-	t.Run("owner approves", func(t *testing.T) {
+	t.Run("owner is left out and refused", func(t *testing.T) {
 		before, err := f.service.Approval(t.Context(), daniel, "A-1004")
 		if err != nil {
 			t.Fatalf("Approval: %v", err)
 		}
-		approval := f.approve(t, daniel, "A-1004", "")
-		if !before.Viewer.IsOwner || !before.Viewer.IsCurrentApprover || approval.Status != StatusApproved {
-			t.Errorf("viewer %+v, status %s; want owner and approver, then approved", before.Viewer, approval.Status)
+		_, err = f.service.Approve(t.Context(), daniel, "A-1004", DecisionInput{RoundID: f.openRound(t, "A-1004").ID, Level: version(1)})
+		level := before.Rounds[0].Levels[0]
+		if !before.Viewer.IsOwner || before.Viewer.IsCurrentApprover || before.Viewer.CanDecide || !level.NoApprover ||
+			len(level.Excluded) != 1 || level.Excluded[0].Reason != ReasonOwner {
+			t.Errorf("viewer %+v, level %+v; want the owner left out, the level with no approver", before.Viewer, level)
 		}
-		for _, n := range f.notifications(t, daniel.ID) {
-			if n.Kind == NotifyApproved {
-				t.Errorf("Daniel Okoro was told about his own approval: %+v", n)
-			}
+		if before.Actions.Approve != (ActionAvailability{Reason: "You own this activity, so someone else must approve it."}) {
+			t.Errorf("approve = %+v, want unavailable with the owner message", before.Actions.Approve)
 		}
+		assertError(t, err, errs.Forbidden("You own this activity, so someone else must approve it."))
 	})
 	t.Run("one person on two levels", func(t *testing.T) {
 		first := f.approve(t, carlos, "A-1009", "")
@@ -607,12 +617,13 @@ func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_EdgeCases(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Approval: %v", err)
 		}
-		approval := f.approve(t, priya, "A-1001", "")
-		if approvers := before.Rounds[0].Levels[0].Approvers; len(approvers) != 1 || approvers[0].Active {
-			t.Errorf("chain approvers = %+v, want Daniel Okoro shown inactive", approvers)
+		approval := f.approve(t, alex, "A-1001", "")
+		if approvers := before.Rounds[0].Levels[0].Approvers; len(approvers) != 1 || approvers[0].Active || !before.Rounds[0].Levels[0].NoApprover {
+			t.Errorf("chain approvers = %+v, want Daniel Okoro shown inactive and no approver", approvers)
 		}
-		if decision := approval.Rounds[0].Levels[0].Decision; !reflect.DeepEqual(decision.OnBehalfOf, []actor.Actor{daniel}) {
-			t.Errorf("decision = %+v, want Priya Raman on behalf of Daniel Okoro", decision)
+		if decision := approval.Rounds[0].Levels[0].Decision; !reflect.DeepEqual(decision.OnBehalfOf, []actor.Actor{daniel}) ||
+			decision.Capacity != CapacityOnBehalf {
+			t.Errorf("decision = %+v, want Alex Morgan on behalf of Daniel Okoro", decision)
 		}
 	})
 }

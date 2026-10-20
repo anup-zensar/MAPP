@@ -40,6 +40,10 @@ func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 		demoPerson("U-1005", "Carlos Mendes", "carlos.mendes@northstar.demo", "Business champion"),
 		demoPerson("U-1006", "Sara Novak", "sara.novak@northstar.demo", "Local finance advisor"),
 	}
+	// 017 FR-037: their line managers (017 data-model §13).
+	for i, manager := range []string{"", "U-1003", "U-1001", "U-1005", "U-1001", "U-1003"} {
+		want[i].ManagerID = manager
+	}
 	got := storedPeople(t, db)
 	if len(got) != len(want) {
 		t.Fatalf("loaded %d people, want %d: %+v", len(got), len(want), got)
@@ -63,9 +67,10 @@ func TestLoad_IDsComeFromTheCounters_FR027(t *testing.T) {
 		ids.PrefixFinanceBudgetItem: "FBI-1007", ids.PrefixTeam: "T-1004", ids.PrefixTeamMembership: "TM-1009",
 		ids.PrefixPlan: "P-1004", ids.PrefixCampaign: "C-1005", ids.PrefixInitiative: "I-1010", ids.PrefixActivity: "A-1012",
 		ids.PrefixLineItem: "L-1010", ids.PrefixLogEntry: "LOG-1047", ids.PrefixBinEntry: "BIN-1002",
-		ids.PrefixApprovalWorkflow: "WF-1003", ids.PrefixApprovalRound: "AR-1009",
+		ids.PrefixApprovalWorkflow: "WF-1004", ids.PrefixApprovalRound: "AR-1009",
 		ids.PrefixApprovalAction: "AH-1016", ids.PrefixNotification: "NT-1010",
 		ids.PrefixFinancialTransaction: "FT-1012", ids.PrefixFinancialImport: "FIM-1002",
+		ids.PrefixApprovalDelegation: "DLG-1002",
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -147,10 +152,10 @@ func TestLoaded_SaysWhatIsLoaded_FR028(t *testing.T) {
 	entries, bin := demoLog(t, loadedStore(t))
 	got := fmt.Sprintf("%d people, %d teams, %d models, %d activity types, %d Shell attributes with %d options, "+
 		"%d currencies, %d finance budget items, %d plans, %d campaigns, %d initiatives, %d activities, %d line items, "+
-		"%d approval workflows, %d approval rounds, %d activity-log entries, %d recycle-bin entry",
+		"%d approval workflows, %d approval rounds, %d approval delegation, %d activity-log entries, %d recycle-bin entry",
 		len(d.people), len(d.teams), len(d.models), len(d.activityTypes), len(d.attributes), activeOptions,
 		len(d.currencies), len(d.items), len(d.plans), len(d.campaigns), len(d.initiatives), len(d.activities),
-		len(d.lineItems), len(d.workflows), len(d.rounds), len(entries), len(bin))
+		len(d.lineItems), len(d.workflows), len(d.rounds), len(d.delegations), len(entries), len(bin))
 	if got != seed.Loaded {
 		t.Errorf("stored: %s\nseed.Loaded: %s", got, seed.Loaded)
 	}
@@ -254,6 +259,7 @@ type demoData struct {
 	rounds        []approvals.Round
 	actions       []approvals.Action
 	notifications map[string][]approvals.Notification // by recipient id
+	delegations   []approvals.Delegation
 
 	attributeByID map[string]settings.Attribute
 	optionByID    map[string]settings.Option
@@ -305,6 +311,8 @@ func loadDemo(t *testing.T) demoData {
 		d.rounds, err = approvalsRepo.ListRounds(ctx)
 		collect(err)
 		d.actions, err = approvalsRepo.ListActions(ctx)
+		collect(err)
+		d.delegations, err = approvalsRepo.ListDelegations(ctx)
 		collect(err)
 		d.notifications = map[string][]approvals.Notification{}
 		for _, p := range d.people {

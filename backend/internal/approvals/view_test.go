@@ -20,7 +20,8 @@ func TestApproval_Actions_FR009_FR014_FR021(t *testing.T) {
 	}{
 		{StatusCreated, ActionSet{Submit: available}},
 		{StatusDeclined, ActionSet{Resubmit: available}},
-		{StatusSubmitted, ActionSet{Approve: available, Decline: available, Recall: available}},
+		// 017 FR-017: approve and decline follow who may decide the open round's level (TestApproval_ViewerAuthority_FR017).
+		{StatusSubmitted, ActionSet{Recall: available}},
 		{StatusApproved, ActionSet{Recall: ActionAvailability{Reason: "Approved activities can't be recalled. " +
 			"Changing its planned cost, dates or line-item amounts sends it back for approval."}}},
 	}
@@ -85,9 +86,11 @@ func TestApproval_ChainAndHistory_FR024_FR025(t *testing.T) {
 	alexView := PersonView{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}
 	want := []HistoryEntryView{
 		{ID: "AH-1003", RoundNumber: 1, Level: 2, LevelLabel: "Level 2", Approvers: []PersonView{alexView}, Actor: alex,
-			OnBehalfOf: []actor.Actor{}, Action: "declined", At: start.Add(2 * time.Hour), Comment: "Split the cost.", Changes: []ChangeView{}},
+			OnBehalfOf: []actor.Actor{}, Action: "declined", At: start.Add(2 * time.Hour), Comment: "Split the cost.", Changes: []ChangeView{},
+			Capacity: CapacityApprover},
 		{ID: "AH-1002", RoundNumber: 1, Level: 1, LevelLabel: "Level 1", Approvers: []PersonView{carlosView}, Actor: alex,
-			OnBehalfOf: []actor.Actor{carlos}, Action: "approved", At: start.Add(time.Hour), Comment: "For Carlos.", Changes: []ChangeView{}},
+			OnBehalfOf: []actor.Actor{carlos}, Action: "approved", At: start.Add(time.Hour), Comment: "For Carlos.", Changes: []ChangeView{},
+			Capacity: CapacityOnBehalf},
 		{ID: "AH-1001", RoundNumber: 1, Level: 1, LevelLabel: "Level 1", Approvers: []PersonView{carlosView}, Actor: mei,
 			OnBehalfOf: []actor.Actor{}, Action: "submitted", At: start, Changes: []ChangeView{}},
 	}
@@ -139,11 +142,13 @@ func TestApproval_NotSubmittedYet_FR024(t *testing.T) {
 		DisplayStatus: StatusCreated, OwnerID: mei.ID, Owner: &PersonView{ID: mei.ID, Name: "Mei Lin", Initials: "ML", Active: true},
 		Workflow: &WorkflowRef{ID: chinaFlow, Name: "China BC approval workflow", Active: true},
 		UpcomingLevels: []LevelView{
-			{Number: 1, Label: "Level 1", Approvers: []PersonView{{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}},
-			{Number: 2, Label: "Level 2", Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}},
+			{Number: 1, Label: "Level 1", Approvers: []PersonView{{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}},
+				ApproverType: SourcePeople, Mode: ModeAny, Summary: "Level 1 · Carlos Mendes"},
+			{Number: 2, Label: "Level 2", Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}},
+				ApproverType: SourcePeople, Mode: ModeAny, Summary: "Level 2 · Alex Morgan"},
 		},
 		Rounds:  []RoundView{},
-		Viewer:  Viewer{IsOwner: true, OnBehalfOf: []PersonView{}},
+		Viewer:  Viewer{IsOwner: true, OnBehalfOf: []PersonView{}, AsDelegateOf: []PersonView{}},
 		Actions: ActionSet{Submit: ActionAvailability{Available: true}},
 	}
 	if !reflect.DeepEqual(asOwner, want) {

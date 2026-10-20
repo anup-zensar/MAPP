@@ -63,19 +63,20 @@ func TestNotify_Recipients_FR035(t *testing.T) {
 	}{
 		{"submit", func(*fixture) {}, func(f *fixture) { f.submit(t, alex, "A-1004", "") },
 			[]string{"Daniel Okoro: approvalNeeded"}},
-		{"re-submit", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.decline(t, alex, "A-1004", "No.") },
+		// 017 FR-018: Alex submits, so the approvers decide.
+		{"re-submit", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.decline(t, daniel, "A-1004", "No.") },
 			func(f *fixture) { f.submit(t, alex, "A-1004", "") },
 			[]string{"Daniel Okoro: approvalNeeded"}},
 		{"approve a level before the last", func(f *fixture) { f.submit(t, alex, "A-1004", "") },
-			func(f *fixture) { f.approve(t, alex, "A-1004", "") },
+			func(f *fixture) { f.approve(t, daniel, "A-1004", "") },
 			[]string{"Priya Raman: levelApproved", "Carlos Mendes: approvalNeeded", "Sara Novak: approvalNeeded"}},
-		{"approve the last level", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.approve(t, alex, "A-1004", "") },
-			func(f *fixture) { f.approve(t, alex, "A-1004", "") },
+		{"approve the last level", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.approve(t, daniel, "A-1004", "") },
+			func(f *fixture) { f.approve(t, carlos, "A-1004", "") },
 			[]string{"Priya Raman: approved"}},
 		{"decline", func(f *fixture) { f.submit(t, alex, "A-1004", "") },
-			func(f *fixture) { f.decline(t, alex, "A-1004", "No.") },
+			func(f *fixture) { f.decline(t, daniel, "A-1004", "No.") },
 			[]string{"Priya Raman: declined"}},
-		{"recall", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.approve(t, alex, "A-1004", "") },
+		{"recall", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.approve(t, daniel, "A-1004", "") },
 			func(f *fixture) { f.recall(t, alex, "A-1004", "") },
 			[]string{"Priya Raman: recalled", "Carlos Mendes: recalled", "Sara Novak: recalled"}},
 		{"restart of a Submitted activity", func(f *fixture) { f.submit(t, alex, "A-1004", "") },
@@ -112,9 +113,11 @@ func TestNotify_Recipients_FR035(t *testing.T) {
 }
 
 // Nobody is ever told about their own action, also when they are the owner or an approver of the level:
-// Daniel Okoro submits, approves and recalls his own activity at a level that lists him (FR-036).
+// Daniel Okoro submits, approves and recalls his own activity at a level that lists him (FR-036). He may,
+// because 014's access rule is off here (017 edge case "The access rule is turned off").
 func TestNotify_NeverOwnAction_FR036(t *testing.T) {
 	f := newFixture(t)
+	f.access.rule = false
 	f.addActivity(t, "A-1004", "Trade magazine ads", daniel.ID, lubricantsFlow)
 	f.addActivity(t, "A-1005", "Fleet roadshow", daniel.ID, lubricantsFlow)
 

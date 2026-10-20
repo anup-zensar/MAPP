@@ -84,7 +84,8 @@ func TestAdapter_ActivityDeletingKeepsRound_008P3(t *testing.T) {
 	priya := actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	open := approvals.Round{
 		ID: "AR-1001", ActivityID: "A-1004", Number: 1, WorkflowID: "WF-1001", WorkflowName: "Lubricants EU approval",
-		Levels:       []approvals.RoundLevel{{Number: 1, Approvers: []actor.Actor{{ID: "U-1003", Name: "Daniel Okoro"}}}},
+		Levels: []approvals.RoundLevel{{Number: 1, Approvers: []actor.Actor{{ID: "U-1003", Name: "Daniel Okoro"}},
+			ApproverType: approvals.SourcePeople, Mode: approvals.ModeAny, Resolution: approvals.ResolutionDecide, Excluded: []approvals.Excluded{}}},
 		CurrentLevel: 1, Outcome: approvals.OutcomeOpen, SubmittedAt: at, SubmittedBy: priya, Meta: record.NewMeta(priya, at),
 	}
 	hooks := activityApprovalHooks{} // the delete needs nothing of the approvals service

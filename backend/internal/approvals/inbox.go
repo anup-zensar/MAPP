@@ -11,7 +11,8 @@ import (
 )
 
 // Inbox returns the rows of one tab of the Approvals page as a sees it (FR-029, FR-030): waiting — the
-// Submitted activities whose current level lists a; open — every Submitted activity; both oldest
+// Submitted activities a may decide as approver, delegate or backup approver, not on behalf (017 FR-031);
+// open — every Submitted activity; both oldest
 // submission first; decided — the activities on which a approved or declined a level in any round, latest
 // decision first, with that decision and the activity's latest round. Only stored activities are listed:
 // one in the recycle bin is not (FR-023).
@@ -27,13 +28,13 @@ func (s *Service) Inbox(ctx context.Context, a actor.Actor, tab string) ([]Row, 
 		}
 		switch tab {
 		case TabWaiting:
-			rows = b.open(func(r Round) bool { return includes(r.Levels[r.CurrentLevel-1].Approvers, a.ID) })
+			rows, err = s.waitingFor(ctx, b, a)
 		case TabOpen:
-			rows = b.open(func(Round) bool { return true })
+			rows = b.open()
 		default:
 			rows = b.decided(a)
 		}
-		return nil
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -46,29 +47,23 @@ func (s *Service) Inbox(ctx context.Context, a actor.Actor, tab string) ([]Row, 
 // or declined in [monthStart, monthEnd) — the viewer's calendar month, or the clock's UTC month when
 // neither bound is given. Give both bounds or neither.
 func (s *Service) Summary(ctx context.Context, a actor.Actor, monthStart, monthEnd *time.Time) (Counts, error) {
-	switch {
-	case (monthStart == nil) != (monthEnd == nil):
-		return Counts{}, errs.Validation(errs.FieldError{Field: "monthStart", Message: reloadMessage})
-	case monthStart != nil && !monthEnd.After(*monthStart):
-		return Counts{}, errs.Validation(errs.FieldError{Field: "monthEnd", Message: reloadMessage})
-	}
-	var from, until time.Time
-	if monthStart != nil {
-		from, until = *monthStart, *monthEnd
-	} else {
-		now := s.now().UTC()
-		from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-		until = from.AddDate(0, 1, 0)
+	from, until, err := s.month(monthStart, monthEnd)
+	if err != nil {
+		return Counts{}, err
 	}
 
 	var counts Counts
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
+	err = s.tx.Read(ctx, func(ctx context.Context) error {
 		b, err := s.board(ctx)
 		if err != nil {
 			return err
 		}
-		counts.WaitingForMe = len(b.open(func(r Round) bool { return includes(r.Levels[r.CurrentLevel-1].Approvers, a.ID) }))
-		counts.AllOpen = len(b.open(func(Round) bool { return true }))
+		waiting, err := s.waitingFor(ctx, b, a)
+		if err != nil {
+			return err
+		}
+		counts.WaitingForMe = len(waiting)
+		counts.AllOpen = len(b.open())
 		for _, facts := range b.activities {
 			for _, r := range b.rounds[facts.ID] {
 				if r.EndedAt == nil || r.EndedAt.Before(from) || !r.EndedAt.Before(until) {
@@ -149,14 +144,18 @@ func (s *Service) Preview(ctx context.Context, a actor.Actor, activityID string)
 }
 
 // board is what the Approvals page is built from, read once per request: the stored activities with their
-// rounds and history entries, the workflows, the people and today's date.
+// rounds and history entries, the workflows, the people with whether each can approve, the delegations
+// current today, the time and today's date.
 type board struct {
-	activities []ActivityFacts
-	rounds     map[string][]Round  // by activity id, by number
-	entries    map[string][]Action // by activity id, oldest first
-	workflows  map[string]Workflow
-	people     directory
-	today      date.Date
+	activities  []ActivityFacts
+	rounds      map[string][]Round  // by activity id, by number
+	entries     map[string][]Action // by activity id, oldest first
+	workflows   map[string]Workflow
+	people      directory
+	canApprove  map[string]bool // 014: holds approvals.decide
+	delegations []Delegation    // current today (FR-023)
+	now         time.Time
+	today       date.Date
 }
 
 // board reads the board inside the caller's transaction.
@@ -177,13 +176,18 @@ func (s *Service) board(ctx context.Context) (*board, error) {
 	if err != nil {
 		return nil, err
 	}
-	d, err := s.directory(ctx)
+	rc, err := s.ruleContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	dl, err := s.currentDelegations(ctx, rc.people)
+	if err != nil {
+		return nil, err
+	}
+	now := s.now()
 	b := &board{
 		activities: list, rounds: map[string][]Round{}, entries: map[string][]Action{}, workflows: map[string]Workflow{},
-		people: d, today: date.Today(s.now()),
+		people: rc.people, canApprove: rc.canApprove, delegations: dl, now: now, today: date.Today(now),
 	}
 	for _, r := range rounds {
 		b.rounds[r.ActivityID] = append(b.rounds[r.ActivityID], r)
@@ -200,22 +204,64 @@ func (s *Service) board(ctx context.Context) (*board, error) {
 	return b, nil
 }
 
-// open returns a row for every Submitted activity whose open round keep accepts, oldest submission first
-// (FR-029, FR-030).
-func (b *board) open(keep func(Round) bool) []Row {
-	rows := []Row{}
+// submitted calls fn for every Submitted activity with its open round and the round's history entries.
+func (b *board) submitted(fn func(facts ActivityFacts, round Round, entries []Action) error) error {
 	for _, facts := range b.activities {
 		if facts.Status != StatusSubmitted {
 			continue
 		}
 		round, found := openRound(b.rounds[facts.ID])
-		if !found || !keep(round) {
+		if !found {
 			continue
 		}
-		rows = append(rows, b.row(facts, round))
+		if err := fn(facts, round, entriesOf(b.entries[facts.ID], round.ID)); err != nil {
+			return err
+		}
 	}
-	slices.SortStableFunc(rows, func(x, y Row) int { return x.SubmittedAt.Compare(y.SubmittedAt) })
+	return nil
+}
+
+// open returns a row for every Submitted activity, oldest submission first (FR-029, FR-030).
+func (b *board) open() []Row {
+	rows := []Row{}
+	_ = b.submitted(func(facts ActivityFacts, round Round, _ []Action) error {
+		rows = append(rows, b.row(facts, round))
+		return nil
+	})
+	sortBySubmission(rows)
 	return rows
+}
+
+// waitingFor returns the rows of a's Waiting for me (017 FR-031): the Submitted activities a may decide as a
+// waiting approver, as the current delegate of one — marked with the approvers a acts for — or as the
+// backup approver of an escalated level, and not barred by segregation of duties; oldest submission first.
+func (s *Service) waitingFor(ctx context.Context, b *board, a actor.Actor) ([]Row, error) {
+	rule, err := s.accessRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dc := decider{person: a, canApprove: b.canApprove[a.ID], rule: rule, delegations: b.delegations}
+	rows := []Row{}
+	err = b.submitted(func(facts ActivityFacts, round Round, entries []Action) error {
+		au, err := s.authority(ctx, dc, facts, round, entries, false)
+		if err != nil || !au.waits() {
+			return err
+		}
+		row := b.row(facts, round)
+		row.AsDelegateOf = b.people.copiedAll(au.asDelegateOf)
+		rows = append(rows, row)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	sortBySubmission(rows)
+	return rows, nil
+}
+
+// sortBySubmission orders rows by submission, oldest first.
+func sortBySubmission(rows []Row) {
+	slices.SortStableFunc(rows, func(x, y Row) int { return x.SubmittedAt.Compare(y.SubmittedAt) })
 }
 
 // decided returns a row for every activity on which a approved or declined a level, with a's latest
@@ -241,11 +287,13 @@ func (b *board) decided(a actor.Actor) []Row {
 	return rows
 }
 
-// row returns the row of facts at round (FR-030): the level it waits at (or ended at), with the level's
-// designated approvers; since when it waits there; and whether its start date has passed while it waits
-// (edge case "start date passed").
+// row returns the row of facts at round (FR-030; 017 FR-031): the level it waits at (or ended at), with the
+// level's approvers, its mode and progress; since when it waits there and for how many whole days, whether
+// that is overdue, escalated or without anyone who can act; and whether its start date has passed while it
+// waits (edge case "start date passed").
 func (b *board) row(facts ActivityFacts, round Round) Row {
 	level := round.Levels[round.CurrentLevel-1]
+	entries := entriesOf(b.entries[facts.ID], round.ID)
 	workflow := WorkflowRef{ID: round.WorkflowID, Name: round.WorkflowName}
 	if w, found := b.workflows[round.WorkflowID]; found {
 		workflow.Name, workflow.Active = w.Name, w.Active
@@ -256,18 +304,55 @@ func (b *board) row(facts ActivityFacts, round Round) Row {
 		Round: RowRound{
 			ID: round.ID, Number: round.Number, Outcome: round.Outcome, CurrentLevel: round.CurrentLevel,
 			LevelCount: len(round.Levels), LevelLabel: levelLabel(level.Name, level.Number), Approvers: b.people.copiedAll(level.Approvers),
+			Mode: level.Mode, RequiredCount: 1,
 		},
-		SubmittedAt: round.SubmittedAt, StartDate: facts.StartDate,
+		SubmittedAt: round.SubmittedAt, StartDate: facts.StartDate, AsDelegateOf: []PersonView{},
 		StartDatePassed: facts.Status == StatusSubmitted && facts.StartDate != nil && facts.StartDate.Before(b.today),
 	}
-	if round.Outcome == OutcomeOpen {
-		since := round.SubmittedAt
-		if previous, found := decisionOn(entriesOf(b.entries[facts.ID], round.ID), round.CurrentLevel-1); found {
-			since = previous.At
-		}
-		row.WaitingSince = &since
+	waiting := waitingOn(level, entries)
+	if level.Mode == ModeAll {
+		row.Round.RequiredCount = len(level.Approvers)
+		row.Round.ApprovedCount = len(level.Approvers) - len(waiting)
+	} else if levelDone(level, entries) {
+		row.Round.ApprovedCount = 1
 	}
+	if round.Outcome != OutcomeOpen {
+		return row
+	}
+	row.WaitingSince = waitingSince(round, level, entries)
+	if row.WaitingSince != nil {
+		days := waitedDays(*row.WaitingSince, b.now)
+		row.WaitingDays = &days
+		row.Overdue = overdue(round, days)
+	}
+	if level.EscalatedAt != nil && level.Backup != nil {
+		backup := b.people.copied(*level.Backup)
+		row.EscalatedTo = &backup
+	}
+	row.NoApprover = level.NoApprover || (len(level.Approvers) > 0 && !slices.ContainsFunc(waiting, func(a actor.Actor) bool {
+		return b.people[a.ID].Active && b.canApprove[a.ID]
+	}))
 	return row
+}
+
+// waitedDays is how many whole days of 24 hours have passed from since to now (017 FR-029).
+func waitedDays(since, now time.Time) int {
+	if now.Before(since) {
+		return 0
+	}
+	return int(now.Sub(since) / (24 * time.Hour))
+}
+
+// overdue reports whether a level of round that has waited days is overdue (017 FR-029, D-287): it has
+// waited at least the round's escalation days or, without escalation, its reminder days; never without both.
+func overdue(round Round, days int) bool {
+	switch {
+	case round.EscalationDays != nil:
+		return days >= *round.EscalationDays
+	case round.ReminderDays != nil:
+		return days >= *round.ReminderDays
+	}
+	return false
 }
 
 // owner returns the owner personID as the API shows them, nil when the activity has none.

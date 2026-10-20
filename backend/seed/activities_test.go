@@ -65,7 +65,7 @@ func TestLoad_Activities_FR003(t *testing.T) {
 }
 
 // The approval workflows 006 seeds in 008's shape: WF-1001 with Daniel Okoro, WF-1002 with Carlos Mendes,
-// then Alex Morgan (D-103, D-201; 008 data model §8).
+// then Alex Morgan (D-103, D-201; 008 data model §8); 017's approvals step adds WF-1003 (017 FR-037).
 func TestLoad_ApprovalWorkflows_D103(t *testing.T) {
 	d := loadDemo(t)
 	var got []string
@@ -79,7 +79,8 @@ func TestLoad_ApprovalWorkflows_D103(t *testing.T) {
 			t.Errorf("workflow %s has no description", w.ID)
 		}
 	}
-	want := []string{"WF-1001 Lubricants EU approval true U-1003", "WF-1002 China BC approval workflow true U-1005 → U-1001"}
+	want := []string{"WF-1001 Lubricants EU approval true U-1003", "WF-1002 China BC approval workflow true U-1005 → U-1001",
+		"WF-1003 Standard marketing approval true Line manager → Marketing administratorU-1001 → Mobility second checkU-1003,U-1001"}
 	if !slices.Equal(got, want) {
 		t.Errorf("workflows = %q, want %q", got, want)
 	}

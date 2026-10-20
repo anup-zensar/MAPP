@@ -36,7 +36,7 @@ var ErrNotEmpty = errors.New("seed: the store already has data")
 // Loaded says what Load loads, for the seed command's message; a test checks it against the store.
 const Loaded = "6 people, 3 teams, 2 models, 6 activity types, 35 Shell attributes with 110 options, " +
 	"5 currencies, 6 finance budget items, 3 plans, 4 campaigns, 8 initiatives, 10 activities, 8 line items, " +
-	"2 approval workflows, 8 approval rounds, 46 activity-log entries, 1 recycle-bin entry"
+	"3 approval workflows, 8 approval rounds, 1 approval delegation, 46 activity-log entries, 1 recycle-bin entry"
 
 // demoPeople are the demo people of docs/product/demo-users-and-data.md, in the order of its table, which
 // gives them the IDs U-1001 to U-1006.
@@ -168,7 +168,7 @@ func (d *demo) addPeople(ctx context.Context) error {
 		}
 		d.people[p.name] = id
 	}
-	return nil
+	return d.addLineManagers(ctx) // 017: once everyone exists
 }
 
 // Shell attribute values, as the planning records keep them (002 data model §9).

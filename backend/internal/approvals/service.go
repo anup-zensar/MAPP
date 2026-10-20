@@ -37,6 +37,10 @@ type Service struct {
 	now        clock.Clock
 	// displayRates reads the reader's display currency (UseDisplayRates, D-213); nil shows USD.
 	displayRates DisplayRates
+	// access answers feature 014's questions (UseAccess); choices lists what rule conditions may name
+	// (UseRuleChoices). NewService starts with everyone allowed and no choices (017 plan, Ports).
+	access  Access
+	choices RuleChoices
 }
 
 // NewService returns the approvals service. It keeps its records in repo, reads people from peopleRepo
@@ -44,8 +48,50 @@ type Service struct {
 // transactions of tx and reads the time from now.
 func NewService(tx store.Transactor, repo Repository, peopleRepo people.Repository, activities Activities,
 	generator *ids.Generator, hist *history.Service, now clock.Clock) *Service {
-	return &Service{tx: tx, repo: repo, people: peopleRepo, activities: activities, ids: generator, history: hist, now: now}
+	return &Service{tx: tx, repo: repo, people: peopleRepo, activities: activities, ids: generator, history: hist, now: now,
+		access: openAccess{}, choices: noChoices{}}
 }
+
+// UseAccess sets where approvals reads people's permissions, the access rule and the roles (feature 014).
+func (s *Service) UseAccess(access Access) {
+	s.access = access
+}
+
+// UseRuleChoices sets where approvals reads the activity types and business units of rule conditions.
+func (s *Service) UseRuleChoices(choices RuleChoices) {
+	s.choices = choices
+}
+
+// openAccess is the Access of a service without feature 014: everyone holds every permission, the access
+// rule is on and there are no roles (data-model §6: "everything allowed, rule on").
+type openAccess struct{}
+
+func (openAccess) CanApprove(_ context.Context, personIDs []string) (map[string]bool, error) {
+	can := make(map[string]bool, len(personIDs))
+	for _, id := range personIDs {
+		can[id] = true
+	}
+	return can, nil
+}
+
+func (openAccess) Check(context.Context, string, Permission, *PlanFacts) (Grant, error) {
+	return Grant{Allowed: true}, nil
+}
+
+func (openAccess) NoSelfApproval(context.Context) (bool, error) { return true, nil }
+
+func (openAccess) Roles(context.Context) ([]RoleInfo, error) { return []RoleInfo{}, nil }
+
+func (openAccess) RoleHolders(context.Context, string, PlanFacts) ([]string, error) {
+	return []string{}, nil
+}
+
+// noChoices is the RuleChoices of a service without Settings: nothing to choose.
+type noChoices struct{}
+
+func (noChoices) ActivityTypes(context.Context) ([]Choice, error) { return []Choice{}, nil }
+
+func (noChoices) BusinessUnits(context.Context) ([]Choice, error) { return []Choice{}, nil }
 
 // activity returns the stored activity id, or not_found with the plan's message.
 func (s *Service) activity(ctx context.Context, id string) (ActivityFacts, error) {
@@ -118,37 +164,6 @@ func levelLabel(name string, n int) string {
 	return name
 }
 
-// levelViews returns a workflow's levels as the API shows them, with their approvers' names now; never nil.
-func levelViews(levels []Level, d directory) []LevelView {
-	views := make([]LevelView, 0, len(levels))
-	for i, l := range levels {
-		approvers := make([]PersonView, 0, len(l.ApproverIDs))
-		for _, id := range l.ApproverIDs {
-			approvers = append(approvers, d.person(id))
-		}
-		views = append(views, LevelView{Number: i + 1, Name: l.Name, Label: levelLabel(l.Name, i+1), Approvers: approvers})
-	}
-	return views
-}
-
-// levelsText writes levels in one line: "Level 1 · Carlos Mendes → Level 2 · Alex Morgan", inactive
-// approvers with " (inactive)" (data model §1, FR-005).
-func levelsText(levels []LevelView) string {
-	parts := make([]string, 0, len(levels))
-	for _, l := range levels {
-		names := make([]string, 0, len(l.Approvers))
-		for _, p := range l.Approvers {
-			if p.Active {
-				names = append(names, p.Name)
-			} else {
-				names = append(names, p.Name+" (inactive)")
-			}
-		}
-		parts = append(parts, l.Label+" · "+strings.Join(names, ", "))
-	}
-	return strings.Join(parts, " → ")
-}
-
 // names joins the names of actors with ", ".
 func names(actors []actor.Actor) string {
 	list := make([]string, 0, len(actors))
@@ -161,15 +176,6 @@ func names(actors []actor.Actor) string {
 // includes reports whether personID is one of actors.
 func includes(actors []actor.Actor, personID string) bool {
 	return slices.ContainsFunc(actors, func(a actor.Actor) bool { return a.ID == personID })
-}
-
-// onBehalfOf returns the level's approvers when a is not one of them, and an empty list when a is
-// (FR-017, D-020).
-func onBehalfOf(approvers []actor.Actor, a actor.Actor) []actor.Actor {
-	if includes(approvers, a.ID) {
-		return []actor.Actor{}
-	}
-	return slices.Clone(approvers)
 }
 
 // tooLong reports whether text has more than limit characters (characters, not bytes).

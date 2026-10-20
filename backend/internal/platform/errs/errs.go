@@ -38,7 +38,7 @@ const (
 	// CodeParentDeletedPermanently refuses a restore whose parent, or a record above it, was deleted
 	// permanently; Parent names that record (011, D-182).
 	CodeParentDeletedPermanently = "parent_deleted_permanently"
-	// The refusal by permission or scope (feature 014, D-227, D-299): 403 forbidden.
+	// CodeForbidden refuses what the person's access does not allow (014, D-227, D-299).
 	CodeForbidden = "forbidden"
 )
 

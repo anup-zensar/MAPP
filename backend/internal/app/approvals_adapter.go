@@ -170,7 +170,11 @@ func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, acti
 // facts returns act as approvals needs it: with its plan, campaign and initiative, type name, display
 // status and unassigned planned cost, all derived now (D-041).
 func (p *approvalsActivities) facts(ctx context.Context, act activities.Activity) (approvals.ActivityFacts, error) {
-	path, err := p.path(ctx, act.InitiativeID)
+	path, plan, err := p.path(ctx, act.InitiativeID)
+	if err != nil {
+		return approvals.ActivityFacts{}, err
+	}
+	units, err := p.businessUnits(ctx, plan.Attributes)
 	if err != nil {
 		return approvals.ActivityFacts{}, err
 	}
@@ -183,6 +187,9 @@ func (p *approvalsActivities) facts(ctx context.Context, act activities.Activity
 		Path: path, OwnerID: act.OwnerID, StartDate: act.StartDate, EndDate: act.EndDate, Ongoing: act.Ongoing,
 		PlannedCost: act.PlannedCost, UnassignedPlannedCost: unassigned, Description: act.Description,
 		WorkflowID: act.ApprovalWorkflowID, Meta: act.Meta,
+		// 017: what the approval rules and 014's scopes look at (data-model §3).
+		Plan:           approvals.PlanFacts{ID: plan.ID, TeamIDs: slices.Clone(plan.TeamIDs), OwnerID: plan.OwnerID, CreatedByID: plan.CreatedBy.ID},
+		ActivityTypeID: act.ActivityTypeID, BusinessUnits: units,
 	}
 	if act.ActivityTypeID != "" {
 		activityType, found, err := p.settings.GetActivityType(ctx, act.ActivityTypeID)
@@ -211,34 +218,68 @@ func displayStatus(act activities.Activity, today date.Date) string {
 	}
 }
 
-// path returns the plan, campaign and initiative of the initiative initiativeID, top level first.
-func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]errs.RecordRef, error) {
+// path returns the plan, campaign and initiative of the initiative initiativeID, top level first, and the
+// plan.
+func (p *approvalsActivities) path(ctx context.Context, initiativeID string) ([]errs.RecordRef, plans.Plan, error) {
 	initiative, found, err := p.campaigns.GetInitiative(ctx, initiativeID)
 	if err != nil {
-		return nil, err
+		return nil, plans.Plan{}, err
 	}
 	if !found {
-		return nil, fmt.Errorf("app: initiative %s is not stored", initiativeID)
+		return nil, plans.Plan{}, fmt.Errorf("app: initiative %s is not stored", initiativeID)
 	}
 	campaign, found, err := p.campaigns.GetCampaign(ctx, initiative.CampaignID)
 	if err != nil {
-		return nil, err
+		return nil, plans.Plan{}, err
 	}
 	if !found {
-		return nil, fmt.Errorf("app: campaign %s is not stored", initiative.CampaignID)
+		return nil, plans.Plan{}, fmt.Errorf("app: campaign %s is not stored", initiative.CampaignID)
 	}
 	plan, found, err := p.plans.Get(ctx, campaign.PlanID)
 	if err != nil {
-		return nil, err
+		return nil, plans.Plan{}, err
 	}
 	if !found {
-		return nil, fmt.Errorf("app: plan %s is not stored", campaign.PlanID)
+		return nil, plans.Plan{}, fmt.Errorf("app: plan %s is not stored", campaign.PlanID)
 	}
 	return []errs.RecordRef{
 		{Type: "plan", ID: plan.ID, Name: plan.Name},
 		{Type: "campaign", ID: campaign.ID, Name: campaign.Name},
 		{Type: "initiative", ID: initiative.ID, Name: initiative.Name},
-	}, nil
+	}, plan, nil
+}
+
+// businessUnits returns the plan's business units (017 data-model §3): the options chosen in the plan's
+// values of the plan-level Business unit attribute (002, Attribute.Role businessUnit), with their labels
+// and active flags now; none without that attribute or value.
+func (p *approvalsActivities) businessUnits(ctx context.Context, values settings.AttributeValues) ([]approvals.Choice, error) {
+	attributes, err := p.settings.ListAttributes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	units := []approvals.Choice{}
+	for _, a := range attributes {
+		if a.Role != settings.RoleBusinessUnit || a.Level != settings.LevelPlan {
+			continue
+		}
+		var ids []string
+		if raw, found := values[a.ID]; found && json.Unmarshal(raw, &ids) != nil {
+			var one string
+			if json.Unmarshal(raw, &one) == nil && one != "" {
+				ids = []string{one}
+			}
+		}
+		for _, id := range ids {
+			option, found, err := p.settings.GetOption(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			if found {
+				units = append(units, approvals.Choice{ID: option.ID, Label: option.Label, Active: option.Active})
+			}
+		}
+	}
+	return units, nil
 }
 
 // unassigned is the activity's planned cost (0.00 when empty) minus its line items' planned costs in USD

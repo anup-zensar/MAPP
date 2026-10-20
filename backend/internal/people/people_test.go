@@ -426,14 +426,14 @@ func TestListPeople_EveryoneSortedWithTeams_FR001(t *testing.T) {
 	if !slices.Equal(order, want) {
 		t.Fatalf("people = %q, want %q", order, want)
 	}
-	wantSara := PersonView{
+	wantSara := PersonListItem{PersonView: PersonView{
 		ID: sara.ID, Name: "Sara Novak", Email: "sara.novak@northstar.demo", JobTitle: "Local finance advisor",
 		Initials: "SN", Active: true, Meta: sara.Meta,
 		Teams: []TeamRef{
 			{ID: ops.ID, Name: "global Marketing Ops", Colour: "teal", Active: false},
 			{ID: europe.ID, Name: "Lubricants Europe", Colour: "blue", Active: true},
 		},
-	}
+	}}
 	if !reflect.DeepEqual(got[4], wantSara) {
 		t.Errorf("Sara = %+v\nwant %+v", got[4], wantSara)
 	}

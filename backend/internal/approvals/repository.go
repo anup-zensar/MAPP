@@ -38,4 +38,11 @@ type Repository interface {
 	NotificationsOf(ctx context.Context, personID string) ([]Notification, error)
 	// PutNotification saves n, replacing the notification with the same id.
 	PutNotification(ctx context.Context, n Notification) error
+
+	// GetDelegation returns the approval delegation with id, and false when there is none (017).
+	GetDelegation(ctx context.Context, id string) (Delegation, bool, error)
+	// ListDelegations returns every approval delegation, cancelled ones included, ordered by id.
+	ListDelegations(ctx context.Context) ([]Delegation, error)
+	// PutDelegation saves dl, replacing the delegation with the same id. Delegations are never deleted.
+	PutDelegation(ctx context.Context, dl Delegation) error
 }

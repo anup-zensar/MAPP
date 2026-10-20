@@ -54,6 +54,9 @@ const (
 	// Feature 015, financial transactions (D-254).
 	PrefixFinancialTransaction = "FT"  // GSAP transactions: FT-1001
 	PrefixFinancialImport      = "FIM" // GSAP imports: FIM-1001
+
+	// Feature 017, approval rules (D-291).
+	PrefixApprovalDelegation = "DLG" // approval delegations
 )
 
 // Prefixes lists every prefix above, in that order.
@@ -65,6 +68,7 @@ var Prefixes = []string{
 	PrefixApprovalWorkflow, PrefixApprovalRound, PrefixApprovalAction, PrefixNotification,
 	PrefixSavedView,
 	PrefixFinancialTransaction, PrefixFinancialImport,
+	PrefixApprovalDelegation,
 }
 
 // firstNumber is the number of the first ID of every prefix: "P-1001".

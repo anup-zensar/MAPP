@@ -293,7 +293,10 @@ func TestPersonUsage_EveryFeature_FR004(t *testing.T) {
 	if !reflect.DeepEqual(mei, wantMei) {
 		t.Errorf("Mei Lin's usage =\n%+v\nwant\n%+v", mei, wantMei)
 	}
-	wantCarlos := []usageCount{{Role: "approver", RecordType: "approvalWorkflow", Label: "approval workflow", Count: 1}}
+	wantCarlos := []usageCount{ // 017 FR-016: and line manager of Mei Lin
+		{Role: "approver", RecordType: "approvalWorkflow", Label: "approval workflow", Count: 1},
+		{Role: "manager", RecordType: "person", Label: "person", Count: 1},
+	}
 	if !reflect.DeepEqual(carlos, wantCarlos) {
 		t.Errorf("Carlos Mendes' usage = %+v, want %+v", carlos, wantCarlos)
 	}

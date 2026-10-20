@@ -125,6 +125,28 @@ func (d directory) personView(p Person) PersonView {
 	}
 }
 
+// listItem returns p as the people list shows them: their view with their line manager and how many people,
+// active or not, have them as line manager (017 FR-016).
+func (d directory) listItem(p Person) PersonListItem {
+	item := PersonListItem{PersonView: d.personView(p), ReportCount: d.reportCount(p.ID)}
+	if manager, found := d.people[p.ManagerID]; found {
+		ref := manager.Ref()
+		item.Manager = &ref
+	}
+	return item
+}
+
+// reportCount is how many people, active or not, have the person personID as their line manager.
+func (d directory) reportCount(personID string) int {
+	n := 0
+	for _, p := range d.people {
+		if personID != "" && p.ManagerID == personID {
+			n++
+		}
+	}
+	return n
+}
+
 // teamView returns t with its members and the plans among plans that use it, in the recycle bin or not
 // (FR-010, FR-014).
 func (d directory) teamView(t Team, plans []PlanUse) TeamView {

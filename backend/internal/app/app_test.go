@@ -345,14 +345,6 @@ var notYetServed = []string{
 	"POST /api/activities/{activityId}/split-preview",
 	"POST /api/activities/{activityId}/split",
 	"GET /api/all-work/breakdown",
-	// 017 Approval rules
-	"GET /api/approval-rule-options",
-	"GET /api/approval-delegations",
-	"POST /api/approval-delegations",
-	"PATCH /api/approval-delegations/{delegationId}",
-	"POST /api/approval-delegations/{delegationId}/cancel",
-	"GET /api/approvals/monitoring",
-	"POST /api/approvals/escalations/run",
 }
 
 // The list of operations not yet served stays accurate: every entry is an operation of the contract, none
