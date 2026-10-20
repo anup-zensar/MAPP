@@ -18,15 +18,17 @@ import { NO_CAMPAIGNS, yearDates } from '../planText';
 import styles from './PlanTree.module.css';
 
 /**
- * The tree's columns (FR-013, design system §5.4): the name at least 260 px (functional review
- * X-01), people never squeeze below 160 px and never wrap, the dates and the two chips stay on one
+ * The tree's columns (FR-013, design system §5.4): the name wide enough for an activity's name
+ * on one line below its level tag (at least 260 px of text room, functional review X-01), people
+ * never squeeze below 160 px and never wrap (PL-01), the dates and the two chips stay on one
  * line, and money is right-aligned under its header. The budget used is the second line of the
- * planned cost, so the tree fits a 1,440 px screen without clipping its last column.
+ * planned cost, so the tree fits a 1,440 px screen without clipping its last column; narrower
+ * screens scroll the tree sideways inside its card, never the page.
  */
 const COLUMNS: TreeTableColumn[] = [
-  { key: 'name', header: 'Name', minWidth: '240px' },
-  { key: 'owner', header: 'Owner' },
-  { key: 'dates', header: 'Dates' },
+  { key: 'name', header: 'Name', minWidth: '350px' },
+  { key: 'owner', header: 'Owner', minWidth: '160px' },
+  { key: 'dates', header: 'Dates', minWidth: '172px' },
   { key: 'status', header: 'Status' },
   { key: 'budget', header: 'Budget', align: 'end' },
   { key: 'plannedCost', header: 'Planned cost', align: 'end' },
