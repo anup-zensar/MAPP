@@ -80,7 +80,7 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
 
   // Open it again from the Plans list (004 US2).
   await page.goto('/plans');
-  await page.getByRole('searchbox', { name: 'Search name or ID' }).fill(planName);
+  await page.getByRole('searchbox', { name: 'Search plans' }).fill(planName);
   await page.getByRole('link', { name: planName, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/plans/${planId}$`));
   await expect(page.getByRole('heading', { name: planName, level: 1 })).toBeVisible();
@@ -124,9 +124,11 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   await page.getByRole('button', { name: `Actions for ${initiativeName}` }).click();
   await page.getByRole('menuitem', { name: 'Add activity' }).click();
   await expect(page.getByRole('heading', { name: 'New activity', level: 1 })).toBeVisible();
-  await expect(
-    page.getByText(`In initiative '${initiativeName}' of campaign '${campaignName}' · ${planName}`),
-  ).toBeVisible();
+  // The breadcrumb names where the activity goes: plan › campaign › initiative (design system v2).
+  const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(crumbs.getByRole('link', { name: planName, exact: true })).toBeVisible();
+  await expect(crumbs.getByRole('link', { name: campaignName, exact: true })).toBeVisible();
+  await expect(crumbs.getByRole('link', { name: initiativeName, exact: true })).toBeVisible();
   await expect(page.getByText('From the initiative').first()).toBeVisible();
   await page.getByRole('textbox', { name: /^Activity name/ }).fill(activityName);
   // Activity type is a native select whose options read "<type>" or "<type> · default <amount>".
@@ -165,8 +167,13 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   await expect(page).toHaveURL(new RegExp(`/activities/${activityId}#line-items$`));
 
   // The line item's USD cost counts against the activity's planned cost (007 FR-002).
-  // The section's table comes before the spread grid, which repeats the name.
-  const lineItemRow = page.getByRole('row').filter({ hasText: lineItemName }).first();
+  // The Line items section's table comes before its spread grid, which repeats the name (the
+  // Financials card of 015 lists the line item too, so the row is looked for in the section).
+  const lineItemRow = page
+    .locator('#line-items')
+    .getByRole('row')
+    .filter({ hasText: lineItemName })
+    .first();
   await expect(lineItemRow).toContainText('9,200.00 EUR');
   // The USD column and the balance write amounts with the code, "10,000.00 USD" (007-P4).
   await expect(lineItemRow).toContainText('10,000.00 USD');
@@ -211,22 +218,15 @@ test('A: a planner builds a plan down to a line item in euros and sees the cost 
   await expect(treeRow(page, activityName)).toContainText('10 fields needed');
   await expect(treeRow(page, activityName)).toContainText('1 line item needs attention');
   await expect(treeRow(page, initiativeName)).toContainText('$20,000.00');
-  await expect(treeRow(page, initiativeName).getByRole('progressbar')).toHaveAttribute(
-    'aria-valuenow',
-    '50',
-  );
+  await expect(treeRow(page, initiativeName).getByText('50% used', { exact: true })).toBeVisible();
   await expect(treeRow(page, campaignName)).toContainText('$20,000.00');
-  await expect(treeRow(page, campaignName).getByRole('progressbar')).toHaveAttribute(
-    'aria-valuenow',
-    '40',
-  );
-  // The campaign's own fields are complete (cluster and region set); something below is not.
-  await expect(treeRow(page, campaignName)).toContainText('All filled in');
+  await expect(treeRow(page, campaignName).getByText('40% used', { exact: true })).toBeVisible();
+  // The campaign's own fields are complete (cluster and region set); something below is not. Its one
+  // completeness chip names what below needs attention (design system §4.1).
+  await expect(treeRow(page, campaignName)).toContainText('2 items below need attention');
+  await expect(treeRow(page, campaignName)).not.toContainText('fields needed');
   await expect(treeRow(page, planName)).toContainText('$20,000.00');
-  await expect(treeRow(page, planName).getByRole('progressbar')).toHaveAttribute(
-    'aria-valuenow',
-    '20',
-  );
+  await expect(treeRow(page, planName).getByText('20% used', { exact: true })).toBeVisible();
   await expect(treeRow(page, planName)).toContainText('Draft');
   // The plan header's completeness counts the records below that need attention: the activity and
   // its line item.
@@ -544,8 +544,10 @@ test('D: the plan form offers only members of the chosen teams as owner and refu
   await expectToast(page, `Plan '${planName}' created — add campaigns next.`);
   await expect(page).toHaveURL(/\/plans\/P-\d+$/);
   await expect(page.getByRole('heading', { name: planName, level: 1 })).toBeVisible();
-  // The header's owner fact reads "Owner: <name>".
-  await expect(page.getByText('Owner: Mei Lin').first()).toBeVisible();
+  // The header's Plan facts row names the owner with their avatar (design system v2).
+  await expect(
+    page.getByRole('group', { name: 'Plan facts' }).getByText('Mei Lin', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText('Mobility China').first()).toBeVisible();
 });
 

@@ -121,11 +121,14 @@ async function activityAttributeValues(
  * 1.0, team Mobility China, owner Mei Lin, business unit Mobility, budget 100,000.00 USD), without
  * campaigns.
  *
- * Next year, so an activity in it starts after today: once approved it shows "Approved", not "In
- * progress" (006 FR-021). The plan form accepts years up to the current year + 5.
+ * Next year by default, so an activity in it starts after today: once approved it shows "Approved",
+ * not "In progress" (006 FR-021). The plan form accepts years up to the current year + 5.
  */
-export async function createPlan(page: Page, label: string): Promise<Named & { year: number }> {
-  const year = new Date().getUTCFullYear() + 1;
+export async function createPlan(
+  page: Page,
+  label: string,
+  year = new Date().getUTCFullYear() + 1,
+): Promise<Named & { year: number }> {
   const [modelId, teamId, ownerId, planForm] = await Promise.all([
     idOf(page, '/api/models', 'Mobility 1.0'),
     idOf(page, '/api/teams', 'Mobility China'),

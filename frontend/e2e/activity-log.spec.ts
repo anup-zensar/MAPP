@@ -117,7 +117,8 @@ test('US2: the cards, filters, chips, details and record links of the activity l
   await expect(chip(page, 'Action: Deleted')).toBeVisible();
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page).toHaveURL(/\/activity-log$/);
-  await expect(page.getByText(/^[\d,]+ entries$/)).toBeVisible();
+  // With no filter the count reads "1,204 of 1,204 entries" (design system §11, rule 14).
+  await expect(page.getByText(/^([\d,]+) of \1 entries$/)).toBeVisible();
   await expect(page.getByText(/^Showing the last 50 of [\d,]+$/)).toBeVisible();
   await page.getByRole('button', { name: 'Load more' }).focus();
   await page.keyboard.press('Enter');

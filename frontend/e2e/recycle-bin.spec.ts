@@ -70,7 +70,8 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
 
   await page.goto('/recycle-bin');
   await expect(page).toHaveTitle('Recycle bin · NorthStar');
-  await expect(page.getByText(/^\d+ items? in the recycle bin/)).toBeVisible();
+  // With no filter the count reads "3 of 3 items" (design system §11, rule 14).
+  await expect(page.getByText(/^(\d+) of \1 items?$/)).toBeVisible();
   const row = binRow(page, 'Trade shows');
   await expect(row.getByText('Was in FY2026 Lubricants Europe › Rimula fleet')).toBeVisible();
   await expect(row.getByText('1 activity · 1 line item')).toBeVisible();

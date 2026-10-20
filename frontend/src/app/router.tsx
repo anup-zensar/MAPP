@@ -34,10 +34,9 @@ import { RecycleBinPage } from '@/features/recycle-bin/RecycleBinPage';
 import { ActivityTypesPage } from '@/features/settings/activity-types/ActivityTypesPage';
 import { CurrenciesPage } from '@/features/settings/currencies/CurrenciesPage';
 import { FinanceBudgetItemsPage } from '@/features/settings/finance-budget-items/FinanceBudgetItemsPage';
-import { FieldHelpPage } from '@/features/settings/field-help/FieldHelpPage';
-import { FIELD_HELP_PATH } from '@/features/settings/field-help/settingsSections';
 import { ModelsPage } from '@/features/settings/models/ModelsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { SETTINGS_016_ROUTES } from '@/features/settings/settingsRoutes';
 import { ShellAttributeEditorPage } from '@/features/settings/shell-attributes/ShellAttributeEditorPage';
 import { ShellAttributePage } from '@/features/settings/shell-attributes/ShellAttributePage';
 import { ShellAttributesPage } from '@/features/settings/shell-attributes/ShellAttributesPage';
@@ -194,8 +193,8 @@ const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 011 Activity log and Recycle bin (under MORE in the sidebar)
   { path: '/activity-log', element: <ActivityLogPage />, ...titled('Activity log') },
   { path: '/recycle-bin', element: <RecycleBinPage />, ...titled('Recycle bin') },
-  // 016 Settings › Field help
-  { path: FIELD_HELP_PATH, element: <FieldHelpPage />, ...titled('Field help') },
+  // 016 Settings › Import GSAP rates and Field help
+  ...SETTINGS_016_ROUTES,
   // 014 Settings › Roles and access, for people whose role includes access.manage (FR-012)
   ...ACCESS_ROUTES.map((route) => ({
     ...route,

@@ -53,7 +53,9 @@ test('US1: wrong password is refused; e-mail case and spaces are ignored (FR-003
 test('US2: every navigation item opens its page with its tab title (FR-010, FR-015, FR-017, SC-003)', async ({
   page,
 }) => {
-  await signInAs(page, 'daniel.okoro@northstar.demo');
+  // Alex Morgan, the administrator: Global budgets and Financials are shown only to people whose
+  // role includes them (014 FR-011).
+  await signInAs(page, 'alex.morgan@northstar.demo');
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Main' });
   const main = page.getByRole('main');
@@ -70,7 +72,7 @@ test('US2: every navigation item opens its page with its tab title (FR-010, FR-0
     { item: 'Financials', heading: 'Financials' },
     { item: 'Recycle bin', heading: 'Recycle bin' },
     { item: 'Activity log', heading: 'Activity log' },
-    { item: 'Home', heading: 'Welcome back, Daniel.' },
+    { item: 'Home', heading: 'Welcome back, Alex.' },
   ];
   for (const { item, heading } of pages) {
     await nav.getByRole('link', { name: item }).click();

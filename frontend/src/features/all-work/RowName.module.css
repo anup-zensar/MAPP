@@ -70,8 +70,12 @@
  * names end with an ellipsis (the full name is in the tip).
  */
 .line > .link {
+  /* A 24 px target (WCAG 2.2 SC 2.5.8): the name sits next to its toggle and tags in a row. */
+  display: inline-block;
+  min-height: 24px;
   max-width: 320px;
   overflow: hidden;
+  line-height: 24px;
   color: var(--link);
   font-weight: var(--weight-bold);
   text-decoration: none;

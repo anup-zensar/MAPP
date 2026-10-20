@@ -30,19 +30,18 @@ changing screens or rules.
 
   | Status | Count | Requirements |
   |---|---|---|
-  | Met | 4 | BUS.PLN.020 multi-year and plan types, BUS.PLN.040 monthly budgets and split, BUS.PLN.050 re-use of last year, BUS.WFL.030 missing mandatory data |
-  | Met, finish open | 5 | BUS.ADM.020 roles and access, BUS.BUD.040 global and local budgets, BUS.BUD.050 currency (the GSAP rate import page is not yet reachable), BUS.FIN.080 financial transactions, BUS.WFL.010 approvals |
+  | Met | 5 | BUS.PLN.020 multi-year and plan types, BUS.PLN.040 monthly budgets and split, BUS.PLN.050 re-use of last year, BUS.WFL.030 missing mandatory data, BUS.BUD.050 currency |
+  | Met, finish open | 4 | BUS.ADM.020 roles and access, BUS.BUD.040 global and local budgets, BUS.FIN.080 financial transactions, BUS.WFL.010 approvals |
   | Partly met | 2 | BUS.BUD.020 budget categories (the screens for filtering and breaking down by category are not built; the API is), BUS.UX.020 field help (administrators edit the help for every field, but most forms do not show those tips yet) |
   | Not met | 0 | |
 
 - **Four new features close the gaps:** 014 access control and global budgets, 015 financial transactions,
   016 planning and currency extensions, 017 approval rules. Feature **011** (activity log, record history and
   recycle bin) is complete and merged. It provides the audit trail that the approvals requirement asks for.
-- **The five "finish open" items are small.** Some screens still show buttons that a person's role does not
+- **The four "finish open" items are small.** Some screens still show buttons that a person's role does not
   allow; the API refuses them with a clear message. Approvals still take people's roles from a stand-in that
-  mirrors the demo roles, so a role changed in Settings does not yet change who may approve. The **Import GSAP
-  rates** page is built but its address is missing from the app's routes. A line manager cannot yet be set
-  on the People screen. The new end-to-end journeys of 014–017 are not written yet. Section 7 lists each item
+  mirrors the demo roles, so a role changed in Settings does not yet change who may approve. A line manager cannot yet be set
+  on the People screen. Section 7 lists each item
   with its task.
 - **NorthStar now follows Shell's design language**: Shell yellow for the one primary action, a light-grey
   page with white cards, Jost headings and Arial text, WCAG 2.2 AA, red only for danger. The foundation and
@@ -90,7 +89,7 @@ Defaults are numbered as in section 8. FR numbers are the functional requirement
 - Approvals read people's roles from a stand-in (`backend/internal/app/approvals_access.go`) that gives the
   demo people their seeded roles. The demo behaves correctly, but a role given or removed in Settings › Roles
   and access does not yet change who may approve or decide on behalf (017 T001, T008).
-- The end-to-end journeys of access control are not written (014 T061).
+- End to end: `brd-gaps.spec.ts` covers a role change and a viewer's read-only plan (014 T061).
 
 **Evidence**
 - Go: `TestAccessMatrix` checks that every served operation refuses each demo persona whose rule excludes
@@ -156,7 +155,7 @@ page, form and allocation dialog. Checked at 1440 × 900 and 390 × 844, light a
 > *Support currency conversion in planning, analysis and reporting, exchange-rate management, and whether it
 > can consume daily conversion rates from GSAP. Client: ability to plan in local currency and USD.*
 
-**Status: Met, finish open.** Before: Partly met (USD-only budgets and costs, one rate per currency with no
+**Status: Met.** Before: Partly met (USD-only budgets and costs, one rate per currency with no
 history).
 
 **How it is met (016 FR-001–FR-019)**
@@ -169,10 +168,8 @@ history).
   on the summary cards. A line item can be in any currency and shows both rates.
 - Financial transactions convert to USD at the current rate (015 FR-010).
 
-**What is still open:** the **Import GSAP rates** page and its recent imports are built and tested, but the
-address `/settings/currencies/import` is not in the app's routes, so the button on the Currencies page opens
-"Page not found" (016 T028; adding the route is a one-line change). Rates can be added by hand meanwhile, and
-the API serves the import.
+**What was open:** the **Import GSAP rates** page was not in the app's routes. It is routed now
+(`/settings/currencies/import`, 016 T028), found and fixed in the end-to-end run (section 6).
 
 **Evidence:** Go: tests of the money conversion, the dated rates, the rate import and the plan-currency rules
 (016 backend, 21 operations served). Web: component tests of the rate history, the rate dialog, the GSAP rate
@@ -207,7 +204,8 @@ import and recent imports, each with an axe check.
 - The Financials page shows every action to everyone; the API refuses import and linking to people without
   the permission (same item as 2.1). The Home Financials card has no "no access" text yet (015 T044).
 - The campaign, initiative and plan delete dialogs do not yet say how many transactions stay linked (015 T045).
-- The end-to-end journeys of 015 (T021, T025, T030, T035) are not written.
+- End to end: `brd-gaps.spec.ts` covers an activity's financials and the Financials page; the import and
+  linking journeys (015 T025, T030, T035) are not written.
 
 **Evidence:** Go: 62 test functions in the financials package, including the extract's column rules
 (FR-004, FR-005), read-only, empty and delete-dialog counts, and SC-004 stress tests for import and list.
@@ -313,7 +311,8 @@ tips show.
 - The line manager field on the People screen (017 T036). Line managers come from the demo data until then.
 - Approvals take people's roles from a stand-in that mirrors the seeded roles, not yet from Settings › Roles
   and access (017 T001, T008; same item as 2.1).
-- The end-to-end journeys of 017 (T047–T049).
+- End to end: `brd-gaps.spec.ts` covers automatic approval and a delegate's approval; conditional and
+  all-must-approve levels have Go tests only (017 T048).
 
 **Evidence:** Go: 136 test functions in the approvals package (rule engine, resolution, authority,
 delegations, escalations, monitoring, audit), for example `TestAuthority_Table_FR017_FR018_FR020_SC002`,
@@ -458,18 +457,37 @@ bin had no demo content) is closed by 011's seed.
 
 ## 6. Test results
 
-To be filled by the browser-test agent on the merged `plan-module`, with fresh demo data, on `127.0.0.1` only.
+Run on the merged `plan-module` (`e0b5f45` plus the end-to-end commit), with fresh demo data, on `127.0.0.1`
+only, on 21 Oct 2026.
 
 | Check | Command | Result | Run on |
 |---|---|---|---|
-| Go formatting | `gofmt -l .` (prints nothing) | to be filled | to be filled |
-| Go static checks | `go vet ./...` | to be filled | to be filled |
-| Go tests | `go test ./...` (number of packages and tests) | to be filled | to be filled |
-| Web checks | `npm run check`: API types, type check, lint, format | to be filled | to be filled |
-| Web unit and component tests | Vitest, part of `npm run check` (number of files and tests) | to be filled | to be filled |
-| End to end, run 1 | Playwright, full suite (number of journeys) | to be filled | to be filled |
-| End to end, run 2 | Playwright, full suite on fresh demo data | to be filled | to be filled |
-| Accessibility | axe WCAG 2.2 AA inside the end-to-end journeys | to be filled | to be filled |
+| Go formatting | `gofmt -l .` (prints nothing) | Pass: no file listed | 21 Oct 2026 |
+| Go static checks | `go vet ./...` | Pass: no findings | 21 Oct 2026 |
+| Go tests | `go test ./...` (number of packages and tests) | Pass: 33 packages (32 with tests, `api` has none), 1,572 tests and 479 subtests, 0 failures | 21 Oct 2026 |
+| Web checks | `npm run check`: API types, type check, lint, format | Pass: API types match `openapi.yaml`, `tsc -b`, `eslint .` and `prettier --check .` clean | 21 Oct 2026 |
+| Web unit and component tests | Vitest, part of `npm run check` (number of files and tests) | Pass: 288 files, 2,274 tests | 21 Oct 2026 |
+| End to end, run 1 | Playwright, full suite (number of journeys) | Pass: 36 of 36 journeys (29 existing + 7 in `brd-gaps.spec.ts`), 6.6 min | 21 Oct 2026 |
+| End to end, run 2 | Playwright, full suite on fresh demo data | Pass: 36 of 36 journeys on a second fresh seed, 5.9 min (run at the same time as run 1, with its own API, web app, ports and data folder) | 21 Oct 2026 |
+| Accessibility | axe WCAG 2.2 AA inside the end-to-end journeys | Pass: 26 axe checks in 7 spec files, 0 violations (after the All work fix below) | 21 Oct 2026 |
+
+**What the end-to-end run found and fixed**
+- The **Import GSAP rates** page is now routed: `/settings/currencies/import` opens it from the Currencies
+  page (016 T028). BUS.BUD.050 has no open item left from this.
+- The All work grid's record names were smaller than the 24 px target size that axe checks (WCAG 2.2
+  SC 2.5.8); they are now 24 px high.
+- 11 of the 29 existing journeys failed on the first run because they asserted wording or layout from
+  before the Shell redesign, 016's plan currency or 014's roles: the plan header's facts row and More
+  menu, the breadcrumb of a new activity, "Search plans", "My profile", the "1,204 of 1,204 entries" and
+  "1 of 1 item" counts, the "Years" filter, the one completeness chip, amounts in the plan's currency with
+  their display-currency value, the tree's "67% used" meter, the Home summary card values, and the sidebar
+  for a person whose role hides Global budgets (that journey now signs in as Alex Morgan). Each now checks
+  the same behaviour in today's wording; no check was dropped.
+- New `frontend/e2e/brd-gaps.spec.ts`, 7 journeys of the BRD gaps: an administrator gives a person a
+  role and it takes effect (014), a viewer sees a plan read-only (014), a planner sees an activity's GSAP
+  financials and the Financials page (015), a small activity is approved automatically (017), a delegate
+  approves for the approver who is away (017), a planner splits an activity (016), and a global planner
+  allocates part of the global budget to a plan (016).
 
 **Recorded at the final merge (`a1ae8fe`, before the full runs above)**
 - `go build ./...`, `go vet ./...` and the web type check (`tsc -b`) pass.
@@ -502,10 +520,10 @@ To be filled by the browser-test agent on the merged `plan-module`, with fresh d
 | 2 | Field-help tips on the plan, campaign, initiative, activity and line item screens | BUS.UX.020 | 016 T084–T088 | S–M |
 | 3 | Hide or explain actions the person's role does not allow, on every page ("View only" note); the Home Financials card's no-access text | BUS.ADM.020, BUD.040, FIN.080 | 014 T043–T051, 015 T044 | M |
 | 4 | Approvals read people's roles from 014 instead of the stand-in that mirrors the demo roles | BUS.ADM.020, WFL.010 | 017 T001, T008 | S–M |
-| 5 | Route the Import GSAP rates page (`/settings/currencies/import`) | BUS.BUD.050 | 016 T028 | S |
+| 5 | ~~Route the Import GSAP rates page (`/settings/currencies/import`)~~ Done in the end-to-end run | BUS.BUD.050 | 016 T028 | S |
 | 6 | Line manager field on the People screen | BUS.WFL.010 | 017 T036 | S |
 | 7 | Linked-transactions sentence in the campaign, initiative and plan delete dialogs | BUS.FIN.080 | 015 T045 | S |
-| 8 | End-to-end journeys of 014–017 | all four | 014 T061, 015 T021/T025/T030/T035, 016 T089, 017 T047–T049 | M |
+| 8 | End-to-end journeys of 014–017: 7 written (`brd-gaps.spec.ts`); GSAP import and linking, conditional levels open | all four | 015 T025/T030/T035, 017 T048 | S |
 | 9 | Product documents: domain model, field catalogue, glossary, design system §5, build guide (the `tasks.md` files and the feature map are up to date) | — | 014 T063, 015 T048, 016 T090–T093 | S |
 | 10 | UI test harness and the stylelint guard | UI plan | UI plan 1.1, 1.4 | S–M |
 | 11 | Re-use small follow-ups: copy a single campaign or activity into another year; "structure only" plan copy | BUS.PLN.050, AI.010 example | gap analysis §3.8 | S |

@@ -139,7 +139,8 @@ test('An activity deleted from its page is found in the recycle bin and restored
     .getByRole('link', { name: 'Activity log' })
     .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Activity log' })).toBeVisible();
-  await expect(page.getByText(/^[\d,]+ entries$/)).toBeVisible();
+  // With no filter the count reads "1,204 of 1,204 entries" (design system §11, rule 14).
+  await expect(page.getByText(/^([\d,]+) of \1 entries$/)).toBeVisible();
   await page.getByRole('searchbox', { name: 'Search name, ID or person' }).fill(name);
   await expect(page).toHaveURL(/[?&]q=/);
   await expect(chip(page, `Search: '${name}'`)).toBeVisible();
@@ -166,7 +167,8 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await expect(chip(page, 'Action: Restored')).toBeVisible();
   await page.getByRole('button', { name: 'Clear filters' }).click();
   await expect(page).toHaveURL(/\/activity-log$/);
-  await expect(page.getByText(/^[\d,]+ of [\d,]+ entries$/)).toHaveCount(0);
+  // No filter in use: the count reads "<n> of <n> entries" (design system §11, rule 14).
+  await expect(page.getByText(/^([\d,]+) of \1 entries$/)).toBeVisible();
 });
 
 test('Delete permanently: the activity leaves the bin for good and the log keeps every step, without a link (011 US5, FR-008, FR-028, FR-030)', async ({

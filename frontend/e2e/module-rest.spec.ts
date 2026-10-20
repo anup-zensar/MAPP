@@ -71,11 +71,8 @@ test('Copy a plan: a planner copies a plan with everything inside into the next 
 
   await page.goto(`/plans/${records.planId}`);
   await expect(page.getByRole('heading', { name: records.planName, level: 1 })).toBeVisible();
-  // The header's More menu: Copy · View history · Delete (004 plan, Plan header).
-  await page
-    .getByRole('button', { name: `Actions for ${records.planName}` })
-    .first()
-    .click();
+  // The header's More menu: Copy · View history · Delete (004 plan, Plan header; design system §6.3).
+  await page.getByRole('main').getByRole('button', { name: 'More', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Copy' }).click();
 
   const dialog = page.getByRole('dialog', { name: `Copy plan '${records.planName}'` });
@@ -99,10 +96,11 @@ test('Copy a plan: a planner copies a plan with everything inside into the next 
   const copyId = idIn(page.url(), /\/plans\/(P-\d+)$/);
   expect(copyId).not.toBe(records.planId);
   await expect(page.getByRole('heading', { name: copyName, level: 1 })).toBeVisible();
-  const facts = page.getByRole('list', { name: 'Plan facts' });
+  // The header's Plan facts row: ID, owner and the copy's dates (design system v2).
+  const facts = page.getByRole('group', { name: 'Plan facts' });
   await expect(facts).toContainText(copyId);
-  await expect(facts).toContainText(`Year ${year + 1}`);
-  await expect(facts).toContainText('Owner: Mei Lin');
+  await expect(facts).toContainText(`01 Jan – 31 Dec ${year + 1}`);
+  await expect(facts.getByText('Mei Lin', { exact: true })).toBeVisible();
   await expect(page.getByText('Draft', { exact: true }).first()).toBeVisible();
 
   // Everything inside came along, one year later, with its planned cost rolled up again.
@@ -122,13 +120,15 @@ test('Copy a plan: a planner copies a plan with everything inside into the next 
 
   // The source keeps its year, and the copy is on the Plans list.
   await page.goto('/plans');
-  await page.getByRole('searchbox', { name: 'Search name or ID' }).fill(copyName);
+  await page.getByRole('searchbox', { name: 'Search plans' }).fill(copyName);
   const card = page.getByRole('article', { name: copyName });
   await expect(card).toContainText(`${copyId} · ${year + 1}`);
   await card.getByRole('link', { name: copyName, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/plans/${copyId}$`));
   await page.goto(`/plans/${records.planId}`);
-  await expect(page.getByRole('list', { name: 'Plan facts' })).toContainText(`Year ${year}`);
+  await expect(page.getByRole('group', { name: 'Plan facts' })).toContainText(
+    `01 Jan – 31 Dec ${year}`,
+  );
 });
 
 test('Move and copy: an activity moves to another initiative and its campaign is copied into another plan; the roll-ups follow at source and destination (005 US6, 006 US5)', async ({
@@ -182,7 +182,7 @@ test('Move and copy: an activity moves to another initiative and its campaign is
   await expect(destination).toContainText('1 activity');
   await expect(destination).toContainText('$20,000.00');
   // 20,000 of the target's 30,000 budget: 67 % used.
-  await expect(destination.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '67');
+  await expect(destination.getByText('67% used', { exact: true })).toBeVisible();
   await expect(treeRow(page, records.campaignName)).toContainText('$20,000.00');
   await expect(treeRow(page, records.planName)).toContainText('$20,000.00');
 
@@ -212,10 +212,7 @@ test('Move and copy: an activity moves to another initiative and its campaign is
   await expect(treeRow(page, name)).toContainText('Created');
   await expect(treeRow(page, otherPlan.name)).toContainText('$20,000.00');
   // 20,000 of the plan's 100,000 budget: 20 % used.
-  await expect(treeRow(page, otherPlan.name).getByRole('progressbar')).toHaveAttribute(
-    'aria-valuenow',
-    '20',
-  );
+  await expect(treeRow(page, otherPlan.name).getByText('20% used', { exact: true })).toBeVisible();
 
   // The source plan is unchanged: still one campaign and 20,000.00.
   await page.goto(`/plans/${records.planId}`);
@@ -333,9 +330,11 @@ test('My profile: the display currency and date format follow on the Plans list 
   await page.getByRole('button', { name: 'Sara — account menu' }).click();
   await page.getByRole('menuitem', { name: 'My profile' }).click();
   await expect(page).toHaveURL(/\/profile$/);
-  await expect(page.getByRole('heading', { name: 'Your profile', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'My profile', level: 1 })).toBeVisible();
   await expect(
-    page.getByText('Your details and teams, and how NorthStar shows dates and money to you.'),
+    page.getByText(
+      'Your details, teams and access, and how NorthStar shows dates and money to you.',
+    ),
   ).toBeVisible();
   const preferences = page.getByRole('region', { name: 'Display preferences' });
   await expect(preferences).toContainText('USD — US dollar');
@@ -356,19 +355,22 @@ test('My profile: the display currency and date format follow on the Plans list 
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Plans' }).click();
   await expect(page.getByRole('heading', { name: 'Plans', level: 1 })).toBeVisible();
   const card = page.getByRole('article', { name: 'FY2026 Lubricants Europe' });
-  await expect(card).toContainText('Budget 1,104,000.00 EUR');
-  await expect(card).toContainText(/Planned cost [\d,]+\.\d{2} EUR/);
+  // Amounts are in the plan's currency (USD), each with its EUR value at the current rate (016).
+  await expect(card).toContainText('1,200,000.00 USD');
+  await expect(card).toContainText('about 1,104,000.00 EUR');
+  await expect(card).toContainText(/Planned cost[\d,]+\.\d{2} USD≈ about [\d,]+\.\d{2} EUR/);
   await expect(card).not.toContainText('$');
 
-  // The plan page: amounts in EUR and dates as DD/MM/YYYY, in the header, the summary and the tree.
+  // The plan page: amounts in the plan's currency with their EUR value (016), and dates as
+  // DD/MM/YYYY, in the header, the summary and the tree.
   await card.getByRole('link', { name: 'FY2026 Lubricants Europe', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'FY2026 Lubricants Europe', level: 1 }),
   ).toBeVisible();
-  await expect(
-    page.getByText(/^Created by .+ on \d{2}\/\d{2}\/\d{4}, last changed by/),
-  ).toBeVisible();
-  await expect(page.getByRole('button', { name: '1.1M EUR (1,104,000.00 EUR)' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Plan facts' })).toContainText(
+    `01/01/${SEED_YEAR} – 31/12/${SEED_YEAR}`,
+  );
+  await expect(page.getByRole('region', { name: 'Summary' })).toContainText('≈ 1,104,000.00 EUR');
   const planRow = treeRow(page, 'P-1001');
   await expect(planRow).toContainText(`01/01/${SEED_YEAR} – 31/12/${SEED_YEAR}`);
   await expect(planRow).toContainText('1,104,000.00 EUR');
@@ -388,7 +390,9 @@ test('Home: the summary cards and sections for a planner and an approver, with w
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Welcome back, Priya.', level: 1 })).toBeVisible();
   await expect(
-    page.getByText('Your plans, your activities and what needs you today.'),
+    page.getByText(
+      'Your own activities, what needs your attention and your approvals always cover all plans.',
+    ),
   ).toBeVisible();
   const scope = page.getByRole('group', { name: 'Scope' });
   await expect(scope.getByRole('button', { name: 'My teams' })).toHaveAttribute(
@@ -491,9 +495,7 @@ test('Home: the summary cards and sections for a planner and an approver, with w
   await page.goto('/');
   await teamPlans.click();
   await expect(page).toHaveURL(/\/plans\?scope=myTeams$/);
-  await expect(
-    page.getByRole('group', { name: 'Show' }).getByRole('button', { name: 'My teams' }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Remove filter: My teams’ plans' })).toBeVisible();
 
   // "Activities I own" opens All work with the owner filter (D-174).
   await page.goto('/');
@@ -542,14 +544,16 @@ test('Home: the summary cards and sections for a planner and an approver, with w
   await expect(
     page.getByRole('heading', { name: 'Welcome back, Carlos.', level: 1 }),
   ).toBeVisible();
-  const teamPlanCount = Number(await teamPlans.textContent());
+  // Each card's value is in its link's name, "All plans: 10 — open the Plans list".
+  const cardValue = async (link: typeof teamPlans) =>
+    Number(/: (\d+) —/.exec((await link.getAttribute('aria-label')) ?? '')?.[1]);
+  const teamPlanCount = await cardValue(teamPlans);
+  expect(teamPlanCount).toBeGreaterThan(0);
   await scope.getByRole('button', { name: 'Everything' }).click();
   const allPlans = summary.getByRole('link', { name: /^All plans: \d+ — open the Plans list$/ });
   await expect(allPlans).toBeVisible();
   // Polled: the label changes at once, the count when the new scope's figures arrive.
-  await expect
-    .poll(async () => Number(await allPlans.textContent()))
-    .toBeGreaterThan(teamPlanCount);
+  await expect.poll(async () => cardValue(allPlans)).toBeGreaterThan(teamPlanCount);
   await scope.getByRole('button', { name: 'My teams' }).click();
   await expect(teamPlans).toBeVisible();
 });
@@ -564,7 +568,8 @@ test('All work: filter and search the grid, the calendar, budget and cost by mon
   await expect(page.getByRole('heading', { name: 'All work', level: 1 })).toBeVisible();
   await expect(page.getByText('Filter, compare and export all planned work.')).toBeVisible();
   const filters = page.getByRole('group', { name: 'Filters' });
-  await expect(filters.getByRole('button', { name: `Year · ${SEED_YEAR}` })).toBeVisible();
+  // 016 FR-034: the year filter is a range, "Years · 2026" for one year.
+  await expect(filters.getByRole('button', { name: `Years · ${SEED_YEAR}` })).toBeVisible();
   const count = page.getByText(/^\d+ of \d+ activit(y|ies)$/);
   await expect(count).toHaveText(/^(\d+) of \1 activities$/);
   const grid = page.getByRole('table', { name: 'All work grid' });
