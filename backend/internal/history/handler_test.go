@@ -17,6 +17,10 @@ const (
 	danielsEmail = "daniel.okoro@northstar.demo"
 )
 
+// Every test here starts the API with apitest.WithoutDemoHistory: the activity log and the recycle bin start
+// empty, so the entries and IDs are the test's own. The seed's demo history has its own tests
+// (seed/history_test.go).
+
 // The bodies of the API's answers, as the web app receives them.
 const (
 	emptyLogBody       = `{"items":[],"total":0,"unfilteredTotal":0,"record":null}`
@@ -30,7 +34,7 @@ const (
 // Before anything has changed, the activity log and the recycle bin answer empty lists, never null
 // (FR-022, FR-024, research R10).
 func TestEmptyLogAndBin_AnswerEmptyLists_FR022_FR024(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/activity-log", nil), http.StatusOK, emptyLogBody)
@@ -40,7 +44,7 @@ func TestEmptyLogAndBin_AnswerEmptyLists_FR022_FR024(t *testing.T) {
 // An entry carries who did what to which record and when, where the record was and where it is now, and
 // each changed field with readable values, exactly as the contract describes it (FR-022, 011 FR-008).
 func TestListActivityLog_EntriesAsTheContractSays_FR022(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas") // SF-1001
 	renameFolder(t, priya, "SF-1001", "Ideas 2")
@@ -65,7 +69,7 @@ func TestListActivityLog_EntriesAsTheContractSays_FR022(t *testing.T) {
 // The log answers the newest matching entries first, filtered by record type and by record, at most limit
 // of them, with the number of all matching entries (FR-022).
 func TestListActivityLog_FiltersNewestFirst_FR022(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")              // SF-1001, LOG-1001
 	createFolder(t, priya, "Plans")              // SF-1002, LOG-1002
@@ -92,7 +96,7 @@ func TestListActivityLog_FiltersNewestFirst_FR022(t *testing.T) {
 
 // Without a limit, the log answers the newest 50 entries (FR-022, contract default).
 func TestListActivityLog_DefaultLimitIs50_FR022(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	for i := range 51 {
 		createFolder(t, priya, fmt.Sprintf("Folder %d", i+1)) // LOG-1001 to LOG-1051
@@ -109,7 +113,7 @@ func TestListActivityLog_DefaultLimitIs50_FR022(t *testing.T) {
 // A limit that is not a whole number from 1 to 200 is refused next to the field (FR-020); 1 and 200 are
 // accepted.
 func TestListActivityLog_InvalidLimit_FR020(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 
 	for _, limit := range []string{"0", "201", "-5", "ten", "1.5", ""} {
@@ -130,7 +134,7 @@ func TestListActivityLog_InvalidLimit_FR020(t *testing.T) {
 // Load more with beforeSeq; the answer counts the matching entries and the whole log, and names the record
 // of recordId (011 FR-003, FR-009, FR-013).
 func TestListActivityLog_Filters_Contract(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
 	createFolder(t, priya, "Ideas")             // SF-1001, LOG-1001
@@ -182,7 +186,7 @@ func TestListActivityLog_Filters_Contract(t *testing.T) {
 // Every problem with the parameters is answered at once, next to its parameter, in the order of the
 // parameters (011 FR-003).
 func TestListActivityLog_InvalidParams_400(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	tests := []struct {
 		query string
@@ -216,7 +220,7 @@ func TestListActivityLog_InvalidParams_400(t *testing.T) {
 // The summary counts the whole log for the boundaries the browser sends (todayStart, weekStart), and offers
 // the choices of the Person, Record type and Plan filters (011 FR-002, FR-003).
 func TestActivityLogSummary_Contract(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	daniel := server.SignIn(t, danielsEmail)
 	createFolder(t, daniel, "Ideas")           // yesterday
 	addNote(t, daniel, "SF-1001", "Old idea")  // yesterday
@@ -237,7 +241,7 @@ func TestActivityLogSummary_Contract(t *testing.T) {
 
 // The boundaries are required and must be moments, and the week cannot start after today (011 FR-002).
 func TestActivityLogSummary_MissingParams_400(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	reload := `"message":"Reload the page and try again."`
 	tests := []struct {
@@ -260,7 +264,7 @@ func TestActivityLogSummary_MissingParams_400(t *testing.T) {
 
 // Undo and Restore of an entry the recycle bin never had answer not found (FR-025).
 func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 
 	for _, action := range []string{"undo", "restore"} {
@@ -306,7 +310,7 @@ func binWithParent(t *testing.T, priya *apitest.Client) {
 // the entries inside them and the records they hold, as the contract describes (011 FR-014 – FR-017,
 // FR-028).
 func TestListRecycleBin_Items_Contract(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
@@ -319,7 +323,7 @@ func TestListRecycleBin_Items_Contract(t *testing.T) {
 // name because "Ideas" is taken, and the note returns into it (011 FR-018, FR-022, FR-023). Nothing is
 // saved: the bin and the log are unchanged.
 func TestRestorePreview_Contract(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 	logBefore := getLog(t, priya, "")
@@ -342,7 +346,7 @@ func TestRestorePreview_Contract(t *testing.T) {
 // The preview of an entry the bin never had answers not found; of an entry that already left the bin, the
 // conflict already_resolved with how, by whom and when (011 FR-032).
 func TestRestorePreview_UnknownAndResolved_404_409(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")   // SF-1001
 	deleteFolder(t, priya, "SF-1001") // BIN-1001
@@ -359,7 +363,7 @@ func TestRestorePreview_UnknownAndResolved_404_409(t *testing.T) {
 // Restore with withParents=true brings back the folder's entry first, then the note's, in one step (011
 // FR-023); withParents must be true or false.
 func TestRestore_WithParents_Contract(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
@@ -381,7 +385,7 @@ func TestRestore_WithParents_Contract(t *testing.T) {
 // parent_deleted_permanently once it was deleted permanently, also with withParents=true; both name the
 // parent (011 FR-023, FR-024).
 func TestRestore_ParentCodes_409(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 	parent := `"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}`
@@ -401,7 +405,7 @@ func TestRestore_ParentCodes_409(t *testing.T) {
 // with the record's place and contents at the time of the delete, and leaves the entry waiting for it in
 // the bin, no longer restorable (011 FR-028, FR-030).
 func TestPurge_Contract(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
@@ -428,7 +432,7 @@ func TestPurge_Contract(t *testing.T) {
 // Delete permanently of an entry the bin never had answers not found; of an entry that already left the
 // bin, the conflict already_resolved with how, by whom and when (011 FR-032).
 func TestPurge_404_409(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")   // SF-1001
 	deleteFolder(t, priya, "SF-1001") // BIN-1001
@@ -446,7 +450,7 @@ func TestPurge_404_409(t *testing.T) {
 // and writes one "emptied the recycle bin" entry that lists them; when nothing listed is left it answers 0
 // and writes nothing (011 FR-029, FR-030, FR-032).
 func TestEmptyRecycleBin_Contract(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 	body := map[string][]string{"entryIds": {"BIN-1002", "BIN-1001"}}
@@ -474,7 +478,7 @@ func TestEmptyRecycleBin_Contract(t *testing.T) {
 
 // Empty recycle bin needs at least one entry: an empty list is refused next to entryIds (011 FR-029).
 func TestEmptyRecycleBin_EmptyList_400(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 
 	response := priya.Do(t, http.MethodPost, "/api/recycle-bin/empty", map[string][]string{"entryIds": {}},
@@ -486,7 +490,7 @@ func TestEmptyRecycleBin_EmptyList_400(t *testing.T) {
 
 // Every history operation needs a signed-in person (FR-005).
 func TestHistoryOperations_WithoutSession_FR005(t *testing.T) {
-	server := apitest.New(t)
+	server := apitest.New(t, apitest.WithoutDemoHistory())
 	calls := []struct{ method, path string }{
 		{http.MethodGet, "/api/activity-log"},
 		{http.MethodGet, "/api/activity-log/summary"},
