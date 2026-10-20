@@ -249,7 +249,7 @@ func (s *Service) approvedAtSubmission(ctx context.Context, a actor.Actor, facts
 	if err != nil {
 		return err
 	}
-	if notes == "" {
+	if len(automatic) == 0 { // every level was not needed
 		notes = noLevelAppliesNote
 	}
 	err = s.logOnActivity(ctx, actor.System, updated, statusLog{
