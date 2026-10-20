@@ -142,6 +142,7 @@ export function linkedTransactionsText(count: number): string | null {
   if (count <= 0) {
     return null;
   }
-  const linked = count === 1 ? '1 GSAP transaction is' : `${count} GSAP transactions are`;
-  return `${linked} linked to it. They stay in NorthStar and leave the figures until it is restored.`;
+  return count === 1
+    ? '1 GSAP transaction is linked to it. It stays in NorthStar and leaves the figures until it is restored.'
+    : `${plural(count, 'GSAP transaction')} are linked to it. They stay in NorthStar and leave the figures until it is restored.`;
 }

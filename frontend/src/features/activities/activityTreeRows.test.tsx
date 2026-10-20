@@ -5,6 +5,7 @@ import { ActionsMenu, TreeTable } from '@/components';
 import { mockApi } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
+import { activityRecord } from '@/features/line-items/testData';
 import { activityActionsForInitiative, useActivityRows } from './activityTreeRows';
 import { destinations, launchFilm, launchFilmRow } from './testData';
 
@@ -69,6 +70,11 @@ function openRows(answers: Parameters<typeof mockApi>[0] = {}) {
         total: 2,
       },
     },
+    // No GSAP data yet: a delete question says nothing of transactions (015 FR-029).
+    'GET /api/financials/records/A-1042': {
+      status: 404,
+      body: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+    },
     ...answers,
   });
   const rendered = renderWithProviders(<ActivityRows />, {
@@ -122,6 +128,9 @@ describe('activityTreeRows (feature 006)', () => {
       },
       'DELETE /api/activities/A-1042': { body: DELETED },
       'POST /api/recycle-bin/BIN-1001/undo': { body: {} },
+      'GET /api/financials/records/A-1042': {
+        body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
+      },
     });
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
@@ -130,6 +139,12 @@ describe('activityTreeRows (feature 006)', () => {
       name: "Delete activity 'Launch film'?",
     });
     expect(within(question).getByText('2 line items go with it.')).toBeVisible();
+    // The GSAP transactions linked to its line items stay (015 FR-029).
+    expect(
+      await within(question).findByText(
+        '3 GSAP transactions are linked to it. They stay in NorthStar and leave the figures until it is restored.',
+      ),
+    ).toBeVisible();
     expect(within(question).getByRole('button', { name: 'Cancel' })).toHaveFocus();
     expect(api.bodiesOf('DELETE /api/activities/A-1042')).toEqual([]);
 

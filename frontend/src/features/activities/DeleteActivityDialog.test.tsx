@@ -4,13 +4,14 @@ import { DeleteActivityDialog } from './DeleteActivityDialog';
 import type { DeletedActivity } from './DeleteActivityDialog';
 import { launchFilm } from './testData';
 
-function ask(overrides: Partial<DeletedActivity> = {}) {
+function ask(overrides: Partial<DeletedActivity> = {}, linkedTransactions?: number) {
   render(
     <DeleteActivityDialog
       open
       onOpenChange={() => {}}
       activity={{ ...launchFilm(), ...overrides }}
       onConfirm={() => {}}
+      linkedTransactions={linkedTransactions}
     />,
   );
   return screen.getByRole('alertdialog', { name: "Delete activity 'Launch film'?" });
@@ -82,5 +83,15 @@ describe('DeleteActivityDialog (feature 006, FR-031)', () => {
     expect(dialog).toHaveTextContent(
       "If it's restored later from the recycle bin, it comes back as Created.",
     );
+  });
+
+  it('says a GSAP transaction linked to it stays (015 FR-029)', () => {
+    expect(ask({}, 1)).toHaveTextContent(
+      '1 GSAP transaction is linked to it. It stays in NorthStar and leaves the figures until it is restored.',
+    );
+  });
+
+  it('says nothing of transactions when none are linked', () => {
+    expect(ask({}, 0)).not.toHaveTextContent('GSAP');
   });
 });

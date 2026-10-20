@@ -11,6 +11,7 @@ import {
   deleteResult,
   launchFilmSection,
   lineItem,
+  lineItemRecord,
   usd,
 } from './testData';
 
@@ -276,6 +277,7 @@ describe('LineItemsSection (US1)', () => {
     mockApi({
       [SECTION]: { body: launchFilmSection() },
       [FINANCIALS]: { body: activityRecord() },
+      'GET /api/financials/records/L-1001': { body: lineItemRecord() },
       'DELETE /api/line-items/L-1001': { body: deleteResult() },
     });
     const { user, router } = renderWithProviders(<LineItemsSection activityId="A-1001" />, {
@@ -288,6 +290,10 @@ describe('LineItemsSection (US1)', () => {
     const dialog = await screen.findByRole('alertdialog', {
       name: "Delete line item 'Agency fee'?",
     });
+    // The GSAP transactions linked to it stay (015 FR-029).
+    expect(
+      await within(dialog).findByText(/^2 GSAP transactions are linked to it\./),
+    ).toBeVisible();
     await user.click(within(dialog).getByRole('button', { name: 'Delete line item' }));
 
     expect(

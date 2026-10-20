@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/components';
+import { linkedTransactionsText, useFinancialRecord } from './gsapFinancials';
 import { moneyText } from './lineItemMath';
 import type { LineItem } from './lineItemsApi';
 import {
@@ -22,8 +23,8 @@ export interface DeleteLineItemDialogProps {
 
 /**
  * "Delete line item 'Agency fee'?" (FR-030, design system §6.5): what it does to the unassigned
- * planned cost, that it can be restored, the re-approval line when needed, Cancel focused and the
- * red Delete line item.
+ * planned cost, the GSAP transactions that stay linked to it (015 FR-029), that it can be restored,
+ * the re-approval line when needed, Cancel focused and the red Delete line item.
  */
 export function DeleteLineItemDialog({
   lineItem,
@@ -32,6 +33,9 @@ export function DeleteLineItemDialog({
   onConfirm,
   onCancel,
 }: DeleteLineItemDialogProps) {
+  // The line item page's Financials query; without figures the dialog says nothing of them.
+  const financials = useFinancialRecord(lineItem?.id ?? '', lineItem !== null);
+  const linked = linkedTransactionsText(financials.data?.figures.transactionCount ?? 0);
   return (
     <ConfirmDialog
       open={lineItem !== null}
@@ -48,6 +52,7 @@ export function DeleteLineItemDialog({
       onConfirm={onConfirm}
     >
       {lineItem && <p>{deleteEffect(moneyText(lineItem.plannedCostDisplay))}</p>}
+      {linked && <p>{linked}</p>}
       <p>{DELETE_TO_BIN}</p>
       {restartsApproval && <p>{DELETE_RESTART}</p>}
     </ConfirmDialog>

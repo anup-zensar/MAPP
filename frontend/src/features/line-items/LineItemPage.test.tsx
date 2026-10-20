@@ -203,6 +203,10 @@ describe('LineItemPage (US4, FR-026)', () => {
       "The activity's unassigned planned cost goes up by 50,000.00 USD.",
     );
     expect(dialog).toHaveTextContent('It moves to the recycle bin; you can restore it.');
+    // The GSAP transactions linked to it stay (015 FR-029), from the Financials section's query.
+    expect(dialog).toHaveTextContent(
+      '2 GSAP transactions are linked to it. They stay in NorthStar and leave the figures until it is restored.',
+    );
     expect(dialog).not.toHaveTextContent('This activity will need approval again.');
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus();
 
