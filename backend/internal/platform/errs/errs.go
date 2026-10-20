@@ -34,6 +34,9 @@ const (
 	CodeCannotRestore = "cannot_restore" // a record cannot come back from the recycle bin, with the reason (002)
 	CodeNotAllowed    = "not_allowed"    // the person may not do this, such as deactivate themselves (003)
 	CodeNotReady      = "not_ready"      // needed fields are missing for publish or submit; Missing lists them (004)
+
+	// CodeForbidden refuses what the person's roles do not allow (014, D-299; used by 017 first).
+	CodeForbidden = "forbidden"
 )
 
 // Error is an API failure. Status is the HTTP status and is not part of the JSON.
@@ -187,6 +190,12 @@ func CannotRestore(message string) *Error {
 // NotAllowed refuses an action the person may not take, with a message for the user (409 not_allowed).
 func NotAllowed(message string) *Error {
 	return newError(http.StatusConflict, CodeNotAllowed, message)
+}
+
+// Forbidden refuses an action the person's roles or the access rules do not allow, with a message for the
+// user (403 forbidden, 014 D-299).
+func Forbidden(message string) *Error {
+	return newError(http.StatusForbidden, CodeForbidden, message)
 }
 
 // NotReady refuses to publish or submit while needed fields are missing, listing every one of them grouped

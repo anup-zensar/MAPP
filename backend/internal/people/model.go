@@ -22,6 +22,9 @@ type Person struct {
 	Email    string `json:"email"`    // the sign-in name: at most 254 characters, unique, stored in lower case
 	JobTitle string `json:"jobTitle"` // 0 to 120 characters
 	Active   bool   `json:"active"`   // only active people are listed on the sign-in page and can sign in
+	// ManagerID is the person's line manager (017 FR-016): an active person when chosen, not the person, and no
+	// loop of managers; "" = none. It is kept in NorthStar until Microsoft Entra ID provides it (D-282).
+	ManagerID string `json:"managerId"`
 	record.Meta
 }
 
@@ -259,11 +262,20 @@ type PersonView struct {
 	record.Meta
 }
 
+// PersonListItem is a person in the people list (Person): the person's view with their line manager and
+// how many people they are the line manager of (017 FR-016). The details answer (PersonDetails) has no
+// manager fields: the web app reads the manager from the list and "Line manager of <n> people" from usage.
+type PersonListItem struct {
+	PersonView
+	Manager     *PersonRef `json:"manager"`     // nil when the person has no line manager
+	ReportCount int        `json:"reportCount"` // people, active or not, whose line manager this person is
+}
+
 // UsageCount is how many records of one type name the person in one role, records in the recycle bin not
 // counted (UsageCount); only counts of at least 1 are returned.
 type UsageCount struct {
-	Role       string `json:"role"`       // "owner" or "approver"
-	RecordType string `json:"recordType"` // "plan", "campaign", "initiative", "activity", "approvalWorkflow"
+	Role       string `json:"role"`       // "owner", "approver" or "manager" (017: line manager of people)
+	RecordType string `json:"recordType"` // "plan", "campaign", "initiative", "activity", "approvalWorkflow", "person"
 	Label      string `json:"label"`      // "2 plans", "1 approval workflow"
 	Count      int    `json:"count"`
 }
@@ -277,27 +289,29 @@ type PersonDetails struct {
 
 // PersonPage is the answer of GET /api/people (PersonPage).
 type PersonPage struct {
-	Items []PersonView `json:"items"`
-	Total int          `json:"total"`
+	Items []PersonListItem `json:"items"`
+	Total int              `json:"total"`
 }
 
 // PersonInput is the body of POST /api/people (PersonCreate).
 type PersonInput struct {
-	Name     string   `json:"name"`
-	Email    string   `json:"email"`
-	JobTitle string   `json:"jobTitle"`
-	TeamIDs  []string `json:"teamIds"`
+	Name      string   `json:"name"`
+	Email     string   `json:"email"`
+	JobTitle  string   `json:"jobTitle"`
+	TeamIDs   []string `json:"teamIds"`
+	ManagerID string   `json:"managerId"` // "" or left out for none (017 FR-016)
 }
 
 // PersonUpdate is the body of PATCH /api/people/{personId} and of its impact check (PersonUpdate): only
 // the fields to change, plus the version (D-203, D-210). A field that is not sent (nil) keeps its value;
-// TeamIDs, when sent, is every team after the change.
+// TeamIDs, when sent, is every team after the change; ManagerID "" clears the line manager.
 type PersonUpdate struct {
-	Name     *string   `json:"name"`
-	Email    *string   `json:"email"`
-	JobTitle *string   `json:"jobTitle"`
-	TeamIDs  *[]string `json:"teamIds"`
-	Version  *int      `json:"version"`
+	Name      *string   `json:"name"`
+	Email     *string   `json:"email"`
+	JobTitle  *string   `json:"jobTitle"`
+	TeamIDs   *[]string `json:"teamIds"`
+	ManagerID *string   `json:"managerId"`
+	Version   *int      `json:"version"`
 }
 
 // applyTo returns form with the fields u sends put in place of the stored values.
@@ -313,6 +327,9 @@ func (u PersonUpdate) applyTo(form personForm) personForm {
 	}
 	if u.TeamIDs != nil {
 		form.TeamIDs = *u.TeamIDs
+	}
+	if u.ManagerID != nil {
+		form.ManagerID = *u.ManagerID
 	}
 	return form
 }

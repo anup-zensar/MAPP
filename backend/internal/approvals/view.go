@@ -2,13 +2,16 @@ package approvals
 
 import (
 	"context"
+	"slices"
+	"time"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/errs"
 )
 
 // Approval returns the activity's Approval section as a sees it (FR-024, FR-025): the chain of every round
 // with its history, newest first, the latest decline while Declined (FR-016), a's relation to the activity
-// and the actions available now (FR-009, FR-014, FR-021).
+// and the actions available now (FR-009, FR-014, FR-021; 017 FR-017, FR-033, FR-034).
 func (s *Service) Approval(ctx context.Context, a actor.Actor, activityID string) (ActivityApproval, error) {
 	var approval ActivityApproval
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -27,10 +30,11 @@ func (s *Service) Approval(ctx context.Context, a actor.Actor, activityID string
 
 // approval builds the Approval section of facts, inside the caller's transaction.
 func (s *Service) approval(ctx context.Context, a actor.Actor, facts ActivityFacts) (ActivityApproval, error) {
-	d, err := s.directory(ctx)
+	rc, err := s.ruleContext(ctx)
 	if err != nil {
 		return ActivityApproval{}, err
 	}
+	d := rc.people
 	rounds, err := s.repo.RoundsOf(ctx, facts.ID)
 	if err != nil {
 		return ActivityApproval{}, err
@@ -44,7 +48,9 @@ func (s *Service) approval(ctx context.Context, a actor.Actor, facts ActivityFac
 		ActivityID: facts.ID, ActivityName: facts.Name, ActivityVersion: facts.Version,
 		Status: facts.Status, DisplayStatus: facts.DisplayStatus, OwnerID: facts.OwnerID, Owner: d.owner(facts.OwnerID),
 		UpcomingLevels: []LevelView{}, Rounds: make([]RoundView, 0, len(rounds)),
-		Viewer:  Viewer{IsOwner: facts.OwnerID != "" && facts.OwnerID == a.ID, OnBehalfOf: []PersonView{}},
+		Viewer: Viewer{
+			IsOwner: facts.OwnerID != "" && facts.OwnerID == a.ID, OnBehalfOf: []PersonView{}, AsDelegateOf: []PersonView{},
+		},
 		Actions: availableActions(facts.Status),
 	}
 	if facts.WorkflowID != "" {
@@ -55,18 +61,41 @@ func (s *Service) approval(ctx context.Context, a actor.Actor, facts ActivityFac
 		if found {
 			view.Workflow = workflowRef(workflow)
 			if len(rounds) == 0 {
-				view.UpcomingLevels = levelViews(workflow.Levels, d) // "Not submitted yet"
+				view.UpcomingLevels = levelViews(workflow.Levels, rc) // "Not submitted yet"
 			}
 		}
 	}
 	for i := len(rounds) - 1; i >= 0; i-- {
-		view.Rounds = append(view.Rounds, roundView(rounds[i], entriesOf(entries, rounds[i].ID), d))
+		view.Rounds = append(view.Rounds, roundView(rounds[i], entriesOf(entries, rounds[i].ID), rc))
 	}
 	if open, found := openRound(rounds); found {
-		approvers := open.Levels[open.CurrentLevel-1].Approvers
-		view.Viewer.IsCurrentApprover = includes(approvers, a.ID)
-		if !view.Viewer.IsCurrentApprover {
-			view.Viewer.OnBehalfOf = d.copiedAll(approvers)
+		level := open.Levels[open.CurrentLevel-1]
+		view.Viewer.IsCurrentApprover = includes(level.Approvers, a.ID)
+		view.Viewer.IsSubmitter = open.SubmittedBy.ID == a.ID
+		dl, err := s.currentDelegations(ctx, d)
+		if err != nil {
+			return ActivityApproval{}, err
+		}
+		dc, err := s.deciderOf(ctx, a, dl)
+		if err != nil {
+			return ActivityApproval{}, err
+		}
+		au, err := s.authority(ctx, dc, facts, open, entriesOf(entries, open.ID), true)
+		if err != nil {
+			return ActivityApproval{}, err
+		}
+		view.Viewer.CanDecide, view.Viewer.CannotDecideReason = au.allowed, au.shown
+		if au.allowed {
+			capacity := au.capacity
+			view.Viewer.Capacity = &capacity
+			view.Viewer.AsDelegateOf = d.copiedAll(au.asDelegateOf)
+			if au.capacity == CapacityOnBehalf {
+				view.Viewer.OnBehalfOf = d.copiedAll(au.onBehalfOf)
+			}
+		}
+		if facts.Status == StatusSubmitted {
+			decide := ActionAvailability{Available: au.allowed, Reason: au.shown}
+			view.Actions.Approve, view.Actions.Decline = decide, decide
 		}
 	}
 	if facts.Status == StatusDeclined {
@@ -76,7 +105,8 @@ func (s *Service) approval(ctx context.Context, a actor.Actor, facts ActivityFac
 }
 
 // availableActions says which approval actions an activity with status offers (FR-009, FR-014, FR-021).
-// Only an unavailable recall of an Approved activity explains itself: the screen must say why.
+// Only an unavailable recall of an Approved activity explains itself: the screen must say why. Approve and
+// decline of a Submitted activity follow who may decide (approval, 017 FR-017).
 func availableActions(status string) ActionSet {
 	var set ActionSet
 	switch status {
@@ -85,7 +115,7 @@ func availableActions(status string) ActionSet {
 	case StatusDeclined:
 		set.Resubmit.Available = true
 	case StatusSubmitted:
-		set.Approve.Available, set.Decline.Available, set.Recall.Available = true, true, true
+		set.Recall.Available = true
 	case StatusApproved:
 		set.Recall.Reason = approvedNoRecallMessage
 	}
@@ -108,8 +138,8 @@ func entriesOf(entries []Action, roundID string) []Action {
 	return where(entries, func(e Action) bool { return e.RoundID == roundID })
 }
 
-// decisionOn returns the decision (approved or declined) on level in a round's entries, and false when
-// the level was not decided. Only the first decision on a level counts (FR-018), and there is only one.
+// decisionOn returns the first decision (approved or declined) on level in a round's entries, and false
+// when the level has none. Only the first decision of each approver counts (FR-018, 017 FR-020).
 func decisionOn(entries []Action, level int) (Action, bool) {
 	for _, e := range entries {
 		if e.Level == level && (e.Action == ActionApproved || e.Action == ActionDeclined) {
@@ -119,37 +149,150 @@ func decisionOn(entries []Action, level int) (Action, bool) {
 	return Action{}, false
 }
 
-// roundView returns round with its chain and its history, newest first (FR-024, FR-025). entries are the
-// round's history entries, oldest first.
-func roundView(round Round, entries []Action, d directory) RoundView {
+// decisionsOn returns every decision on level in a round's entries, oldest first; never nil.
+func decisionsOn(entries []Action, level int) []Action {
+	return where(entries, func(e Action) bool {
+		return e.Level == level && (e.Action == ActionApproved || e.Action == ActionDeclined)
+	})
+}
+
+// decisionView returns a decision entry as the chain shows it.
+func decisionView(e Action) Decision {
+	return Decision{
+		Action: string(e.Action), Actor: e.Actor, OnBehalfOf: nonNil(e.OnBehalfOf), At: e.At, Comment: e.Comment,
+		Capacity: e.Capacity, AsDelegateOf: e.AsDelegateOf,
+	}
+}
+
+// waitingSince is when the round reached the level (017 FR-029): its stored time, or for rounds stored
+// before 017 008's rule — the submission for the first level, else the approval of the level before. nil for
+// a level not reached, not needed or approved automatically.
+func waitingSince(round Round, level RoundLevel, entries []Action) *time.Time {
+	if level.StartedAt != nil {
+		return level.StartedAt
+	}
+	if level.Resolution != ResolutionDecide || level.Number > round.CurrentLevel || round.Facts != nil {
+		return nil
+	}
+	since := round.SubmittedAt
+	if previous, found := decisionOn(entries, level.Number-1); found {
+		since = previous.At
+	}
+	return &since
+}
+
+// roundView returns round with its chain and its history, newest first (FR-024, FR-025; 017 FR-033,
+// FR-034). entries are the round's history entries, oldest first.
+func roundView(round Round, entries []Action, rc ruleContext) RoundView {
+	d := rc.people
 	view := RoundView{
 		ID: round.ID, Number: round.Number, Outcome: round.Outcome,
 		Workflow:    RoundWorkflow{ID: round.WorkflowID, Name: round.WorkflowName},
 		SubmittedAt: round.SubmittedAt, SubmittedBy: round.SubmittedBy, Comment: round.Comment, EndedAt: round.EndedAt,
 		CurrentLevel: round.CurrentLevel, LevelCount: len(round.Levels),
 		Levels: make([]ChainLevel, 0, len(round.Levels)), History: make([]HistoryEntryView, 0, len(entries)),
+		Facts: factsView(round.Facts, rc), ReminderDays: round.ReminderDays, EscalationDays: round.EscalationDays,
+		AutoApproved: round.AutoApproved,
 	}
 	for _, l := range round.Levels {
-		level := ChainLevel{Number: l.Number, Label: levelLabel(l.Name, l.Number), Approvers: d.copiedAll(l.Approvers)}
-		decision, decided := decisionOn(entries, l.Number)
-		switch {
-		case decided:
-			level.State = string(decision.Action)
-			level.Decision = &Decision{
-				Action: string(decision.Action), Actor: decision.Actor, OnBehalfOf: nonNil(decision.OnBehalfOf),
-				At: decision.At, Comment: decision.Comment,
-			}
-		case l.Number == round.CurrentLevel && round.Outcome == OutcomeOpen:
-			level.State = LevelWaiting
-		case l.Number == round.CurrentLevel: // recalled, restarted or cancelled while it waited
-			level.State = LevelNotDecided
-		default:
-			level.State = LevelNotReached
-		}
-		view.Levels = append(view.Levels, level)
+		view.Levels = append(view.Levels, chainLevel(round, l, entries, rc))
 	}
 	for i := len(entries) - 1; i >= 0; i-- {
 		view.History = append(view.History, historyEntryView(entries[i], d))
+	}
+	return view
+}
+
+// chainLevel returns one level of a round as the chain shows it (017 FR-033): what the rules decided, who
+// approves it and how they were found, who was left out, its decisions and progress, its timings and
+// whether nobody waiting can act.
+func chainLevel(round Round, l RoundLevel, entries []Action, rc ruleContext) ChainLevel {
+	d := rc.people
+	level := ChainLevel{
+		Number: l.Number, Label: levelLabel(l.Name, l.Number), Approvers: d.copiedAll(l.Approvers),
+		Mode: l.Mode, Source: l.Source, RuleText: l.RuleText, Decisions: []Decision{}, RequiredCount: 1,
+		Excluded: excludedViews(l.Excluded, d), BackupUsed: l.BackupUsed, WaitingSince: waitingSince(round, l, entries),
+		RemindedAt: l.RemindedAt, EscalatedAt: l.EscalatedAt, NoApprover: l.NoApprover,
+	}
+	if l.Mode == ModeAll {
+		level.RequiredCount = len(l.Approvers)
+	}
+	if l.Backup != nil {
+		backup := d.copied(*l.Backup)
+		level.Backup = &backup
+		if l.EscalatedAt != nil {
+			level.EscalatedTo = &backup
+		}
+	}
+	decisions := decisionsOn(entries, l.Number)
+	for _, e := range decisions {
+		level.Decisions = append(level.Decisions, decisionView(e))
+	}
+	done := levelDone(l, entries)
+	if l.Mode == ModeAll {
+		level.ApprovedCount = len(l.Approvers) - len(waitingOn(l, entries))
+	} else if done {
+		level.ApprovedCount = 1
+	}
+	declined := slices.IndexFunc(decisions, func(e Action) bool { return e.Action == ActionDeclined })
+	switch {
+	case l.Resolution == ResolutionSkipped:
+		level.State = LevelSkipped
+	case l.Resolution == ResolutionAutoApproved:
+		level.State = LevelAutoApproved
+	case declined >= 0:
+		level.State = LevelDeclined
+		decision := decisionView(decisions[declined])
+		level.Decision = &decision
+	case done:
+		level.State = LevelApproved
+		decision := decisionView(decisions[len(decisions)-1]) // the approval that completed it
+		level.Decision = &decision
+	case l.Number == round.CurrentLevel && round.Outcome == OutcomeOpen:
+		level.State = LevelWaiting
+		if !level.NoApprover && len(l.Approvers) > 0 {
+			level.NoApprover = !slices.ContainsFunc(waitingOn(l, entries), func(a actor.Actor) bool {
+				return d[a.ID].Active && rc.canApprove[a.ID]
+			})
+		}
+	case l.Number == round.CurrentLevel: // recalled, restarted or cancelled while it waited
+		level.State = LevelNotDecided
+	default:
+		level.State = LevelNotReached
+	}
+	if level.NoApprover {
+		if l.NoApprover {
+			level.Advice = noApproverAdvice(l, round.SubmittedBy.ID)
+		} else {
+			derived := l
+			derived.NoApprover, derived.Excluded = true, nil
+			level.Advice = noApproverAdvice(derived, round.SubmittedBy.ID)
+		}
+	}
+	return level
+}
+
+// excludedViews returns the people left out of a level as the API shows them; never nil.
+func excludedViews(excluded []Excluded, d directory) []ExcludedView {
+	views := make([]ExcludedView, 0, len(excluded))
+	for _, e := range excluded {
+		views = append(views, ExcludedView{Person: d.copied(e.Person), Reason: e.Reason})
+	}
+	return views
+}
+
+// factsView returns the values the rules used as the API shows them; nil for rounds stored before 017.
+func factsView(f *RuleFacts, rc ruleContext) *RuleFactsView {
+	if f == nil {
+		return nil
+	}
+	view := &RuleFactsView{PlannedCost: f.PlannedCost, BusinessUnits: make([]OptionRef, 0, len(f.BusinessUnits))}
+	if f.ActivityType != nil {
+		view.ActivityType = &errs.RecordRef{Type: "activityType", ID: f.ActivityType.ID, Name: f.ActivityType.Name}
+	}
+	for _, o := range f.BusinessUnits {
+		choice, known := rc.names.businessUnits[o.ID]
+		view.BusinessUnits = append(view.BusinessUnits, OptionRef{ID: o.ID, Label: o.Label, Active: !known || choice.Active})
 	}
 	return view
 }
@@ -159,7 +302,8 @@ func historyEntryView(e Action, d directory) HistoryEntryView {
 	view := HistoryEntryView{
 		ID: e.ID, RoundNumber: e.RoundNumber, Level: e.Level, Approvers: d.copiedAll(e.Approvers),
 		Actor: e.Actor, OnBehalfOf: nonNil(e.OnBehalfOf), Action: string(e.Action), At: e.At, Comment: e.Comment,
-		Changes: make([]ChangeView, 0, len(e.Changes)),
+		Changes: make([]ChangeView, 0, len(e.Changes)), Capacity: e.Capacity, AsDelegateOf: e.AsDelegateOf, Rule: e.Rule,
+		EscalatedTo: e.EscalatedTo, WaitedDays: e.WaitedDays,
 	}
 	if e.Level > 0 {
 		view.LevelLabel = levelLabel(e.LevelName, e.Level)
@@ -181,6 +325,7 @@ func latestDecline(entries []Action) *DeclineNote {
 		return &DeclineNote{
 			RoundNumber: e.RoundNumber, Level: e.Level, LevelLabel: levelLabel(e.LevelName, e.Level),
 			Actor: e.Actor, OnBehalfOf: nonNil(e.OnBehalfOf), At: e.At, Comment: e.Comment,
+			Capacity: e.Capacity, AsDelegateOf: e.AsDelegateOf,
 		}
 	}
 	return nil

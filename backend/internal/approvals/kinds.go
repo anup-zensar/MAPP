@@ -77,11 +77,21 @@ func (s *Service) describeWorkflow(ctx context.Context, field string, value any)
 		if err := json.Unmarshal(data, &levels); err != nil {
 			return "", "", err
 		}
-		d, err := s.directory(ctx)
+		rc, err := s.ruleContext(ctx)
 		if err != nil {
 			return "", "", err
 		}
-		return "Levels", levelsText(levelViews(levels, d)), nil
+		return "Levels", levelsText(levelViews(normalisedLevels(levels), rc)), nil
+	case "reminderDays", "escalationDays":
+		label := remindAfterLabel
+		if field == "escalationDays" {
+			label = escalateAfterLabel
+		}
+		days, isNumber := value.(float64)
+		if !isNumber {
+			return label, offText, nil
+		}
+		return label, daysText(int(days)), nil
 	}
 	return "", "", nil
 }

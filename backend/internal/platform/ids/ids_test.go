@@ -172,15 +172,15 @@ func TestPrefixes_UniquePerRecordType_FR027(t *testing.T) {
 		ids.PrefixFinanceBudget: "FB", ids.PrefixFinanceBudgetItem: "FBI", ids.PrefixTeam: "T", ids.PrefixTeamMembership: "TM",
 		ids.PrefixPlan: "P", ids.PrefixCampaign: "C", ids.PrefixInitiative: "I", ids.PrefixActivity: "A", ids.PrefixLineItem: "L",
 		ids.PrefixApprovalWorkflow: "WF", ids.PrefixApprovalRound: "AR", ids.PrefixApprovalAction: "AH", ids.PrefixNotification: "NT",
-		ids.PrefixSavedView: "SV",
+		ids.PrefixSavedView: "SV", ids.PrefixApprovalDelegation: "DLG",
 	}
 	for got, wantPrefix := range want {
 		if got != wantPrefix {
 			t.Errorf("prefix %q, want %q", got, wantPrefix)
 		}
 	}
-	if len(ids.Prefixes) != 23 {
-		t.Errorf("%d prefixes, want 23", len(ids.Prefixes))
+	if len(ids.Prefixes) != 24 {
+		t.Errorf("%d prefixes, want 24", len(ids.Prefixes))
 	}
 }
 

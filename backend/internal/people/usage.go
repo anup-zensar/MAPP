@@ -50,6 +50,7 @@ func OnlyUSD(context.Context) ([]Currency, error) {
 const (
 	roleOwner    = "owner"
 	roleApprover = "approver"
+	roleManager  = "manager" // line manager of people (017 FR-016)
 )
 
 // usageOf counts what the person personID owns and approves, inside the caller's transaction (FR-004,
@@ -82,6 +83,22 @@ func (s *Service) usageOf(ctx context.Context, personID string, plans []PlanUse)
 				usage = append(usage, usageCount(u.Role, u.RecordType, u.Singular, u.Plural, count))
 			}
 		}
+	}
+
+	// Last, the people they are the line manager of, active or not: "Line manager of 2 people" in the
+	// details and the Deactivate dialog (017 FR-016).
+	everyone, err := s.repo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reports := 0
+	for _, p := range everyone {
+		if p.ManagerID == personID {
+			reports++
+		}
+	}
+	if reports > 0 {
+		usage = append(usage, usageCount(roleManager, "person", "person", "people", reports))
 	}
 	return usage, nil
 }

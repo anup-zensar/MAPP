@@ -30,12 +30,14 @@ func TestJSONRepository_RoundTrip(t *testing.T) {
 	meta := record.NewMeta(actor.System, seededAt)
 	workflow := approvals.Workflow{
 		ID: "WF-1001", Name: "Lubricants EU approval", Description: "Lubricants Europe activities.", Active: true,
-		Levels: []approvals.Level{{Name: "", ApproverIDs: []string{"U-1003"}}}, Meta: meta,
+		Levels: []approvals.Level{{Name: "", ApproverType: approvals.SourcePeople, ApproverIDs: []string{"U-1003"}, Mode: approvals.ModeAny}},
+		Meta:   meta,
 	}
 	ended := seededAt.Add(-8 * 24 * time.Hour)
 	first := approvals.Round{
 		ID: "AR-1001", ActivityID: "A-1004", Number: 1, WorkflowID: "WF-1001", WorkflowName: "Lubricants EU approval",
-		Levels:       []approvals.RoundLevel{{Number: 1, Approvers: []actor.Actor{daniel}}},
+		Levels: []approvals.RoundLevel{{Number: 1, Approvers: []actor.Actor{daniel}, ApproverType: approvals.SourcePeople,
+			Mode: approvals.ModeAny, Resolution: approvals.ResolutionDecide, Excluded: []approvals.Excluded{}}},
 		CurrentLevel: 1, Outcome: approvals.OutcomeDeclined, SubmittedAt: seededAt.Add(-9 * 24 * time.Hour), SubmittedBy: priya,
 		EndedAt: &ended, Meta: meta,
 	}

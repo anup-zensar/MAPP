@@ -186,15 +186,16 @@ func TestInbox_RowFacts_FR030_EdgeCase(t *testing.T) {
 
 	start := date.MustParse("2026-04-01")
 	cost := money.USD(mustAmount(t, "50000.00"))
+	zeroDays := 0 // waited one hour
 	want := Row{
 		Activity: RowActivity{ID: "A-1009", Name: "Fleet card launch", Status: StatusSubmitted, DisplayStatus: StatusSubmitted},
 		Path:     facts.Path, Owner: &PersonView{ID: mei.ID, Name: "Mei Lin", Initials: "ML", Active: true}, PlannedCost: &cost,
 		Workflow: WorkflowRef{ID: chinaFlow, Name: "China BC approval workflow", Active: true},
 		Round: RowRound{
 			ID: round.ID, Number: 1, Outcome: OutcomeOpen, CurrentLevel: 2, LevelCount: 2, LevelLabel: "Level 2",
-			Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}},
+			Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, Mode: ModeAny, RequiredCount: 1,
 		},
-		SubmittedAt: submittedAt, WaitingSince: &approvedAt, StartDate: &start,
+		SubmittedAt: submittedAt, WaitingSince: &approvedAt, StartDate: &start, AsDelegateOf: []PersonView{}, WaitingDays: &zeroDays,
 	}
 	if len(rows) != 1 || !reflect.DeepEqual(rows[0], want) {
 		t.Fatalf("rows = %+v\nwant [%+v]", rows, want)

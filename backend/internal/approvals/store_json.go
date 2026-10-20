@@ -14,6 +14,7 @@ const (
 	roundsTable        = "approval_rounds"
 	actionsTable       = "approval_actions"
 	notificationsTable = "notifications"
+	delegationsTable   = "approval_delegations" // 017 data-model §7
 )
 
 // jsonRepository is the Repository of the JSON store.
@@ -26,12 +27,17 @@ func NewJSONRepository() Repository {
 
 // GetWorkflow reads one workflow.
 func (jsonRepository) GetWorkflow(ctx context.Context, id string) (Workflow, bool, error) {
-	return store.Get[Workflow](ctx, workflowsTable, id)
+	w, found, err := store.Get[Workflow](ctx, workflowsTable, id)
+	return w.normalised(), found, err
 }
 
 // ListWorkflows reads the whole approval_workflows table.
 func (jsonRepository) ListWorkflows(ctx context.Context) ([]Workflow, error) {
-	return store.List[Workflow](ctx, workflowsTable)
+	workflows, err := store.List[Workflow](ctx, workflowsTable)
+	for i := range workflows {
+		workflows[i] = workflows[i].normalised()
+	}
+	return workflows, err
 }
 
 // PutWorkflow saves a workflow under its id.
@@ -46,12 +52,17 @@ func (jsonRepository) DeleteWorkflow(ctx context.Context, id string) error {
 
 // GetRound reads one round.
 func (jsonRepository) GetRound(ctx context.Context, id string) (Round, bool, error) {
-	return store.Get[Round](ctx, roundsTable, id)
+	round, found, err := store.Get[Round](ctx, roundsTable, id)
+	return round.normalised(), found, err
 }
 
 // ListRounds reads the whole approval_rounds table.
 func (jsonRepository) ListRounds(ctx context.Context) ([]Round, error) {
-	return store.List[Round](ctx, roundsTable)
+	rounds, err := store.List[Round](ctx, roundsTable)
+	for i := range rounds {
+		rounds[i] = rounds[i].normalised()
+	}
+	return rounds, err
 }
 
 // RoundsOf reads every round to find those of one activity, ordered by their number.
@@ -123,4 +134,19 @@ func where[T any](records []T, keep func(T) bool) []T {
 		}
 	}
 	return kept
+}
+
+// GetDelegation reads one delegation.
+func (jsonRepository) GetDelegation(ctx context.Context, id string) (Delegation, bool, error) {
+	return store.Get[Delegation](ctx, delegationsTable, id)
+}
+
+// ListDelegations reads the whole approval_delegations table, ordered by id.
+func (jsonRepository) ListDelegations(ctx context.Context) ([]Delegation, error) {
+	return store.List[Delegation](ctx, delegationsTable)
+}
+
+// PutDelegation saves a delegation under its id.
+func (jsonRepository) PutDelegation(ctx context.Context, dl Delegation) error {
+	return store.Put(ctx, delegationsTable, dl.ID, dl)
 }

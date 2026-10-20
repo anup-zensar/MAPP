@@ -70,3 +70,13 @@ const (
 	noTeamText      = "No team"
 	noMembersText   = "No members"
 )
+
+// The line manager (017 FR-016, data-model §9): field problems on "managerId", the activity-log label and
+// the usage label of the people a person is the line manager of.
+const (
+	chooseManagerMessage   = "Choose the line manager from the list."
+	inactiveManagerMessage = "%s is inactive — choose an active person."
+	ownManagerMessage      = "A person can't be their own line manager."
+	managerLoopMessage     = "%s reports to %s, so %s can't report to %s."
+	managerLabel           = "Line manager"
+)

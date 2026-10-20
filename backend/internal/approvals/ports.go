@@ -42,6 +42,78 @@ type ActivityFacts struct {
 	TypeName, Description string
 	WorkflowID            string // the activity's Approval workflow field; "" when empty
 	record.Meta                  // version, and who changed the activity last, and when
+
+	// Feature 017: what the approval rules and 014's scopes look at — the activity's plan, its activity type
+	// ("" when empty) and the plan's business units with their labels now (data-model §3).
+	Plan           PlanFacts
+	ActivityTypeID string
+	BusinessUnits  []Choice
+}
+
+// PlanFacts is what feature 014's scopes look at in an activity's plan (authz.PlanFacts): its id, teams,
+// owner and creator.
+type PlanFacts struct {
+	ID          string
+	TeamIDs     []string
+	OwnerID     string
+	CreatedByID string
+}
+
+// Choice is a value a rule condition may name — an activity type or a business unit — with its label and
+// whether it is active.
+type Choice struct {
+	ID, Label string
+	Active    bool
+}
+
+// Permission is one of feature 014's permissions that approvals asks about.
+type Permission string
+
+// The 014 permissions of approvals (014 Table A).
+const (
+	PermissionDecide          Permission = "approvals.decide"         // approve or decline when named as an approver
+	PermissionDecideOnBehalf  Permission = "approvals.decideOnBehalf" // decide on behalf of the named approvers (scoped)
+	PermissionManageWorkflows Permission = "workflows.manage"         // create and change approval workflows and delegations
+)
+
+// Grant says whether a person holds a permission and, when not, the 403 message that explains it.
+type Grant struct {
+	Allowed bool
+	Refusal string // 014's refusal message; "" when allowed
+}
+
+// RoleInfo is a 014 role as approvals needs it: its reference and whether it includes approvals.decide.
+type RoleInfo struct {
+	RoleRef
+	Approves bool
+}
+
+// Access is what approvals needs to know from feature 014 (access control) about people's roles (017 plan,
+// Ports; D-290): who may approve, decide on behalf and manage workflows, the access rule "Nobody approves an
+// activity they own or submitted", the roles and their holders. internal/app implements it over 014's
+// internal/access hooks; until it is set (UseAccess), everyone holds every permission and the rule is on.
+// Every method runs inside the caller's transaction, which ctx carries.
+type Access interface {
+	// CanApprove reports, for each of personIDs, whether they hold approvals.decide (014 hook CanApprove).
+	CanApprove(ctx context.Context, personIDs []string) (map[string]bool, error)
+	// Check reports whether the person personID holds the permission p — approvals.decideOnBehalf in a scope
+	// that covers plan (nil: in any scope) — and, when not, 014's refusal message.
+	Check(ctx context.Context, personID string, p Permission, plan *PlanFacts) (Grant, error)
+	// NoSelfApproval reports whether 014's access rule "Nobody approves an activity they own or submitted" is
+	// on (D-302).
+	NoSelfApproval(ctx context.Context) (bool, error)
+	// Roles returns every 014 role, sorted by name, with whether it includes approvals.decide.
+	Roles(ctx context.Context) ([]RoleInfo, error)
+	// RoleHolders returns the active people who hold the role roleID with a scope that covers plan, sorted by
+	// name (014 hook RoleHolders).
+	RoleHolders(ctx context.Context, roleID string, plan PlanFacts) ([]string, error)
+}
+
+// RuleChoices lists what a rule condition may name (017 FR-005), over feature 002's readers: every activity
+// type and every option of the plan-level Business unit attribute, active or not, as Settings sorts them.
+type RuleChoices interface {
+	ActivityTypes(ctx context.Context) ([]Choice, error)
+	BusinessUnits(ctx context.Context) ([]Choice, error)
 }
 
 // ReadyCheck is the result of the ready-to-submit check: every problem that blocks submitting, all at once

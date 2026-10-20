@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -96,6 +97,7 @@ type fixture struct {
 	history    *history.Service
 	db         *store.DB
 	clock      *testClock
+	access     *fakeAccess
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -113,7 +115,10 @@ func newFixture(t *testing.T) *fixture {
 	}
 	peopleRepo := people.NewJSONRepository()
 	service := NewService(db, NewJSONRepository(), peopleRepo, fake, generator, hist, clock.Now)
-	f := &fixture{service: service, activities: fake, history: hist, db: db, clock: clock}
+	access := &fakeAccess{rule: true, cannotApprove: map[string]bool{}, holders: map[string][]string{}}
+	service.UseAccess(access)
+	service.UseRuleChoices(fakeChoices{})
+	f := &fixture{service: service, activities: fake, history: hist, db: db, clock: clock, access: access}
 
 	// The activity kind of feature 006, as far as the log needs it: its name.
 	err = hist.Register(history.Kind{
@@ -177,6 +182,8 @@ func (f *fixture) addActivity(t *testing.T, id, name, owner, workflowID string) 
 		},
 		OwnerID: owner, StartDate: &startDate, EndDate: &endDate, PlannedCost: &cost, UnassignedPlannedCost: &cost,
 		TypeName: "Event", WorkflowID: workflowID, Meta: record.NewMeta(actor.System, start),
+		Plan: PlanFacts{ID: "P-1001", TeamIDs: []string{"T-1001"}}, ActivityTypeID: eventType,
+		BusinessUnits: []Choice{{ID: lubricantsUnit, Label: "Lubricants", Active: true}},
 	}
 	f.activities.facts[id] = facts
 	f.activities.order = append(f.activities.order, id)
@@ -284,3 +291,106 @@ type testClock struct {
 
 func (c *testClock) Now() time.Time          { return c.now }
 func (c *testClock) Advance(d time.Duration) { c.now = c.now.Add(d) }
+
+// The rule choices of the fixture (017): two activity types and two business units.
+const (
+	eventType       = "AT-1001" // Event
+	sponsorshipType = "AT-1002" // Sponsorship
+	lubricantsUnit  = "SO-1001" // Lubricants
+	mobilityUnit    = "SO-1002" // Mobility
+)
+
+// fakeChoices is the RuleChoices of the service tests.
+type fakeChoices struct{}
+
+func (fakeChoices) ActivityTypes(context.Context) ([]Choice, error) {
+	return []Choice{{ID: eventType, Label: "Event", Active: true}, {ID: sponsorshipType, Label: "Sponsorship", Active: true}}, nil
+}
+
+func (fakeChoices) BusinessUnits(context.Context) ([]Choice, error) {
+	return []Choice{{ID: lubricantsUnit, Label: "Lubricants", Active: true}, {ID: mobilityUnit, Label: "Mobility", Active: true}}, nil
+}
+
+// The roles of the fixture's fake access (014 seed names).
+var (
+	approverRole = RoleInfo{RoleRef: RoleRef{ID: "RL-1004", Name: "Approver", BuiltIn: "approver"}, Approves: true}
+	viewerRole   = RoleInfo{RoleRef: RoleRef{ID: "RL-1005", Name: "Viewer", BuiltIn: "viewer"}, Approves: false}
+)
+
+// fakeAccess is the Access of the service tests: everyone may approve except cannotApprove; everyone may
+// decide on behalf and manage workflows unless the lists are set; the access rule is on unless a test turns
+// it off; two roles and their holders by role id.
+type fakeAccess struct {
+	rule          bool
+	cannotApprove map[string]bool
+	onBehalf      []string // nil: everyone may decide on behalf
+	managers      []string // nil: everyone holds workflows.manage
+	holders       map[string][]string
+}
+
+func (f *fakeAccess) CanApprove(_ context.Context, personIDs []string) (map[string]bool, error) {
+	can := map[string]bool{}
+	for _, id := range personIDs {
+		can[id] = !f.cannotApprove[id]
+	}
+	return can, nil
+}
+
+func (f *fakeAccess) Check(_ context.Context, personID string, p Permission, _ *PlanFacts) (Grant, error) {
+	var list []string
+	switch p {
+	case PermissionDecide:
+		if f.cannotApprove[personID] {
+			return Grant{Refusal: "Approving activities isn't part of your role (Viewer). Ask an administrator if you need it."}, nil
+		}
+		return Grant{Allowed: true}, nil
+	case PermissionDecideOnBehalf:
+		list = f.onBehalf
+	default:
+		list = f.managers
+	}
+	if list == nil || slices.Contains(list, personID) {
+		return Grant{Allowed: true}, nil
+	}
+	return Grant{Refusal: "Changing approval workflows isn't part of your role (Planner). Ask an administrator if you need it."}, nil
+}
+
+func (f *fakeAccess) NoSelfApproval(context.Context) (bool, error) { return f.rule, nil }
+
+func (f *fakeAccess) Roles(context.Context) ([]RoleInfo, error) {
+	return []RoleInfo{approverRole, viewerRole}, nil
+}
+
+func (f *fakeAccess) RoleHolders(_ context.Context, roleID string, _ PlanFacts) ([]string, error) {
+	return f.holders[roleID], nil
+}
+
+// setManager makes manager the line manager of the person p in the fixture's store.
+func (f *fixture) setManager(t *testing.T, p, manager actor.Actor) {
+	t.Helper()
+	f.write(t, func(ctx context.Context) error {
+		person, _, err := f.service.people.Get(ctx, p.ID)
+		if err != nil {
+			return err
+		}
+		person.ManagerID = manager.ID
+		return f.service.people.Put(ctx, person)
+	})
+}
+
+// decideLevel is a round level whose approvers decide, as Submit stores one of named people where any one
+// approves.
+func decideLevel(n int, approvers ...actor.Actor) RoundLevel {
+	if approvers == nil {
+		approvers = []actor.Actor{}
+	}
+	return RoundLevel{Number: n, Approvers: approvers, ApproverType: SourcePeople, Mode: ModeAny, Resolution: ResolutionDecide, Excluded: []Excluded{}}
+}
+
+// fixtureFacts are the rule facts of an activity of addActivity: 50,000.00 USD, Event, Lubricants.
+func fixtureFacts(t *testing.T) *RuleFacts {
+	t.Helper()
+	cost := money.USD(mustAmount(t, "50000.00"))
+	return &RuleFacts{PlannedCost: &cost, ActivityType: &FactRef{ID: eventType, Name: "Event"},
+		BusinessUnits: []FactOption{{ID: lubricantsUnit, Label: "Lubricants"}}}
+}

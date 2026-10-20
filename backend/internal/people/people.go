@@ -26,17 +26,18 @@ const (
 // by e-mail (FR-001). It is also the data of every person picker, which filters it in the browser (FR-017,
 // FR-018, D-069): inactive people are included, so that a field holding one can label them "(inactive)".
 // Every signed-in person may see it (FR-027), so a is not used yet; it is where a permission check will go
-// when roles arrive.
-func (s *Service) ListPeople(ctx context.Context, a actor.Actor) ([]PersonView, error) {
-	var views []PersonView
+// when roles arrive. Each person comes with their line manager and how many people report to them (017
+// FR-016).
+func (s *Service) ListPeople(ctx context.Context, a actor.Actor) ([]PersonListItem, error) {
+	var views []PersonListItem
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		d, err := s.readDirectory(ctx)
 		if err != nil {
 			return err
 		}
-		views = make([]PersonView, 0, len(d.people))
+		views = make([]PersonListItem, 0, len(d.people))
 		for _, p := range d.sortedPeople() {
-			views = append(views, d.personView(p))
+			views = append(views, d.listItem(p))
 		}
 		return nil
 	})
@@ -76,7 +77,7 @@ func (s *Service) CreatePerson(ctx context.Context, a actor.Actor, input PersonI
 			return err
 		}
 		var problems errs.Problems
-		form := checkPersonForm(&problems, d, "", personForm{input.Name, input.Email, input.JobTitle, input.TeamIDs})
+		form := checkPersonForm(&problems, d, "", personForm{input.Name, input.Email, input.JobTitle, input.TeamIDs, input.ManagerID})
 		if err := problems.Err(); err != nil {
 			return err
 		}
@@ -86,7 +87,7 @@ func (s *Service) CreatePerson(ctx context.Context, a actor.Actor, input PersonI
 			return err
 		}
 		p := Person{ID: id, Name: form.Name, Email: form.Email, JobTitle: form.JobTitle, Active: true,
-			Meta: record.NewMeta(a, s.now())}
+			ManagerID: form.ManagerID, Meta: record.NewMeta(a, s.now())}
 		if err := s.repo.Put(ctx, p); err != nil {
 			return err
 		}
@@ -140,7 +141,7 @@ func (s *Service) UpdatePerson(ctx context.Context, a actor.Actor, id string, up
 
 		before := d.teamIDsOf(p.ID)
 		changed := p
-		changed.Name, changed.Email, changed.JobTitle = form.Name, form.Email, form.JobTitle
+		changed.Name, changed.Email, changed.JobTitle, changed.ManagerID = form.Name, form.Email, form.JobTitle, form.ManagerID
 		changes, err := history.Diff(p.logView(before), changed.logView(form.TeamIDs))
 		if err != nil {
 			return err
@@ -305,12 +306,13 @@ func (s *Service) details(ctx context.Context, p Person) (PersonDetails, error) 
 type personForm struct {
 	Name, Email, JobTitle string
 	TeamIDs               []string
+	ManagerID             string // "" = no line manager (017 FR-016)
 }
 
-// storedPersonForm is the person p as their form starts: the stored name, e-mail, job title and teams.
-// PersonUpdate.applyTo puts the sent fields in place.
+// storedPersonForm is the person p as their form starts: the stored name, e-mail, job title, teams and line
+// manager. PersonUpdate.applyTo puts the sent fields in place.
 func storedPersonForm(p Person, d directory) personForm {
-	return personForm{Name: p.Name, Email: p.Email, JobTitle: p.JobTitle, TeamIDs: d.teamIDsOf(p.ID)}
+	return personForm{Name: p.Name, Email: p.Email, JobTitle: p.JobTitle, TeamIDs: d.teamIDsOf(p.ID), ManagerID: p.ManagerID}
 }
 
 // checkPersonForm returns form with its texts trimmed, the e-mail in lower case and the team ids without
@@ -349,7 +351,49 @@ func checkPersonForm(problems *errs.Problems, d directory, personID string, form
 			problems.Add("teamIds", fmt.Sprintf(inactiveTeamMessage, t.Name))
 		}
 	}
+	form.ManagerID = checkManager(problems, d, personID, form.ManagerID)
 	return form
+}
+
+// checkManager returns managerID trimmed and adds its problem to problems (017 FR-016, data-model §9): the
+// line manager is optional; when chosen, a known person, not the person themselves, active when added or
+// changed (a manager who became inactive may stay), and not someone who reports to the person, directly or
+// through other managers — that would make a loop. personID is the person being edited, "" on create (a
+// new person has nobody reporting to them yet).
+func checkManager(problems *errs.Problems, d directory, personID, managerID string) string {
+	managerID = strings.TrimSpace(managerID)
+	if managerID == "" {
+		return ""
+	}
+	manager, known := d.people[managerID]
+	switch {
+	case !known:
+		problems.Add("managerId", chooseManagerMessage)
+	case managerID == personID:
+		problems.Add("managerId", ownManagerMessage)
+	case !manager.Active && d.people[personID].ManagerID != managerID:
+		problems.Add("managerId", fmt.Sprintf(inactiveManagerMessage, manager.Name))
+	case personID != "" && reportsTo(d, managerID, personID):
+		name := d.people[personID].Name
+		problems.Add("managerId", fmt.Sprintf(managerLoopMessage, manager.Name, name, name, manager.Name))
+	}
+	return managerID
+}
+
+// reportsTo reports whether the person personID reaches bossID by following line managers upwards. The walk
+// stops after as many steps as there are people, so data that already holds a loop cannot hang it.
+func reportsTo(d directory, personID, bossID string) bool {
+	current := d.people[personID].ManagerID
+	for range len(d.people) {
+		if current == "" {
+			return false
+		}
+		if current == bossID {
+			return true
+		}
+		current = d.people[current].ManagerID
+	}
+	return false
 }
 
 // checkPersonName returns name trimmed and adds its problem to problems: a person's name is required, with

@@ -70,17 +70,18 @@ func (s *Service) Kinds() []history.Kind {
 // personLog is a person as the activity log compares them (003 data model §6): what people read, without
 // the bookkeeping. TeamIDs is ordered by id.
 type personLog struct {
-	Name     string   `json:"name"`
-	Email    string   `json:"email"`
-	JobTitle string   `json:"jobTitle"`
-	Active   bool     `json:"active"`
-	TeamIDs  []string `json:"teamIds"`
+	Name      string   `json:"name"`
+	Email     string   `json:"email"`
+	JobTitle  string   `json:"jobTitle"`
+	Active    bool     `json:"active"`
+	TeamIDs   []string `json:"teamIds"`
+	ManagerID string   `json:"managerId"` // 017 FR-016, FR-035: line-manager changes are logged
 }
 
 // logView returns p with the teams teamIDs as the activity log compares them.
 func (p Person) logView(teamIDs []string) personLog {
 	sorted := slices.Sorted(slices.Values(teamIDs))
-	return personLog{Name: p.Name, Email: p.Email, JobTitle: p.JobTitle, Active: p.Active, TeamIDs: sorted}
+	return personLog{Name: p.Name, Email: p.Email, JobTitle: p.JobTitle, Active: p.Active, TeamIDs: sorted, ManagerID: p.ManagerID}
 }
 
 // teamLog is a team as the activity log compares it (003 data model §6). MemberIDs is ordered by id.
@@ -114,6 +115,13 @@ func (s *Service) describePerson(ctx context.Context, field string, value any) (
 			names = noTeamText
 		}
 		return teamsLabel, names, err
+	case "managerId":
+		id, _ := value.(string)
+		if id == "" {
+			return managerLabel, "", nil // no manager: history's "Not filled in"
+		}
+		name, err := s.personName(ctx, id)
+		return managerLabel, name, err
 	}
 	return "", "", nil
 }

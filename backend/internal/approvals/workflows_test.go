@@ -97,8 +97,9 @@ func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
 		Levels: []LevelView{
 			{Number: 1, Name: "Regional", Label: "Regional", Approvers: []PersonView{
 				{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}, {ID: mei.ID, Name: "Mei Lin", Initials: "ML", Active: true},
-			}},
-			{Number: 2, Label: "Level 2", Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}},
+			}, ApproverType: SourcePeople, Mode: ModeAny, Summary: "Regional · Carlos Mendes, Mei Lin"},
+			{Number: 2, Label: "Level 2", Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}},
+				ApproverType: SourcePeople, Mode: ModeAny, Summary: "Level 2 · Alex Morgan"},
 		},
 		LevelsText: "Regional · Carlos Mendes, Mei Lin → Level 2 · Alex Morgan", Warnings: []string{}, Meta: meta,
 	}
@@ -108,7 +109,10 @@ func TestCreateWorkflow_SavesOrderedLevels_FR002(t *testing.T) {
 	stored, _ := f.storedWorkflow(t, "WF-1003")
 	wantStored := Workflow{
 		ID: "WF-1003", Name: "Mobility India approval", Description: "For India.", Active: true,
-		Levels: []Level{{Name: "Regional", ApproverIDs: []string{carlos.ID, mei.ID}}, {ApproverIDs: []string{alex.ID}}}, Meta: meta,
+		Levels: []Level{
+			{Name: "Regional", ApproverType: SourcePeople, ApproverIDs: []string{carlos.ID, mei.ID}, Mode: ModeAny},
+			{ApproverType: SourcePeople, ApproverIDs: []string{alex.ID}, Mode: ModeAny},
+		}, Meta: meta,
 	}
 	if !reflect.DeepEqual(stored, wantStored) {
 		t.Errorf("stored =\n%+v\nwant\n%+v", stored, wantStored)
