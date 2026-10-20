@@ -34,8 +34,9 @@
   height: 16px;
 }
 
+/* Phones only: the badge, and the layout in the menu (two classes, so they win over .field). */
 .badge,
-.phoneOnly {
+.field.phoneOnly {
   display: none;
 }
 
@@ -78,7 +79,7 @@
     line-height: 1;
   }
 
-  .phoneOnly {
+  .field.phoneOnly {
     display: flex;
   }
 }

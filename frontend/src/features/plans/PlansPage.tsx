@@ -47,7 +47,11 @@ export function PlansPage() {
   const user = useCurrentUser();
   const { money, moneyCompact } = useFormatters();
   const [search, setSearch] = useSearchParams();
-  const filters = readFilters(search, user.id);
+  // 016's API sends every plan's type; until then the list takes one year and no plan types, so
+  // a plan type in the address is neither sent nor shown as a chip.
+  const [served016, setServed016] = useState(false);
+  const chosen = readFilters(search, user.id);
+  const filters = served016 ? chosen : { ...chosen, types: [] };
   const [typed, setTyped] = useState(filters.q);
   const plans = usePlans({
     status: filters.status,
@@ -58,8 +62,6 @@ export function PlansPage() {
     q: filters.q,
   });
   const actions = usePlanActions();
-  // 016's API sends every plan's type; until then the list takes one year and no plan types.
-  const [served016, setServed016] = useState(false);
   const answersTypes = plans.data?.items.some((plan) => plan.planType !== undefined) ?? false;
   if (answersTypes && !served016) {
     setServed016(true);
