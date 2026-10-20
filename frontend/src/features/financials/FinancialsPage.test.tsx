@@ -261,6 +261,36 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
     expect(await screen.findByRole('table', { name: 'Transactions' })).toBeInTheDocument();
   });
 
+  it('says what an empty tab means, and when no GSAP data was ever loaded', async () => {
+    const { user } = renderPage('/financials?link=notLinked', (request) =>
+      new URL(request.url).searchParams.get('link') === 'notLinked'
+        ? { body: transactionPage({ items: [], total: 0 }) }
+        : {
+            body: transactionPage({
+              items: [],
+              total: 0,
+              counts: {
+                all: 0,
+                purchaseOrder: 0,
+                invoice: 0,
+                payment: 0,
+                accrual: 0,
+                notLinked: 0,
+              },
+              source: { dataAsOf: null, feedName: null, fileName: null, accrualMonth: null },
+            }),
+          },
+    );
+
+    expect(
+      await screen.findByText('Every transaction of 2026 is linked to a line item.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull();
+
+    await user.click(screen.getByRole('tab', { name: 'All (11)' }));
+    expect((await screen.findAllByText('No GSAP data loaded yet.')).length).toBe(2);
+  });
+
   it('shows one card per transaction on a phone (US3 scenario 6)', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query === '(max-width: 639px)',

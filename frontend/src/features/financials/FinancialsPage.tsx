@@ -24,10 +24,12 @@ import {
   accruedLabel,
   countLine,
   NO_ACCESS,
+  NO_DATA,
   NO_MATCH,
   PAGE_SUBTITLE,
   SEARCH_PLACEHOLDER,
   sourceLine,
+  TAB_LABELS,
   tabLabel,
   TILE_TIPS,
 } from './financialsText';
@@ -110,27 +112,19 @@ export function FinancialsPage() {
               <Toolbar filters={filters} page={data} onChange={change} />
               {data ? (
                 data.items.length === 0 ? (
-                  <EmptyState
-                    icon={
-                      data.counts.all === 0 && !filtersInUse(filters) ? (
-                        <ReceiptText />
-                      ) : (
-                        <SearchX />
-                      )
-                    }
-                    title={
-                      data.counts.all === 0 && !filtersInUse(filters)
-                        ? `No transactions for ${data.year} yet`
-                        : NO_MATCH
-                    }
-                    action={
-                      filtersInUse(filters) ? (
+                  filtersInUse(filters) ? (
+                    <EmptyState
+                      icon={<SearchX />}
+                      title={NO_MATCH}
+                      action={
                         <Button onClick={() => change(clearedFilters(filters))}>
                           Clear filters
                         </Button>
-                      ) : undefined
-                    }
-                  />
+                      }
+                    />
+                  ) : (
+                    <EmptyState icon={<ReceiptText />} title={emptyTabText(filters.tab, data)} />
+                  )
                 ) : (
                   <>
                     <TransactionsTable
@@ -314,6 +308,18 @@ function withChosen(years: number[], chosen: number | undefined): number[] {
   return chosen === undefined || years.includes(chosen)
     ? years
     : [...years, chosen].sort((a, b) => b - a);
+}
+
+/** What an empty tab says when no filter is in use. */
+function emptyTabText(tab: FinancialTab, page: FinancialTransactionPage): string {
+  if (!page.source.dataAsOf) {
+    return NO_DATA;
+  }
+  if (tab === 'notLinked') {
+    return `Every transaction of ${page.year} is linked to a line item.`;
+  }
+  const what = tab === 'all' ? 'transactions' : TAB_LABELS[tab].toLowerCase();
+  return `No ${what} for ${page.year} yet.`;
 }
 
 /** A search, year, plan or record filter is in use (the tab and sort are not filters). */

@@ -237,7 +237,7 @@ function Allocations({ budget, onAllocate, onChange, onRemove }: AllocationsProp
                       {row.plan.name}
                     </Link>
                   </th>
-                  <td>
+                  <td className={styles.teams}>
                     <TeamPills teams={row.teams} />
                   </td>
                   <td className={styles.nowrap}>
@@ -274,10 +274,15 @@ function Allocations({ budget, onAllocate, onChange, onRemove }: AllocationsProp
               ))}
               {other && (
                 <tr className={styles.other}>
-                  <th scope="row">{otherMarketsLabel(other.planCount)}</th>
-                  <td colSpan={3} className={styles.muted}>
-                    Plans of markets you don&apos;t see, added up
-                  </td>
+                  <th scope="row">
+                    {otherMarketsLabel(other.planCount)}
+                    <span className={styles.secondary}>
+                      Plans of markets you don&apos;t see, added up
+                    </span>
+                  </th>
+                  <td />
+                  <td />
+                  <td />
                   <td className={styles.numeric}>{money(other.amount)}</td>
                   <td className={styles.numeric}>{money(other.plannedCost)}</td>
                   <td />
@@ -358,7 +363,7 @@ function WithoutAllocation({
                       {option.plan.name}
                     </Link>
                   </th>
-                  <td>
+                  <td className={styles.teams}>
                     <TeamPills teams={option.teams} />
                   </td>
                   <td className={styles.nowrap}>
