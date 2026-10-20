@@ -9,6 +9,7 @@ package plans
 
 import (
 	"northstar/internal/people"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
@@ -201,6 +202,7 @@ type PlanView struct {
 	Goals                Goals                    `json:"goals"`
 	Completeness         Completeness             `json:"completeness"`
 	Contents             Contents                 `json:"contents"`
+	Access               *authz.PlanAccess        `json:"access,omitempty"` // what the reader may do (014 FR-011)
 	record.Meta
 }
 
@@ -216,6 +218,7 @@ type PlanSummary struct {
 	BusinessUnit []OptionRef       `json:"businessUnit"`
 	Figures      Figures           `json:"figures"`
 	Completeness Completeness      `json:"completeness"`
+	Access       *authz.PlanAccess `json:"access,omitempty"` // what the reader may do (014 FR-011)
 }
 
 // ListSummary is the summary cards of the Plans page (PlanListSummary).

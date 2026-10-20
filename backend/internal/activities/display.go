@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"northstar/internal/people"
+	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/money"
 )
 
@@ -56,7 +58,28 @@ func (s *Service) shown(ctx context.Context, a actor.Actor, view View) (View, er
 	if err != nil {
 		return View{}, err
 	}
-	return displayView(d, view), nil
+	facts, err := s.planAccess(ctx, view.Plan.ID)
+	view.Access = authz.ActivityAccessOf(ctx, facts) // 014 FR-011
+	return displayView(d, view), err
+}
+
+// planAccess returns the access facts of the plan planID, read in a transaction of its own (feature 014);
+// zero facts when the plan is gone.
+func (s *Service) planAccess(ctx context.Context, planID string) (authz.PlanFacts, error) {
+	var facts authz.PlanFacts
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		plan, _, err := s.plans.Get(ctx, planID)
+		facts = plans.AccessFacts(plan)
+		return err
+	})
+	return facts, err
+}
+
+// PlanContentAccess returns what the person acting may do with the records of the plan planID, for the
+// plan's activity rows (feature 014, FR-011); nil for an internal call.
+func (s *Service) PlanContentAccess(ctx context.Context, planID string) (*authz.PlanContentAccess, error) {
+	facts, err := s.planAccess(ctx, planID)
+	return authz.ContentAccessOf(ctx, facts), err
 }
 
 // shownSummaries returns the plan-tree rows with their amounts also in a's display currency.

@@ -13,6 +13,7 @@ import (
 
 	"northstar/internal/history"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/clock"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/ids"
@@ -81,6 +82,7 @@ func (s *Service) Section(ctx context.Context, a actor.Actor, activityID string)
 		}
 		section = Section{
 			Activity: activityView(f), Items: d.views(views), Balance: d.balance(balanceOf(f, views)), Grid: d.grid(Grid(f, views)),
+			Access: authz.LineItemAccessOf(ctx, f.Access), // 014 FR-011
 		}
 		return nil
 	})
@@ -315,7 +317,8 @@ func (s *Service) Get(ctx context.Context, a actor.Actor, id string) (Details, e
 			return err
 		}
 		i := slices.IndexFunc(views, func(v View) bool { return v.ID == id })
-		details = Details{LineItem: d.view(views[i]), Activity: activityView(f), Balance: d.balance(balanceOf(f, views))}
+		details = Details{LineItem: d.view(views[i]), Activity: activityView(f), Balance: d.balance(balanceOf(f, views)),
+			Access: authz.LineItemAccessOf(ctx, f.Access)} // 014 FR-011
 		return nil
 	})
 	if err != nil {

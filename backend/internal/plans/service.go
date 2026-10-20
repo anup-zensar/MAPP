@@ -230,6 +230,7 @@ func (s *Service) List(ctx context.Context, a actor.Actor, filter ListFilter) (P
 			list.Items = append(list.Items, PlanSummary{
 				ID: p.ID, Name: p.Name, Year: p.Year, Status: p.Status, AOP: p.AOP, Owner: sh.owner, Teams: sh.teams,
 				BusinessUnit: sh.businessUnit, Figures: sh.figures, Completeness: sh.completeness,
+				Access: authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
 			})
 		}
 		list.Summary.Budget = c.optional(sumOf(budgets))
@@ -537,6 +538,7 @@ func (s *Service) view(ctx context.Context, a actor.Actor, p Plan) (PlanView, er
 		DefaultSpread: p.DefaultSpread, BCPIR: p.BCPIR, GoalStage: p.GoalStage, Attributes: p.Attributes,
 		BusinessUnit: sh.businessUnit, Figures: sh.figures, Goals: goalsOf(p, m, f.ActivityGoals, c),
 		Completeness: sh.completeness, Contents: contentsOf(f), Meta: p.Meta,
+		Access: authz.PlanAccessOf(ctx, AccessFacts(p)), // 014 FR-011
 	}
 	if view.Attributes == nil {
 		view.Attributes = settings.AttributeValues{}

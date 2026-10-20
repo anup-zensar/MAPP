@@ -10,6 +10,7 @@ package lineitems
 
 import (
 	"northstar/internal/people"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
@@ -219,17 +220,19 @@ type SpreadGrid struct {
 
 // Section is the answer of GET /api/activities/{activityId}/line-items (LineItemSection).
 type Section struct {
-	Activity ActivityView      `json:"activity"`
-	Items    []View            `json:"items"` // in creation order
-	Balance  UnassignedBalance `json:"balance"`
-	Grid     SpreadGrid        `json:"grid"`
+	Activity ActivityView          `json:"activity"`
+	Items    []View                `json:"items"` // in creation order
+	Balance  UnassignedBalance     `json:"balance"`
+	Grid     SpreadGrid            `json:"grid"`
+	Access   *authz.LineItemAccess `json:"access,omitempty"` // what the reader may do (014 FR-011)
 }
 
 // Details is the answer of GET /api/line-items/{lineItemId} (LineItemDetails).
 type Details struct {
-	LineItem View              `json:"lineItem"`
-	Activity ActivityView      `json:"activity"`
-	Balance  UnassignedBalance `json:"balance"`
+	LineItem View                  `json:"lineItem"`
+	Activity ActivityView          `json:"activity"`
+	Balance  UnassignedBalance     `json:"balance"`
+	Access   *authz.LineItemAccess `json:"access,omitempty"` // what the reader may do (014 FR-011)
 }
 
 // Defaults are what a new line item starts with (LineItemDefaults, FR-008).

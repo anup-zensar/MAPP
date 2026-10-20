@@ -8,6 +8,7 @@ package activities
 
 import (
 	"northstar/internal/people"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/date"
 	"northstar/internal/platform/errs"
 	"northstar/internal/platform/money"
@@ -172,6 +173,7 @@ type View struct {
 	LineItems             LineItemTotals           `json:"lineItems"`
 	Completeness          Completeness             `json:"completeness"`
 	Readiness             SubmitCheck              `json:"readiness"`
+	Access                *authz.ActivityAccess    `json:"access,omitempty"` // what the reader may do (014 FR-011)
 	record.Meta
 }
 
@@ -198,6 +200,8 @@ type Summary struct {
 type SummaryPage struct {
 	Items []Summary `json:"items"`
 	Total int       `json:"total"`
+	// Access is what the reader may do with the records of the plan (014 FR-011).
+	Access *authz.PlanContentAccess `json:"access,omitempty"`
 }
 
 // Input is the body of POST /api/initiatives/{initiativeId}/activities (ActivityCreate). Dates are texts so

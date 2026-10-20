@@ -56,7 +56,11 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) listForPlan(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
 	summaries, err := h.service.ListForPlan(r.Context(), a, r.PathValue("planId"))
-	answer(w, r, http.StatusOK, SummaryPage{Items: summaries, Total: len(summaries)}, err)
+	page := SummaryPage{Items: summaries, Total: len(summaries)}
+	if err == nil {
+		page.Access, err = h.service.PlanContentAccess(r.Context(), r.PathValue("planId"))
+	}
+	answer(w, r, http.StatusOK, page, err)
 }
 
 // get answers GET /api/activities/{activityId}.
