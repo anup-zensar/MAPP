@@ -201,6 +201,7 @@ type PlanView struct {
 	Goals                Goals                    `json:"goals"`
 	Completeness         Completeness             `json:"completeness"`
 	Contents             Contents                 `json:"contents"`
+	Allocation           *PlanAllocation          `json:"allocation"` // the global budget that sets the budget (014); null when none
 	record.Meta
 }
 

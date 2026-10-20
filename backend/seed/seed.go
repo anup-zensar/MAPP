@@ -61,7 +61,9 @@ func Load(ctx context.Context, db *store.DB, now clock.Clock) error {
 	d := &demo{ids: ids.NewGenerator(ids.NewJSONCounters()), at: now()}
 	return db.Write(ctx, func(ctx context.Context) error {
 		steps := []func(context.Context) error{
-			d.addPeople, d.addSettings, d.addTeams, d.addPlans, d.addCampaigns, d.addActivities,
+			d.addPeople, d.addSettings, d.addTeams, d.addPlans,
+			d.addGlobalBudgets, // 014's global budget and its allocations, after the plans (budgets.go, D-306)
+			d.addCampaigns, d.addActivities,
 			d.addLineItems, d.addApprovals,
 			d.addSavedViews, // 010's personal settings (allwork.go)
 		}
