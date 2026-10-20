@@ -62,10 +62,7 @@ func TestLoad_LineItems_FR009(t *testing.T) {
 // 500.00 USD (006 US2), Fleet roadshow has no line items (007 data model §3.7, §8).
 func TestLoad_UnassignedPlannedCost_US1(t *testing.T) {
 	d := loadDemo(t)
-	rates := money.Rates{}
-	for _, c := range d.currencies {
-		rates[c.Code] = c.Rate
-	}
+	rates := d.currentRates()
 	want := map[string]string{
 		"Launch film": "20,000.00", "Grand opening Shanghai": "-500.00", "Social always-on": "55,000.00",
 		"Trade magazine ads": "0.00", "Billboard winter wave": "35,000.00", "Fleet roadshow": "60,000.00",

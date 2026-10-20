@@ -69,7 +69,6 @@ var demoLineItems = []demoLineItem{
 func (d *demo) addLineItems(ctx context.Context) error {
 	repo := lineitems.NewJSONRepository()
 	activityRepo := activities.NewJSONRepository()
-	currencies := settings.NewJSONRepository()
 	for _, l := range demoLineItems {
 		activityID, err := find(d.activities, "activity", l.plan+"/"+l.activity)
 		if err != nil {
@@ -79,11 +78,11 @@ func (d *demo) addLineItems(ctx context.Context) error {
 		if err != nil || !found {
 			return cmpErr(err, fmt.Errorf("seed: activity %s is not stored", activityID))
 		}
-		currency, found, err := currencies.GetCurrency(ctx, l.currency)
-		if err != nil || !found {
-			return cmpErr(err, fmt.Errorf("seed: there is no currency %s", l.currency))
+		rate, found := d.rates[l.currency]
+		if !found {
+			return fmt.Errorf("seed: there is no currency %s", l.currency)
 		}
-		item, err := d.lineItemFields(l, activity, currency.Rate)
+		item, err := d.lineItemFields(l, activity, rate)
 		if err != nil {
 			return fmt.Errorf("seed: line item %s: %w", l.name, err)
 		}

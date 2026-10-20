@@ -74,4 +74,31 @@ type Repository interface {
 	PutFinanceBudgetItem(ctx context.Context, i FinanceBudgetItem) error
 	// DeleteFinanceBudgetItem removes the item with id.
 	DeleteFinanceBudgetItem(ctx context.Context, id string) error
+
+	// GetRate returns the dated exchange rate with id, and false when there is none (016).
+	GetRate(ctx context.Context, id string) (ExchangeRate, bool, error)
+	// ListRates returns every dated exchange rate of every currency.
+	ListRates(ctx context.Context) ([]ExchangeRate, error)
+	// RatesOf returns the dated rates of the currency code, oldest date first.
+	RatesOf(ctx context.Context, code string) ([]ExchangeRate, error)
+	// PutRate saves r, replacing the rate with the same id.
+	PutRate(ctx context.Context, r ExchangeRate) error
+	// DeleteRate removes the rate with id.
+	DeleteRate(ctx context.Context, id string) error
+
+	// PutRateImport saves the record of a rate import (016).
+	PutRateImport(ctx context.Context, i RateImport) error
+	// GetRateImport returns the rate import with id, and false when there is none.
+	GetRateImport(ctx context.Context, id string) (RateImport, bool, error)
+	// ListRateImports returns every rate import, oldest first.
+	ListRateImports(ctx context.Context) ([]RateImport, error)
+
+	// GetFieldHelp returns the edited help text of the catalogue key, and false when it has none (016).
+	GetFieldHelp(ctx context.Context, key string) (FieldHelpText, bool, error)
+	// ListFieldHelp returns every edited help text.
+	ListFieldHelp(ctx context.Context) ([]FieldHelpText, error)
+	// PutFieldHelp saves h under its key.
+	PutFieldHelp(ctx context.Context, h FieldHelpText) error
+	// DeleteFieldHelp removes the edited text of key (Reset to default).
+	DeleteFieldHelp(ctx context.Context, key string) error
 }

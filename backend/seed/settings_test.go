@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/date"
+	"northstar/internal/platform/money"
 	"northstar/internal/settings"
 )
 
@@ -14,11 +16,22 @@ import (
 func TestLoad_Settings_FR032(t *testing.T) {
 	d := loadDemo(t)
 
+	// The current rate of each currency is its latest dated rate on or before the seed day (016 FR-002).
+	current := map[string]settings.ExchangeRate{}
+	for _, r := range d.rates {
+		if latest, found := current[r.Currency]; r.Date.Compare(date.Today(loadedAt)) <= 0 && (!found || r.Date.After(latest.Date)) {
+			current[r.Currency] = r
+		}
+	}
 	var currencies []string
 	for _, c := range d.currencies {
-		currencies = append(currencies, c.Code+" "+c.Rate.String()+" "+c.Symbol)
-		if !c.Active || c.RateChangedAt != loadedAt || c.RateChangedBy != actor.System {
-			t.Errorf("currency %s: active %v, rate changed %v by %v", c.Code, c.Active, c.RateChangedAt, c.RateChangedBy)
+		rate := "1"
+		if r, found := current[c.Code]; found {
+			rate = r.Rate.String()
+		}
+		currencies = append(currencies, c.Code+" "+rate+" "+c.Symbol)
+		if !c.Active || c.CreatedBy != actor.System || c.Rate != (money.Rate{}) {
+			t.Errorf("currency %s: active %v, created by %v, legacy rate %v", c.Code, c.Active, c.CreatedBy, c.Rate)
 		}
 	}
 	if want := []string{"CNY 7.1 ¥", "EUR 0.92 €", "GBP 0.79 £", "INR 83.5 ₹", "USD 1 $"}; !slices.Equal(currencies, want) {
@@ -211,6 +224,40 @@ func TestLoad_DependentOptions_FR022(t *testing.T) {
 			if p == "Retail – India" {
 				t.Errorf("%s is linked to Retail – India, which has no regions (D-034)", option)
 			}
+		}
+	}
+}
+
+// The simulated GSAP rate history of 016 data-model §8: one import RI-1001 by NorthStar and, for each currency
+// but USD, a GSAP-imported rate for each of the 30 days before the seed day, swinging −0.6 % … +0.6 % around the
+// seeded rate, and the seeded rate on the seed day — so the current rates stay the seeded ones (D-274).
+func TestLoad_RateHistory_016_D274(t *testing.T) {
+	d := loadDemo(t)
+	today := date.Today(loadedAt)
+
+	if len(d.rateImports) != 1 {
+		t.Fatalf("%d rate imports, want 1", len(d.rateImports))
+	}
+	imp := d.rateImports[0]
+	if imp.ID != "RI-1001" || imp.FileName != "gsap_rates_seed.csv" || imp.Feed != "gsapDailyRatesFile" || imp.Added != 124 ||
+		imp.FirstDate == nil || *imp.FirstDate != today.AddDays(-30) || imp.LastDate == nil || *imp.LastDate != today ||
+		imp.CreatedBy != actor.System {
+		t.Errorf("rate import = %+v", imp)
+	}
+	if len(d.rates) != 124 {
+		t.Fatalf("%d exchange rates, want 124 (31 for each of EUR, GBP, CNY, INR)", len(d.rates))
+	}
+	first, last := d.rates[0], d.rates[30]
+	if first.ID != "XR-1001" || first.Currency != "EUR" || first.Date != today.AddDays(-30) || first.Rate.String() != "0.91448" ||
+		first.Source != settings.RateGSAPImport || first.ImportID != "RI-1001" {
+		t.Errorf("first rate = %+v, want EUR 0.91448 (0.92 − 0.6 %%) 30 days before the seed day", first)
+	}
+	if last.Currency != "EUR" || last.Date != today || last.Rate.String() != "0.92" {
+		t.Errorf("EUR's rate on the seed day = %+v, want 0.92", last)
+	}
+	for _, r := range d.rates {
+		if r.Date.After(today) || r.Currency == "USD" {
+			t.Errorf("rate %s: %s on %s", r.ID, r.Currency, r.Date)
 		}
 	}
 }

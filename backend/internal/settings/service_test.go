@@ -132,7 +132,8 @@ func TestEveryChangeLogged_FR006(t *testing.T) {
 		{kind: "currency",
 			create: func() (string, error) { c, err := f.service.CreateCurrency(ctx, alex, jpy()); return c.Code, err },
 			change: func(id string) error {
-				_, err := f.service.UpdateCurrency(ctx, alex, id, CurrencyUpdate{Rate: text("151"), Version: version(1)})
+				// Since 016 a new rate is logged on the exchange rate; the name is the currency's own change.
+				_, err := f.service.UpdateCurrency(ctx, alex, id, CurrencyUpdate{Name: text("Yen"), Rate: text("151"), Version: version(1)})
 				return err
 			},
 			status: func(id string, active bool, v int) error {
@@ -342,6 +343,7 @@ type testAttribute struct {
 	options         []string
 	links           map[string][]string
 	inactiveOptions []string
+	help            string // its help text (016 FR-048)
 }
 
 // testForm is what addAttributes stored: attributes by "<level>/<label>", options by
@@ -390,7 +392,7 @@ func (f *fixture) addAttributes(t *testing.T, list ...testAttribute) testForm {
 		for _, ta := range list {
 			positions[ta.level]++
 			a := Attribute{
-				ID: f.next(ctx, ids.PrefixShellAttribute), Label: ta.label, Level: ta.level, Type: ta.typ,
+				ID: f.next(ctx, ids.PrefixShellAttribute), Label: ta.label, HelpText: ta.help, Level: ta.level, Type: ta.typ,
 				Marking: cmp.Or(ta.marking, MarkingOptional), Section: cmp.Or(ta.section, DefaultSection),
 				Position: positions[ta.level], Condition: []string{}, Role: ta.role, Active: !ta.inactive,
 				Meta: record.NewMeta(actor.System, start),

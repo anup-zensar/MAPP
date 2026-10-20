@@ -48,7 +48,13 @@ const maxBodyBytes = 1 << 20 // 1 MB
 // at most 1 MB, without unknown fields and with nothing after the JSON value. Anything else returns a
 // bad_request error with a message for the user; the technical detail goes only to the server log.
 func ReadJSON(w http.ResponseWriter, r *http.Request, dst any) error {
-	if err := decodeJSON(w, r, dst); err != nil {
+	return ReadJSONUpTo(w, r, dst, maxBodyBytes)
+}
+
+// ReadJSONUpTo is ReadJSON for a body of at most limit bytes: the few operations that receive a file in their
+// body (016's GSAP rate import: 3 MB for a 2 MB file in base64) raise the 1 MB of ReadJSON.
+func ReadJSONUpTo(w http.ResponseWriter, r *http.Request, dst any, limit int64) error {
+	if err := decodeJSON(w, r, dst, limit); err != nil {
 		slog.Warn("unreadable request body", "method", r.Method, "path", r.URL.Path, "error", err)
 		return errs.BadRequest(unreadableMessage)
 	}
@@ -56,13 +62,13 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 }
 
 // decodeJSON does the work of ReadJSON and returns the technical reason when it refuses the body.
-func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+func decodeJSON(w http.ResponseWriter, r *http.Request, dst any, limit int64) error {
 	contentType := r.Header.Get("Content-Type")
 	if mediaType, _, err := mime.ParseMediaType(contentType); err != nil || mediaType != "application/json" {
 		return fmt.Errorf("content type %q is not application/json", contentType)
 	}
 
-	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBodyBytes))
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
 	decoder.DisallowUnknownFields() // a misspelt field must not be ignored silently
 	if err := decoder.Decode(dst); err != nil {
 		return err

@@ -50,6 +50,10 @@ const (
 
 	// Feature 010, All work (D-125).
 	PrefixSavedView = "SV" // saved views
+
+	// Feature 016, exchange rates (internal ids, never shown on screens).
+	PrefixExchangeRate = "XR" // dated exchange rates
+	PrefixRateImport   = "RI" // GSAP rate imports
 )
 
 // Prefixes lists every prefix above, in that order.
@@ -60,6 +64,7 @@ var Prefixes = []string{
 	PrefixPlan, PrefixCampaign, PrefixInitiative, PrefixActivity, PrefixLineItem,
 	PrefixApprovalWorkflow, PrefixApprovalRound, PrefixApprovalAction, PrefixNotification,
 	PrefixSavedView,
+	PrefixExchangeRate, PrefixRateImport,
 }
 
 // firstNumber is the number of the first ID of every prefix: "P-1001".

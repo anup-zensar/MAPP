@@ -34,6 +34,7 @@ type approvalsActivities struct {
 	campaigns  campaigns.Repository
 	plans      plans.Repository
 	settings   settings.Repository
+	rates      func(context.Context) (money.Rates, error) // the current rates (016: dated rates), settings.Service.Rates
 	check      submitCheck
 	now        clock.Clock
 }
@@ -268,19 +269,6 @@ func (p *approvalsActivities) unassigned(ctx context.Context, act activities.Act
 	}
 	result := money.USD(balance)
 	return &result, nil
-}
-
-// rates returns the current rate of every currency (002).
-func (p *approvalsActivities) rates(ctx context.Context) (money.Rates, error) {
-	currencies, err := p.settings.ListCurrencies(ctx)
-	if err != nil {
-		return nil, err
-	}
-	rates := money.Rates{}
-	for _, c := range currencies {
-		rates[c.Code] = c.Rate
-	}
-	return rates, nil
 }
 
 // coding finds the labels of the single-choice values of the line-item attributes, by attribute label.

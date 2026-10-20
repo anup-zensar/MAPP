@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/date"
 	"northstar/internal/platform/money"
 	"northstar/internal/platform/record"
 )
@@ -140,16 +141,68 @@ type Option struct {
 	record.Meta
 }
 
-// Currency is a currency with its one current exchange rate (table "currencies", data model §6). Its id is
-// its ISO code. USD always exists, is active and has rate 1.
+// Currency is a currency (table "currencies", data model §6). Its id is its ISO code. USD always exists, is
+// active and has rate 1.
+//
+// Since 016 a currency's rates are dated records of their own (ExchangeRate, D-258): the current rate is
+// the latest one dated today or earlier. The stored fields Rate, RateChangedAt and RateChangedBy are legacy:
+// MigrateRates turns them into the first dated rate once and clears them. The readers (Currency,
+// Currencies) and the API fill them on read with the current rate and who recorded it, so every caller
+// keeps reading c.Rate.
 type Currency struct {
-	Code          string      `json:"code"`          // "EUR": three capital letters, unique, locked once saved
-	Name          string      `json:"name"`          // 1–80 characters, unique among currencies
-	Symbol        string      `json:"symbol"`        // at most 5 characters; "" when none
-	Rate          money.Rate  `json:"rate"`          // units per 1 USD
-	RateChangedAt time.Time   `json:"rateChangedAt"` // set on create and whenever the rate changes
-	RateChangedBy actor.Actor `json:"rateChangedBy"`
+	Code          string      `json:"code"`                   // "EUR": three capital letters, unique, locked once saved
+	Name          string      `json:"name"`                   // 1–80 characters, unique among currencies
+	Symbol        string      `json:"symbol"`                 // at most 5 characters; "" when none
+	Rate          money.Rate  `json:"rate,omitzero"`          // legacy when stored; the current rate when read
+	RateChangedAt time.Time   `json:"rateChangedAt,omitzero"` // legacy when stored; when the current rate was recorded when read
+	RateChangedBy actor.Actor `json:"rateChangedBy,omitzero"` // legacy when stored; who recorded it when read
 	Active        bool        `json:"active"`
+	record.Meta
+}
+
+// RateSource says where a dated exchange rate came from (contract RateSource).
+type RateSource string
+
+// The rate sources.
+const (
+	RateManual     RateSource = "manual"     // entered by hand (Add rate, Edit, the currency form)
+	RateGSAPImport RateSource = "gsapImport" // written by a GSAP rate import
+)
+
+// ExchangeRate is one dated rate of a currency (table "exchange_rates", 016 data-model §2.1): units of the
+// currency per 1 USD from its date on. At most one per currency and date; USD has none (always 1).
+type ExchangeRate struct {
+	ID       string     `json:"id"`       // "XR-1001"
+	Currency string     `json:"currency"` // an existing currency other than USD; never changes
+	Date     date.Date  `json:"date"`     // the day the rate applies from; never changes
+	Rate     money.Rate `json:"rate"`     // above 0, at most six decimals, at most 1,000,000
+	Source   RateSource `json:"source"`   // manual for Add rate and every Edit
+	ImportID string     `json:"importId"` // the RI-… import that wrote it; "" for manual
+	record.Meta
+}
+
+// RateImport is one GSAP rate file read into NorthStar (table "rate_imports", 016 data-model §2.3). Never
+// changed or deleted.
+type RateImport struct {
+	ID        string     `json:"id"`        // "RI-1001"
+	FileName  string     `json:"fileName"`  // 1–200 characters, as uploaded
+	Feed      string     `json:"feed"`      // the rate feed's name, "gsapDailyRatesFile"
+	FirstDate *date.Date `json:"firstDate"` // the earliest date among the rates added or replaced; nil when none
+	LastDate  *date.Date `json:"lastDate"`  // the latest such date
+	Added     int        `json:"added"`
+	Replaced  int        `json:"replaced"`
+	Unchanged int        `json:"unchanged"`
+	NotUsed   int        `json:"notUsed"`
+	Problems  int        `json:"problems"`
+	record.Meta
+}
+
+// FieldHelpText is the edited help text of one built-in field (table "field_help", 016 data-model §2.5): its
+// id is the catalogue key, such as "plan.budget". Only edited texts are stored; Reset to default deletes the
+// row.
+type FieldHelpText struct {
+	Key  string `json:"key"`
+	Text string `json:"text"` // 0–300 characters, plain text; "" hides the ⓘ
 	record.Meta
 }
 

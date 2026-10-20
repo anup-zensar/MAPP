@@ -82,6 +82,7 @@ type demo struct {
 
 	people      map[string]string // person name → ID
 	settings    SettingsSeed      // Settings records by name
+	rates       money.Rates       // the seeded current rate of every currency (016: the latest dated rates)
 	teams       map[string]string // team name → ID
 	plans       map[string]string // plan name → ID
 	campaigns   map[string]string // "<plan>/<campaign>" → ID
