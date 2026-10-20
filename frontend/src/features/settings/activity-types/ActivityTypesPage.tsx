@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useActivityTypes } from '@/api/settingsQueries';
 import {
   ActionsMenu,
-  Breadcrumb,
   Button,
   Card,
   EmptyState,
@@ -69,8 +68,8 @@ export function ActivityTypesPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'Activity types' }]} />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Activity types' }]}
         eyebrow="Settings"
         title="Activity types"
         description="The kinds of work activities can be."

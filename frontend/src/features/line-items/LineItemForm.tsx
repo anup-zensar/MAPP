@@ -3,7 +3,6 @@ import type { FormEvent } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
 import type { components } from '@/api/schema';
 import {
-  Breadcrumb,
   Button,
   CheckboxField,
   FailureMessage,
@@ -256,8 +255,8 @@ export function LineItemForm({
 
   return (
     <div className={styles.page}>
-      <Breadcrumb items={[...activityBreadcrumb(activity), { label: breadcrumbEnd }]} />
       <PageHeader
+        breadcrumb={[...activityBreadcrumb(activity), { label: breadcrumbEnd }]}
         eyebrow={EYEBROW}
         title={title}
         description={inActivity(activity.name, activity.id)}

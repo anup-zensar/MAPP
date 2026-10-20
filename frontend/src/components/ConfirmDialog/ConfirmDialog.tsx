@@ -18,7 +18,7 @@ export interface ConfirmDialogProps {
   cancelLabel?: string;
   /** Runs the action. The dialog stays open until you close it, so it can show `busy` meanwhile. */
   onConfirm: () => void;
-  /** danger: the confirm button is filled red, for actions that remove something. */
+  /** danger: the confirm button is Shell red, for actions that remove something; otherwise yellow. */
   tone?: 'danger';
   /** The action is running: a second click on the confirm button is ignored. */
   busy?: boolean;
@@ -67,8 +67,7 @@ export function ConfirmDialog({
             </AlertDialog.Cancel>
             {/* A plain button, not AlertDialog.Action: that one would close the dialog at once. */}
             <Button
-              variant="primary"
-              className={tone === 'danger' ? styles.danger : undefined}
+              variant={tone === 'danger' ? 'danger' : 'primary'}
               icon={busy ? <LoaderCircle className={styles.spinner} /> : undefined}
               aria-busy={busy || undefined}
               onClick={() => {

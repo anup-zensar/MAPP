@@ -7,7 +7,7 @@ import { Tooltip } from '../Tooltip/Tooltip';
 import styles from './LinkSummaryCard.module.css';
 
 export interface LinkSummaryCardProps {
-  /** A lucide icon on a tinted tile (ZenReach home). */
+  /** A lucide icon in the ink colour on a lightly tinted tile. */
   icon: ReactNode;
   /** The colour of the tile, as CSS: "var(--blue)". */
   tint: string;

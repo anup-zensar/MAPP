@@ -5,14 +5,14 @@
 .lines {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* A grey bar with a lighter band sweeping across it. */
 .line {
   position: relative;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius-chip);
   background: var(--chip);
 }
 

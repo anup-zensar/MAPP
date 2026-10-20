@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import {
   ActionsMenu,
-  Breadcrumb,
   Button,
   Card,
   EmptyState,
@@ -132,8 +131,8 @@ export function ShellAttributesPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'Shell attributes' }]} />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Shell attributes' }]}
         eyebrow="Settings"
         title="Shell attributes"
         description="Shell's own fields on each level's form. Changes apply to every form straight away."
@@ -447,7 +446,7 @@ function OrderButton({ id, label, direction, disabledReason, onMove }: OrderButt
     <Tooltip content={disabledReason ?? label}>
       <Button
         id={id}
-        variant="ghost"
+        variant="tertiary"
         size="sm"
         icon={direction === 'up' ? <ArrowUp /> : <ArrowDown />}
         aria-label={label}

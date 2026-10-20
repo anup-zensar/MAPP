@@ -3,15 +3,15 @@
   background: var(--page-bg);
 }
 
-/* The sidebar is fixed on the left from top to bottom: 244 px, or the 72 px icon rail. */
+/* The sidebar is fixed on the left under the top bar: 240 px, or the 64 px icon rail. */
 .sidebar {
   position: fixed;
-  top: 0;
+  top: var(--topbar);
   bottom: 0;
   left: 0;
-  z-index: 30;
+  z-index: 20;
   width: var(--sidebar);
-  border-right: 1px solid var(--hairline);
+  border-right: 1px solid var(--card-border);
   transition: width var(--dur) var(--ease-out);
 }
 
@@ -23,7 +23,8 @@
 .column {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-width: 0;
+  min-height: calc(100vh - var(--topbar));
   padding-left: var(--sidebar);
   transition: padding-left var(--dur) var(--ease-out);
 }
@@ -34,6 +35,7 @@
 
 .main {
   flex: 1;
+  min-width: 0;
 }
 
 /* The focus lands here only through the skip link; the main area needs no ring. */
@@ -41,28 +43,27 @@
   outline: none;
 }
 
-/* The page: at most 1120 px wide, with 20 px on each side. */
+/* The page: at most 1300 px of content, centred, with 24 px gutters (16 px on phones). */
 .content {
-  max-width: var(--content-max);
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
   margin: 0 auto;
-  padding: 0 20px 48px;
+  padding: var(--space-6) var(--gutter) var(--space-12);
 }
 
 .footer {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--gutter);
   border-top: 1px solid var(--hairline);
-  background: var(--gray-bg);
 }
 
 .footerText {
   max-width: var(--content-max);
   margin: 0 auto;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
-/* Below 768 px there is no sidebar: the top bar's Open menu shows it as a drawer instead. */
-@media (max-width: 767px) {
+/* Below 960 px there is no sidebar: Open menu in the top bar shows it as a drawer instead. */
+@media (max-width: 959px) {
   .sidebar {
     display: none;
   }

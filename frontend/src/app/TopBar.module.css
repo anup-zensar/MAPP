@@ -1,0 +1,40 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--topbar);
+  padding: 0 var(--space-3) 0 var(--space-4);
+  border-bottom: 1px solid var(--card-border);
+  background: var(--surface);
+}
+
+/* Open menu: only below 960 px, where the sidebar becomes the drawer. */
+.menu {
+  display: flex;
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.homeLink {
+  display: inline-flex;
+  border-radius: var(--radius-control);
+}
+
+.homeLink:hover {
+  text-decoration: none;
+}
+
+.end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+@media (min-width: 960px) {
+  .menu {
+    display: none;
+  }
+}

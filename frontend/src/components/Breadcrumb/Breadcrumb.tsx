@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router';
 import styles from './Breadcrumb.module.css';
 
@@ -14,7 +15,8 @@ export interface BreadcrumbProps {
 
 /**
  * Where a page sits: "Settings › Models", "Plans › FY2026 Lubricants › Helix launch"
- * (design system §6.3). Placed above the page header; the last item is the current page.
+ * (design system §6.3). Usually given to PageHeader, which shows it above the title; the last
+ * item is the current page. On phones only the parent is shown, as "‹ Parent" (Shell).
  */
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
@@ -22,8 +24,9 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
       <ol className={styles.list}>
         {items.map((item, index) => {
           const isCurrent = index === items.length - 1;
+          const isParent = index === items.length - 2;
           return (
-            <li key={`${index}-${item.label}`} className={styles.item}>
+            <li key={`${index}-${item.label}`} className={isParent ? styles.parent : styles.item}>
               {index > 0 && (
                 <span aria-hidden="true" className={styles.separator}>
                   ›
@@ -35,6 +38,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                 </span>
               ) : (
                 <Link to={item.to} className={styles.link}>
+                  {isParent && <ChevronLeft aria-hidden="true" className={styles.back} />}
                   {item.label}
                 </Link>
               )}

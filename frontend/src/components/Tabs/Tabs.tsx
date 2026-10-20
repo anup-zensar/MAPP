@@ -1,20 +1,20 @@
 import { useId, useRef } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { cx } from '@/lib/cx';
-import styles from './PillTabs.module.css';
+import styles from './Tabs.module.css';
 
 /** One tab. */
-export interface PillTab<T extends string> {
+export interface TabItem<T extends string> {
   value: T;
   label: string;
   /** Shown after the label, usually a CountBadge. */
   badge?: ReactNode;
 }
 
-export interface PillTabsProps<T extends string> {
+export interface TabsProps<T extends string> {
   /** Names the tab list for screen readers: "Approvals". */
   label: string;
-  tabs: PillTab<T>[];
+  tabs: TabItem<T>[];
   value: T;
   onChange: (value: T) => void;
   /** What the chosen tab shows: the tab panel's content. */
@@ -22,17 +22,11 @@ export interface PillTabsProps<T extends string> {
 }
 
 /**
- * Tabs as pills (feature 004; Approvals' Waiting for me · All open · Decided by me, All work's
- * views): an ARIA tab list with one tab in the tab order; ← → Home End move to another tab and
- * show it. The content below is the chosen tab's panel.
+ * Underline tabs (Shell; Approvals' Waiting for me · All open · Decided by me, All work's views):
+ * the chosen tab is bold with a 4 px yellow bar. An ARIA tab list with one tab in the tab order;
+ * ← → Home End move to another tab and show it. The content below is the chosen tab's panel.
  */
-export function PillTabs<T extends string>({
-  label,
-  tabs,
-  value,
-  onChange,
-  children,
-}: PillTabsProps<T>) {
+export function Tabs<T extends string>({ label, tabs, value, onChange, children }: TabsProps<T>) {
   const id = useId();
   const list = useRef<HTMLDivElement>(null);
   const tabId = (tab: T) => `${id}-tab-${tab}`;

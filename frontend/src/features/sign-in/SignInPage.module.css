@@ -1,28 +1,28 @@
-/* A centred card on the grey page, as ZenReach's sign-in: 440 px wide, 20 px corners. */
+/* A centred white card on the grey page: 440 px wide, 8 px corners (Shell). */
 .card {
   overflow: hidden;
   max-width: 440px;
-  margin: 24px auto 0;
+  margin: 0 auto;
   border: 1px solid var(--card-border);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   background: var(--surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
 }
 
-/* The header on the strong brand gradient carries white text (5.4:1 or more, research R17). */
+/* The header: the NorthStar mark and the title in ink, above a hairline. */
 .brand {
-  padding: 28px 24px 24px;
-  background: var(--brand-gradient-strong);
-  color: var(--on-accent);
+  padding: var(--space-6) var(--card-padding) var(--space-5);
+  border-bottom: 1px solid var(--row-divider);
+  color: var(--ink);
 }
 
 .brandName {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  gap: var(--space-2);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heading);
 }
 
 .brandTile {
@@ -31,8 +31,8 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--on-accent) 15%, transparent);
+  border-radius: var(--radius-control);
+  background: var(--brand-mark);
 }
 
 .brandTile svg {
@@ -42,38 +42,38 @@
 }
 
 .title {
-  margin-top: 16px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  margin-top: var(--space-5);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-2xl);
 }
 
 .subtitle {
-  margin-top: 4px;
-  font-size: 13px;
+  margin-top: var(--space-1);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
 }
 
 .body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
+  gap: var(--space-4);
+  padding: var(--card-padding);
 }
 
 /* "You have been signed out." / "Please sign in again". */
 .notice {
-  padding: 10px 14px;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-control);
   background: var(--chip);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 /* The notice region before it has a text (or without one): it stays in the page, so screen
    readers announce the text when it comes, but gives back the 16 px gap below it. */
 .emptyNotice {
-  margin-bottom: -16px;
+  margin-bottom: calc(-1 * var(--space-4));
 }
 
 /* The demo notice: a blue-tinted box with the shared password. */
@@ -81,12 +81,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   border: 1px solid color-mix(in srgb, var(--blue) 25%, transparent);
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--blue) 8%, var(--surface));
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .strong {
@@ -94,25 +94,25 @@
 }
 
 .body code {
-  padding: 1px 6px;
-  border-radius: 6px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-2);
   background: var(--chip);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 /* "Incorrect e-mail or password." and other failures, above the form. */
 .failure {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border: 1px solid color-mix(in srgb, var(--status-problem) 40%, transparent);
   border-left: 4px solid var(--status-problem);
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .failure svg {
@@ -126,46 +126,43 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
-/* Sign in fills the width as a pill. ".form .submit" is more specific than the Button's own
-   classes, so these rules win whatever order the styles load in. */
+/* Sign in fills the width. ".form .submit" is more specific than the Button's own classes, so
+   this rule wins whatever order the styles load in. */
 .form .submit {
   width: 100%;
-  min-height: 40px;
-  margin-top: 4px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
+  margin-top: var(--space-1);
 }
 
 /* Demo sign-in off, or no demo people yet. */
 .box {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-control);
   background: var(--gray-bg);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .demoPeople {
-  padding-top: 16px;
+  padding-top: var(--space-4);
   border-top: 1px solid var(--hairline);
 }
 
 .sectionTitle {
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .hint {
-  margin: 2px 0 10px;
+  margin: 2px 0 var(--space-2);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .people {
@@ -181,9 +178,9 @@
 .person {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 8px;
+  padding: var(--space-2);
   border: 0;
   border-radius: var(--radius-control);
   background: transparent;
@@ -204,11 +201,11 @@
 }
 
 .personName {
-  font-size: 13.5px;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
 .personTitle {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }

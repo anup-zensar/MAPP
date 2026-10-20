@@ -2,21 +2,21 @@
 .picker {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .label {
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
 .select {
   max-width: 220px;
-  height: 36px;
-  padding: 0 32px 0 14px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-pill);
+  height: var(--control-md);
+  padding: 0 var(--space-8) 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
   /* A chevron drawn with two gradients, in the text colour of both themes. */
   background:
     linear-gradient(45deg, transparent 50%, var(--ink-2) 50%) no-repeat calc(100% - 17px) 50% / 5px
@@ -25,7 +25,7 @@
       5px,
     var(--surface);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
   appearance: none;
   cursor: pointer;
 }

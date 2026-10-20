@@ -2,34 +2,34 @@
 .readOnly {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .readOnlyLabel {
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
 .readOnlyInput {
   width: 100%;
-  min-height: 38px;
-  padding: 8px 12px;
+  min-height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-control);
   background: var(--gray-bg);
   color: var(--ink);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .readOnlyInput:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
 }
 
 .hint {
   margin: 0;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }

@@ -101,7 +101,9 @@ function ApprovalBody({ approval, activity, onShowProblems }: ApprovalBodyProps)
           {(actions.submit.available || actions.resubmit.available) && (
             <SubmitButton activity={current} onShowProblems={onShowProblems} variant="secondary" />
           )}
-          {actions.approve.available && <DecisionButton mode="approve" approval={approval} />}
+          {actions.approve.available && (
+            <DecisionButton mode="approve" approval={approval} variant="secondary" />
+          )}
           {actions.decline.available && <DecisionButton mode="decline" approval={approval} />}
           {actions.recall.available && <RecallButton approval={approval} />}
         </div>

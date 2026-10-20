@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { Breadcrumb, ErrorState, PageHeader, useToast } from '@/components';
+import { ErrorState, PageHeader, useToast } from '@/components';
 import type { FieldProblem, SaveFailure } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
@@ -33,14 +33,16 @@ export function PlanEditPage() {
 
   return (
     <>
-      <Breadcrumb
-        items={[
+      <PageHeader
+        breadcrumb={[
           { label: 'Plans', to: '/plans' },
           { label: plan.data?.name ?? planId, to: `/plans/${encodeURIComponent(planId)}` },
           { label: 'Edit' },
         ]}
+        eyebrow="Plans"
+        title="Edit plan"
+        description={plan.data?.name}
       />
-      <PageHeader eyebrow="Plans" title="Edit plan" description={plan.data?.name} />
       {plan.isError ? (
         <ErrorState error={plan.error} onRetry={() => void plan.refetch()} />
       ) : plan.isPending ? (

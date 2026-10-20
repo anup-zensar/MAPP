@@ -1,17 +1,21 @@
-/* Looks like a text input that holds the chips and the search input. */
+/* Looks like a text input (40 px, 8 px corners, a 3:1 border) holding the chips and the search. */
 .control {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   width: 100%;
-  min-height: 38px;
-  padding: 5px 8px;
-  border: 1px solid var(--hairline);
+  min-height: var(--control-md);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
   background: var(--surface);
   cursor: text;
   transition: border-color 0.15s ease;
+}
+
+.control:hover {
+  border-color: var(--control-border-hover);
 }
 
 .control:focus-within {
@@ -20,11 +24,13 @@
 
 /* The input carries the focus ring for the whole control. */
 .control:has(:focus-visible) {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-.disabled {
+.disabled,
+.disabled:hover {
+  border-color: var(--hairline);
   background: var(--gray-bg);
   cursor: not-allowed;
 }
@@ -32,12 +38,12 @@
 .input {
   flex: 1 1 120px;
   min-width: 80px;
-  min-height: 26px;
-  padding: 2px 4px;
+  min-height: var(--space-7);
+  padding: 2px var(--space-1);
   border: 0;
   background: transparent;
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .input:focus,
@@ -58,29 +64,30 @@
   align-items: center;
   gap: 2px;
   max-width: 100%;
-  padding: 2px 4px 2px 8px;
+  padding: 2px var(--space-1) 2px var(--space-2);
   border-radius: var(--radius-chip);
   background: var(--chip);
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .chipContent {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
+/* 24 × 24 px, so it is easy to hit (WCAG 2.2, 2.5.8). */
 .remove {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-chip);
   background: transparent;
   color: var(--ink-2);
   cursor: pointer;
@@ -99,7 +106,7 @@
 .popover {
   z-index: 60;
   min-width: 240px;
-  padding: 6px;
+  padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
   background: var(--surface);
@@ -107,12 +114,13 @@
 }
 
 .count {
-  padding: 4px 10px 6px;
+  padding: var(--space-1) var(--space-3) var(--space-1);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .list {
+  position: relative;
   max-height: 320px;
   margin: 0;
   padding: 0;
@@ -124,11 +132,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 6px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-chip);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
@@ -144,7 +152,7 @@
 
 .optionContent {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .check {
@@ -155,7 +163,14 @@
 }
 
 .message {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
+}
+
+/* Phones and tablets: 16 px text, so the browser does not zoom into the field (Shell). */
+@media (max-width: 959px) {
+  .input {
+    font-size: var(--text-md);
+  }
 }

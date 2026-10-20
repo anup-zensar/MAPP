@@ -1,11 +1,12 @@
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 /* The rows scroll sideways inside the card on narrow screens, never the page (design system §2). */
 .scroll {
+  position: relative;
   overflow-x: auto;
 }
 
@@ -13,12 +14,12 @@
   width: 100%;
   border-collapse: collapse;
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .table th,
 .table td {
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--hairline);
   font-weight: 400;
   text-align: left;
@@ -26,10 +27,10 @@
 }
 
 .table thead th {
-  padding-block: 8px;
+  padding-block: var(--space-2);
   background: var(--gray-bg);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -50,7 +51,7 @@
 .id {
   display: block;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -77,7 +78,7 @@
 @media (prefers-reduced-motion: reduce) {
   .highlight {
     animation: none;
-    outline: 2px solid var(--blue);
+    outline: 2px solid var(--focus-ring);
     outline-offset: -2px;
   }
 }

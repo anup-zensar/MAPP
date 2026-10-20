@@ -109,7 +109,7 @@ export function campaignRows(data: PlanCampaigns, options: RowOptions): TreeNode
           </span>
           <Tooltip content={addInitiativeTo(item.name)}>
             <Button
-              variant="ghost"
+              variant="tertiary"
               size="sm"
               icon={<Plus />}
               aria-label={addInitiativeTo(item.name)}

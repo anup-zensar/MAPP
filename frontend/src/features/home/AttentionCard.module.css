@@ -5,7 +5,7 @@
 }
 
 .item {
-  padding: 12px 0;
+  padding: var(--space-3) 0;
 }
 
 .item:first-child {
@@ -21,16 +21,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
+  gap: var(--space-2) var(--space-2);
   min-width: 0;
 }
 
 .name {
   min-width: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .name:hover,
@@ -40,21 +40,21 @@
 
 .id {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
 .where {
   margin-top: 2px;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .reasons {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 8px 0 0;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -63,10 +63,10 @@
 .reason {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--ink);
-  font-size: 13px;
-  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  overflow-wrap: break-word;
 }
 
 .icon {
@@ -83,5 +83,5 @@
 }
 
 .more {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }

@@ -15,12 +15,4 @@ describe('NotificationBell with unread notifications (feature 008 extension poin
     expect(screen.getByRole('button', { name: 'Notifications, 3 unread' })).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
   });
-
-  it('adds the count to the written name in the menu drawer', () => {
-    renderWithProviders(<NotificationBell withLabel />);
-
-    expect(screen.getByRole('button', { name: 'Notifications, 3 unread' })).toHaveTextContent(
-      'Notifications',
-    );
-  });
 });

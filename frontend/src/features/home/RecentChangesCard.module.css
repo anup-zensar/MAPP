@@ -8,8 +8,8 @@
 .entry {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
 }
 
 .entry:first-child {
@@ -26,8 +26,8 @@
 
 .sentence {
   color: var(--ink);
-  font-size: 13.5px;
-  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  overflow-wrap: break-word;
 }
 
 /* The relative time looks like plain grey text; only its focus ring shows it is a control. */
@@ -35,10 +35,10 @@
   margin-top: 2px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-1);
   background: none;
   color: var(--ink-2);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-xs);
   cursor: default;
 }

@@ -1,26 +1,26 @@
 .editor {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .table th {
-  padding: 6px 8px;
+  padding: var(--space-1) var(--space-2);
   border-bottom: 1px solid var(--hairline);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   text-align: left;
 }
 
 .table td {
-  padding: 6px 8px;
+  padding: var(--space-1) var(--space-2);
   border-bottom: 1px solid var(--hairline);
   color: var(--ink);
   vertical-align: middle;
@@ -39,12 +39,12 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .complete,
 .incomplete {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
@@ -59,7 +59,7 @@
 
 .note {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .note:empty {

@@ -104,7 +104,7 @@ export function ComponentGalleryPage() {
             <Button variant="primary">Primary</Button>
             <Button>Secondary</Button>
             <Button variant="danger">Danger</Button>
-            <Button variant="ghost">Ghost</Button>
+            <Button variant="tertiary">Ghost</Button>
           </div>
           <div className={styles.row}>
             <Button variant="primary" size="sm">
@@ -116,7 +116,7 @@ export function ComponentGalleryPage() {
             </Button>
             {/* An icon alone needs a name and a tooltip (design system §9). */}
             <Tooltip content="Copy plan">
-              <Button variant="ghost" icon={<Copy />} aria-label="Copy plan" />
+              <Button variant="tertiary" icon={<Copy />} aria-label="Copy plan" />
             </Tooltip>
             <LinkButton to="/">Go to Home</LinkButton>
           </div>

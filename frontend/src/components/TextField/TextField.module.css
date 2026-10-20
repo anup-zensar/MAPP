@@ -1,45 +1,53 @@
+/* The same frame as FieldShell: label row, hint, control, problem (8 px apart). */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .labelRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-1) var(--space-2);
 }
 
 .label {
   color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
 }
 
 .marking {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .hint {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .control {
   position: relative;
 }
 
+/* 40 px high, 8 px corners, a 3:1 border (inputs.module.css has the same look). */
 .input {
   width: 100%;
-  min-height: 38px;
-  padding: 8px 12px;
-  border: 1px solid var(--hairline);
+  min-height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   transition: border-color 0.15s ease;
+}
+
+.input:hover {
+  border-color: var(--control-border-hover);
 }
 
 .input:focus {
@@ -52,24 +60,25 @@
 
 /* Room for the eye button inside the field. */
 .withEye {
-  padding-right: 44px;
+  padding-right: var(--space-11);
 }
 
-.invalid {
-  border-color: var(--status-problem);
+.invalid,
+.invalid:hover {
+  border-color: var(--danger);
 }
 
 .eye {
   position: absolute;
   top: 50%;
-  right: 4px;
+  right: var(--space-1);
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: var(--control-sm);
+  height: var(--control-sm);
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-chip);
   background: transparent;
   color: var(--ink-2);
   cursor: pointer;
@@ -89,9 +98,9 @@
 .error {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  color: var(--status-problem-text);
-  font-size: 12.5px;
+  gap: var(--space-2);
+  color: var(--danger-text);
+  font-size: var(--text-xs);
 }
 
 .error svg {
@@ -99,4 +108,11 @@
   width: 14px;
   height: 14px;
   margin-top: 2px;
+}
+
+/* Phones and tablets: 16 px text, so the browser does not zoom into the field (Shell). */
+@media (max-width: 959px) {
+  .input {
+    font-size: var(--text-md);
+  }
 }

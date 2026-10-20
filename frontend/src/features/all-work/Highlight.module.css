@@ -3,7 +3,7 @@
  * blue on the tint is too faint (WCAG 1.4.3), so the matched words read in ink in both themes.
  */
 .mark {
-  border-radius: 3px;
+  border-radius: var(--radius-1);
   background: color-mix(in srgb, var(--blue) 16%, transparent);
   color: var(--ink);
 }

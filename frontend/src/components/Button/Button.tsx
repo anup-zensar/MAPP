@@ -4,12 +4,14 @@ import { cx } from '@/lib/cx';
 import styles from './Button.module.css';
 
 /**
- * primary: the page's one main action (solid blue). secondary: everything else (outlined).
- * danger: an action that removes something (red text and outline). ghost: text only, for quiet
- * actions such as an icon button in a header.
+ * primary: the one main action of a page, panel or dialog (Shell yellow, dark text; at most one
+ * per view). secondary: every other action (outlined). tertiary: a quiet action without a frame,
+ * such as an icon button in a toolbar. danger: the confirm button of an action that removes
+ * something (red, white text), in a confirmation dialog.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
-export type ButtonSize = 'md' | 'sm';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger';
+/** One height per size, everywhere: sm 32 px (toolbars, tables), md 40 px, lg 48 px (touch). */
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /** How a Button or LinkButton looks. */
 interface ButtonLook {

@@ -1,77 +1,77 @@
 .summary {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* ID · Owner · Planned cost · Spread, side by side; they wrap on narrow screens. */
 .factsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 32px;
+  gap: var(--space-2) var(--space-8);
 }
 
 .bookkeeping {
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .sections {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   max-width: 720px;
 }
 
 .facts {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .fact {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .fact dt {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .fact dd {
   margin: 2px 0 0;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .note {
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .problem {
   color: var(--status-problem-text);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .months {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
   list-style: none;
 }

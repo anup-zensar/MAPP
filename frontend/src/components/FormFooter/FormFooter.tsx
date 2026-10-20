@@ -2,7 +2,10 @@ import type { ReactNode } from 'react';
 import styles from './FormFooter.module.css';
 
 export interface FormFooterProps {
-  /** The form's buttons: Save (primary), Save and add another, Cancel (design system §6.2). */
+  /**
+   * The form's buttons in order of importance: Save (primary), Save and add another, Cancel
+   * (design system §6.2). They line up from the right, so Save ends up rightmost.
+   */
   children: ReactNode;
 }
 

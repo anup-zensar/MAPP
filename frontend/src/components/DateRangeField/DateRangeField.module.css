@@ -1,26 +1,26 @@
 .pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .date {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .label {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .error {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--status-problem-text);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .error svg {
@@ -34,7 +34,7 @@
 .warning {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--ink);
 }
 

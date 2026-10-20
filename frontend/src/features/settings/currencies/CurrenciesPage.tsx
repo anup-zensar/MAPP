@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useCurrencies } from '@/api/settingsQueries';
 import {
   ActionsMenu,
-  Breadcrumb,
   Button,
   Card,
   ErrorState,
@@ -74,8 +73,8 @@ export function CurrenciesPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'Currencies' }]} />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Currencies' }]}
         eyebrow="Settings"
         title="Currencies"
         description="Currencies for line items and display, with their rate per 1 USD."

@@ -3,52 +3,52 @@
 .details {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  overflow-wrap: anywhere;
+  gap: var(--space-5);
+  overflow-wrap: break-word;
 }
 
 .top {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .facts {
   display: grid;
-  gap: 14px;
+  gap: var(--space-4);
   margin: 0;
 }
 
 .facts dt {
   margin-bottom: 2px;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
 }
 
 .facts dd {
   margin: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .sectionTitle {
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -56,7 +56,7 @@
 
 .muted {
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .link {
@@ -68,18 +68,18 @@
 }
 
 .recordLine {
-  padding-top: 12px;
+  padding-top: var(--space-3);
   border-top: 1px solid var(--hairline);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .colour {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .dot {
@@ -92,9 +92,9 @@
 .notFound {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 /* Footer actions that may carry a reason under them (FR-006). */
@@ -103,13 +103,13 @@
   flex: 1;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .reasonLine {
   flex-basis: 100%;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
   text-align: right;
 }
 
@@ -121,5 +121,5 @@
 
 .email {
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }

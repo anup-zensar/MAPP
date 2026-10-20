@@ -1,14 +1,14 @@
 .sections {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 /* The summary cards side by side; on narrow screens they wrap onto more rows. */
 .summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 /* Search, Filters and the count; they wrap on narrow screens. */
@@ -16,8 +16,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .search {
@@ -29,10 +29,10 @@
 .count {
   margin-left: auto;
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
 
 .chips {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }

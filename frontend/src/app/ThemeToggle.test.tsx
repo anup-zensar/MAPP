@@ -122,14 +122,4 @@ describe('ThemeToggle', () => {
       "Your choice couldn't be saved.",
     );
   });
-
-  it('writes its name out, without a tooltip, inside the menu drawer (plan "Layout")', async () => {
-    const { user } = renderWithProviders(<ThemeToggle withLabel />, { user: PRIYA });
-
-    const toggle = screen.getByRole('button', { name: 'Switch to dark mode' });
-    expect(toggle).toHaveTextContent('Dark mode');
-    await user.hover(toggle);
-
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-  });
 });

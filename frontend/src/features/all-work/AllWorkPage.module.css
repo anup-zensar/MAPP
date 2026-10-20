@@ -1,14 +1,14 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   min-width: 0;
 }
 
 .view {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -24,5 +24,5 @@
 
 /* Loading, error and empty states inside the card. */
 .state {
-  padding: 20px;
+  padding: var(--space-5);
 }

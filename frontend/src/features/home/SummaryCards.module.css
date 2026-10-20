@@ -5,7 +5,7 @@
 .cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 @container home (min-width: 520px) {
@@ -22,7 +22,7 @@
 
 /* A card's place while the summary loads. */
 .placeholder {
-  padding: 18px;
+  padding: var(--space-4);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -31,7 +31,7 @@
 
 /* The four cards failed together: one message in one card. */
 .failed {
-  padding: 18px;
+  padding: var(--space-4);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -43,7 +43,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .percent {

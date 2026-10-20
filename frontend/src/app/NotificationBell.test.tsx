@@ -35,16 +35,6 @@ describe('NotificationBell', () => {
       expect(screen.getByRole('button', { name: 'Notifications' })).toHaveFocus(),
     );
   });
-
-  it('writes its name out, without a tooltip, inside the menu drawer (plan "Layout")', async () => {
-    const { user } = renderWithProviders(<NotificationBell withLabel />);
-
-    const bell = screen.getByRole('button', { name: 'Notifications' });
-    expect(bell).toHaveTextContent('Notifications');
-    await user.hover(bell);
-
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-  });
 });
 
 describe('NotificationBell with notifications (feature 008, US6)', () => {

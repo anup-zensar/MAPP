@@ -1,19 +1,19 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .box {
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin: 0;
   accent-color: var(--blue);
   cursor: pointer;
@@ -25,27 +25,27 @@
 
 .label {
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
 .hint,
 .indented,
 .error {
-  padding-left: 26px;
+  padding-left: var(--space-7);
 }
 
 .hint {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .error {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--status-problem-text);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 .error svg {

@@ -6,6 +6,7 @@
   animation: fade-in var(--dur) var(--ease-out);
 }
 
+/* A centred dialog: 512 px (Shell), 12 px corners, 24 px padding. */
 .dialog {
   position: fixed;
   top: 50%;
@@ -13,11 +14,11 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
-  width: min(520px, calc(100vw - 32px));
+  width: min(512px, calc(100vw - 32px));
   max-height: calc(100vh - 48px);
-  padding: 24px;
+  padding: var(--card-padding);
   overflow-y: auto;
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-dialog);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
   transform: translate(-50%, -50%);
@@ -30,33 +31,34 @@
 
 .title {
   color: var(--ink);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-xl);
+  overflow-wrap: break-word;
 }
 
 .description {
-  margin-top: 6px;
+  margin-top: var(--space-1);
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 16px;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
+/* One footer for every dialog: Cancel, then the primary on the right. */
 .actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
 }
 
 .spinner {

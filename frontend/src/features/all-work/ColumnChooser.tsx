@@ -127,7 +127,7 @@ export function ColumnChooser({
                   <span className={styles.label}>{label}</span>
                   {index > 0 && (
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       size="sm"
                       icon={<ArrowUp />}
                       aria-label={`Move ${label} up`}
@@ -136,7 +136,7 @@ export function ColumnChooser({
                   )}
                   {index < columns.length - 1 && (
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       size="sm"
                       icon={<ArrowDown />}
                       aria-label={`Move ${label} down`}

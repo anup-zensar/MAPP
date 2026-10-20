@@ -13,7 +13,11 @@ export interface SidePanelProps {
   description?: string;
   /** The form or details. It scrolls when it is long. */
   children: ReactNode;
-  /** The buttons that stay at the bottom: Save (primary) and Cancel. */
+  /**
+   * The buttons that stay at the bottom, in order of importance: the primary first (Save, Edit),
+   * then Cancel or other secondary buttons, then the More menu. They line up from the right, so the
+   * primary ends up rightmost, the same in every panel (design system §6.2).
+   */
   footer: ReactNode;
 }
 
@@ -51,7 +55,7 @@ export function SidePanel({
           }}
         >
           <div className={styles.header}>
-            <div>
+            <div className={styles.heading}>
               <Dialog.Title className={styles.title}>{title}</Dialog.Title>
               {description && (
                 <Dialog.Description className={styles.description}>
@@ -61,7 +65,7 @@ export function SidePanel({
             </div>
             {/* No tooltip: inside a dialog it would swallow the first Escape (research R14). */}
             <Dialog.Close asChild>
-              <Button variant="ghost" icon={<X />} aria-label="Close" />
+              <Button variant="tertiary" icon={<X />} aria-label="Close" />
             </Dialog.Close>
           </div>
           <div className={styles.body}>{children}</div>

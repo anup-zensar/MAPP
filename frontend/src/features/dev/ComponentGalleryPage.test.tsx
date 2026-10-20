@@ -33,7 +33,7 @@ const COMPONENT_CARDS = [
   // The Plan module's building blocks (build guide §4).
   'Breadcrumb',
   'SearchField, SegmentedFilter and FilterChips',
-  'PillTabs and CountBadge',
+  'Tabs and CountBadge',
   'LevelTag and ProgressBar',
   'Items below and summary detail',
   'LockedNote',

@@ -64,20 +64,6 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Plans' })).not.toHaveAttribute('aria-current');
   });
 
-  it('links the logo to Home (FR-010)', () => {
-    renderWithProviders(<Sidebar />, { user: PRIYA });
-
-    expect(screen.getByRole('link', { name: 'NorthStar home' })).toHaveAttribute('href', '/');
-  });
-
-  it('has the account button, the bell and the theme switch in its footer (FR-010)', () => {
-    renderWithProviders(<Sidebar />, { user: PRIYA });
-
-    expect(screen.getByRole('button', { name: 'Priya — account menu' })).toHaveTextContent('Priya');
-    expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
-  });
-
   it('collapses and saves that for the person (FR-011, US2 scenario 3)', async () => {
     const api = mockApi({
       'PATCH /api/me/preferences': { body: { theme: 'system', sidebarCollapsed: true } },
@@ -98,8 +84,6 @@ describe('Sidebar', () => {
     expect(within(plans).getByText('Plans')).toHaveClass('visually-hidden');
     expect(screen.getByText('More')).toHaveClass('visually-hidden');
     expect(screen.queryByRole('button', { name: 'Collapse' })).not.toBeInTheDocument();
-    const account = screen.getByRole('button', { name: 'Priya — account menu' });
-    expect(within(account).getByText('Priya')).toHaveClass('visually-hidden');
   });
 
   it('keeps the item style and the highlight in the icon rail, where each link has a tooltip (FR-011)', () => {

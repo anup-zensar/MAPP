@@ -2,13 +2,13 @@
 .preview {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   max-width: 720px;
 }
 
 .note {
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .completeness {
@@ -20,17 +20,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  padding-top: 16px;
+  gap: var(--space-2) var(--space-3);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--hairline);
 }
 
 .answer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .works {
@@ -39,11 +39,11 @@
 }
 
 .cleared {
-  margin: 4px 0 0;
-  padding-left: 18px;
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-5);
 }
 
 .failure {
   color: var(--status-problem-text);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }

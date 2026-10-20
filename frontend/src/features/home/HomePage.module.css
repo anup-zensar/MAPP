@@ -2,7 +2,7 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
   container: home / inline-size;
 }
 
@@ -11,12 +11,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 14px;
+  gap: var(--space-2) var(--space-4);
 }
 
 .hint {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }
 
 /* The cards of the person's own work: two columns when Home is wide, one under the other below. */
@@ -24,7 +24,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 @container home (min-width: 880px) {

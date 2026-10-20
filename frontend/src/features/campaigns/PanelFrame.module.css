@@ -1,27 +1,27 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 .loading {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 /* A record that is gone: red-tinted, like a failed save (design system §6.4). */
 .gone {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border: 1px solid color-mix(in srgb, var(--status-problem) 40%, transparent);
   border-left: 4px solid var(--status-problem);
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .gone p {

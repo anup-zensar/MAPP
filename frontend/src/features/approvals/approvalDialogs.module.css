@@ -2,16 +2,16 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  overflow-wrap: anywhere;
+  gap: var(--space-3);
+  overflow-wrap: break-word;
 }
 
 .levels {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   background: var(--gray-bg);
   color: var(--ink);
@@ -20,7 +20,7 @@
 
 /* A note that needs attention but blocks nothing (an unassigned amount, acting on behalf). */
 .note {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--status-review) 12%, transparent);
   color: var(--status-review-text);

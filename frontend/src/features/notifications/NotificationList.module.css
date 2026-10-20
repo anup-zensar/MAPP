@@ -3,30 +3,31 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 4px 8px;
-  padding: 8px 8px 8px 16px;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--hairline);
 }
 
 .title {
-  padding-block: 4px;
+  padding-block: var(--space-1);
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .empty {
-  padding: 28px 16px;
+  padding: var(--space-7) var(--space-4);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   text-align: center;
 }
 
 /* Up to 50 notifications: the list scrolls inside the popover, never the page. */
 .list {
+  position: relative;
   max-height: min(420px, 60vh);
   margin: 0;
-  padding: 4px;
+  padding: var(--space-1);
   overflow-y: auto;
   list-style: none;
 }
@@ -34,15 +35,15 @@
 .item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 0;
   border-radius: var(--radius-control);
   background: none;
   color: var(--ink-2);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-sm);
   text-align: left;
   cursor: pointer;
 }
@@ -79,7 +80,7 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .itemTitle {
@@ -97,7 +98,7 @@
 
 .time {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 /* The unread marker; its word is read by screen readers only. */
@@ -105,7 +106,7 @@
   flex: none;
   width: 8px;
   height: 8px;
-  margin-top: 6px;
+  margin-top: var(--space-1);
   border-radius: 50%;
   background: var(--blue);
 }
@@ -114,13 +115,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 24px 16px;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   text-align: center;
 }
 
 .loading {
-  padding: 16px;
+  padding: var(--space-4);
 }

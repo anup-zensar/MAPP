@@ -11,13 +11,16 @@ export interface ApprovalStatusActionProps {
 /**
  * The status button in feature 006's activity header (008 plan, "Activity page parts"; FR-009,
  * FR-014): Created → **Submit for approval**; Declined → **Re-submit for approval**; Submitted →
- * **Approve**; Approved (In progress, Complete) → nothing.
+ * **Approve**; Approved (In progress, Complete) → nothing. A secondary button: Edit is the page's one
+ * primary action (design system §6.3).
  */
 export function ApprovalStatusAction({ activity, onShowProblems }: ApprovalStatusActionProps) {
   switch (activity.status) {
     case 'created':
     case 'declined':
-      return <SubmitButton activity={activity} onShowProblems={onShowProblems} />;
+      return (
+        <SubmitButton activity={activity} onShowProblems={onShowProblems} variant="secondary" />
+      );
     case 'submitted':
       return <ApproveAction activityId={activity.id} />;
     default:
@@ -31,5 +34,5 @@ function ApproveAction({ activityId }: { activityId: string }) {
   if (!approval.data?.actions.approve.available) {
     return null;
   }
-  return <DecisionButton mode="approve" approval={approval.data} />;
+  return <DecisionButton mode="approve" approval={approval.data} variant="secondary" />;
 }

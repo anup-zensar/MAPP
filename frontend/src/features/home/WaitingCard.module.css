@@ -9,8 +9,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
 }
 
 .row:first-child {
@@ -29,15 +29,15 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 8px;
+  gap: var(--space-1) var(--space-2);
 }
 
 .name {
   min-width: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .name:hover,
@@ -47,21 +47,21 @@
 
 .id {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
 .meta {
   margin-top: 2px;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .more {
-  margin-top: 12px;
-  font-size: 13.5px;
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
 }
 
 .more a {

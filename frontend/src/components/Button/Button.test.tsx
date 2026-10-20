@@ -47,12 +47,12 @@ describe('Button', () => {
   });
 
   it('can be an icon-only button named by aria-label (FR-019)', () => {
-    render(<Button variant="ghost" icon={<X />} aria-label="Close" />);
+    render(<Button variant="tertiary" icon={<X />} aria-label="Close" />);
 
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
-  it.each(['primary', 'secondary', 'danger', 'ghost'] as const)(
+  it.each(['primary', 'secondary', 'danger', 'tertiary'] as const)(
     'offers the %s variant (FR-019)',
     (variant) => {
       render(<Button variant={variant}>Go</Button>);

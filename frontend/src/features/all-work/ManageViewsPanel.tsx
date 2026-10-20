@@ -104,7 +104,7 @@ export function ManageViewsPanel({ open, onOpenChange, views }: ManageViewsPanel
                 <Button size="sm" onClick={() => setRenaming(view)}>
                   Rename <span className="visually-hidden">{view.name}</span>
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => setDeleting(view)}>
+                <Button size="sm" onClick={() => setDeleting(view)}>
                   Delete <span className="visually-hidden">{view.name}</span>
                 </Button>
               </div>

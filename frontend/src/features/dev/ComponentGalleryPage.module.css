@@ -2,7 +2,7 @@
 .cards {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 /* Variants side by side; they wrap on narrow screens. */
@@ -10,30 +10,30 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .row + .row {
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .summaries {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 /* Two examples next to each other on wide screens, one under the other on narrow ones. */
 .columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 /* A label with its info tip, as next to a form field or a summary. */
@@ -41,7 +41,7 @@
   display: flex;
   align-items: center;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -49,14 +49,14 @@
 .person {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
 }
 
 .fields {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   max-width: 420px;
 }

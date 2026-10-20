@@ -4,7 +4,6 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ActionsMenu,
   Avatar,
-  Breadcrumb,
   Button,
   Card,
   EmptyState,
@@ -80,8 +79,8 @@ export function TeamsPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'Teams' }]} />
       <PageHeader
+        breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'Teams' }]}
         eyebrow="Settings"
         title="Teams"
         description="Groups of people that plans are assigned to. A plan's owner must belong to one of its teams."

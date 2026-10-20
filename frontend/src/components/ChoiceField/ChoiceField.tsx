@@ -133,7 +133,7 @@ export function ChoiceField(props: ChoiceFieldProps) {
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          className={cx(inputs.input, styles.select, error && inputs.invalid)}
+          className={cx(inputs.input, inputs.select, error && inputs.invalid)}
         >
           <option value="">Choose…</option>
           {offered.map((option) => (

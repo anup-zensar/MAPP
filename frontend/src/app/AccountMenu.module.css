@@ -1,12 +1,13 @@
-/* The account button: a pill with the avatar and the name, as in ZenReach. */
+/* The account button: the avatar, the first name and a chevron, 40 px high (Shell's header). */
 .button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
-  padding: 4px;
+  height: var(--control-md);
+  padding: 0 var(--space-2) 0 var(--space-1);
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
   text-align: left;
@@ -14,44 +15,33 @@
   transition: background-color 0.15s ease;
 }
 
-.button:hover {
+.button:hover,
+.button[data-state='open'] {
   background: var(--hover);
 }
 
+/* A long first name is cut short with an ellipsis (the tooltip has it in full). */
 .name {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-/* In the sidebar a long first name is cut short with an ellipsis (the tooltip has it in full). */
-.full {
-  padding-right: 12px;
-}
-
-.full .name {
   overflow: hidden;
-  max-width: 120px;
+  max-width: 140px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* In the menu drawer the full name is written out and wraps. */
-.drawer {
-  width: 100%;
-  padding-right: 12px;
-  border-radius: 12px;
-}
-
-.drawer .name {
-  min-width: 0;
-  overflow-wrap: anywhere;
+.chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-2);
 }
 
 .menu {
   z-index: 50;
   min-width: 240px;
   max-width: min(320px, calc(100vw - 32px));
-  padding: 6px;
+  padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
   background: var(--surface);
@@ -62,42 +52,43 @@
 .header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 10px;
+  gap: var(--space-3);
+  padding: var(--space-3);
 }
 
 .details {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .fullName {
   color: var(--ink);
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
 }
 
 .detail {
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .separator {
   height: 1px;
-  margin: 6px 4px;
-  background: var(--hairline);
+  margin: var(--space-1) 0;
+  background: var(--row-divider);
 }
 
 .item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  border-radius: 6px;
+  gap: var(--space-3);
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-chip);
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
   text-decoration: none;
   cursor: pointer;
   outline: none;
@@ -118,4 +109,23 @@
   width: 16px;
   height: 16px;
   color: var(--ink-2);
+}
+
+/* On phones the button is the avatar alone; the first name stays in its name for screen
+   readers (the same rules as .visually-hidden). */
+@media (max-width: 599px) {
+  .name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .chevron {
+    display: none;
+  }
 }

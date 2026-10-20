@@ -87,7 +87,7 @@ export function NotificationList({ titleId, onClose }: NotificationListProps) {
         </h2>
         {page && page.unread > 0 && (
           <Button
-            variant="ghost"
+            variant="tertiary"
             size="sm"
             aria-busy={markAllRead.isPending || undefined}
             onClick={readAll}

@@ -1,31 +1,42 @@
+/* A small tag on a tint of the level's colour: 20 px high, 12 px bold, 4 px corners. */
 .tag {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 6px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 var(--space-1);
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-chip);
   color: var(--ink);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.6;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
   white-space: nowrap;
+  /* Always the text face, also inside a heading. */
+  font-family: var(--font);
 }
 
 .plan {
+  border-left-color: var(--level-plan);
   background: color-mix(in srgb, var(--level-plan) 12%, transparent);
 }
 
 .campaign {
+  border-left-color: var(--level-campaign);
   background: color-mix(in srgb, var(--level-campaign) 12%, transparent);
 }
 
 .initiative {
+  border-left-color: var(--level-initiative);
   background: color-mix(in srgb, var(--level-initiative) 12%, transparent);
 }
 
 .activity {
+  border-left-color: var(--level-activity);
   background: color-mix(in srgb, var(--level-activity) 12%, transparent);
 }
 
 .lineItem {
+  border-left-color: var(--level-line-item);
   background: color-mix(in srgb, var(--level-line-item) 12%, transparent);
 }

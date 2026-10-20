@@ -1,14 +1,14 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-4);
   min-width: 0;
-  padding: 18px;
+  padding: var(--space-4);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
-  font-size: 13.5px;
+  font-size: var(--text-sm);
   color: var(--ink);
 }
 
@@ -16,7 +16,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .title {
@@ -25,9 +25,9 @@
 
 .name {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--text-md);
   font-weight: 600;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .name a {
@@ -44,7 +44,7 @@
 .id {
   margin: 2px 0 0;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -52,19 +52,19 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .facts {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .approved {
   margin: 0;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
 }

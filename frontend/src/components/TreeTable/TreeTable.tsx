@@ -26,15 +26,17 @@ export interface TreeNode {
   children: TreeNode[];
   /** The row's ⋯ menu; its button is named "Actions for <name>". */
   actions?: ActionsMenuItem[];
-  /** A blue tint, for the record just created, moved or copied; it is scrolled into view. */
+  /** A yellow tint, for the record just created, moved or copied; it is scrolled into view. */
   highlighted?: boolean;
 }
 
 export interface TreeTableColumn {
   key: string;
   header: string;
-  /** 'end' right-aligns the column, for money (design system §4). */
+  /** 'end' right-aligns the column and keeps its values on one line, for money (design system §4). */
   align?: 'start' | 'end';
+  /** The narrowest the column may become, so a person or team never squeezes: "160px". */
+  minWidth?: string;
 }
 
 /** The totals row under the tree, by column key. */
@@ -151,7 +153,12 @@ export function TreeTable({
         <thead>
           <tr>
             {columns.map((column) => (
-              <th key={column.key} scope="col" className={cx(column.align === 'end' && styles.end)}>
+              <th
+                key={column.key}
+                scope="col"
+                className={cx(column.align === 'end' && styles.end)}
+                style={column.minWidth ? { minWidth: column.minWidth } : undefined}
+              >
                 {column.header}
               </th>
             ))}

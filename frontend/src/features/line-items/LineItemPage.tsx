@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
 import {
-  Breadcrumb,
   Card,
   CompletenessChip,
   ErrorState,
@@ -84,8 +83,8 @@ export function LineItemPage() {
 
   return (
     <>
-      <Breadcrumb items={[...activityBreadcrumb(activity), { label: lineItem.name }]} />
       <PageHeader
+        breadcrumb={[...activityBreadcrumb(activity), { label: lineItem.name }]}
         eyebrow={EYEBROW}
         title={lineItem.name}
         actions={
