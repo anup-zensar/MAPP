@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { detailsOf } from '@/features/approval-workflows/testData';
+import { NO_DELEGATIONS } from '@/features/approvals/testData';
 import { expectCurrentSection, renderApp } from '@/test/app';
 
 const NO_ROWS = { body: { items: [], total: 0 } };
@@ -9,7 +10,10 @@ const NO_ROWS = { body: { items: [], total: 0 } };
 // the stub pages (their own requests go into renderApp's answers).
 describe('Approvals routes (feature 008)', () => {
   it('opens /approvals, with Approvals current in the sidebar', async () => {
-    renderApp('/approvals', { 'GET /api/approvals': NO_ROWS });
+    renderApp('/approvals', {
+      'GET /api/approvals': NO_ROWS,
+      'GET /api/approval-delegations': NO_DELEGATIONS,
+    });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Approvals' })).toBeInTheDocument();
     expect(document.title).toBe('Approvals · NorthStar');

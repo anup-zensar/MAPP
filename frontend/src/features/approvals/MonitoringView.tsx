@@ -117,11 +117,19 @@ function WaitingByLevel({ data }: { data: ApprovalMonitoring }) {
     return <p className={styles.empty}>Nothing is waiting for approval.</p>;
   }
   return (
-    <div className={styles.scroll}>
+    // Focusable, so the keyboard can scroll it sideways when it is wider than the card.
+    <div
+      className={styles.scroll}
+      role="region"
+      aria-label="Waiting by level, scrolls sideways"
+      tabIndex={0}
+    >
       <table className={styles.table}>
         <thead>
           <tr>
-            <th scope="col">Workflow</th>
+            <th scope="col" className={styles.workflowCol}>
+              Workflow
+            </th>
             <th scope="col">Level</th>
             <th scope="col" className={styles.number}>
               Waiting
