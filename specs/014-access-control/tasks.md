@@ -145,19 +145,19 @@ built with 012.
 
 ### US6 — global budgets (P2)
 
-- [ ] T033 [US6] New package `backend/internal/budgets`: `model.go`, `repository.go`, `store_json.go`, `kinds.go`
+- [x] T033 [US6] New package `backend/internal/budgets`: `model.go`, `repository.go`, `store_json.go`, `kinds.go`
   (`globalBudget`; `budgetAllocation` with parent `plan` and `PrepareRestore` note 31); tests (FR-035).
-- [ ] T034 [US6] `backend/internal/budgets/service.go`, `figures.go`: list (year filter, `years`, `create`
+- [x] T034 [US6] `backend/internal/budgets/service.go`, `figures.go`: list (year filter, `years`, `create`
   availability), get (figures, rows filtered by plan visibility, Other markets row, plans without allocation),
   create/update (messages 24–27, owner must manage All markets, year lock), delete (409 `in_use` message 30, bin +
   Undo); tests US6 scenarios 1, 5 (FR-029, FR-032, FR-033, FR-035, FR-036).
-- [ ] T035 [US6] `backend/internal/budgets`: `AllocationOptions`, `Allocate`, `UpdateAllocation` (messages 28–29,
+- [x] T035 [US6] `backend/internal/budgets`: `AllocationOptions`, `Allocate`, `UpdateAllocation` (messages 28–29,
   `planVersion` conflict), `RemoveAllocation`; `backend/internal/plans`: `SetBudgetFromAllocation` (write budget,
   `Touch`, log with comment); tests US6 scenarios 2, 6 and the log rows of data-model §3 (FR-030, FR-034, FR-037).
 - [ ] T036 [P] [US6] `backend/internal/plans`: `Allocations` hook + `UseAllocations` (default none); `Plan.allocation`;
   `Update` refuses a changed budget on an allocated plan (409 `not_allowed`, message 23); `PlanAccess.editBudget`;
   `Copy` does not copy the allocation; tests US6 scenario 3 (FR-031, FR-035).
-- [ ] T037 [US6] `backend/internal/budgets/handler.go` (9 operations), `backend/internal/app/budgets_adapter.go`
+- [x] T037 [US6] `backend/internal/budgets/handler.go` (9 operations), `backend/internal/app/budgets_adapter.go`
   (`Plans`, `People`, `Managers`), wiring in `app.go` (kinds registered after the plan kind), `backend/seed/budgets.go`
   (`addGlobalBudgets` after `addPlans`); contract-validated handler tests; remove from `notYetServed`; seed test
   (FR-029–FR-036, FR-040).

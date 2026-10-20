@@ -74,6 +74,8 @@ internal/
   home/               the Home dashboard, read-only over 003–008 through Sources (009)
   allwork/            All work (010): the read-only Grid, Calendar and Budget & cost of a year, export, saved
                       views; it reads 004–007 through allwork.Source (internal/app/allwork_source.go)
+  budgets/            global budgets and their allocations to plans (014): an allocation sets the plan budget
+                      through plans.SetBudgetFromAllocation (internal/app/budgets_adapter.go)
 ```
 
 The Plan module's packages (002–008) started from a shared foundation: each has its stored types and API
