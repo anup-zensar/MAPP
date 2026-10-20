@@ -41,7 +41,11 @@ export const NO_DATA = 'No GSAP data loaded yet.';
 export const NO_ACCESS = "You don't have access to financial data — ask an administrator.";
 export const NO_MATCH = 'No transactions match — clear a filter or search for something else';
 export const NOTHING_TO_IMPORT = 'Nothing to import — fix the rows and choose the file again';
-export const SEARCH_PLACEHOLDER = 'Search number, vendor, SWBS code, HX key, line item or activity';
+/**
+ * Short enough for the 320 px search field (design system §5.2); the API also searches the
+ * description and the linked line item's and activity's name (plan 015's longer wording did not fit).
+ */
+export const SEARCH_PLACEHOLDER = 'Search number, vendor, code or ID';
 export const PAGE_SUBTITLE = 'Purchase orders, invoices, payments and accruals from GSAP';
 export const TRANSACTION_GONE = "This GSAP transaction doesn't exist.";
 

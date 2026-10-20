@@ -1,4 +1,4 @@
-import { Check, ChevronDown, CircleAlert } from 'lucide-react';
+import { Check, CircleAlert } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { useEffect, useEffectEvent, useId, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -231,11 +231,10 @@ function ActionMenu({
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            className={`${styles.control} ${styles.menuButton}`}
+            className={`${styles.control} ${styles.select} ${styles.menuButton}`}
             aria-label={`Action: ${summary}`}
           >
             <span className={styles.menuText}>{summary}</span>
-            <ChevronDown aria-hidden="true" />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>

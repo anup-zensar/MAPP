@@ -17,6 +17,7 @@ import {
   TeamPills,
   useToast,
 } from '@/components';
+import { ScrollBox } from '@/features/financials/ScrollBox';
 import { PlanStatusChip } from '@/features/plans/PlanFacts';
 import { usePageTitle } from '@/lib/usePageTitle';
 import { useFormatters } from '@/lib/useFormatters';
@@ -205,7 +206,7 @@ function Allocations({ budget, onAllocate, onChange, onRemove }: AllocationsProp
           />
         </div>
       ) : (
-        <div className={styles.scroll}>
+        <ScrollBox label="Allocations" className={styles.scroll}>
           <table className={styles.table}>
             <caption className="visually-hidden">Allocations</caption>
             <thead>
@@ -292,7 +293,7 @@ function Allocations({ budget, onAllocate, onChange, onRemove }: AllocationsProp
               )}
             </tbody>
           </table>
-        </div>
+        </ScrollBox>
       )}
     </section>
   );
@@ -335,7 +336,7 @@ function WithoutAllocation({
           className={styles.emptyLine}
         >{`Every plan of ${budget.year} you can see has an allocation.`}</p>
       ) : (
-        <div className={styles.scroll}>
+        <ScrollBox label={heading} className={styles.scroll}>
           <table className={styles.table}>
             <caption className="visually-hidden">{heading}</caption>
             <thead>
@@ -386,7 +387,7 @@ function WithoutAllocation({
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollBox>
       )}
     </section>
   );

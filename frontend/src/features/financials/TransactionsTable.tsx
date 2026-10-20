@@ -14,6 +14,7 @@ import {
   recordLabel,
   TYPE_WORDS,
 } from './financialsText';
+import { ScrollBox } from './ScrollBox';
 import styles from './TransactionsTable.module.css';
 
 /** The type chips: one tone per type, the word carries the meaning. */
@@ -71,7 +72,7 @@ export function TransactionsTable({
   );
 
   return (
-    <div className={styles.scroll}>
+    <ScrollBox label="Transactions" className={styles.scroll}>
       <table className={styles.table}>
         <caption className="visually-hidden">Transactions</caption>
         <thead>
@@ -91,7 +92,7 @@ export function TransactionsTable({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollBox>
   );
 }
 

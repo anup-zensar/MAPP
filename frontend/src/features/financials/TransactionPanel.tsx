@@ -105,8 +105,10 @@ function Details({ transaction }: { transaction: FinancialTransaction }) {
   const day = (timestamp: string) => date(localDate(timestamp));
   const poReference = t.poNumber ? [t.poNumber, t.poLineNumber].filter(Boolean).join(' / ') : '';
 
+  // Focusable, so the keyboard can scroll the details when they are longer than the panel and
+  // hold no link (a not-linked transaction on a phone).
   return (
-    <div className={styles.body}>
+    <div className={styles.body} tabIndex={0} role="group" aria-label="Transaction details">
       <section aria-labelledby="transaction-fields" className={styles.section}>
         <h3 id="transaction-fields" className={styles.heading}>
           From GSAP

@@ -2,6 +2,17 @@
 .scroll {
   position: relative;
   overflow-x: auto;
+  /* A soft shadow at an edge with more columns beyond it, so a cut-off table says it scrolls
+     (design system §5.4): the white covers scroll with the table, the shadows stay with the box. */
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent) left center / 32px 100% no-repeat
+      local,
+    linear-gradient(to left, var(--surface) 30%, transparent) right center / 32px 100% no-repeat
+      local,
+    radial-gradient(farthest-side at 0 50%, var(--scroll-shadow), transparent) left center / 12px
+      100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--scroll-shadow), transparent) right center /
+      12px 100% no-repeat scroll;
 }
 
 .table {
