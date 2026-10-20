@@ -16,12 +16,11 @@ import type {
 import {
   amountText,
   centsInput,
+  convert,
   customGridMonths,
-  fromUsd,
   parseAmount,
   splitEvenly,
   spreadMonths,
-  toUsd,
 } from './lineItemMath';
 import type { ActivityDates, SpreadMethod } from './lineItemMath';
 import {
@@ -67,10 +66,10 @@ export interface LineItemFormState {
   /** The planned cost as typed ("20,000.00"). */
   plannedCost: string;
   /**
-   * The pre-filled unassigned balance in USD ("20000.00") while the planned cost still holds it
-   * (FR-012); null once the person types an amount.
+   * The pre-filled unassigned balance in the plan currency ("20000.00"; USD before 016) while the
+   * planned cost still holds it (FR-012, 016 FR-015); null once the person types an amount.
    */
-  prefilledUsd: string | null;
+  prefilled: string | null;
   /** "Changed to 18,400.00 EUR = 20,000.00 USD", and the rounding hint when needed (FR-012). */
   costNotes: string[];
   spreadMethod: SpreadMethod;
@@ -121,7 +120,7 @@ export function newFormState(options: LineItemFormOptions): LineItemFormState {
     description: '',
     currency: defaults.currency,
     plannedCost: defaults.plannedCost ? centsInput(toCents(defaults.plannedCost.amount)) : '',
-    prefilledUsd: defaults.plannedCost?.amount ?? null,
+    prefilled: defaults.plannedCost?.amount ?? null,
     costNotes: [],
     spreadMethod: defaults.spreadMethod,
     customMonths: [],
@@ -145,7 +144,7 @@ export function editFormState(lineItem: LineItem): LineItemFormState {
     description: lineItem.description,
     currency: lineItem.currency.code,
     plannedCost: centsInput(toCents(lineItem.plannedCost.amount)),
-    prefilledUsd: null,
+    prefilled: null,
     costNotes: [],
     spreadMethod: lineItem.spread.method,
     customMonths: custom
@@ -180,38 +179,43 @@ export function withField<K extends keyof LineItemFormState>(
 
 /** A typed planned cost: no longer the pre-filled balance (FR-012). */
 export function changePlannedCost(state: LineItemFormState, text: string): LineItemFormState {
-  return { ...withField(state, 'plannedCost', text), prefilledUsd: null, costNotes: [] };
+  return { ...withField(state, 'plannedCost', text), prefilled: null, costNotes: [] };
 }
 
 /**
  * Another currency. While the planned cost still holds the pre-filled balance, it is converted so
- * that its USD value stays the balance, and the form says so (FR-012).
+ * that its value in the plan currency stays the balance, and the form says so (FR-012; 016 FR-015:
+ * "the pre-filled balance keeps its plan-currency value"). The plan currency is USD before 016.
  */
 export function changeCurrency(
   state: LineItemFormState,
   code: string,
   currencies: LineItemCurrency[],
+  planCode = 'USD',
 ): LineItemFormState {
   const next = withField(state, 'currency', code);
   const currency = currencies.find((candidate) => candidate.code === code);
-  if (state.prefilledUsd === null || !currency) {
+  const planRate = rateOf(currencies, planCode);
+  if (state.prefilled === null || !currency || planRate === null) {
     return next;
   }
-  const balance = toCents(state.prefilledUsd);
-  const local = fromUsd(balance, currency.ratePerUsd);
+  const balance = toCents(state.prefilled);
+  const local = convert(balance, planRate, currency.ratePerUsd);
+  const back = convert(local, currency.ratePerUsd, planRate);
   const notes =
-    code === 'USD'
-      ? []
-      : [
-          changedToText(
-            amountText(local, code),
-            amountText(toUsd(local, currency.ratePerUsd), 'USD'),
-          ),
-        ];
-  if (code !== 'USD' && toUsd(local, currency.ratePerUsd) !== balance) {
+    code === planCode ? [] : [changedToText(amountText(local, code), amountText(back, planCode))];
+  if (code !== planCode && back !== balance) {
     notes.push(ROUNDING_HINT);
   }
   return { ...next, plannedCost: centsInput(local), costNotes: notes };
+}
+
+/** A currency's rate per 1 USD from the form's currencies; USD is 1; null when it is not there. */
+export function rateOf(currencies: LineItemCurrency[], code: string): string | null {
+  if (code === 'USD') {
+    return '1';
+  }
+  return currencies.find((candidate) => candidate.code === code)?.ratePerUsd ?? null;
 }
 
 /**

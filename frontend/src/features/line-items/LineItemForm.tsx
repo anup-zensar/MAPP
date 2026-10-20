@@ -37,13 +37,14 @@ import {
   formProblems,
   isRestartRefusal,
   needsRestartConfirmation,
+  rateOf,
   restartReasons,
   toCreateBody,
   withField,
 } from './lineItemFormState';
 import type { LineItemFormState } from './lineItemFormState';
 import { LINE_ITEM_SECTION, lineItemRailSections } from './lineItemFormProgress';
-import { parseAmount, toUsd } from './lineItemMath';
+import { convert, parseAmount } from './lineItemMath';
 import { activityBreadcrumb } from './lineItemLinks';
 import type { LineItem, LineItemCreate, LineItemFormOptions } from './lineItemsApi';
 import {
@@ -171,10 +172,14 @@ export function LineItemForm({
     ongoing: activity.ongoing,
   };
 
-  // Saving changes the assigned amount by the new USD planned cost, less the saved one (edit).
-  const rate = currencies.find((c) => c.code === state.currency)?.ratePerUsd ?? '1';
-  const newUsd = toUsd(parseAmount(state.plannedCost) ?? 0n, rate);
-  const change = newUsd - (stored ? toCents(stored.plannedCostUsd.amount) : 0n);
+  // The plan currency the unassigned planned cost is worked out in (016 FR-015); USD before 016.
+  const planCode = options.balance.assigned.currency;
+  const planRate = rateOf(currencies, planCode) ?? '1';
+  // Saving changes the assigned amount by the new planned cost in the plan currency, less the saved
+  // one (edit).
+  const rate = rateOf(currencies, state.currency) ?? '1';
+  const newPlan = convert(parseAmount(state.plannedCost) ?? 0n, rate, planRate);
+  const change = newPlan - (stored ? storedPlanCents(stored, planCode, planRate) : 0n);
 
   function update(edit: (current: LineItemFormState) => LineItemFormState) {
     setState((current) => edit(current));
@@ -316,7 +321,10 @@ export function LineItemForm({
               state={state}
               currencies={currencies}
               problems={problems}
-              onCurrencyChange={(code) => update((s) => changeCurrency(s, code, currencies))}
+              planCode={planCode}
+              onCurrencyChange={(code) =>
+                update((s) => changeCurrency(s, code, currencies, planCode))
+              }
               onPlannedCostChange={(text) => update((s) => changePlannedCost(s, text))}
             />
           </FormCard>
@@ -446,4 +454,15 @@ function withoutCleared(values: AttributeValues, cleared: ClearedValue[]): Attri
 /** The list with the stored value added when it is not in it (an inactive one, kept). */
 function withStored<T>(list: T[], stored: T | undefined, key: (value: T) => string): T[] {
   return stored && !list.some((value) => key(value) === key(stored)) ? [...list, stored] : list;
+}
+
+/** The saved planned cost in the plan currency, in cents: the API's, else converted from its own. */
+function storedPlanCents(stored: LineItem, planCode: string, planRate: string): bigint {
+  if (stored.plannedCostPlan?.currency === planCode) {
+    return toCents(stored.plannedCostPlan.amount);
+  }
+  if (planCode === 'USD') {
+    return toCents(stored.plannedCostUsd.amount);
+  }
+  return convert(toCents(stored.plannedCost.amount), stored.currency.ratePerUsd, planRate);
 }

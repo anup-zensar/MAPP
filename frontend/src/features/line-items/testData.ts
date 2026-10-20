@@ -330,6 +330,8 @@ export function formAnswers(): Record<string, MockHandler> {
   return {
     'GET /api/people': { body: { items: [PRIYA], total: 1 } },
     'GET /api/shell-attribute-forms/lineItem': { body: lineItemForm() },
+    // The rates' dates of the conversion line (016 FR-009).
+    'GET /api/exchange-rates/current': { body: currentRates() },
   };
 }
 
@@ -397,7 +399,7 @@ export function currentRates() {
         rate: '0.92',
         inverseRate: '1.086957',
         rateDate: '2026-03-01',
-        source: 'settings' as const,
+        source: 'manual' as const,
         importFileName: null,
       },
       {

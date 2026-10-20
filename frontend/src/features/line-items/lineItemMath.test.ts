@@ -4,6 +4,7 @@ import {
   activityMonths,
   addMonths,
   amountText,
+  convert,
   customGridMonths,
   formatMonth,
   fromUsd,
@@ -39,6 +40,18 @@ describe('the shared example table (D-142, SC-002, SC-003)', () => {
   it('converts 20,000.00 USD to 18,400.00 EUR at 0.92 (FR-012)', () => {
     expect(fromUsd(2_000_000n, '0.920000')).toBe(1_840_000n);
   });
+
+  it.each([
+    ['23000.00', '0.92', '0.79', 1_975_000n],
+    ['5000.00', '1', '0.79', 395_000n],
+    ['10000.00', '0.92', '1', 1_086_957n],
+    ['15000.00', '0.79', '0.790000', 1_500_000n],
+  ])(
+    'converts %s at %s into the plan currency at %s half-up (016 data model §3.1)',
+    (amount, from, to, cents) => {
+      expect(convert(parseAmount(amount)!, from, to)).toBe(cents);
+    },
+  );
 
   it('spreads 10,000.00 evenly over three months with the rest in the last (FR-017)', () => {
     const spread = spreadMonths('evenly', 1_000_000n, MAR_MAY);

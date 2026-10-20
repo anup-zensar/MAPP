@@ -177,14 +177,39 @@ export const SUMMARY_NO_COST =
 // Conversion
 export const CALCULATED = 'Calculated';
 
-/** "= 10,869.57 USD at 0.92 EUR per USD". */
-export function conversionText(usd: string, rate: string, code: string): string {
-  return `= ${usd} USD at ${rate} ${code} per USD`;
+/** A currency's rate in a conversion sentence: 0.92 units of EUR per 1 USD. */
+export interface RatePart {
+  rate: string;
+  code: string;
 }
 
-/** The ⓘ of the conversion line. */
-export function conversionTip(code: string): string {
-  return `Planned cost in USD = planned cost ÷ the rate in Settings (units of ${code} per 1 USD), rounded to the cent.`;
+/**
+ * "= 10,869.57 USD at 0.92 EUR per USD"; into a plan currency other than USD "= 19,750.00 GBP at
+ * 0.92 EUR and 0.79 GBP per USD"; with the rates' dates when known "… (rates of 19 Oct 2026)"
+ * (016 FR-009, FR-015).
+ */
+export function conversionText(
+  amount: string,
+  code: string,
+  rates: RatePart[],
+  dates?: string | null,
+): string {
+  const parts = rates.map((part) => `${part.rate} ${part.code}`).join(' and ');
+  return `= ${amount} ${code} at ${parts} per USD${dates ? ` (${dates})` : ''}`;
+}
+
+/** "rate of 19 Oct 2026", "rates of 19 Oct 2026", "rates of 1 Mar 2026 and 19 Oct 2026". */
+export function rateDatesText(dates: string[]): string {
+  const distinct = dates.filter((date, index) => dates.indexOf(date) === index);
+  return `${dates.length === 1 ? 'rate' : 'rates'} of ${distinct.join(' and ')}`;
+}
+
+/** The ⓘ of the conversion line, into USD or into the plan currency (016 FR-015). */
+export function conversionTip(code: string, planCode = 'USD'): string {
+  if (planCode === 'USD') {
+    return `Planned cost in USD = planned cost ÷ the rate in Settings (units of ${code} per 1 USD), rounded to the cent.`;
+  }
+  return `Planned cost in ${planCode}, the plan's currency = planned cost ÷ the ${code} rate × the ${planCode} rate (units per 1 USD), rounded to the cent.`;
 }
 
 /** "Changed to 18,400.00 EUR = 20,000.00 USD" (FR-012). */

@@ -219,11 +219,9 @@ function CostBeside({ lineItem }: { lineItem: LineItem }) {
     lines.push(
       plan
         ? `≈ ${moneyText(usd)}`
-        : conversionText(
-            centsInput(toCents(usd.amount)),
-            formatRate(lineItem.currency.ratePerUsd),
-            lineItem.currency.code,
-          ),
+        : conversionText(centsInput(toCents(usd.amount)), 'USD', [
+            { rate: formatRate(lineItem.currency.ratePerUsd), code: lineItem.currency.code },
+          ]),
     );
   }
   return (
