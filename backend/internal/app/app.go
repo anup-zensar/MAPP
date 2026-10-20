@@ -163,6 +163,9 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// recycle bin ends an activity's approval (FR-022, FR-023).
 	activitiesService.UseApprovalHooks(activityApprovalHooks{svc: approvalsService})
 	approvalsService.UseDisplayRates(peopleService) // amounts on the Approvals page (D-213)
+	// 017: who may approve and the roles (a stand-in until 014 is merged), and what rule conditions may name.
+	approvalsService.UseAccess(approvalsAccess{people: peopleRepo})
+	approvalsService.UseRuleChoices(approvalRuleChoices{settings: settingsService})
 	approvals.NewHandler(approvalsService).Routes(router, signedIn)
 
 	// Home (009): a read-only dashboard over the services of 003–008 (home_sources.go).

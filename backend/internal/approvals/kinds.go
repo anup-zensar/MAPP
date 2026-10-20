@@ -17,7 +17,7 @@ const workflowKind = "approvalWorkflow"
 const workflowSingular = "approval workflow"
 
 // Kinds returns the history kinds of this package for internal/app to register: approval workflows, which
-// have no parent and no children. Rounds, history entries and notifications are not deleted on their own,
+// have no parent and no children, and approval delegations (017), which are logged but never deleted. Rounds, history entries and notifications are not deleted on their own,
 // so they have no kind. With it, history moves a workflow to the recycle bin, brings it back, and logs its
 // changes with readable labels and texts (FR-008, FR-026).
 func (s *Service) Kinds() []history.Kind {
@@ -30,7 +30,7 @@ func (s *Service) Kinds() []history.Kind {
 		Put:            s.putWorkflow,
 		Describe:       s.describeWorkflow,
 		PrepareRestore: s.prepareWorkflowRestore,
-	}}
+	}, s.delegationKindOf()}
 }
 
 // workflowSnapshot reads the workflow id as history keeps it: the stored workflow and its name.
@@ -87,11 +87,12 @@ func (s *Service) describeWorkflow(ctx context.Context, field string, value any)
 		if field == "escalationDays" {
 			label = escalateAfterLabel
 		}
-		days, isNumber := value.(float64)
-		if !isNumber {
+		days, isNumber := value.(json.Number)
+		n, err := days.Int64()
+		if !isNumber || err != nil {
 			return label, offText, nil
 		}
-		return label, daysText(int(days)), nil
+		return label, daysText(int(n)), nil
 	}
 	return "", "", nil
 }

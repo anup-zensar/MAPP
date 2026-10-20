@@ -47,23 +47,13 @@ func (s *Service) Inbox(ctx context.Context, a actor.Actor, tab string) ([]Row, 
 // or declined in [monthStart, monthEnd) — the viewer's calendar month, or the clock's UTC month when
 // neither bound is given. Give both bounds or neither.
 func (s *Service) Summary(ctx context.Context, a actor.Actor, monthStart, monthEnd *time.Time) (Counts, error) {
-	switch {
-	case (monthStart == nil) != (monthEnd == nil):
-		return Counts{}, errs.Validation(errs.FieldError{Field: "monthStart", Message: reloadMessage})
-	case monthStart != nil && !monthEnd.After(*monthStart):
-		return Counts{}, errs.Validation(errs.FieldError{Field: "monthEnd", Message: reloadMessage})
-	}
-	var from, until time.Time
-	if monthStart != nil {
-		from, until = *monthStart, *monthEnd
-	} else {
-		now := s.now().UTC()
-		from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-		until = from.AddDate(0, 1, 0)
+	from, until, err := s.month(monthStart, monthEnd)
+	if err != nil {
+		return Counts{}, err
 	}
 
 	var counts Counts
-	err := s.tx.Read(ctx, func(ctx context.Context) error {
+	err = s.tx.Read(ctx, func(ctx context.Context) error {
 		b, err := s.board(ctx)
 		if err != nil {
 			return err

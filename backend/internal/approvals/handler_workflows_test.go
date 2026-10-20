@@ -12,7 +12,7 @@ import (
 // The two seeded workflows, sorted by name, with their levels text and usage: China BC is used by the two
 // Mobility activities, one waiting; Lubricants EU by the seven Lubricants activities, one waiting
 // (FR-005, FR-037).
-func TestListApprovalWorkflows_SeededTwo_FR005_FR037(t *testing.T) {
+func TestListApprovalWorkflows_SeededThree_FR005_FR037(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -23,10 +23,14 @@ func TestListApprovalWorkflows_SeededTwo_FR005_FR037(t *testing.T) {
 	}
 	var page approvals.WorkflowPage
 	response.Decode(t, &page)
-	if page.Total != 2 || len(page.Items) != 2 {
-		t.Fatalf("page = %+v, want the 2 seeded workflows", page)
+	if page.Total != 3 || len(page.Items) != 3 {
+		t.Fatalf("page = %+v, want the 3 seeded workflows", page)
 	}
 	china, lubricants := page.Items[0], page.Items[1]
+	if standard := page.Items[2]; standard.ID != "WF-1003" || standard.Name != "Standard marketing approval" ||
+		*standard.ReminderDays != 3 || *standard.EscalationDays != 5 || standard.UsedByCount != 0 {
+		t.Errorf("third = %+v, want 017's Standard marketing approval, unused", standard)
+	}
 	if china.ID != "WF-1002" || china.LevelsText != "Level 1 · Carlos Mendes → Level 2 · Alex Morgan" || !china.Active ||
 		china.UsedByCount != 2 || china.WaitingCount != 1 || len(china.Warnings) != 0 {
 		t.Errorf("first = %+v, want China BC approval workflow used by 2, 1 waiting", china)
@@ -48,9 +52,9 @@ func TestCreateApprovalWorkflow_201_FR002(t *testing.T) {
 	})
 
 	view := decodeWorkflow(t, response, http.StatusCreated)
-	if view.ID != "WF-1003" || view.LevelsText != "Regional · Carlos Mendes → Level 2 · Alex Morgan" || !view.Active ||
+	if view.ID != "WF-1004" || view.LevelsText != "Regional · Carlos Mendes → Level 2 · Alex Morgan" || !view.Active ||
 		view.Version != 1 || view.CreatedBy.Name != "Alex Morgan" || view.Levels[1].Label != "Level 2" {
-		t.Errorf("workflow = %+v, want WF-1003 with the two levels, created by Alex Morgan", view)
+		t.Errorf("workflow = %+v, want WF-1004 with the two levels, created by Alex Morgan", view)
 	}
 }
 
@@ -131,11 +135,11 @@ func TestUpdateApprovalWorkflow_OpenRoundUnchanged_FR006(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 
 	response := alex.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1002", map[string]any{
-		"levels": []map[string]any{{"name": "", "approverIds": []string{"U-1006"}}}, "version": 1,
+		"levels": []map[string]any{{"name": "", "approverIds": []string{"U-1003"}, "backupApproverId": "U-1001"}}, "version": 1,
 	})
 
 	view := decodeWorkflow(t, response, http.StatusOK)
-	if view.LevelsText != "Level 1 · Sara Novak" || view.Version != 2 || view.WaitingCount != 1 {
+	if view.LevelsText != "Level 1 · Daniel Okoro" || view.Version != 2 || view.WaitingCount != 1 {
 		t.Errorf("workflow = %+v, want the new level in version 2, 1 waiting", view)
 	}
 	approval := decodeApproval(t, alex.Do(t, http.MethodGet, "/api/activities/"+fleetCardLaunch+"/approval", nil))

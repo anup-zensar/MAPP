@@ -108,6 +108,9 @@ var demoNotifications = []demoNotification{
 // addApprovals creates the approval rounds with their history entries, then the notifications, through
 // the approvals repository. The rounds match the activities' seeded statuses.
 func (d *demo) addApprovals(ctx context.Context) error {
+	if err := d.addApprovalRules(ctx); err != nil { // 017: timings, backups and WF-1003 first
+		return err
+	}
 	repo := approvals.NewJSONRepository()
 	activityRepo := activities.NewJSONRepository()
 	peopleRepo := people.NewJSONRepository()
@@ -158,6 +161,10 @@ func (d *demo) addApprovals(ctx context.Context) error {
 			Levels: levels, CurrentLevel: 1, Outcome: approvals.OutcomeOpen, SubmittedAt: submittedAt, SubmittedBy: submitter,
 			Meta: record.NewMeta(submitter, submittedAt),
 		}
+		round.Levels[0].StartedAt = &submittedAt
+		if err := d.roundRules(ctx, &round, workflow, activity, d.plans[dr.plan]); err != nil {
+			return err
+		}
 		if round.ID, err = d.next(ctx, ids.PrefixApprovalRound); err != nil {
 			return err
 		}
@@ -188,6 +195,7 @@ func (d *demo) addApprovals(ctx context.Context) error {
 				round.Outcome, round.EndedAt = approvals.OutcomeApproved, &at
 			default:
 				round.CurrentLevel++
+				round.Levels[round.CurrentLevel-1].StartedAt = &at
 			}
 			round.Touch(by, at)
 		}
@@ -195,7 +203,10 @@ func (d *demo) addApprovals(ctx context.Context) error {
 			return err
 		}
 	}
-	return d.addNotifications(ctx, repo, person)
+	if err := d.addNotifications(ctx, repo, person); err != nil {
+		return err
+	}
+	return d.addDelegation(ctx)
 }
 
 // addAction writes one history entry of round at its current level.

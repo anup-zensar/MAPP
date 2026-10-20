@@ -41,6 +41,13 @@ func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
 	r.Handle("GET /api/approvals", signedIn(h.inbox))
 	r.Handle("GET /api/approvals/summary", signedIn(h.summary))
 	r.Handle("GET /api/approvals/activities/{activityId}", signedIn(h.preview))
+	r.Handle("GET /api/approvals/monitoring", signedIn(h.monitoring))
+	r.Handle("POST /api/approvals/escalations/run", signedIn(h.runEscalations))
+	r.Handle("GET /api/approval-rule-options", signedIn(h.ruleOptions))
+	r.Handle("GET /api/approval-delegations", signedIn(h.listDelegations))
+	r.Handle("POST /api/approval-delegations", signedIn(h.createDelegation))
+	r.Handle("PATCH /api/approval-delegations/{delegationId}", signedIn(h.updateDelegation))
+	r.Handle("POST /api/approval-delegations/{delegationId}/cancel", signedIn(h.cancelDelegation))
 	r.Handle("GET /api/notifications", signedIn(h.listNotifications))
 	r.Handle("POST /api/notifications/{notificationId}/read", signedIn(h.markRead))
 	r.Handle("POST /api/notifications/read-all", signedIn(h.markAllRead))
@@ -298,4 +305,107 @@ func (h *Handler) setWorkflowActive(active bool) http.HandlerFunc {
 		}
 		web.WriteJSON(w, http.StatusOK, workflow)
 	}
+}
+
+// monitoring answers GET /api/approvals/monitoring?monthStart&monthEnd: the Monitoring tab (017 FR-030).
+func (h *Handler) monitoring(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	var problems errs.Problems
+	monthStart := instant(query, "monthStart", &problems)
+	monthEnd := instant(query, "monthEnd", &problems)
+	if err := problems.Err(); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	m, err := h.service.Monitoring(r.Context(), a, monthStart, monthEnd)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, m)
+}
+
+// runEscalations answers POST /api/approvals/escalations/run: the reminders and escalations sent now (017
+// FR-028).
+func (h *Handler) runEscalations(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	run, err := h.service.RunEscalations(r.Context(), a)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, run)
+}
+
+// ruleOptions answers GET /api/approval-rule-options: what a level's rule may name (017 FR-001).
+func (h *Handler) ruleOptions(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	options, err := h.service.RuleOptions(r.Context(), a)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, options)
+}
+
+// listDelegations answers GET /api/approval-delegations?scope=mine|all (017 FR-024).
+func (h *Handler) listDelegations(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	page, err := h.service.ListDelegations(r.Context(), a, r.URL.Query().Get("scope"))
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, page)
+}
+
+// createDelegation answers POST /api/approval-delegations with 201 and the new delegation (017 FR-022).
+func (h *Handler) createDelegation(w http.ResponseWriter, r *http.Request) {
+	var input DelegationInput
+	if err := web.ReadJSON(w, r, &input); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	view, err := h.service.CreateDelegation(r.Context(), a, input)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusCreated, view)
+}
+
+// updateDelegation answers PATCH /api/approval-delegations/{delegationId} with the delegation after the
+// change (017 FR-024).
+func (h *Handler) updateDelegation(w http.ResponseWriter, r *http.Request) {
+	var update DelegationUpdate
+	if err := web.ReadJSON(w, r, &update); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	view, err := h.service.UpdateDelegation(r.Context(), a, r.PathValue("delegationId"), update)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, view)
+}
+
+// cancelDelegation answers POST /api/approval-delegations/{delegationId}/cancel with the cancelled
+// delegation (017 FR-024).
+func (h *Handler) cancelDelegation(w http.ResponseWriter, r *http.Request) {
+	var cancel DelegationCancel
+	if err := web.ReadJSON(w, r, &cancel); err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	view, err := h.service.CancelDelegation(r.Context(), a, r.PathValue("delegationId"), cancel)
+	if err != nil {
+		web.WriteError(w, r, err)
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, view)
 }
