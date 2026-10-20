@@ -43,7 +43,7 @@ describe('PlanTree (FR-013, FR-014)', () => {
     expect(planRow).toHaveTextContent('01 Jan – 31 Dec 2026');
     expect(planRow).toHaveTextContent('Draft');
     expect(planRow).toHaveTextContent('$1,200,000.00Remaining $1,200,000.00');
-    expect(planRow).toHaveTextContent('0 %');
+    expect(planRow).toHaveTextContent('0%');
     expect(
       screen.getByText('No campaigns yet — a campaign is a theme that runs for most of the year.'),
     ).toBeInTheDocument();

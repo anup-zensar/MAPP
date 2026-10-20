@@ -33,7 +33,7 @@
   padding: 0;
   color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .list {
@@ -73,7 +73,7 @@
 .name {
   color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--weight-bold);
   overflow-wrap: break-word;
   cursor: pointer;
 }
@@ -139,7 +139,7 @@
 
 .consequencesTitle {
   margin: 0 0 var(--space-1);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .consequenceList {

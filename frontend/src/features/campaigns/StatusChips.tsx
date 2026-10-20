@@ -1,14 +1,13 @@
 import { TriangleAlert } from 'lucide-react';
-import { InfoTip, StatusChip, Tooltip } from '@/components';
+import { StatusChip, Tooltip } from '@/components';
 import type { components } from '@/api/schema';
 import styles from './StatusChips.module.css';
 import {
+  activitiesApprovedOf,
   ALL_APPROVED,
   approvedOf,
-  IN_PROGRESS,
   NO_ACTIVITIES,
   outsidePlanYear,
-  TIMING_TIP,
   TIMING_WORD,
 } from './texts';
 
@@ -16,8 +15,10 @@ type ApprovalSummary = components['schemas']['ApprovalSummary'];
 export type Timing = 'notStarted' | 'running' | 'finished' | null;
 
 /**
- * Approval progress of the activities below (FR-013, design system §4): "No activities" (grey),
- * "In progress · 3 of 5 activities approved" (amber), "All approved" (green).
+ * Approval progress of the activities below (FR-013, design system §4.1): "No activities" (grey),
+ * "3 of 5 approved" (amber, the waiting family; never "In progress", which means a running
+ * activity — functional review A-02) and "All approved" (green). Screen readers hear the whole
+ * meaning: "3 of 5 activities approved".
  */
 export function ApprovalProgressChip({ progress }: { progress: ApprovalSummary }) {
   switch (progress.state) {
@@ -28,28 +29,25 @@ export function ApprovalProgressChip({ progress }: { progress: ApprovalSummary }
     default:
       return (
         <StatusChip tone="review">
-          {IN_PROGRESS} · {approvedOf(progress.approved, progress.total)}
+          <span aria-hidden="true">{approvedOf(progress.approved, progress.total)}</span>
+          <span className="visually-hidden">
+            {activitiesApprovedOf(progress.approved, progress.total)}
+          </span>
         </StatusChip>
       );
   }
 }
 
-const TIMING_TONE = { notStarted: 'neutral', running: 'active', finished: 'done' } as const;
-
 /**
- * Timing against today (FR-013): Not started, Running, Finished; "—" with the reason while the
- * record has no dates.
+ * Timing against today (FR-013) as words under a record's dates: Not started, Running, Finished.
+ * Nothing while the record has no dates (its dates already read "—"). It is a fact about the
+ * dates, not a status, so it is text, not a third chip (design system §4.1: at most two chips).
  */
-export function TimingChip({ timing }: { timing: Timing }) {
+export function TimingNote({ timing }: { timing: Timing }) {
   if (!timing) {
-    return (
-      <span className={styles.noTiming}>
-        <span>—</span>
-        <InfoTip label="Timing" text={TIMING_TIP} />
-      </span>
-    );
+    return null;
   }
-  return <StatusChip tone={TIMING_TONE[timing]}>{TIMING_WORD[timing]}</StatusChip>;
+  return <span className={styles.timing}>{TIMING_WORD[timing]}</span>;
 }
 
 /**

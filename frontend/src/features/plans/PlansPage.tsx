@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router';
 import { useCurrentUser } from '@/app/useSession';
 import {
   Button,
-  Card,
   EmptyState,
   ErrorState,
   FilterChips,
@@ -21,6 +20,7 @@ import { usePageTitle } from '@/lib/usePageTitle';
 import { DEFAULT_FILTERS, readFilters, remember, toSearchParams } from './listPreferences';
 import type { PlanListFilters } from './listPreferences';
 import { PlanCard } from './PlanCard';
+import { PlansFilters } from './PlansFilters';
 import styles from './PlansPage.module.css';
 import { usePlans } from './plansApi';
 import { PlanTable } from './PlanTable';
@@ -84,8 +84,8 @@ export function PlansPage() {
 
   const chips: FilterChip[] = [
     ...(filters.status !== 'all' ? [{ key: 'status', label: STATUS[filters.status].word }] : []),
-    ...(filters.year !== null ? [{ key: 'year', label: String(filters.year) }] : []),
-    ...(filters.scope === 'myTeams' ? [{ key: 'scope', label: 'My teams' }] : []),
+    ...(filters.year !== null ? [{ key: 'year', label: `Year: ${filters.year}` }] : []),
+    ...(filters.scope === 'myTeams' ? [{ key: 'scope', label: 'My teams’ plans' }] : []),
     ...(filters.q.trim() ? [{ key: 'q', label: `Search: ${filters.q.trim()}` }] : []),
   ];
 
@@ -99,13 +99,48 @@ export function PlansPage() {
   const data = plans.data;
   const summary = data?.summary;
   const years = data?.years ?? [];
-  const yearOptions =
-    filters.year !== null && !years.includes(filters.year) ? [...years, filters.year] : years;
+  const showsTable = filters.layout === 'table';
+
+  /** The list's state when it has no plans to show: loading, failure, empty, filtered out. */
+  function listState() {
+    if (plans.isError && !data) {
+      return <ErrorState error={plans.error} onRetry={() => void plans.refetch()} />;
+    }
+    if (!data) {
+      return <ListSkeleton />;
+    }
+    if (data.total === 0 && chips.length === 0) {
+      return (
+        <EmptyState
+          icon={<ClipboardList />}
+          title="No plans yet — create your first plan"
+          text="A plan holds one year of marketing for one business."
+          // Secondary: the header already holds the primary New plan (design system §11, rule 1).
+          action={
+            <LinkButton to="/plans/new" icon={<Plus />}>
+              Create your first plan
+            </LinkButton>
+          }
+        />
+      );
+    }
+    if (data.items.length === 0) {
+      return (
+        <EmptyState
+          icon={<SearchX />}
+          title="Nothing matches these filters"
+          action={<Button onClick={clearFilters}>Clear filters</Button>}
+        />
+      );
+    }
+    return null;
+  }
+
+  const state = listState();
 
   return (
     <>
       <PageHeader
-        eyebrow="Plans"
         title="Plans"
         description="Every yearly marketing plan, its status, its budget and what's still missing."
         actions={
@@ -121,19 +156,12 @@ export function PlansPage() {
               <SummaryCard
                 label="Plans"
                 value={summary.plans}
-                tip="Plans in the chosen year and teams."
-              />
-              <SummaryCard label="Draft" value={summary.draft} tip="Plans still being prepared." />
-              <SummaryCard
-                label="Published"
-                value={summary.published}
-                tip="Plans agreed as the plan of record."
-              />
-              <SummaryCard
-                label="Total planned cost"
-                value={moneyCompact(summary.plannedCost)}
-                fullValue={money(summary.plannedCost)}
-                tip="The planned cost of these plans added up: the sum of their activities' planned cost."
+                tip="Plans in the chosen years and teams."
+                detail={
+                  <span>
+                    {summary.draft} draft · {summary.published} published
+                  </span>
+                }
               />
               <SummaryCard
                 label="Total plan budget"
@@ -141,9 +169,15 @@ export function PlansPage() {
                 fullValue={money(summary.budget)}
                 tip="The plan budgets of these plans added up. Plans without a budget add nothing."
               />
+              <SummaryCard
+                label="Total planned cost"
+                value={moneyCompact(summary.plannedCost)}
+                fullValue={money(summary.plannedCost)}
+                tip="The planned cost of these plans added up: the sum of their activities' planned cost."
+              />
             </>
           ) : (
-            [0, 1, 2, 3, 4].map((card) => (
+            [0, 1, 2].map((card) => (
               <div key={card} className={styles.skeletonCard}>
                 <Skeleton width="60%" />
                 <Skeleton height="24px" width="40%" />
@@ -152,126 +186,84 @@ export function PlansPage() {
           )}
         </section>
 
-        <div className={styles.toolbar}>
-          <SegmentedFilter
-            label="Status"
-            options={[
-              { value: 'all', label: 'All' },
-              { value: 'draft', label: 'Draft' },
-              { value: 'published', label: 'Published' },
-            ]}
-            value={filters.status}
-            onChange={(status) => change({ status })}
-          />
-          <label className={styles.year}>
-            <span className="visually-hidden">Year</span>
-            <select
-              value={filters.year === null ? '' : String(filters.year)}
-              onChange={(event) =>
-                change({ year: event.target.value ? Number(event.target.value) : null })
-              }
-            >
-              <option value="">All years</option>
-              {yearOptions.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </label>
-          <SegmentedFilter
-            label="Show"
-            options={[
-              { value: 'all', label: 'All plans' },
-              { value: 'myTeams', label: 'My teams' },
-            ]}
-            value={filters.scope}
-            onChange={(scope) => change({ scope })}
-          />
-          <div className={styles.search}>
-            <SearchField
-              label="Search name or ID"
-              placeholder="Search name or ID"
-              value={typed}
-              onChange={typeSearch}
-            />
-          </div>
-          <SegmentedFilter
-            label="Layout"
-            options={[
-              { value: 'cards', label: 'Cards' },
-              { value: 'table', label: 'Table' },
-            ]}
-            value={filters.layout}
-            onChange={(layout) => change({ layout })}
-          />
-        </div>
-        {filters.scope === 'myTeams' && <p className={styles.hint}>{MY_TEAMS_HINT}</p>}
-        {(chips.length > 0 || data) && (
-          <div className={styles.results}>
-            <FilterChips chips={chips} onRemove={removeChip} onClearAll={clearFilters} />
-            {data && (
-              <p className={styles.count} aria-live="polite">
-                {data.items.length} of {data.total}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div aria-busy={plans.isFetching}>
-          {plans.isError && !data ? (
-            <Card>
-              <ErrorState error={plans.error} onRetry={() => void plans.refetch()} />
-            </Card>
-          ) : !data ? (
-            <ListSkeleton />
-          ) : data.total === 0 && chips.length === 0 ? (
-            <Card>
-              <EmptyState
-                icon={<ClipboardList />}
-                title="No plans yet — create your first plan"
-                text="A plan holds one year of marketing for one business."
-                action={
-                  <LinkButton to="/plans/new" variant="primary" icon={<Plus />}>
-                    Create your first plan
-                  </LinkButton>
-                }
+        {/* The list toolbar inside the list's card, across its full width (design system §2.4 A). */}
+        <section className={styles.listCard} aria-label="Plan list">
+          <div className={styles.toolbar}>
+            <div className={styles.search}>
+              <SearchField
+                label="Search plans"
+                placeholder="Search name or ID"
+                value={typed}
+                onChange={typeSearch}
               />
-            </Card>
-          ) : data.items.length === 0 ? (
-            <Card>
-              <EmptyState
-                icon={<SearchX />}
-                title="Nothing matches these filters"
-                action={<Button onClick={clearFilters}>Clear filters</Button>}
+            </div>
+            <div className={styles.status}>
+              <SegmentedFilter
+                label="Status"
+                options={[
+                  { value: 'all', label: summary ? `All (${summary.plans})` : 'All' },
+                  { value: 'draft', label: summary ? `Draft (${summary.draft})` : 'Draft' },
+                  {
+                    value: 'published',
+                    label: summary ? `Published (${summary.published})` : 'Published',
+                  },
+                ]}
+                value={filters.status}
+                onChange={(status) => change({ status })}
               />
-            </Card>
-          ) : filters.layout === 'table' ? (
-            <PlanTable plans={data.items} actionsFor={actions.menuItems} />
-          ) : (
-            <div className={styles.cards}>
-              {data.items.map((plan) => (
-                <PlanCard key={plan.id} plan={plan} actions={actions.menuItems(plan)} />
-              ))}
+            </div>
+            <PlansFilters filters={filters} years={years} onChange={change} />
+            <div className={styles.end}>
+              {data && (
+                <p className={styles.count} aria-live="polite">
+                  {data.items.length} of {data.total} {data.total === 1 ? 'plan' : 'plans'}
+                </p>
+              )}
+              <SegmentedFilter
+                label="Layout"
+                options={[
+                  { value: 'cards', label: 'Cards' },
+                  { value: 'table', label: 'Table' },
+                ]}
+                value={filters.layout}
+                onChange={(layout) => change({ layout })}
+              />
+            </div>
+          </div>
+          {(chips.length > 0 || filters.scope === 'myTeams') && (
+            <div className={styles.chips}>
+              <FilterChips chips={chips} onRemove={removeChip} onClearAll={clearFilters} />
+              {filters.scope === 'myTeams' && <p className={styles.hint}>{MY_TEAMS_HINT}</p>}
             </div>
           )}
-        </div>
+          <div aria-busy={plans.isFetching}>
+            {state ? (
+              <div className={styles.state}>{state}</div>
+            ) : (
+              showsTable && data && <PlanTable plans={data.items} actionsFor={actions.menuItems} />
+            )}
+          </div>
+        </section>
+
+        {!state && !showsTable && data && (
+          <div className={styles.cards}>
+            {data.items.map((plan) => (
+              <PlanCard key={plan.id} plan={plan} actions={actions.menuItems(plan)} />
+            ))}
+          </div>
+        )}
       </div>
       {actions.dialogs}
     </>
   );
 }
 
-/** Five grey cards while the plans load. */
+/** Grey lines while the plans load. */
 function ListSkeleton() {
   return (
-    <div className={styles.cards} aria-label="Loading plans">
-      {[0, 1, 2, 3, 4].map((card) => (
-        <div key={card} className={styles.skeletonPlan}>
-          <Skeleton width="70%" height="18px" />
-          <Skeleton lines={3} />
-          <Skeleton height="8px" />
-        </div>
+    <div className={styles.skeletonList} aria-label="Loading plans">
+      {[0, 1, 2].map((row) => (
+        <Skeleton key={row} height="40px" />
       ))}
     </div>
   );

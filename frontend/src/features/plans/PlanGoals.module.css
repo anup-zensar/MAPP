@@ -1,0 +1,75 @@
+/* The goals table (data table standard, design system §5.4): sentence-case bold headers on grey,
+   numbers right-aligned under right-aligned headers, in figures of one width. */
+.goalsTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.goalsTable th,
+.goalsTable td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.goalsTable thead th {
+  height: var(--control-md);
+  border-bottom-color: var(--hairline);
+  background: var(--gray-bg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+}
+
+.goalsTable tbody th {
+  font-weight: var(--weight-bold);
+}
+
+.goalsTable .number {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* The value at the right edge; "Calculated" before it, so values line up (UI audit PL-06). */
+.goalCell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+}
+
+.subtle {
+  flex-basis: 100%;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  white-space: normal;
+  text-align: right;
+}
+
+/* The small "Calculated" tag of design system §6.6, with its formula in a tip. */
+.calculated {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px 0 var(--space-2);
+  border-radius: var(--radius-chip);
+  background: var(--chip);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+}
+
+.goalShare {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}

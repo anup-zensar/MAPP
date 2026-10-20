@@ -1,14 +1,15 @@
 import { Plus } from 'lucide-react';
 import type { NavigateFunction } from 'react-router';
-import { Button, CompletenessChip, PersonLabel, Tooltip } from '@/components';
+import { PersonLabel, Tooltip } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableFooter } from '@/components';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import type { Formatters } from '@/lib/useFormatters';
+import { AttentionChip } from './AttentionChip';
 import { BudgetUsed, CampaignBudgetCell } from './BudgetCost';
 import styles from './campaignRows.module.css';
 import type { Campaign, Initiative, PlanCampaigns } from './campaignApi';
 import { initiativeExtraActions } from './extensions';
-import { ApprovalProgressChip, OutsideYearNote, TimingChip } from './StatusChips';
+import { ApprovalProgressChip, OutsideYearNote, TimingNote } from './StatusChips';
 import {
   activitiesCount,
   ADD_INITIATIVE,
@@ -107,22 +108,26 @@ export function campaignRows(data: PlanCampaigns, options: RowOptions): TreeNode
           <span>
             {item.id} · {initiativesCount(item.counts.initiatives)}
           </span>
+          {/* A 24 px target (WCAG 2.5.8) on the ID line, so the row keeps its 2-line height. */}
           <Tooltip content={addInitiativeTo(item.name)}>
-            <Button
-              variant="tertiary"
-              size="sm"
-              icon={<Plus />}
+            <button
+              type="button"
               aria-label={addInitiativeTo(item.name)}
               className={styles.quickAction}
               onClick={() => void options.navigate(addInitiativeHref(options.planId, item.id))}
-            />
+            >
+              <Plus aria-hidden="true" />
+            </button>
           </Tooltip>
         </span>
       ),
       dates: (
-        <span className={styles.nowrap}>
-          {options.formatters.dateRange(item.startDate, item.endDate)}
-          {item.outsidePlanYear && <OutsideYearNote year={item.plan.year} compact />}
+        <span className={styles.dates}>
+          <span className={styles.nowrap}>
+            {options.formatters.dateRange(item.startDate, item.endDate)}
+            {item.outsidePlanYear && <OutsideYearNote year={item.plan.year} compact />}
+          </span>
+          <TimingNote timing={item.timing} />
         </span>
       ),
       budget: <CampaignBudgetCell campaign={item} />,
@@ -150,7 +155,14 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
     cells: {
       ...commonCells(initiative, options),
       name: `${initiative.id} · ${activitiesCount(initiative.counts.activities)}`,
-      dates: options.formatters.dateRange(initiative.startDate, initiative.endDate),
+      dates: (
+        <span className={styles.dates}>
+          <span className={styles.nowrap}>
+            {options.formatters.dateRange(initiative.startDate, initiative.endDate)}
+          </span>
+          <TimingNote timing={initiative.timing} />
+        </span>
+      ),
       budget: options.formatters.money(initiative.display.budget),
     },
     children: options.rowsBelow?.get(initiative.id) ?? [],
@@ -166,18 +178,26 @@ function initiativeNode(initiative: Initiative, options: RowOptions): TreeNode {
   };
 }
 
-/** The cells both levels show the same way. */
+/**
+ * The cells both levels show the same way. The Status column holds at most two chips (design
+ * system §4.1): the approval roll-up and one completeness chip whose list holds the rest.
+ */
 function commonCells(record: Campaign | Initiative, options: RowOptions) {
   const level = 'initiatives' in record ? 'campaign' : 'initiative';
   // Amounts in the reader's display currency (D-220).
   const { budgetAndCost } = record.display;
   return {
-    owner: record.owner ? <PersonLabel person={record.owner} /> : '—',
+    owner: record.owner ? (
+      <span className={styles.nowrap}>
+        <PersonLabel person={record.owner} />
+      </span>
+    ) : (
+      '—'
+    ),
     status: (
       <span className={styles.chips}>
         <ApprovalProgressChip progress={record.approvalProgress} />
-        <TimingChip timing={record.timing} />
-        <CompletenessChip
+        <AttentionChip
           missing={record.completeness.missing.map((field) => ({
             id: field.field,
             label: field.label,
@@ -189,12 +209,18 @@ function commonCells(record: Campaign | Initiative, options: RowOptions) {
           onItemsBelowSelect={() =>
             void options.navigate(recordHref(level, record.id, options.planId))
           }
+          compact
         />
       </span>
     ),
     plannedCost: options.formatters.money(budgetAndCost.plannedCost),
     budgetUsed: (
-      <BudgetUsed percent={budgetAndCost.budgetUsedPercent} overBudget={budgetAndCost.overBudget} />
+      <BudgetUsed
+        percent={budgetAndCost.budgetUsedPercent}
+        overBudget={budgetAndCost.overBudget}
+        label={`Budget used of ${record.name}`}
+        compact
+      />
     ),
   };
 }
@@ -244,7 +270,15 @@ export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeT
   // Amounts in the reader's display currency (D-220).
   const totals = data.displayTotals;
   return {
-    name: totalsText(totals.campaigns, totals.initiatives, totals.activities),
+    // "Total" on the first line, the counts in one line beneath (UI audit PL-05: never wrapping).
+    name: (
+      <span className={styles.total}>
+        <span>Total</span>
+        <span className={styles.left}>
+          {totalsText(totals.campaigns, totals.initiatives, totals.activities)}
+        </span>
+      </span>
+    ),
     budget: (
       <span className={styles.money}>
         <span>{formatters.money(totals.allocatedToCampaigns)}</span>

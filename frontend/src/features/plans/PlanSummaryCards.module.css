@@ -1,0 +1,24 @@
+/* Four summary cards in a row from 960 px, two per row below (design system §5.3); cards in a
+   row stretch to the same height. */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--grid-gap);
+  scroll-margin-top: 80px;
+}
+
+@media (min-width: 960px) {
+  .summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.problem {
+  color: var(--status-problem-text);
+}

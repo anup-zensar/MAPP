@@ -28,6 +28,7 @@ vi.mock('@/features/campaigns/useCampaignTreeContent', () => ({
 function renderPage(
   answer: MockHandler = { body: plan() },
   more: Record<string, MockHandler> = {},
+  route = '/plans/P-1001',
 ) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
@@ -37,7 +38,7 @@ function renderPage(
   });
   const result = renderWithProviders(<PlanPage />, {
     user: testUser(),
-    route: '/plans/P-1001',
+    route,
     path: '/plans/:planId',
   });
   return { ...result, api };
@@ -64,22 +65,41 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     expect(within(header).getByText('PLAN')).toBeInTheDocument();
     expect(within(header).getByText('Draft')).toBeInTheDocument();
     expect(within(header).getByText('All filled in')).toBeInTheDocument();
-    expect(within(header).getByText('AOP')).toBeInTheDocument();
-    const facts = within(header).getByRole('list', { name: 'Plan facts' });
+    // The meta row of the one page header (design system §2.3).
+    const facts = within(header).getByRole('group', { name: 'Plan facts' });
     expect(facts).toHaveTextContent('P-1001');
-    expect(facts).toHaveTextContent('Owner: Priya Raman');
-    expect(facts).toHaveTextContent('Year 2026');
+    expect(facts).toHaveTextContent('Priya Raman');
+    expect(facts).toHaveTextContent('01 Jan – 31 Dec 2026');
+    expect(facts).toHaveTextContent('AOP plan');
     expect(facts).toHaveTextContent('Lubricants Europe');
     expect(facts).toHaveTextContent('Business unit: Lubricants');
-    expect(
-      within(header).getByText(
-        'Created by Alex Morgan on 01 Mar 2026, last changed by Daniel Okoro on 10 Mar 2026',
-      ),
-    ).toBeInTheDocument();
     expect(within(header).getByRole('link', { name: 'Edit' })).toHaveAttribute(
       'href',
       '/plans/P-1001/edit',
     );
+    expect(within(header).getByRole('button', { name: 'More' })).toBeInTheDocument();
+    // The tabs of the record template, the tree first (design system §2.4 B).
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'Plan tree',
+      'Details',
+      'History',
+    ]);
+    expect(screen.getByRole('tab', { name: 'Plan tree' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('keeps the chosen tab in the address (design system §2.4 B)', async () => {
+    const { user, router } = renderPage();
+
+    await user.click(await screen.findByRole('tab', { name: 'Details' }));
+
+    expect(router.state.location.search).toBe('?tab=details');
+    expect(
+      await screen.findByText(
+        'Created by Alex Morgan on 01 Mar 2026, last changed by Daniel Okoro on 10 Mar 2026',
+      ),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Plan tree' }));
+    expect(router.state.location.search).toBe('');
   });
 
   it('has the sections Home links to: #budget and #completeness (feature 009, FR-012)', async () => {
@@ -117,11 +137,9 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     );
 
     await screen.findByRole('region', { name: 'Summary' });
+    // What remains for campaigns is part of the plan budget card (four cards, §2.4 B).
     expect(
-      within(card('Remaining budget')).getByText('Over-allocated by $100,000.00'),
-    ).toBeInTheDocument();
-    expect(
-      within(card('Remaining budget')).getByRole('button', { name: /\(-\$100,000\.00\)$/ }),
+      within(card('Plan budget')).getByText('Over-allocated by $100,000.00'),
     ).toBeInTheDocument();
   });
 
@@ -134,7 +152,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     );
 
     await screen.findByRole('region', { name: 'Summary' });
-    expect(card('Budget used')).toHaveTextContent('80 %');
+    expect(card('Budget used')).toHaveTextContent('80%');
     expect(within(card('Budget used')).getByRole('progressbar')).toHaveAttribute(
       'aria-valuenow',
       '80',
@@ -151,7 +169,6 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
 
     await screen.findByRole('region', { name: 'Summary' });
     expect(card('Plan budget')).toHaveTextContent('—No plan budget set');
-    expect(card('Remaining budget')).toHaveTextContent('—No plan budget set');
     expect(card('Budget used')).toHaveTextContent('—No plan budget set');
     expect(card('Planned cost')).toHaveTextContent('Nothing planned yet');
     expect(card('Activities approved')).toHaveTextContent('0 of 0No activities yet');
@@ -181,32 +198,35 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
       'header',
     ) as HTMLElement;
     expect(within(header).getByText('No business unit yet')).toBeInTheDocument();
-    await user.click(within(header).getByRole('button', { name: '1 item below needs attention' }));
+    // One completeness chip: its list holds the missing field and the records below (§4.1).
+    await user.click(within(header).getByRole('button', { name: '1 field needed' }));
     expect(
       await screen.findByRole('link', { name: "Campaign 'Retail growth' — 2 fields needed" }),
     ).toHaveAttribute('href', '/plans/P-1001/campaigns/C-1001');
-    await user.keyboard('{Escape}');
-    await user.click(within(header).getByRole('button', { name: '1 field needed' }));
-    await user.click(await screen.findByRole('button', { name: 'Business unit' }));
+    await user.click(screen.getByRole('button', { name: 'Business unit' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001/edit'));
     expect(router.state.location.search).toBe('?focus=attributes.SA-BU');
   });
 
   it('shows the goals beside what the activities plan (US3#5, FR-016)', async () => {
-    renderPage({
-      body: plan({
-        goals: {
-          ...plan().goals,
-          activities: {
-            inq: 150000,
-            mql: 3000,
-            revenue: { amount: '1500000.00', currency: 'USD' },
+    renderPage(
+      {
+        body: plan({
+          goals: {
+            ...plan().goals,
+            activities: {
+              inq: 150000,
+              mql: 3000,
+              revenue: { amount: '1500000.00', currency: 'USD' },
+            },
+            plannedPercent: 60,
           },
-          plannedPercent: 60,
-        },
-      }),
-    });
+        }),
+      },
+      {},
+      '/plans/P-1001?tab=details',
+    );
 
     const goals = (await screen.findByRole('heading', { name: 'Goals' })).closest(
       'section',
@@ -217,24 +237,28 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
       .map((row) => row.textContent);
     expect(rows).toEqual([
       'INQ250,000150,000',
-      'MQL5,000Calculated3,000',
-      'Revenue$2,500,000.00Calculated$1,500,000.00',
+      'MQLCalculated5,0003,000',
+      'RevenueCalculated$2,500,000.00$1,500,000.00',
     ]);
     expect(within(goals).getByRole('button', { name: 'About MQL goal' })).toBeInTheDocument();
-    expect(within(goals).getByText('60 % of the INQ goal planned')).toBeInTheDocument();
+    expect(within(goals).getByText('60% of the INQ goal planned')).toBeInTheDocument();
   });
 
   it('says when no goal is set yet', async () => {
-    renderPage({
-      body: plan({
-        goalAmount: null,
-        goals: {
-          ...plan().goals,
-          plan: { inq: null, mql: null, deals: null, revenue: null, reasons: {} },
-          plannedPercent: null,
-        },
-      }),
-    });
+    renderPage(
+      {
+        body: plan({
+          goalAmount: null,
+          goals: {
+            ...plan().goals,
+            plan: { inq: null, mql: null, deals: null, revenue: null, reasons: {} },
+            plannedPercent: null,
+          },
+        }),
+      },
+      {},
+      '/plans/P-1001?tab=details',
+    );
 
     expect(
       await screen.findByText('No goal set yet — set a goal amount in Edit.'),
@@ -242,9 +266,11 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
   });
 
   it('shows every detail read-only, with "—" and "(inactive)" (FR-015)', async () => {
-    renderPage({
-      body: plan({ description: '', model: { ...plan().model, active: false } }),
-    });
+    renderPage(
+      { body: plan({ description: '', model: { ...plan().model, active: false } }) },
+      {},
+      '/plans/P-1001?tab=details',
+    );
 
     const details = (await screen.findByRole('heading', { name: 'Details' })).closest(
       'section',
@@ -304,9 +330,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
       },
     );
 
-    await user.click(
-      await screen.findByRole('button', { name: 'Actions for FY2026 Lubricants Europe' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'More' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
     await user.click(await screen.findByRole('button', { name: 'Delete plan' }));
 
@@ -340,9 +364,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
       },
     );
 
-    await user.click(
-      await screen.findByRole('button', { name: 'Actions for FY2026 Lubricants Europe' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'More' }));
     expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
       'Copy',
       'View history',
@@ -363,22 +385,21 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     ).toBeInTheDocument();
   });
 
-  it('brings the plan’s History section up from More (FR-031, 011 FR-011)', async () => {
+  it('opens the History tab from More and focuses it (FR-031, 011 FR-011)', async () => {
     const { user, router } = renderPage();
 
-    await user.click(
-      await screen.findByRole('button', { name: 'Actions for FY2026 Lubricants Europe' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'More' }));
     await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
 
     await waitFor(() =>
       expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
     );
     expect(router.state.location.pathname).toBe('/plans/P-1001');
+    expect(router.state.location.search).toBe('?tab=history');
   });
 
-  it('ends with the plan’s History, with Include items inside (011 FR-011 – FR-013)', async () => {
-    const { api } = renderPage();
+  it('shows the plan’s History in its tab, with Include items inside (011 FR-011 – FR-013)', async () => {
+    const { api } = renderPage({ body: plan() }, {}, '/plans/P-1001?tab=history');
 
     const history = await screen.findByRole('region', { name: 'History' });
     expect(within(history).getByText('Every change to this plan, newest first')).toBeVisible();

@@ -2,25 +2,29 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Button,
-  Card,
   ErrorState,
   filterTree,
-  ProgressBar,
+  PersonLabel,
   SearchField,
   Skeleton,
   TreeTable,
 } from '@/components';
 import type { ActionsMenuItem, TreeNode, TreeTableColumn, TreeTableFooter } from '@/components';
+import { BudgetUsed } from '@/features/campaigns/BudgetCost';
 import { useFormatters } from '@/lib/useFormatters';
 import { PlanCompleteness, PlanStatusChip } from '../PlanFacts';
 import type { Plan } from '../plansApi';
 import { NO_CAMPAIGNS, yearDates } from '../planText';
 import styles from './PlanTree.module.css';
 
+/**
+ * The tree's columns (FR-013, design system §5.4): people never squeeze below 160 px and never
+ * wrap, the dates and the two chips stay on one line, and money is right-aligned under its header.
+ */
 const COLUMNS: TreeTableColumn[] = [
-  { key: 'name', header: 'Name' },
-  { key: 'owner', header: 'Owner' },
-  { key: 'dates', header: 'Dates' },
+  { key: 'name', header: 'Name', minWidth: '300px' },
+  { key: 'owner', header: 'Owner', minWidth: '160px' },
+  { key: 'dates', header: 'Dates', minWidth: '150px' },
   { key: 'status', header: 'Status' },
   { key: 'budget', header: 'Budget', align: 'end' },
   { key: 'plannedCost', header: 'Planned cost', align: 'end' },
@@ -101,12 +105,19 @@ export function PlanTree({
     children: childNodes,
     cells: {
       name: <span className={styles.id}>{plan.id}</span>,
-      owner: plan.owner ? plan.owner.name : <span className={styles.muted}>No owner yet</span>,
-      dates: yearDates(plan.year, dateRange),
+      // Like every other row: avatar and name (UI audit PL-04).
+      owner: plan.owner ? (
+        <span className={styles.nowrap}>
+          <PersonLabel person={plan.owner} />
+        </span>
+      ) : (
+        <span className={styles.muted}>No owner yet</span>
+      ),
+      dates: <span className={styles.nowrap}>{yearDates(plan.year, dateRange)}</span>,
       status: (
         <span className={styles.chips}>
           <PlanStatusChip status={plan.status} />
-          <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
+          <PlanCompleteness planId={plan.id} completeness={plan.completeness} compact />
         </span>
       ),
       budget: figures.budget ? (
@@ -124,21 +135,14 @@ export function PlanTree({
         <span className={styles.muted}>No budget set</span>
       ),
       plannedCost: money(figures.plannedCost),
-      budgetUsed:
-        figures.budgetUsedPercent === null ? (
-          '—'
-        ) : (
-          <span className={styles.used}>
-            <ProgressBar
-              value={figures.budgetUsedPercent}
-              label={`Budget used of ${plan.name}`}
-              tone={figures.overBudget ? 'problem' : undefined}
-            />
-            <span className={figures.overBudget ? styles.problem : undefined}>
-              {figures.budgetUsedPercent} %
-            </span>
-          </span>
-        ),
+      budgetUsed: (
+        <BudgetUsed
+          percent={figures.budgetUsedPercent}
+          overBudget={figures.overBudget}
+          label={`Budget used of ${plan.name}`}
+          compact
+        />
+      ),
     },
   };
 
@@ -175,25 +179,24 @@ export function PlanTree({
   }
 
   return (
-    <Card title="Plan tree" subtitle="The plan and everything in it">
-      <div className={styles.tree}>
-        <div className={styles.toolbar}>
-          <div className={styles.search}>
-            <SearchField
-              label="Search name or ID in this plan"
-              placeholder="Search name or ID in this plan"
-              value={query}
-              onChange={search}
-            />
-          </div>
-          <Button size="sm" onClick={() => setAllOpen(true)}>
-            Expand all
-          </Button>
-          <Button size="sm" onClick={() => setAllOpen(false)}>
-            Collapse all
-          </Button>
+    // A table card (design system §5.3): the toolbar and the table reach the card's edges.
+    <section className={styles.card} aria-label="Plan tree">
+      <div className={styles.toolbar}>
+        <div className={styles.search}>
+          <SearchField
+            label="Search name or ID in this plan"
+            placeholder="Search name or ID in this plan"
+            value={query}
+            onChange={search}
+          />
+        </div>
+        <div className={styles.buttons}>
+          <Button onClick={() => setAllOpen(true)}>Expand all</Button>
+          <Button onClick={() => setAllOpen(false)}>Collapse all</Button>
           {toolbarActions}
         </div>
+      </div>
+      <div className={styles.tree}>
         <TreeTable
           label="Plan tree"
           columns={COLUMNS}
@@ -204,9 +207,11 @@ export function PlanTree({
           footer={footer}
         />
         {error ? (
-          <ErrorState error={error} onRetry={() => onRetry?.()} />
+          <div className={styles.state}>
+            <ErrorState error={error} onRetry={() => onRetry?.()} />
+          </div>
         ) : isLoading ? (
-          <div aria-busy="true" aria-label="Loading the campaigns">
+          <div className={styles.state} aria-busy="true" aria-label="Loading the campaigns">
             <Skeleton lines={3} />
           </div>
         ) : (
@@ -219,6 +224,6 @@ export function PlanTree({
           )
         )}
       </div>
-    </Card>
+    </section>
   );
 }

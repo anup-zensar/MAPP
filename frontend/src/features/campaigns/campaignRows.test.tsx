@@ -130,14 +130,20 @@ describe('campaignRows (feature 005, US4)', () => {
     expect(
       within(row).getByRole('img', { name: "This campaign runs outside 2026, the plan's year" }),
     ).toBeInTheDocument();
-    expect(within(row).getByText('In progress · 3 of 5 activities approved')).toBeInTheDocument();
-    expect(within(row).getByText('Running')).toBeInTheDocument();
+    // At most two chips: the approval roll-up and one completeness chip (design system §4.1).
+    expect(within(row).getByText('3 of 5 approved')).toBeInTheDocument();
+    expect(within(row).getByText('3 of 5 activities approved')).toBeInTheDocument();
+    expect(row).not.toHaveTextContent('In progress');
     expect(within(row).getByText('All filled in')).toBeInTheDocument();
+    // The timing is a word under the dates, not a third chip.
+    expect(within(row).getByText('Running')).toBeInTheDocument();
     expect(within(row).getByText('$120,000.00')).toBeInTheDocument();
     expect(within(row).getByText('Over-allocated by $30,000.00')).toBeInTheDocument();
     expect(within(row).getByText('$150,000.00')).toBeInTheDocument();
-    expect(within(row).getByRole('progressbar', { name: 'Budget used' })).toBeInTheDocument();
-    expect(within(row).getByText('125 %')).toBeInTheDocument();
+    expect(
+      within(row).getByRole('progressbar', { name: 'Budget used of Helix launch' }),
+    ).toBeInTheDocument();
+    expect(within(row).getByText('125%')).toBeInTheDocument();
     expect(
       within(row).getByRole('button', { name: 'Add initiative to Helix launch' }),
     ).toBeInTheDocument();
@@ -148,13 +154,15 @@ describe('campaignRows (feature 005, US4)', () => {
 
     const rimula = rowOf(tree, 'Rimula fleet');
     expect(rimula).toHaveTextContent('C-1002 · 0 initiatives');
-    expect(within(rimula).getByText('$200,000.00 left')).toBeInTheDocument();
+    // One wording with the plan row: "Remaining …" (UI audit PL-03).
+    expect(within(rimula).getByText('Remaining $200,000.00')).toBeInTheDocument();
     expect(rimula).not.toHaveTextContent('runs outside');
 
     const sponsorships = rowOf(tree, 'Sponsorships');
-    expect(sponsorships).not.toHaveTextContent('left');
+    expect(sponsorships).not.toHaveTextContent('Remaining');
     expect(sponsorships).not.toHaveTextContent('Over-allocated');
-    expect(within(sponsorships).getByRole('button', { name: 'About Timing' })).toBeInTheDocument();
+    // Without dates there is no timing word.
+    expect(sponsorships).not.toHaveTextContent(/Running|Not started|Finished/);
   });
 
   it('shows every cell of an initiative row, inactive owners labelled (FR-019)', () => {
@@ -165,7 +173,7 @@ describe('campaignRows (feature 005, US4)', () => {
     expect(within(digital).getByText('Sam Lee (inactive)')).toBeInTheDocument();
     expect(digital).toHaveTextContent('01 Feb – 30 Nov 2026');
     expect(within(digital).getByText('$300,000.00')).toBeInTheDocument();
-    expect(digital).not.toHaveTextContent('left');
+    expect(digital).not.toHaveTextContent('Remaining');
 
     const events = rowOf(tree, 'Events');
     expect(events).toHaveTextContent('I-1002 · 0 activities');
@@ -276,7 +284,7 @@ describe('campaignRows (feature 005, US4)', () => {
 
     const row = rowOf(tree, 'Helix launch');
     expect(row).toHaveTextContent('368,000.00 EUR');
-    expect(row).toHaveTextContent('92,000.00 EUR left');
+    expect(row).toHaveTextContent('Remaining 92,000.00 EUR');
     expect(row).toHaveTextContent('46,000.00 EUR');
     expect(row).not.toHaveTextContent('$');
     expect(rowOf(tree, 'Digital & social')).toHaveTextContent('276,000.00 EUR');
@@ -289,7 +297,11 @@ describe('campaignRows (feature 005, US4)', () => {
     const tree = renderRows(DATA);
     const totals = within(tree).getAllByRole('row').at(-1) as HTMLElement;
 
-    expect(totals).toHaveTextContent('Total · 3 campaigns · 2 initiatives · 1 activity');
+    // "Total" and its counts on two short lines, never wrapping (UI audit PL-05).
+    expect(within(totals).getByText('Total')).toBeInTheDocument();
+    expect(
+      within(totals).getByText('3 campaigns · 2 initiatives · 1 activity'),
+    ).toBeInTheDocument();
     expect(within(totals).getByText('$320,000.00')).toBeInTheDocument();
     expect(within(totals).getByText('Allocated to campaigns')).toBeInTheDocument();
     expect(within(totals).getByText('$150,000.00')).toBeInTheDocument();
@@ -298,7 +310,10 @@ describe('campaignRows (feature 005, US4)', () => {
       planCampaigns([RIMULA], { campaigns: 1, initiatives: 1, activities: 0, plannedCost: null }),
       formatters,
     );
-    expect(one.name).toBe('Total · 1 campaign · 1 initiative · 0 activities');
+    renderWithProviders(<div data-testid="one">{one.name}</div>);
+    expect(screen.getByTestId('one')).toHaveTextContent(
+      'Total1 campaign · 1 initiative · 0 activities',
+    );
     expect(one.plannedCost).toBe('—');
   });
 });

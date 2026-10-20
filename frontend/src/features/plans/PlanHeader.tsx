@@ -1,85 +1,73 @@
 import { TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { ActionsMenu, Breadcrumb, LevelTag, LinkButton, StatusChip, TeamPills } from '@/components';
+import { LevelTag, LinkButton, PageHeader, PersonLabel, TeamPills } from '@/components';
 import type { ActionsMenuItem } from '@/components';
-import { localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
-import styles from './PlanPage.module.css';
+import styles from './PlanHeader.module.css';
 import type { Plan } from './plansApi';
+import { yearDates } from './planText';
 
 export interface PlanHeaderProps {
   plan: Plan;
-  /** Publish on a Draft plan, Unpublish on a Published one (feature 004, US5). */
+  /** Publish on a Draft plan, Unpublish on a Published one (feature 004, US5): a secondary button. */
   statusAction?: ReactNode;
   /** The ⋯ More menu: Copy, View history, Delete. */
   moreItems: ActionsMenuItem[];
+  /** Facts added by later features (016: the plan type and currency tags), after the dates. */
+  extraFacts?: ReactNode;
 }
 
 /**
- * The plan's details header (FR-011, design system §6.3): breadcrumb, PLAN tag, name, status,
- * completeness and AOP chips, the key facts, who created and last changed it, and the actions.
+ * The plan's header (FR-011, design system §2.3, §6.3) on the one page header of the app: the
+ * breadcrumb, the plan's name, ⋯ More · Publish or Unpublish · **Edit** (the one primary, last),
+ * and the meta row — level tag, status, one completeness chip, ID, owner, dates, teams and
+ * business unit. Who created and last changed the plan is at the end of the Details tab.
  */
-export function PlanHeader({ plan, statusAction, moreItems }: PlanHeaderProps) {
-  const { date } = useFormatters();
+export function PlanHeader({ plan, statusAction, moreItems, extraFacts }: PlanHeaderProps) {
+  const { dateRange } = useFormatters();
   const owner = plan.owner;
 
   return (
-    <header className={styles.header}>
-      <Breadcrumb items={[{ label: 'Plans', to: '/plans' }, { label: plan.name }]} />
-      <div className={styles.titleRow}>
-        <div className={styles.titleBlock}>
-          <LevelTag level="plan" />
-          <h1 className={styles.title}>{plan.name}</h1>
-          <div className={styles.chips}>
-            <PlanStatusChip status={plan.status} />
-            {/* #completeness: where Home's "Show fields" leads (feature 009). */}
-            <span id="completeness" className={styles.anchor}>
-              <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
-            </span>
-            {plan.aop && <StatusChip tone="active">AOP</StatusChip>}
-          </div>
-        </div>
-        <div className={styles.actions}>
+    <PageHeader
+      breadcrumb={[{ label: 'Plans', to: '/plans' }, { label: plan.name }]}
+      title={plan.name}
+      moreActions={moreItems}
+      actions={
+        <>
+          {statusAction}
           <LinkButton to={`/plans/${encodeURIComponent(plan.id)}/edit`} variant="primary">
             Edit
           </LinkButton>
-          {statusAction}
-          <ActionsMenu label={plan.name} items={moreItems} />
+        </>
+      }
+      meta={
+        <div className={styles.meta} aria-label="Plan facts" role="group">
+          <LevelTag level="plan" />
+          <PlanStatusChip status={plan.status} />
+          {/* #completeness: where Home's "Show fields" leads (feature 009). */}
+          <span id="completeness" className={styles.anchor}>
+            <PlanCompleteness planId={plan.id} completeness={plan.completeness} />
+          </span>
+          <span className={styles.fact}>{plan.id}</span>
+          <span className={styles.fact}>
+            {owner ? <PersonLabel person={owner} /> : 'No owner yet'}
+            {plan.ownerProblem && (
+              <span className={styles.ownerProblem}>
+                <TriangleAlert aria-hidden="true" />
+                {plan.ownerProblem}
+              </span>
+            )}
+          </span>
+          <span className={styles.fact}>{yearDates(plan.year, dateRange)}</span>
+          {plan.aop && <span className={styles.fact}>AOP plan</span>}
+          {extraFacts}
+          {plan.teams.length > 0 && <TeamPills teams={plan.teams} linked />}
+          <span className={styles.fact}>
+            <BusinessUnitText units={plan.businessUnit} />
+          </span>
         </div>
-      </div>
-      <ul className={styles.meta} aria-label="Plan facts">
-        <li className={styles.id}>{plan.id}</li>
-        <li>
-          {owner ? (
-            <>
-              Owner: {owner.name}
-              {!owner.active && ' (inactive)'}
-            </>
-          ) : (
-            'No owner yet'
-          )}
-          {plan.ownerProblem && (
-            <span className={styles.ownerProblem}>
-              <TriangleAlert aria-hidden="true" />
-              {plan.ownerProblem}
-            </span>
-          )}
-        </li>
-        <li>Year {plan.year}</li>
-        {plan.teams.length > 0 && (
-          <li>
-            <TeamPills teams={plan.teams} linked />
-          </li>
-        )}
-        <li>
-          <BusinessUnitText units={plan.businessUnit} />
-        </li>
-      </ul>
-      <p className={styles.changed}>
-        Created by {plan.createdBy.name} on {date(localDate(plan.createdAt))}, last changed by{' '}
-        {plan.updatedBy.name} on {date(localDate(plan.updatedAt))}
-      </p>
-    </header>
+      }
+    />
   );
 }

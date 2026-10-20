@@ -1,22 +1,40 @@
-.tree {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+/* A table card (design system §5.3): white, a hairline edge, the toolbar padded like the card and
+   the table reaching both edges, so the tree gets the full width before it scrolls. */
+.card {
   min-width: 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
 }
 
-/* Search, Expand all, Collapse all and later features' buttons; wraps on narrow screens. */
+/* Search on the left; Expand all, Collapse all and later features' buttons at the right end. */
 .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) var(--card-padding);
+}
+
+.search {
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 360px;
+}
+
+.buttons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
 
-.search {
-  flex: 1 1 220px;
+.tree {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  max-width: 360px;
 }
 
 .id {
@@ -25,10 +43,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* At most two chips, side by side (design system §4.1). */
 .chips {
   display: inline-flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 
 .money {
@@ -37,6 +61,7 @@
   align-items: flex-end;
   gap: 2px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .money span {
@@ -51,25 +76,22 @@
   color: var(--status-problem-text);
 }
 
-.used {
-  display: grid;
-  grid-template-columns: 72px auto;
-  align-items: center;
-  gap: var(--space-2);
-  font-variant-numeric: tabular-nums;
-}
-
 /* The sentence under the plan row while it has no campaigns. */
 .empty {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  padding: var(--space-1) var(--space-1) 0;
+  padding: var(--space-4) var(--card-padding);
   color: var(--ink-2);
   font-size: var(--text-sm);
 }
 
 .empty p {
   margin: 0;
+}
+
+/* Loading and failure below the plan row keep the card's padding. */
+.state {
+  padding: var(--space-4) var(--card-padding);
 }

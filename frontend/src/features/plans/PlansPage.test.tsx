@@ -42,15 +42,14 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     );
     const summary = screen.getByRole('region', { name: 'Summary' });
     expect(within(summary).getByText('Plans').parentElement).toHaveTextContent('3');
-    expect(within(summary).getByText('Draft').parentElement).toHaveTextContent('2');
-    expect(within(summary).getByText('Published').parentElement).toHaveTextContent('1');
+    expect(within(summary).getByText('2 draft · 1 published')).toBeInTheDocument();
     expect(
       within(summary).getByRole('button', { name: '$2.26M ($2,260,000.00)' }),
     ).toHaveTextContent('$2.26M');
     expect(
       within(summary).getByRole('button', { name: /^\S+ \(\$2,400,000\.00\)$/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText('3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('3 of 3 plans')).toBeInTheDocument();
   });
 
   it('filters by status and year with chips and the count (US2#2, FR-003)', async () => {
@@ -63,14 +62,20 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
 
     await screen.findAllByRole('article');
     await user.click(
-      within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Draft' }),
+      within(screen.getByRole('group', { name: 'Status' })).getByRole('button', {
+        name: 'Draft (2)',
+      }),
     );
+    // The year is one of the less-used filters behind Filters (design system §2.4 A).
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
     await user.selectOptions(screen.getByRole('combobox', { name: 'Year' }), '2026');
+    await user.keyboard('{Escape}');
 
     await waitFor(() => expect(cardNames()).toEqual(['FY2026 Mobility China']));
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('1 of 3 plans')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove filter: Draft' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Remove filter: 2026' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove filter: Year: 2026' })).toBeInTheDocument();
     expect(router.state.location.search).toBe('?status=draft&year=2026');
     expect(listQueries(api)).toContain('?scope=all&status=draft&year=2026');
 
@@ -82,7 +87,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     const { api, user } = renderPage();
 
     await screen.findAllByRole('article');
-    await user.type(screen.getByRole('searchbox', { name: 'Search name or ID' }), 'mobility');
+    await user.type(screen.getByRole('searchbox', { name: 'Search plans' }), 'mobility');
 
     await waitFor(() => expect(listQueries(api)).toContain('?scope=all&q=mobility'));
     expect(listQueries(api)).not.toContain('?scope=all&q=m');
@@ -95,7 +100,8 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     const { api, user } = renderPage();
 
     await screen.findAllByRole('article');
-    await user.click(screen.getByRole('button', { name: 'My teams' }));
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
+    await user.click(screen.getByRole('radio', { name: 'My teams’ plans' }));
 
     expect(
       screen.getByText(
@@ -131,7 +137,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     });
 
     expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
-    expect(screen.getByText('0 of 3')).toBeInTheDocument();
+    expect(screen.getByText('0 of 3 plans')).toBeInTheDocument();
     const clear = screen.getAllByRole('button', { name: 'Clear filters' });
     await user.click(clear[clear.length - 1]);
 

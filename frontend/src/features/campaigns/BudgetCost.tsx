@@ -17,7 +17,6 @@ import {
   GOALS_TIP,
   INQ,
   LEFT_TO_PLAN,
-  leftText,
   LEFT_TO_PLAN_TIP,
   MQL,
   NO_BUDGET_SET,
@@ -28,6 +27,7 @@ import {
   PLANNED_COST_TIP,
   REMAINING_CAMPAIGN_BUDGET,
   REMAINING_FOR_INITIATIVES,
+  remainingText,
   REVENUE,
 } from './texts';
 import type { RecordLevel } from './texts';
@@ -171,21 +171,29 @@ export function BudgetCostSection({
   );
 }
 
-/** The budget-used bar with "125 %", red above 100 % (FR-011); "—" without a value. */
+/**
+ * The budget-used bar with "125%", red above 100 % (FR-011); "—" without a value. `compact` is
+ * the plan tree's: a short bar, never wrapping, so the column stays narrow.
+ */
 export function BudgetUsed({
   percent,
   overBudget,
+  compact = false,
+  label = BUDGET_USED,
 }: {
   percent: number | null;
   overBudget: boolean;
+  compact?: boolean;
+  /** The bar's accessible name ("Budget used of Helix launch" in a tree row). */
+  label?: string;
 }) {
   if (percent === null) {
     return <span>—</span>;
   }
   return (
-    <span className={styles.used}>
-      <ProgressBar value={percent} label={BUDGET_USED} tone={overBudget ? 'problem' : undefined} />
-      <span className={overBudget ? styles.negative : undefined}>{percent} %</span>
+    <span className={compact ? styles.usedCompact : styles.used}>
+      <ProgressBar value={percent} label={label} tone={overBudget ? 'problem' : undefined} />
+      <span className={overBudget ? styles.negative : undefined}>{percent}%</span>
     </span>
   );
 }
@@ -196,11 +204,12 @@ export function GoalsSection({ goals }: { goals: GoalSums }) {
   return (
     <PanelSection
       title={
-        <span className={styles.lineLabel}>
+        // In ink like every other heading of the panel, never grey (UI audit C-03).
+        <>
           {GOALS}
           <span className={styles.calculated}>{CALCULATED}</span>
           <InfoTip label={GOALS} text={GOALS_TIP} />
-        </span>
+        </>
       }
     >
       <Facts>
@@ -233,7 +242,7 @@ export function CampaignBudgetCell({ campaign }: { campaign: Campaign }) {
             {overAllocatedBy(money(withoutSign(remaining)))}
           </span>
         ) : (
-          <span className={styles.detail}>{leftText(money(remaining))}</span>
+          <span className={styles.detail}>{remainingText(money(remaining))}</span>
         ))}
     </span>
   );

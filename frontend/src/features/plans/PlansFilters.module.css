@@ -1,0 +1,143 @@
+/* **Filters (n)**: a secondary button of the toolbar (40 px, like the search beside it). */
+.trigger {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.trigger:hover {
+  border-color: var(--control-border-hover);
+  background: var(--hover);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.trigger svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* The menu: a popover (radius 8, the level-1 shadow), the filters one under the other. */
+.menu {
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 288px;
+  max-width: calc(100vw - 32px);
+  padding: var(--space-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.label {
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.sublabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+/* One select style (design system §5.5): drawn like an input, with its own chevron. */
+.select {
+  width: 100%;
+  height: var(--control-md);
+  padding: 0 var(--space-9) 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  appearance: none;
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: var(--control-border-hover);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.radio,
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 24px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  cursor: pointer;
+}
+
+.radio input,
+.check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.problem {
+  margin: 0;
+  color: var(--status-problem-text);
+  font-size: var(--text-sm);
+}

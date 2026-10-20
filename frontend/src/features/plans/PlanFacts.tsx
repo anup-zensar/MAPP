@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router';
 import type { components } from '@/api/schema';
-import { Avatar, CompletenessChip, ProgressBar, StatusChip } from '@/components';
+import { Avatar, ProgressBar, StatusChip } from '@/components';
+import { AttentionChip } from '@/features/campaigns/AttentionChip';
 import { fieldHref, recordHref } from '@/lib/recordLinks';
 import type { PlanningRecordType } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
@@ -19,19 +20,23 @@ export function PlanStatusChip({ status }: { status: PlanStatus }) {
 }
 
 /**
- * The plan's completeness (FR-017): "All filled in" or "<n> fields needed", each field opening the
- * edit form on it, and "<n> items below need attention" with a link to each record.
+ * The plan's completeness (FR-017) as one chip (design system §4.1): "All filled in", or
+ * "<n> fields needed" / "<n> items below need attention" whose list opens the edit form on each
+ * field and links to each record below.
  */
 export function PlanCompleteness({
   planId,
   completeness,
+  compact = false,
 }: {
   planId: string;
   completeness: Completeness;
+  /** The plan tree's row: a short chip ("2 items below"). */
+  compact?: boolean;
 }) {
   const navigate = useNavigate();
   return (
-    <CompletenessChip
+    <AttentionChip
       missing={completeness.missing.map((field) => ({ id: field.field, label: field.label }))}
       onSelectField={(field) => void navigate(fieldHref('plan', planId, field))}
       itemsBelow={completeness.itemsBelow.map(({ record, missing }) => ({
@@ -39,6 +44,7 @@ export function PlanCompleteness({
         label: `${groupLabel(record)} — ${fieldsNeededText(missing.length)}`,
         href: recordHref(record.type as PlanningRecordType, record.id, planId),
       }))}
+      compact={compact}
     />
   );
 }
@@ -90,7 +96,7 @@ export function BudgetUsed({ figures }: { figures: PlanFigures }) {
           />
           <p className={figures.overBudget ? styles.problem : undefined}>
             {planned} · Budget {money(figures.budget)}
-            {figures.budgetUsedPercent !== null && ` · ${figures.budgetUsedPercent} % used`}
+            {figures.budgetUsedPercent !== null && ` · ${figures.budgetUsedPercent}% used`}
           </p>
         </>
       ) : (

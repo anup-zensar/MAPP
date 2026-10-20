@@ -1,15 +1,23 @@
+import type { ReactNode } from 'react';
 import { ProgressBar, SummaryCard } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import type { Plan } from './plansApi';
-import styles from './PlanPage.module.css';
+import styles from './PlanSummaryCards.module.css';
 import { APPROVAL_PROGRESS } from './planText';
 
+export interface PlanSummaryCardsProps {
+  plan: Plan;
+  /** Under the plan budget (014: where an allocated budget comes from). */
+  budgetNote?: ReactNode;
+}
+
 /**
- * The plan's money and progress at a glance (FR-012): plan budget, planned cost, remaining budget
- * (red with "Over-allocated by …" below zero), budget used (red above 100 %) and activities
- * approved, each with its formula in a tip and "—" with the reason when it can't be shown.
+ * The plan's money and progress at a glance (FR-012, design system §2.4 B: four cards): the plan
+ * budget with what remains for campaigns (red "Over-allocated by …" below zero), the planned cost,
+ * the budget used (red above 100 %) and the activities approved — each with its formula in a tip
+ * and "—" with the reason when it can't be shown.
  */
-export function PlanSummaryCards({ plan }: { plan: Plan }) {
+export function PlanSummaryCards({ plan, budgetNote }: PlanSummaryCardsProps) {
   const { money, moneyCompact } = useFormatters();
   const { figures } = plan;
   const noBudget = <span>No plan budget set</span>;
@@ -21,8 +29,21 @@ export function PlanSummaryCards({ plan }: { plan: Plan }) {
         label="Plan budget"
         value={moneyCompact(figures.budget)}
         fullValue={money(figures.budget)}
-        tip="The money this plan may spend in its year."
-        detail={figures.budget ? undefined : noBudget}
+        tip="The money this plan may spend in its year. Remaining for campaigns = plan budget − the budgets given to campaigns; it can go below zero."
+        detail={
+          <span className={styles.details}>
+            {!figures.budget || !figures.remainingBudget ? (
+              noBudget
+            ) : figures.overAllocatedBy ? (
+              <span className={styles.problem}>
+                Over-allocated by {money(figures.overAllocatedBy)}
+              </span>
+            ) : (
+              <span>Remaining for campaigns {money(figures.remainingBudget)}</span>
+            )}
+            {budgetNote}
+          </span>
+        }
       />
       <SummaryCard
         label="Planned cost"
@@ -32,25 +53,9 @@ export function PlanSummaryCards({ plan }: { plan: Plan }) {
         detail={figures.plannedCost ? undefined : <span>Nothing planned yet</span>}
       />
       <SummaryCard
-        label="Remaining budget"
-        value={moneyCompact(figures.remainingBudget)}
-        fullValue={money(figures.remainingBudget)}
-        tip="Plan budget minus the budgets given to campaigns. It can go below zero."
-        tone={figures.overAllocatedBy ? 'problem' : undefined}
-        detail={
-          !figures.remainingBudget ? (
-            noBudget
-          ) : figures.overAllocatedBy ? (
-            <span className={styles.problem}>
-              Over-allocated by {money(figures.overAllocatedBy)}
-            </span>
-          ) : undefined
-        }
-      />
-      <SummaryCard
         label="Budget used"
-        value={figures.budgetUsedPercent === null ? '—' : `${figures.budgetUsedPercent} %`}
-        tip="Planned cost divided by the plan budget."
+        value={figures.budgetUsedPercent === null ? '—' : `${figures.budgetUsedPercent}%`}
+        tip="Planned cost ÷ plan budget."
         tone={figures.overBudget ? 'problem' : undefined}
         detail={
           figures.budgetUsedPercent !== null ? (

@@ -95,9 +95,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
     const rows = within(tree).getAllByRole('row');
     expect(rows[1]).toHaveTextContent('Helix launch');
     expect(rows[2]).toHaveTextContent('Digital & social');
-    expect(
-      within(tree).getByText('Total · 1 campaign · 1 initiative · 0 activities'),
-    ).toBeVisible();
+    expect(within(tree).getByText('1 campaign · 1 initiative · 0 activities')).toBeVisible();
   });
 
   it('offers Add campaign in the toolbar and on the plan row (FR-001)', async () => {
@@ -173,9 +171,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
 
     const tree = await screen.findByRole('treegrid', { name: 'Plan tree' });
     expect(await within(tree).findByRole('link', { name: 'Fleet growth' })).toBeInTheDocument();
-    expect(
-      within(tree).getByText('Total · 2 campaigns · 1 initiative · 0 activities'),
-    ).toBeVisible();
+    expect(within(tree).getByText('2 campaigns · 1 initiative · 0 activities')).toBeVisible();
     expect(within(tree).getByText('$500,000.00')).toBeVisible();
     const row = within(tree).getByRole('link', { name: 'Fleet growth' }).closest('tr');
     expect(row?.className).toContain('highlighted');

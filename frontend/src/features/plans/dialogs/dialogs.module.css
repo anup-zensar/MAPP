@@ -16,7 +16,7 @@
   margin: 0;
   color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .stack {
@@ -47,7 +47,7 @@
   padding: 0;
   color: var(--ink);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .radio {

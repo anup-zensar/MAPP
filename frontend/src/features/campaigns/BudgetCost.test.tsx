@@ -75,7 +75,7 @@ describe('BudgetCostSection and GoalsSection (feature 005, FR-011, FR-016)', () 
     const section = screen.getByRole('region', { name: 'Budget and cost' });
 
     expect(within(section).getByText('$150,000.00')).toBeInTheDocument();
-    expect(within(section).getByText('125 %').className).toContain('negative');
+    expect(within(section).getByText('125%').className).toContain('negative');
     expect(within(section).getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuetext',
       '125 %',

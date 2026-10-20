@@ -31,7 +31,7 @@ describe('PlanCard (FR-002)', () => {
     expect(screen.getByText('Lubricants Europe')).toBeInTheDocument();
     expect(screen.getByText('Business unit: Lubricants')).toBeInTheDocument();
     expect(
-      screen.getByText('Planned cost $960,000.00 · Budget $1,200,000.00 · 80 % used'),
+      screen.getByText('Planned cost $960,000.00 · Budget $1,200,000.00 · 80% used'),
     ).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuenow',
@@ -48,7 +48,7 @@ describe('PlanCard (FR-002)', () => {
       '108 %',
     );
     expect(
-      screen.getByText('Planned cost $1,300,000.00 · Budget $1,200,000.00 · 108 % used'),
+      screen.getByText('Planned cost $1,300,000.00 · Budget $1,200,000.00 · 108% used'),
     ).toBeInTheDocument();
   });
 

@@ -49,7 +49,7 @@ export function goalAmountLabel(stage: GoalStage): string {
 /** The detail under "Activities approved" and its tone. */
 export const APPROVAL_PROGRESS: Record<ApprovalProgress, { word: string; tone: StatusTone }> = {
   noActivities: { word: 'No activities yet', tone: 'neutral' },
-  inProgress: { word: 'In progress', tone: 'review' },
+  inProgress: { word: 'Partly approved', tone: 'review' },
   allApproved: { word: 'All approved', tone: 'positive' },
 };
 

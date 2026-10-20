@@ -74,22 +74,20 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     renderPanel(DETAILS);
     const panel = await findDetails();
 
-    const breadcrumb = within(panel).getByRole('navigation', { name: /breadcrumb/i });
-    expect(within(breadcrumb).getByRole('link', { name: 'Plans' })).toHaveAttribute(
+    // The page under the panel has the breadcrumb; the panel names its plan as a value (C-02).
+    expect(within(panel).queryByRole('navigation', { name: /breadcrumb/i })).toBeNull();
+    expect(within(panel).getByRole('link', { name: 'FY2026 Lubricants Europe' })).toHaveAttribute(
       'href',
-      '/plans',
+      '/plans/P-1001',
     );
-    expect(
-      within(breadcrumb).getByRole('link', { name: 'FY2026 Lubricants Europe' }),
-    ).toHaveAttribute('href', '/plans/P-1001');
     expect(within(panel).getByText('CAMPAIGN')).toBeInTheDocument();
     // The campaign's chips, and its initiative's approval progress in the list.
     expect(within(panel).getAllByText('No activities')).toHaveLength(2);
-    expect(within(panel).getByText('Running')).toBeInTheDocument();
     expect(within(panel).getByText('All filled in')).toBeInTheDocument();
     expect(within(panel).getByText('C-1001')).toBeInTheDocument();
     expect(within(panel).getByText('Alex Morgan')).toBeInTheDocument();
-    expect(within(panel).getByText('01 Jan – 31 Dec 2026')).toBeInTheDocument();
+    // The timing is a word after the dates, not a third chip.
+    expect(within(panel).getByText('01 Jan – 31 Dec 2026 · Running')).toBeInTheDocument();
     expect(
       within(panel).getByText(
         'Created by Alex Morgan on 10 Feb 2026, last changed by Priya Raman on 05 Mar 2026',
@@ -125,7 +123,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('shows planned cost, budget used in red and over-allocation (FR-010, FR-011)', async () => {
-    renderPanel(DETAILS, {
+    const { user } = renderPanel(DETAILS, {
       'GET /api/campaigns/C-1001': {
         body: campaign({
           budget: usd('120000.00'),
@@ -159,13 +157,14 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
       'aria-valuetext',
       '125 %',
     );
-    expect(within(panel).getByText('125 %')).toBeInTheDocument();
-    expect(within(panel).getByText('In progress · 3 of 5 activities approved')).toBeInTheDocument();
-    expect(within(panel).getByText('2 fields needed')).toBeInTheDocument();
-    expect(within(panel).getByText('1 item below needs attention')).toBeInTheDocument();
+    expect(within(panel).getByText('125%')).toBeInTheDocument();
+    expect(within(panel).getByText('3 of 5 activities approved')).toBeInTheDocument();
     expect(
       within(panel).getByText("This campaign runs outside 2026, the plan's year"),
     ).toBeInTheDocument();
+    // One completeness chip (design system §4.1); its list also names the records below.
+    await user.click(within(panel).getByRole('button', { name: /2 fields needed/ }));
+    expect(await screen.findByText('1 item below needs attention')).toBeInTheDocument();
   });
 
   it('links a needed field to the edit form with that field focused (FR-014)', async () => {
