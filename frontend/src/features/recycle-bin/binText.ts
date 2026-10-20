@@ -229,13 +229,16 @@ export function restoredMessage(typeLabel: string, name: string): string {
 
 /**
  * The page of a restored record, for the message's View: a planning record's page, inside the
- * plan it returned to; undefined for records without a page.
+ * plan it returned to, or a global budget's page (014 FR-035); undefined for records without a page.
  */
 export function restoredHref(
   recordType: string,
   recordId: string,
   destination: RecordRef[],
 ): string | undefined {
+  if (recordType === 'globalBudget') {
+    return `/budgets/${encodeURIComponent(recordId)}`;
+  }
   const planningTypes: string[] = ['plan', 'campaign', 'initiative', 'activity', 'lineItem'];
   if (!planningTypes.includes(recordType)) {
     return undefined;

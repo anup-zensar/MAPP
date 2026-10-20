@@ -201,6 +201,7 @@ describe('restore dialog (FR-018 – FR-024, FR-026)', () => {
     expect(restoredHref('plan', 'P-1001', [])).toBe('/plans/P-1001');
     expect(restoredHref('campaign', 'C-1', [])).toBeUndefined();
     expect(restoredHref('currency', 'EUR', [])).toBeUndefined();
+    expect(restoredHref('globalBudget', 'GB-1001', [])).toBe('/budgets/GB-1001');
   });
 });
 
