@@ -50,6 +50,7 @@ import { SwbsChip } from './SwbsChip';
 import { useLineItemActions } from './useLineItemActions';
 
 /** The activity's unassigned planned cost, as the line item page's third summary card says it. */
+const FINANCE_CODING = 'Finance coding';
 const UNASSIGNED_LABEL = "Activity's unassigned planned cost";
 const UNASSIGNED_TIP =
   "The activity's planned cost minus all its line items' planned costs (Sys_Gen_Balance). Aim for 0.00.";
@@ -274,34 +275,43 @@ function DetailsCard({ lineItem }: { lineItem: LineItem }) {
 }
 
 /**
- * Finance coding: the line-item Shell attributes under their group's own name (no heading repeats
- * its parent, UI audit LI-03), then the contracted amount, the finance budget and the GSAP request
- * in the same key–value layout.
+ * Finance coding: a card with the same header as Details (one header layout), titled with the
+ * line-item Shell attributes' own group name when there is one group (no heading repeats its
+ * parent, UI audit LI-03), then the contracted amount, the finance budget and the GSAP request in
+ * the same key–value layout.
  */
 function FinanceCard({ lineItem, activity }: { lineItem: LineItem; activity: LineItemActivity }) {
   const attributeForm = useAttributeForm('lineItem');
   const planId = planIdOf(activity);
+  const sections = attributeForm.data?.sections ?? [];
+  const oneGroup = sections.length === 1;
+  return (
+    <Card title={oneGroup ? sections[0].name : FINANCE_CODING}>
+      <div className={styles.stack}>
+        {attributeForm.data ? (
+          <ShellAttributeValues
+            form={attributeForm.data}
+            values={lineItem.attributes}
+            businessUnit={activity.businessUnitOptionIds}
+            planLink={planId ? recordHref('plan', planId) : undefined}
+            sectionHeading={oneGroup ? 'none' : 'h3'}
+          />
+        ) : attributeForm.isError ? (
+          <ErrorState error={attributeForm.error} onRetry={() => void attributeForm.refetch()} />
+        ) : (
+          <Skeleton lines={2} />
+        )}
+        <FinanceDetails lineItem={lineItem} />
+      </div>
+    </Card>
+  );
+}
+
+/** The contracted amount, the finance budget and the GSAP request, under the attributes. */
+function FinanceDetails({ lineItem }: { lineItem: LineItem }) {
   const item = lineItem.financeBudgetItem;
   return (
-    <section aria-label="Finance coding" className={styles.financeCard}>
-      {attributeForm.data ? (
-        <ShellAttributeValues
-          form={attributeForm.data}
-          values={lineItem.attributes}
-          businessUnit={activity.businessUnitOptionIds}
-          planLink={planId ? recordHref('plan', planId) : undefined}
-          sectionHeading="h2"
-        />
-      ) : (
-        <>
-          <h2>Finance coding</h2>
-          {attributeForm.isError ? (
-            <ErrorState error={attributeForm.error} onRetry={() => void attributeForm.refetch()} />
-          ) : (
-            <Skeleton lines={2} />
-          )}
-        </>
-      )}
+    <>
       <DetailsList>
         <Detail label={LABEL.contractedAmount} numeric>
           {lineItem.contractedAmount ? moneyText(lineItem.contractedAmount) : null}
@@ -315,7 +325,7 @@ function FinanceCard({ lineItem, activity }: { lineItem: LineItem; activity: Lin
         <Detail label={LABEL.requestSwbs}>{lineItem.requestSwbs ? 'Yes' : 'No'}</Detail>
       </DetailsList>
       {item && !item.active && <p className={styles.problem}>{inactiveItemText(item.name)}</p>}
-    </section>
+    </>
   );
 }
 

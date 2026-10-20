@@ -22,19 +22,25 @@
   line-height: var(--leading-lg);
 }
 
+/* Where the activity sits, on one line: "Campaign Helix launch · Initiative Digital & social",
+   and the lock that says how to change it (UI audit AF-01: a shorter form). */
 .readOnly {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-6);
 }
 
 .pairs {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-3) var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-6);
+  margin: 0;
 }
 
 .pair {
+  display: flex;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -45,7 +51,7 @@
 }
 
 .pair dd {
-  margin: 2px 0 0;
+  margin: 0;
   color: var(--ink-2);
   overflow-wrap: break-word;
 }

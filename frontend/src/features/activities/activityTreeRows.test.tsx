@@ -105,6 +105,42 @@ describe('activityTreeRows (feature 006)', () => {
     expect(screen.queryByText('Print ads')).not.toBeInTheDocument();
   });
 
+  it('shows the planned cost in the plan currency with the display currency under it (016 FR-013)', async () => {
+    openRows({
+      'GET /api/plans/P-1001/activities': {
+        body: {
+          items: [
+            launchFilmRow({
+              plannedCost: { amount: '3950.00', currency: 'GBP' },
+              unassignedPlannedCost: { amount: '0.00', currency: 'GBP' },
+              display: {
+                plannedCost: { amount: '5000.00', currency: 'USD' },
+                unassignedPlannedCost: { amount: '0.00', currency: 'USD' },
+                revenue: null,
+              },
+            }),
+          ],
+          total: 1,
+        },
+      },
+    });
+
+    const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
+      'tr',
+    ) as HTMLElement;
+    expect(within(row).getByText(/3,950\.00/)).toHaveTextContent(/GBP|£/);
+    expect(within(row).getByText(/≈/)).toHaveTextContent(/5,000\.00/);
+  });
+
+  it('shows only the display currency when the plan is planned in it', async () => {
+    openRows();
+
+    const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
+      'tr',
+    ) as HTMLElement;
+    expect(within(row).queryByText(/≈/)).not.toBeInTheDocument();
+  });
+
   it('opens the activity page from the row and offers View, Edit, Copy, Move, Split activity and Delete in its menu', async () => {
     const { user, router } = openRows();
 

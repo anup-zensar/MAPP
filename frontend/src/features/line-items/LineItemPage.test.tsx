@@ -95,9 +95,14 @@ describe('LineItemPage (US4, FR-026)', () => {
     const march = screen.getByRole('cell', { name: 'Mar 2026' }).closest('tr') as HTMLElement;
     expect(within(march).getAllByRole('cell')[1]).toHaveTextContent('16,666.66 USD');
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    // Details and Finance coding: two cards with the same header, no heading repeated (LI-03).
+    expect(screen.getByRole('region', { name: 'Details' })).toBeInTheDocument();
+    const coding = await screen.findByRole('region', { name: 'Finance coding' });
+    expect(within(coding).getAllByRole('heading')).toHaveLength(1);
+    expect(within(coding).getByText('Request SWBS code from GSAP')).toBeInTheDocument();
     // GSAP's money, open (015 FR-017): figures, every transaction and the SWBS code.
     const financials = await screen.findByRole('region', { name: 'Financials' });
-    expect(within(financials).getByText('30,000.00 USD')).toBeInTheDocument();
+    expect(within(financials).getAllByText('30,000.00 USD').length).toBeGreaterThan(0);
     expect(
       await within(financials).findByRole('table', { name: /transactions, newest first/ }),
     ).toBeInTheDocument();

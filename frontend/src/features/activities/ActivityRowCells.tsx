@@ -40,15 +40,19 @@ export function ActivityRowStatus({ row, href }: { row: ActivitySummary; href: s
 
 /**
  * The planned-cost cell of an activity row, with a red mark when its line items exceed it
- * (the unassigned planned cost is negative).
+ * (the unassigned planned cost is negative). In the reader's display currency (D-220); in a plan
+ * planned in another currency, the plan-currency amount with the display one under it, muted
+ * (016 FR-013).
  */
 export function ActivityRowCost({ row }: { row: ActivitySummary }) {
   const { money } = useFormatters();
   const overspent = row.unassignedPlannedCost?.amount.startsWith('-') ?? false;
+  const plan = row.plannedCost;
+  const display = row.display.plannedCost;
+  const both = Boolean(plan && display && plan.currency !== display.currency);
   return (
     <span className={overspent ? styles.overspent : undefined}>
-      {/* In the reader's display currency (D-220). */}
-      {money(row.display.plannedCost)}
+      {both ? money(plan) : money(display)}
       {overspent && (
         <>
           {' '}
@@ -56,6 +60,7 @@ export function ActivityRowCost({ row }: { row: ActivitySummary }) {
           <span className="visually-hidden">Line items exceed the planned cost</span>
         </>
       )}
+      {both && <span className={styles.beside}>≈ {money(display)}</span>}
     </span>
   );
 }
