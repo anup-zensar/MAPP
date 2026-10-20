@@ -178,7 +178,6 @@ func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 func TestFieldHelpAPI_ListAndUpdate_FR045_FR046_FR048(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	daniel := server.SignIn(t, danielsEmail)
 
 	var page struct {
 		Items []struct {
@@ -190,7 +189,7 @@ func TestFieldHelpAPI_ListAndUpdate_FR045_FR046_FR048(t *testing.T) {
 	}
 	alex.Do(t, http.MethodGet, "/api/field-help", nil).Decode(t, &page)
 	edited := alex.Do(t, http.MethodPatch, "/api/field-help/plan.budget", map[string]any{"text": "The plan's money.", "version": 0})
-	stale := daniel.Do(t, http.MethodPatch, "/api/field-help/plan.budget", map[string]any{"text": "Daniel's.", "version": 0})
+	stale := alex.Do(t, http.MethodPatch, "/api/field-help/plan.budget", map[string]any{"text": "Daniel's.", "version": 0}) // settings.manage: administrators only (014)
 	reset := alex.Do(t, http.MethodPatch, "/api/field-help/plan.budget", map[string]any{"text": nil, "version": 1})
 	tooLong := alex.Do(t, http.MethodPatch, "/api/field-help/plan.name", map[string]any{"text": strings.Repeat("a", 301), "version": 0},
 		apitest.SkipRequestValidation())

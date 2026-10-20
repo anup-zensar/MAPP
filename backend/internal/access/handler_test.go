@@ -250,7 +250,7 @@ func TestCheckPersonRolesImpact_Warnings_FR022(t *testing.T) {
 	alex.Do(t, http.MethodGet, "/api/people/U-1003/roles", nil).Decode(t, &after)
 
 	if len(daniels.Warnings) != 1 || daniels.Warnings[0].Kind != "approverCannotApprove" ||
-		!strings.HasPrefix(daniels.Warnings[0].Message, "Daniel Okoro is an approver in 1 approval workflow and has ") {
+		!strings.HasPrefix(daniels.Warnings[0].Message, "Daniel Okoro is an approver in 2 approval workflows and has ") {
 		t.Errorf("Daniel's warnings = %+v", daniels.Warnings)
 	}
 	if len(alexs.Warnings) != 0 {

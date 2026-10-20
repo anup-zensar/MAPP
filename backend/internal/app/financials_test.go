@@ -63,7 +63,7 @@ func TestFinancialPlanning_SeedTree_FR012(t *testing.T) {
 		t.Errorf("Venue hire = %+v under %+v", venue, social)
 	}
 	plan := byName["FY2026 Lubricants Europe"]
-	if plan.Level != financials.LevelPlan || plan.ID != social.PlanID || len(mine) != 1 || mine[0] != plan.ID {
+	if plan.Level != financials.LevelPlan || plan.ID != social.PlanID || len(mine) != 2 || !slices.Contains(mine, plan.ID) || !slices.Contains(mine, "P-1004") {
 		t.Errorf("plan %+v, Priya's team plans %v", plan, mine)
 	}
 }
@@ -89,8 +89,8 @@ func TestFinancialPlanning_LineItemsInBin_FR007(t *testing.T) {
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	if !slices.Equal(inBin, []string{"L-1005"}) {
-		t.Errorf("in the bin = %v, want L-1005", inBin)
+	if !slices.Equal(inBin, []string{"L-1011", "L-1005"}) { // L-1011: the seed's deleted Trade shows
+		t.Errorf("in the bin = %v, want L-1011 and L-1005", inBin)
 	}
 	if slices.ContainsFunc(nodes, func(n financials.Node) bool { return n.ID == "L-1005" }) {
 		t.Errorf("L-1005 is still in the live tree")

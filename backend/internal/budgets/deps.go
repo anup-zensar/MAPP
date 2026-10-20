@@ -22,7 +22,7 @@ type PlanInfo struct {
 	TeamIDs     []string
 	OwnerID     string        // "" = none
 	CreatedByID string        // who created the plan: a team-less plan is in their scope (014 FR-005)
-	Currency    string        // the plan's currency: USD until feature 016 adds plan currencies (D-303)
+	Currency    string        // the plan currency (016; D-303)
 	Budget      *money.Amount // in the plan's currency; nil = none
 }
 

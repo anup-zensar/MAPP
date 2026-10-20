@@ -169,9 +169,10 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// Global budgets (014, BUS.BUD.040): global budgets and their allocations to plans, which set the plans'
 	// budgets through the plans service (budgets_adapter.go). Their kinds come after the planning kinds: an
 	// allocation is a child of its plan, which takes it along when deleted and restored. Without Access the
-	// service allows every action; the access rules of 014 come in through budgets.Deps.Access.
+	// service allows every action; the access rules of 014 come in through budgets.Deps.Access (budgets_access.go).
 	budgetsService := budgets.NewService(db, budgets.NewJSONRepository(), generator, historyService, budgets.Deps{
-		Plans: budgetPlans{plans: planService, repo: plansRepo}, Directory: peopleService, Rates: settingsService,
+		Plans:     budgetPlans{plans: planService, repo: plansRepo, rates: settingsService.Rates},
+		Directory: peopleService, Rates: settingsService, Access: budgetAccess{access: accessService},
 	}, now)
 	for _, kind := range budgetsService.Kinds() {
 		if err := historyService.Register(kind); err != nil {
@@ -209,8 +210,8 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// recycle bin ends an activity's approval (FR-022, FR-023).
 	activitiesService.UseApprovalHooks(activityApprovalHooks{svc: approvalsService})
 	approvalsService.UseDisplayRates(peopleService) // amounts on the Approvals page (D-213)
-	// 017: who may approve and the roles (a stand-in until 014 is merged), and what rule conditions may name.
-	approvalsService.UseAccess(approvalsAccess{people: peopleRepo})
+	// 017: who may approve and the roles, from 014's access service, and what rule conditions may name.
+	approvalsService.UseAccess(approvalsAccess{access: accessService})
 	approvalsService.UseRuleChoices(approvalRuleChoices{settings: settingsService})
 	// The roles impact check of access control reads approval workflows and rounds (014 FR-022); the access
 	// middleware finds the plan of every planning record an operation names in its path (access_targets.go).
@@ -229,7 +230,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	}
 	financialsService := financials.NewService(db, financials.NewJSONRepository(), generator, historyService, financials.Deps{
 		Planning: finance, Rates: settingsService, Displays: financialDisplays{people: peopleService},
-		Access: financialAccess{},
+		Access: financialAccess{tx: db, plans: plansRepo},
 	}, now)
 	for _, kind := range financialsService.Kinds() {
 		if err := historyService.Register(kind); err != nil {
@@ -251,7 +252,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		activities: activitiesService, activitiesRepo: activitiesRepo, lineItems: lineItemsService,
 		lineItemsRepo: lineItemsRepo, settings: settingsService, budgetItems: lineItemBudgets{repo: settingsRepo},
 		workflows: activityWorkflows{repo: approvalsRepo}, people: peopleService, peopleRepo: peopleRepo,
-		history: historyService, financials: financialsService, financeAccess: financialAccess{},
+		history: historyService, financials: financialsService, financeAccess: financialAccess{tx: db, plans: plansRepo},
 	}
 	allWorkService := allwork.NewService(db, allwork.NewJSONRepository(), allWork, generator, now)
 	allwork.NewHandler(allWorkService).Routes(router, signedIn)

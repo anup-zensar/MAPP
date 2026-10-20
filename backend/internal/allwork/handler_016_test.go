@@ -47,7 +47,7 @@ func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 			uk = row
 		}
 	}
-	if r.YearFrom != 2026 || r.YearTo != 2027 || r.Year != 2026 || years["P-1001"] != 2026 || years["P-1004"] != 2027 || len(years) != 4 {
+	if r.YearFrom != 2026 || r.YearTo != 2027 || r.Year != 2026 || years["P-1001"] != 2026 || years["P-1004"] != 2027 || len(years) != 2 { // Priya sees her team's plans only (014)
 		t.Errorf("range %d–%d (year %d), plan years %v", r.YearFrom, r.YearTo, r.Year, years)
 	}
 	keys := []string{}
@@ -158,14 +158,14 @@ func TestGetOptions_RangeTypesCurrenciesAttributes_Contract_FR037_FR039(t *testi
 		plans[p.ID] = p
 	}
 	uk := plans["P-1004"]
-	if o.YearFrom != 2026 || o.YearTo != 2027 || o.Year != 2026 || len(plans) != 4 ||
+	if o.YearFrom != 2026 || o.YearTo != 2027 || o.Year != 2026 || len(plans) != 2 ||
 		uk.Year != 2027 || uk.PlanType != "crossMarket" || uk.Currency != "GBP" || plans["P-1001"].Year != 2026 {
 		t.Errorf("range %d–%d (year %d), plans %+v", o.YearFrom, o.YearTo, o.Year, o.Plans)
 	}
 	if !slices.Equal(o.PlanTypes, []string{"operational", "strategic", "crossMarket"}) || !slices.Equal(o.PlanCurrencies, []string{"GBP", "USD"}) {
 		t.Errorf("plan types %q, plan currencies %q", o.PlanTypes, o.PlanCurrencies)
 	}
-	if first.YearFrom != 2026 || first.YearTo != 2026 || !slices.Equal(first.PlanCurrencies, []string{"USD"}) || len(first.Plans) != 2 {
+	if first.YearFrom != 2026 || first.YearTo != 2026 || !slices.Equal(first.PlanCurrencies, []string{"USD"}) || len(first.Plans) != 1 {
 		t.Errorf("2026 alone: range %d–%d, currencies %q, %d plans", first.YearFrom, first.YearTo, first.PlanCurrencies, len(first.Plans))
 	}
 	var yesNo *allwork.FilterableAttribute

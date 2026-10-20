@@ -13,7 +13,9 @@ import (
 	"northstar/internal/people"
 	"northstar/internal/plans"
 	"northstar/internal/platform/actor"
+	"northstar/internal/platform/authz"
 	"northstar/internal/platform/money"
+	"northstar/internal/platform/store"
 	"northstar/internal/settings"
 )
 
@@ -51,6 +53,7 @@ func (p financialPlanning) Nodes(ctx context.Context) ([]financials.Node, error)
 	}
 	var nodes []financials.Node
 	planOf := map[string]plans.Plan{} // activity id → its plan
+	var rates money.Rates             // read once, for an activity planned in a plan currency other than USD
 	var activityIDs []string
 	for _, plan := range all {
 		nodes = append(nodes, financials.Node{
@@ -83,6 +86,16 @@ func (p financialPlanning) Nodes(ctx context.Context) ([]financials.Node, error)
 			}
 			if a.PlannedCost != nil {
 				planned := a.PlannedCost.Amount
+				if c := a.PlannedCost.Currency; c != "" && c != money.BaseCurrency { // a plan currency (016) in USD
+					if rates == nil {
+						if rates, err = p.settings.Rates(ctx); err != nil {
+							return nil, err
+						}
+					}
+					if planned, err = rates.ToUSD(*a.PlannedCost); err != nil {
+						return nil, err
+					}
+				}
 				node.PlannedCost = &planned
 			}
 			nodes = append(nodes, node)
@@ -170,27 +183,94 @@ func (d financialDisplays) Display(ctx context.Context, personID string) (money.
 	return money.DisplayIn(rate.Code, rate.Rate), nil
 }
 
-// financialAccess is financials.Access (FR-028, D-252, D-301). Until feature 014's authz is merged, every
-// signed-in person may do everything (D-004); 014's lane replaces these bodies with the checks of its
-// permissions finance.view, finance.import and finance.link (014 plan, Table C additions), keeping this
-// type, so nothing else changes.
-type financialAccess struct{}
+// financialAccess is financials.Access (FR-028, D-252, D-301) over feature 014's grants, which the request's
+// context carries: finance.view (scoped), finance.import and finance.link (scoped to the line item's plan).
+// An internal call (no grants) may do everything.
+type financialAccess struct {
+	tx    store.Transactor
+	plans plans.Repository
+}
 
-// SeeFinance allows every signed-in person until 014.
-func (financialAccess) SeeFinance(context.Context, actor.Actor) error { return nil }
+// SeeFinance needs finance.view in some scope.
+func (financialAccess) SeeFinance(ctx context.Context, _ actor.Actor) error {
+	return authz.Require(ctx, authz.FinanceView)
+}
 
-// SeeFinanceIn allows every signed-in person until 014.
-func (financialAccess) SeeFinanceIn(context.Context, actor.Actor, string) error { return nil }
+// SeeFinanceIn needs the plan to be visible and finance.view in its scope.
+func (f financialAccess) SeeFinanceIn(ctx context.Context, _ actor.Actor, planID string) error {
+	if _, restricted := authz.From(ctx); !restricted || planID == "" {
+		return authz.Require(ctx, authz.FinanceView)
+	}
+	facts, found, err := f.planFacts(ctx, planID)
+	if err != nil || !found {
+		return err
+	}
+	if err := authz.RequireView(ctx, facts, "plan"); err != nil {
+		return err
+	}
+	return authz.RequireIn(ctx, authz.FinanceView, facts)
+}
 
-// Import allows every signed-in person until 014.
-func (financialAccess) Import(context.Context, actor.Actor) error { return nil }
+// Import needs finance.import.
+func (financialAccess) Import(ctx context.Context, _ actor.Actor) error {
+	return authz.Require(ctx, authz.FinanceImport)
+}
 
-// Link allows every signed-in person until 014.
-func (financialAccess) Link(context.Context, actor.Actor, string) error { return nil }
+// Link needs finance.link in the plan's scope; "" asks about any plan.
+func (f financialAccess) Link(ctx context.Context, _ actor.Actor, planID string) error {
+	if _, restricted := authz.From(ctx); !restricted || planID == "" {
+		return authz.Require(ctx, authz.FinanceLink)
+	}
+	facts, found, err := f.planFacts(ctx, planID)
+	if err != nil || !found {
+		return err
+	}
+	return authz.RequireIn(ctx, authz.FinanceLink, facts)
+}
 
-// VisiblePlanIDs gives every plan until 014.
-func (financialAccess) VisiblePlanIDs(context.Context, actor.Actor) ([]string, error) {
-	return nil, nil
+// VisiblePlanIDs gives nil (every plan) to an internal call and to a person who holds finance.view for All
+// markets; otherwise the plans they see and hold finance.view in.
+func (f financialAccess) VisiblePlanIDs(ctx context.Context, _ actor.Actor) ([]string, error) {
+	g, restricted := authz.From(ctx)
+	if !restricted {
+		return nil, nil
+	}
+	if all, _ := g.Teams(authz.FinanceView); all && g.Has(authz.FinanceView) {
+		return nil, nil
+	}
+	visible := []string{}
+	if f.plans == nil || !g.Has(authz.FinanceView) {
+		return visible, nil
+	}
+	err := f.tx.Read(ctx, func(ctx context.Context) error {
+		list, err := f.plans.List(ctx)
+		if err != nil {
+			return err
+		}
+		for _, p := range list {
+			facts := plans.AccessFacts(p)
+			if g.CanViewPlan(facts) && g.InScope(authz.FinanceView, facts) {
+				visible = append(visible, p.ID)
+			}
+		}
+		return nil
+	})
+	return visible, err
+}
+
+// planFacts returns the access facts of the plan planID, and false when there is none.
+func (f financialAccess) planFacts(ctx context.Context, planID string) (authz.PlanFacts, bool, error) {
+	if f.plans == nil {
+		return authz.PlanFacts{}, false, nil
+	}
+	var facts authz.PlanFacts
+	var found bool
+	err := f.tx.Read(ctx, func(ctx context.Context) error {
+		p, ok, err := f.plans.Get(ctx, planID)
+		facts, found = plans.AccessFacts(p), ok
+		return err
+	})
+	return facts, found, err
 }
 
 // addFinance gives All work the GSAP figures of the year's line items, as feature 015 works them out for

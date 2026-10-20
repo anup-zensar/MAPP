@@ -16,7 +16,7 @@ func TestCurrencyUsage_CountsPlans_FR010(t *testing.T) {
 	priya := server.SignIn(t, "priya.raman@northstar.demo")
 
 	gbp := usageAt(t, priya, "/api/currencies/GBP")
-	refused := priya.Do(t, http.MethodDelete, "/api/currencies/GBP", nil)
+	refused := server.SignIn(t, "alex.morgan@northstar.demo").Do(t, http.MethodDelete, "/api/currencies/GBP", nil) // exchangeRates.manage (014)
 
 	if !gbp.InUse || !strings.Contains(gbp.Summary, "Plan currency of 1 plan") ||
 		!slices.Contains(gbp.Records, recordRef{Type: "plan", ID: "P-1004", Name: "FY2027 Lubricants UK & Ireland"}) {

@@ -17,6 +17,7 @@ import (
 type budgetPlans struct {
 	plans *plans.Service
 	repo  plans.Repository
+	rates func(context.Context) (money.Rates, error) // the current rates (016), for planned costs in USD
 }
 
 // Plan returns the plan id as budgets needs it.
@@ -41,9 +42,38 @@ func (b budgetPlans) PlansOfYear(ctx context.Context, year int) ([]budgets.PlanI
 	return infos, nil
 }
 
-// PlannedCosts returns the planned cost in USD of each plan, as the plan page works it out.
+// PlannedCosts returns the planned cost in USD of each plan, as the plan page works it out in the plan
+// currency (016), converted at the current rate.
 func (b budgetPlans) PlannedCosts(ctx context.Context, planIDs []string) (map[string]*money.Amount, error) {
-	return b.plans.PlannedCosts(ctx, planIDs)
+	costs, err := b.plans.PlannedCosts(ctx, planIDs)
+	if err != nil || b.rates == nil {
+		return costs, err
+	}
+	var rates money.Rates
+	for id, cost := range costs {
+		if cost == nil {
+			continue
+		}
+		p, found, err := b.repo.Get(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		currency := p.Normalised().Currency
+		if !found || currency == money.BaseCurrency {
+			continue
+		}
+		if rates == nil {
+			if rates, err = b.rates(ctx); err != nil {
+				return nil, err
+			}
+		}
+		usd, err := rates.ToUSD(money.Money{Amount: *cost, Currency: currency})
+		if err != nil {
+			return nil, err
+		}
+		costs[id] = &usd
+	}
+	return costs, nil
 }
 
 // SetBudgetFromAllocation sets the plan's budget through the plans service, its one owner.
@@ -57,13 +87,12 @@ func (b budgetPlans) AllocationRemoved(ctx context.Context, a actor.Actor, planI
 	return b.plans.AllocationRemoved(ctx, a, planID, comment)
 }
 
-// planInfoOf returns what budgets needs to know of the stored plan p. Plans are planned in US dollars until
-// feature 016 adds plan currencies (D-303).
+// planInfoOf returns what budgets needs to know of the stored plan p, in the plan currency (016).
 func planInfoOf(p plans.Plan) budgets.PlanInfo {
 	return budgets.PlanInfo{
 		ID: p.ID, Name: p.Name, Year: p.Year, Status: string(p.Status), Version: p.Version,
 		TeamIDs: slices.Clone(p.TeamIDs), OwnerID: p.OwnerID, CreatedByID: p.CreatedBy.ID,
-		Currency: money.BaseCurrency, Budget: p.Budget,
+		Currency: p.Normalised().Currency, Budget: p.Budget,
 	}
 }
 

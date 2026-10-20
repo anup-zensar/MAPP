@@ -134,8 +134,9 @@ func TestCreateGlobalBudget_201_400_FR029(t *testing.T) {
 	})
 	var view budgets.GlobalBudgetView
 	decode(t, created, http.StatusCreated, &view)
-	if len(view.PlansWithoutAllocation) != 1 || view.PlansWithoutAllocation[0].Plan.Name != "FY2027 Global Brand" {
-		t.Errorf("plans without allocation = %+v, want FY2027 Global Brand", view.PlansWithoutAllocation)
+	if len(view.PlansWithoutAllocation) != 2 || view.PlansWithoutAllocation[0].Plan.Name != "FY2027 Global Brand" ||
+		view.PlansWithoutAllocation[1].Plan.Name != "FY2027 Lubricants UK & Ireland" {
+		t.Errorf("plans without allocation = %+v, want FY2027 Global Brand and FY2027 Lubricants UK & Ireland", view.PlansWithoutAllocation)
 	}
 	assertAnswer(t, refused, http.StatusBadRequest, validation(
 		`{"field":"name","message":"A global budget called 'FY2026 Global marketing budget' already exists."},`+
@@ -301,7 +302,7 @@ func TestUpdateBudgetAllocation_200_409_404_FR030_FR037(t *testing.T) {
 	var planLog, budgetLog history.LogPage
 	decode(t, carlos.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1001", nil), http.StatusOK, &planLog)
 	decode(t, carlos.Do(t, http.MethodGet, "/api/activity-log?recordType=globalBudget&recordId=GB-1001", nil), http.StatusOK, &budgetLog)
-	if planLog.Total != 1 || changesText(planLog.Items[0].Changes) != "Plan budget: 1,200,000.00 USD → 1,300,000.00 USD" ||
+	if planLog.Total < 1 || changesText(planLog.Items[0].Changes) != "Plan budget: 1,200,000.00 USD → 1,300,000.00 USD" || // newest first, after the seeded log (011)
 		planLog.Items[0].Comment != "Allocated from 'FY2026 Global marketing budget'" || planLog.Items[0].Actor.Name != "Carlos Mendes" {
 		t.Errorf("plan log = %+v", planLog.Items)
 	}
@@ -342,7 +343,7 @@ func TestRemoveBudgetAllocation_200_404_AndThePlanBudgetLock_FR031_FR034(t *test
 	assertFields(t, saved, http.StatusOK, map[string]any{"budget": usd("850000.00"), "allocation": nil})
 	var planLog history.LogPage
 	decode(t, carlos.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1002", nil), http.StatusOK, &planLog)
-	if planLog.Total != 2 || planLog.Items[1].Comment != "Allocation from 'FY2026 Global marketing budget' removed" || len(planLog.Items[1].Changes) != 0 {
+	if planLog.Total < 2 || planLog.Items[1].Comment != "Allocation from 'FY2026 Global marketing budget' removed" || len(planLog.Items[1].Changes) != 0 {
 		t.Errorf("plan log = %+v", planLog.Items)
 	}
 }

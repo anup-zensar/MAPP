@@ -94,7 +94,7 @@ func TestSplitPreview_MatchesSplit_FR027(t *testing.T) {
 		original.LineItems.Count != 1 || len(original.SplitInto) != 1 || original.SplitInto[0].ID != created.ID {
 		t.Errorf("original = %+v", original)
 	}
-	if created.ID != "A-1013" || created.Name != "Ireland roadshow" || created.Initiative.ID != irelandInit ||
+	if created.ID != "A-1014" || created.Name != "Ireland roadshow" || created.Initiative.ID != irelandInit ||
 		created.PlannedCost.Format() != "19,750.00 GBP" || created.UnassignedPlannedCost.Format() != "0.00 GBP" ||
 		created.LineItems.Count != 1 || created.SplitFrom == nil ||
 		*created.SplitFrom != (activities.SplitLink{ID: ukLaunchEvent, Name: "UK launch event", PlanID: "P-1004"}) {
@@ -290,9 +290,9 @@ func TestSplit_Logs_FR030(t *testing.T) {
 		lines = append(lines, strings.TrimSpace(line))
 	}
 	want := []string{
-		"changed split A-1011 Into 'Ireland roadshow' (A-1013): 1 line item and 19,750.00 GBP | Planned cost: 40,000.00 GBP → 20,250.00 GBP",
-		"moved moved L-1010 | Activity: 'UK launch event' (A-1011) → 'Ireland roadshow' (A-1013)",
-		"created created A-1013 Split from 'UK launch event' (A-1011)",
+		"changed split A-1011 Into 'Ireland roadshow' (A-1014): 1 line item and 19,750.00 GBP | Planned cost: 40,000.00 GBP → 20,250.00 GBP",
+		"moved moved L-1010 | Activity: 'UK launch event' (A-1011) → 'Ireland roadshow' (A-1014)",
+		"created created A-1014 Split from 'UK launch event' (A-1011)",
 	}
 	if len(lines) < 3 || !slices.Equal(lines[:3], want) {
 		t.Errorf("log =\n%s\nwant first\n%s", strings.Join(lines, "\n"), strings.Join(want, "\n"))

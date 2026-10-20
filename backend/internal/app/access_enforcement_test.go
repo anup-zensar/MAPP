@@ -58,11 +58,11 @@ func TestPlansList_FilteredByScope_FR006_FR007(t *testing.T) {
 		email string
 		want  []string
 	}{
-		{priyasEmail, []string{"P-1001"}},
+		{priyasEmail, []string{"P-1004", "P-1001"}},
 		{meisEmail, []string{"P-1002"}},
-		{sarasEmail, []string{"P-1001", "P-1002"}},
-		{carlosEmail, []string{"P-1003", "P-1001", "P-1002"}},
-		{alexsEmail, []string{"P-1003", "P-1001", "P-1002"}},
+		{sarasEmail, []string{"P-1004", "P-1001", "P-1002"}},
+		{carlosEmail, []string{"P-1003", "P-1004", "P-1001", "P-1002"}},
+		{alexsEmail, []string{"P-1003", "P-1004", "P-1001", "P-1002"}},
 	} {
 		response := server.SignIn(t, c.email).Do(t, http.MethodGet, "/api/plans", nil)
 		var list struct {
@@ -230,8 +230,8 @@ func TestListsAndTotals_OnlyWhatThePersonSees_SC004(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	if got := itemIDs(t, priya.Do(t, http.MethodGet, "/api/home/plans?scope=everything", nil)); !slices.Equal(got, []string{"P-1001"}) {
-		t.Errorf("Home plans (everything) = %q, want the Lubricants plan only", got)
+	if got := itemIDs(t, priya.Do(t, http.MethodGet, "/api/home/plans?scope=everything", nil)); !slices.Equal(got, []string{"P-1004", "P-1001"}) {
+		t.Errorf("Home plans (everything) = %q, want the Lubricants Europe team's plans only", got)
 	}
 	var grid struct {
 		Rows []struct {

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	accessservice "northstar/internal/access"
 	"northstar/internal/activities"
 	"northstar/internal/approvals"
 	"northstar/internal/campaigns"
@@ -38,9 +39,12 @@ func seededStore(t *testing.T) (*store.DB, func() time.Time) {
 // teams, owner and creator, its activity type id, and the plan's business units with their labels.
 func TestAdapter_RuleFacts_FR010(t *testing.T) {
 	db, now := seededStore(t)
+	generator := ids.NewGenerator(ids.NewJSONCounters())
+	settingsService := settings.NewService(db, settings.NewJSONRepository(), generator,
+		history.NewService(db, history.NewJSONRepository(), generator, now), now)
 	adapter := &approvalsActivities{
 		activities: activities.NewJSONRepository(), lineItems: lineitems.NewJSONRepository(), campaigns: campaigns.NewJSONRepository(),
-		plans: plans.NewJSONRepository(), settings: settings.NewJSONRepository(), now: now,
+		plans: plans.NewJSONRepository(), settings: settings.NewJSONRepository(), rates: settingsService.Rates, now: now,
 	}
 
 	var fleet, launch approvals.ActivityFacts
@@ -66,15 +70,17 @@ func TestAdapter_RuleFacts_FR010(t *testing.T) {
 	}
 }
 
-// The stand-in for 014's hooks (017 FR-001, FR-025): the roles of 014's seed, who may approve, decide on
+// 014's hooks as approvals reads them (017 FR-001, FR-025): the roles of 014's seed, who may approve, decide on
 // behalf and manage workflows, and the holders of a role whose scope covers a plan — Daniel Okoro holds
 // Approver for his own teams' plans only.
 func TestApprovalsAccess_RoleHolders_FR001(t *testing.T) {
 	db, now := seededStore(t)
-	access := approvalsAccess{people: people.NewJSONRepository()}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
-	choices := approvalRuleChoices{settings: settings.NewService(db, settings.NewJSONRepository(), generator,
-		history.NewService(db, history.NewJSONRepository(), generator, now), now)}
+	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
+	peopleService := people.NewService(db, people.NewJSONRepository(), generator, historyService, now)
+	access := approvalsAccess{access: accessservice.NewService(db, accessservice.NewJSONRepository(), generator, historyService,
+		accessDirectory{people: peopleService}, now)}
+	choices := approvalRuleChoices{settings: settings.NewService(db, settings.NewJSONRepository(), generator, historyService, now)}
 
 	err := db.Read(t.Context(), func(ctx context.Context) error {
 		lubricants, found, err := plans.NewJSONRepository().Get(ctx, "P-1001")

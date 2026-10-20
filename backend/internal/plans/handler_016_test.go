@@ -49,7 +49,7 @@ func TestGetPlan_PlanCurrency_Contract_FR013(t *testing.T) {
 	if p.CurrencyLock == nil || *p.CurrencyLock != want {
 		t.Errorf("currency lock = %v, want %q", p.CurrencyLock, want)
 	}
-	if usd := getPlan(t, priya, "P-1002"); usd.Currency != "USD" || usd.PlanType != "operational" || usd.CurrencyLock == nil {
+	if usd := getPlan(t, server.SignIn(t, meisEmail), "P-1002"); usd.Currency != "USD" || usd.PlanType != "operational" || usd.CurrencyLock == nil {
 		t.Errorf("P-1002: %s %s, lock %v", usd.Currency, usd.PlanType, usd.CurrencyLock)
 	}
 }
@@ -100,8 +100,8 @@ func TestListPlans_YearRangeAndType_Contract_FR033(t *testing.T) {
 		crossMarket.Summary.Budget.Format() != "759,493.67 USD" {
 		t.Errorf("row = %+v, summary %+v", row, crossMarket.Summary)
 	}
-	if ids := listIDs(both); !reflect.DeepEqual(ids, []string{"P-1003", "P-1004"}) {
-		t.Errorf("Cross-market or Strategic 2026–2027 = %q, want P-1003 and P-1004", ids)
+	if ids := listIDs(both); !reflect.DeepEqual(ids, []string{"P-1004"}) { // P-1003 is not Priya's team's plan (014)
+		t.Errorf("Cross-market or Strategic 2026–2027 = %q, want P-1004", ids)
 	}
 	if reversed.Status != http.StatusBadRequest || !strings.Contains(string(reversed.Body), `"field":"yearTo"`) {
 		t.Errorf("reversed range = %d %s, want 400 on yearTo", reversed.Status, reversed.Body)

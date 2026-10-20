@@ -329,11 +329,11 @@ func TestOverview_Contract_FR025(t *testing.T) {
 	f := mine.Figures
 	if mine.Year != 2026 || mine.Scope != financials.ScopeMyTeams || f.Committed != dollars(t, "35652.17") ||
 		*f.PlannedCost != dollars(t, "460000.00") || *f.CommittedPercent != 8 || mine.ActivitiesAbovePlanned != 1 ||
-		mine.NotLinked != 1 {
+		mine.NotLinked != 0 { // not-linked transactions show only to people who may import (014: Priya may not)
 		t.Errorf("my teams = %+v", mine)
 	}
 	everything := get[financials.Overview](t, priya, "/api/financials/overview?scope=everything")
-	if everything.Figures.Committed != dollars(t, "35652.17") || everything.Figures.PlannedCost.Amount.Cmp(f.PlannedCost.Amount) <= 0 {
+	if everything.Figures.Committed != dollars(t, "35652.17") || everything.Figures.PlannedCost.Amount.Cmp(f.PlannedCost.Amount) < 0 { // Priya sees her team's plans only (014)
 		t.Errorf("everything = %+v", everything.Figures)
 	}
 	fieldRefused(t, priya.Do(t, http.MethodGet, "/api/financials/overview?scope=all", nil, apitest.SkipRequestValidation()), "scope",

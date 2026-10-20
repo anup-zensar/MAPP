@@ -42,7 +42,9 @@ func TestGetAllWork_FinancialColumns_FR023(t *testing.T) {
 		"Helix launch":             {"35,652.17", "33,152.17", "30,652.17", "2,500.00", "239,347.83"},
 		"Social always-on":         {"25,000.00", "22,500.00", "20,000.00", "2,500.00", "55,000.00"},
 		"Stand build":              {"10,652.17", "10,652.17", "10,652.17", "0.00", "-652.17"},
-		"Station signage":          {"0.00", "0.00", "0.00", "0.00", "1,000.00"},
+	}
+	if _, shown := figures["Station signage"]; shown { // FY2026 Mobility China is not Priya's team's plan (014)
+		t.Errorf("Priya sees Station signage of FY2026 Mobility China")
 	}
 	for name, cells := range want {
 		if got := figures[name]; got == nil || !slices.Equal(got[:5], cells) {
