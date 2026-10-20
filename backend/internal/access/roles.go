@@ -219,15 +219,15 @@ func (s *Service) DeleteRole(ctx context.Context, a actor.Actor, id string) (his
 		if reason := w.inUseReason(r); reason != "" {
 			return errs.InUse(reason)
 		}
-		if entry, err = s.history.MoveToBin(ctx, a, RoleKind, r.ID); err != nil {
-			return err
-		}
-		if w.rules.NewPersonRoleID == r.ID {
+		if w.rules.NewPersonRoleID == r.ID { // logged first, while the log can still name the role
 			after := w.rules
 			after.NewPersonRoleID = ""
-			return s.saveRules(ctx, a, w.rules, after)
+			if err := s.saveRules(ctx, a, w.rules, after); err != nil {
+				return err
+			}
 		}
-		return nil
+		entry, err = s.history.MoveToBin(ctx, a, RoleKind, r.ID)
+		return err
 	})
 	if err != nil {
 		return history.BinEntry{}, err
