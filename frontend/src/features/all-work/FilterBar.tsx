@@ -201,7 +201,7 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
         <div className={styles.search}>
           <SearchField
             label="Search"
-            placeholder="Search name, ID, external name or description"
+            placeholder="Search name, ID or description"
             value={typed}
             onChange={typeSearch}
           />

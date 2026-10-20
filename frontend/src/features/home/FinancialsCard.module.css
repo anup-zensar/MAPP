@@ -17,9 +17,13 @@
   }
 }
 
+/* Label, amount and the lines under it are rows shared across a row of figures (subgrid). */
 .figure {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  align-content: start;
   min-width: 0;
 }
 

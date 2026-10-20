@@ -1,5 +1,6 @@
 import { ChevronsDownUp, ChevronsUpDown, Columns3, RotateCw } from 'lucide-react';
 import { Button, SegmentedFilter } from '@/components';
+import { cx } from '@/lib/cx';
 import { formatTime } from '@/lib/format';
 import { COMPARE_PHASED, PERIOD_LABELS } from './allWorkText';
 import type { ViewState } from './allWorkTypes';
@@ -22,7 +23,9 @@ export interface ViewToolbarProps {
  * FR-035), Expand all and Collapse all, the Unassigned planned cost switch (FR-012) and, in Budget
  * & cost, Compare with phased budget (016 FR-038); then, at the end, Columns (Grid),
  * "Updated at …" and Refresh. Below 600 px the buttons show their icons only (their names stay),
- * so the toolbar takes two rows and the data starts higher (UI audit PH-04).
+ * so the toolbar takes two rows and the data starts higher (UI audit PH-04). Budget & cost has the
+ * most controls: while its card is too narrow for all of them on one row, the Unassigned switch
+ * shows its short words and the time is read out but not shown, so the toolbar keeps one row.
  */
 export function ViewToolbar({
   state,
@@ -34,7 +37,7 @@ export function ViewToolbar({
   const tree = state.view !== 'calendar';
 
   return (
-    <div className={styles.toolbar}>
+    <div className={cx(styles.toolbar, state.view === 'budget' && styles.crowded)}>
       <div className={styles.group}>
         {state.view === 'calendar' && (
           <SegmentedFilter
@@ -90,6 +93,8 @@ export function ViewToolbar({
         {state.view === 'budget' && (
           <Switch
             label={COMPARE_PHASED}
+            shortLabel="Compare"
+            shortOn="phone"
             checked={Boolean(state.comparePhased)}
             onChange={(comparePhased) => onChange({ ...state, comparePhased })}
           />

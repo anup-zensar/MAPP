@@ -68,7 +68,7 @@ describe('FilterBar (US2)', () => {
     ]);
     expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveAttribute(
       'placeholder',
-      'Search name, ID, external name or description',
+      'Search name, ID or description',
     );
   });
 

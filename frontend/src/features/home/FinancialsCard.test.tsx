@@ -137,7 +137,8 @@ describe('FinancialsCard (015 US6, FR-025)', () => {
       },
     });
 
-    expect(await screen.findAllByText('No GSAP data loaded yet.')).not.toHaveLength(0);
+    // Said once, by the empty state, not again in the source line.
+    expect(await screen.findAllByText('No GSAP data loaded yet.')).toHaveLength(1);
   });
 
   it('fails on its own with a retry (009 FR-022)', async () => {

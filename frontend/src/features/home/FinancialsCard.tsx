@@ -60,8 +60,11 @@ function Overview({ overview, open }: { overview: FinancialOverview; open: React
   const { figures, source, year } = overview;
   const empty = figures.transactionCount === 0;
 
+  // Without any GSAP data the empty state says so; the source line would only repeat it.
+  const subtitle = source.dataAsOf ? sourceText(source, dateTime) : undefined;
+
   return (
-    <Card title={financialsTitle(year)} subtitle={sourceText(source, dateTime)} actions={open}>
+    <Card title={financialsTitle(year)} subtitle={subtitle} actions={open}>
       {empty ? (
         <EmptyState
           icon={<ReceiptText />}

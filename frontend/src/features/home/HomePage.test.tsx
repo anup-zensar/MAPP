@@ -12,6 +12,7 @@ import {
   groupOf,
   logEntryOf,
   myActivityOf,
+  overviewOf,
   summaryOf,
   waitingItemOf,
 } from './testData';
@@ -199,6 +200,17 @@ describe('HomePage', () => {
     expect(requestsTo(api, '/api/home/attention')).toHaveLength(1);
     expect(requestsTo(api, '/api/home/waiting')).toHaveLength(1);
     expect(requestsTo(api, '/api/home/my-activities')).toHaveLength(1);
+  });
+
+  it('shows the Financials card right under the summary cards, for the Home scope (015 FR-025)', async () => {
+    const { api } = renderHome({
+      'GET /api/financials/overview': { body: overviewOf() },
+    });
+
+    const financials = await screen.findByRole('region', { name: 'Financials · 2026' });
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(summary.nextElementSibling).toBe(financials);
+    expect(requestsTo(api, '/api/financials/overview')[0]?.search).toBe('?scope=myTeams');
   });
 
   it('shows what needs the person and what waits for their approval (US3)', async () => {

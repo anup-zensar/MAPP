@@ -8,6 +8,11 @@ export interface SwitchProps {
    * visible words stay part of the name (WCAG 2.5.3).
    */
   shortLabel?: string;
+  /**
+   * Where only the short words show: below 600 px and in a crowded toolbar ('narrow', the
+   * default), or below 600 px only ('phone').
+   */
+  shortOn?: 'narrow' | 'phone';
   checked: boolean;
   onChange: (checked: boolean) => void;
 }
@@ -16,7 +21,7 @@ export interface SwitchProps {
  * An on/off switch with its words beside it (the Unassigned planned cost switch, FR-012): a
  * button with role="switch", so screen readers say "on" or "off".
  */
-export function Switch({ label, shortLabel, checked, onChange }: SwitchProps) {
+export function Switch({ label, shortLabel, shortOn = 'narrow', checked, onChange }: SwitchProps) {
   return (
     <button
       type="button"
@@ -31,7 +36,9 @@ export function Switch({ label, shortLabel, checked, onChange }: SwitchProps) {
       {shortLabel && label.startsWith(shortLabel) ? (
         <span>
           {shortLabel}{' '}
-          <span className={styles.rest}>{label.slice(shortLabel.length).trimStart()}</span>
+          <span className={shortOn === 'phone' ? styles.restOnPhones : styles.rest}>
+            {label.slice(shortLabel.length).trimStart()}
+          </span>
         </span>
       ) : (
         label

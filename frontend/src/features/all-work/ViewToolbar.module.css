@@ -29,12 +29,38 @@
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/*
+ * Budget & cost has the most controls. While its card is narrower than they need on one row, the
+ * time is read out but not shown (and the Unassigned switch shows its short words, Switch.module.css),
+ * so the toolbar keeps one row instead of putting Refresh alone on a second one.
+ */
+.crowded {
+  container: view-toolbar / inline-size;
+}
+
+@container view-toolbar (max-width: 1299px) {
+  .updated {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 599px) {
   .toolbar {
     gap: var(--space-2);
     padding: var(--space-3);
+  }
+
+  /* Every control wraps in one flow, so Refresh joins the last row instead of taking its own. */
+  .group {
+    display: contents;
   }
 
   /*

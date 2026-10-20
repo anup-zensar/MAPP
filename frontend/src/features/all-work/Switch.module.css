@@ -66,9 +66,24 @@
   }
 }
 
-/* Below 600 px only the short words show; the rest stays in the name. */
-@media (max-width: 599px) {
+/*
+ * Below 600 px, and in a crowded toolbar (ViewToolbar.module.css), only the short words show; the
+ * rest stays in the name.
+ */
+@container view-toolbar (max-width: 1299px) {
   .rest {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 599px) {
+  .rest,
+  .restOnPhones {
     position: absolute;
     width: 1px;
     height: 1px;

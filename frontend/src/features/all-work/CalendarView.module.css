@@ -152,14 +152,18 @@
 .wordsBefore .words {
   position: absolute;
   overflow: visible;
+  /* The Today line and the month lines pass behind the words, never through them. */
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-1);
+  background: var(--surface);
 }
 
 .wordsAfter .words {
-  left: calc(100% + var(--space-2));
+  left: calc(100% + var(--space-1));
 }
 
 .wordsBefore .words {
-  right: calc(100% + var(--space-2));
+  right: calc(100% + var(--space-1));
 }
 
 .neutral {

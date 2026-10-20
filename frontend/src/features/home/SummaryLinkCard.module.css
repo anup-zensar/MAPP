@@ -6,9 +6,25 @@
 .card {
   position: relative;
   display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
   min-width: 0;
   border-radius: var(--radius-card);
   transition: box-shadow var(--dur) var(--ease-out);
+}
+
+/*
+ * Label, value and line under it are three rows shared by the cards of a row (subgrid), so a
+ * label that wraps to three lines on a phone moves every value of its row down with it: the
+ * values of a row stay at one height (plan 2.1 acceptance).
+ */
+.card > div {
+  display: grid;
+  grid-row: 1 / -1;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  align-content: start;
 }
 
 .card:hover {
