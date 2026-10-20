@@ -58,9 +58,9 @@
 }
 
 .search {
-  flex: 1 1 280px;
+  flex: 1 1 360px;
   min-width: 0;
-  max-width: 400px;
+  max-width: 480px;
 }
 
 .field {
@@ -116,12 +116,11 @@
 
 /* "4 of 11 transactions", pushed to the end of the row, on the controls' centre line. */
 .count {
-  align-self: center;
   margin-left: auto;
   color: var(--ink-2);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
-  line-height: var(--leading-sm);
+  line-height: var(--control-md);
   white-space: nowrap;
 }
 

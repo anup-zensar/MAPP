@@ -3,14 +3,15 @@
  * until a later feature builds a section — the sentence its "Coming soon" page shows (FR-015).
  * A feature that builds a section removes its sentence and gives it a real page in router.tsx.
  *
- * Plans (004–007), Approvals (008), All work (010), Financials (015), Settings (002, 003), My
- * profile (003), Recycle bin and Activity log (011) have their pages; no section is "Coming soon"
- * any more.
+ * Plans (004–007), Global budgets (014), Approvals (008), All work (010), Financials (015),
+ * Settings (002, 003), My profile (003), Recycle bin and Activity log (011) have their pages; no
+ * section is "Coming soon" any more.
  */
 import {
   CircleCheckBig,
   ClipboardList,
   House,
+  Landmark,
   LayoutGrid,
   ReceiptText,
   RotateCcwClock,
@@ -53,6 +54,9 @@ const PLANS: NavItem = {
   alsoCurrentOn: ['/activities/', '/line-items/'],
 };
 
+/** Feature 014 US6: global budgets shared out to market plans (FR-036). */
+const GLOBAL_BUDGETS: NavItem = { label: 'Global budgets', path: '/budgets', icon: Landmark };
+
 const APPROVALS: NavItem = {
   label: 'Approvals',
   path: '/approvals',
@@ -79,7 +83,7 @@ const ACTIVITY_LOG: NavItem = {
 export const MY_PROFILE: NavItem = { label: 'My profile', path: '/profile', icon: UserRound };
 
 /** The sidebar's main group, in order. */
-export const MAIN_ITEMS: NavItem[] = [HOME, PLANS, APPROVALS, ALL_WORK, FINANCIALS];
+export const MAIN_ITEMS: NavItem[] = [HOME, PLANS, GLOBAL_BUDGETS, APPROVALS, ALL_WORK, FINANCIALS];
 
 /** The sidebar's MORE group, in order. */
 export const MORE_ITEMS: NavItem[] = [SETTINGS, RECYCLE_BIN, ACTIVITY_LOG];

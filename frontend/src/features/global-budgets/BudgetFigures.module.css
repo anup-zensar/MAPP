@@ -1,0 +1,76 @@
+/* Four summary cards in a row; two per row below 960 px (design system §5.3). */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--grid-gap);
+}
+
+/* The compact figures inside a card on the list. */
+.figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.figure dd {
+  margin: 0;
+}
+
+.label {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.value {
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-xl);
+  white-space: nowrap;
+}
+
+.problem {
+  color: var(--danger-text);
+}
+
+/* "Over-allocated by $100,000.00": in words, never colour alone. */
+.over {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  color: var(--danger-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+}
+
+.over svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+@media (max-width: 959px) {
+  .cards,
+  .figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 399px) {
+  .figures {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

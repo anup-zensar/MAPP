@@ -86,6 +86,8 @@ describe('routes', () => {
     ['/plans', 'Plans'],
     ['/approvals', 'Approvals'],
     ['/all-work', 'All work'],
+    ['/budgets', 'Global budgets'],
+    ['/budgets/GB-1001', 'Global budget'],
     ['/financials', 'Financials'],
     ['/financials/transactions/FT-1003', 'Financials'],
     ['/settings', 'Settings'],

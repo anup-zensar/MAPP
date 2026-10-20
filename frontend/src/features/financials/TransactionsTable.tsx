@@ -217,7 +217,11 @@ function Amount({ row }: { row: FinancialTransactionRow }) {
 function LinkedTo({ row }: { row: FinancialTransactionRow }) {
   const { link } = row;
   if (link.state === 'notLinked') {
-    return <StatusChip tone="review">{NOT_LINKED}</StatusChip>;
+    return (
+      <span className={styles.linked}>
+        <StatusChip tone="review">{NOT_LINKED}</StatusChip>
+      </span>
+    );
   }
   if (link.state === 'lineItemDeleted') {
     return (

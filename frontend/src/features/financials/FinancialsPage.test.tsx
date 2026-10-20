@@ -3,7 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
 import { ALL_ROWS, FT_1006, FT_1010, FT_1011, transactionPage } from './testData';
-import { renderFinancials } from './renderFinancials';
+import { Outlet } from 'react-router';
+import { SessionProvider } from '@/app/SessionProvider';
+import { renderRoutes } from '@/test/render';
+import { testUser } from '@/test/users';
+import { FinancialsPage } from './FinancialsPage';
+import { TransactionPanel } from './TransactionPanel';
 
 const LIST = 'GET /api/financials/transactions';
 
@@ -20,6 +25,33 @@ function listQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
 }
 
 const rowOf = (name: string) => screen.getByRole('row', { name: new RegExp(name) });
+
+/**
+ * Renders the Financials page as the router does: the list at /financials and the details panel
+ * as its child route. Other addresses show "Another page". For tests only.
+ */
+function renderFinancials(route = '/financials') {
+  return renderRoutes(
+    [
+      {
+        element: (
+          <SessionProvider>
+            <Outlet />
+          </SessionProvider>
+        ),
+        children: [
+          {
+            path: '/financials',
+            element: <FinancialsPage />,
+            children: [{ path: 'transactions/:transactionId', element: <TransactionPanel /> }],
+          },
+          { path: '*', element: <p>Another page</p> },
+        ],
+      },
+    ],
+    { route, user: testUser() },
+  );
+}
 
 describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
   it('shows the header, the source, the tabs with counts, the totals and the rows newest first', async () => {

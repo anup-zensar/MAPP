@@ -2,7 +2,6 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
-import { renderFinancials } from './renderFinancials';
 import {
   FT_1003,
   FT_1004,
@@ -12,6 +11,12 @@ import {
   transactionOf,
   transactionPage,
 } from './testData';
+import { Outlet } from 'react-router';
+import { SessionProvider } from '@/app/SessionProvider';
+import { renderRoutes } from '@/test/render';
+import { testUser } from '@/test/users';
+import { FinancialsPage } from './FinancialsPage';
+import { TransactionPanel } from './TransactionPanel';
 
 const LIST = 'GET /api/financials/transactions';
 
@@ -22,6 +27,33 @@ function renderPanel(id: string, answer: MockHandler, more: Record<string, MockH
     ...more,
   });
   return { ...renderFinancials(`/financials/transactions/${id}?q=helix`), api };
+}
+
+/**
+ * Renders the Financials page as the router does: the list at /financials and the details panel
+ * as its child route. Other addresses show "Another page". For tests only.
+ */
+function renderFinancials(route = '/financials') {
+  return renderRoutes(
+    [
+      {
+        element: (
+          <SessionProvider>
+            <Outlet />
+          </SessionProvider>
+        ),
+        children: [
+          {
+            path: '/financials',
+            element: <FinancialsPage />,
+            children: [{ path: 'transactions/:transactionId', element: <TransactionPanel /> }],
+          },
+          { path: '*', element: <p>Another page</p> },
+        ],
+      },
+    ],
+    { route, user: testUser() },
+  );
 }
 
 describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
