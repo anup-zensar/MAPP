@@ -1,0 +1,112 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* The tab's toolbar: its one action at the right end. */
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Four cards per row from 960 px, two below (as the page's summary cards). */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+@media (min-width: 960px) {
+  .cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Ageing and waiting by level side by side (6 + 6) from 960 px, stacked below. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+
+@media (min-width: 960px) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.empty {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+/* The data table standard (design system §5.4), touching the card's edges. */
+.scroll {
+  overflow-x: auto;
+  margin: 0 calc(-1 * var(--card-padding)) calc(-1 * var(--card-padding));
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--row-divider);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: var(--card-padding);
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: var(--card-padding);
+}
+
+.table thead th {
+  height: var(--control-md);
+  border-bottom-color: var(--hairline);
+  background: var(--gray-bg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-xs);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table .number {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.secondary {
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}

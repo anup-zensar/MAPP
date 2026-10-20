@@ -5,7 +5,7 @@ import { formatWaitingTime, localDate } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import type { Formatters } from '@/lib/useFormatters';
 import type { ApprovalRow, ApprovalTab } from './approvalsApi';
-import { levelOf, names } from './messages';
+import { levelOf, names, progressText } from './messages';
 import { useIsPhone } from './useIsPhone';
 import styles from './ApprovalsTable.module.css';
 
@@ -176,16 +176,29 @@ function OpenButton({ row, onOpen }: { row: ApprovalRow; onOpen: (id: string) =>
   );
 }
 
-/** "Level 1 of 2" over the level's approvers, each on one line; "—" once the round ended. */
+/**
+ * "Level 1 of 2" over the level's approvers, and "1 of 3 approved" on a level where all must
+ * approve (017 FR-031); "—" once the round ended.
+ */
 function LevelCell({ row }: { row: ApprovalRow }) {
-  if (row.round.outcome !== 'open') {
+  const { round } = row;
+  if (round.outcome !== 'open') {
     return <>—</>;
   }
+  const all = round.mode === 'all' && (round.requiredCount ?? 0) > 1;
   return (
     <span className={styles.stack}>
-      <span>{levelOf(row.round.currentLevel, row.round.levelCount)}</span>{' '}
-      {row.round.approvers.length > 0 && (
-        <span className={styles.secondary}>{names(row.round.approvers)}</span>
+      <span>{levelOf(round.currentLevel, round.levelCount)}</span>{' '}
+      {round.approvers.length > 0 && (
+        <span className={styles.secondary}>{names(round.approvers)}</span>
+      )}
+      {all && (
+        <>
+          {' '}
+          <span className={styles.secondary}>
+            {progressText(round.approvedCount ?? 0, round.requiredCount ?? 0)}
+          </span>
+        </>
       )}
     </span>
   );
@@ -202,12 +215,41 @@ function SubmittedCell({ row, format }: { row: ApprovalRow; format: Formatters }
   );
 }
 
-/** The problem chips of a row; null when it has none (at most two per row, §4.1). */
+/**
+ * The chips of a row, most pressing first (008, 017 FR-031): "No approver" and "Overdue" (problem),
+ * "Start date passed" (problem), "Escalated to <name>" (waiting) and "as delegate of <names>"
+ * (running: the person decides for someone else); null when it has none.
+ */
 function rowChips(row: ApprovalRow): ReactNode {
-  if (!row.startDatePassed) {
-    return null;
-  }
-  return <StatusChip tone="problem">Start date passed</StatusChip>;
+  const open = row.round.outcome === 'open';
+  const chips = [
+    open && row.noApprover && (
+      <StatusChip key="none" tone="problem">
+        No approver
+      </StatusChip>
+    ),
+    open && row.overdue && (
+      <StatusChip key="overdue" tone="problem">
+        Overdue
+      </StatusChip>
+    ),
+    row.startDatePassed && (
+      <StatusChip key="start" tone="problem">
+        Start date passed
+      </StatusChip>
+    ),
+    open && row.escalatedTo && (
+      <StatusChip key="escalated" tone="review">
+        {`Escalated to ${row.escalatedTo.name}`}
+      </StatusChip>
+    ),
+    open && row.asDelegateOf && row.asDelegateOf.length > 0 && (
+      <StatusChip key="delegate" tone="active">
+        {`as delegate of ${names(row.asDelegateOf)}`}
+      </StatusChip>
+    ),
+  ].filter(Boolean);
+  return chips.length > 0 ? chips : null;
 }
 
 function pathText(row: ApprovalRow): string {

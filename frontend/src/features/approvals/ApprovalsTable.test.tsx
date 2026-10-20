@@ -4,7 +4,7 @@ import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import type { ApprovalTab } from './approvalsApi';
 import { ApprovalsTable } from './ApprovalsTable';
-import { rowOf } from './testData';
+import { ALEX, CARLOS, DANIEL, rowOf } from './testData';
 
 function renderTable(rows = [rowOf()], tab: ApprovalTab = 'waiting') {
   const onOpen = vi.fn();
@@ -156,3 +156,36 @@ function visibleText(element: Element | null): string {
   copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
   return copy.textContent ?? '';
 }
+
+describe('ApprovalsTable rules (feature 017, US4 and US6)', () => {
+  it('marks overdue, escalated, delegated and approver-less rows, and the progress of all levels (FR-031)', () => {
+    renderTable([
+      rowOf({
+        overdue: true,
+        escalatedTo: ALEX,
+        asDelegateOf: [CARLOS],
+        round: {
+          ...rowOf().round,
+          approvers: [CARLOS, DANIEL],
+          mode: 'all',
+          approvedCount: 1,
+          requiredCount: 2,
+        },
+      }),
+      rowOf({
+        activity: { id: 'A-1050', name: 'Booth', status: 'submitted', displayStatus: 'submitted' },
+        noApprover: true,
+        round: { ...rowOf().round, approvers: [] },
+      }),
+    ]);
+
+    const first = screen.getByRole('row', { name: /Launch film/ });
+    expect(first).toHaveTextContent('Overdue');
+    expect(first).toHaveTextContent('Escalated to Alex Morgan');
+    expect(first).toHaveTextContent('as delegate of Carlos Mendes');
+    expect(first).toHaveTextContent('Level 1 of 2 Carlos Mendes, Daniel Okoro 1 of 2 approved');
+    const second = screen.getByRole('row', { name: /Booth/ });
+    expect(second).toHaveTextContent('No approver');
+    expect(second).not.toHaveTextContent('Overdue');
+  });
+});

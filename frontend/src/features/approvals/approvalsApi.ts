@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/schema';
+import { useMonthRange } from './useMonthRange';
 
 export type ActivityApproval = components['schemas']['ActivityApproval'];
 export type ApprovalSubmission = components['schemas']['ApprovalSubmission'];
@@ -17,6 +18,8 @@ export type ApprovalRound = components['schemas']['ApprovalRound'];
 export type ApprovalRow = components['schemas']['ApprovalRow'];
 export type ApprovalPreview = components['schemas']['ApprovalPreview'];
 export type ApprovalPerson = components['schemas']['ApprovalPerson'];
+export type ApprovalMonitoring = components['schemas']['ApprovalMonitoring'];
+export type EscalationRunResult = components['schemas']['EscalationRunResult'];
 
 /** The three tabs of the approvals page. */
 export type ApprovalTab = 'waiting' | 'open' | 'decided';
@@ -139,6 +142,32 @@ export function useRecall() {
           body: reason ? { roundId, reason } : { roundId },
         }),
       ),
+    onSettled: () => invalidateAllButSession(queryClient),
+  });
+}
+
+/**
+ * The monitoring figures of the approvals page (017 US6, FR-029, FR-030): overdue, escalated,
+ * the average time to decision and the automatic approvals of this calendar month, the ageing
+ * buckets, the waiting by level and the overdue rows. Asked again every 30 seconds, like the
+ * counts; `enabled` false while the Monitoring tab is not shown.
+ */
+export function useApprovalMonitoring(enabled = true) {
+  const { monthStart, monthEnd } = useMonthRange();
+  return useQuery({
+    queryKey: ['approval-monitoring', monthStart],
+    queryFn: () =>
+      call(api.GET('/api/approvals/monitoring', { params: { query: { monthStart, monthEnd } } })),
+    refetchInterval: 30_000,
+    enabled,
+  });
+}
+
+/** "Run reminders and escalations now" (017 US5, FR-028); every query but the session after it. */
+export function useRunEscalations() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => call(api.POST('/api/approvals/escalations/run')),
     onSettled: () => invalidateAllButSession(queryClient),
   });
 }

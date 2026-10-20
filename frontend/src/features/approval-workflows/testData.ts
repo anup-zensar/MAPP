@@ -111,8 +111,8 @@ export const RULE_OPTIONS = {
       { id: 'OP-1003', label: 'Retail', active: false },
     ],
     roles: [
-      { id: 'RL-1002', name: 'Administrator', builtIn: 'administrator' },
-      { id: 'RL-1005', name: 'Approver', builtIn: 'approver' },
+      { id: 'RL-1002', name: 'Administrator', builtIn: 'administrator' as const },
+      { id: 'RL-1005', name: 'Approver', builtIn: 'approver' as const },
     ],
   },
 };

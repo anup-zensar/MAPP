@@ -6,7 +6,18 @@ import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import type { ApprovalRow } from './approvalsApi';
 import { ApprovalsPage } from './ApprovalsPage';
-import { DANIEL, approvalOf, previewOf, roundOf, rowOf } from './testData';
+import {
+  CARLOS,
+  DANIEL,
+  NO_DELEGATIONS,
+  PRIYA,
+  approvalOf,
+  delegationOf,
+  monitoringOf,
+  previewOf,
+  roundOf,
+  rowOf,
+} from './testData';
 
 const SUMMARY = {
   body: { waitingForMe: 3, allOpen: 5, approvedThisMonth: 2, declinedThisMonth: 1 },
@@ -44,6 +55,7 @@ function renderPage(route = '/approvals', answers: Record<string, MockHandler> =
   const api = mockApi({
     'GET /api/approvals/summary': SUMMARY,
     'GET /api/approvals': page(ROWS),
+    'GET /api/approval-delegations': NO_DELEGATIONS,
     ...answers,
   });
   const rendered = renderWithProviders(<ApprovalsPage />, {
@@ -250,5 +262,56 @@ describe('ApprovalsPage (feature 008, US3)', () => {
       'aria-selected',
       'true',
     );
+  });
+});
+
+describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
+  it('opens Monitoring as the fourth tab, without search or filters (FR-030)', async () => {
+    const { user, api } = renderPage('/approvals?tab=waiting', {
+      'GET /api/approvals/monitoring': { body: monitoringOf() },
+    });
+    await screen.findByRole('row', { name: /Launch film/ });
+
+    await user.click(screen.getByRole('tab', { name: 'Monitoring' }));
+
+    expect(await screen.findByText('Average time to decision')).toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Filters/ })).not.toBeInTheDocument();
+    expect(api.requests.some((r) => r.path === '/api/approvals/monitoring')).toBe(true);
+  });
+
+  it('opens the delegation panel from Delegate my approvals, through the address (FR-024)', async () => {
+    const { user } = renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Delegate my approvals' }));
+
+    const panel = await screen.findByRole('dialog', { name: 'Approval delegation' });
+    const closes = within(panel).getAllByRole('button', { name: 'Close' });
+    await user.click(closes[closes.length - 1]);
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Approval delegation' })).not.toBeInTheDocument(),
+    );
+  });
+
+  it('says above the cards who approves for whom today (FR-024)', async () => {
+    renderPage('/approvals', {
+      'GET /api/approval-delegations': {
+        body: {
+          items: [
+            delegationOf({ person: PRIYA, delegate: CARLOS, state: 'current' }),
+            delegationOf({ id: 'DLG-1002', person: DANIEL, delegate: PRIYA, state: 'current' }),
+          ],
+          total: 2,
+          canManageOthers: false,
+        },
+      },
+    });
+
+    expect(
+      await screen.findByText('Carlos Mendes approves for you until 14 Nov 2026.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('You are approving for Daniel Okoro until 14 Nov 2026.'),
+    ).toBeInTheDocument();
   });
 });

@@ -140,3 +140,26 @@ describe('ApprovalChain rules (feature 017, US2 and US7)', () => {
     expect(levels[3]).toHaveTextContent('No approver. Nobody else can approve level 4.');
   });
 });
+
+describe('ApprovalChain access (feature 014, FR-028)', () => {
+  it('flags an approver who holds no role that approves', () => {
+    renderWithProviders(
+      <ApprovalChain
+        round={roundOf({
+          levels: [
+            {
+              number: 1,
+              label: 'Level 1',
+              approvers: [{ ...CARLOS, canApprove: false }],
+              state: 'waiting',
+              decision: null,
+            },
+          ],
+        })}
+      />,
+      { user: testUser() },
+    );
+
+    expect(document.body).toHaveTextContent("Carlos Mendes(can't approve — no approving role)");
+  });
+});

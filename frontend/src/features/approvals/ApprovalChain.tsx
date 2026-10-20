@@ -84,7 +84,7 @@ export function ApprovalChain(props: ApprovalChainProps) {
                     <PersonLabel
                       person={person}
                       you={person.id === user.id}
-                      detail={row.approverState?.(person)}
+                      detail={approverDetail(row, person)}
                     />
                   </li>
                 ))}
@@ -116,6 +116,18 @@ export function ApprovalChain(props: ApprovalChainProps) {
       ))}
     </ol>
   );
+}
+
+/**
+ * What follows an approver's name: their own state on a level where all must approve, and 014's
+ * flag when they hold no role that approves (FR-028).
+ */
+function approverDetail(row: ChainRow, person: ApprovalPerson): string | undefined {
+  const parts = [
+    row.approverState?.(person),
+    person.canApprove === false ? "(can't approve — no approving role)" : undefined,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : undefined;
 }
 
 /** A level of a round with its state and the lines of 017 (absent fields read as before 017). */

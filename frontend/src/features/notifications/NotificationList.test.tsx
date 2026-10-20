@@ -56,6 +56,47 @@ describe('NotificationList (feature 008, US6)', () => {
     expect(screen.getByRole('button', { name: 'Mark all as read' })).toBeInTheDocument();
   });
 
+  it('shows the kinds of approval rules: automatic, reminder, escalation (017 FR-032)', async () => {
+    const NORTHSTAR = { id: 'system', name: 'NorthStar' };
+    renderList({
+      [LIST]: {
+        body: pageOf([
+          notificationOf({
+            id: 'NT-1010',
+            kind: 'autoApproved',
+            title: 'Activity approved automatically',
+            text: "'Launch film' (A-1042) was approved automatically: planned cost is below $10,000.00",
+            actor: NORTHSTAR,
+          }),
+          notificationOf({
+            id: 'NT-1011',
+            kind: 'reminder',
+            title: 'Reminder — approval waiting 3 days',
+            text: "'Launch film' (A-1042) has waited 3 days for you at level 1",
+            actor: NORTHSTAR,
+          }),
+          notificationOf({
+            id: 'NT-1012',
+            kind: 'escalated',
+            title: 'Approval escalated to you',
+            text: "'Launch film' (A-1042) waited 5 days at level 1. You can now approve it as backup approver.",
+            actor: NORTHSTAR,
+          }),
+        ]),
+      },
+    });
+
+    expect(
+      await screen.findByRole('button', { name: /^Activity approved automatically/ }),
+    ).toHaveTextContent('was approved automatically: planned cost is below $10,000.00');
+    expect(
+      screen.getByRole('button', { name: /^Reminder — approval waiting 3 days/ }),
+    ).toHaveTextContent('has waited 3 days for you at level 1');
+    expect(screen.getByRole('button', { name: /^Approval escalated to you/ })).toHaveTextContent(
+      'You can now approve it as backup approver.',
+    );
+  });
+
   it('marks a notification read and opens its activity at the Approval section (FR-034)', async () => {
     let read = false;
     const { user, api, router, onClose } = renderList({

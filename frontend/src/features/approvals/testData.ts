@@ -216,3 +216,64 @@ export function previewOf(overrides: Partial<ApprovalPreview> = {}): ApprovalPre
     ...overrides,
   };
 }
+
+type Delegation = components['schemas']['ApprovalDelegation'];
+type Monitoring = components['schemas']['ApprovalMonitoring'];
+
+/** Daniel delegates to Carlos (017, the seeded DLG-1001 shape); tests set dates and state. */
+export function delegationOf(overrides: Partial<Delegation> = {}): Delegation {
+  return {
+    id: 'DLG-1001',
+    person: DANIEL,
+    delegate: CARLOS,
+    startDate: '2026-11-03',
+    endDate: '2026-11-14',
+    note: 'Annual leave',
+    state: 'planned',
+    canChange: true,
+    cancelledAt: null,
+    cancelledBy: null,
+    version: 1,
+    createdAt: '2026-10-20T09:00:00Z',
+    createdBy: actor(DANIEL),
+    updatedAt: '2026-10-20T09:00:00Z',
+    updatedBy: actor(DANIEL),
+    ...overrides,
+  };
+}
+
+/** GET /api/approval-delegations without any delegation. */
+export const NO_DELEGATIONS = { body: { items: [], total: 0, canManageOthers: false } };
+
+/** The monitoring figures: one overdue approval of "Launch film", waiting 6 days at level 1. */
+export function monitoringOf(overrides: Partial<Monitoring> = {}): Monitoring {
+  return {
+    cards: {
+      overdue: 1,
+      escalated: 0,
+      averageDecisionDays: '2.4',
+      decidedThisMonth: 3,
+      autoApprovedThisMonth: 2,
+    },
+    ageing: [
+      { bucket: 'under1', label: 'Under 1 day', count: 1 },
+      { bucket: 'days1to2', label: '1–2 days', count: 0 },
+      { bucket: 'days3to5', label: '3–5 days', count: 2 },
+      { bucket: 'days6to10', label: '6–10 days', count: 1 },
+      { bucket: 'over10', label: 'More than 10 days', count: 0 },
+    ],
+    byLevel: [
+      {
+        workflow: { id: WORKFLOW_REF.id, name: WORKFLOW_REF.name },
+        level: 1,
+        levelLabel: 'Level 1',
+        waiting: 3,
+        overdue: 1,
+        oldestWaitingSince: '2026-03-10T09:00:00Z',
+      },
+    ],
+    overdue: [rowOf({ overdue: true, waitingDays: 6 })],
+    canRunEscalations: false,
+    ...overrides,
+  };
+}
