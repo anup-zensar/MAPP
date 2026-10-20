@@ -2,6 +2,7 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useAttributeForm } from '@/api/settingsQueries';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { planCurrencyOf } from '@/features/plans/planCurrency';
 import { usePlan } from './campaignApi';
 import type { Campaign, Initiative } from './campaignApi';
 import { PanelFailure, PanelLoading, StatePanel } from './PanelFrame';
@@ -123,6 +124,7 @@ function EditWhenReady({
       planId={planId}
       attributeForm={attributeForm.data}
       businessUnit={plan.data.businessUnit.map((option) => option.id)}
+      currency={planCurrencyOf(plan.data)}
     />
   );
 }

@@ -431,6 +431,43 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     );
   });
 
+  it('types the budget in the plan currency and says clearing it removes Budget by month (016 FR-011, FR-022)', async () => {
+    const gbp = (amount: string) => ({ amount, currency: 'GBP' });
+    const { user, api } = renderPanel(`${DETAILS}/edit`, {
+      'GET /api/plans/P-1001': { body: { ...planAnswer(), currency: 'GBP' } },
+      'GET /api/campaigns/C-1001': {
+        body: campaign({
+          budget: gbp('120000.00'),
+          parentRemainingBudget: gbp('80000.00'),
+          budgetPhasing: {
+            method: 'evenly',
+            months: [],
+            monthly: Array.from({ length: 12 }, () => gbp('10000.00')),
+            total: gbp('120000.00'),
+            problem: null,
+          },
+        }),
+      },
+      'PATCH /api/campaigns/C-1001': { body: campaign() },
+    });
+    const form = await findForm();
+    const budget = within(form).getByLabelText('Campaign budget');
+    expect(within(form).queryByText('Budget by month will be removed when you save.')).toBeNull();
+
+    await user.clear(budget);
+    expect(
+      within(form).getByText('Budget by month will be removed when you save.'),
+    ).toBeInTheDocument();
+    await user.type(budget, '150000');
+    expect(within(form).queryByText('Budget by month will be removed when you save.')).toBeNull();
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(api.bodiesOf('PATCH /api/campaigns/C-1001')).toHaveLength(1));
+    expect(api.bodiesOf('PATCH /api/campaigns/C-1001')[0]).toMatchObject({
+      budget: { amount: '150000.00', currency: 'GBP' },
+    });
+  });
+
   it('shows the FR-007 problem under the dates and saves nothing (US3#3, FR-007)', async () => {
     const problem =
       'Digital & social (01 Feb – 30 Nov 2026) would be outside these dates. Change its dates first, or choose dates that include it.';

@@ -68,7 +68,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     );
     // The year is one of the less-used filters behind Filters (design system §2.4 A).
     await user.click(screen.getByRole('button', { name: 'Filters' }));
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Year' }), '2026');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'From' }), '2026');
     await user.keyboard('{Escape}');
 
     await waitFor(() => expect(cardNames()).toEqual(['FY2026 Mobility China']));
@@ -76,11 +76,62 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove filter: Draft' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove filter: Year: 2026' })).toBeInTheDocument();
-    expect(router.state.location.search).toBe('?status=draft&year=2026');
+    expect(router.state.location.search).toBe('?status=draft&yearFrom=2026&yearTo=2026');
+    // One year goes as the year parameter, the alias every API version understands (D-269).
     expect(listQueries(api)).toContain('?scope=all&status=draft&year=2026');
 
     await user.click(screen.getByRole('button', { name: 'Remove filter: Draft' }));
-    await waitFor(() => expect(router.state.location.search).toBe('?year=2026'));
+    await waitFor(() => expect(router.state.location.search).toBe('?yearFrom=2026&yearTo=2026'));
+  });
+
+  it('filters by a range of years and by plan type (016 FR-033)', async () => {
+    const { api, user, router } = renderPage();
+
+    await screen.findAllByRole('article');
+    await user.click(screen.getByRole('button', { name: 'Filters' }));
+    const to = screen.getByRole('combobox', { name: 'To' });
+    expect(to).toBeDisabled();
+    expect(
+      within(screen.getByRole('combobox', { name: 'From' }))
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['All years', '2025', '2026']);
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'From' }), '2025');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'To' }), '2026');
+    await user.click(screen.getByRole('checkbox', { name: 'Strategic' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Cross-market' }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('button', { name: 'Filters (2)' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Remove filter: Years: 2025 – 2026' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Remove filter: Plan type: Strategic, Cross-market' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.search).toBe(
+      '?yearFrom=2025&yearTo=2026&type=strategic&type=crossMarket',
+    );
+    await waitFor(() =>
+      expect(listQueries(api)).toContain(
+        '?scope=all&yearFrom=2025&yearTo=2026&type=strategic&type=crossMarket',
+      ),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Remove filter: Years: 2025 – 2026' }));
+    await waitFor(() =>
+      expect(router.state.location.search).toBe('?type=strategic&type=crossMarket'),
+    );
+  });
+
+  it('reads an old single year in the address as a one-year range (D-269)', async () => {
+    const { api } = renderPage('/plans?year=2025');
+
+    expect(
+      await screen.findByRole('button', { name: 'Remove filter: Year: 2025' }),
+    ).toBeInTheDocument();
+    expect(listQueries(api)[0]).toBe('?scope=all&year=2025');
   });
 
   it('searches name or ID once typing stops (US2#3)', async () => {

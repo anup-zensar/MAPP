@@ -21,6 +21,8 @@ export interface RecordEditProps {
   planId: string;
   attributeForm: AttributeForm;
   businessUnit: string[];
+  /** The plan currency: the budget is typed and sent in it (016 FR-011). */
+  currency: string;
 }
 
 /**
@@ -35,6 +37,7 @@ export function RecordEdit({
   planId,
   attributeForm,
   businessUnit,
+  currency,
 }: RecordEditProps) {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -67,7 +70,7 @@ export function RecordEdit({
   async function save() {
     setSaving(true);
     try {
-      const saved = await update.mutateAsync({ ...bodyOf(values), version });
+      const saved = await update.mutateAsync({ ...bodyOf(values, currency), version });
       show({ message: savedToast(level, saved.name) });
       leave(detailsHref);
     } catch (error) {
@@ -140,6 +143,8 @@ export function RecordEdit({
         campaign={campaign}
         parentRemaining={opened.parentRemainingBudget}
         savedBudget={opened.budget}
+        currency={currency}
+        phased={!!opened.budgetPhasing && opened.budgetPhasing.method !== 'none'}
       />
     </RecordFormPanel>
   );

@@ -5,6 +5,7 @@ import { useToast } from '@/components';
 import type { AttributeForm, FieldProblem, SaveFailure } from '@/components';
 import { recordHref } from '@/lib/recordLinks';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { planCurrencyOf } from '@/features/plans/planCurrency';
 import { useCampaign, useCreateInitiative, usePlan } from './campaignApi';
 import type { Campaign } from './campaignApi';
 import { bodyOf, defaultAttributes, fieldId, sameValues } from './formValues';
@@ -52,6 +53,7 @@ export function NewInitiativePanel() {
       campaign={parent.data}
       businessUnit={plan.data.businessUnit.map((option) => option.id)}
       attributeForm={attributeForm.data}
+      currency={planCurrencyOf(plan.data)}
     />
   );
 }
@@ -61,6 +63,8 @@ interface NewInitiativeFormProps {
   campaign: Campaign;
   businessUnit: string[];
   attributeForm: AttributeForm;
+  /** The plan currency: the budget is typed and sent in it (016 FR-011). */
+  currency: string;
 }
 
 function NewInitiativeForm({
@@ -68,6 +72,7 @@ function NewInitiativeForm({
   campaign,
   businessUnit,
   attributeForm,
+  currency,
 }: NewInitiativeFormProps) {
   const navigate = useNavigate();
   const { show } = useToast();
@@ -95,7 +100,7 @@ function NewInitiativeForm({
   async function save(addAnother: boolean) {
     setSaving(true);
     try {
-      const created = await create.mutateAsync(bodyOf(values));
+      const created = await create.mutateAsync(bodyOf(values, currency));
       show({
         message: createdToast('initiative', created.name),
         action: {
@@ -143,6 +148,7 @@ function NewInitiativeForm({
         defaults={defaults}
         parentRemaining={campaign.budgetAndCost.remainingForChildren}
         savedBudget={null}
+        currency={currency}
       />
     </RecordFormPanel>
   );

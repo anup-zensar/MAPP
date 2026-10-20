@@ -11,7 +11,7 @@ import {
 import type { AttributeForm, AttributeValues, FieldProblem } from '@/components';
 import { PersonField } from '@/features/people';
 import { useFormatters } from '@/lib/useFormatters';
-import { BUDGET_CURRENCY } from './budget';
+import { PHASING_REMOVED } from '@/features/plans/planText';
 import { RemainingBudgetLine } from './BudgetCost';
 import type { Money } from './campaignApi';
 import { attributeErrors, outsideYear } from './formValues';
@@ -76,6 +76,10 @@ export interface RecordFormProps {
   /** The parent's remaining budget as saved, and this record's saved budget (FR-010). */
   parentRemaining: Money | null;
   savedBudget: Money | null;
+  /** The plan currency: the budget is typed in it (016 FR-011). */
+  currency: string;
+  /** Edit forms: the saved budget has a Budget by month, which clearing the budget removes. */
+  phased?: boolean;
 }
 
 /**
@@ -97,6 +101,8 @@ export function RecordForm({
   defaults,
   parentRemaining,
   savedBudget,
+  currency,
+  phased = false,
 }: RecordFormProps) {
   const { date } = useFormatters();
   const campaignFieldId = useId();
@@ -191,9 +197,10 @@ export function RecordForm({
         <MoneyField
           label={BUDGET_LABEL[level]}
           name={`${level}-budget`}
-          currency={BUDGET_CURRENCY}
+          currency={currency}
           value={values.budget}
           onChange={(budget) => set('budget', budget)}
+          note={phased && savedBudget && values.budget.trim() === '' ? PHASING_REMOVED : undefined}
           error={problemOf(problems, 'budget')}
         />
         <RemainingBudgetLine

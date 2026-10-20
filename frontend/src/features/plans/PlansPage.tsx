@@ -17,12 +17,19 @@ import {
 import type { FilterChip } from '@/components';
 import { useFormatters } from '@/lib/useFormatters';
 import { usePageTitle } from '@/lib/usePageTitle';
-import { DEFAULT_FILTERS, readFilters, remember, toSearchParams } from './listPreferences';
+import {
+  DEFAULT_FILTERS,
+  readFilters,
+  remember,
+  toSearchParams,
+  yearRangeLabel,
+} from './listPreferences';
 import type { PlanListFilters } from './listPreferences';
 import { PlanCard } from './PlanCard';
 import { PlansFilters } from './PlansFilters';
 import styles from './PlansPage.module.css';
 import { usePlans } from './plansApi';
+import { PLAN_TYPE_LABELS } from './planCurrency';
 import { PlanTable } from './PlanTable';
 import { MY_TEAMS_HINT, STATUS } from './planText';
 import { usePlanActions } from './usePlanActions';
@@ -31,8 +38,8 @@ import { usePlanActions } from './usePlanActions';
 const SEARCH_DELAY_MS = 250;
 
 /**
- * Plans (US2, FR-001 – FR-004): every plan as cards or a table, with summary cards, status, year
- * and team filters, search on name or ID, removable filter chips and the result count. Filters
+ * Plans (US2, FR-001 – FR-004; 016 FR-033): every plan as cards or a table, with summary cards,
+ * status, years, plan type and team filters, search on name or ID, removable filter chips and the result count. Filters
  * live in the address and are remembered per person.
  */
 export function PlansPage() {
@@ -44,7 +51,9 @@ export function PlansPage() {
   const [typed, setTyped] = useState(filters.q);
   const plans = usePlans({
     status: filters.status,
-    year: filters.year,
+    yearFrom: filters.yearFrom,
+    yearTo: filters.yearTo,
+    types: filters.types,
     scope: filters.scope,
     q: filters.q,
   });
@@ -82,9 +91,25 @@ export function PlansPage() {
     change({ ...DEFAULT_FILTERS, layout: filters.layout });
   }
 
+  const years = yearRangeLabel(filters);
   const chips: FilterChip[] = [
     ...(filters.status !== 'all' ? [{ key: 'status', label: STATUS[filters.status].word }] : []),
-    ...(filters.year !== null ? [{ key: 'year', label: `Year: ${filters.year}` }] : []),
+    ...(years !== null
+      ? [
+          {
+            key: 'years',
+            label: `${filters.yearFrom === filters.yearTo ? 'Year' : 'Years'}: ${years}`,
+          },
+        ]
+      : []),
+    ...(filters.types.length > 0
+      ? [
+          {
+            key: 'types',
+            label: `Plan type: ${filters.types.map((type) => PLAN_TYPE_LABELS[type]).join(', ')}`,
+          },
+        ]
+      : []),
     ...(filters.scope === 'myTeams' ? [{ key: 'scope', label: 'My teams’ plans' }] : []),
     ...(filters.q.trim() ? [{ key: 'q', label: `Search: ${filters.q.trim()}` }] : []),
   ];
@@ -93,12 +118,16 @@ export function PlansPage() {
     if (key === 'q') {
       clearSearch();
     }
+    if (key === 'years') {
+      change({ yearFrom: null, yearTo: null });
+      return;
+    }
     change({ [key]: DEFAULT_FILTERS[key as keyof PlanListFilters] });
   }
 
   const data = plans.data;
   const summary = data?.summary;
-  const years = data?.years ?? [];
+  const planYears = data?.years ?? [];
   const showsTable = filters.layout === 'table';
 
   /** The list's state when it has no plans to show: loading, failure, empty, filtered out. */
@@ -156,7 +185,7 @@ export function PlansPage() {
               <SummaryCard
                 label="Plans"
                 value={summary.plans}
-                tip="Plans in the chosen years and teams."
+                tip="Plans in the chosen years, plan types and teams."
                 detail={
                   <span>
                     {summary.draft} draft · {summary.published} published
@@ -212,7 +241,7 @@ export function PlansPage() {
                 onChange={(status) => change({ status })}
               />
             </div>
-            <PlansFilters filters={filters} years={years} onChange={change} />
+            <PlansFilters filters={filters} years={planYears} onChange={change} />
             <div className={styles.end}>
               {data && (
                 <p className={styles.count} aria-live="polite">

@@ -31,6 +31,15 @@ export const PLAN_KEYS = {
   copyOptions: (planId: string) => ['plan-copy-options', planId] as const,
 };
 
+/**
+ * The year parameters of the list (016 FR-033, D-269): one year goes as `year`, the alias every
+ * API version understands; a range as `yearFrom` and `yearTo`; All years sends neither.
+ */
+function yearParams({ yearFrom, yearTo }: Pick<PlanQuery, 'yearFrom' | 'yearTo'>) {
+  if (yearFrom === null || yearTo === null) return {};
+  return yearFrom === yearTo ? { year: yearFrom } : { yearFrom, yearTo };
+}
+
 /** The plans matching the filters, newest year first; the old answer stays while a new one loads. */
 export function usePlans(query: PlanQuery) {
   return useQuery({
@@ -42,7 +51,8 @@ export function usePlans(query: PlanQuery) {
             query: {
               scope: query.scope,
               ...(query.status !== 'all' && { status: query.status }),
-              ...(query.year !== null && { year: query.year }),
+              ...yearParams(query),
+              ...(query.types.length > 0 && { type: query.types }),
               ...(query.q.trim() !== '' && { q: query.q.trim() }),
             },
           },

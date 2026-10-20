@@ -5,6 +5,7 @@ import { useToast } from '@/components';
 import type { AttributeForm, FieldProblem, SaveFailure } from '@/components';
 import { recordHref } from '@/lib/recordLinks';
 import { usePageTitle } from '@/lib/usePageTitle';
+import { planCurrencyOf } from '@/features/plans/planCurrency';
 import { useCreateCampaign, usePlan, usePlanCampaigns } from './campaignApi';
 import type { PlanCampaigns } from './campaignApi';
 import { PanelFailure, PanelLoading, RecordFormPanel, StatePanel } from './PanelFrame';
@@ -51,6 +52,7 @@ export function NewCampaignPanel() {
       data={campaigns.data}
       businessUnit={plan.data.businessUnit.map((option) => option.id)}
       attributeForm={attributeForm.data}
+      currency={planCurrencyOf(plan.data)}
     />
   );
 }
@@ -60,9 +62,17 @@ interface NewCampaignFormProps {
   data: PlanCampaigns;
   businessUnit: string[];
   attributeForm: AttributeForm;
+  /** The plan currency: the budget is typed and sent in it (016 FR-011). */
+  currency: string;
 }
 
-function NewCampaignForm({ planId, data, businessUnit, attributeForm }: NewCampaignFormProps) {
+function NewCampaignForm({
+  planId,
+  data,
+  businessUnit,
+  attributeForm,
+  currency,
+}: NewCampaignFormProps) {
   const navigate = useNavigate();
   const { show } = useToast();
   const create = useCreateCampaign(planId);
@@ -90,7 +100,7 @@ function NewCampaignForm({ planId, data, businessUnit, attributeForm }: NewCampa
   async function save(addAnother: boolean) {
     setSaving(true);
     try {
-      const created = await create.mutateAsync(bodyOf(values));
+      const created = await create.mutateAsync(bodyOf(values, currency));
       show({
         message: createdToast('campaign', created.name),
         action: {
@@ -134,6 +144,7 @@ function NewCampaignForm({ planId, data, businessUnit, attributeForm }: NewCampa
         defaults={defaults}
         parentRemaining={data.totals.remainingPlanBudget}
         savedBudget={null}
+        currency={currency}
       />
     </RecordFormPanel>
   );
