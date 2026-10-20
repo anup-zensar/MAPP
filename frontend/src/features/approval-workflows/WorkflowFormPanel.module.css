@@ -23,3 +23,15 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
 }
+
+/* A reminder or escalation check box with its days indented under it. */
+.timing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.days {
+  max-width: 280px;
+  margin-left: var(--space-6);
+}

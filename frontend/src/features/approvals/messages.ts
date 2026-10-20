@@ -14,6 +14,12 @@ type ActorRef = components['schemas']['ActorRef'];
 type ApprovalRound = components['schemas']['ApprovalRound'];
 type ApprovalChainLevel = components['schemas']['ApprovalChainLevel'];
 type ApprovalHistoryEntry = components['schemas']['ApprovalHistoryEntry'];
+type ApprovalWorkflowLevel = components['schemas']['ApprovalWorkflowLevel'];
+type ApprovalExcludedPerson = components['schemas']['ApprovalExcludedPerson'];
+type ApprovalRuleFacts = components['schemas']['ApprovalRuleFacts'];
+type EscalationRunResult = components['schemas']['EscalationRunResult'];
+type EscalationEvent = components['schemas']['EscalationEvent'];
+type Money = components['schemas']['Money'];
 
 /** "This activity no longer exists — someone may have deleted it." (API and web). */
 export const ACTIVITY_GONE = 'This activity no longer exists — someone may have deleted it.';
@@ -88,11 +94,216 @@ export function historyActionText(action: ApprovalHistoryEntry['action']): strin
     restarted: 'Approval restarted',
     cancelled: 'Cancelled — activity deleted',
     autoApproved: 'Approved automatically',
-    skipped: 'Skipped',
+    skipped: 'Not needed',
     reminded: 'Reminder sent',
     escalated: 'Escalated',
   };
   return texts[action];
+}
+
+/** The title of a history entry: its action, and for an escalation whom it went to (017 FR-034). */
+export function historyEntryTitle(
+  entry: Pick<ApprovalHistoryEntry, 'action' | 'escalatedTo'>,
+): string {
+  if (entry.action === 'escalated' && entry.escalatedTo) {
+    return `Escalated to ${entry.escalatedTo.name}`;
+  }
+  return historyActionText(entry.action);
+}
+
+/**
+ * Who acted in a history entry, in the capacity they acted (017 FR-019, FR-034): "Carlos Mendes",
+ * "Carlos Mendes as delegate of Daniel Okoro", "Alex Morgan as backup approver", "Alex Morgan on
+ * behalf of Daniel Okoro"; NorthStar for reminders, escalations and rules.
+ */
+export function historyActorText(entry: ApprovalHistoryEntry): string {
+  return decisionActorText(entry);
+}
+
+/** What else an entry of 017 says: the rule that applied, or how long the level waited. */
+export function historyEntryNote(entry: ApprovalHistoryEntry): string {
+  if ((entry.action === 'autoApproved' || entry.action === 'skipped') && entry.rule) {
+    return entry.action === 'skipped' ? `Only when ${entry.rule}` : capitalise(entry.rule);
+  }
+  if ((entry.action === 'reminded' || entry.action === 'escalated') && entry.waitedDays) {
+    return `waited ${daysText(entry.waitedDays)}`;
+  }
+  return '';
+}
+
+/**
+ * "Rules applied to: planned cost $50,000.00 · Event · Lubricants, Mobility" — the facts the rules
+ * of a round used at submission (017 FR-010); "" for rounds submitted before the rules.
+ */
+export function rulesAppliedText(
+  facts: ApprovalRuleFacts | null | undefined,
+  money: (value: Money | null) => string,
+): string {
+  if (!facts) {
+    return '';
+  }
+  const parts = [
+    facts.plannedCost ? `planned cost ${money(facts.plannedCost)}` : 'no planned cost',
+    facts.activityType?.name ?? '',
+    facts.businessUnits.map((unit) => unit.label).join(', '),
+  ].filter(Boolean);
+  return `Rules applied to: ${parts.join(' · ')}`;
+}
+
+/** "1 day" / "3 days" (017: day counts read the same everywhere). */
+export function daysText(days: number): string {
+  return days === 1 ? '1 day' : `${days} days`;
+}
+
+/**
+ * The reminders and escalation of a workflow: "Reminder after 3 days · escalation after 5 days",
+ * one of the two, or "No reminders or escalation" (017 FR-007, FR-009).
+ */
+export function timingsText(
+  reminderDays: number | null | undefined,
+  escalationDays: number | null | undefined,
+): string {
+  const parts = [
+    reminderDays ? `reminder after ${daysText(reminderDays)}` : '',
+    escalationDays ? `escalation after ${daysText(escalationDays)}` : '',
+  ].filter(Boolean);
+  return parts.length > 0 ? capitalise(parts.join(' · ')) : 'No reminders or escalation';
+}
+
+/**
+ * The rules of a workflow level in words (017 FR-009), one line each: "Line manager" or "Role:
+ * Approver", "All must approve", "Only needed when planned cost is at least $100,000.00",
+ * "Approved automatically when planned cost is below $10,000.00", "Backup approver: Alex Morgan".
+ * A level stored before the rules has none.
+ */
+export function levelRuleLines(level: ApprovalWorkflowLevel): string[] {
+  const lines: string[] = [];
+  if (level.approverType === 'manager') {
+    lines.push('Line manager');
+  } else if (level.approverType === 'role') {
+    lines.push(`Role: ${level.role?.name ?? '—'}`);
+  }
+  if (level.mode === 'all' && level.approverType !== 'manager') {
+    lines.push('All must approve');
+  }
+  if (level.appliesWhen) {
+    lines.push(`Only needed when ${level.appliesWhen.text}`);
+  }
+  if (level.autoApproveWhen) {
+    lines.push(`Approved automatically when ${level.autoApproveWhen.text}`);
+  }
+  if (level.backupApprover) {
+    lines.push(`Backup approver: ${personName(level.backupApprover)}`);
+  }
+  return lines;
+}
+
+/**
+ * Where a round level's approvers came from, as the chain writes it: "Line manager of Priya
+ * Raman", "Role: Approver"; "" for named people (the API says "line manager of …", "role …").
+ */
+export function sourceText(source: string | undefined): string {
+  if (!source) {
+    return '';
+  }
+  if (source.startsWith('role ')) {
+    return `Role: ${source.slice('role '.length)}`;
+  }
+  return capitalise(source);
+}
+
+/** Why a person was left out of a level (017 FR-011, 014 FR-028). */
+const LEFT_OUT: Record<ApprovalExcludedPerson['reason'], { now: string; then: string }> = {
+  owner: { now: 'owns this activity', then: 'owns this activity' },
+  submitter: { now: 'is submitting it', then: 'submitted it' },
+  inactive: { now: 'is inactive', then: 'inactive' },
+  cannotApprove: {
+    now: "can't approve — no approving role",
+    then: "can't approve — no approving role",
+  },
+};
+
+/** At submission: "Priya Raman is left out: owns this activity." */
+export function leftOutText(excluded: ApprovalExcludedPerson): string {
+  return `${excluded.person.name} is left out: ${LEFT_OUT[excluded.reason].now}.`;
+}
+
+/** In the chain: "Priya Raman was left out: owns this activity." */
+export function wasLeftOutText(excluded: ApprovalExcludedPerson): string {
+  return `${excluded.person.name} was left out: ${LEFT_OUT[excluded.reason].then}.`;
+}
+
+/** "1 of 3 approved" on a level where every approver must approve (017 FR-015). */
+export function progressText(approvedCount: number, requiredCount: number): string {
+  return `${approvedCount} of ${requiredCount} approved`;
+}
+
+/** "Escalated to Alex Morgan on 14 Mar 2026" (017 FR-027, FR-033). */
+export function escalatedText(name: string, at: string, dateFormat?: DateFormat): string {
+  return `Escalated to ${name} on ${formatDate(localDate(at), dateFormat)}`;
+}
+
+/** "Reminder sent on 13 Mar 2026" (017 FR-026, FR-033). */
+export function reminderSentText(at: string, dateFormat?: DateFormat): string {
+  return `Reminder sent on ${formatDate(localDate(at), dateFormat)}`;
+}
+
+/** What the person deciding acts as (017 FR-019), for the decision dialog; "" for an approver. */
+export function capacitySentence(
+  capacity: string | null | undefined,
+  asDelegateOf: { name: string }[],
+  level: number,
+): string {
+  if (capacity === 'delegate' && asDelegateOf.length > 0) {
+    return `You approve as delegate of ${names(asDelegateOf)}.`;
+  }
+  if (capacity === 'backup') {
+    return `You approve as backup approver of level ${level}.`;
+  }
+  return '';
+}
+
+/**
+ * The result of "Run reminders and escalations now" (017 FR-028): "2 reminders sent, 1
+ * escalation", "1 reminder sent, no escalations", "No reminders, no escalations".
+ */
+export function escalationRunText(result: Pick<EscalationRunResult, 'reminded' | 'escalated'>) {
+  const reminders =
+    result.reminded === 0
+      ? 'no reminders'
+      : result.reminded === 1
+        ? '1 reminder sent'
+        : `${result.reminded} reminders sent`;
+  const escalations =
+    result.escalated === 0
+      ? 'no escalations'
+      : result.escalated === 1
+        ? '1 escalation'
+        : `${result.escalated} escalations`;
+  return capitalise(`${reminders}, ${escalations}`);
+}
+
+/**
+ * "Not escalated: 'Trade magazine ads' (A-1004), level 1: no backup approver can take it." — the
+ * levels due for escalation that nobody could take, one sentence each joined by a space.
+ */
+export function notEscalatedText(events: EscalationEvent[]): string {
+  return `Not escalated: ${events
+    .map(
+      (event) =>
+        `'${event.activity.name}' (${event.activity.id}), level ${event.level}: no backup approver can take it.`,
+    )
+    .join(' ')}`;
+}
+
+/** "Alex Morgan" or "Alex Morgan (inactive)". */
+function personName(person: ApprovalPerson): string {
+  return person.active ? person.name : `${person.name} (inactive)`;
+}
+
+/** The text with its first letter in upper case. */
+function capitalise(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /** The state of one level of the chain as a status word, its family and what follows the word. */

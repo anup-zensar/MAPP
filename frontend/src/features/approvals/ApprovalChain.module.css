@@ -69,6 +69,40 @@
   white-space: nowrap;
 }
 
+/* The level's rules and events, one line each. */
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  list-style: none;
+  overflow-wrap: break-word;
+}
+
+/* "No approver" and its advice: a warning in words, the colour only repeats it. */
+.warning {
+  display: flex;
+  gap: var(--space-2);
+  color: var(--warning-text);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+
+.warning svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.warning span {
+  color: var(--ink);
+}
+
 /* The state: its chip, then what follows it in secondary ink. */
 .state {
   grid-column: 2;

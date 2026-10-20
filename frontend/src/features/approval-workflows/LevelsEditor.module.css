@@ -42,3 +42,90 @@
   display: flex;
   gap: 2px;
 }
+
+/* A condition check box with the fields it reveals under it. */
+.rule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* "Who approves" and "When there are several approvers": the choices in a row, wrapping. */
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.radioGroup:focus-visible {
+  border-radius: var(--radius-1);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-sm);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.radio input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--status-problem-text);
+  font-size: var(--text-xs);
+}
+
+.problem svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+/* The choices of the rules could not be loaded: say so once, with Try again. */
+.loadFailed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--gray-bg);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}

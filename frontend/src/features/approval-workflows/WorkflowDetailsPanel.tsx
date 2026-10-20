@@ -5,6 +5,7 @@ import { ActionsMenu, Button, ErrorState, SidePanel, Skeleton, StatusChip } from
 import { ApprovalAlert } from '@/features/approvals/ApprovalAlert';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
 import { ApprovalChain } from '@/features/approvals/ApprovalChain';
+import { timingsText } from '@/features/approvals/messages';
 import { localDate } from '@/lib/format';
 import { recordHref } from '@/lib/recordLinks';
 import { useFormatters } from '@/lib/useFormatters';
@@ -122,6 +123,9 @@ function DetailsBody({ details }: { details: ApprovalWorkflowDetails }) {
       <section className={styles.section} aria-label="Levels">
         <h3 className={styles.heading}>Levels</h3>
         <ApprovalChain upcomingLevels={workflow.levels} />
+        <p className={styles.muted}>
+          {timingsText(workflow.reminderDays, workflow.escalationDays)}
+        </p>
       </section>
 
       <section className={styles.section} aria-label="Activities using it">

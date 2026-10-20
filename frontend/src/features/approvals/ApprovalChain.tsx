@@ -1,13 +1,25 @@
+import { CircleAlert } from 'lucide-react';
 import { useCurrentUser } from '@/app/useSession';
 import type { components } from '@/api/schema';
 import { PersonLabel, StatusChip } from '@/components';
+import type { DateFormat } from '@/lib/format';
 import { useFormatters } from '@/lib/useFormatters';
 import type { ApprovalPerson, ApprovalRound } from './approvalsApi';
-import { chainState } from './messages';
+import {
+  chainState,
+  escalatedText,
+  levelRuleLines,
+  names,
+  progressText,
+  reminderSentText,
+  sourceText,
+  wasLeftOutText,
+} from './messages';
 import type { ChainState } from './messages';
 import styles from './ApprovalChain.module.css';
 
 type WorkflowLevel = components['schemas']['ApprovalWorkflowLevel'];
+type ChainLevel = components['schemas']['ApprovalChainLevel'];
 
 export type ApprovalChainProps =
   /** The chain of a round: each level with its state. */
@@ -20,24 +32,35 @@ interface ChainRow {
   label: string;
   approvers: ApprovalPerson[];
   state?: ChainState;
+  /** The level's rules and what happened to it, one line each, in secondary ink. */
+  lines: string[];
+  /** Each approver's own state on a level where all must approve ("Approved", "Waiting"). */
+  approverState?: (person: ApprovalPerson) => string | undefined;
+  /** "No approver" and its advice (017 data-model §4). */
+  noApprover?: string;
 }
 
 /**
- * The approval chain (FR-024): one row per level, in order — the badge "L1", the level's name,
- * its approvers ("(you)" for the signed-in person, "(inactive)") and its state as a status chip
- * with what follows it ("Approved" by Carlos Mendes on 12 Mar 2026, "Waiting", "Not reached
- * yet", …). Each state word has one colour (design system §4.1).
+ * The approval chain (008 FR-024, 017 FR-033): one row per level, in order — the badge "L1", the
+ * level's name, its approvers ("(you)" for the signed-in person, "(inactive)"), where they came
+ * from (line manager, role), and its state as a status chip with what follows it ("Approved" by
+ * Carlos Mendes on 12 Mar 2026, "Waiting", "Not needed — only when …", "Approved automatically —
+ * …"). Under it: "1 of 3 approved · waiting for …" on a level where all must approve, the reminder
+ * and escalation, the people left out and why, and "No approver" with its advice. Each state word
+ * has one colour (design system §4.1).
  */
 export function ApprovalChain(props: ApprovalChainProps) {
   const user = useCurrentUser();
   const { dateFormat } = useFormatters();
   const rows: ChainRow[] =
     'round' in props
-      ? props.round.levels.map((level) => ({
-          ...level,
-          state: chainState(level, props.round.outcome, dateFormat),
-        }))
-      : props.upcomingLevels;
+      ? props.round.levels.map((level) => roundRow(level, props.round, dateFormat))
+      : props.upcomingLevels.map((level) => ({
+          number: level.number,
+          label: level.label,
+          approvers: level.approvers,
+          lines: levelRuleLines(level),
+        }));
 
   return (
     <ol role="list" className={styles.chain}>
@@ -58,10 +81,29 @@ export function ApprovalChain(props: ApprovalChainProps) {
               <ul role="list" className={styles.approvers}>
                 {row.approvers.map((person) => (
                   <li key={person.id}>
-                    <PersonLabel person={person} you={person.id === user.id} />
+                    <PersonLabel
+                      person={person}
+                      you={person.id === user.id}
+                      detail={row.approverState?.(person)}
+                    />
                   </li>
                 ))}
               </ul>
+            )}
+            {row.lines.length > 0 && (
+              <ul role="list" className={styles.lines}>
+                {row.lines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            )}
+            {row.noApprover && (
+              <p className={styles.warning}>
+                <CircleAlert aria-hidden="true" />
+                <span>
+                  <strong>No approver.</strong> {row.noApprover}
+                </span>
+              </p>
             )}
           </div>
           {row.state && (
@@ -74,4 +116,50 @@ export function ApprovalChain(props: ApprovalChainProps) {
       ))}
     </ol>
   );
+}
+
+/** A level of a round with its state and the lines of 017 (absent fields read as before 017). */
+function roundRow(level: ChainLevel, round: ApprovalRound, dateFormat: DateFormat): ChainRow {
+  const all = level.mode === 'all' && (level.requiredCount ?? 0) > 1;
+  const approvedIds = new Set(
+    (level.decisions ?? [])
+      .filter((decision) => decision.action === 'approved')
+      .map((decision) =>
+        decision.capacity === 'delegate' && decision.asDelegateOf
+          ? decision.asDelegateOf.id
+          : decision.actor.id,
+      ),
+  );
+  const waiting = level.approvers.filter((person) => !approvedIds.has(person.id));
+  const open = level.state === 'waiting' || level.state === 'notReached';
+
+  const lines = [
+    sourceText(level.source),
+    all
+      ? [
+          progressText(level.approvedCount ?? approvedIds.size, level.requiredCount ?? 0),
+          level.state === 'waiting' && waiting.length > 0 ? `waiting for ${names(waiting)}` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : '',
+    level.remindedAt ? reminderSentText(level.remindedAt, dateFormat) : '',
+    level.escalatedAt && level.escalatedTo
+      ? escalatedText(level.escalatedTo.name, level.escalatedAt, dateFormat)
+      : '',
+    ...(level.excluded ?? []).map(wasLeftOutText),
+  ].filter(Boolean);
+
+  return {
+    number: level.number,
+    label: level.label,
+    approvers: level.approvers,
+    state: chainState(level, round.outcome, dateFormat),
+    lines,
+    approverState:
+      all && level.state !== 'notReached'
+        ? (person) => (approvedIds.has(person.id) ? 'Approved' : open ? 'Waiting' : undefined)
+        : undefined,
+    noApprover: level.noApprover && open ? level.advice || 'Nobody can approve this level.' : '',
+  };
 }
