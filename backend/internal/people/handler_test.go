@@ -2,6 +2,8 @@ package people_test
 
 import (
 	"net/http"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -21,7 +23,7 @@ const (
 // The answers about Priya Raman as the seed has her: her preferences are the defaults, and she is in the
 // team Lubricants Europe.
 const (
-	defaultPreferencesBody = `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false}`
+	defaultPreferencesBody = `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`
 	lubricantsEuropeBody   = `{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}`
 	priyasTeamsBody        = `[` + lubricantsEuropeBody + `]`
 )
@@ -95,15 +97,16 @@ func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	collapse := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"sidebarCollapsed": true})
-	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false}`)
+	assertAnswer(t, collapse, http.StatusOK, `{"theme":"system","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 
 	response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"theme": "dark"})
 
-	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false}`)
+	assertAnswer(t, response, http.StatusOK, `{"theme":"dark","sidebarCollapsed":true,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 	var me people.CurrentUser
 	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
-	want := people.PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams"}
-	if me.Preferences != want {
+	want := people.PreferencesView{Theme: "dark", SidebarCollapsed: true, DisplayCurrency: "USD", DateFormat: "DD MMM YYYY", HomeScope: "myTeams",
+		PinnedPlanIDs: []string{}}
+	if !reflect.DeepEqual(me.Preferences, want) {
 		t.Errorf("GET /api/me preferences = %+v, want %+v", me.Preferences, want)
 	}
 }
@@ -130,7 +133,7 @@ func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
 	refused := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"homeScope": "all"},
 		apitest.SkipRequestValidation()) // the contract itself allows only the two scopes
 
-	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"everything","historyIncludeInside":false}`)
+	assertAnswer(t, response, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"everything","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 	var me people.CurrentUser
 	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
 	if me.Preferences.HomeScope != "everything" {
@@ -138,6 +141,26 @@ func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
 	}
 	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed",`+
 		`"message":"Some fields need your attention.","fields":[{"field":"homeScope","message":"Choose My teams or Everything."}]}`)
+}
+
+// Pinned plans are saved per person like the other preferences and come back with GET /api/me, in the
+// order pinned; a repeated id is pinned once; an id that is no plan id is refused next to the field
+// (018 FR-004 – FR-006, D-317).
+func TestPatchPreferences_PinnedPlans_FR004_FR005(t *testing.T) {
+	server := apitest.New(t)
+	priya := server.SignIn(t, priyasEmail)
+
+	pinned := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"pinnedPlanIds": []string{"P-1002", "P-1001", "P-1002"}})
+	refused := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"pinnedPlanIds": []string{"plan-7"}},
+		apitest.SkipRequestValidation()) // the contract itself allows only plan ids
+
+	assertAnswer(t, pinned, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":["P-1002","P-1001"]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"pinnedPlanIds","message":"Pin plans by their id, like P-1001."}`))
+	var me people.CurrentUser
+	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	if want := []string{"P-1002", "P-1001"}; !slices.Equal(me.Preferences.PinnedPlanIDs, want) {
+		t.Errorf("GET /api/me pinned plans = %q, want %q (the refusal changed nothing)", me.Preferences.PinnedPlanIDs, want)
+	}
 }
 
 // Changing preferences needs a signed-in person (FR-005).
@@ -218,7 +241,7 @@ func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T)
 	chosen := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR", "dateFormat": "DD/MM/YYYY"})
 	invalid := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "XYZ", "dateFormat": "DD.MM.YYYY"})
 
-	assertAnswer(t, chosen, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"EUR","dateFormat":"DD/MM/YYYY","homeScope":"myTeams","historyIncludeInside":false}`)
+	assertAnswer(t, chosen, http.StatusOK, `{"theme":"system","sidebarCollapsed":false,"displayCurrency":"EUR","dateFormat":"DD/MM/YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"displayCurrency","message":"Choose one of the active currencies."},`+
 		`{"field":"dateFormat","message":"Choose one of the date formats."}`))
 }

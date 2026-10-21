@@ -2,6 +2,7 @@ package people
 
 import (
 	"context"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -16,6 +17,10 @@ import (
 
 // themes are the values a person can choose for Preferences.Theme.
 var themes = []string{themeSystem, themeLight, themeDark}
+
+// planIDPattern is the form of a plan id in PinnedPlanIDs (018 FR-005). Whether the plan exists is not
+// checked: an unknown or deleted plan's id is harmless (018 FR-007).
+var planIDPattern = regexp.MustCompile(`^P-\d+$`)
 
 // Service holds the rules about people, teams, team memberships and preferences.
 type Service struct {
@@ -197,6 +202,11 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 		if update.HistoryIncludeInside != nil {
 			changed.HistoryIncludeInside = *update.HistoryIncludeInside
 		}
+		if update.PinnedPlanIDs != nil {
+			// A repeated id pins the plan once: duplicates are dropped, keeping the order they were
+			// sent — the order the person pinned in (018 FR-005, D-317).
+			changed.PinnedPlanIDs = uniqueIDs(*update.PinnedPlanIDs)
+		}
 		var currencies []Currency // needed only to choose another display currency
 		if changed.DisplayCurrency != current.DisplayCurrency {
 			if currencies, err = s.currencies(ctx); err != nil {
@@ -208,7 +218,7 @@ func (s *Service) UpdatePreferences(ctx context.Context, a actor.Actor, update P
 		}
 
 		// Saved only when something changed, so a person who changed nothing keeps having no record.
-		if changed != current {
+		if !changed.equal(current) {
 			if err := s.repo.PutPreferences(ctx, changed); err != nil {
 				return err
 			}
@@ -315,6 +325,16 @@ func validatePreferences(current, changed Preferences, update PreferencesUpdate,
 	}
 	if update.HomeScope != nil && *update.HomeScope != HomeScopeMyTeams && *update.HomeScope != HomeScopeEverything {
 		problems.Add("homeScope", chooseHomeScopeMessage)
+	}
+	// Pinned plans, checked after the dedupe (018 FR-005, FR-006): only plan ids, at most 100. Unknown
+	// ids are allowed — the Plans list simply doesn't show them (FR-007).
+	if update.PinnedPlanIDs != nil {
+		if slices.ContainsFunc(changed.PinnedPlanIDs, func(id string) bool { return !planIDPattern.MatchString(id) }) {
+			problems.Add("pinnedPlanIds", pinPlanIDsMessage)
+		}
+		if len(changed.PinnedPlanIDs) > maxPinnedPlans {
+			problems.Add("pinnedPlanIds", pinLimitMessage)
+		}
 	}
 	return problems.Err()
 }
