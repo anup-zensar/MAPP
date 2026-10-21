@@ -6,12 +6,18 @@ import { PlanTable } from './PlanTable';
 import type { PlanSummary } from './plansApi';
 import { seedList } from './testData';
 
-function renderTable(plans: PlanSummary[] = seedList().items) {
-  return renderWithProviders(<PlanTable plans={plans} actionsFor={() => []} />, {
-    user: testUser(),
-    route: '/plans',
-    path: '/plans',
-  });
+function renderTable(
+  plans: PlanSummary[] = seedList().items,
+  isPinned: (plan: PlanSummary) => boolean = () => false,
+) {
+  return renderWithProviders(
+    <PlanTable plans={plans} actionsFor={() => []} isPinned={isPinned} onPinToggle={() => {}} />,
+    {
+      user: testUser(),
+      route: '/plans',
+      path: '/plans',
+    },
+  );
 }
 
 function row(name: string) {
@@ -23,6 +29,7 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
     renderTable();
 
     expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+      'Pinned',
       'Name',
       'Status',
       'Owner',
@@ -49,7 +56,7 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
     const budget = headers.find((header) => header.textContent === 'Plan budget') as HTMLElement;
     const cells = within(row('FY2026 Lubricants Europe')).getAllByRole('cell');
     expect(budget.className).toMatch(/number/);
-    expect(cells[3].className).toMatch(/number/);
+    expect(cells[4].className).toMatch(/number/);
   });
 
   it('says over budget in words and "—" without a budget', () => {
@@ -59,7 +66,20 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
       /problem/,
     );
     const china = within(row('FY2026 Mobility China')).getAllByRole('cell');
-    expect(china[3]).toHaveTextContent('—');
+    expect(china[4]).toHaveTextContent('—');
+  });
+
+  it('marks pinned rows with the filled star, named for the plan (018 FR-001, FR-003)', () => {
+    renderTable(seedList().items, (plan) => plan.id === 'P-1003');
+
+    const pinned = within(row('FY2025 Lubricants Europe')).getByRole('button', {
+      name: "Unpin plan 'FY2025 Lubricants Europe'",
+    });
+    expect(pinned.className).toMatch(/pinned/);
+    const unpinned = within(row('FY2026 Mobility China')).getByRole('button', {
+      name: "Pin plan 'FY2026 Mobility China'",
+    });
+    expect(unpinned.className).not.toMatch(/pinned/);
   });
 
   it('shows at most two teams, then "+n" with the other names', () => {
@@ -70,8 +90,8 @@ describe('PlanTable (FR-002, design system §5.4)', () => {
     ]);
 
     const cells = within(row('FY2026 Lubricants Europe')).getAllByRole('cell');
-    expect(cells[2]).toHaveTextContent('AlphaBeta+1');
-    expect(within(cells[2]).getByRole('button', { name: '+1 more: Gamma' })).toBeInTheDocument();
+    expect(cells[3]).toHaveTextContent('AlphaBeta+1');
+    expect(within(cells[3]).getByRole('button', { name: '+1 more: Gamma' })).toBeInTheDocument();
   });
 
   it('links completeness to the field to fill in (FR-017)', async () => {

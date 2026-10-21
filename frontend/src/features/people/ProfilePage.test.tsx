@@ -202,6 +202,7 @@ describe('ProfilePage (feature 003, US4)', () => {
       sidebarCollapsed: false,
       displayCurrency: 'EUR',
       dateFormat: 'DD/MM/YYYY',
+      pinnedPlanIds: [] as string[],
     } as const;
     const { api, user, queryClient } = renderProfile({
       'PATCH /api/me/preferences': { body: preferences },
@@ -327,7 +328,7 @@ describe('ProfilePage (feature 003, US4)', () => {
       testUser({
         version: undefined,
         teams: undefined,
-        preferences: { theme: 'system', sidebarCollapsed: false },
+        preferences: { theme: 'system', sidebarCollapsed: false, pinnedPlanIds: [] },
       }),
     );
 

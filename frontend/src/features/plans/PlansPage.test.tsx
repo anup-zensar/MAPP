@@ -10,10 +10,28 @@ import { seedList } from './testData';
 
 afterEach(() => window.localStorage.clear());
 
-function renderPage(route = '/plans', list: MockHandler = { body: seedList() }) {
-  const api = mockApi({ 'GET /api/plans': list });
-  const result = renderWithProviders(<PlansPage />, { user: testUser(), route, path: '/plans' });
+function renderPage(
+  route = '/plans',
+  list: MockHandler = { body: seedList() },
+  { user = testUser(), handlers = {} as Record<string, MockHandler> } = {},
+) {
+  const api = mockApi({ 'GET /api/plans': list, ...handlers });
+  const result = renderWithProviders(<PlansPage />, { user, route, path: '/plans' });
   return { ...result, api };
+}
+
+/** The page with `pinned` already pinned and PATCH /api/me/preferences answered (018). */
+function renderWithPins(...pinned: string[]) {
+  return renderPage(
+    '/plans',
+    { body: seedList() },
+    {
+      user: testUser({
+        preferences: { ...testUser().preferences, pinnedPlanIds: pinned },
+      }),
+      handlers: { 'PATCH /api/me/preferences': { body: {} } },
+    },
+  );
 }
 
 /** The query strings sent to GET /api/plans, in order. */
@@ -236,6 +254,84 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     expect(await screen.findByRole('table')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove filter: Published' })).toBeInTheDocument();
     expect(listQueries(api)[0]).toBe('?scope=all&status=published');
+  });
+
+  it('pins a plan to the top of the cards and saves the full list for the person (018 FR-001, FR-002, FR-004)', async () => {
+    const { api, user } = renderWithPins();
+
+    await screen.findAllByRole('article');
+    await user.click(screen.getByRole('button', { name: "Pin plan 'FY2025 Lubricants Europe'" }));
+
+    // The pinned plan sits first at once; the others keep the list's own order (FR-002).
+    await waitFor(() =>
+      expect(cardNames()).toEqual([
+        'FY2025 Lubricants Europe',
+        'FY2026 Lubricants Europe',
+        'FY2026 Mobility China',
+      ]),
+    );
+    // The full new list is saved for the person, like every display preference (FR-004).
+    await waitFor(() =>
+      expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ pinnedPlanIds: ['P-1003'] }]),
+    );
+    // The star reads back from the saved preferences: filled and renamed (FR-003).
+    const star = screen.getByRole('button', { name: "Unpin plan 'FY2025 Lubricants Europe'" });
+    expect(star.className).toMatch(/pinned/);
+  });
+
+  it('unpins a plan back into the list’s own order (018 FR-001)', async () => {
+    const { api, user } = renderWithPins('P-1003');
+
+    await screen.findAllByRole('article');
+    expect(cardNames()[0]).toBe('FY2025 Lubricants Europe');
+    await user.click(screen.getByRole('button', { name: "Unpin plan 'FY2025 Lubricants Europe'" }));
+
+    await waitFor(() =>
+      expect(cardNames()).toEqual([
+        'FY2026 Lubricants Europe',
+        'FY2026 Mobility China',
+        'FY2025 Lubricants Europe',
+      ]),
+    );
+    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ pinnedPlanIds: [] }]);
+    expect(
+      screen.getByRole('button', { name: "Pin plan 'FY2025 Lubricants Europe'" }).className,
+    ).not.toMatch(/pinned/);
+  });
+
+  it('puts pinned plans first in the table too, each group keeping the current sort (018 FR-002)', async () => {
+    // Pinned in reverse order on purpose: the list's own sort, not the pin order, orders the group.
+    const { user } = renderWithPins('P-1003', 'P-1002');
+
+    await screen.findAllByRole('article');
+    await user.click(screen.getByRole('button', { name: 'Table' }));
+
+    const table = await screen.findByRole('table');
+    expect(
+      within(table)
+        .getAllByRole('link', { name: /^FY/ })
+        .map((link) => link.textContent),
+    ).toEqual(['FY2026 Mobility China', 'FY2025 Lubricants Europe', 'FY2026 Lubricants Europe']);
+    expect(
+      within(table).getByRole('button', { name: "Unpin plan 'FY2026 Mobility China'" }),
+    ).toBeInTheDocument();
+    expect(
+      within(table).getByRole('button', { name: "Pin plan 'FY2026 Lubricants Europe'" }),
+    ).toBeInTheDocument();
+  });
+
+  it('simply doesn’t show a pinned plan the list no longer has (018 FR-007)', async () => {
+    renderWithPins('P-9999');
+
+    await screen.findAllByRole('article');
+
+    expect(cardNames()).toEqual([
+      'FY2026 Lubricants Europe',
+      'FY2026 Mobility China',
+      'FY2025 Lubricants Europe',
+    ]);
+    expect(screen.getByText('3 of 3 plans')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Unpin plan/ })).not.toBeInTheDocument();
   });
 
   it('offers View, Edit, Copy, Publish and Delete in a Draft plan’s actions menu', async () => {

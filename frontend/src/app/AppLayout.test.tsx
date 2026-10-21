@@ -58,7 +58,10 @@ describe('AppLayout', () => {
   });
 
   it('shows the sidebar as the icon rail when the person collapsed it (FR-011)', () => {
-    renderLayout({ ...PRIYA, preferences: { theme: 'system', sidebarCollapsed: true } });
+    renderLayout({
+      ...PRIYA,
+      preferences: { theme: 'system', sidebarCollapsed: true, pinnedPlanIds: [] },
+    });
 
     expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
   });

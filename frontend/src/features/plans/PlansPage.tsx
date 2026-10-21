@@ -1,7 +1,7 @@
 import { ClipboardList, Plus, SearchX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser, useSession } from '@/app/useSession';
 import {
   Button,
   EmptyState,
@@ -13,6 +13,7 @@ import {
   SegmentedFilter,
   Skeleton,
   SummaryCard,
+  useToast,
 } from '@/components';
 import type { FilterChip } from '@/components';
 import { useAccess } from '@/lib/access';
@@ -30,6 +31,7 @@ import { PlanCard } from './PlanCard';
 import { PlansFilters } from './PlansFilters';
 import styles from './PlansPage.module.css';
 import { usePlans } from './plansApi';
+import type { PlanSummary } from './plansApi';
 import { PLAN_TYPE_LABELS } from './planCurrency';
 import { PlanTable } from './PlanTable';
 import { MY_TEAMS_HINT, STATUS } from './planText';
@@ -37,6 +39,21 @@ import { usePlanActions } from './usePlanActions';
 
 /** How long the search waits after the last key before it asks the API (plan "Plans list"). */
 const SEARCH_DELAY_MS = 250;
+
+/** The most plans one person can pin (018 FR-006, D-317) — the API refuses more. */
+const MAX_PINNED_PLANS = 100;
+
+/**
+ * Pinned plans first, each group keeping the list's current order (018 FR-002). A pinned id whose
+ * plan the list doesn't show is simply not there (018 FR-007).
+ */
+function pinnedFirst(plans: PlanSummary[], pinnedIds: string[]): PlanSummary[] {
+  const pinned = new Set(pinnedIds);
+  return [
+    ...plans.filter((plan) => pinned.has(plan.id)),
+    ...plans.filter((plan) => !pinned.has(plan.id)),
+  ];
+}
 
 /**
  * Plans (US2, FR-001 – FR-004; 016 FR-033): every plan as cards or a table, with summary cards,
@@ -46,6 +63,8 @@ const SEARCH_DELAY_MS = 250;
 export function PlansPage() {
   usePageTitle('Plans');
   const user = useCurrentUser();
+  const { updatePreferences } = useSession();
+  const { show } = useToast();
   const canCreate = useAccess().has('plans.create');
   const { money, moneyCompact } = useFormatters();
   const [search, setSearch] = useSearchParams();
@@ -68,6 +87,27 @@ export function PlansPage() {
   if (answersTypes && !served016) {
     setServed016(true);
   }
+
+  /**
+   * Pins or unpins one plan (018 FR-001, FR-004): the full new list goes to the session, which
+   * updates the signed-in person in the query cache at once and PATCHes /api/me/preferences in
+   * the background — the same way the theme is saved. A new pin goes last: the stored order only
+   * says what is pinned; the list's own sort orders the pinned group (D-317).
+   */
+  function togglePin(plan: PlanSummary) {
+    const pinnedIds = user.preferences.pinnedPlanIds;
+    if (pinnedIds.includes(plan.id)) {
+      updatePreferences({ pinnedPlanIds: pinnedIds.filter((id) => id !== plan.id) });
+      return;
+    }
+    if (pinnedIds.length >= MAX_PINNED_PLANS) {
+      show({ message: `You can pin up to ${MAX_PINNED_PLANS} plans. Unpin one first.` });
+      return;
+    }
+    updatePreferences({ pinnedPlanIds: [...pinnedIds, plan.id] });
+  }
+
+  const isPinned = (plan: PlanSummary) => user.preferences.pinnedPlanIds.includes(plan.id);
 
   /** Changes some filters: in the address (replacing it) and in what is remembered. */
   function change(next: Partial<PlanListFilters>) {
@@ -139,6 +179,8 @@ export function PlansPage() {
   const summary = data?.summary;
   const planYears = data?.years ?? [];
   const showsTable = filters.layout === 'table';
+  // Pinned plans first in both layouts, each group in the list's own order (018 FR-002).
+  const items = data ? pinnedFirst(data.items, user.preferences.pinnedPlanIds) : [];
 
   /** The list's state when it has no plans to show: loading, failure, empty, filtered out. */
   function listState() {
@@ -291,15 +333,29 @@ export function PlansPage() {
             {state ? (
               <div className={styles.state}>{state}</div>
             ) : (
-              showsTable && data && <PlanTable plans={data.items} actionsFor={actions.menuItems} />
+              showsTable &&
+              data && (
+                <PlanTable
+                  plans={items}
+                  actionsFor={actions.menuItems}
+                  isPinned={isPinned}
+                  onPinToggle={togglePin}
+                />
+              )
             )}
           </div>
         </section>
 
         {!state && !showsTable && data && (
           <div className={styles.cards}>
-            {data.items.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} actions={actions.menuItems(plan)} />
+            {items.map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                actions={actions.menuItems(plan)}
+                pinned={isPinned(plan)}
+                onPinToggle={() => togglePin(plan)}
+              />
             ))}
           </div>
         )}

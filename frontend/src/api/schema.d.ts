@@ -3658,7 +3658,7 @@ export interface components {
             email: string;
             password: string;
         };
-        /** @description Extended by later features: displayCurrency (003), dateFormat (003), homeScope (009), historyIncludeInside (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
+        /** @description Extended by later features: displayCurrency (003), dateFormat (003), homeScope (009), historyIncludeInside (011), pinnedPlanIds (018). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). pinnedPlanIds is in the required list (018): it was born always sent and never null. */
         Preferences: {
             /**
              * @description system follows the computer's setting.
@@ -3675,8 +3675,10 @@ export interface components {
             homeScope?: components["schemas"]["HomeScope"];
             /** @description Include items inside / Include line items on History sections (default false). */
             historyIncludeInside?: boolean;
+            /** @description The ids of the plans the person pinned on the Plans list, in the order they pinned them (insertion order); [] when none — always sent, never null (018, D-317). An id may name a plan that no longer exists or is out of sight; the list simply doesn't show it. */
+            pinnedPlanIds: string[];
         };
-        /** @description Only the preferences to change. Extended by later features: displayCurrency (003), dateFormat (003), homeScope (009), historyIncludeInside (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
+        /** @description Only the preferences to change. Extended by later features: displayCurrency (003), dateFormat (003), homeScope (009), historyIncludeInside (011), pinnedPlanIds (018). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         PreferencesUpdate: {
             /**
              * @description The server also checks the value and answers validation_failed for anything else.
@@ -3694,6 +3696,8 @@ export interface components {
              */
             homeScope?: "myTeams" | "everything";
             historyIncludeInside?: boolean;
+            /** @description Every pinned plan after the change, in the order pinned (018, D-317). Duplicates are dropped, keeping the order sent; the server also checks each id (^P-\d+$) and the cap of 100 and answers validation_failed otherwise. Ids of deleted or out-of-sight plans are allowed — they are harmless. */
+            pinnedPlanIds?: string[];
         };
         /** @description Extended by later features: version (003), teams (003). Properties beyond the required list are always sent by the feature that adds them; they stay optional so that earlier answers remain valid (D-191). */
         CurrentUser: {
