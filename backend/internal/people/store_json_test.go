@@ -29,7 +29,8 @@ func TestJSONRepository_TeamsMembershipsPreferences(t *testing.T) {
 		{ID: "TM-1002", TeamID: "T-1001", PersonID: "U-1006", Meta: meta},
 		{ID: "TM-1003", TeamID: "T-1002", PersonID: "U-1006", Meta: meta},
 	}
-	prefs := people.Preferences{PersonID: "U-1002", Theme: "dark", DisplayCurrency: "EUR", DateFormat: "DD/MM/YYYY"}
+	prefs := people.Preferences{PersonID: "U-1002", Theme: "dark", DisplayCurrency: "EUR", DateFormat: "DD/MM/YYYY",
+		PinnedPlanIDs: []string{"P-1002", "P-1001"}} // 018: pinned plans round-trip in the order pinned
 
 	err = db.Write(t.Context(), func(ctx context.Context) error {
 		for _, err := range []error{

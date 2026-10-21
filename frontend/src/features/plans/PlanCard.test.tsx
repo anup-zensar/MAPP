@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/test/render';
 import { testUser } from '@/test/users';
 import { PlanCard } from './PlanCard';
@@ -7,12 +7,15 @@ import { seedList } from './testData';
 
 const [europe, china, lastYear] = seedList().items;
 
-function renderCard(plan = europe) {
-  return renderWithProviders(<PlanCard plan={plan} actions={[]} />, {
-    user: testUser(),
-    route: '/plans',
-    path: '/plans',
-  });
+function renderCard(plan = europe, pinned = false, onPinToggle = () => {}) {
+  return renderWithProviders(
+    <PlanCard plan={plan} actions={[]} pinned={pinned} onPinToggle={onPinToggle} />,
+    {
+      user: testUser(),
+      route: '/plans',
+      path: '/plans',
+    },
+  );
 }
 
 /** The value beside a label of the card's money list ("Planned cost", "Plan budget"). */
@@ -85,6 +88,33 @@ describe('PlanCard (FR-002)', () => {
     renderCard({ ...china, figures: { ...china.figures, activities: 0, activitiesApproved: 0 } });
 
     expect(screen.getByText('No activities yet')).toBeInTheDocument();
+  });
+
+  it('offers the pin star, named for the plan, filled while pinned (018 FR-001, FR-003)', async () => {
+    const onPinToggle = vi.fn();
+    const { user } = renderCard(europe, false, onPinToggle);
+
+    const pin = screen.getByRole('button', { name: "Pin plan 'FY2026 Lubricants Europe'" });
+    expect(pin.className).not.toMatch(/pinned/);
+    await user.hover(pin);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      "Pin plan 'FY2026 Lubricants Europe'",
+    );
+    await user.click(pin);
+
+    expect(onPinToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the filled star visible on a pinned card, with the unpin tooltip (018 FR-003)', async () => {
+    const { user } = renderCard(europe, true);
+
+    const star = screen.getByRole('button', { name: "Unpin plan 'FY2026 Lubricants Europe'" });
+    expect(star.className).toMatch(/pinned/);
+    await user.hover(star);
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      "Unpin plan 'FY2026 Lubricants Europe'",
+    );
   });
 
   it('opens the edit form on a missing field from the completeness chip (FR-017)', async () => {

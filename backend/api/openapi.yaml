@@ -7553,6 +7553,7 @@ components:
       required:
         - theme
         - sidebarCollapsed
+        - pinnedPlanIds
       properties:
         theme:
           type: string
@@ -7574,17 +7575,28 @@ components:
         historyIncludeInside:
           type: boolean
           description: Include items inside / Include line items on History sections (default false).
+        pinnedPlanIds:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            pattern: "^P-\\d+$"
+          description: >-
+            The ids of the plans the person pinned on the Plans list, in the order they pinned them (insertion
+            order); [] when none — always sent, never null (018, D-317). An id may name a plan that no longer
+            exists or is out of sight; the list simply doesn't show it.
       description: >-
         Extended by later features: displayCurrency (003), dateFormat (003), homeScope (009), historyIncludeInside
-        (011). Properties beyond the required list are always sent by the feature that adds them; they stay optional so
-        that earlier answers remain valid (D-191).
+        (011), pinnedPlanIds (018). Properties beyond the required list are always sent by the feature that adds them;
+        they stay optional so that earlier answers remain valid (D-191). pinnedPlanIds is in the required list (018):
+        it was born always sent and never null.
     PreferencesUpdate:
       type: object
       additionalProperties: false
       description: >-
         Only the preferences to change. Extended by later features: displayCurrency (003), dateFormat (003), homeScope
-        (009), historyIncludeInside (011). Properties beyond the required list are always sent by the feature that adds
-        them; they stay optional so that earlier answers remain valid (D-191).
+        (009), historyIncludeInside (011), pinnedPlanIds (018). Properties beyond the required list are always sent by
+        the feature that adds them; they stay optional so that earlier answers remain valid (D-191).
       properties:
         theme:
           type: string
@@ -7609,6 +7621,16 @@ components:
           description: The server also checks the value and answers validation_failed for anything else.
         historyIncludeInside:
           type: boolean
+        pinnedPlanIds:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            pattern: "^P-\\d+$"
+          description: >-
+            Every pinned plan after the change, in the order pinned (018, D-317). Duplicates are dropped, keeping
+            the order sent; the server also checks each id (^P-\d+$) and the cap of 100 and answers
+            validation_failed otherwise. Ids of deleted or out-of-sight plans are allowed — they are harmless.
     CurrentUser:
       type: object
       additionalProperties: false

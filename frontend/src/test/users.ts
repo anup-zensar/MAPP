@@ -21,6 +21,7 @@ export function testUser(overrides: Partial<CurrentUser> = {}): CurrentUser {
       sidebarCollapsed: false,
       displayCurrency: 'USD',
       dateFormat: 'DD MMM YYYY',
+      pinnedPlanIds: [],
     },
     ...overrides,
   };

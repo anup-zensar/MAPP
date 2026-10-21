@@ -1,0 +1,9 @@
+/* The pin star (018 FR-003): an ink outline; pinned, it fills with brand yellow and keeps its ink
+   outline, so the state reads in both themes (yellow is a fill, never a line — design system §3.1). */
+.star svg {
+  color: var(--ink);
+}
+
+.pinned svg {
+  fill: var(--brand-yellow);
+}

@@ -53,6 +53,17 @@
   background: var(--hover);
 }
 
+/* The pin star (018): a narrow first column, the star centred under no visible header. */
+.pin {
+  width: 40px;
+}
+
+.table th.pin:first-child,
+.table td.pin:first-child {
+  padding-right: 0;
+  padding-left: var(--space-3);
+}
+
 /* The name: a link that wraps at word boundaries, never inside a word; ID, year and type below. */
 .nameColumn {
   min-width: 220px;

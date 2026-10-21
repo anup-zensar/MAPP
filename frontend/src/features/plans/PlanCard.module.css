@@ -28,6 +28,13 @@
   min-width: 0;
 }
 
+/* The pin star (018) and the ⋯ menu, together in the top right corner. */
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .name {
   margin: 0;
   font-size: var(--text-md);

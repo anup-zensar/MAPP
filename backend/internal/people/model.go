@@ -8,6 +8,7 @@ package people
 
 import (
 	"cmp"
+	"slices"
 	"strings"
 
 	"northstar/internal/platform/actor"
@@ -80,7 +81,14 @@ type Preferences struct {
 	// HistoryIncludeInside is the History section's Include items inside / Include line items choice on
 	// record pages (011 FR-012); false by default.
 	HistoryIncludeInside bool `json:"historyIncludeInside,omitempty"`
+	// PinnedPlanIDs are the plans the person pinned on the Plans list (018 FR-004, D-317), in the order
+	// they pinned them; empty — and omitted from the stored record — when they pinned none. An id of a
+	// plan that was later deleted is kept: it is harmless and simply doesn't show (018 FR-007).
+	PinnedPlanIDs []string `json:"pinnedPlanIds,omitempty"`
 }
+
+// maxPinnedPlans is the most plans one person can pin on the Plans list (018 FR-006, D-317).
+const maxPinnedPlans = 100
 
 // The values of Home's My teams / Everything switch (feature 009, D-172): My teams is the default.
 const (
@@ -134,15 +142,27 @@ var Palette = []Colour{
 // 2026" (003 FR-023, FR-024).
 func defaultPreferences(personID string) Preferences {
 	return Preferences{PersonID: personID, Theme: themeSystem, SidebarCollapsed: false,
-		DisplayCurrency: DefaultDisplayCurrency, DateFormat: DefaultDateFormat}
+		DisplayCurrency: DefaultDisplayCurrency, DateFormat: DefaultDateFormat, PinnedPlanIDs: []string{}}
 }
 
 // withDefaults returns p with the default display currency and date format in place of empty ones: records
-// saved by feature 001 have neither, and need no migration (003 data model §4).
+// saved by feature 001 have neither, and need no migration (003 data model §4). Pinned plans read as an
+// empty list, never nil, so records saved before 018 need none either (018 FR-004).
 func (p Preferences) withDefaults() Preferences {
 	p.DisplayCurrency = cmp.Or(p.DisplayCurrency, DefaultDisplayCurrency)
 	p.DateFormat = cmp.Or(p.DateFormat, DefaultDateFormat)
+	if p.PinnedPlanIDs == nil {
+		p.PinnedPlanIDs = []string{}
+	}
 	return p
+}
+
+// equal reports whether two preference records hold the same choices. Preferences hold a slice since 018,
+// so they can no longer be compared with ==.
+func (p Preferences) equal(o Preferences) bool {
+	return p.PersonID == o.PersonID && p.Theme == o.Theme && p.SidebarCollapsed == o.SidebarCollapsed &&
+		p.DisplayCurrency == o.DisplayCurrency && p.DateFormat == o.DateFormat && p.HomeScope == o.HomeScope &&
+		p.HistoryIncludeInside == o.HistoryIncludeInside && slices.Equal(p.PinnedPlanIDs, o.PinnedPlanIDs)
 }
 
 // The API types below are what the API returns or receives. They are kept apart from the stored records
@@ -184,6 +204,8 @@ type PreferencesView struct {
 	HomeScope        string `json:"homeScope"` // always sent (009, D-191)
 	// HistoryIncludeInside is always sent (011, D-191).
 	HistoryIncludeInside bool `json:"historyIncludeInside"`
+	// PinnedPlanIDs is always sent and never null, in the order pinned (018 FR-004, D-317).
+	PinnedPlanIDs []string `json:"pinnedPlanIds"`
 }
 
 // PreferencesUpdate is the body of PATCH /api/me/preferences: only the preferences to change. A field that
@@ -196,6 +218,9 @@ type PreferencesUpdate struct {
 	HomeScope        *string `json:"homeScope"`
 	// HistoryIncludeInside (011 FR-012) is saved only when it changes, and not logged.
 	HistoryIncludeInside *bool `json:"historyIncludeInside"`
+	// PinnedPlanIDs, when sent, is every pinned plan after the change, in the order pinned (018 FR-005):
+	// duplicates are dropped keeping that order, each id matches ^P-\d+$, at most 100 (D-317).
+	PinnedPlanIDs *[]string `json:"pinnedPlanIds"`
 }
 
 // currentUser returns p as the signed-in person, with prefs and their teams.
@@ -224,9 +249,13 @@ func (p Preferences) view() PreferencesView {
 	if homeScope == "" {
 		homeScope = HomeScopeMyTeams
 	}
+	pinned := p.PinnedPlanIDs
+	if pinned == nil {
+		pinned = []string{} // "pinnedPlanIds": [], never null (018 FR-004)
+	}
 	return PreferencesView{Theme: p.Theme, SidebarCollapsed: p.SidebarCollapsed,
 		DisplayCurrency: p.DisplayCurrency, DateFormat: p.DateFormat, HomeScope: homeScope,
-		HistoryIncludeInside: p.HistoryIncludeInside}
+		HistoryIncludeInside: p.HistoryIncludeInside, PinnedPlanIDs: pinned}
 }
 
 // The API types of feature 003 (contract schemas in brackets; JSON names as the contract). 001's

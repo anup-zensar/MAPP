@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { ActionsMenu, PersonLabel, TeamPill, Tooltip } from '@/components';
 import type { ActionsMenuItem, TeamRef } from '@/components';
 import { AmountPair } from './AmountPair';
+import { PinButton } from './PinButton';
 import { PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import type { PlanSummary } from './plansApi';
 import styles from './PlanTable.module.css';
@@ -10,24 +11,31 @@ import { PlanTypeTag } from './PlanTypeTag';
 export interface PlanTableProps {
   plans: PlanSummary[];
   actionsFor: (plan: PlanSummary) => ActionsMenuItem[];
+  /** Whether this person pinned the plan (018 FR-003): its star is filled and stays visible. */
+  isPinned: (plan: PlanSummary) => boolean;
+  /** Pins or unpins one plan for this person (018 FR-001). */
+  onPinToggle: (plan: PlanSummary) => void;
 }
 
 /** Teams shown before "+n" in a table cell (design system §5.4: more than 2 show "+n"). */
 const TEAMS_SHOWN = 2;
 
 /**
- * The Plans list as a table (FR-002) on the data table standard (design system §5.4): the name
- * with its ID, year and type; at most two status chips; the owner and teams on one line; money
- * right-aligned under its header in the plan currency, the display currency beside when it differs
- * (016 FR-014); no cell repeats its column's label (UI audit P-02). On narrow screens the table
- * scrolls sideways inside its card, never the page.
+ * The Plans list as a table (FR-002) on the data table standard (design system §5.4): the pin star
+ * first (018); the name with its ID, year and type; at most two status chips; the owner and teams
+ * on one line; money right-aligned under its header in the plan currency, the display currency
+ * beside when it differs (016 FR-014); no cell repeats its column's label (UI audit P-02). On
+ * narrow screens the table scrolls sideways inside its card, never the page.
  */
-export function PlanTable({ plans, actionsFor }: PlanTableProps) {
+export function PlanTable({ plans, actionsFor, isPinned, onPinToggle }: PlanTableProps) {
   return (
     <div className={styles.scroll}>
       <table className={styles.table} aria-label="Plans">
         <thead>
           <tr>
+            <th scope="col" className={styles.pin}>
+              <span className="visually-hidden">Pinned</span>
+            </th>
             <th scope="col" className={styles.nameColumn}>
               Name
             </th>
@@ -56,6 +64,13 @@ export function PlanTable({ plans, actionsFor }: PlanTableProps) {
             const used = figures.budgetUsedPercent;
             return (
               <tr key={plan.id}>
+                <td className={styles.pin}>
+                  <PinButton
+                    planName={plan.name}
+                    pinned={isPinned(plan)}
+                    onToggle={() => onPinToggle(plan)}
+                  />
+                </td>
                 <th scope="row" className={styles.nameColumn}>
                   <Link to={`/plans/${encodeURIComponent(plan.id)}`} className={styles.name}>
                     {plan.name}

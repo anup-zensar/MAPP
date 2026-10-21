@@ -31,6 +31,13 @@ const (
 	chooseDateFormatMessage = "Choose one of the date formats."
 )
 
+// Pinned-plan problems (018 FR-005, FR-006, D-317). An id of a plan that does not exist is not a problem:
+// it is kept and simply doesn't show (018 FR-007).
+const (
+	pinPlanIDsMessage = "Pin plans by their id, like P-1001."
+	pinLimitMessage   = "Pin at most 100 plans."
+)
+
 // Refusals (not_found, not_allowed, in_use, name_taken) and the note of a renaming restore.
 const (
 	personGoneMessage         = "This person doesn't exist."
