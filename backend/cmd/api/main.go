@@ -1,4 +1,4 @@
-// Command api runs the NorthStar API on http://127.0.0.1:<APP_PORT>. From the backend folder:
+// Command api runs the MAPP API on http://127.0.0.1:<APP_PORT>. From the backend folder:
 //
 //	go run ./cmd/api
 //
@@ -19,9 +19,9 @@ import (
 	"syscall"
 	"time"
 
-	"northstar/internal/app"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/store"
+	"mapp/internal/app"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/store"
 )
 
 func main() {
@@ -104,6 +104,6 @@ func startupLine(cfg app.Config) string {
 	if cfg.DemoMode() {
 		demoSignIn = "on"
 	}
-	return fmt.Sprintf("NorthStar API listening on http://127.0.0.1:%d (environment: %s, demo sign-in %s)",
+	return fmt.Sprintf("MAPP API listening on http://127.0.0.1:%d (environment: %s, demo sign-in %s)",
 		cfg.Port, cfg.Env, demoSignIn)
 }

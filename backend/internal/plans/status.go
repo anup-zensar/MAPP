@@ -6,9 +6,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // The messages of publishing and unpublishing (plan "User-visible messages").

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
+	"mapp/internal/activities"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
 )
 
 // User story 4 — edit an activity, including one that is submitted or approved.

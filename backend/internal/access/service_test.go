@@ -6,9 +6,9 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // The JSON store keeps roles, role assignments and the access rules; the rules are missing until the first

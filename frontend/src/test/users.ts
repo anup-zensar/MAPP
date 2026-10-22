@@ -11,7 +11,7 @@ export function testUser(overrides: Partial<CurrentUser> = {}): CurrentUser {
     id: 'U-1002',
     name: 'Priya Raman',
     firstName: 'Priya',
-    email: 'priya.raman@northstar.demo',
+    email: 'priya.raman@shell.com',
     jobTitle: 'Marketer',
     initials: 'PR',
     version: 1,

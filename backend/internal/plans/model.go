@@ -8,13 +8,13 @@
 package plans
 
 import (
-	"northstar/internal/people"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // Status is a plan's status (domain model §2.1): changed only by Publish and Unpublish.

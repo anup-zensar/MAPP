@@ -4,9 +4,9 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/activities"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // User story 2 — see an activity's status and everything it still needs.

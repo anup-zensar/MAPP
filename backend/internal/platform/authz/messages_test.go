@@ -3,7 +3,7 @@ package authz_test
 import (
 	"testing"
 
-	"northstar/internal/platform/authz"
+	"mapp/internal/platform/authz"
 )
 
 // The refusal messages 1–4 of the plan, word for word (FR-010).

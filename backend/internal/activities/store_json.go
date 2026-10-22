@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/store"
 )
 
 // activitiesTable is the JSON store table of this package.

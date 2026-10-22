@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/store"
 )
 
 // sessionsTable is the JSON store table of this package.

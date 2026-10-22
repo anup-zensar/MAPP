@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The plan currency and the plan type (feature 016, FR-011 – FR-014, FR-032; D-260, D-261, D-264, D-268). A

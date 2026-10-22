@@ -9,39 +9,39 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/access"
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/lineitems"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
-	"northstar/seed"
+	"mapp/internal/access"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/lineitems"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
+	"mapp/seed"
 )
 
 // loadedAt is the time the tests pass to Load.
 var loadedAt = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
 // The seed loads the six demo people of docs/product/demo-users-and-data.md in the order of that table, all
-// active and created by NorthStar at the time given (FR-028, data model §1).
+// active and created by MAPP at the time given (FR-028, data model §1).
 func TestLoad_SixDemoPeople_FR028(t *testing.T) {
 	db := loadedStore(t)
 
 	want := []people.Person{
-		demoPerson("U-1001", "Alex Morgan", "alex.morgan@northstar.demo", "Marketing administrator"),
-		demoPerson("U-1002", "Priya Raman", "priya.raman@northstar.demo", "Marketer"),
-		demoPerson("U-1003", "Daniel Okoro", "daniel.okoro@northstar.demo", "Marketing team leader"),
-		demoPerson("U-1004", "Mei Lin", "mei.lin@northstar.demo", "Marketer"),
-		demoPerson("U-1005", "Carlos Mendes", "carlos.mendes@northstar.demo", "Business champion"),
-		demoPerson("U-1006", "Sara Novak", "sara.novak@northstar.demo", "Local finance advisor"),
+		demoPerson("U-1001", "Alex Morgan", "alex.morgan@shell.com", "Marketing administrator"),
+		demoPerson("U-1002", "Priya Raman", "priya.raman@shell.com", "Marketer"),
+		demoPerson("U-1003", "Daniel Okoro", "daniel.okoro@shell.com", "Marketing team leader"),
+		demoPerson("U-1004", "Mei Lin", "mei.lin@shell.com", "Marketer"),
+		demoPerson("U-1005", "Carlos Mendes", "carlos.mendes@shell.com", "Business champion"),
+		demoPerson("U-1006", "Sara Novak", "sara.novak@shell.com", "Local finance advisor"),
 	}
 	// 017 FR-037: their line managers (017 data-model §13).
 	for i, manager := range []string{"", "U-1003", "U-1001", "U-1005", "U-1001", "U-1003"} {
@@ -402,7 +402,7 @@ func read(t *testing.T, db *store.DB, fn func(ctx context.Context) error) {
 	}
 }
 
-// demoPerson is a seeded person: active, created by NorthStar itself at loadedAt.
+// demoPerson is a seeded person: active, created by MAPP itself at loadedAt.
 func demoPerson(id, name, email, jobTitle string) people.Person {
 	return people.Person{
 		ID:       id,

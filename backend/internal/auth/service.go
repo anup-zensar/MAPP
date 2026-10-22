@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/store"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/store"
 )
 
 // Service holds the rules of demo sign-in and sessions (research R6).

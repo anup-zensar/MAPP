@@ -1,6 +1,6 @@
-# How We Work — Spec-Driven Development in NorthStar
+# How We Work — Spec-Driven Development in MAPP
 
-A step-by-step guide for anyone (developer, analyst or AI agent) working on NorthStar with GitHub Spec
+A step-by-step guide for anyone (developer, analyst or AI agent) working on MAPP with GitHub Spec
 Kit. The rules behind it are in `.specify/memory/constitution.md`.
 
 ## 1. The idea in one paragraph

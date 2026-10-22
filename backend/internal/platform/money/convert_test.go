@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // Convert converts between two currencies given their rates per 1 USD: amount × to ÷ from, rounded half up

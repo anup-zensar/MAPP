@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/record"
 )
 
 // The stress tests of SC-004: they run without -short, as 010's. Each measure is taken three times and the

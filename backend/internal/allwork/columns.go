@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
 )
 
 // The columns of the grid (data model §6; FR-018 – FR-020): the catalogue, the default columns and the value

@@ -3,9 +3,9 @@ package people
 import (
 	"net/http"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/web"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/web"
 )
 
 // listTeams answers GET /api/teams: every team with its members and the plans using it, sorted by name.

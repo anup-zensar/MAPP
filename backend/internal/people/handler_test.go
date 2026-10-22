@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/people"
+	"mapp/internal/platform/apitest"
 )
 
-const priyasEmail = "priya.raman@northstar.demo"
+const priyasEmail = "priya.raman@shell.com"
 
 // The bodies of the API's refusals, as the web app receives them.
 const (
@@ -57,7 +57,7 @@ func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 	response := priya.Do(t, http.MethodGet, "/api/me", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Raman","firstName":"Priya",`+
-		`"email":"priya.raman@northstar.demo","jobTitle":"Marketer","initials":"PR",`+
+		`"email":"priya.raman@shell.com","jobTitle":"Marketer","initials":"PR",`+
 		`"preferences":`+defaultPreferencesBody+`,"version":1,"teams":`+priyasTeamsBody+`,"access":`+priyasAccessBody+`}`)
 }
 
@@ -183,7 +183,7 @@ func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
 	response := priya.Do(t, http.MethodPatch, "/api/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Senior marketer", "version": 1})
 
 	assertAnswer(t, response, http.StatusOK, `{"id":"U-1002","name":"Priya Sharma","firstName":"Priya",`+
-		`"email":"priya.raman@northstar.demo","jobTitle":"Senior marketer","initials":"PS",`+
+		`"email":"priya.raman@shell.com","jobTitle":"Senior marketer","initials":"PS",`+
 		`"preferences":`+defaultPreferencesBody+`,"version":2,"teams":`+priyasTeamsBody+`,"access":`+priyasAccessBody+`}`)
 	var me people.CurrentUser
 	priya.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)

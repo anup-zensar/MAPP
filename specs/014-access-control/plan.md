@@ -619,7 +619,7 @@ Every route a sibling adds needs its row in `routeRules`; `app/access_routes_tes
    currency (D-303).
 10. Local owners never see other markets' allocations; global budget pages show them as "Other markets".
 11. Refused attempts are recorded only in the technical log, not shown to administrators.
-12. Role assignments are made in NorthStar; with Entra ID later they may come from Entra app roles or groups.
+12. Role assignments are made in MAPP; with Entra ID later they may come from Entra app roles or groups.
 
 ## Complexity Tracking
 

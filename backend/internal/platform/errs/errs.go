@@ -1,4 +1,4 @@
-// Package errs defines NorthStar's one error format (research R9).
+// Package errs defines MAPP's one error format (research R9).
 //
 // Every API failure is answered as JSON {"code", "message", "fields"}, plus "conflict", "parent" or
 // "resolution" for the errors that need them. The message is written for users (the texts come from the
@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // The error codes of the API contract (research R9). The web app chooses what to show by the code.

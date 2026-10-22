@@ -3,11 +3,11 @@ package activities
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/money"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/money"
 )
 
 // The amounts an activity shows — its planned cost, its unassigned planned cost and its revenue goal — are

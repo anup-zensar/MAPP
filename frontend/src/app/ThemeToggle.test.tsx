@@ -64,7 +64,7 @@ describe('ThemeToggle', () => {
     await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
 
     await waitFor(() => expect(shownTheme()).toBe('dark'));
-    expect(localStorage.getItem('northstar.theme')).toBe('dark');
+    expect(localStorage.getItem('mapp.theme')).toBe('dark');
     expect(api.requests).toEqual([]);
   });
 

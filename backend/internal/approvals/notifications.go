@@ -3,8 +3,8 @@ package approvals
 import (
 	"context"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // maxNotifications is how many notifications the bell lists (FR-033).

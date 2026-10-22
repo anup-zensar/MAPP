@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // unzip writes wb as .xlsx and returns its parts by name; every XML part must be well-formed.

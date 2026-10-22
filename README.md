@@ -1,8 +1,8 @@
-# NorthStar
+# MAPP
 
 **Marketing planning for Shell — simple, clear, step by step.**
 
-NorthStar is Shell's marketing planning application. It replaces Hive9, starting with the **Plan
+MAPP is Shell's marketing planning application. It replaces Hive9, starting with the **Plan
 module**: marketers build a **plan**, break it into **campaigns**, **initiatives** and **activities**,
 plan every cost as **line items**, and send activities for **approval** — always seeing the status of
 everything and what is still missing.
@@ -13,7 +13,7 @@ spec, agreed, planned, broken into tasks, and only then built and tested.
 The requirements and features were collected from **the available documentation** — Shell's Hive9 Plan
 Module document, Shell's Business Requirements, the GSAP workshop and the Hive9 user guide — and from
 **the Hive9 application itself**, studied in Shell's Hive9 sandbox (see
-[docs/reference/](docs/reference/README.md)). Hive9's screens are not copied: NorthStar has its own simple
+[docs/reference/](docs/reference/README.md)). Hive9's screens are not copied: MAPP has its own simple
 design, in Shell's enterprise design language.
 
 | | |
@@ -21,7 +21,7 @@ design, in Shell's enterprise design language.
 | API | Go 1.27, standard library only at run time (`backend/`) |
 | Web app | React 19 + TypeScript (`frontend/`) |
 | Data | Local JSON file store now, PostgreSQL later |
-| Sign-in | Demo sign-in now (password `northstar`), Shell single sign-on later |
+| Sign-in | Demo sign-in now (password `mapp`), Shell single sign-on later |
 | Design | Shell's enterprise design language, design system v2 (`docs/product/design-system.md`) |
 | Phase | **Plan module** — see `docs/sdd/feature-map.md` |
 
@@ -47,17 +47,17 @@ actions a role does not allow, the end-to-end journeys of 014–017) is listed i
 
 ## Demo people and their roles
 
-All demo people share the password **`northstar`**. Roles come from the demo data (feature 014) and can be
+All demo people share the password **`mapp`**. Roles come from the demo data (feature 014) and can be
 changed in **Settings › Roles and access** (Administrators only).
 
 | Person | E-mail | Role (scope) | Good for showing |
 |---|---|---|---|
-| Alex Morgan | alex.morgan@northstar.demo | Administrator (all markets) | Settings, Roles and access, approval level 2, deciding on behalf, GSAP imports |
-| Carlos Mendes | carlos.mendes@northstar.demo | Global planner (all markets) | Global budgets and allocations, Mobility approvals (level 1) |
-| Daniel Okoro | daniel.okoro@northstar.demo | Planner and Approver (own teams: Lubricants Europe) | Approving Lubricants activities |
-| Priya Raman | priya.raman@northstar.demo | Planner (own teams: Lubricants Europe) | Building the Lubricants plan, submitting for approval |
-| Mei Lin | mei.lin@northstar.demo | Planner (own teams: Mobility China) | Building the Mobility plan |
-| Sara Novak | sara.novak@northstar.demo | Viewer (own teams: Lubricants Europe, Mobility China) | View only: sees plans and financial data, changes nothing |
+| Alex Morgan | alex.morgan@shell.com | Administrator (all markets) | Settings, Roles and access, approval level 2, deciding on behalf, GSAP imports |
+| Carlos Mendes | carlos.mendes@shell.com | Global planner (all markets) | Global budgets and allocations, Mobility approvals (level 1) |
+| Daniel Okoro | daniel.okoro@shell.com | Planner and Approver (own teams: Lubricants Europe) | Approving Lubricants activities |
+| Priya Raman | priya.raman@shell.com | Planner (own teams: Lubricants Europe) | Building the Lubricants plan, submitting for approval |
+| Mei Lin | mei.lin@shell.com | Planner (own teams: Mobility China) | Building the Mobility plan |
+| Sara Novak | sara.novak@shell.com | Viewer (own teams: Lubricants Europe, Mobility China) | View only: sees plans and financial data, changes nothing |
 
 | Role | May |
 |---|---|
@@ -81,7 +81,7 @@ Viewer role for their own teams. Details: [014 spec](specs/014-access-control/sp
 If `node` is not found after installing, open a new terminal; for Node.js unpacked from a zip file, add
 its folder to `PATH`.
 
-## Run NorthStar
+## Run MAPP
 
 Use two terminals: one for the API, one for the web app.
 
@@ -90,7 +90,7 @@ Use two terminals: one for the API, one for the web app.
 ```powershell
 cd backend
 go run ./cmd/seed          # once: loads the demo data (people, roles, plans, approvals, GSAP data) into backend/data
-go run ./cmd/api           # prints "NorthStar API listening on http://127.0.0.1:8080 …"
+go run ./cmd/api           # prints "MAPP API listening on http://127.0.0.1:8080 …"
 ```
 
 The API reads its data only when it starts, so **stop the API (Ctrl+C) before you run the seed again**.
@@ -108,17 +108,17 @@ If PowerShell says "running scripts is disabled on this system", type `npm.cmd` 
 (for example `npm.cmd run dev`); it does the same and needs no change to the computer's settings.
 
 Open <http://127.0.0.1:5173> and click a demo person, or type a demo e-mail with the password
-**`northstar`**.
+**`mapp`**.
 
 **Port 8080 already in use?** The API then stops with "Port 8080 is already in use — stop the other
 program or set APP_PORT." Either stop the other program, or use another port in both terminals:
 
 ```powershell
 $env:APP_PORT = '18081'                               # API terminal, before go run ./cmd/seed and ./cmd/api
-$env:NORTHSTAR_API_URL = 'http://127.0.0.1:18081'     # web-app terminal, before npm run dev
+$env:MAPP_API_URL = 'http://127.0.0.1:18081'     # web-app terminal, before npm run dev
 ```
 
-## Test NorthStar
+## Test MAPP
 
 ```powershell
 cd backend

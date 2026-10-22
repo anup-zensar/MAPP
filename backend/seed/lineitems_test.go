@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/lineitems"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/lineitems"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // The line items of 007 data model §8, L-1001 … L-1008, with their activities, currencies, planned costs,

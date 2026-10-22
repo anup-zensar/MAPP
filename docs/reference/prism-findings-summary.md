@@ -32,10 +32,10 @@ data foundation is trusted.
 - **Could / not now:** UX polish, advanced analytics or AI, vendor differentiators, extended
   configurability.
 
-## What it means for NorthStar's Plan module
+## What it means for MAPP's Plan module
 
 - Make planning *in* the tool easier than in Excel (friendly CRUD, drafts, completeness, no
   one-error-per-save).
 - Standardise data at entry: configured attribute lists, required finance coding on line items, one FX
   rule (base USD), readable IDs that will key the future GSAP link.
-- Keep the GSAP boundary clean: NorthStar records the SWBS request; it never creates financial truth.
+- Keep the GSAP boundary clean: MAPP records the SWBS request; it never creates financial truth.

@@ -7,8 +7,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // Copies for features 004–006 (data model §5): every stored field and the same names, new IDs, the actor as

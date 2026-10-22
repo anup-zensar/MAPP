@@ -226,7 +226,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     });
 
     expect(screen.getByLabelText('Loading plans')).toBeInTheDocument();
-    expect(await screen.findByRole('alert')).toHaveTextContent("NorthStar can't reach its server");
+    expect(await screen.findByRole('alert')).toHaveTextContent("MAPP can't reach its server");
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(await screen.findAllByRole('article')).toHaveLength(3);

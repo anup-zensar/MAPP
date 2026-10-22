@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/campaigns"
-	"northstar/internal/plans"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/campaigns"
+	"mapp/internal/plans"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // The demo activities of 006 plan "Demo data", A-1001 … A-1010, in their initiatives and statuses, with

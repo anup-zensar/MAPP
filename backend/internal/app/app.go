@@ -1,4 +1,4 @@
-// Package app builds the NorthStar API: it reads the configuration and wires every package's repository,
+// Package app builds the MAPP API: it reads the configuration and wires every package's repository,
 // service and routes together. It is the only package that knows all the others.
 package app
 
@@ -7,28 +7,28 @@ import (
 	"net/http"
 	"slices"
 
-	"northstar/internal/access"
-	"northstar/internal/activities"
-	"northstar/internal/allwork"
-	"northstar/internal/approvals"
-	"northstar/internal/auth"
-	"northstar/internal/budgets"
-	"northstar/internal/campaigns"
-	"northstar/internal/financials"
-	"northstar/internal/history"
-	"northstar/internal/home"
-	"northstar/internal/lineitems"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/clock"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
-	"northstar/internal/platform/web"
-	"northstar/internal/samples"
-	"northstar/internal/settings"
+	"mapp/internal/access"
+	"mapp/internal/activities"
+	"mapp/internal/allwork"
+	"mapp/internal/approvals"
+	"mapp/internal/auth"
+	"mapp/internal/budgets"
+	"mapp/internal/campaigns"
+	"mapp/internal/financials"
+	"mapp/internal/history"
+	"mapp/internal/home"
+	"mapp/internal/lineitems"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/clock"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
+	"mapp/internal/platform/web"
+	"mapp/internal/samples"
+	"mapp/internal/settings"
 )
 
-// App is the NorthStar API, ready to serve.
+// App is the MAPP API, ready to serve.
 type App struct {
 	// Handler serves every route of the API, wrapped in web.Middleware.
 	Handler http.Handler

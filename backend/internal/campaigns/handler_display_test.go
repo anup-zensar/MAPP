@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // displayed is the part of a Campaign or Initiative answer that D-220 adds: its amounts in the reader's

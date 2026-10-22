@@ -8,8 +8,8 @@ import (
 	"github.com/pb33f/libopenapi"
 	validator "github.com/pb33f/libopenapi-validator"
 
-	"northstar/api"
-	"northstar/internal/platform/apitest"
+	"mapp/api"
+	"mapp/internal/platform/apitest"
 )
 
 // The helper checks every request against the contract, so a handler test cannot pass with a request
@@ -17,7 +17,7 @@ import (
 func TestDo_ReportsARequestThatBreaksTheContract(t *testing.T) {
 	server := apitest.New(t)
 	recorder := &failureRecorder{TB: t}
-	notAnEmail := map[string]any{"email": 42, "password": "northstar"}
+	notAnEmail := map[string]any{"email": 42, "password": "mapp"}
 
 	server.Do(recorder, http.MethodPost, "/api/auth/sign-in", notAnEmail)
 	if len(recorder.failures) == 0 {
@@ -52,13 +52,13 @@ func TestDo_ReportsAPathThatIsNotInTheContract(t *testing.T) {
 func TestResponse_CookieAndDecode(t *testing.T) {
 	response := &apitest.Response{
 		Status: http.StatusOK,
-		Header: http.Header{"Set-Cookie": {"northstar_session=abc123; Path=/; HttpOnly; SameSite=Strict"}},
+		Header: http.Header{"Set-Cookie": {"mapp_session=abc123; Path=/; HttpOnly; SameSite=Strict"}},
 		Body:   []byte(`{"status":"ok"}`),
 	}
 
-	cookie := response.Cookie("northstar_session")
+	cookie := response.Cookie("mapp_session")
 	if cookie == nil || cookie.Value != "abc123" || !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode {
-		t.Errorf("Cookie(northstar_session) = %+v, want abc123, HttpOnly, SameSite=Strict", cookie)
+		t.Errorf("Cookie(mapp_session) = %+v, want abc123, HttpOnly, SameSite=Strict", cookie)
 	}
 	if other := response.Cookie("other"); other != nil {
 		t.Errorf("Cookie(other) = %+v, want nil", other)
@@ -106,13 +106,13 @@ func (r *failureRecorder) Errorf(format string, args ...any) {
 // signing in again: Sara Novak, a Viewer, may then read the access rules (feature 014 D-228).
 func TestServer_GrantRole(t *testing.T) {
 	server := apitest.New(t)
-	sara := server.SignIn(t, "sara.novak@northstar.demo")
+	sara := server.SignIn(t, "sara.novak@shell.com")
 	before := sara.Do(t, http.MethodGet, "/api/access-rules", nil)
 	if before.Status != http.StatusForbidden {
 		t.Fatalf("a Viewer reading the access rules = %d %s, want 403", before.Status, before.Body)
 	}
 
-	server.GrantRole(t, "sara.novak@northstar.demo", "administrator", "all")
+	server.GrantRole(t, "sara.novak@shell.com", "administrator", "all")
 	after := sara.Do(t, http.MethodGet, "/api/access-rules", nil)
 	if after.Status != http.StatusOK {
 		t.Errorf("after GrantRole = %d %s, want 200", after.Status, after.Body)

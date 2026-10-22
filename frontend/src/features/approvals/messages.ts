@@ -114,7 +114,7 @@ export function historyEntryTitle(
 /**
  * Who acted in a history entry, in the capacity they acted (017 FR-019, FR-034): "Carlos Mendes",
  * "Carlos Mendes as delegate of Daniel Okoro", "Alex Morgan as backup approver", "Alex Morgan on
- * behalf of Daniel Okoro"; NorthStar for reminders, escalations and rules.
+ * behalf of Daniel Okoro"; MAPP for reminders, escalations and rules.
  */
 export function historyActorText(entry: ApprovalHistoryEntry): string {
   return decisionActorText(entry);

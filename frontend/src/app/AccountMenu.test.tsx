@@ -41,7 +41,7 @@ describe('AccountMenu', () => {
 
     const menu = screen.getByRole('menu');
     expect(menu).toHaveTextContent('Priya Raman');
-    expect(menu).toHaveTextContent('priya.raman@northstar.demo');
+    expect(menu).toHaveTextContent('priya.raman@shell.com');
     expect(menu).toHaveTextContent('Marketer');
     expect(
       within(menu)
@@ -109,7 +109,7 @@ describe('AccountMenu', () => {
 
     const messages = await findMessages();
     expect(messages).toHaveTextContent(
-      "NorthStar can't reach its server right now. Check that it is running and try again.",
+      "MAPP can't reach its server right now. Check that it is running and try again.",
     );
     expect(router.state.location.pathname).toBe('/plans');
 

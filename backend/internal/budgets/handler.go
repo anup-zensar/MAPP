@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // Handler answers the HTTP requests of global budgets and allocations (014 plan "API operations").

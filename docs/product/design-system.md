@@ -1,4 +1,4 @@
-# Design System — NorthStar (version 2)
+# Design System — MAPP (version 2)
 
 | | |
 |---|---|
@@ -9,7 +9,7 @@
 | **Evidence** | [Shell brand research](../reports/ux-research-shell-brand.md) · [Shell UI patterns research](../reports/ux-research-shell-ui-patterns.md) · [UI audit](../reports/ui-audit.md) · [Functional review](../reports/functional-review.md) · [Recommendations](../reports/ux-design-recommendations.md) · [Implementation plan](../reports/ui-ux-implementation-plan.md) |
 | **Code** | Tokens: `frontend/src/styles/tokens.css` · base styles: `frontend/src/styles/global.css` · shared components: `frontend/src/components/` · app shell: `frontend/src/app/` |
 
-NorthStar looks like a **Shell enterprise tool**: calm, structured, symmetric and ready for daily
+MAPP looks like a **Shell enterprise tool**: calm, structured, symmetric and ready for daily
 production use. It follows Shell's current web design language (grey ink text, white cards on a light
 grey canvas, Shell yellow only where you act and where you are, red only for danger and errors) and
 applies it to a working application. Version 1's layout and interaction patterns stay (left sidebar,
@@ -38,8 +38,8 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 5. **Safe.** Confirm destructive actions, protect unsaved changes, offer Undo, keep a recycle bin.
 6. **Calm.** White cards on a light grey canvas, grey ink text, one accent (Shell yellow) used only where
    you act and where you are, colour otherwise used only for meaning (status, level, money problems).
-7. **Looks like Shell, behaves like NorthStar.** Shell's colours, type pairing, grid, radii and wayfinding;
-   NorthStar's own name mark, plain words and CRUD pattern. No Shell logo, typeface or trade dress until
+7. **Looks like Shell, behaves like MAPP.** Shell's colours, type pairing, grid, radii and wayfinding;
+   MAPP's own name mark, plain words and CRUD pattern. No Shell logo, typeface or trade dress until
    Shell grants them (§3.10, §12).
 8. **One of everything.** One ink colour, one accent, one height per control size, one radius per kind of
    object, one spacing scale, one page header, one panel footer, one table style, one key–value layout,
@@ -58,7 +58,7 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Demo environment — sign-in and data are for demonstration only            (banner 32, navy)  │
 ├──────────────────────────────────────────────────────────────────────────────────────────────┤
-│ [★] NorthStar          (search slot, reserved)                       🔔3   (AB) Priya ▾      │ top bar 56, white
+│ [★] MAPP          (search slot, reserved)                       🔔3   (AB) Priya ▾      │ top bar 56, white
 ├────────────────────┬─────────────────────────────────────────────────────────────────────────┤
 │▌⌂ Home             │   Plans › FY2026 Lubricants Europe                     (breadcrumb 12)  │
 │ ▤ Plans            │   Helix launch                           [⋯] [Submit for approval] [Edit]│ title 28 Jost
@@ -70,7 +70,7 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 │ ↺ Recycle bin      │   ┌──────────────────────────────────────────────────────────────────┐  │
 │ ☰ Activity log     │   │ white card: table, 40 px rows, money right-aligned                │  │
 │                    │   └──────────────────────────────────────────────────────────────────┘  │
-│ « Collapse sidebar │   NorthStar · demo data                                     (footer 12) │
+│ « Collapse sidebar │   MAPP · demo data                                     (footer 12) │
 └────────────────────┴─────────────────────────────────────────────────────────────────────────┘
  sidebar 240, white          content: #F5F5F5 canvas, column ≤ 1300 px centred, 24 px padding
  ▌ = 4 px yellow bar + bold label + pale-yellow fill on the current section
@@ -80,12 +80,12 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 |---|---|
 | **Skip link** | First focusable element: "Skip to main content". Hidden until focused, then shown top-left: `--brand-yellow` fill, `--on-brand-yellow` text, 14 px bold, padding 16, radius 8. |
 | **Environment banner** | `DemoBanner`. 32 px, full width, Shell system navy `--banner-bg` with white 12 px text, one line, centred. Below 600 px the shorter text "Demo environment — demonstration data only". Not sticky. |
-| **Top bar** | 56 px, `--surface`, 1 px `--hairline` bottom border, full width, sticky at the top. **Left:** at ≥ 960 px the logo zone is 240 px wide, aligned with the sidebar (`Logo` + "NorthStar"); below 960 px a 40 px **Open menu** icon button, then the logo mark. **Centre-left:** the global search slot (360–480 px), empty until a search feature is specified; never a fake control. **Right**, 8 px apart: notifications bell (40 px icon button with `CountBadge`), the account button (32 px avatar + first name at ≥ 960 px; avatar only below). The account menu holds the name and role, **My profile**, **Appearance** (Follow the computer · Light · Dark; D-038) and **Sign out**. A help button joins the right group, always in the same place (WCAG 3.2.6), when a help feature exists. |
+| **Top bar** | 56 px, `--surface`, 1 px `--hairline` bottom border, full width, sticky at the top. **Left:** at ≥ 960 px the logo zone is 240 px wide, aligned with the sidebar (`Logo` + "MAPP"); below 960 px a 40 px **Open menu** icon button, then the logo mark. **Centre-left:** the global search slot (360–480 px), empty until a search feature is specified; never a fake control. **Right**, 8 px apart: notifications bell (40 px icon button with `CountBadge`), the account button (32 px avatar + first name at ≥ 960 px; avatar only below). The account menu holds the name and role, **My profile**, **Appearance** (Follow the computer · Light · Dark; D-038) and **Sign out**. A help button joins the right group, always in the same place (WCAG 3.2.6), when a help feature exists. |
 | **Sidebar** | 240 px, `--surface`, 1 px `--hairline` right border, sticky under the top bar, scrolls on its own. Items 40 px high, padding 0 16 0 20, 20 px icon + 12 px gap + 14 px label in `--ink`. Hover `--hover`, no movement. **Current section: a 4 px `--brand-yellow` bar on the start edge (full item height), `--brand-yellow-tint` fill, bold label, `aria-current="page"`.** Group label "More" 12 px bold `--ink-2`, sentence case, 24 px above and 8 px below. Count badges sit at the end of the item. At the bottom: **Collapse sidebar** (40 px, ghost). |
 | **Collapsed rail** | 64 px; icons centred; tooltips on the right; the yellow bar stays on the current item; badges become a small count at the icon's top end. Chosen by the person (saved, D-038) at ≥ 960 px; automatic between 600 and 959 px. |
 | **Drawer** | Below 600 px the sidebar is hidden. **Open menu** opens a 280 px drawer from the left with `--overlay`, focus kept inside, Escape and the close button close it and return the focus. It shows the same items with labels, no tooltips. Bell and account stay in the top bar. |
 | **Content area** | `--page-bg` (#F5F5F5) canvas. One column, at most `--content-max` (1300 px), centred in the space right of the sidebar, padding `--gutter` (24 px; `--gutter-sm` 16 px below 600 px), 24 px from the top bar to the breadcrumb row, 48 px bottom padding. When the sidebar collapses, the column grows (up to 1300 px). |
-| **Footer** | Inside the content column, after the page: 1 px `--hairline` top border, 16 px padding, one 12 px `--ink-2` row: "NorthStar · demo data" (this phase). No marketing footer. |
+| **Footer** | Inside the content column, after the page: 1 px `--hairline` top border, 16 px padding, one 12 px `--ink-2` row: "MAPP · demo data" (this phase). No marketing footer. |
 
 Primary navigation for this phase: **Home · Plans · Approvals · All work** and, under **More**,
 **Settings · Recycle bin · Activity log**. (Finance and Measure appear later.) My profile is reached from
@@ -256,7 +256,7 @@ on white and on grey (#F5F5F5); in the dark columns on `--page-bg` and on `--sur
 | `--brand-yellow-hover` / `-pressed` | `#F2B800` / `#E0A800` | ink on them 5.74 / 4.82 | `#FFC800` / `#B88A00` | dark text 11.37 / 5.61 | Primary hover and pressed |
 | `--on-brand-yellow` | `#404040` | **6.67 on yellow** | `#14191F` | **7.54 on dark yellow** | Text and icons on yellow (never white) |
 | `--brand-yellow-tint` | `#FFF4CC` | ink 9.41 · link 9.52 | `#3B3723` | ink 9.06 · link 5.57 | Current sidebar item, highlighted row (just created, moved or copied) |
-| `--brand-mark` | `#092949` (Shell system navy) | white on it 14.74 | `#0D3A66` | white 11.58 | The NorthStar mark's tile, avatars |
+| `--brand-mark` | `#092949` (Shell system navy) | white on it 14.74 | `#0D3A66` | white 11.58 | The MAPP mark's tile, avatars |
 | `--button-primary-bg`, `-bg-hover`, `-bg-pressed`, `-text` | aliases of the four yellow tokens | – | aliases | – | The primary button |
 | `--focus-ring` | `#092949` (navy) | 14.74 · 13.52; 9.48 against yellow | `#FFC800` | 11.37 · 10.19 | Keyboard focus ring on every control |
 | `--blue` | `#003C88` (Shell dark blue) | 10.49 · 9.62 | `#8CB4E6` | 8.23 · 7.38 | Checked checkboxes and switches |
@@ -288,7 +288,7 @@ solid colours). `--blue` keeps its name with the Shell dark-blue value and no lo
 | Shell yellow | The one primary button of a page or dialog; the 4 px current-place bar on the current sidebar item and the selected tab; the skip link; the pale tint of the current sidebar item and the highlighted row | Text or icons on white or grey (1.55:1); a focus ring on light backgrounds; warnings (amber is used); large areas; chart series; a second yellow button |
 | Shell red | The destructive confirm button; error messages and icons; the problem status family (§4.1) | Headings, decoration, main actions, brand accents; red with yellow in stripes, gradients or shell shapes (Shell trade dress) |
 | Shell dark blue `#003C88` | Links; checked checkboxes and switches; the plan level | Buttons, headings or large areas |
-| Navy `#092949` | The focus ring in light mode; the NorthStar mark and avatars; the environment banner | Other surfaces |
+| Navy `#092949` | The focus ring in light mode; the MAPP mark and avatars; the environment banner | Other surfaces |
 | Shell secondary colours (blue, green, purple, teal, magenta) | Meaning only: feedback, status families, planning levels, team dots, charts — always next to a word | Buttons, headings, backgrounds of whole areas |
 | Ink and greys | Everything else | – |
 
@@ -411,8 +411,8 @@ chevron crops).
 
 ### 3.10 Logo and brand assets
 
-- **NorthStar's own mark** in the logo slot: a 28 px tile, radius 8, filled `--brand-mark` (navy), with a
-  white four-point star, and the word "NorthStar" in Jost 600 18 px `--ink`. The favicon is the same tile.
+- **MAPP's own mark** in the logo slot: a 28 px tile, radius 8, filled `--brand-mark` (navy), with a
+  white four-point star, and the word "MAPP" in Jost 600 18 px `--ink`. The favicon is the same tile.
   No gradient.
 - **No Shell pecten, no "Shell" wordmark, no Shell typeface, no red-and-yellow shell shapes or stripes**
   until Shell gives trade-mark consent and artwork approval (§12). The word "Shell" may appear as plain
@@ -861,7 +861,7 @@ of a dialog, panel or drawer (R14).
 ### 5.7 Brand
 
 **`Logo`** — §3.10: the 28 px navy tile with the white star (`md`; `lg` 32 on the sign-in page), optional
-wordmark "NorthStar" Jost 600 18. The tile is decoration; the link around it is named "NorthStar home".
+wordmark "MAPP" Jost 600 18. The tile is decoration; the link around it is named "MAPP home".
 
 ### 5.8 App shell parts (`frontend/src/app/`)
 
@@ -873,7 +873,7 @@ wordmark "NorthStar" Jost 600 18. The tile is decoration; the link around it is 
 | `AccountMenu` | Opened from the top bar's avatar button; a menu (§5.1 look) with name and role (not a link), My profile, Appearance (three choices, the current one ticked), a separator, Sign out |
 | `NotificationBell` | 40 px ghost icon button with `CountBadge`; opens a 360 wide popover (radius 8, `--shadow-md`) with the notices, **Mark all as read** (ghost) and links |
 | `ThemeToggle` | Becomes the Appearance choice inside `AccountMenu` |
-| `PublicLayout` (sign-in) | `--page-bg` canvas, one centred white card (max 400 wide, radius 16, padding 32) with the logo, the title "Sign in to NorthStar" (Jost 700 28), the fields (48 high) and **Sign in** (primary, `lg`, full width). The brand appears once (UI audit S-01); no gradient header (S-02). |
+| `PublicLayout` (sign-in) | `--page-bg` canvas, one centred white card (max 400 wide, radius 16, padding 32) with the logo, the title "Sign in to MAPP" (Jost 700 28), the fields (48 high) and **Sign in** (primary, `lg`, full width). The brand appears once (UI audit S-01); no gradient header (S-02). |
 
 ---
 
@@ -991,7 +991,7 @@ proposal awaiting the product owner, see the implementation plan.)
 Shell business terms are kept: Plan, Campaign, Initiative, Activity, Line item, SWBS, GL code, BCPIR,
 SP&A, AOP, SMP, INQ, MQL. Hive9 interface terms are replaced:
 
-| Hive9 term | NorthStar label |
+| Hive9 term | MAPP label |
 |---|---|
 | Inspection Window | Details (side panel or page) |
 | Honeycomb | Select (checkboxes and a bulk-action bar) |
@@ -1058,7 +1058,7 @@ decision 4, D-313). Automated checks run axe with the tags `wcag2a`, `wcag2aa`, 
 
 ## 10. Usability targets (used in success criteria)
 
-| Task | Hive9 (estimate) | NorthStar target |
+| Task | Hive9 (estimate) | MAPP target |
 |---|---|---|
 | Create a plan | ~14 steps | ≤ 6 steps |
 | Add a campaign | ~8 | ≤ 5 |
@@ -1115,7 +1115,7 @@ or one component (see the recommendations report for the questions to Shell).
 | Item | Now | When Shell supplies it |
 |---|---|---|
 | Heading typeface (Shell Heavy / Bold / Book, URW, proprietary) | Jost 600/700 (OFL) in `--font-heading` | Change `--font-heading` (and possibly `--font`) and self-host Shell's files under its licence |
-| Pecten and trade-mark consent | NorthStar's navy tile and star | Replace `Logo` and the favicon, following Shell's placement and clear-space rules |
+| Pecten and trade-mark consent | MAPP's navy tile and star | Replace `Logo` and the favicon, following Shell's placement and clear-space rules |
 | Official screen colour values | Live shell.com values: yellow `#FFC800`, red `#DD1D21`, secondaries | Update §3.1 and §4 tokens and re-run the contrast test |
 | Shell's internal design system ("Shell DS") | This document | If mandatory for internal tools, its tokens and components replace ours where they differ |
 | Icon set | lucide outline icons | Swap the icon imports |

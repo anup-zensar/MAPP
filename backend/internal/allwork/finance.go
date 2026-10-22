@@ -4,8 +4,8 @@ import (
 	"slices"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // Financial figures from GSAP (feature 015, FR-023, FR-024): the Financials column group — committed,

@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
+	"mapp/internal/people"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
 )
 
 // gbpInput is the plan form of P-1004 of the 016 demo data: a 2027 Cross-market plan planned in GBP with a

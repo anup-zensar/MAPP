@@ -6,11 +6,11 @@ import (
 	"slices"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // Provided to other features (plan, "Provided to other features"): what activities (006), plans (004),

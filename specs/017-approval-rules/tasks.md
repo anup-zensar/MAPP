@@ -111,7 +111,7 @@ plan wins and the difference is reported.
 
 ### US5 — reminders and escalation (P2)
 
-- [x] T024 [US5] `backend/internal/approvals/escalations.go` `RunEscalations` (plan *Service operations*; data-model §4, §8): escalation before reminder, usable backup, `notEscalated`, entries and log by NorthStar with "run by <person>", notifications; tests `escalations_test.go` `TestRunEscalations_FR026_FR027_FR028_SC005` (reminder once; escalation once; escalation replaces a due reminder; inactive / non-approving / owner / submitter / waiting-approver backup not usable; second run sends nothing; legacy round uses 008's waiting-since rule)
+- [x] T024 [US5] `backend/internal/approvals/escalations.go` `RunEscalations` (plan *Service operations*; data-model §4, §8): escalation before reminder, usable backup, `notEscalated`, entries and log by MAPP with "run by <person>", notifications; tests `escalations_test.go` `TestRunEscalations_FR026_FR027_FR028_SC005` (reminder once; escalation once; escalation replaces a due reminder; inactive / non-approving / owner / submitter / waiting-approver backup not usable; second run sends nothing; legacy round uses 008's waiting-since rule)
 - [x] T025 [US5] Route `POST /api/approvals/escalations/run` (route rule Need `workflows.manage`, T008); handler tests `TestRunEscalations_SeededEscalatesToAlex_FR027`, `TestRunEscalations_WithoutPermission403_FR028`
 
 ### US6 — monitoring (P2)
@@ -121,7 +121,7 @@ plan wins and the difference is reported.
 
 ### US7 — audit trail (P2)
 
-- [x] T028 [US7] One test that drives every new event through the service and checks both the approval history and the activity log (actor or NorthStar, verb, details with capacity, rule or waited days): `TestApprovalRuleEvents_Logged_FR034_FR035_SC004`; fix any gap in T013/T016/T019/T021/T024
+- [x] T028 [US7] One test that drives every new event through the service and checks both the approval history and the activity log (actor or MAPP, verb, details with capacity, rule or waited days): `TestApprovalRuleEvents_Logged_FR034_FR035_SC004`; fix any gap in T013/T016/T019/T021/T024
 
 ### Seed and finish
 

@@ -72,7 +72,7 @@ spend type and saving; confirm the unassigned balance becomes 0.00 USD.
    on it"; **When** the user picks a spend type with one GL code, **Then** that code is filled in with
    "The only GL code for this spend type"; with several, only those are offered.
 4. **Given** a chosen GL code, **When** the spend type changes to one it does not fit, **Then** before
-   saving NorthStar lists "GL code '7250080 – Advertising digital' will be cleared — it doesn't fit 'BTL –
+   saving MAPP lists "GL code '7250080 – Advertising digital' will be cleared — it doesn't fit 'BTL –
    Event'".
 5. **Given** an empty name, a name already used in the activity and planned cost "-50", **When** the user
    saves, **Then** nothing is saved and all three problems appear at once, in a summary and by the fields.
@@ -114,7 +114,7 @@ check the preview; then move the activity's dates by one month and check the spr
 5. **Given** line items spread Evenly, All in first month and All in last month, **When** the activity's
    dates change to 1 Apr – 30 Jun 2026, **Then** they are re-spread over Apr–Jun automatically, while a
    Custom line item keeps its amounts with Mar marked as outside the activity's dates.
-6. **Given** a Custom line item, **When** the user switches it to Evenly, **Then** before saving NorthStar
+6. **Given** a Custom line item, **When** the user switches it to Evenly, **Then** before saving MAPP
    says the typed month amounts will be replaced.
 
 ---
@@ -221,7 +221,7 @@ its amount (confirmation, activity becomes *Created*), duplicate it and delete t
 - **FR-009**: Saving MUST require only the fields marked **Required** in field catalogue §5 (name,
   currency, planned cost); "needed to submit" fields MAY stay empty (D-009). Names MUST be unique within
   the activity, ignoring letter case and surrounding spaces; planned cost MUST be 0.00 or more.
-- **FR-010**: On save, the line item MUST get a permanent ID (L-…, D-019) and be logged; NorthStar MUST
+- **FR-010**: On save, the line item MUST get a permanent ID (L-…, D-019) and be logged; MAPP MUST
   show a toast naming it and return to the activity page with the new row highlighted. **Save and add
   another** MUST open a new form whose planned cost is the new unassigned balance.
 
@@ -285,7 +285,7 @@ its amount (confirmation, activity becomes *Created*), duplicate it and delete t
 
 - **FR-024**: **Request SWBS code from GSAP** MUST be a yes/no choice, on by default and editable in any
   activity status, with the status chip of domain model §2.4 on the row and page; the SWBS code MUST show
-  "Filled by GSAP later". NorthStar MUST NOT send anything to GSAP in this phase (D-008).
+  "Filled by GSAP later". MAPP MUST NOT send anything to GSAP in this phase (D-008).
 - **FR-025**: "From finance (coming later)" MUST show total actuals, % of actual cost, actuals at monthly
   rate, total invoiced and total purchase requests as "—" with "Filled when the Finance module and GSAP
   are connected" (domain model §4.6).

@@ -12,7 +12,7 @@ come from feature 001: [plan](../001-app-shell-and-sign-in/plan.md),
 
 ## Summary
 
-Feature 004 adds the **plan**, the top of the planning hierarchy, as NorthStar's first full standard CRUD
+Feature 004 adds the **plan**, the top of the planning hierarchy, as MAPP's first full standard CRUD
 record (design system §6):
 
 - **Go API** — a new business package `internal/plans` (handler → service → repository) with the stored
@@ -107,7 +107,7 @@ goals and percentages; deterministic tests (fixed clock 2026-03-12 09:00 UTC →
 | D-078 | **`PATCH /api/plans/{planId}` sends the whole form** (every editable field, `null` to clear), not only changed fields (deviation from 001 R10). The server compares, saves and logs only what changed. | Several plan fields can be cleared; telling "not sent" from `null` in Go needs extra code; the form always has every value anyway |
 | D-079 | **Amounts in plan views are converted to the viewer's display currency by the API** (`figures`, `goals`), rounded half up to the cent, each labelled with its currency; editable stored values (plan budget, revenue goal) stay in USD in the same answer. | Constitution IV (conversion on the server) and FR-015, while the edit form keeps USD inputs (003 FR-023) |
 | D-080 | **Plans list filtering happens in the API** (`scope`, `status`, `year`, `q`); the summary cards cover scope + year (ignoring status and search); the count reads "<matching> of <all plans in the team scope>". | FR-001/FR-003 and US2 scenario 2 ("1 of 3"); one tested implementation; money totals stay on the server |
-| D-081 | **List filters and layout are remembered per person in the browser** (`localStorage` key `northstar.plans.list.<personId>`; status, year, scope, layout — not the search text); a filter in the address (`/plans?status=draft&year=2026&scope=myTeams&q=…`) wins over the remembered one. | FR-003 "remembered per user" without a server change to 001's preferences; works with Home's links (009 FR-007). Other browsers start from the defaults |
+| D-081 | **List filters and layout are remembered per person in the browser** (`localStorage` key `mapp.plans.list.<personId>`; status, year, scope, layout — not the search text); a filter in the address (`/plans?status=draft&year=2026&scope=myTeams&q=…`) wins over the remembered one. | FR-003 "remembered per user" without a server change to 001's preferences; works with Home's links (009 FR-007). Other browsers start from the defaults |
 | D-048 | **Shell attribute values are stored on their record** as a map `attributes: {attributeId: value}` (all levels), validated and interpreted by Settings (002); hidden values stay in the map (R9). | One row per record; PostgreSQL maps it to a JSONB column or a values table behind the same repository interface |
 | D-082 | **A plan copy writes one `copied` log entry, on the new plan** (details: source and counts); copied campaigns, initiatives, activities and line items get no entries of their own. | R13: copies carry no history; one readable entry; 011's "Include items inside" still finds it |
 | D-083 | **Publish and unpublish are idempotent and carry no version**: publishing a Published plan or unpublishing a Draft plan changes nothing and logs nothing; the server re-checks completeness at the moment of publishing. | A status action does not overwrite fields, so an out-of-date page cannot lose data |
@@ -496,10 +496,10 @@ description lists `not_ready`. Go: `errs.CodeNotReady`, `errs.NotReady(message s
 
 | Path | Page | Tab title (`handle.title`, then the page's own) |
 |---|---|---|
-| `/plans` | `PlansPage` | Plans · NorthStar |
-| `/plans/new` | `PlanCreatePage` | New plan · NorthStar |
-| `/plans/:planId` | `PlanPage` (layout route with `<Outlet/>`; 005 adds child routes for side panels) | "<plan name> · NorthStar" once loaded ("Plan" before) |
-| `/plans/:planId/edit` | `PlanEditPage` (`?focus=<field>` focuses that field after loading) | "Edit <plan name> · NorthStar" ("Edit plan" before) |
+| `/plans` | `PlansPage` | Plans · MAPP |
+| `/plans/new` | `PlanCreatePage` | New plan · MAPP |
+| `/plans/:planId` | `PlanPage` (layout route with `<Outlet/>`; 005 adds child routes for side panels) | "<plan name> · MAPP" once loaded ("Plan" before) |
+| `/plans/:planId/edit` | `PlanEditPage` (`?focus=<field>` focuses that field after loading) | "Edit <plan name> · MAPP" ("Edit plan" before) |
 
 - `navigation.ts`: `PLANS` becomes a `NavItem` (no `comingSoon`) and leaves `COMING_SOON_SECTIONS`;
   `router.tsx` adds the four routes inside `RequireSignIn`; Plans stays highlighted on every `/plans/…`

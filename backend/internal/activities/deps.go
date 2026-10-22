@@ -3,13 +3,13 @@ package activities
 import (
 	"context"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // What activities reads from earlier features: small consumer-side interfaces (D-196). The repositories

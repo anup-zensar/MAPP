@@ -7,13 +7,13 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // Moving and copying an activity (US5, FR-029, FR-030): inside its plan only; copying into another plan

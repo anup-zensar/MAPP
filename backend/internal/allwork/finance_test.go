@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // The financial figures of feature 015 in All work (015 FR-023, FR-024).

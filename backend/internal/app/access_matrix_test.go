@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/access"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/authz"
+	"mapp/internal/access"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/authz"
 )
 
 // lubricantsRecords names a record of the Lubricants Europe plan for each path parameter of a planning

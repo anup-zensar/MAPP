@@ -1,5 +1,5 @@
 /**
- * The web app's only way to talk to NorthStar's API (research R11, R15).
+ * The web app's only way to talk to MAPP's API (research R11, R15).
  *
  * `api` is typed from the contract (backend/api/openapi.yaml → schema.d.ts), so paths, parameters
  * and bodies are checked by TypeScript. Wrap every call in call(), which returns the data or throws
@@ -109,7 +109,7 @@ function isSessionCall(request: Request): boolean {
   return path.startsWith('/api/auth/') || (request.method === 'GET' && path === '/api/me');
 }
 
-/** An error answer of NorthStar's API: JSON with a code (anything else came from elsewhere). */
+/** An error answer of MAPP's API: JSON with a code (anything else came from elsewhere). */
 function isErrorBody(value: unknown): value is ErrorBody {
   return (
     typeof value === 'object' && value !== null && 'code' in value && typeof value.code === 'string'

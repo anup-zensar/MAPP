@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // workflowKind is the history kind of approval workflows (data model §1).

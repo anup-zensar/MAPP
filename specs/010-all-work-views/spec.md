@@ -196,7 +196,7 @@ filtered, its totals, money in its currency, and a note of every filter used.
 
 **Page and summary cards**
 
-- **FR-001**: NorthStar MUST provide an **All work** page in the sidebar, with the page header of design
+- **FR-001**: MAPP MUST provide an **All work** page in the sidebar, with the page header of design
   system §2 and the pill tabs **Grid · Calendar · Budget & cost**. The views MUST show the same records
   for the same filters, and switching views MUST keep the filters, search and expansion.
 - **FR-002**: The page MUST NOT create, edit or delete records. Changes are made on each record's page
@@ -226,7 +226,7 @@ filtered, its totals, money in its currency, and a note of every filter used.
   | Show levels | Everything (default) · Complete branches only · Campaigns without initiatives · Initiatives without activities | Branches |
 
 - **FR-005**: A record **matches** when it meets every filter tested on its level; a filter tested only
-  on lower levels counts as met when a record below it matches. NorthStar MUST show every match and its
+  on lower levels counts as met when a record below it matches. MAPP MUST show every match and its
   parents. Parents that do not match MUST appear as context rows (lighter text, "Shown for context")
   and MUST NOT be counted in the cards, the count or the totals.
 - **FR-006**: Search MUST match the typed text, ignoring letter case, anywhere in the name, ID, external
@@ -240,7 +240,7 @@ filtered, its totals, money in its currency, and a note of every filter used.
   activities in the year's plans; under the last two Show levels choices it counts campaigns or
   initiatives instead.
 - **FR-009**: Filters MUST apply as soon as they change, without an Apply button, and are kept while
-  the user moves around NorthStar in a session. A new visit MUST start from the user's default saved
+  the user moves around MAPP in a session. A new visit MUST start from the user's default saved
   view or the standard view (current year, no filters, Grid, default columns).
 - **FR-010**: The filter bar MUST offer only the filters of FR-004. Resolved: no Shell-attribute
   filters and no "Not filled in" choice in this phase (D-207).
@@ -343,7 +343,7 @@ filtered, its totals, money in its currency, and a note of every filter used.
   as words.
 - **FR-034**: Every export MUST state, before the data, the view, year, active filters, search, Show
   levels, display currency, exporter, and date and time; a spreadsheet puts these on an "About this
-  export" sheet. The file name MUST give the view, year and date, e.g. "NorthStar All work – Grid –
+  export" sheet. The file name MUST give the view, year and date, e.g. "MAPP All work – Grid –
   2026 – 18 Oct 2026".
 
 ### Key Entities *(include if feature involves data)*

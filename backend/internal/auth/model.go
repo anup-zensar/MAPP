@@ -1,4 +1,4 @@
-// Package auth is NorthStar's demo sign-in (decision D-004, research R6): a person signs in with a demo
+// Package auth is MAPP's demo sign-in (decision D-004, research R6): a person signs in with a demo
 // e-mail and the shared demo password, gets a session kept in an HttpOnly cookie, and every request that
 // needs a signed-in person is turned into an actor by RequireSignIn. Microsoft Entra ID will later replace
 // the sign-in, and only the middleware that produces the actor (ADR-0005).
@@ -7,11 +7,11 @@ package auth
 import (
 	"time"
 
-	"northstar/internal/people"
+	"mapp/internal/people"
 )
 
 // CookieName is the name of the cookie that carries the session token to and from the browser.
-const CookieName = "northstar_session"
+const CookieName = "mapp_session"
 
 const (
 	// idleLimit is how long a session lasts without a request (FR-006): 12 hours, plus the minute by which

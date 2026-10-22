@@ -1,4 +1,4 @@
-# NorthStar UI audit, page by page
+# MAPP UI audit, page by page
 
 **Date:** 20 October 2026 · **Build audited:** branch `plan-module` (features 001–010; 011 not merged) · **Method:** the real app with the demo data, signed in as four demo people, 310 screenshots, measured layouts, automated accessibility checks.
 
@@ -6,7 +6,7 @@
 
 ## Summary
 
-The product owner is right: NorthStar does not yet look production-ready. The cause is **not** the basic parts: the colour tokens, chips, cards, error summaries, empty states and dark mode are sound, and the automated WCAG check finds almost nothing. Three things make it look unfinished:
+The product owner is right: MAPP does not yet look production-ready. The cause is **not** the basic parts: the colour tokens, chips, cards, error summaries, empty states and dark mode are sound, and the automated WCAG check finds almost nothing. Three things make it look unfinished:
 
 1. **Four layout bugs break the most important screens.** The plan tree, the module's main screen, shows each owner's name **one letter per line**. That makes every row about 200 px tall: a plan with 13 records takes about 3,000 px of scrolling. The Plans table does the same to team names. On a phone, 9 pages are wider than the screen (up to 1,099 px on a 390 px phone). The campaign panel then opens off-screen, so its labels show without values and its Close button cannot be reached. Each bug traces to one or two lines of CSS (see X-01, X-02, X-07 and H-01).
 2. **Each feature was assembled its own way.** The pages use 5 different header layouts, the side panels 5 different footers, and the details screens 3 key–value layouts with different label widths. Selects come in 3 styles and table headers in 2. Numbers are right-aligned in some tables and left-aligned in others. Next to each other, these differences read as "misaligned" and "no symmetry".
@@ -314,4 +314,4 @@ The scripts live outside the repository (`…\scratchpad\uiaudit\`):
 - `shoot2.cjs`: viewport shots of panels, forms and menus.
 - `hscroll.cjs`, `chain.cjs` and `diag.cjs`: the phone-width checks behind X-02.
 
-They need the API on a seeded temporary data folder and Vite pointed at it with `NORTHSTAR_API_URL`, as described under "How the audit was done". Note: the desktop run pressed Save on an untouched New line item form, which created line item L-1009 in the **temporary** data. That is why later screenshots show "2 line items need attention" on *Launch film*.
+They need the API on a seeded temporary data folder and Vite pointed at it with `MAPP_API_URL`, as described under "How the audit was done". Note: the desktop run pressed Save on an untouched New line item form, which created line item L-1009 in the **temporary** data. That is why later screenshots show "2 line items need attention" on *Launch film*.

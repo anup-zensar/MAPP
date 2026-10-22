@@ -9,9 +9,9 @@ comments is kept exactly as written in the source, including its spelling.
 | **Source** | `Business Requirements.pdf` (2 pages), received from Shell; read on 2026-10-20 |
 | **Rows** | 36: 11 MVP Requirement · 14 Future-State/Later · 6 RFP/Selection Requirement · 5 Needs Clarification |
 | **Requirement source** | "Business" on every row |
-| **Rows without an ID** | 4 rows have no requirement ID or area in the source. They were added in a workshop (the comment says "Workshop-added requirement captured from Miro sticky note"). This document numbers them **BUS.WS.01–BUS.WS.04** in the order they appear, and marks them *workshop-added*. These IDs are NorthStar's, not Shell's. |
+| **Rows without an ID** | 4 rows have no requirement ID or area in the source. They were added in a workshop (the comment says "Workshop-added requirement captured from Miro sticky note"). This document numbers them **BUS.WS.01–BUS.WS.04** in the order they appear, and marks them *workshop-added*. These IDs are MAPP's, not Shell's. |
 | **Order** | As in the source: MVP rows first, then Future-State/Later, RFP/Selection and Needs Clarification |
-| **Gap analysis** | [../reports/brd-gap-analysis.md](../reports/brd-gap-analysis.md) compares every row with NorthStar |
+| **Gap analysis** | [../reports/brd-gap-analysis.md](../reports/brd-gap-analysis.md) compares every row with MAPP |
 
 Line breaks inside a client comment are shown as `<br>`. "—" means the source cell is empty.
 
@@ -74,7 +74,7 @@ Line breaks inside a client comment are shown as `<br>`. "—" means the source 
 ## Notes on the source
 
 - **BUS.FIN.080** refers to "the note on financial transactions". That note is not part of this PDF;
-  NorthStar needs a copy before the requirement can be specified in detail.
+  MAPP needs a copy before the requirement can be specified in detail.
 - "Captured in MVP in Green" (BUS.PLN.010) refers to the green MVP rows of the source (the first 11
   rows above).
 - Three rows (BUS.FIN.020, BUS.FIN.010, BUS.INT.010) are marked by the client to move to the technical

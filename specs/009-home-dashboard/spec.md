@@ -160,7 +160,7 @@ empty screen.
 **Page header and scope**
 
 - **FR-001**: Home MUST replace feature 001's getting-started Home and use the page header pattern
-  (design system §2) in NorthStar's Home layout: blue eyebrow "HOME", title "Welcome back," with the
+  (design system §2) in MAPP's Home layout: blue eyebrow "HOME", title "Welcome back," with the
   user's first name as the grey highlight ("Welcome back, Priya."), subtitle "Your plans, your activities
   and what needs you today.", and a **Currency** picker on the right.
 - **FR-002**: The currency picker MUST list active currencies (feature 002), start on the user's display
@@ -272,7 +272,7 @@ approval rounds and the activity log from features 001 and 004–008.
 - **Home preferences**: the user's **My teams / Everything** choice. The display currency is the user's
   preference from feature 003.
 - **Attention item** (derived, not stored): a record the user owns, its reasons and the link to fix it.
-- **Team colour** (derived): a colour NorthStar gives each team for its pills, the same everywhere.
+- **Team colour** (derived): a colour MAPP gives each team for its pills, the same everywhere.
 
 ## Success Criteria *(mandatory)*
 
@@ -298,7 +298,7 @@ approval rounds and the activity log from features 001 and 004–008.
 - Home is the same for every user (no manager, lead or member variants), because
   there are no roles in this phase (D-004). The **My teams / Everything** switch shows visibility
   without enforcing it, like the Plans list (domain model §8, Q-006).
-- Teams have no colour of their own (domain model §6); NorthStar gives each team a stable colour from a
+- Teams have no colour of their own (domain model §6); MAPP gives each team a stable colour from a
   fixed palette so its pills look the same on every screen.
 - A plan's approval progress uses the campaign and initiative rule of domain model §2.2.
 - The Plans list (feature 004) and All work (feature 010) can be opened with a filter already applied;

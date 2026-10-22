@@ -23,7 +23,7 @@ type Money = components['schemas']['Money'];
 type Period = 'monthly' | 'quarterly';
 
 /** Where the browser remembers Monthly or Quarterly (007 plan, "Line items section"). */
-const GRID_PERIOD_KEY = 'northstar.lineItemGrid';
+const GRID_PERIOD_KEY = 'mapp.lineItemGrid';
 
 export interface SpreadGridProps {
   grid: Grid;

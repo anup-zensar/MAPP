@@ -162,6 +162,6 @@ same IDs and versions.
 
 | Key | Where | Value |
 |---|---|---|
-| `northstar.plans.list.<personId>` | `localStorage` (try/catch; missing or invalid → defaults) | `{status: 'all' \| 'draft' \| 'published', year: number \| null, scope: 'all' \| 'myTeams', layout: 'cards' \| 'table'}` |
+| `mapp.plans.list.<personId>` | `localStorage` (try/catch; missing or invalid → defaults) | `{status: 'all' \| 'draft' \| 'published', year: number \| null, scope: 'all' \| 'myTeams', layout: 'cards' \| 'table'}` |
 | address `/plans?status=&year=&scope=&q=` | URL | wins over the remembered values; invalid values ignored |
 | plan form values | component state | copied once from the plan (with `version`); background refetches never change them (001's edit-form rule) |

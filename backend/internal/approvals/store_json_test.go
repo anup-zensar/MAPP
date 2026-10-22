@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/approvals"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 var (

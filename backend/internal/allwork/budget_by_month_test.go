@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // The Budget by month tests (016 FR-024, data-model §3.4) build one GBP plan of 2027 by hand: P-1 with a

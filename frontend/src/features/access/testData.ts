@@ -15,9 +15,9 @@ import { PERMISSIONS } from './accessWords';
 const META = {
   version: 1,
   createdAt: '2026-10-01T09:00:00Z',
-  createdBy: { id: 'system', name: 'NorthStar' },
+  createdBy: { id: 'system', name: 'MAPP' },
   updatedAt: '2026-10-01T09:00:00Z',
-  updatedBy: { id: 'system', name: 'NorthStar' },
+  updatedBy: { id: 'system', name: 'MAPP' },
 };
 
 export const EUROPE = {

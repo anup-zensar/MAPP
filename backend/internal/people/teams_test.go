@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 )
 
 // A new team is saved active, with its name and description trimmed, its members (a repeated id counts

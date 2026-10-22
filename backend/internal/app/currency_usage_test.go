@@ -6,17 +6,17 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // A currency's "Used by" also counts the plans planned in it, and a plan currency cannot be deleted — Set
 // inactive is offered (016 FR-010): GBP is the plan currency of P-1004 "FY2027 Lubricants UK & Ireland".
 func TestCurrencyUsage_CountsPlans_FR010(t *testing.T) {
 	server := apitest.New(t)
-	priya := server.SignIn(t, "priya.raman@northstar.demo")
+	priya := server.SignIn(t, "priya.raman@shell.com")
 
 	gbp := usageAt(t, priya, "/api/currencies/GBP")
-	refused := server.SignIn(t, "alex.morgan@northstar.demo").Do(t, http.MethodDelete, "/api/currencies/GBP", nil) // exchangeRates.manage (014)
+	refused := server.SignIn(t, "alex.morgan@shell.com").Do(t, http.MethodDelete, "/api/currencies/GBP", nil) // exchangeRates.manage (014)
 
 	if !gbp.InUse || !strings.Contains(gbp.Summary, "Plan currency of 1 plan") ||
 		!slices.Contains(gbp.Records, recordRef{Type: "plan", ID: "P-1004", Name: "FY2027 Lubricants UK & Ireland"}) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"maps"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/plans"
-	"northstar/internal/platform/money"
+	"mapp/internal/campaigns"
+	"mapp/internal/plans"
+	"mapp/internal/platform/money"
 )
 
 // The adapters below give feature 005's campaigns package what it needs from feature 004 (campaigns.Deps,

@@ -183,7 +183,7 @@ export const PEOPLE = {
   total: 2,
   items: [ALEX, PRIYA].map((person) => ({
     ...person,
-    email: `${person.name.toLowerCase().replace(' ', '.')}@northstar.demo`,
+    email: `${person.name.toLowerCase().replace(' ', '.')}@shell.com`,
     teams: [],
     ...PERSON_META,
   })),

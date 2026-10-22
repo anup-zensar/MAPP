@@ -1,4 +1,4 @@
-// Package history is NorthStar's activity log and recycle bin core (FR-022 – FR-027, research R8,
+// Package history is MAPP's activity log and recycle bin core (FR-022 – FR-027, research R8,
 // ADR-0007). It writes one activity-log entry for every business change, and turns every delete into a
 // move to the recycle bin: the record and everything under it are kept there, and Undo or Restore brings
 // them back. Feature 011 adds what the screens need: the activity-log query and summary (query.go), and the
@@ -13,9 +13,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // RecordRef points at a record: its kind, its ID and its name at the time. It is the errs type, so that the

@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
 )
 
 // Transactions returns one page of the Financials page (FR-021) for the query q: the transactions a may see

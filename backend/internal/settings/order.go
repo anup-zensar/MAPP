@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"slices"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // Messages of the plan's "User-visible messages" table about moves.

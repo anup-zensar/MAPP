@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // The access rules: segregation of duties and the role for new people, changed with the version and

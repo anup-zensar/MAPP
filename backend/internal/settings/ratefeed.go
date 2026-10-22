@@ -13,7 +13,7 @@ import (
 // The rate feed seam (016 FR-008, D-259). GSAP's daily exchange rates are simulated: an administrator
 // uploads the GSAP daily rate extract, and the only RateFeed, GSAPRateFile, turns it into rows. A later
 // automatic feed implements RateFeed (or calls ApplyRateRows) and every rule of the import stays the same.
-// NorthStar connects to no external system.
+// MAPP connects to no external system.
 
 // RateFeed turns what one source delivers into rows of rates.
 type RateFeed interface {

@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/approvals"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/apitest"
 )
 
 // The two seeded workflows, sorted by name, with their levels text and usage: China BC is used by the two
@@ -132,7 +132,7 @@ func TestGetApprovalWorkflow_404(t *testing.T) {
 // keeps the levels it was submitted with (FR-006).
 func TestUpdateApprovalWorkflow_OpenRoundUnchanged_FR006(t *testing.T) {
 	server := apitest.New(t)
-	server.GrantRole(t, "sara.novak@northstar.demo", "approver", "all") // 014: a role that approves, to be named an approver
+	server.GrantRole(t, "sara.novak@shell.com", "approver", "all") // 014: a role that approves, to be named an approver
 	alex := server.SignIn(t, alexsEmail)
 
 	response := alex.Do(t, http.MethodPatch, "/api/approval-workflows/WF-1002", map[string]any{

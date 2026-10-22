@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/plans"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/record"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/plans"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/record"
+	"mapp/internal/settings"
 )
 
 // The demo plans of these tests.

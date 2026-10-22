@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC.
@@ -141,7 +141,7 @@ func newFixture(t *testing.T) *fixture {
 
 	f.write(t, func(ctx context.Context) error {
 		for _, p := range []actor.Actor{alex, priya, daniel, mei, carlos, sara} {
-			person := people.Person{ID: p.ID, Name: p.Name, Email: p.ID + "@northstar.demo", Active: true, Meta: record.NewMeta(actor.System, start)}
+			person := people.Person{ID: p.ID, Name: p.Name, Email: p.ID + "@shell.com", Active: true, Meta: record.NewMeta(actor.System, start)}
 			if err := peopleRepo.Put(ctx, person); err != nil {
 				return err
 			}

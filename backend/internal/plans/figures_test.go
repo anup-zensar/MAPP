@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // planWithBudget is a plan with a budget in USD; "" for none.

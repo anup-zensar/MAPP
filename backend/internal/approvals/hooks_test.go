@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
 )
 
 // restart does what features 006 and 007 do when a re-approval change is saved: in one Write, the activity

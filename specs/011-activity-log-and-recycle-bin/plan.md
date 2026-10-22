@@ -387,8 +387,8 @@ Written straight into the history repository (no service), in time order, so `se
 
 | Path | Page | Tab title |
 |---|---|---|
-| `/activity-log` | `ActivityLogPage` | Activity log · NorthStar |
-| `/recycle-bin` | `RecycleBinPage` | Recycle bin · NorthStar |
+| `/activity-log` | `ActivityLogPage` | Activity log · MAPP |
+| `/recycle-bin` | `RecycleBinPage` | Recycle bin · MAPP |
 
 `navigation.ts`: `RECYCLE_BIN` and `ACTIVITY_LOG` become plain `NavItem`s (no `comingSoon`) and leave
 `COMING_SOON_SECTIONS`; `router.tsx` adds both routes inside `RequireSignIn` with `handle.title`.

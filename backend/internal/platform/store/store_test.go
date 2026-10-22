@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // note is the record type these tests store in the table "notes".
@@ -334,7 +334,7 @@ func TestCommit_RenameFailure_NothingChangesAndLaterWritesAreRefused(t *testing.
 	if !errors.Is(err, ErrFailed) || !errors.As(err, &apiErr) {
 		t.Fatalf("later Write = %v, want ErrFailed", err)
 	}
-	if want := "NorthStar could not save its data folder — restart the API."; apiErr.Message != want {
+	if want := "MAPP could not save its data folder — restart the API."; apiErr.Message != want {
 		t.Errorf("message = %q, want %q", apiErr.Message, want)
 	}
 }

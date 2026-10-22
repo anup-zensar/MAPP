@@ -21,7 +21,7 @@ export interface ExportMenuProps {
 /**
  * **Export** (US7, FR-032 – FR-034): the current view as a spreadsheet or a CSV file, written by
  * the API with every row (collapsed branches too), the totals and a note of every filter, and
- * saved under the name the API gives ("NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx").
+ * saved under the name the API gives ("MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx").
  */
 export function ExportMenu({ state, result }: ExportMenuProps) {
   const { show } = useToast();
@@ -42,7 +42,7 @@ export function ExportMenu({ state, result }: ExportMenuProps) {
           },
           parseAs: 'blob',
         }),
-        `NorthStar All work.${format}`,
+        `MAPP All work.${format}`,
       );
       show({ message: `Exported '${fileName}'` });
     } catch (error) {

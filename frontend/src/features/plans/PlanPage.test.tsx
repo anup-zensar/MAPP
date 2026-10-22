@@ -61,7 +61,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     const header = (
       await screen.findByRole('heading', { level: 1, name: 'FY2026 Lubricants Europe' })
     ).closest('header') as HTMLElement;
-    expect(document.title).toBe('FY2026 Lubricants Europe · NorthStar');
+    expect(document.title).toBe('FY2026 Lubricants Europe · MAPP');
     expect(within(header).getByRole('link', { name: 'Plans' })).toHaveAttribute('href', '/plans');
     expect(within(header).getByText('PLAN')).toBeInTheDocument();
     expect(within(header).getByText('Draft')).toBeInTheDocument();

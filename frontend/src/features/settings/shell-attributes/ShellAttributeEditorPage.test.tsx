@@ -72,7 +72,7 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'New Shell attribute' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('New Shell attribute · NorthStar');
+    expect(document.title).toBe('New Shell attribute · MAPP');
     expect(screen.getByRole('combobox', { name: /Level/ })).toHaveValue('activity');
     expect(screen.getByRole('combobox', { name: /Section/ })).toHaveValue('Shell attributes');
 
@@ -231,7 +231,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
         name: "Edit Shell attribute 'Media channel'",
       }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Edit Media channel · NorthStar');
+    expect(document.title).toBe('Edit Media channel · MAPP');
     expect(screen.queryByRole('combobox', { name: /Type/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Level/ })).not.toBeInTheDocument();
     expect(

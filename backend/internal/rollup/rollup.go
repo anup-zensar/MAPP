@@ -12,8 +12,8 @@ package rollup
 import (
 	"math/big"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // The approval progress states (contract ApprovalProgress).

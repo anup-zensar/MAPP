@@ -1,6 +1,6 @@
 # Field Catalogue — Plan Module
 
-Every field NorthStar shows on each planning level, with its on-screen label, the Shell/Hive9 name it
+Every field MAPP shows on each planning level, with its on-screen label, the Shell/Hive9 name it
 replaces, its type and its marking. Rules and calculations are in [domain-model.md](domain-model.md).
 
 **Marking legend** (domain model §3):
@@ -11,7 +11,7 @@ replaces, its type and its marking. Rules and calculations are in [domain-model.
 | **P** | Needed to publish — blocks publishing the plan |
 | **S** | Needed to submit — blocks submitting the activity |
 | — | Optional |
-| calc | Calculated by NorthStar, read-only |
+| calc | Calculated by MAPP, read-only |
 | later | Filled by Finance/GSAP in a future phase; shown read-only as "—" |
 
 **Type legend:** text · long text · number (whole) · money (exact decimal + currency) · percent · date ·
@@ -29,7 +29,7 @@ values in the seed data are **fictitious samples** until Shell provides the real
 
 | # | Label | Shell / Hive9 name | Type | Mark | Default / options | Notes |
 |---|---|---|---|---|---|---|
-| 1 | Plan name | Name | text (≤ 120) | R | — | Unique across NorthStar |
+| 1 | Plan name | Name | text (≤ 120) | R | — | Unique across MAPP |
 | 2 | Year | Year | single choice | R | Current year; options current year − 1 … + 5 | Locked after first save |
 | 3 | Model | Model | reference (Model) | R | Only active models | Drives activity types and goals |
 | 4 | Teams | Team | reference (Teams, many) | P | The signed-in user's teams | |

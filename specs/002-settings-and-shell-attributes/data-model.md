@@ -39,7 +39,7 @@ binary floating point anywhere (constitution VI).
 | Type | JSON | Meaning and rules |
 |---|---|---|
 | `Amount` | string `"1234.50"` | Exact amount in hundredths (`int64` cents inside). Parsing accepts `^-?[0-9]{1,15}(\.[0-9]{1,2})?$` (so at most 999,999,999,999,999.99); writing always has two decimals. Every currency, JPY included, uses two decimals (domain model §4.4 "rounded to the cent"). |
-| `Money` | `{"amount": "1234.50", "currency": "USD"}` | An `Amount` with an ISO currency code (`^[A-Z]{3}$`). The API shape of every amount in NorthStar. |
+| `Money` | `{"amount": "1234.50", "currency": "USD"}` | An `Amount` with an ISO currency code (`^[A-Z]{3}$`). The API shape of every amount in MAPP. |
 | `Rate` | string `"0.92"` | Exchange rate = units of a currency per 1 USD (D-010), exact to six decimals (`int64` millionths inside). Parsing accepts `^[0-9]{1,7}(\.[0-9]{1,6})?$`, above 0 and at most 1,000,000. Writing drops trailing zeros (`"0.92"`, `"150"`, `"1.086957"`). `One` = 1. |
 | `Percent` | string `"2.00"` | A percentage with two decimals (`int64` hundredths of a percent inside): model rates and % split shares. Parsing accepts `^[0-9]{1,3}(\.[0-9]{1,2})?$`; writing always has two decimals. `Hundred` = 100.00. |
 | `Rates` | — | `map[string]Rate`: the current rate of every currency, active or not (D-027: one current rate). |
@@ -247,7 +247,7 @@ ignoring letter case ("0220" finds "CN04000220", SC-007). Derived (API only): `p
 Derived (API only): `inverseRate` (`Rate.Inverse()`), `usage` (§10), `locks`.
 
 **USD** always exists, is active and has rate 1: its `rate`, `active` and delete are locked with "USD is
-NorthStar's base currency; its rate is always 1." (FR-028). Its name and symbol may change.
+MAPP's base currency; its rate is always 1." (FR-028). Its name and symbol may change.
 
 A rate change applies at once everywhere (FR-029): features 003 and 007 never store converted values; they
 convert when they read, with `settings.(*Service).Rates` (Proposed decision "Settings-derived values are

@@ -67,10 +67,7 @@ describe('NavDrawer', () => {
   it('shows the logo, which leads Home, above the sections (plan "Layout")', async () => {
     const { drawer } = await openDrawer();
 
-    expect(within(drawer).getByRole('link', { name: 'NorthStar home' })).toHaveAttribute(
-      'href',
-      '/',
-    );
+    expect(within(drawer).getByRole('link', { name: 'MAPP home' })).toHaveAttribute('href', '/');
   });
 
   it('closes with one Escape, also with the focus on a section link (US2 scenario 4)', async () => {

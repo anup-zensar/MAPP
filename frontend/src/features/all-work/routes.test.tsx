@@ -13,7 +13,7 @@ describe('All work route (feature 010)', () => {
     renderApp('/all-work', { ...PAGE_ANSWERS, 'GET /api/all-work': { body: gridResult() } });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'All work' })).toBeInTheDocument();
-    await vi.waitFor(() => expect(document.title).toBe('All work · NorthStar'));
+    await vi.waitFor(() => expect(document.title).toBe('All work · MAPP'));
     expectCurrentSection('All work');
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
   });

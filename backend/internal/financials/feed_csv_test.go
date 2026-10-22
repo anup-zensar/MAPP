@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
 )
 
 // The simulated GSAP extract (FR-004, FR-005, plan "Simulated GSAP extract").

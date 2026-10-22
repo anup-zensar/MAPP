@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpreadGrid } from './SpreadGrid';
 import { launchFilmSection, usd } from './testData';
 
-const KEY = 'northstar.lineItemGrid';
+const KEY = 'mapp.lineItemGrid';
 
 function renderGrid(grid = launchFilmSection().grid, noDates = false) {
   return render(

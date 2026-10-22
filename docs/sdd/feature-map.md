@@ -1,4 +1,4 @@
-# Feature Map — NorthStar (Plan module phase)
+# Feature Map — MAPP (Plan module phase)
 
 Every feature of this phase, one Spec Kit folder each under `specs/`. **Numbers are the build order** for 001–013;
 014–017 close the MVP gaps of Shell's BRD and are built in the order of D-307

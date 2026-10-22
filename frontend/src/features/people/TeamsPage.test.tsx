@@ -79,11 +79,11 @@ function ref(team: typeof EUROPE | typeof CHINA) {
 const PEOPLE = {
   total: 5,
   items: [
-    { ...ALEX, email: 'alex.morgan@northstar.demo', teams: [ref(EUROPE)], ...META },
-    { ...PRIYA, email: 'priya.raman@northstar.demo', teams: [ref(EUROPE)], ...META },
-    { ...DANIEL, email: 'daniel.okoro@northstar.demo', teams: [ref(CHINA)], ...META },
-    { ...SARA, email: 'sara.novak@northstar.demo', teams: [ref(CHINA)], ...META },
-    { ...OLD, email: 'old.timer@northstar.demo', teams: [ref(EUROPE)], ...META },
+    { ...ALEX, email: 'alex.morgan@shell.com', teams: [ref(EUROPE)], ...META },
+    { ...PRIYA, email: 'priya.raman@shell.com', teams: [ref(EUROPE)], ...META },
+    { ...DANIEL, email: 'daniel.okoro@shell.com', teams: [ref(CHINA)], ...META },
+    { ...SARA, email: 'sara.novak@shell.com', teams: [ref(CHINA)], ...META },
+    { ...OLD, email: 'old.timer@shell.com', teams: [ref(EUROPE)], ...META },
   ],
 };
 

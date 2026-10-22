@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"northstar/internal/budgets"
-	"northstar/internal/platform/money"
+	"mapp/internal/budgets"
+	"mapp/internal/platform/money"
 )
 
 // The demo global budget of 014 plan "Demo data" (FR-040): GB-1001, owned by Carlos Mendes, the global

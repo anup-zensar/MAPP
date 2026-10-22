@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/app"
+	"mapp/internal/app"
 )
 
 func TestLoadConfig_Defaults(t *testing.T) {
@@ -13,7 +13,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 		t.Fatalf("LoadConfig: %v", err)
 	}
 
-	want := app.Config{Env: "local", Port: 8080, DataDir: "data", DemoPassword: "northstar"}
+	want := app.Config{Env: "local", Port: 8080, DataDir: "data", DemoPassword: "mapp"}
 	if cfg != want {
 		t.Errorf("LoadConfig = %+v, want %+v", cfg, want)
 	}
@@ -23,14 +23,14 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 	cfg, err := app.LoadConfig(environment(map[string]string{
 		"APP_ENV":       "development",
 		"APP_PORT":      "18080",
-		"DATA_DIR":      "C:/temp/northstar-data",
+		"DATA_DIR":      "C:/temp/mapp-data",
 		"DEMO_PASSWORD": "open sesame",
 	}))
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
 
-	want := app.Config{Env: "development", Port: 18080, DataDir: "C:/temp/northstar-data", DemoPassword: "open sesame"}
+	want := app.Config{Env: "development", Port: 18080, DataDir: "C:/temp/mapp-data", DemoPassword: "open sesame"}
 	if cfg != want {
 		t.Errorf("LoadConfig = %+v, want %+v", cfg, want)
 	}

@@ -86,7 +86,7 @@ every missing field, the 90 % Country / OU split and the missing GL code are lis
 
 The Shell attributes section shows the attributes every activity needs and, by the plan's business unit,
 a Lubricants and a Mobility group saying why they are shown; Country / OU and Brands use the split editor.
-In Goals, the user types INQ and NorthStar calculates MQL and revenue from the plan's model, unless the
+In Goals, the user types INQ and MAPP calculates MQL and revenue from the plan's model, unless the
 user chooses **Set later stages myself**.
 
 **Why this priority**: These attributes carry the finance keys (company code, cost centre) and Shell's
@@ -115,7 +115,7 @@ Mobility and back; confirm the values survive and the goals read MQL 5,000 and 2
    revenue 2,500,000.00 USD, labelled "Calculated" with an ⓘ showing the formula and the model's values;
    with INQ empty they show "—", and INQ "-5" or "12.5" gives "Enter a whole number of 0 or more."
 7. **Given** **Set later stages myself** is on, **Then** MQL and revenue are editable and keep their typed
-   values when INQ changes; **When** it is turned off, **Then** NorthStar lists the typed values that will
+   values when INQ changes; **When** it is turned off, **Then** MAPP lists the typed values that will
    be replaced before saving.
 
 ---
@@ -123,7 +123,7 @@ Mobility and back; confirm the values survive and the goals read MQL 5,000 and 2
 ### User Story 4 - Edit an activity, including one that is submitted or approved (Priority: P1)
 
 **Edit** turns the activity page into the same form. Most edits simply save; on a submitted or approved
-activity, changing planned cost or dates sends it back for approval, and NorthStar says so first.
+activity, changing planned cost or dates sends it back for approval, and MAPP says so first.
 
 **Why this priority**: Plans change all year; approval must stay meaningful without blocking small fixes
 (decision D-013).
@@ -144,7 +144,7 @@ planned cost (confirmation, it becomes *Created*); check both changes in the act
 4. **Given** a saved ongoing activity, **Then** the Ongoing choice shows a lock and "Ongoing can't be undone
    — to plan with an end date, create a new activity."
 5. **Given** an activity with a planned cost, **When** the user changes its type to "Event" (default
-   25,000.00 USD), **Then** NorthStar asks "Use the default planned cost of 25,000.00 USD for 'Event'?"
+   25,000.00 USD), **Then** MAPP asks "Use the default planned cost of 25,000.00 USD for 'Event'?"
    with **Use default** and **Keep 120,000.00 USD**.
 
 ---
@@ -217,7 +217,7 @@ undo the delete; check totals, statuses and the activity log at each step.
 - **FR-006**: Activity names MUST be unique within their initiative, ignoring letter case and surrounding
   spaces (domain model §1). The external name is optional; when empty, the activity name is used.
 - **FR-007**: **Activity type** MUST offer only the active types the plan's model allows (R7). A type's
-  default planned cost MUST fill an empty planned cost; when one is already set, NorthStar MUST ask "Use
+  default planned cost MUST fill an empty planned cost; when one is already set, MAPP MUST ask "Use
   the default planned cost of <amount> for '<type>'?" (**Use default** · **Keep <current amount>**).
 - **FR-008**: **Owner** MUST default to the initiative's owner and use the person picker (feature 003).
 - **FR-009**: Start and end dates MUST default to the initiative's dates. When the user enters or changes
@@ -297,7 +297,7 @@ undo the delete; check totals, statuses and the activity log at each step.
   **Discard changes**, and every saved change is logged with old and new values.
 - **FR-027**: While an activity is *Submitted* or *Approved* (including shown *In progress* / *Complete*),
   its page MUST show "<status> — changing planned cost or dates will restart approval." When a save
-  changes its planned cost, start date or end date (including making it ongoing), NorthStar MUST first
+  changes its planned cost, start date or end date (including making it ongoing), MAPP MUST first
   show "This activity will need approval again", listing each change (old → new) and its effect on
   line-item spreads (feature 007), with **Save and restart approval** and **Keep editing**. On
   confirmation the activity MUST return to *Created* with the reason logged; ending the pending or given

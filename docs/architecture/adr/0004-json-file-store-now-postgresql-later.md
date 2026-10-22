@@ -13,7 +13,7 @@ in shape (one record type per level, parent ids, stable ids, no deep nesting). A
 implementation will be added behind the same interfaces when Azure is available.
 
 ## Consequences
-- No database server is needed to run NorthStar locally.
+- No database server is needed to run MAPP locally.
 - The JSON store is for development and demos only — not for concurrent production use.
 - Queries that would be SQL joins are done in services for now; the PostgreSQL step may move them into
   repositories without changing service behaviour.

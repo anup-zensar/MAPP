@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 )
 
 // A new person is saved active with the next U- id; the log gets their "created" entry and a "changed"
@@ -21,7 +21,7 @@ func TestCreatePerson_SavedActiveAndLogged_FR001_FR028(t *testing.T) {
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true, priya)
 
 	got, err := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{
-		Name: "Jane Doe", Email: "jane.doe@northstar.demo", JobTitle: "Marketer", TeamIDs: []string{europe.ID},
+		Name: "Jane Doe", Email: "jane.doe@shell.com", JobTitle: "Marketer", TeamIDs: []string{europe.ID},
 	})
 	if err != nil {
 		t.Fatalf("CreatePerson: %v", err)
@@ -29,7 +29,7 @@ func TestCreatePerson_SavedActiveAndLogged_FR001_FR028(t *testing.T) {
 
 	want := PersonDetails{
 		PersonView: PersonView{
-			ID: "U-1003", Name: "Jane Doe", Email: "jane.doe@northstar.demo", JobTitle: "Marketer", Initials: "JD",
+			ID: "U-1003", Name: "Jane Doe", Email: "jane.doe@shell.com", JobTitle: "Marketer", Initials: "JD",
 			Active: true, Teams: []TeamRef{europe.Ref()}, Meta: record.NewMeta(alex.Actor(), start),
 		},
 		Usage: []UsageCount{},
@@ -50,14 +50,14 @@ func TestCreatePerson_SavedActiveAndLogged_FR001_FR028(t *testing.T) {
 func TestCreatePerson_AllProblemsAtOnce_FR002_SC007(t *testing.T) {
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
-	longEmail := strings.Repeat("j", 240) + "@northstar.demo" // 255 characters
+	longEmail := strings.Repeat("j", 245) + "@shell.com" // 255 characters
 
 	tests := []struct {
 		name  string
 		input PersonInput
 		want  []errs.FieldError
 	}{
-		{"empty name, e-mail without @", PersonInput{Name: " ", Email: "jane.doe.northstar.demo"}, []errs.FieldError{
+		{"empty name, e-mail without @", PersonInput{Name: " ", Email: "jane.doe.shell.com"}, []errs.FieldError{
 			{Field: "name", Message: "Enter a name."},
 			{Field: "email", Message: "Enter a valid e-mail address."},
 		}},
@@ -76,8 +76,8 @@ func TestCreatePerson_AllProblemsAtOnce_FR002_SC007(t *testing.T) {
 			assertError(t, err, errs.Validation(tt.want...))
 		})
 	}
-	for _, email := range []string{"jane@", "@northstar.demo", "jane doe@northstar.demo", "jane@@northstar.demo",
-		"jane@northstar", "jane@.northstar.demo", "jane@northstar.demo."} {
+	for _, email := range []string{"jane@", "@shell.com", "jane doe@shell.com", "jane@@shell.com",
+		"jane@shell", "jane@.shell.com", "jane@shell.com."} {
 		_, err := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: "Jane Doe", Email: email})
 		assertError(t, err, errs.Validation(errs.FieldError{Field: "email", Message: "Enter a valid e-mail address."}))
 	}
@@ -94,12 +94,12 @@ func TestCreatePerson_EmailTrimmedAndLowerCase_FR002(t *testing.T) {
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 
 	got, err := f.service.CreatePerson(t.Context(), alex.Actor(),
-		PersonInput{Name: "  Jane Doe ", Email: "  Jane.Doe@NorthStar.Demo ", JobTitle: " Marketer "})
+		PersonInput{Name: "  Jane Doe ", Email: "  Jane.Doe@Shell.Com ", JobTitle: " Marketer "})
 
-	if err != nil || got.Name != "Jane Doe" || got.Email != "jane.doe@northstar.demo" || got.JobTitle != "Marketer" {
+	if err != nil || got.Name != "Jane Doe" || got.Email != "jane.doe@shell.com" || got.JobTitle != "Marketer" {
 		t.Errorf("CreatePerson = %+v, %v; want the trimmed name and title and the lower-case e-mail", got, err)
 	}
-	if stored := f.storedPerson(t, got.ID); stored.Email != "jane.doe@northstar.demo" {
+	if stored := f.storedPerson(t, got.ID); stored.Email != "jane.doe@shell.com" {
 		t.Errorf("stored e-mail = %q", stored.Email)
 	}
 }
@@ -112,13 +112,13 @@ func TestCreatePerson_DuplicateEmailNamesHolder_FR002(t *testing.T) {
 	f.addPerson(t, "Priya Raman", "Marketer", true)
 	f.addPerson(t, "Jane Doe", "Marketer", false)
 
-	_, active := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: "P", Email: " PRIYA.Raman@northstar.demo"})
-	_, inactive := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: "J", Email: "Jane.Doe@northstar.demo"})
+	_, active := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: "P", Email: " PRIYA.Raman@shell.com"})
+	_, inactive := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: "J", Email: "Jane.Doe@shell.com"})
 
 	assertError(t, active, errs.Validation(errs.FieldError{Field: "email",
-		Message: "priya.raman@northstar.demo already belongs to Priya Raman."}))
+		Message: "priya.raman@shell.com already belongs to Priya Raman."}))
 	assertError(t, inactive, errs.Validation(errs.FieldError{Field: "email",
-		Message: "jane.doe@northstar.demo already belongs to Jane Doe (inactive) — reactivate them instead."}))
+		Message: "jane.doe@shell.com already belongs to Jane Doe (inactive) — reactivate them instead."}))
 }
 
 // A person created with teams shows in those teams' members at once (FR-012).
@@ -129,7 +129,7 @@ func TestCreatePerson_WithTeamsShowsOnBothSides_FR012(t *testing.T) {
 	china := f.addTeam(t, "Mobility China", "violet", true)
 
 	jane, err := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{
-		Name: "Jane Doe", Email: "jane.doe@northstar.demo", TeamIDs: []string{china.ID, europe.ID, china.ID},
+		Name: "Jane Doe", Email: "jane.doe@shell.com", TeamIDs: []string{china.ID, europe.ID, china.ID},
 	})
 	if err != nil {
 		t.Fatalf("CreatePerson: %v", err)
@@ -153,7 +153,7 @@ func TestCreatePerson_InactiveOrUnknownTeamRefused_FR011(t *testing.T) {
 	china := f.addTeam(t, "Mobility China", "violet", false)
 
 	_, err := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{
-		Name: "Jane Doe", Email: "jane.doe@northstar.demo", TeamIDs: []string{china.ID, "T-9999"},
+		Name: "Jane Doe", Email: "jane.doe@shell.com", TeamIDs: []string{china.ID, "T-9999"},
 	})
 
 	assertError(t, err, errs.Validation(
@@ -172,20 +172,20 @@ func TestUpdatePerson_ChangesLoggedOldAndNew_FR028(t *testing.T) {
 	china := f.addTeam(t, "Mobility China", "violet", true)
 
 	got, err := f.service.UpdatePerson(t.Context(), alex.Actor(), priya.ID, PersonUpdate{
-		Name: text("Priya Raman"), Email: text("priya.r@northstar.demo"), JobTitle: text("Senior marketer"),
+		Name: text("Priya Raman"), Email: text("priya.r@shell.com"), JobTitle: text("Senior marketer"),
 		TeamIDs: idList(europe.ID, china.ID), Version: version(1),
 	})
 
-	if err != nil || got.Version != 2 || got.Email != "priya.r@northstar.demo" || len(got.Teams) != 2 {
+	if err != nil || got.Version != 2 || got.Email != "priya.r@shell.com" || len(got.Teams) != 2 {
 		t.Fatalf("UpdatePerson = %+v, %v; want the new e-mail and two teams at version 2", got, err)
 	}
 	assertLog(t, f, []string{
-		"Alex Morgan changed person 'Priya Raman' (U-1002): E-mail priya.raman@northstar.demo → priya.r@northstar.demo: " +
+		"Alex Morgan changed person 'Priya Raman' (U-1002): E-mail priya.raman@shell.com → priya.r@shell.com: " +
 			"Job title Marketer → Senior marketer: Teams Lubricants Europe → Lubricants Europe, Mobility China",
 		"Alex Morgan changed team 'Mobility China' (T-1002): Members No members → Priya Raman",
 	})
 	f.read(t, func(ctx context.Context, repo Repository) error {
-		found, ok, err := repo.FindByEmail(ctx, "priya.r@northstar.demo")
+		found, ok, err := repo.FindByEmail(ctx, "priya.r@shell.com")
 		if !ok || found.ID != priya.ID {
 			t.Errorf("FindByEmail(new e-mail) = %+v, %v; want Priya", found, ok)
 		}
@@ -270,7 +270,7 @@ func TestUpdatePerson_NoChangeNoVersionNoLog_FR028(t *testing.T) {
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true, priya)
 
 	got, err := f.service.UpdatePerson(t.Context(), alex.Actor(), priya.ID, PersonUpdate{
-		Name: text(" Priya Raman"), Email: text("PRIYA.RAMAN@northstar.demo"), JobTitle: text("Marketer"),
+		Name: text(" Priya Raman"), Email: text("PRIYA.RAMAN@shell.com"), JobTitle: text("Marketer"),
 		TeamIDs: idList(europe.ID, europe.ID), Version: version(1),
 	})
 
@@ -389,7 +389,7 @@ func TestSetPersonStatus_MissingActiveAndVersion(t *testing.T) {
 		errs.FieldError{Field: "active", Message: "Choose active or inactive."},
 		errs.FieldError{Field: "version", Message: "Reload the page and try again."},
 	))
-	assertError(t, conflict, errs.VersionConflict("person", "NorthStar", start))
+	assertError(t, conflict, errs.VersionConflict("person", "MAPP", start))
 	assertError(t, gone, errs.NotFound("This person doesn't exist."))
 }
 
@@ -402,7 +402,7 @@ func TestListPeople_EveryoneSortedWithTeams_FR001(t *testing.T) {
 	f.addPerson(t, "daniel okoro", "", true)
 	mei := f.addPerson(t, "Mei Lin", "Marketer", true)
 	otherMei := f.addPerson(t, "Mei Lin", "Business champion", true)
-	otherMei.Email = "a.mei.lin@northstar.demo"
+	otherMei.Email = "a.mei.lin@shell.com"
 	f.putPerson(t, otherMei)
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true, sara)
 	ops := f.addTeam(t, "global Marketing Ops", "teal", false, sara, mei)
@@ -417,17 +417,17 @@ func TestListPeople_EveryoneSortedWithTeams_FR001(t *testing.T) {
 		order = append(order, p.Name+" <"+p.Email+">")
 	}
 	want := []string{
-		"daniel okoro <daniel.okoro@northstar.demo>",
-		"Mei Lin <a.mei.lin@northstar.demo>",
-		"Mei Lin <mei.lin@northstar.demo>",
-		"Priya Raman <priya.raman@northstar.demo>",
-		"Sara Novak <sara.novak@northstar.demo>",
+		"daniel okoro <daniel.okoro@shell.com>",
+		"Mei Lin <a.mei.lin@shell.com>",
+		"Mei Lin <mei.lin@shell.com>",
+		"Priya Raman <priya.raman@shell.com>",
+		"Sara Novak <sara.novak@shell.com>",
 	}
 	if !slices.Equal(order, want) {
 		t.Fatalf("people = %q, want %q", order, want)
 	}
 	wantSara := PersonListItem{PersonView: PersonView{
-		ID: sara.ID, Name: "Sara Novak", Email: "sara.novak@northstar.demo", JobTitle: "Local finance advisor",
+		ID: sara.ID, Name: "Sara Novak", Email: "sara.novak@shell.com", JobTitle: "Local finance advisor",
 		Initials: "SN", Active: true, Meta: sara.Meta,
 		Teams: []TeamRef{
 			{ID: ops.ID, Name: "global Marketing Ops", Colour: "teal", Active: false},

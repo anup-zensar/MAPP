@@ -1,7 +1,7 @@
-// Package authz is NorthStar's access policy (feature 014): the fixed list of permissions, what one signed-in
+// Package authz is MAPP's access policy (feature 014): the fixed list of permissions, what one signed-in
 // person holds (Grants) and the checks every service calls before it shows or changes a record.
 //
-// Permissions are fixed here, in code: they are the actions NorthStar offers. Roles, which group permissions,
+// Permissions are fixed here, in code: they are the actions MAPP offers. Roles, which group permissions,
 // are data that administrators change in Settings (package access, decision D-223). The access middleware
 // builds the Grants of the signed-in person once per request and puts them in the request's context; the
 // services then ask:

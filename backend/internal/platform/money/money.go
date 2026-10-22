@@ -1,4 +1,4 @@
-// Package money is NorthStar's exact money: amounts, exchange rates and percentages as exact decimals,
+// Package money is MAPP's exact money: amounts, exchange rates and percentages as exact decimals,
 // never binary floating point (constitution VI; decisions D-010, D-024, D-027, D-052). Feature 002 owns it;
 // every feature uses it.
 //
@@ -40,7 +40,7 @@ var (
 	ErrUnknownCurrency = errors.New("money: no rate for the currency")
 )
 
-// BaseCurrency is NorthStar's base currency: every rate is in units per 1 USD, and stored budgets and
+// BaseCurrency is MAPP's base currency: every rate is in units per 1 USD, and stored budgets and
 // planned costs are in USD (D-010).
 const BaseCurrency = "USD"
 
@@ -240,7 +240,7 @@ func (a *Amount) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Money is an amount with its currency: the API shape of every amount in NorthStar,
+// Money is an amount with its currency: the API shape of every amount in MAPP,
 // {"amount": "1234.50", "currency": "USD"}.
 type Money struct {
 	Amount   Amount `json:"amount"`

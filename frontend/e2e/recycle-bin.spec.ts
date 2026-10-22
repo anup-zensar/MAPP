@@ -13,9 +13,9 @@ import { approveThroughApi, createPlanningRecords } from './planning';
 // deleted there land in the bin as they would from their pages). The last test empties the bin, so it
 // stays last; it deletes permanently as Alex Morgan, whose Administrator role holds that (014).
 
-const PRIYA = 'priya.raman@northstar.demo';
-const MEI = 'mei.lin@northstar.demo';
-const ALEX = 'alex.morgan@northstar.demo';
+const PRIYA = 'priya.raman@shell.com';
+const MEI = 'mei.lin@shell.com';
+const ALEX = 'alex.morgan@shell.com';
 
 interface BinRecord {
   recordType: string;
@@ -69,7 +69,7 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
   }
 
   await page.goto('/recycle-bin');
-  await expect(page).toHaveTitle('Recycle bin · NorthStar');
+  await expect(page).toHaveTitle('Recycle bin · MAPP');
   // With no filter the count reads "3 of 3 items" (design system §11, rule 14).
   await expect(page.getByText(/^(\d+) of \1 items?$/)).toBeVisible();
   const row = binRow(page, 'Trade shows');

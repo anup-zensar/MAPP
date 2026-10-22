@@ -3,8 +3,8 @@ package rollup
 import (
 	"testing"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // usd returns a pointer to the USD amount text ("150000.00"); "" gives nil (no value).

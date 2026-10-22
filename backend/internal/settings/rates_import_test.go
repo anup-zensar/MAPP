@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/date"
+	"mapp/internal/history"
+	"mapp/internal/platform/date"
 )
 
 // rateHeader is the header of the GSAP daily rate extract.

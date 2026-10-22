@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // Budget & cost by period (FR-022 – FR-024, data model §8). A line item's period amounts are its spread as

@@ -153,7 +153,7 @@ const AGENDA_CREATED: ActivityLogEntry = {
 };
 
 const UNREACHABLE =
-  "NorthStar can't reach its server right now. Check that it is running and try again.";
+  "MAPP can't reach its server right now. Check that it is running and try again.";
 
 /** A list as the API answers it. */
 function listOf<T>(items: T[]) {
@@ -247,7 +247,7 @@ describe('SampleRecordsPage: the page', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New sample folder' })).toBeInTheDocument();
-    expect(document.title).toBe('Sample records · NorthStar');
+    expect(document.title).toBe('Sample records · MAPP');
   });
 
   it('counts the folders, their notes and what is in the recycle bin (plan "Developer pages")', async () => {

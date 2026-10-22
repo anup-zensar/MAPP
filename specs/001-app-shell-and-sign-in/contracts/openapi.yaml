@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API
+  title: MAPP API
   version: 0.1.0
   license:
     name: Proprietary - internal use only
   description: |
-    The contract between the NorthStar web app and the NorthStar API (constitution IV).
+    The contract between the MAPP web app and the MAPP API (constitution IV).
     This file is the source of truth: the Go contract tests check every request and response against
     it, and the web app's TypeScript types are generated from it.
 
@@ -91,7 +91,7 @@ paths:
           description: Signed in. The session cookie is set.
           headers:
             Set-Cookie:
-              description: The HttpOnly session cookie northstar_session.
+              description: The HttpOnly session cookie mapp_session.
               schema:
                 type: string
           content:
@@ -415,7 +415,7 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: northstar_session
+      name: mapp_session
       description: HttpOnly session cookie set by sign-in.
 
   parameters:
@@ -607,7 +607,7 @@ components:
         password:
           type: string
           description: The shared demo password, shown on the sign-in page.
-          example: northstar
+          example: mapp
         people:
           type: array
           items:

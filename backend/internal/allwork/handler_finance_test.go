@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/allwork"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/allwork"
+	"mapp/internal/platform/apitest"
 )
 
 // All work's financial columns and filter on the demo GSAP data of feature 015 (015 FR-023, FR-024, US5).

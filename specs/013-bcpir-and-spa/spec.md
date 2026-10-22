@@ -82,7 +82,7 @@ by hand.
 
 Sara exports the SP&A view to share with her finance team; Daniel exports the business case.
 
-**Why this priority**: Finance and leadership review plans outside NorthStar; export removes retyping.
+**Why this priority**: Finance and leadership review plans outside MAPP; export removes retyping.
 
 **Independent Test**: Export both views of a seeded plan and compare every cell with the screen.
 

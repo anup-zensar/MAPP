@@ -3,7 +3,7 @@ package allwork
 import (
 	"slices"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // Shell-attribute filters (feature 016, FR-039, D-270): under More filters, any active choice or yes/no Shell

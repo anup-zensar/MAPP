@@ -9,13 +9,13 @@
 package campaigns
 
 import (
-	"northstar/internal/people"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // Campaign is a campaign as stored in the table "campaigns" (data model §1).

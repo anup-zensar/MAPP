@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // unreadableMessage answers a path or query value the API cannot read, such as an unknown level.
-const unreadableMessage = "NorthStar couldn't read this request. Reload the page and try again."
+const unreadableMessage = "MAPP couldn't read this request. Reload the page and try again."
 
 // Handler answers the HTTP requests of Settings (feature 002).
 type Handler struct {

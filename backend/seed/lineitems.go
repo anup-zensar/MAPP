@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/lineitems"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/lineitems"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // demoLineItem is one line item of 007 data model §8. plannedCost and custom may be worked out from the

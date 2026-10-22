@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The reasons a record needs attention (HomeAttentionReason.kind, FR-011), in the order a record lists them.

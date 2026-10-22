@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Budget by month (feature 016, FR-024, data-model §3.4, D-266): for a plan and each of its campaigns and

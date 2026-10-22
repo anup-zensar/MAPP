@@ -3570,7 +3570,7 @@ export interface paths {
         put?: never;
         /**
          * Send due reminders and escalations now (needs workflows.manage; stands in for the nightly job) (FR-026 – FR-028)
-         * @description Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by NorthStar.
+         * @description Safe to call any number of times; each level gets at most one reminder and one escalation. Events are recorded as made by MAPP.
          */
         post: operations["runApprovalEscalations"];
         delete?: never;
@@ -3649,7 +3649,7 @@ export interface components {
         DemoPeople: {
             /**
              * @description The shared demo password, shown on the sign-in page.
-             * @example northstar
+             * @example mapp
              */
             password: string;
             people: components["schemas"]["DemoPerson"][];
@@ -4447,7 +4447,7 @@ export interface components {
             name: string;
             /**
              * @description The sign-in name, in lower case.
-             * @example priya.raman@northstar.demo
+             * @example priya.raman@shell.com
              */
             email: string;
             jobTitle: string;
@@ -7985,7 +7985,7 @@ export interface components {
             problemsTotal: number;
             notLinked: components["schemas"]["FinancialImportNotLinkedRow"][];
             notLinkedTotal: number;
-            /** @description Header names NorthStar does not read. */
+            /** @description Header names MAPP does not read. */
             unusedColumns: string[];
         };
         FinancialImport: {
@@ -8822,7 +8822,7 @@ export interface operations {
             /** @description Signed in. The session cookie is set. */
             200: {
                 headers: {
-                    /** @description The HttpOnly session cookie northstar_session. */
+                    /** @description The HttpOnly session cookie mapp_session. */
                     "Set-Cookie"?: string;
                     [name: string]: unknown;
                 };
@@ -13256,7 +13256,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The file. Its name is in Content-Disposition, e.g. NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx. */
+            /** @description The file. Its name is in Content-Disposition, e.g. MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx. */
             200: {
                 headers: {
                     /** @description attachment with filename (ASCII) and filename* (UTF-8). */
@@ -13817,7 +13817,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The template. Its name is in Content-Disposition (NorthStar import template – <plan>.xlsx). */
+            /** @description The template. Its name is in Content-Disposition (MAPP import template – <plan>.xlsx). */
             200: {
                 headers: {
                     "Content-Disposition"?: string;
@@ -14776,7 +14776,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The file, named northstar-gsap-extract-sample.csv in Content-Disposition. */
+            /** @description The file, named mapp-gsap-extract-sample.csv in Content-Disposition. */
             200: {
                 headers: {
                     /** @description attachment with filename. */

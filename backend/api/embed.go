@@ -1,4 +1,4 @@
-// Package api holds NorthStar's API contract, backend/api/openapi.yaml.
+// Package api holds MAPP's API contract, backend/api/openapi.yaml.
 //
 // The contract is the source of truth for every endpoint (constitution IV): the Go contract tests check
 // every request and response against it, and the web app's TypeScript types are generated from it.

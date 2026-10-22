@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The history kinds of this package (014 plan internal/budgets, data model §1.4–§1.5, §3).

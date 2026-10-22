@@ -11,9 +11,9 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/record"
 )
 
 // Person is someone who can sign in, stored in the table "people". In this feature only the seed creates
@@ -25,7 +25,7 @@ type Person struct {
 	JobTitle string `json:"jobTitle"` // 0 to 120 characters
 	Active   bool   `json:"active"`   // only active people are listed on the sign-in page and can sign in
 	// ManagerID is the person's line manager (017 FR-016): an active person when chosen, not the person, and no
-	// loop of managers; "" = none. It is kept in NorthStar until Microsoft Entra ID provides it (D-282).
+	// loop of managers; "" = none. It is kept in MAPP until Microsoft Entra ID provides it (D-282).
 	ManagerID string `json:"managerId"`
 	record.Meta
 }

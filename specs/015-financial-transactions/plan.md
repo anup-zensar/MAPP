@@ -73,7 +73,7 @@ on the seed; Vitest + Testing Library with `mockApi`; Playwright + axe (`fronten
 | Principle | How this plan complies | Result |
 |---|---|---|
 | I. Spec first | Every element traces to FR-001–FR-031 (traceability table). No `[NEEDS CLARIFICATION]`; the open points are defaults with questions for Shell (spec, *Questions for Shell*) | Pass |
-| II. Shell business, plain language | Shell's words (purchase order, invoice, accrual, SWBS code, HX key, GSAP); every text is in *User-visible messages*. "NorthStar owns plans; GSAP owns the money": transactions are read-only and nothing is sent to GSAP | Pass, **with amendment** (below) |
+| II. Shell business, plain language | Shell's words (purchase order, invoice, accrual, SWBS code, HX key, GSAP); every text is in *User-visible messages*. "MAPP owns plans; GSAP owns the money": transactions are read-only and nothing is sent to GSAP | Pass, **with amendment** (below) |
 | III. Simple, friendly experience | Figures are open by default and shown as words plus colour. Empty, loading and error states for each card. Search plus tabs on one page. Problems are listed all at once, with row numbers | Pass |
 | IV. Simple, layered architecture | One package, handler → service → repository. Ports to other features are consumer interfaces with adapters in `internal/app` (D-196). No third runtime part: the import is an API call, not a job | Pass |
 | V. Tested business rules | Unit tests for matching, figures, rounding, CSV parsing and access. Contract tests per operation. Seed-wide equality test (SC-002). Playwright for the P1 stories | Pass |
@@ -101,9 +101,9 @@ It replaces or reopens the decision named.
 
 | # | Proposed decision | Reason | Reopens |
 |---|---|---|---|
-| D-242 (015-A) | Read-only GSAP financial transactions are in the MVP. They are loaded through a simulated feed (CSV import endpoint + demo seed) behind `financials.Feed`; a PGSI 941 feed replaces it later. NorthStar never creates, edits, deletes or sends transactions | PO decision 2026-10-20; BUS.FIN.080 (MVP); GSAP frozen until about March 2027 (FA §D1 file-exchange option) | D-008; constitution II and *Current Phase & Scope* (1.1.0) |
+| D-242 (015-A) | Read-only GSAP financial transactions are in the MVP. They are loaded through a simulated feed (CSV import endpoint + demo seed) behind `financials.Feed`; a PGSI 941 feed replaces it later. MAPP never creates, edits, deletes or sends transactions | PO decision 2026-10-20; BUS.FIN.080 (MVP); GSAP frozen until about March 2027 (FA §D1 file-exchange option) | D-008; constitution II and *Current Phase & Scope* (1.1.0) |
 | D-243 (015-B) | Four types: PO line (Committed), Invoice (Invoiced; credit notes negative), Payment (Paid = actuals), Accrual (Accrued, one accrual month). No purchase requests | BRD text names these four; PRs are BUS.FIN.020 (later); workshop: actuals are payments | Field catalogue §4.6, §5 #17 |
-| D-244 (015-C) | Accrued is the sum of the accruals of the **latest accrual month in the data**. NorthStar calculates no accruals | Accruals are month-end positions; BUS.FIN.040 (calculation) is later | — |
+| D-244 (015-C) | Accrued is the sum of the accruals of the **latest accrual month in the data**. MAPP calculates no accruals | Accruals are month-end positions; BUS.FIN.040 (calculation) is later | — |
 | D-245 (015-D) | Matching order: line-item ID → HX key ("HX" + line-item number) → PO number (+ PO line) → SWBS code (unique) → Not linked with a reason. Rows are applied POs first; each import retries every not-linked transaction; manual links are never changed by an import | Workshop D5: HX key is the match key; D-019; makes invoices without HX keys link through their PO | — |
 | D-246 (015-E) | A row's key is type + document number + line. A re-sent row updates in place. Imports never delete. Refused rows are skipped, the rest imported. Two-step check → import, with the file sent twice (stateless, as D-051 and D-136) | GSAP is the source of truth; idempotent re-imports; nothing saved without a check | — |
 | D-247 (015-F) | Simulated extract format: UTF-8 CSV, header row, the columns of *Simulated GSAP extract*, at most 700 KB and 5,000 rows, base64 in JSON | API body limit 1 MB (001 R10); same pattern as 002's option import | — |
@@ -112,7 +112,7 @@ It replaces or reopens the decision named.
 | D-250 (015-I) | Placement, all open by default:<br>- activity page: second section, "Financials";<br>- Line items section: Committed and Invoiced columns;<br>- line-item page: Financials section (the form has none);<br>- plan page: under the summary cards, by campaign;<br>- campaign and initiative panels: after Budget and cost;<br>- All work: column group "Financials", with Committed and Invoiced default, and filter "Financials";<br>- Home: card under the summary cards;<br>- sidebar: "Financials" after All work.<br>The plan tree gets no new columns | BUS.FIN.080 "prominent … main working views", "simple to access"; design-system card layout | 006 FR-020, 007 FR-007/FR-025, 010 FR-018/FR-019, D-086 (adds a section) |
 | D-251 (015-J) | Every embedded Financials card reads one endpoint, `GET /api/financials/records/{recordId}`, owned by `financials`. Home's card reads `GET /api/financials/overview` from `financials`, not from `home` (an exception to D-171). The card component lives in `features/financials/` and host pages import it (as D-187) | One owner per rule; the host packages 004–009 stay untouched on the server | D-171 (exception) |
 | D-252 (015-K) | Access seam `financials.Access` (view, import, link), checked on every operation. The default allows everyone (D-004). Roles and access (BUS.ADM.020) supplies the real one and the visible plan scope. A refusal answers `409 not_allowed` | BRD BUS.ADM.020 names POs and invoices; keeps today's rule | D-004 for financial data, when roles exist |
-| D-253 (015-L) | Manual link and unlink are allowed only on transactions that the rules could not link, by line-item ID with a preview, logged, with `version`. Rule-based links are corrected in GSAP | The HX key is typed by hand in GSAP; NorthStar must not fight GSAP data | — |
+| D-253 (015-L) | Manual link and unlink are allowed only on transactions that the rules could not link, by line-item ID with a preview, logged, with `version`. Rule-based links are corrected in GSAP | The HX key is typed by hand in GSAP; MAPP must not fight GSAP data | — |
 | D-254 (015-M) | New readable-ID prefixes `FT` (transactions) and `FIM` (imports). History kinds `financialImport` and `financialTransaction` are top-level (never in the recycle bin) | Module convention; transactions are GSAP's records | — |
 | D-255 (015-N) | The SWBS code shown on a line item is taken from its transactions ("(from GSAP data)"). No stored SWBS code on line items yet | No SWBS response feed in this phase; avoids a 007 storage change | 007 FR-024 (display only) |
 | D-256 (015-O) | The Financials page Year filter is the linked plan's year; not-linked transactions use their posting year | Planners think in plan years; invoices arrive after year end | — |
@@ -291,7 +291,7 @@ Whole-file refusals: `400 validation_failed`, field `content`, one message.
 | More than 5,000 data rows | The file has more than 5,000 rows — split it into smaller files. |
 | Required columns missing | The first row must name the columns. Missing: type, amount. |
 
-The sample file `GET /api/financials/imports/template` is named `northstar-gsap-extract-sample.csv`. It
+The sample file `GET /api/financials/imports/template` is named `mapp-gsap-extract-sample.csv`. It
 holds the header in table order and three rows: a PO for `HX1001`, an invoice for its PO, and an accrual
 of month `2026-09`.
 
@@ -534,7 +534,7 @@ read: deleting is unchanged.
 | Import counts | <rows> rows: <new> new, <updated> updated, <unchanged> unchanged, <refused> refused · <notLinked> not linked |
 | Relinked | <n> earlier transactions are now linked |
 | Refused after import | <n> rows refused — fix them and import the file again. |
-| Delete dialog | <n> GSAP transactions are linked to it. They stay in NorthStar and leave the figures until it is restored. |
+| Delete dialog | <n> GSAP transactions are linked to it. They stay in MAPP and leave the figures until it is restored. |
 | No access | You don't have access to financial data — ask an administrator. |
 | Home empty | No purchase orders or invoices for your plans yet. |
 | Home links | <n> activities committed above planned cost · <n> transactions not linked to a line item · Open Financials |

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"northstar/internal/platform/authz"
+	"mapp/internal/platform/authz"
 )
 
 // An answer built outside a request (no Grants in the context) leaves its access object out (FR-011).

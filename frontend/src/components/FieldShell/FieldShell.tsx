@@ -7,7 +7,7 @@ import styles from './FieldShell.module.css';
 /** A field's marking, shown as a word next to its label (design system §6.2). */
 export type FieldMarking = 'Required' | 'Needed to publish' | 'Needed to submit';
 
-/** The parts of the frame every NorthStar field has around its control. */
+/** The parts of the frame every MAPP field has around its control. */
 export interface FieldFrameProps {
   label: string;
   /** Shown as a word next to the label. */

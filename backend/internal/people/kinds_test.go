@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
 )
 
 // Every change of a person or a team is logged, and a team is deleted with its memberships, so history must

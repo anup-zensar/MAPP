@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // viewOf is the part of a line item's view the grid reads: its USD planned cost and its spread.

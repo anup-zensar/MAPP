@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // Every parameter of the query is read (FR-004): single values, repeated values in order and once each,

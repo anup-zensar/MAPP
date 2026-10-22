@@ -3,9 +3,9 @@ package approvals
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
 )
 
 // The amounts the Approvals page shows — a row's planned cost, the preview's planned cost, line items and

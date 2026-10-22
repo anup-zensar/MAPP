@@ -11,7 +11,7 @@ describe('ErrorState', () => {
     render(<ErrorState error={new ApiError('unreachable')} onRetry={onRetry} />);
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      "NorthStar can't reach its server right now. Check that it is running and try again.",
+      "MAPP can't reach its server right now. Check that it is running and try again.",
     );
 
     await user.click(screen.getByRole('button', { name: 'Try again' }));

@@ -67,7 +67,7 @@ describe('ComponentGalleryPage', () => {
     expect(
       screen.getByText('Every shared component of design system §5 in all its variants.'),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Shared building blocks · NorthStar');
+    expect(document.title).toBe('Shared building blocks · MAPP');
   });
 
   it.each(COMPONENT_CARDS)('has a card for %s (FR-019)', (title) => {
@@ -212,7 +212,7 @@ describe('ComponentGalleryPage', () => {
 
     const errors = card('ErrorState');
     expect(errors).toHaveTextContent(
-      "NorthStar can't reach its server right now. Check that it is running and try again.",
+      "MAPP can't reach its server right now. Check that it is running and try again.",
     );
     expect(errors).toHaveTextContent('Something went wrong. Please try again.');
     expect(within(errors).getAllByRole('button', { name: 'Try again' })).toHaveLength(2);

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // A person's line manager (017 FR-016, data-model §9): optional; a known person; not the person; active
@@ -55,12 +55,12 @@ func TestManager_Rules_FR016(t *testing.T) {
 	}
 
 	// A new person may get a manager at once, with every other problem of the form reported beside it.
-	_, err = f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: " ", Email: "jane.doe@northstar.demo", ManagerID: sara.ID})
+	_, err = f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: " ", Email: "jane.doe@shell.com", ManagerID: sara.ID})
 	assertError(t, err, errs.Validation(
 		errs.FieldError{Field: "name", Message: "Enter a name."},
 		errs.FieldError{Field: "managerId", Message: "Sara Novak is inactive — choose an active person."},
 	))
-	jane, err := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: "Jane Doe", Email: "jane.doe@northstar.demo", ManagerID: daniel.ID})
+	jane, err := f.service.CreatePerson(t.Context(), alex.Actor(), PersonInput{Name: "Jane Doe", Email: "jane.doe@shell.com", ManagerID: daniel.ID})
 	if err != nil {
 		t.Fatalf("CreatePerson: %v", err)
 	}

@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/lineitems"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/lineitems"
+	"mapp/internal/platform/apitest"
 )
 
 // The demo records these tests use (seed: 006 activities, 007 line items).
 const (
-	priyasEmail = "priya.raman@northstar.demo"
+	priyasEmail = "priya.raman@shell.com"
 	launchFilm  = "A-1001" // Created, 120,000.00 USD, Mar–May 2026: Agency fee L-1001 and Film production L-1002
 	socialOnAir = "A-1002" // Approved: Venue hire L-1003 and Speaker fees L-1004
 	fleetShow   = "A-1005" // Declined, no line items
@@ -292,7 +292,7 @@ func TestDeleteLineItem_Contract(t *testing.T) {
 	}
 	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
 	assertAnswer(t, unreadable, http.StatusBadRequest, `{"code":"bad_request",`+
-		`"message":"NorthStar couldn't read this request. Reload the page and try again.","fields":[]}`)
+		`"message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}`)
 	assertAnswer(t, confirmed, http.StatusOK, "")
 	assertAnswer(t, unknown, http.StatusNotFound, lineItemGoneBody)
 }

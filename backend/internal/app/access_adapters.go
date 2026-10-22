@@ -4,11 +4,11 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/access"
-	"northstar/internal/approvals"
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
+	"mapp/internal/access"
+	"mapp/internal/approvals"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
 )
 
 // accessDirectory implements access.Directory (feature 014) over the people service (003): everyone with

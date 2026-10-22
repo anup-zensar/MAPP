@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // User story 1 — create an activity.

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/home"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/home"
+	"mapp/internal/platform/apitest"
 )
 
 // The demo data holds the facts Home's story is told with (009 plan "Demo data"), read through the Home
@@ -33,8 +33,8 @@ func TestSeed_HomeStory_009(t *testing.T) {
 
 	// Lubricants Europe also has 016's GBP plan FY2027 Lubricants UK & Ireland.
 	teamPlans := map[string]int{
-		"priya.raman@northstar.demo": 2, "daniel.okoro@northstar.demo": 2, "sara.novak@northstar.demo": 3,
-		"mei.lin@northstar.demo": 1, "carlos.mendes@northstar.demo": 2, "alex.morgan@northstar.demo": 1,
+		"priya.raman@shell.com": 2, "daniel.okoro@shell.com": 2, "sara.novak@shell.com": 3,
+		"mei.lin@shell.com": 1, "carlos.mendes@shell.com": 2, "alex.morgan@shell.com": 1,
 	}
 	for email, want := range teamPlans {
 		if summary, _, _ := homeOf(email); summary.Plans.Count != want || summary.GettingStarted != nil {
@@ -42,7 +42,7 @@ func TestSeed_HomeStory_009(t *testing.T) {
 		}
 	}
 
-	priya, priyasAttention, _ := homeOf("priya.raman@northstar.demo")
+	priya, priyasAttention, _ := homeOf("priya.raman@shell.com")
 	// 1,200,000.00 USD and 600,000.00 GBP = 759,493.67 USD at 0.79, each plan converted to USD before adding (016 FR-014).
 	if cost := priya.PlannedCost; priya.Plans.Published != 1 || cost.PlanBudget == nil || cost.PlanBudget.Format() != "1,959,493.67 USD" {
 		t.Errorf("Priya's plans: %+v, budget %v; want FY2026 Lubricants Europe Published, 1,959,493.67 USD with the GBP plan", priya.Plans, cost.PlanBudget)
@@ -52,7 +52,7 @@ func TestSeed_HomeStory_009(t *testing.T) {
 		t.Errorf("Priya's first item = %+v, want an activity declined by Daniel Okoro with a comment", priyasAttention.Items)
 	}
 
-	_, alexsAttention, _ := homeOf("alex.morgan@northstar.demo")
+	_, alexsAttention, _ := homeOf("alex.morgan@shell.com")
 	overAllocated := false
 	for _, item := range alexsAttention.Items {
 		if item.RecordType == "campaign" && item.Plan.Name == "FY2027 Global Brand" && item.Reasons[0].Kind == "overAllocated" {
@@ -63,7 +63,7 @@ func TestSeed_HomeStory_009(t *testing.T) {
 		t.Errorf("Alex's items = %+v, want his over-allocated FY2027 Global Brand campaign", alexsAttention.Items)
 	}
 
-	_, _, danielsWaiting := homeOf("daniel.okoro@northstar.demo")
+	_, _, danielsWaiting := homeOf("daniel.okoro@shell.com")
 	if danielsWaiting.Total < 1 || danielsWaiting.Items[0].Level != 1 || danielsWaiting.Items[0].Levels != 1 {
 		t.Errorf("waiting for Daniel = %+v, want an activity at level 1 of 1", danielsWaiting)
 	}

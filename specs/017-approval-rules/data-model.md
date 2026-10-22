@@ -160,7 +160,7 @@ every waiting approver of the current level is now inactive or without `approval
 ## 5. Approval history entry — table `approval_actions` (changed)
 
 New `action` values: **`autoApproved`** and **`skipped`** (one per such level, at submission, actor
-NorthStar `{id: "system", name: "NorthStar"}`), **`reminded`** and **`escalated`** (actor NorthStar).
+MAPP `{id: "system", name: "MAPP"}`), **`reminded`** and **`escalated`** (actor MAPP).
 
 New fields:
 
@@ -250,8 +250,8 @@ cancelled.
 
 ## 8. Notification — table `notifications` (changed)
 
-New `kind` values: `autoApproved`, `reminder`, `escalated`. Notifications of NorthStar events have actor
-NorthStar. Recipients (one per person, the actor removed, duplicates removed; 008 §4 rows unchanged):
+New `kind` values: `autoApproved`, `reminder`, `escalated`. Notifications of MAPP events have actor
+MAPP. Recipients (one per person, the actor removed, duplicates removed; 008 §4 rows unchanged):
 
 | Event | Recipients and kind |
 |---|---|

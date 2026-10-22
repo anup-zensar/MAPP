@@ -37,7 +37,7 @@ describe('Settings routes (feature 002)', () => {
     renderApp(path, PAGE_ANSWERS);
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(document.title).toBe(`${title} · NorthStar`);
+    expect(document.title).toBe(`${title} · MAPP`);
     expectCurrentSection('Settings');
   });
 

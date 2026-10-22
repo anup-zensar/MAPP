@@ -5,15 +5,15 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/date"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/date"
 )
 
 // The seeded people of 017's tests (014's seed roles: Sara Novak is a Viewer).
 const (
-	sarasEmail       = "sara.novak@northstar.demo"
+	sarasEmail       = "sara.novak@shell.com"
 	standardWorkflow = "WF-1003" // Standard marketing approval (017 data-model §13)
 )
 

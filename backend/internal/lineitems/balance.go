@@ -3,7 +3,7 @@ package lineitems
 import (
 	"slices"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // roundingHintLimit is the largest balance, either way, that shows the rounding hint: 0.05 in the plan

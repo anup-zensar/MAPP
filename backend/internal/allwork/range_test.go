@@ -5,9 +5,9 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // The tests of 016's All work extensions (FR-034 – FR-043) build two years by hand: 2026 with P-1001

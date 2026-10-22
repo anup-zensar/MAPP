@@ -1,6 +1,6 @@
-# backend — NorthStar API
+# backend — MAPP API
 
-The NorthStar API: one Go program (module `northstar`, Go 1.27, standard library only at run time) with
+The MAPP API: one Go program (module `mapp`, Go 1.27, standard library only at run time) with
 one package per business area. Every area follows the same pattern, **handler → service → repository**
 (ADR-0003), and keeps its data in a local JSON file store for now (ADR-0004); PostgreSQL comes later.
 
@@ -36,7 +36,7 @@ Environment variables; an empty one counts as not set. Invalid values stop the A
 | `APP_ENV` | `local`, `development` or `production`. Demo sign-in and the developer sample records exist only in `local` and `development` | `local` |
 | `APP_PORT` | Port number, 1–65535. There is no host setting: the API listens on `127.0.0.1` only | `8080` |
 | `DATA_DIR` | Folder of the JSON store (`data` is git-ignored) | `data` |
-| `DEMO_PASSWORD` | The password every demo person shares; may not be blank | `northstar` |
+| `DEMO_PASSWORD` | The password every demo person shares; may not be blank | `mapp` |
 
 Example, PowerShell: `$env:APP_PORT = '18081'; go run ./cmd/api` · Git Bash: `APP_PORT=18081 go run ./cmd/api`
 

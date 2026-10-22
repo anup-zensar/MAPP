@@ -120,7 +120,7 @@ describe('PurgeDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Delete permanently' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "NorthStar can't reach its server right now.",
+      "MAPP can't reach its server right now.",
     );
     expect(onClose).not.toHaveBeenCalled();
   });

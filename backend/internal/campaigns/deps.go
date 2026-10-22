@@ -3,10 +3,10 @@ package campaigns
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Deps holds what campaigns needs from other features (005 plan, "Dependencies through small

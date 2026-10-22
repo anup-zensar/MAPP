@@ -3,7 +3,7 @@ package allwork
 import (
 	"time"
 
-	"northstar/internal/platform/date"
+	"mapp/internal/platform/date"
 )
 
 // The answer of GET /api/all-work as a pure function of the year's nodes (D-114): build takes everything a

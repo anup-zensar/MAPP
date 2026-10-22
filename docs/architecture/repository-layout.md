@@ -1,11 +1,11 @@
 # Repository Layout
 
-The folders NorthStar uses. Feature 001 (`specs/001-app-shell-and-sign-in/plan.md`) created the
+The folders MAPP uses. Feature 001 (`specs/001-app-shell-and-sign-in/plan.md`) created the
 structure; the number after a package or folder is the feature that creates it.
 
 ```
-NorthStar/
-├── README.md                    what NorthStar is and how to run it
+MAPP/
+├── README.md                    what MAPP is and how to run it
 ├── CLAUDE.md                    guidance for AI coding agents
 ├── .specify/                    GitHub Spec Kit (templates, scripts, constitution)
 │   └── memory/constitution.md   the project's rules
@@ -25,7 +25,7 @@ NorthStar/
 │       ├── contracts/           API changes             (/speckit-plan)
 │       ├── quickstart.md        how to try the feature  (/speckit-plan)
 │       └── tasks.md             ordered work items      (/speckit-tasks)
-├── backend/                     Go API (module "northstar")
+├── backend/                     Go API (module "mapp")
 │   ├── api/openapi.yaml         the API contract (source of truth) + embed.go             (001)
 │   ├── cmd/api/                 the API program                                           (001)
 │   ├── cmd/seed/                loads the demo data into an empty data folder             (001)

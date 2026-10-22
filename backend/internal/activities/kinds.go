@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // kindName is the history kind of activities (data model §5); feature 007's lineItem kind names it as its

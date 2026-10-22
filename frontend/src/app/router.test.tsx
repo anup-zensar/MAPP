@@ -77,7 +77,7 @@ describe('routes', () => {
         'aria-current',
         'page',
       );
-      expect(document.title).toBe(`${label} · NorthStar`);
+      expect(document.title).toBe(`${label} · MAPP`);
     },
   );
 
@@ -105,7 +105,7 @@ describe('routes', () => {
       renderRoutes(routes, { route: path });
 
       await screen.findByRole('status');
-      expect(document.title).toBe(`${title} · NorthStar`);
+      expect(document.title).toBe(`${title} · MAPP`);
     },
   );
 
@@ -127,7 +127,7 @@ describe('routes', () => {
       expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
       const navigation = screen.getByRole('navigation', { name: 'Main' });
       expect(within(navigation).queryByRole('link', { name: title })).not.toBeInTheDocument();
-      expect(document.title).toBe(`${title} · NorthStar`);
+      expect(document.title).toBe(`${title} · MAPP`);
     },
   );
 

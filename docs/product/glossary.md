@@ -1,13 +1,13 @@
 # Glossary
 
-Plain-English meaning of every term used on NorthStar's screens and in its specs. The ⓘ tips in the
+Plain-English meaning of every term used on MAPP's screens and in its specs. The ⓘ tips in the
 application use these definitions. Hive9 names are given in brackets where users may know them.
 
 ## Planning levels
 
 | Term | Meaning |
 |---|---|
-| **Plan** | One fiscal year of marketing for one business, e.g. "FY2026 Lubricants Europe". Holds the year, model, teams, owner, budget and goal. Plan names are unique across NorthStar. |
+| **Plan** | One fiscal year of marketing for one business, e.g. "FY2026 Lubricants Europe". Holds the year, model, teams, owner, budget and goal. Plan names are unique across MAPP. |
 | **Campaign** | A theme or message that runs for most of the year inside a plan, e.g. "Helix launch". |
 | **Initiative** (Hive9: Program) | A group of similar work inside a campaign, e.g. "Digital & social". |
 | **Activity** (Hive9: Tactic) | One real piece of marketing work — a film, an event, an e-mail programme. It has a planned cost and is the record that goes through approval. |
@@ -24,7 +24,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Left to plan** | Budget minus planned cost — how much of a budget is not yet planned. Negative means planned cost is over the budget. |
 | **Unassigned planned cost** (Sys_Gen_Balance) | The part of an activity's planned cost not yet split into line items. Aim for zero. |
 | **Spread** (Hive9: allocation) | How a line item's planned cost is divided over the months: Evenly, All in first month, All in last month, or Custom amounts. |
-| **Local currency** | The currency a line item's cost is entered in. NorthStar converts it to USD using the rate in Settings. |
+| **Local currency** | The currency a line item's cost is entered in. MAPP converts it to USD using the rate in Settings. |
 | **Base currency** | USD — the currency all totals are calculated in. |
 | **Display currency** | The currency you choose to see amounts in; it does not change stored values. |
 | **Finance budget item** | A row of a finance budget (e.g. "2026 Lubricants Budget › Europe – Digital") that a line item is linked to. Managed by Finance; a simple list in Settings for now. |
@@ -71,7 +71,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **Company code** | The Shell legal entity in SAP, e.g. GB01. |
 | **Cost centre** | The SAP cost centre that pays, e.g. CN04000220. |
 | **Spend type / GL code** | What kind of spend a line item is, and the general-ledger account it posts to. |
-| **SWBS code** | An accounting code that only GSAP creates for a line item; needed before purchasing. NorthStar only records the request in this phase. |
+| **SWBS code** | An accounting code that only GSAP creates for a line item; needed before purchasing. MAPP only records the request in this phase. |
 | **GSAP** | Shell's SAP finance system — the system of record for money. |
 | **PIR** | Post-investment review — whether the activity's results will be reviewed. |
 | **FIT4** | A Shell programme flag and ID attached to initiatives and activities. |

@@ -4,10 +4,10 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/budgets"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
+	"mapp/internal/budgets"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
 )
 
 // The adapters between global budgets (014, package budgets) and plans (004): budgets reads plans and sets a

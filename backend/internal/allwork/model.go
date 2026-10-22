@@ -14,8 +14,8 @@ package allwork
 import (
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // Level is the level of a row (contract AllWorkLevel): a record's level, or an unassigned planned cost row.

@@ -39,7 +39,7 @@ const KEYS = ['status', 'yearFrom', 'yearTo', 'year', 'type', 'scope', 'q', 'lay
 type LooseValues = Partial<Record<(typeof KEYS)[number], unknown>>;
 
 function storageKey(personId: string): string {
-  return `northstar.plans.list.${personId}`;
+  return `mapp.plans.list.${personId}`;
 }
 
 /** A four-digit year from a number or text; null for anything else. */

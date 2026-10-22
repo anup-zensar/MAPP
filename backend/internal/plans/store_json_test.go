@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // A plan is saved in the table "plans" and read back exactly — USD budget as a decimal string, Shell

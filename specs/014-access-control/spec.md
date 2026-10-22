@@ -28,7 +28,7 @@ FR-021, FR-025)
 
 | Word | Meaning |
 |---|---|
-| **Permission** | One thing a person may do, such as "Edit plan details" or "Approve or decline when named as an approver". The list of permissions is fixed by NorthStar (FR-001, Table A). |
+| **Permission** | One thing a person may do, such as "Edit plan details" or "Approve or decline when named as an approver". The list of permissions is fixed by MAPP (FR-001, Table A). |
 | **Role** | A named set of permissions, such as *Planner*. Administrators create and change roles in Settings, without a release. |
 | **Scope** | Where a role applies: **All markets**, **My teams** (the teams the person belongs to at that moment) or **Chosen teams**. |
 | **Market** | A team. Plans belong to teams (004), so "a market's plans" are the plans of its team. |
@@ -46,7 +46,7 @@ teams: Lubricants Europe, Mobility China). Plans: *FY2026 Lubricants Europe* (te
 
 ### User Story 1 - Local people see their own markets, global people see every market (Priority: P1)
 
-A local planner opens NorthStar and sees only the plans of their own teams, with every count, total, list and
+A local planner opens MAPP and sees only the plans of their own teams, with every count, total, list and
 export limited to them. A global planner sees every market. Nobody can open a plan outside their access by
 typing its address.
 
@@ -62,7 +62,7 @@ Approvals, Activity log and Recycle bin with the seed; open a plan of another ma
    reads "1 plan", and the summary cards add up that plan only.
 2. **Given** the seed, **When** Carlos opens Plans, **Then** he sees all three plans.
 3. **Given** the seed, **When** Mei types the address of *FY2026 Lubricants Europe* or one of its activities,
-   **Then** NorthStar shows "You don't have access to this plan. Ask an administrator if you need it." with a
+   **Then** MAPP shows "You don't have access to this plan. Ask an administrator if you need it." with a
    link to Home, and shows nothing of the record (not even its name).
 4. **Given** the seed, **When** Priya opens Home, All work (any view, including Budget & cost and Calendar), and
    exports All work, **Then** every row, count and total covers *FY2026 Lubricants Europe* only, and the export
@@ -305,11 +305,11 @@ access changes".
 
 **Permissions, roles and scopes**
 
-- **FR-001** (BUS.ADM.020): NorthStar MUST decide what each person may see and do from **permissions**. The
+- **FR-001** (BUS.ADM.020): MAPP MUST decide what each person may see and do from **permissions**. The
   permissions are the fixed list of Table A; nothing else grants or refuses an action.
 - **FR-002** (BUS.ADM.020): A **role** MUST be a named set of permissions. A person MAY hold several roles; they
   may do what any of their roles allows (the union).
-- **FR-003** (BUS.ADM.020): NorthStar MUST be delivered with five roles and the permissions of Table B:
+- **FR-003** (BUS.ADM.020): MAPP MUST be delivered with five roles and the permissions of Table B:
   **Administrator, Global planner, Planner, Approver, Viewer**. Administrators may change all of them except
   Administrator (FR-018).
 - **FR-004** (BUS.ADM.020, BUS.BUD.040): Every role a person holds MUST have a **scope**: **All markets**, **My
@@ -381,7 +381,7 @@ access changes".
 - **FR-021** (BUS.ADM.020): At least one active person MUST hold the Administrator role. Removing it from the last
   one, or deactivating the last one (003), MUST be refused with "<name> is the only administrator. Give someone
   else the Administrator role first."
-- **FR-022** (BUS.ADM.020): Before a person's roles are saved, NorthStar MUST warn when (a) they are an approver
+- **FR-022** (BUS.ADM.020): Before a person's roles are saved, MAPP MUST warn when (a) they are an approver
   in active approval workflows and will no longer hold "Approve or decline when named as an approver", with the
   number of workflows and of activities waiting for them; (b) the administrator removes their own Administrator
   role.
@@ -466,7 +466,7 @@ access changes".
   004 FR-004 and FR-032, 005 FR-031, 006 and 007 (Assumptions), 008 FR-017 and FR-021, 009 (Assumptions) and
   011 (Assumptions). Each of those specs gains one sentence pointing here.
 
-#### Table A — Permissions (fixed by NorthStar)
+#### Table A — Permissions (fixed by MAPP)
 
 "Scoped" permissions apply to plans in the role's scope (FR-004); the others apply everywhere. The **refusal noun**
 starts the refusal message ("<Noun> isn't part of your role …").

@@ -14,21 +14,21 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // The demo people of these tests, as the seed creates them.
 var (
-	priya  = demoPerson("U-1002", "Priya Raman", "priya.raman@northstar.demo")
-	daniel = demoPerson("U-1003", "Daniel Okoro", "daniel.okoro@northstar.demo")
-	mei    = demoPerson("U-1004", "Mei Lin", "mei.lin@northstar.demo")
+	priya  = demoPerson("U-1002", "Priya Raman", "priya.raman@shell.com")
+	daniel = demoPerson("U-1003", "Daniel Okoro", "daniel.okoro@shell.com")
+	mei    = demoPerson("U-1004", "Mei Lin", "mei.lin@shell.com")
 )
 
-const demoPassword = "northstar"
+const demoPassword = "mapp"
 
 // start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC.
 var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
@@ -37,7 +37,7 @@ var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 func TestSignIn_EmailIgnoresCaseAndSpaces_FR003(t *testing.T) {
 	f := newFixture(t)
 
-	_, person, err := f.service.SignIn(t.Context(), "  PRIYA.Raman@NorthStar.demo ", demoPassword, "")
+	_, person, err := f.service.SignIn(t.Context(), "  PRIYA.Raman@SHELL.com ", demoPassword, "")
 
 	if err != nil {
 		t.Fatalf("SignIn: %v", err)
@@ -52,7 +52,7 @@ func TestSignIn_EmailIgnoresCaseAndSpaces_FR003(t *testing.T) {
 func TestSignIn_WrongPassword_FR004(t *testing.T) {
 	f := newFixture(t)
 
-	for _, password := range []string{"Northstar", "northstar ", " northstar", "north", "northstar!"} {
+	for _, password := range []string{"Mapp", "mapp ", " mapp", "map", "mapp!"} {
 		t.Run(password, func(t *testing.T) {
 			_, _, err := f.service.SignIn(t.Context(), priya.Email, password, "")
 
@@ -72,7 +72,7 @@ func TestSignIn_SameErrorForUnknownWrongOrInactive_FR004(t *testing.T) {
 	attempts := []struct {
 		name, email, password string
 	}{
-		{"unknown e-mail", "nobody@northstar.demo", demoPassword},
+		{"unknown e-mail", "nobody@shell.com", demoPassword},
 		{"wrong password", priya.Email, "wrong"},
 		{"inactive person", mei.Email, demoPassword},
 	}

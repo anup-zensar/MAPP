@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/record"
 )
 
 // undo undoes the bin entry and stops the test when that fails.

@@ -67,7 +67,7 @@ describe('EmptyBinDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Empty recycle bin' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "NorthStar can't reach its server right now.",
+      "MAPP can't reach its server right now.",
     );
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
   });

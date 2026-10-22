@@ -9,8 +9,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // The catalogue has every key once, a label, a known level and a default of at most 300 characters (data-model

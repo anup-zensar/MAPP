@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/campaigns"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // Campaigns and initiatives are saved in their own tables and read back exactly — dates as YYYY-MM-DD,

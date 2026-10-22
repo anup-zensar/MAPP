@@ -49,7 +49,7 @@ describe('ActivityLogPage', () => {
     expect(
       screen.getByText("See who changed what, and when. Entries can't be edited or removed."),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Activity log · NorthStar');
+    expect(document.title).toBe('Activity log · MAPP');
     expect(await screen.findByRole('link', { name: 'Film shoot' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit|delete|remove entry/i })).toBeNull();
   });

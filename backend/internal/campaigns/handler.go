@@ -3,10 +3,10 @@ package campaigns
 import (
 	"net/http"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/web"
-	"northstar/internal/rollup"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/web"
+	"mapp/internal/rollup"
 )
 
 // Handler answers the HTTP requests about campaigns and initiatives.

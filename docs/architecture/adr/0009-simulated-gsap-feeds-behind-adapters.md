@@ -3,7 +3,7 @@
 **Status:** Accepted · **Date:** 2026-10-20
 
 ## Context
-Shell's MVP requirements need GSAP data in NorthStar: daily exchange rates (BUS.BUD.050) and purchase
+Shell's MVP requirements need GSAP data in MAPP: daily exchange rates (BUS.BUD.050) and purchase
 orders, invoices, payments and accruals shown where people plan (BUS.FIN.080). GSAP is frozen until about
 March 2027, so no live connection can be built or tested now. In Hive9 this data arrives in daily files:
 PGSI 941 brings PR, PO and invoice data back, matched on the HX key, and GSAP publishes daily rates. The
@@ -39,8 +39,8 @@ D-315). ADR-0003 already expects a GSAP worker later.
   set up), duplicate keys, matching transactions to line items (line-item ID → HX key → PO number → SWBS
   code, D-245), currency conversion on read (D-248, D-303) and every figure belong to the `financials` and
   `settings` services, not to the adapters.
-- **Inbound and read-only.** NorthStar never creates, changes, deletes or sends GSAP transactions, SWBS
-  codes, purchase orders or invoices; links made from GSAP data are corrected in GSAP, not in NorthStar
+- **Inbound and read-only.** MAPP never creates, changes, deletes or sends GSAP transactions, SWBS
+  codes, purchase orders or invoices; links made from GSAP data are corrected in GSAP, not in MAPP
   (D-253).
 
 ## Consequences
@@ -48,7 +48,7 @@ D-315). ADR-0003 already expects a GSAP worker later.
   reader for `financials.Feed`, and an automatic daily-rate feed that calls `ApplyRateRows`. Services, rules,
   the API contract and the screens do not change; the file imports can stay as a fallback.
 - A feed that runs on a schedule or connects to GSAP (through SAP Cloud Integration) is a new runtime part
-  or job; it gets its own ADR when NorthStar is hosted (constitution IV; ADR-0003's GSAP worker).
+  or job; it gets its own ADR when MAPP is hosted (constitution IV; ADR-0003's GSAP worker).
 - Until then, a person with the import permission loads GSAP extracts by hand. Figures are as fresh as the
   last import, and screens name the source and its date ("GSAP data as of …").
 - Shell's real extract formats may differ from the simulated columns (Q-012, Q-015); only the adapter's

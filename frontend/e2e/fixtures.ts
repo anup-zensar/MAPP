@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, type Page } from '@playwright/test';
 
 /** The password every demo person shares (shown on the sign-in page, decision D-004). */
-export const DEMO_PASSWORD = 'northstar';
+export const DEMO_PASSWORD = 'mapp';
 
 /**
  * Signs `email` in through the API (the browser keeps the session cookie) and resets that person's

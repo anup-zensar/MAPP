@@ -26,7 +26,7 @@ Hive9 functional analysis §C3 (transactions), §C5 (accruals), §D3–§D8 (PGS
 Specs 004 (plan page), 005 (campaign and initiative panels), 006 (activity page FR-020), 007 (line items
 FR-001, FR-007, FR-024–FR-026), 009 (Home), 010 (All work FR-004, FR-018, FR-019, FR-032), 011 (activity
 log) · Decisions D-008 (reopened), D-019, D-027, D-041, D-061, D-090, D-202 ·
-Constitution II ("NorthStar owns plans; GSAP owns the money").
+Constitution II ("MAPP owns plans; GSAP owns the money").
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -145,7 +145,7 @@ follow its link to "Stand build".
 ### User Story 4 - Load GSAP data (simulated GSAP extract) (Priority: P2)
 
 Until GSAP can be connected (frozen until about March 2027), a person loads a GSAP extract file in the
-format NorthStar documents. NorthStar first checks the file and says what it will do. It then adds or
+format MAPP documents. MAPP first checks the file and says what it will do. It then adds or
 updates the transactions and links each one to a line item.
 
 **Why this priority**: This is the simulated integration the product owner asked for. Demo data covers US1
@@ -159,7 +159,7 @@ counts, the result and the changed figure on the activity page.
 1. **Given** the Financials page, **When** the user chooses **Import GSAP extract**, **Then** a dialog
    explains the file format, offers **Download sample file** and accepts one `.csv` file of at most
    700 KB.
-2. **Given** a file with 4 rows, **When** it is chosen, **Then** NorthStar checks it without saving and
+2. **Given** a file with 4 rows, **When** it is chosen, **Then** MAPP checks it without saving and
    shows "4 rows: 2 new, 1 updated, 1 unchanged, 0 refused · 1 not linked". It lists each not-linked row
    with its reason, and offers **Import 4 rows** and **Cancel**.
 3. **Given** a file where row 3 has the amount "12.345" and row 5 the currency "XYZ", **Then** the check
@@ -235,7 +235,7 @@ links.
 
 When a transaction cannot be matched (for example, the HX key was typed wrongly in GSAP), a person links it
 to the right line item by entering the line item's ID. They can undo that link later. Links that GSAP data
-decides cannot be changed in NorthStar.
+decides cannot be changed in MAPP.
 
 **Why this priority**: The HX key is typed by hand in GSAP (workshop). A few rows will always need a person.
 The import's "Not linked" list makes the problem visible even without this story.
@@ -302,7 +302,7 @@ Each requirement traces to **BUS.FIN.080** unless another ID is given.
 
 **GSAP data (simulated now, real feed later)**
 
-- **FR-001**: NorthStar MUST hold four types of financial transaction:
+- **FR-001**: MAPP MUST hold four types of financial transaction:
   - **Purchase order line** (committed);
   - **Invoice** (invoiced; credit notes negative);
   - **Payment** (paid, Shell's "actuals");
@@ -311,8 +311,8 @@ Each requirement traces to **BUS.FIN.080** unless another ID is given.
   Each transaction has: document number, optional line, PO number and PO line it refers to, posting date,
   accrual month (accruals only), amount with currency, vendor code and name, short description, SWBS code,
   HX tracking key, line-item ID, a readable ID (FT-…), and where it came from (which import).
-- **FR-002**: Transactions MUST be read-only in NorthStar. They are never created by hand, edited or
-  deleted. The only thing a person may change is a manual link (FR-026). NorthStar never sends anything to
+- **FR-002**: Transactions MUST be read-only in MAPP. They are never created by hand, edited or
+  deleted. The only thing a person may change is a manual link (FR-026). MAPP never sends anything to
   GSAP (constitution II; BUS.FIN.010 stays later).
 - **FR-003**: Transactions MUST arrive through a **GSAP feed** that is separate from the screens and the
   rules. There are two feeds now:
@@ -363,7 +363,7 @@ Each requirement traces to **BUS.FIN.080** unless another ID is given.
 
 **Financial figures**
 
-- **FR-011**: For every line item, activity, initiative, campaign and plan, NorthStar MUST calculate:
+- **FR-011**: For every line item, activity, initiative, campaign and plan, MAPP MUST calculate:
 
   | Figure | Rule |
   |---|---|
@@ -463,7 +463,7 @@ Each requirement traces to **BUS.FIN.080** unless another ID is given.
 
 - **FR-026**: On a **Not linked** transaction, **Link to a line item** MUST accept a line-item ID and
   preview the line item's name, activity and plan before saving. **Unlink** MUST be offered only on
-  manually linked transactions. Links made by FR-007's rules cannot be changed in NorthStar; the panel
+  manually linked transactions. Links made by FR-007's rules cannot be changed in MAPP; the panel
   says why and where to correct them (GSAP). A missing line item, or one in the recycle bin, is refused
   with a reason. A change made meanwhile by someone else is refused as a version conflict (D-030).
 
@@ -485,7 +485,7 @@ Each requirement traces to **BUS.FIN.080** unless another ID is given.
   - Every figure, list and count covers only the plans the person may see (014 FR-007).
 - **FR-029** (changes 007 FR-030, 006 and 005 delete dialogs): Deleting a line item, activity, initiative,
   campaign or plan with linked transactions MUST say, in the delete dialog: "<n> GSAP transactions are
-  linked to it. They stay in NorthStar and leave the figures until it is restored." Deleting is still
+  linked to it. They stay in MAPP and leave the figures until it is restored." Deleting is still
   allowed.
 - **FR-030**: Copies of plans, campaigns, initiatives, activities and line items MUST NOT copy or relink
   transactions (R13).
@@ -534,7 +534,7 @@ below.
 - Purchase requests (PRs) are not shown. BUS.FIN.080 names POs, invoices, payments and accruals; PRs belong
   to the PR/PO process (BUS.FIN.020, later).
 - "Paid" is Shell's "actuals" (workshop: "actuals are the payments released").
-- NorthStar does not calculate accruals (BUS.FIN.040 is later). It shows GSAP's accruals of the latest
+- MAPP does not calculate accruals (BUS.FIN.040 is later). It shows GSAP's accruals of the latest
   accrual month.
 - Conversion uses the current rate, like every other amount (consolidation D-303; with 016 the current rate is
   the latest dated rate on or before today). Posting-date rates (settings.RatesOn) are a later option.
@@ -554,7 +554,7 @@ below.
 | Q-015 (gap analysis) | Please share **"the note on financial transactions"** that BUS.FIN.080 refers to. It is not in the BRD PDF. Which transaction types and fields must users see, and where? | Four types, the fields of FR-001, the placements of FR-015–FR-025 |
 | Q-015a | Is "Accrued" the latest month's accrual position per PO, or a running total? | Latest accrual month in the data |
 | Q-015b | Which figure do planners compare with planned cost first: committed (PO), invoiced or paid? | Committed, with a meter; all four shown |
-| Q-015c | Is the HX key always "HX" + the NorthStar line-item number? Who fixes rows GSAP cannot match? | Yes; people with "Link financial transactions" (Administrator, Global planner, Planner) link them by hand (FR-026) |
+| Q-015c | Is the HX key always "HX" + the MAPP line-item number? Who fixes rows GSAP cannot match? | Yes; people with "Link financial transactions" (Administrator, Global planner, Planner) link them by hand (FR-026) |
 | Q-015d | Which rate converts a transaction: the posting-date rate or the current rate? (with Q-012) | The current rate, as every conversion (D-303) |
-| Q-015e | How often will GSAP extracts arrive during the freeze, and in which layout (PGSI 941 sample files)? | Manual file import in NorthStar's documented CSV layout |
+| Q-015e | How often will GSAP extracts arrive during the freeze, and in which layout (PGSI 941 sample files)? | Manual file import in MAPP's documented CSV layout |
 | Q-015f | Who may see POs, invoices and payments (with Q-010)? | Every default role sees them; importing is for Administrators (014 Table B) |

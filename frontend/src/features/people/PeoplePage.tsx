@@ -64,7 +64,7 @@ export function PeoplePage() {
       <PageHeader
         breadcrumb={[{ label: 'Settings', to: '/settings' }, { label: 'People' }]}
         title="People"
-        description="Everyone who can sign in to NorthStar, with their job title and teams."
+        description="Everyone who can sign in to MAPP, with their job title and teams."
         actions={
           <CanChange permission="people.manage">
             <Button variant="primary" icon={<Plus />} onClick={() => setForm({ kind: 'new' })}>

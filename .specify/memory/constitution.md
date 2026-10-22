@@ -1,27 +1,21 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.0 → 1.1.1 (PATCH: wording; no principle added, removed or redefined)
-- Modified principles (titles unchanged):
-  - II Shell Business, Plain Language — names the sources as they are: requirements and features come
-    from the available documentation and the Hive9 application itself; NorthStar's own design system is
-    the layout and interaction reference (D-318)
-- Unchanged principles: I, III, IV, V, VI, VII
-- Modified sections: Governance › Amendment History
+- Version change: 1.1.1 → 1.1.2 (PATCH: the product's name; no principle added, removed or redefined)
+- Modified principles: none in substance; every principle names the product MAPP (D-319)
+- Modified sections: title, Governance › Amendment History
 - Added sections: none
 - Removed sections: none
 - Templates reviewed: plan-template.md, spec-template.md, tasks-template.md, checklist-template.md (OK);
   no template change needed
-- Documents updated with this amendment: decision log (D-004–D-007, D-013, D-025, D-310, Q-001, D-318);
-  docs/reference/README.md; ADR-0006 (now `0006-design-language.md`) and the ADR index; the specs, plans,
-  tasks and checklists of 001–015; the product docs, the architecture docs and the reports. Reference
-  material from other products is removed from docs/reference/.
+- Documents updated with this amendment: every document, spec, plan and task list; the web app, the API
+  and their tests (decision log D-319)
 - Follow-up TODOs: none
 -->
 
 
-# NorthStar Constitution
+# MAPP Constitution
 
-NorthStar is Shell's marketing planning application that replaces Hive9. This constitution sets the few
+MAPP is Shell's marketing planning application that replaces Hive9. This constitution sets the few
 rules everyone — people and AI agents — follows when specifying, designing, building and testing it.
 When another document disagrees with this one, this one wins.
 
@@ -43,11 +37,11 @@ unrequested work.
 
 ### II. Shell Business, Plain Language
 
-- NorthStar uses Shell's planning vocabulary on every screen: **Plan → Campaign → Initiative → Activity →
+- MAPP uses Shell's planning vocabulary on every screen: **Plan → Campaign → Initiative → Activity →
   Line item**. Hive9 product words (Program, Tactic, Inspection Window, Honeycomb, HUD) are never shown
   to users. `docs/product/glossary.md` is the authoritative list of terms.
 - **Requirements and features come from the available documentation and the Hive9 application itself;
-  Shell's process is the functional reference; NorthStar's design system is the layout and interaction
+  Shell's process is the functional reference; MAPP's design system is the layout and interaction
   reference; Shell's enterprise design language is the visual reference (Principle III).** When sources disagree on
   behaviour, follow the precedence in `docs/reference/README.md` (Shell's own documents first). Every
   simplification of Hive9 behaviour is recorded in `docs/sdd/decision-log.md`.
@@ -57,7 +51,7 @@ unrequested work.
 - Business configuration is data, not code: models, activity types, custom attributes and their option
   lists, currencies and exchange rates, finance budget items and roles are managed on Settings screens,
   never hard-coded.
-- **NorthStar owns plans; GSAP owns the money.** NorthStar never creates SWBS codes, purchase orders or
+- **MAPP owns plans; GSAP owns the money.** MAPP never creates SWBS codes, purchase orders or
   invoices, and shows GSAP's financial transactions read-only. Live GSAP integration is out of scope for
   the current phase: GSAP data (daily exchange rates; purchase-order lines, invoices, payments and
   accruals) is loaded through **simulated feeds** behind adapter interfaces (Principle IV, ADR-0009).
@@ -85,7 +79,7 @@ Rationale: users already know Shell's words and process; they must not have to l
   messages, labelled controls, sufficient contrast, colour never the only signal, targets of at least
   24 × 24 px (D-313).
 
-Rationale: Hive9 is described by Shell users as too complex; NorthStar's value is that anyone can plan
+Rationale: Hive9 is described by Shell users as too complex; MAPP's value is that anyone can plan
 in it, in a tool that looks like the rest of Shell.
 
 ### IV. Simple, Layered Architecture
@@ -184,9 +178,9 @@ Rationale: the user asked for an application that is industry-standard but not c
 | Web app | React + TypeScript (strict), built with Vite | Same, served as static files |
 | API | Go (current stable), standard-library HTTP server, REST + JSON, OpenAPI contract | Same |
 | Storage | Local JSON file store behind repository interfaces | PostgreSQL (Azure Database for PostgreSQL) |
-| Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in NorthStar (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
+| Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in MAPP (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
 | Shell integrations | Simulated GSAP feeds behind adapters: file imports and demo data for daily rates, purchase orders, invoices, payments and accruals (ADR-0009) | Live GSAP feeds implementing the same adapters |
-| Visual design | Design system v2: Shell enterprise look, Jost (self-hosted, open licence) and Arial, NorthStar's own mark | Shell's typeface, pecten and official colour values once Shell supplies them and consents |
+| Visual design | Design system v2: Shell enterprise look, Jost (self-hosted, open licence) and Arial, MAPP's own mark | Shell's typeface, pecten and official colour values once Shell supplies them and consents |
 | Hosting | Local laptop | Azure Container Apps behind Azure Front Door (see `docs/reference/README.md`) |
 | Source control | Git, one branch per feature | GitHub with pull requests and CI |
 
@@ -225,7 +219,8 @@ shared ones are fixed by feature 001.
 | Version | Date | Change | Decisions |
 |---|---|---|---|
 | 1.0.0 | 2026-10-18 | Ratified: principles I–VII, Current Phase & Scope, Technology Choices, Development Workflow, Governance | D-001–D-008 |
-| 1.1.0 | 2026-10-20 | II: NorthStar's design system is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
-| 1.1.1 | 2026-10-22 | II (wording): requirements and features come from the available documentation and the Hive9 application itself; NorthStar's design system is the layout and interaction reference | D-318 |
+| 1.1.0 | 2026-10-20 | II: MAPP's design system is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
+| 1.1.1 | 2026-10-22 | II (wording): requirements and features come from the available documentation and the Hive9 application itself; MAPP's design system is the layout and interaction reference | D-318 |
+| 1.1.2 | 2026-10-22 | The product is named MAPP throughout | D-319 |
 
-**Version**: 1.1.1 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-22
+**Version**: 1.1.2 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-22

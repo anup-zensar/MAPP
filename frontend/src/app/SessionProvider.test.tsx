@@ -16,18 +16,18 @@ const DANIEL: CurrentUser = testUser({
   id: 'U-1003',
   name: 'Daniel Okoro',
   firstName: 'Daniel',
-  email: 'daniel.okoro@northstar.demo',
+  email: 'daniel.okoro@shell.com',
   jobTitle: 'Marketing team leader',
   initials: 'DO',
 });
 
 const DEMO_PEOPLE = {
-  password: 'northstar',
+  password: 'mapp',
   people: [
     {
       id: 'U-1002',
       name: 'Priya Raman',
-      email: 'priya.raman@northstar.demo',
+      email: 'priya.raman@shell.com',
       jobTitle: 'Marketer',
       initials: 'PR',
     },
@@ -156,7 +156,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
   });
 
   it('shows the signed-in person’s light or dark mode, whatever this browser chose (FR-014)', async () => {
-    localStorage.setItem('northstar.theme', 'light');
+    localStorage.setItem('mapp.theme', 'light');
     mockApi({
       'GET /api/me': {
         body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
@@ -167,7 +167,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
     await screen.findByText('Status: signedIn');
 
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
-    expect(localStorage.getItem('northstar.theme')).toBe('dark');
+    expect(localStorage.getItem('mapp.theme')).toBe('dark');
   });
 });
 
@@ -234,7 +234,7 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('keeps the person’s light or dark mode on the sign-in page after signing out (FR-014, research R16)', async () => {
     // This browser was light when the page opened; the person chose dark.
-    localStorage.setItem('northstar.theme', 'light');
+    localStorage.setItem('mapp.theme', 'light');
     mockApi({
       'GET /api/me': {
         body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
@@ -252,7 +252,7 @@ describe('SessionProvider: ending a session (US4)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
     expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
     expect(document.documentElement.dataset.theme).toBe('dark');
-    expect(localStorage.getItem('northstar.theme')).toBe('dark');
+    expect(localStorage.getItem('mapp.theme')).toBe('dark');
   });
 
   it('lets the person’s saved theme take over from a visitor’s choice at sign-in (FR-014, research R16)', async () => {
@@ -307,7 +307,7 @@ describe('SessionProvider: ending a session (US4)', () => {
     expect(router.state.location.search).toBe('?year=2026');
     expect(await screen.findByRole('heading', { level: 1, name: 'Plans' })).toBeInTheDocument();
     expect(api.bodiesOf('POST /api/auth/sign-in')).toEqual([
-      { email: 'priya.raman@northstar.demo', password: 'northstar' },
+      { email: 'priya.raman@shell.com', password: 'mapp' },
     ]);
   });
 

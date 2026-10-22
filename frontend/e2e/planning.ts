@@ -291,8 +291,8 @@ export async function approveThroughApi(page: Page, records: PlanningRecords): P
     version: records.activityVersion,
     comment: '',
   });
-  await decideAs(page, 'carlos.mendes@northstar.demo', records.activityId, 'approve');
-  await decideAs(page, 'alex.morgan@northstar.demo', records.activityId, 'approve');
+  await decideAs(page, 'carlos.mendes@shell.com', records.activityId, 'approve');
+  await decideAs(page, 'alex.morgan@shell.com', records.activityId, 'approve');
 }
 
 /** The readable ID in `url` captured by the first group of `pattern`. */

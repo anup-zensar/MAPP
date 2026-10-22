@@ -2,7 +2,7 @@
 
 ## Vision
 
-**NorthStar is the simplest way for Shell marketers to plan their year:** build a plan, break it into
+**MAPP is the simplest way for Shell marketers to plan their year:** build a plan, break it into
 campaigns, initiatives and activities, plan every cost as line items, get activities approved — and always
 see the status of everything and what is missing.
 
@@ -21,7 +21,7 @@ It replaces Hive9's Plan module with the same business process and data, in a mo
 
 ## Users (this phase)
 
-| Persona | Main jobs in NorthStar |
+| Persona | Main jobs in MAPP |
 |---|---|
 | **Marketer** | Create and maintain plans, campaigns, initiatives, activities and line items; submit activities. |
 | **Marketing team leader / approver** | Review and approve or decline activities; watch plan progress. |

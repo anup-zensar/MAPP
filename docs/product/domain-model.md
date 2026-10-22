@@ -1,6 +1,6 @@
 # Domain Model — Plan Module
 
-The single definition of NorthStar's planning records, how they relate, their **statuses** and the
+The single definition of MAPP's planning records, how they relate, their **statuses** and the
 **money rules**. Specs refer to this document instead of redefining it. Field-by-field detail (labels,
 types, required or not) is in [field-catalogue.md](field-catalogue.md); words are defined in
 [glossary.md](glossary.md).
@@ -25,7 +25,7 @@ Plan                one fiscal year of marketing for one business (e.g. "FY2026 
 |---|---|
 | Created top-down | A campaign needs a plan, an initiative needs a campaign, an activity needs an initiative, a line item needs a saved activity. |
 | One parent | Every record has exactly one parent. Moving a record to another parent is an explicit **Move** action. |
-| Unique names | Plan names are unique across NorthStar. Other names are unique **under the same parent** (two campaigns in one plan cannot share a name). Comparison ignores upper/lower case and surrounding spaces. |
+| Unique names | Plan names are unique across MAPP. Other names are unique **under the same parent** (two campaigns in one plan cannot share a name). Comparison ignores upper/lower case and surrounding spaces. |
 | Readable IDs | Every record gets a short, permanent, human-readable ID: `P-1001` (plan), `C-1001` (campaign), `I-1001` (initiative), `A-1001` (activity), `L-1001` (line item). IDs are never reused. |
 | One fiscal year | A plan belongs to one fiscal year (= calendar year, January–December, decision D-011). The year cannot change after the plan is saved. |
 | Delete | Deleting a record also deletes everything under it. All of it goes to the **recycle bin** together and can be restored (parents first). |
@@ -93,7 +93,7 @@ Created / Declined ──Submit, when no level needs a decision──► Approve
   Each level is then *not needed* (its "only needed when" condition does not match), *approved
   automatically* (its "approve automatically when" condition matches) or *waiting for a decision*. When
   no level waits for a decision, the activity goes from Created or Declined **straight to Approved** at
-  submission; the history shows each level as "Not needed" or "Approved automatically" by NorthStar, and
+  submission; the history shows each level as "Not needed" or "Approved automatically" by MAPP, and
   the owner is notified when someone else submitted. Only the changes of §2.5 restart approval; changing
   the activity type or the plan's business units does not re-evaluate an open or approved round.
 
@@ -147,7 +147,7 @@ additionally show "*n* items below need attention" with a link, counting every l
 
 ## 3. Required fields: "to save" versus "to submit"
 
-To keep NorthStar friendly, records can be saved as drafts with very little information (decision
+To keep MAPP friendly, records can be saved as drafts with very little information (decision
 D-009):
 
 | Marking | Blocks | Examples |
@@ -166,7 +166,7 @@ The marking of every field is in [field-catalogue.md](field-catalogue.md).
 
 ## 4. Money rules
 
-All money is an exact decimal amount **with a currency**. NorthStar's **base currency is USD** (decision
+All money is an exact decimal amount **with a currency**. MAPP's **base currency is USD** (decision
 D-010): budgets and planned costs are stored in USD; a line item may be entered in a local currency and
 is converted to USD. Users can choose a **display currency**; every amount on screen is converted for
 display and labelled with its currency.
@@ -267,7 +267,7 @@ Finance module and GSAP are connected". They are never typed by users.
 | # | Rule | Source |
 |---|---|---|
 | R1 | A plan's owner must be a member of at least one of the plan's teams; the owner list offers only those members. | PM, FA B10 |
-| R2 | A campaign's or initiative's owner defaults to its parent's owner. | NorthStar (fewer steps) |
+| R2 | A campaign's or initiative's owner defaults to its parent's owner. | MAPP (fewer steps) |
 | R3 | An initiative's dates must lie inside its campaign's dates; an activity's dates must lie inside its initiative's dates, except ongoing activities (no end date). | FA B5 |
 | R4 | Campaign dates are expected inside the plan's fiscal year; a campaign starting before 1 January or ending after 31 December is allowed with a warning. | FA B4 (multi-year), simplified D-017 |
 | R5 | An activity's end date may not be more than 10 years after its plan's year. | FA B6 |
@@ -323,7 +323,7 @@ for new choices, existing values kept and labelled "(inactive)").
   behalf. While the access rule "Nobody approves an activity they own or submitted" is on, the owner and
   the submitter can never decide and are left out when approvers are resolved (segregation of duties). The
   history records the capacity (as delegate of, as backup approver, on behalf of).
-- Line managers are kept in NorthStar today; later they come from Entra ID. Reminders and escalations run
+- Line managers are kept in MAPP today; later they come from Entra ID. Reminders and escalations run
   when someone allowed to create and change approval workflows runs them (a job endpoint); later a
   scheduler runs them and notifications are also sent by e-mail.
 - Permissions per level (create/edit/delete) come from roles mapped to Shell's 19 Hive9 roles.

@@ -1,38 +1,38 @@
-# Shell UI patterns: research findings and what NorthStar should change
+# Shell UI patterns: research findings and what MAPP should change
 
 | | |
 |---|---|
 | **For** | Product owner and the Shell client team |
-| **Purpose** | Ground the NorthStar UI/UX revamp in how Shell's own digital products look and behave |
+| **Purpose** | Ground the MAPP UI/UX revamp in how Shell's own digital products look and behave |
 | **Date of capture** | 20 Oct 2026 (live sites; values can change when Shell redeploys) |
-| **Method** | Downloaded and read the HTML, CSS, JavaScript and font files of Shell's public sites and B2B portal; measured computed styles in a headless browser at 1440 × 900 (desktop) and 390 × 844 (phone); keyboard focus walk; colour-contrast maths; compared with NorthStar's `docs/product/design-system.md` and `frontend/src/styles/tokens.css` |
+| **Method** | Downloaded and read the HTML, CSS, JavaScript and font files of Shell's public sites and B2B portal; measured computed styles in a headless browser at 1440 × 900 (desktop) and 390 × 844 (phone); keyboard focus walk; colour-contrast maths; compared with MAPP's `docs/product/design-system.md` and `frontend/src/styles/tokens.css` |
 | **Evidence images** | [`ux-research-shell-ui-patterns/`](ux-research-shell-ui-patterns/) (screenshots 01–09) |
 
 ---
 
 ## Summary
 
-1. **Shell runs two design generations.** The current one, which Shell's code calls "Amidala", runs shell.com, shell.co.uk, Shell for Business, Fleet Solutions and the Shell Recharge pages. It is clean and white, with rounded corners, yellow action buttons and dark-grey text. The older one runs the **Shell Fleet Hub** portal for fleet managers. It has square corners, dark-blue buttons and upper-case labels. **NorthStar should follow Amidala's look** and borrow Fleet Hub's *structure* (left navigation, page actions, data tables, activity log), because Fleet Hub is the Shell product closest to NorthStar.
-2. **Typography is simple and strict.** Headings use Shell's own typeface, **"Shell Heavy"**, made by URW Type Foundry in 2018. Licensing is proprietary; the font file's name table says "All rights reserved". All other text is **Arial** at 14 px with a 1.5 line height (12 px for small text). Six core text styles cover almost every word on nine pages. NorthStar uses **15 different font sizes**, including half-pixel sizes such as 12.5 and 13.5 px.
-3. **Closest free alternative to the Shell typeface: Jost.** It is on Google Fonts under the SIL Open Font License, and side by side it is almost the same shape (image 08). Second choice is Outfit. For body text, NorthStar should use **Arial, as Shell does**: no download, figures already the same width for money columns, and it looks exactly like Shell's own pages.
+1. **Shell runs two design generations.** The current one, which Shell's code calls "Amidala", runs shell.com, shell.co.uk, Shell for Business, Fleet Solutions and the Shell Recharge pages. It is clean and white, with rounded corners, yellow action buttons and dark-grey text. The older one runs the **Shell Fleet Hub** portal for fleet managers. It has square corners, dark-blue buttons and upper-case labels. **MAPP should follow Amidala's look** and borrow Fleet Hub's *structure* (left navigation, page actions, data tables, activity log), because Fleet Hub is the Shell product closest to MAPP.
+2. **Typography is simple and strict.** Headings use Shell's own typeface, **"Shell Heavy"**, made by URW Type Foundry in 2018. Licensing is proprietary; the font file's name table says "All rights reserved". All other text is **Arial** at 14 px with a 1.5 line height (12 px for small text). Six core text styles cover almost every word on nine pages. MAPP uses **15 different font sizes**, including half-pixel sizes such as 12.5 and 13.5 px.
+3. **Closest free alternative to the Shell typeface: Jost.** It is on Google Fonts under the SIL Open Font License, and side by side it is almost the same shape (image 08). Second choice is Outfit. For body text, MAPP should use **Arial, as Shell does**: no download, figures already the same width for money columns, and it looks exactly like Shell's own pages.
 4. **The colours that matter:**
    - **Shell Yellow `#FFC800`** with dark text `#404040`/`#4A4A4A` (5.7–6.7:1) for primary buttons and "you are here" bars.
    - **Shell Red `#DD1D21`** used sparingly.
    - **Shell Dark Blue `#003C88`** for Fleet Hub's primary buttons.
    - **Greys `#404040` → `#F5F5F5`** for everything else.
 
-   NorthStar's Apple blue `#0071E3` and its blue-to-violet gradient have no Shell equivalent.
-5. **Everything sits on a 4 px grid.** Shell's spacing steps are 4, 8, 12, 16, 20, 24, 32 px and so on. Gaps between grid columns are 20 px, cards have 24 px padding, the page is at most **1300 px** wide, and there are **only two breakpoints (600 and 960 px)**. Buttons and inputs come in fixed heights of **32 / 40 / 48 px**, with 8 px corners. NorthStar's misalignment has measurable causes:
+   MAPP's Apple blue `#0071E3` and its blue-to-violet gradient have no Shell equivalent.
+5. **Everything sits on a 4 px grid.** Shell's spacing steps are 4, 8, 12, 16, 20, 24, 32 px and so on. Gaps between grid columns are 20 px, cards have 24 px padding, the page is at most **1300 px** wide, and there are **only two breakpoints (600 and 960 px)**. Buttons and inputs come in fixed heights of **32 / 40 / 48 px**, with 8 px corners. MAPP's misalignment has measurable causes:
    - **seven different control heights** (26–38 px) that sit next to each other in the same toolbars;
    - spacing values off the grid (5, 6, 7, 10, 14, 18, 26 px);
    - **11 media queries at 8 different widths**;
    - search boxes shaped like pills sitting beside inputs with 10 px corners.
 6. **Wayfinding is a single Shell signature: a 4 px yellow bar.** It sits under the current main-menu item, above the current audience ("Customer / Business") and under the selected tab. Breadcrumbs (12 px) sit under the header and are repeated in the footer. On phones only the parent page is shown, with a back chevron.
-7. **Accessibility: Shell does the basics; NorthStar is already ahead in places.**
+7. **Accessibility: Shell does the basics; MAPP is already ahead in places.**
    - Shell has a skip link on every Amidala page, proper landmarks, ARIA tabs and menus, `aria-current`, and text contrast of 8.9:1.
    - It relies on the browser's default focus ring and has **no reduced-motion handling**.
    - Fleet Hub removes focus outlines and replaces them with a thin dashed line, and its landing page has no `main` landmark.
-   - NorthStar should keep its own stronger focus ring and reduced-motion rules, and fix one real failure: **input borders `#D2D2D7` are only 1.5:1 against white**. WCAG 1.4.11 asks for 3:1, and Shell's inputs meet it (about 3.1:1).
+   - MAPP should keep its own stronger focus ring and reduced-motion rules, and fix one real failure: **input borders `#D2D2D7` are only 1.5:1 against white**. WCAG 1.4.11 asks for 3:1, and Shell's inputs meet it (about 3.1:1).
 8. **Recommendation for the app shell** (§9.7):
    - a slim white top bar with Shell's tool icons (search, help, notifications, account);
    - a white left sidebar (240 px, or a 64 px icon rail) with 40 px items and the yellow "you are here" bar;
@@ -43,7 +43,7 @@
    - use of the Shell font and Pecten logo;
    - yellow or dark blue as the primary-button colour;
    - whether the page background may be light grey;
-   - a decision that replaces the visual part of D-005 (NorthStar's version 1 Apple-inspired design language).
+   - a decision that replaces the visual part of D-005 (MAPP's version 1 Apple-inspired design language).
 
 ---
 
@@ -114,7 +114,7 @@ Fleet Hub (older generation) uses the classic Shell web palette. These are the m
 | Purple / orange | `#641964` / `#EB8705` | 15 / 14 | Charts, warnings | 11.3:1 / 2.6:1 |
 | Greys | `#595959`, `#717171`, `#A6A6A6`, `#D9D9D9`, `#F7F7F7` | many | Secondary text, placeholders, dividers, modal background | 7.0, 4.9, 2.4, 1.4, — |
 
-What this means for NorthStar:
+What this means for MAPP:
 
 - Yellow is a **fill colour with dark text**. It is never text, and never a focus ring on white, because it is 1.5:1.
 - Orange `#EB8705`, light green and light blue fail as text colours. They can only be fills or decoration.
@@ -134,7 +134,7 @@ What this means for NorthStar:
 | Fleet Hub other text | **Shell Light / Book / Medium**, plus italics, then Arial | 300, 400, 500 | `@font-face` rules in `5997.css`; Book file: family "Shell", style "Book", © 2018 URW |
 | Fleet Hub body | **Arial** 16 px, `#404040` | 400 | Computed style |
 
-So the Shell typeface family is **Shell Light, Book, Medium, Bold and Heavy**, made for Shell by URW. Licensing is proprietary. NorthStar **must not copy these files from Shell's servers**. If Shell's brand team supplies them for internal tools (Fleet Hub already uses them), NorthStar can switch in one token (§10, question 1).
+So the Shell typeface family is **Shell Light, Book, Medium, Bold and Heavy**, made for Shell by URW. Licensing is proprietary. MAPP **must not copy these files from Shell's servers**. If Shell's brand team supplies them for internal tools (Fleet Hub already uses them), MAPP can switch in one token (§10, question 1).
 
 Language-aware sizing: Amidala multiplies every font size by `--font-scale: 1.15` for Arabic, Japanese, Korean, Thai and Chinese (`:root:lang(ar|ja|ko|th|zh)` in the theme CSS).
 
@@ -199,34 +199,34 @@ Jost is not recommended for body text. Its small x-height (0.46) makes 12–14 p
 
 All Amidala specs below come from the component source in the app script, confirmed by computed styles. Fleet Hub specs come from `5997.css`.
 
-| Component | Shell spec (Amidala unless noted) | Notes for NorthStar |
+| Component | Shell spec (Amidala unless noted) | Notes for MAPP |
 |---|---|---|
 | **Primary button** | Fill `#FFC800`, text `#4A4A4A` **bold 14 px**, 1 px border in the fill colour, **radius 8 px** (6 px at the smallest size), padding 0 12 px, gap 8 px, icon at left. **Heights: xs 32, sm 40, md 48 (default), lg 64 px.** Hover **inverts** (dark fill, yellow text). Disabled: greyscale and not clickable. Icon-only: square, with `aria-label` and `title`. Measured examples: "Sign in" 105 × 32, "Find out more" 119 × 48, chat 89 × 40 | One fixed set of heights; one radius |
 | **Dark CTA button** | Fill `#4A4A4A`, text `#FFC800` bold, radius 8, 48 px ("Explore Shell Fleet Hub", "Job search"); contrast 5.7:1 | A secondary emphasis Shell uses inside yellow bands |
 | **Plain button** | Transparent, ink text; hover inverts (ink fill, white text) | Tertiary or icon buttons |
 | Fleet Hub buttons | Dark blue `#003C88` fill, white Shell Bold **12 px upper case**, **square corners**, 47–48 px; outlined: 1 px `#404040` | Shows dark blue is also a Shell primary colour |
 | **Links** | Inside text: **ink colour, underlined**. Stand-alone CTA links: bold, underline on hover. Tags: 12 px, ink at 10% background, radius 3, hover inverts. External links get an icon | Shell does not use blue links on its public site |
-| **Cards** | Link cards: `#F5F5F5` on white (or white on grey bands), **radius 16**, no border, no shadow at rest, image at top, 24 px padding, H3 20 px, "Read more →" at bottom right; the whole card is the link; hover lift 8 px + shadow | NorthStar summary and plan cards can follow this |
-| **Text input** | **48 px** high, 12 px padding, **radius 8**, 1 px border **ink at 60%** (about `#929292`, **3.1:1**), white background; disabled: ink at 10% background; text **16 px on phones and tablets** (stops iOS zooming) and 14 px on desktop; native checkbox and radio | Fixes NorthStar's 1.5:1 borders |
+| **Cards** | Link cards: `#F5F5F5` on white (or white on grey bands), **radius 16**, no border, no shadow at rest, image at top, 24 px padding, H3 20 px, "Read more →" at bottom right; the whole card is the link; hover lift 8 px + shadow | MAPP summary and plan cards can follow this |
+| **Text input** | **48 px** high, 12 px padding, **radius 8**, 1 px border **ink at 60%** (about `#929292`, **3.1:1**), white background; disabled: ink at 10% background; text **16 px on phones and tablets** (stops iOS zooming) and 14 px on desktop; native checkbox and radio | Fixes MAPP's 1.5:1 borders |
 | Textarea | Radius 8, border ink at 20%, 16 px padding, 144 px high, resizes vertically only | |
 | Fleet Hub inputs | Underline style; on hover a teal underline; focus a 1 px dashed teal outline; boxed select 56 px with a 1 px `#A6A6A6` border | Older style, do not copy |
-| **Search** | `role="search"` form; 48 px search input with placeholder; square 48 px yellow submit button with icon (`aria-label "Submit"`); then the text "53 results found"; results show H3 link (Shell Heavy 20 px, underlined), breadcrumb path and snippet with the matched words in bold (image 02) | NorthStar's search boxes should say what they search |
+| **Search** | `role="search"` form; 48 px search input with placeholder; square 48 px yellow submit button with icon (`aria-label "Submit"`); then the text "53 results found"; results show H3 link (Shell Heavy 20 px, underlined), breadcrumb path and snippet with the matched words in bold (image 02) | MAPP's search boxes should say what they search |
 | **Tables** | Wrapper scrolls sideways; 1 px ink-at-20% grid lines; **header bold on ink at 5%**; cell padding 8 px; row hover ink at 5%; outer corners 8 px; left-aligned, top-aligned | Fleet Hub: header Shell Bold 10.7 px upper case; **under 624 px rows become stacked cards** with shadow and 16 px gaps; master-detail and dynamic tables |
-| **Tabs** | `role="tablist"` / `tab` / `tabpanel`, `aria-selected`, `aria-controls`; tab height **48 px**, 14 px text; selected tab = **4 px yellow bottom bar**; container has a 1 px bottom border (ink at 20%); when tabs overflow they scroll sideways with fade-out arrows; the compact variant becomes a dropdown on small screens; tab state is kept in the URL hash | Replace NorthStar's pill tabs for page sections |
+| **Tabs** | `role="tablist"` / `tab` / `tabpanel`, `aria-selected`, `aria-controls`; tab height **48 px**, 14 px text; selected tab = **4 px yellow bottom bar**; container has a 1 px bottom border (ink at 20%); when tabs overflow they scroll sideways with fade-out arrows; the compact variant becomes a dropdown on small screens; tab state is kept in the URL hash | Replace MAPP's pill tabs for page sections |
 | **Main navigation bar** | 64 px high, Pecten logo 64 px box, items 14 px; selected item = **4 px yellow bottom border**; items with children open a dropdown (288 px wide, radius 8, shadow, expand animation) whose first item is "Go to: *Section*"; Escape closes; `aria-expanded`, `aria-controls`, `aria-current="page"`; tool icons on the right (station finder, help, search) as 48 px icon buttons | |
 | **Utility (top) bar** | Grey `#F5F5F5` strip with "Customer / Business / About us" (audience switch, 12–14 px, selected = 4 px yellow **top** bar) and a yellow **Sign in** button (32 px) at the right | Same idea as a module switcher |
 | **Vertical menus** | Selection = **4 px yellow bar on the end edge**; items 32 px (md) or 48 px (lg); hover ink at 10%; radius 4; nested levels indent by 16 px | Gives the sidebar pattern |
 | **Breadcrumb** | 12 px, chevron separators, last item `aria-current="page"`, schema.org BreadcrumbList; hidden when there is only Home; **on phones and tablets only the parent is shown, with a back chevron**; repeated in large size in the footer | |
 | **Modal (dialog)** | Native `<dialog>` with `showModal()`; centred: **512 px wide, radius 12, padding 24**, `shadow-lg`; backdrop black at 50% **with 4 px blur**; max size: screen minus 12 px; Escape closes; layouts "center", "full" (gallery) and "toast" (bottom sheet sliding up 48 px) | Fleet Hub modal: 888 px wide, `#F7F7F7` background, 24 px padding, max 80% of screen height |
 | **Notification / toast** | Same `<dialog>` in toast layout at the bottom; title H3 + text + links; dismiss icon button; shown once per message, suppressed for 100 days, remembered only if functional cookies are allowed | |
-| **System message** | `Message`: full-width, 24 × 16 px padding, 12 px text, **navy `#092949` with white text** | Use for NorthStar's environment banner |
+| **System message** | `Message`: full-width, 24 × 16 px padding, 12 px text, **navy `#092949` with white text** | Use for MAPP's environment banner |
 | **Accordion** | Native `<details>/<summary>`; radius 16; 1 px border ink at 20%; summary padding 24 × 12 px; Shell Heavy 18 px title; chevron rotates; content fades in | |
-| Chips / badges / tags | Shell has no status-chip component; tags are 12 px rectangles (radius 3) on ink at 10% | NorthStar's status chips stay, reshaped (§9.6) |
+| Chips / badges / tags | Shell has no status-chip component; tags are 12 px rectangles (radius 3) on ink at 10% | MAPP's status chips stay, reshaped (§9.6) |
 | **Pagination** | Centred; current page bold; window of ±4 pages; "Previous" / "Next" text hidden on small screens; disabled ends shown at 50% opacity | |
 | **Back to top** | Appears after scrolling; fixed 24 px from the bottom corner; 40 px, radius 8, shadow; `aria-label` and `title` | |
-| **Skip link** | First focusable element; yellow, bold, padding 16 px, radius 8; slides in at the top left when focused (image 09) | NorthStar already has one |
-| Cookie banner | Bottom panel; "Manage cookies" link plus two **equal** yellow buttons, "Reject optional cookies" and "Accept optional cookies" | Not needed in NorthStar |
-| Dates | `toLocaleDateString(lang, {day, month:'short', year})`, which gives "21 Jul 2026" in en-GB ("Page last updated: 21 Jul 2026") | **Already matches NorthStar's D-216 format** |
+| **Skip link** | First focusable element; yellow, bold, padding 16 px, radius 8; slides in at the top left when focused (image 09) | MAPP already has one |
+| Cookie banner | Bottom panel; "Manage cookies" link plus two **equal** yellow buttons, "Reject optional cookies" and "Accept optional cookies" | Not needed in MAPP |
+| Dates | `toLocaleDateString(lang, {day, month:'short', year})`, which gives "21 Jul 2026" in en-GB ("Page last updated: 21 Jul 2026") | **Already matches MAPP's D-216 format** |
 
 ---
 
@@ -259,12 +259,12 @@ All Amidala specs below come from the component source in the app script, confir
 7. **Search** is reached from the magnifier icon in every header. The results page keeps the query in the box and shows the count, and each result shows where it lives (breadcrumb).
 8. **Help** is always one click away: a "?" icon in the header, a floating "Contact Us" tab on B2B pages and a chat button.
 
-### 6.2 Fleet Hub (the Shell product closest to NorthStar)
+### 6.2 Fleet Hub (the Shell product closest to MAPP)
 
 - **Sign in first.** The public landing page is a yellow hero with one dark-blue full-width "Login in to Shell Fleet Hub" button and two outlined secondary actions (image 06).
 - The **in-app navigation is a vertical primary nav**. Each item is 48 px high, with an icon at the left, `#595959` text and 1 px `#D9D9D9` dividers (`.c-primary-nav__item`, `.c-primary-nav__link`). There is a separate notifications panel.
-- **In-app components show its workflow**: dashboard widgets (cards, invoices), **page actions** (stacked on phones, in a row from 1008 px), editable sections, tabular data panels (white, radius 4, light shadow, 24 px header), dynamic and master-detail tables, **activity logs**, confirm modals, multi-step "order cards" flows, CSV export options and user management. These are the same building blocks NorthStar needs.
-- The marketing image of the logged-in dashboard shows a **greeting ("Good morning Victor")**, then cards for *Card activity*, *Cards*, *Invoices* and *Vehicles*, each with counts and a "See all" link. This is the same idea as NorthStar's Home summary cards.
+- **In-app components show its workflow**: dashboard widgets (cards, invoices), **page actions** (stacked on phones, in a row from 1008 px), editable sections, tabular data panels (white, radius 4, light shadow, 24 px header), dynamic and master-detail tables, **activity logs**, confirm modals, multi-step "order cards" flows, CSV export options and user management. These are the same building blocks MAPP needs.
+- The marketing image of the logged-in dashboard shows a **greeting ("Good morning Victor")**, then cards for *Card activity*, *Cards*, *Invoices* and *Vehicles*, each with counts and a "See all" link. This is the same idea as MAPP's Home summary cards.
 
 ### 6.3 Shell Fleet App (mobile, image 07)
 
@@ -277,7 +277,7 @@ All Amidala specs below come from the component source in the app script, confir
 
 ## 7. Accessibility and responsiveness
 
-| Check | Amidala (9 pages) | Fleet Hub landing | NorthStar today |
+| Check | Amidala (9 pages) | Fleet Hub landing | MAPP today |
 |---|---|---|---|
 | Skip link | Yes, "Skip to main content", on every page | **None** | Yes (`global.css:75-90`) |
 | Landmarks | `header`, `nav`, `main`, `footer` on every page; `role="search"` on the search page | **No `main`, no `nav`** | Yes |
@@ -295,15 +295,15 @@ All Amidala specs below come from the component source in the app script, confir
 
 **What to copy:** landmarks, skip link, ARIA tab and menu patterns, "Go to: parent" in menus, 16 px input text on touch devices, 3:1 control borders, a breadcrumb that collapses to the parent on phones, and stacked-card tables on phones for inbox-style lists.
 
-**Where NorthStar should stay better than Shell:** a visible custom focus ring, reduced-motion support, an error summary with links, and status never shown by colour alone.
+**Where MAPP should stay better than Shell:** a visible custom focus ring, reduced-motion support, an error summary with links, and status never shown by colour alone.
 
 ---
 
-## 8. NorthStar today compared with Shell
+## 8. MAPP today compared with Shell
 
-| Aspect | NorthStar now | Shell | Gap |
+| Aspect | MAPP now | Shell | Gap |
 |---|---|---|---|
-| Design reference | NorthStar's version 1 Apple-inspired design language (`design-system.md:3-6`, decision D-005) | Shell Amidala | **Visual language changes**; the CRUD rules in design system §6–§8 stay |
+| Design reference | MAPP's version 1 Apple-inspired design language (`design-system.md:3-6`, decision D-005) | Shell Amidala | **Visual language changes**; the CRUD rules in design system §6–§8 stay |
 | Typeface | System stack `-apple-system, BlinkMacSystemFont, "Segoe UI", Inter…` (`tokens.css:101`), which shows as Segoe UI on Shell's Windows laptops | Shell Heavy headings + Arial text | Change |
 | Font sizes in use | **15 distinct sizes** across 155 CSS files: 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 15, 16, 17, 22, 26, 27, 28 px (e.g. `Sidebar.module.css:107` 10.5 px, `SummaryCard.module.css:20` 27 px, `ConfirmDialog.module.css:29` 17 px) | 6 core styles (12, 14, 20, 28, 32 + bold) | **Main cause of the "unpolished" feel** |
 | Weights | 600 used 162 times; Arial and Jost-at-text-size have no real 600 | 400 / 700 | Change to 400 / 700 |
@@ -583,7 +583,7 @@ Mapping from today's off-grid values: 6 → 8 (or 4 for tight pairs), 10 → 8 o
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│ [Pecten] NorthStar   │ 🔍 Search plans, campaigns, activities by name or ID │  ?  🔔3  (AB) │  ← top bar 56 px, white, 1 px #D9D9D9 bottom
+│ [Pecten] MAPP   │ 🔍 Search plans, campaigns, activities by name or ID │  ?  🔔3  (AB) │  ← top bar 56 px, white, 1 px #D9D9D9 bottom
 ├────────────────┬─────────────────────────────────────────────────────────────────────────┤
 │ ▌⌂ Home        │  Plans › FY2026 Lubricants                         (breadcrumb, 12 px)   │
 │  ▤ Plans       │  Helix launch                                [⋯ More] [Edit] [Submit]   │  ← title 28 px Jost; one yellow button
@@ -602,7 +602,7 @@ Mapping from today's off-grid values: 6 → 8 (or 4 for tight pairs), 10 → 8 o
 
 **Top bar (56 px, white).** It carries the global tools, which today sit in the sidebar footer. This mirrors Shell's header, where the tool icons and Sign in are at the top right.
 
-- Left: the Pecten mark (subject to brand approval, §10) and the product name "NorthStar" in Jost 600 18 px. This mirrors Shell's `Navigation` title next to the logo.
+- Left: the Pecten mark (subject to brand approval, §10) and the product name "MAPP" in Jost 600 18 px. This mirrors Shell's `Navigation` title next to the logo.
 - Centre-left: one **global search**, 40 px high and 360–480 px wide. It searches by name or ID across all levels, which serves the usability target "find an activity ≤ 2 steps".
 - Right: Help (?), Notifications (bell with count), and the account avatar menu (name, role, theme, sign out). All are 40 px icon buttons with names.
 
@@ -624,9 +624,9 @@ Mapping from today's off-grid values: 6 → 8 (or 4 for tight pairs), 10 → 8 o
 
 **Sections inside a record** use underline tabs. Pill toggles are kept only as segmented filters.
 
-**Footer.** One 12 px row, not Shell's marketing footer: "NorthStar · version · Accessibility · Privacy · Help". For example: "Data as of 20 Oct 2026 14:05" (the app equivalent of Shell's "Page last updated").
+**Footer.** One 12 px row, not Shell's marketing footer: "MAPP · version · Accessibility · Privacy · Help". For example: "Data as of 20 Oct 2026 14:05" (the app equivalent of Shell's "Page last updated").
 
-**Why this layout:** marketers work in NorthStar for hours, moving between lists, records and approvals.
+**Why this layout:** marketers work in MAPP for hours, moving between lists, records and approvals.
 
 - A persistent left sidebar keeps every module one click away. This is how Shell's own fleet portal works.
 - The top bar gives search and notifications a fixed place, as on every Shell site.
@@ -634,7 +634,7 @@ Mapping from today's off-grid values: 6 → 8 (or 4 for tight pairs), 10 → 8 o
 
 ### 9.8 Dark mode
 
-Keep dark mode (decision D-038), but use Shell's own dark values (§9.2). Yellow becomes `#D6A100` with dark text, and the focus ring turns yellow on dark backgrounds. Shell supports dark mode only through the computer's setting. NorthStar's per-person switch can stay.
+Keep dark mode (decision D-038), but use Shell's own dark values (§9.2). Yellow becomes `#D6A100` with dark text, and the focus ring turns yellow on dark backgrounds. Shell supports dark mode only through the computer's setting. MAPP's per-person switch can stay.
 
 ### 9.9 Accessibility rules to adopt or keep
 
@@ -672,9 +672,9 @@ Update `docs/product/design-system.md` §2–§5 and §9 in the same change as t
 
 ## 10. Questions for the client before building
 
-1. **Shell typeface and Pecten logo.** May NorthStar, as an internal Shell tool, use the Shell font files (Shell Book, Bold and Heavy; URW) and the Pecten? If yes, Jost is replaced by one token. If not, Jost (OFL) and a neutral NorthStar wordmark are used. Either way, NorthStar must not download the files from shell.com.
+1. **Shell typeface and Pecten logo.** May MAPP, as an internal Shell tool, use the Shell font files (Shell Book, Bold and Heavy; URW) and the Pecten? If yes, Jost is replaced by one token. If not, Jost (OFL) and a neutral MAPP wordmark are used. Either way, MAPP must not download the files from shell.com.
 2. **Primary-button colour.** Shell's current sites use **yellow with dark text**; Fleet Hub uses **Shell Dark Blue with white text**. This report recommends yellow, for consistency with today's Shell brand. Please confirm, or name the colour Shell's digital brand team prefers for staff tools.
-3. **Page background.** Shell's look puts white cards on light-grey bands (`#F5F5F5`). NorthStar's constitution principle VI says "white". Cards, dialogs, top bar and sidebar all stay white; only the canvas behind them turns light grey. Is that acceptable? The alternative is a white canvas with 1 px `#D9D9D9` card borders.
+3. **Page background.** Shell's look puts white cards on light-grey bands (`#F5F5F5`). MAPP's constitution principle VI says "white". Cards, dialogs, top bar and sidebar all stay white; only the canvas behind them turns light grey. Is that acceptable? The alternative is a white canvas with 1 px `#D9D9D9` card borders.
 4. **Shell design system for staff tools.** Does Shell have an internal design system or brand portal for staff and B2B apps (tokens, icons, components)? None is public. If one exists, it should override any value in this report.
 5. **Decision log.** Approve a new decision that replaces the *visual* part of D-005 (the version 1 Apple-inspired look) with "Shell Amidala visual language". The functional rule stays: Hive9 screens are not copied.
 
@@ -699,5 +699,5 @@ Update `docs/product/design-system.md` §2–§5 and §9 in the same change as t
 - Pages were loaded in headless Chromium (Playwright) at 1440 × 900 and 390 × 844, locale en-GB. Optional cookies were rejected before measuring. Computed styles were read from the elements themselves, including open shadow roots. A keyboard focus walk recorded the outline of each focused element.
 - Font facts come from the font files' `name` and `OS/2` tables (fontTools). Candidate fonts were measured the same way and rendered with Pillow.
 - Contrast uses the WCAG 2.x relative-luminance formula.
-- NorthStar figures come from searching all 155 CSS files under `frontend/src` (font sizes, weights, radii, padding, gaps, heights and media queries) on 20 Oct 2026.
+- MAPP figures come from searching all 155 CSS files under `frontend/src` (font sizes, weights, radii, padding, gaps, heights and media queries) on 20 Oct 2026.
 - No personal data was collected; no sign-in was attempted.

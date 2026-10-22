@@ -23,7 +23,7 @@ describe('BuildingPage, BuildingPanel and BuildingSection', () => {
     expect(screen.getByRole('region', { name: 'Line items' })).toHaveTextContent(
       'This section is being built.',
     );
-    expect(document.title).toBe('Models · NorthStar');
+    expect(document.title).toBe('Models · MAPP');
   });
 
   it('names the tab differently when asked', () => {
@@ -31,7 +31,7 @@ describe('BuildingPage, BuildingPanel and BuildingSection', () => {
       <BuildingPage eyebrow="My profile" title="Your profile" tabTitle="My profile" />,
     );
 
-    expect(document.title).toBe('My profile · NorthStar');
+    expect(document.title).toBe('My profile · MAPP');
   });
 
   it('is a side panel that goes back to the page under it when closed', async () => {

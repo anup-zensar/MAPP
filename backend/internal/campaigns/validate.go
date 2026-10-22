@@ -5,10 +5,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // The longest name and description, in characters (data model §1–§2).

@@ -51,7 +51,7 @@ export interface ImportDialogProps {
 }
 
 /**
- * Import GSAP extract (015 US4, FR-004 – FR-009): choose a .csv file, NorthStar checks it without
+ * Import GSAP extract (015 US4, FR-004 – FR-009): choose a .csv file, MAPP checks it without
  * saving and says what the import will do — the counts, every row problem and every row that will
  * not be linked — then Import applies the valid rows. The toast gives the result; the figures on
  * every page are asked again.
@@ -175,7 +175,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
       open
       onOpenChange={(open) => !open && !importExtract.isPending && onClose()}
       title="Import GSAP extract"
-      description="NorthStar checks the file first and tells you what it will change. Nothing is saved until you import."
+      description="MAPP checks the file first and tells you what it will change. Nothing is saved until you import."
       submitLabel={submitLabel}
       busy={busy}
       onSubmit={submit}

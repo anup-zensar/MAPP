@@ -434,9 +434,9 @@ feature's contract task if 006 has not added it.
 
 | Path | Page | `handle.title` (tab while loading) | Tab title when loaded |
 |---|---|---|---|
-| `/activities/:activityId/line-items/new` | `LineItemCreatePage` | New line item | New line item · NorthStar |
-| `/line-items/:lineItemId` | `LineItemPage` (details) | Line item | <line item name> · NorthStar |
-| `/line-items/:lineItemId/edit` | `LineItemEditPage` | Edit line item | Edit <line item name> · NorthStar |
+| `/activities/:activityId/line-items/new` | `LineItemCreatePage` | New line item | New line item · MAPP |
+| `/line-items/:lineItemId` | `LineItemPage` (details) | Line item | <line item name> · MAPP |
+| `/line-items/:lineItemId/edit` | `LineItemEditPage` | Edit line item | Edit <line item name> · MAPP |
 
 Navigation: no sidebar change (line items live inside activities; Plans is feature 004's section). The
 activity page (006, `/activities/:activityId`) embeds the section with the anchor `#line-items`; links to a
@@ -489,7 +489,7 @@ page's primary is 006's **Edit**) linking to `/activities/:activityId/line-items
    text "<assigned> of <planned cost> USD assigned", and the state message; the rounding hint below when
    `roundingHint`.
 3. **Grid** (`SpreadGrid`, FR-003, FR-020), under the heading "Spread over time" with a **Monthly ·
-   Quarterly** `SegmentedControl` (remembered per browser in `localStorage['northstar.lineItemGrid']`,
+   Quarterly** `SegmentedControl` (remembered per browser in `localStorage['mapp.lineItemGrid']`,
    read in try/catch): `<table>` with a visually hidden caption; the first column (line-item names) sticky
    on the left; month headers "Mar 2026"; an outside month shows the small label "Outside dates" with an
    `InfoTip` "Outside the activity's dates — allowed, e.g. a deposit"; "No dates yet" column; Total column;
@@ -620,7 +620,7 @@ filled in at run time; amounts follow 007-P4 ("20,000.00 USD").
 | Leaving Custom | The month amounts you typed will be replaced by this spread when you save. |
 | Finance coding (002 texts, FR-014) | Choose a spend type first — GL codes depend on it · The only GL code for this spend type · GL code '<label>' will be cleared — it doesn't fit '<spend type>' |
 | Finance budget (FR-015, FR-016) | Search item, budget or code · Items of '<budget>', the plan's default finance budget, are listed first. · No finance budget items for <year> yet — an administrator adds them in Settings. · Finance budget item '<name>' will be cleared — it belongs to <year>. · <name> (inactive) |
-| GSAP request | NorthStar asks GSAP for an SWBS code once the activity is approved. Sending requests to GSAP comes later. · Filled by GSAP later |
+| GSAP request | MAPP asks GSAP for an SWBS code once the activity is approved. Sending requests to GSAP comes later. · Filled by GSAP later |
 | From finance (FR-025) | Total actuals · % of actual cost · Actuals at monthly rate · Total invoiced · Total purchase requests · — · Filled when the Finance module and GSAP are connected |
 | Footer | **Save** · **Save and add another** · **Cancel** · Saving… |
 | Toasts | Line item '<name>' created · Line item '<name>' saved · (delete, 001) Line item '<name>' moved to the recycle bin · **Undo** · Line item '<name>' restored |

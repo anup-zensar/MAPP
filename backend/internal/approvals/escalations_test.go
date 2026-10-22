@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // eventLine writes one event of a run: "<activity> L<n> <action> <days>d to <names>".
@@ -60,7 +60,7 @@ func TestRunEscalations_FR026_FR027_FR028_SC005(t *testing.T) {
 	if got := f.notifiedSince(t, counts); !slices.Equal(got, []string{"Daniel Okoro: reminder, reminder", "Carlos Mendes: reminder, reminder"}) {
 		t.Errorf("notified = %q, want Daniel and Carlos twice", got)
 	}
-	if log := f.log(t, "A-1001"); logLine(log[0]) != "NorthStar sent a reminder about activity 'Reminded' "+
+	if log := f.log(t, "A-1001"); logLine(log[0]) != "MAPP sent a reminder about activity 'Reminded' "+
 		"(Round 1 · level 1 of 1 · waited 3 days · to Daniel Okoro, Carlos Mendes · run by Alex Morgan)" {
 		t.Errorf("log = %s", logLine(log[0]))
 	}
@@ -88,7 +88,7 @@ func TestRunEscalations_FR026_FR027_FR028_SC005(t *testing.T) {
 	entries := f.actions(t, "A-1002")
 	if last := entries[len(entries)-1]; last.Action != ActionEscalated || last.Actor != actor.System || last.WaitedDays != 5 ||
 		last.EscalatedTo == nil || *last.EscalatedTo != alex {
-		t.Errorf("last entry = %+v, want escalated to Alex Morgan by NorthStar", last)
+		t.Errorf("last entry = %+v, want escalated to Alex Morgan by MAPP", last)
 	}
 	if f.mustRun(t).Escalated != 0 {
 		t.Error("a level was escalated twice")
@@ -148,7 +148,7 @@ func assertNotifiedFirst(t *testing.T, f *fixture, p actor.Actor, want string) {
 		t.Fatalf("%s has no notification", p.Name)
 	}
 	if got := string(list[0].Kind) + ": " + list[0].Title + " — " + list[0].Text; got != want || list[0].Actor != actor.System {
-		t.Errorf("%s's newest notification = %q by %v, want %q by NorthStar", p.Name, got, list[0].Actor, want)
+		t.Errorf("%s's newest notification = %q by %v, want %q by MAPP", p.Name, got, list[0].Actor, want)
 	}
 }
 
@@ -272,7 +272,7 @@ func TestInbox_RowFlags_FR031(t *testing.T) {
 }
 
 // Every approval event of the feature is in the approval history and the activity log with the person or
-// NorthStar, the capacity and the rule or reason (017 FR-034, FR-035, SC-004): automatic approval and levels
+// MAPP, the capacity and the rule or reason (017 FR-034, FR-035, SC-004): automatic approval and levels
 // not needed at submission, a partial approval, decisions as delegate, backup and on behalf, reminders and
 // escalations, and delegations created, changed and cancelled.
 func TestApprovalRuleEvents_Logged_FR034_FR035_SC004(t *testing.T) {
@@ -301,8 +301,8 @@ func TestApprovalRuleEvents_Logged_FR034_FR035_SC004(t *testing.T) {
 	assertLog(t, f, "A-1009", []string{
 		"Carlos Mendes approved activity 'Fleet card launch' [submitted → approved] (Round 1 · level 3 of 3; as backup approver)",
 		"Sara Novak approved level 3 of activity 'Fleet card launch' (Round 1 · level 3 of 3 · 1 of 2 approved · still waiting for Alex Morgan; as delegate of Daniel Okoro)",
-		"NorthStar escalated activity 'Fleet card launch' (Round 1 · level 3 of 3 · waited 5 days · escalated to Carlos Mendes · run by Alex Morgan)",
-		"NorthStar sent a reminder about activity 'Fleet card launch' (Round 1 · level 3 of 3 · waited 3 days · to Daniel Okoro, Alex Morgan · run by Alex Morgan)",
+		"MAPP escalated activity 'Fleet card launch' (Round 1 · level 3 of 3 · waited 5 days · escalated to Carlos Mendes · run by Alex Morgan)",
+		"MAPP sent a reminder about activity 'Fleet card launch' (Round 1 · level 3 of 3 · waited 3 days · to Daniel Okoro, Alex Morgan · run by Alex Morgan)",
 		"Mei Lin submitted activity 'Fleet card launch' [created → submitted] (Round 1 · Standard marketing approval · " +
 			"level 1 approved automatically (planned cost is below $10,000.00); level 2 not needed (only when planned cost is at least $100,000.00) · " +
 			"waiting for level 3 (Daniel Okoro, Alex Morgan))",
@@ -322,7 +322,7 @@ func TestApprovalRuleEvents_Logged_FR034_FR035_SC004(t *testing.T) {
 	for _, e := range f.actions(t, "A-1009") {
 		kinds = append(kinds, string(e.Action)+"/"+e.Actor.Name+"/"+string(e.Capacity))
 	}
-	if want := []string{"submitted/Mei Lin/", "autoApproved/NorthStar/", "skipped/NorthStar/", "reminded/NorthStar/", "escalated/NorthStar/",
+	if want := []string{"submitted/Mei Lin/", "autoApproved/MAPP/", "skipped/MAPP/", "reminded/MAPP/", "escalated/MAPP/",
 		"approved/Sara Novak/delegate", "approved/Carlos Mendes/backup"}; !slices.Equal(kinds, want) {
 		t.Errorf("history = %q, want %q", kinds, want)
 	}

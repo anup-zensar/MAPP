@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 const (
-	priyasEmail  = "priya.raman@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
+	priyasEmail  = "priya.raman@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
 )
 
 // Every test here starts the API with apitest.WithoutDemoHistory: the recycle bin starts empty, so its

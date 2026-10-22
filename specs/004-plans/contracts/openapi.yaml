@@ -21,7 +21,7 @@
 
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 004 (Plans) fragment
+  title: MAPP API — feature 004 (Plans) fragment
   version: 0.4.0
 tags:
   - name: Plans

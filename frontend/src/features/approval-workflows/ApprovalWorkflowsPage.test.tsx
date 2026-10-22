@@ -46,7 +46,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Approval workflows' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Approval workflows · NorthStar');
+    expect(document.title).toBe('Approval workflows · MAPP');
     const eu = await screen.findByRole('row', { name: /Lubricants EU approval/ });
     expect(eu).toHaveTextContent('Level 1 · Carlos Mendes → Global brand · Alex Morgan');
     expect(eu).toHaveTextContent('Used by 3 activities (2 waiting for approval)');

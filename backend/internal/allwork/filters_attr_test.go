@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // The Shell-attribute filters of 016 (FR-039) over the two years of twoYears: P-1001 (2026) › C-1 Europe ›

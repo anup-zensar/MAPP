@@ -3,8 +3,8 @@ package seed
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/ids"
+	"mapp/internal/people"
+	"mapp/internal/platform/ids"
 )
 
 // demoTeams are the teams of 003 data model §7, T-1001 … T-1003, with their members in membership order

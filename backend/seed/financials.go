@@ -3,15 +3,15 @@ package seed
 import (
 	"context"
 
-	"northstar/internal/financials"
-	"northstar/internal/lineitems"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/financials"
+	"mapp/internal/lineitems"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // addFinancials loads the demo GSAP data of feature 015 (FR-031, data model §6): the 11 fictitious
 // transactions of the demo feed, through the same matching rules as an import, and one import record "Demo
-// data (simulated GSAP)" created by NorthStar at the seed time. They link to Venue hire (L-1003), Speaker
+// data (simulated GSAP)" created by MAPP at the seed time. They link to Venue hire (L-1003), Speaker
 // fees (L-1004) and Stand build (L-1006) only, plus one PO whose HX key matches no line item (D-306). The
 // step runs after approvals and writes no activity-log entry (D-188).
 func (d *demo) addFinancials(ctx context.Context) error {

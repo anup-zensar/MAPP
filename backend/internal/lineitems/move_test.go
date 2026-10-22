@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"northstar/internal/history"
+	"mapp/internal/history"
 )
 
 // Moving a line item to another activity (a split, 016 FR-028) changes only its activity: its ID, currency,

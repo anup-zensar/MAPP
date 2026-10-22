@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/access"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/access"
+	"mapp/internal/platform/apitest"
 )
 
 // Every operation of the contract has its access rule in access/routes.go — also the operations of 012 and
@@ -61,7 +61,7 @@ func TestPublicRules_OnlyTheFourWithoutSession_FR010(t *testing.T) {
 // finance.view only.
 func TestEveryNeedRule_RefusesWithoutThePermission_FR009_FR010(t *testing.T) {
 	server := apitest.New(t)
-	sara := server.SignIn(t, "sara.novak@northstar.demo")
+	sara := server.SignIn(t, "sara.novak@shell.com")
 	viewer := []string{"plans.view", "data.export", "finance.view"}
 	checked := 0
 	for _, op := range contractOperations(t) {

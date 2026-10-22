@@ -8,7 +8,7 @@ later (ADR-0004). In the JSON store a normal table is one file `backend/data/<ta
 whose keys are record ids); the activity log is an **append-only** table `backend/data/activity_log.jsonl`
 (one entry per line, research R3). JSON field names below are the names used in files and in the API.
 
-Conventions used by every record type in NorthStar:
+Conventions used by every record type in MAPP:
 
 - **Timestamps** are UTC, RFC 3339; fractional seconds have up to 3 digits and trailing zeros are dropped
   (`2026-10-18T09:02:00.123Z`, `2026-10-18T09:02:00Z`). Never compare or sort them as text.
@@ -44,7 +44,7 @@ create and change people.
 | `email` | string | At most 254 characters; unique ignoring case; stored in lower case |
 | `jobTitle` | string | 0–120 characters |
 | `active` | boolean | Only active people appear on the sign-in page, can sign in and keep their sessions |
-| *bookkeeping* | `record.Meta` | Seed records are created by the system actor `{"id": "system", "name": "NorthStar"}` |
+| *bookkeeping* | `record.Meta` | Seed records are created by the system actor `{"id": "system", "name": "MAPP"}` |
 
 Derived (computed by the API, never stored):
 
@@ -118,7 +118,7 @@ interface (JSON store now, a PostgreSQL implementation later).
 
 ## 5. Activity-log entry — append-only table `activity_log` (`activity_log.jsonl`)
 
-One entry per business change (FR-022, SC-004). Entries are only ever appended: nothing in NorthStar
+One entry per business change (FR-022, SC-004). Entries are only ever appended: nothing in MAPP
 updates or deletes them (FR-023). They carry everything feature 011 shows, because entries written by
 features 002–010 cannot be completed later (011 Key Entities and Assumptions).
 
@@ -251,5 +251,5 @@ Activity-log behaviour of samples (the pattern every later feature follows):
 
 | Item | Where | Why |
 |---|---|---|
-| Last theme (`light` / `dark` / `system`) | `localStorage["northstar.theme"]` | Paint the right colours before the API answers; the theme switch on the sign-in and public "Page not found" pages stores its choice only here; after sign-in the person's saved preference takes over |
+| Last theme (`light` / `dark` / `system`) | `localStorage["mapp.theme"]` | Paint the right colours before the API answers; the theme switch on the sign-in and public "Page not found" pages stores its choice only here; after sign-in the person's saved preference takes over |
 | Cached API data | TanStack Query cache (memory only) | Cleared on sign-out, when the session is lost and when another person signs in in another tab |

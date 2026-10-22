@@ -19,7 +19,7 @@ export interface PermissionWords {
   scoped: boolean;
 }
 
-/** Table A, in its order (fixed by NorthStar; the API's catalogue says the same). */
+/** Table A, in its order (fixed by MAPP; the API's catalogue says the same). */
 export const PERMISSIONS: PermissionWords[] = [
   { key: 'plans.view', label: 'View plans and everything in them', scoped: true },
   { key: 'plans.create', label: 'Create and copy plans', scoped: true },

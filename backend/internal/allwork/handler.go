@@ -3,9 +3,9 @@ package allwork
 import (
 	"net/http"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // Handler answers the HTTP requests of All work (plan "API operations").

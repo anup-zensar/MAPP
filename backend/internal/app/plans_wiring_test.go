@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/store"
-	"northstar/internal/settings"
-	"northstar/seed"
+	"mapp/internal/history"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/store"
+	"mapp/internal/settings"
+	"mapp/seed"
 )
 
 // Plans reads Settings and people and teams through 002's and 003's services, which app.New passes to

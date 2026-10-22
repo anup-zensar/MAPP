@@ -10,11 +10,11 @@ import (
 
 	"github.com/pb33f/libopenapi"
 
-	"northstar/api"
-	"northstar/internal/app"
-	"northstar/internal/auth"
-	"northstar/internal/platform/apitest"
-	"northstar/internal/platform/store"
+	"mapp/api"
+	"mapp/internal/app"
+	"mapp/internal/auth"
+	"mapp/internal/platform/apitest"
+	"mapp/internal/platform/store"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 )
 
 // priyaSignsIn is the body of a sign-in as Priya Raman with the demo password.
-var priyaSignsIn = map[string]string{"email": "priya.raman@northstar.demo", "password": "northstar"}
+var priyaSignsIn = map[string]string{"email": "priya.raman@shell.com", "password": "mapp"}
 
 // GET /api/health answers without a session and says in which environment the API runs and whether demo
 // sign-in is on (FR-009).
@@ -273,7 +273,7 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 	}
 
 	server := apitest.New(t)
-	alex := server.SignIn(t, "alex.morgan@northstar.demo")
+	alex := server.SignIn(t, "alex.morgan@shell.com")
 	alex.Do(t, http.MethodPost, "/api/currencies", map[string]string{"code": "JPY", "name": "Japanese yen", "symbol": "¥", "rate": "150"})
 	var deleted struct {
 		RecycleBinEntry struct{ ID, RecordType, RecordTypeLabel string }

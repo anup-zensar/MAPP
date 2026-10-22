@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // The handler tests of 016 on the demo data: P-1004 "FY2027 Lubricants UK & Ireland" is planned in GBP (0.79

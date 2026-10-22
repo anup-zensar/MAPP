@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
 )
 
 // The demo teams: Lubricants Europe, Mobility China, Global Marketing Ops.
@@ -162,7 +162,7 @@ func TestGrants_CanView_FR006(t *testing.T) {
 	}
 }
 
-// The Administrator role holds every permission everywhere, also one NorthStar adds later (data model
+// The Administrator role holds every permission everywhere, also one MAPP adds later (data model
 // §1.1).
 func TestGrants_AdministratorHoldsEverything_FR003(t *testing.T) {
 	alex := grants("U-1001", nil, administrator)

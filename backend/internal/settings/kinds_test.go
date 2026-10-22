@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/history"
+	"mapp/internal/history"
 )
 
 // The activity log names every field of a Settings record in words and writes its values as people read

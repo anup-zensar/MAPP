@@ -5,8 +5,8 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
 )
 
 // recentChangesLimit is how many access changes the Roles and access page shows (FR-038).

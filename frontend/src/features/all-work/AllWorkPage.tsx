@@ -61,7 +61,7 @@ const TABS: TabItem<ViewType>[] = [
 /**
  * All work (feature 010, FR-001): every plan of a year as a read-only Grid, Calendar or Budget &
  * cost view, with the summary cards and one filter bar, under one state that survives moving around
- * NorthStar (FR-009). Nothing is created, changed or deleted here (FR-002); a row opens its
+ * MAPP (FR-009). Nothing is created, changed or deleted here (FR-002); a row opens its
  * record (FR-016).
  */
 export function AllWorkPage() {

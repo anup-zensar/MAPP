@@ -62,7 +62,7 @@ describe('Activity routes (feature 006)', () => {
     renderApp(path, ANSWERS);
 
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
-    await waitFor(() => expect(document.title).toBe(`${tab} · NorthStar`));
+    await waitFor(() => expect(document.title).toBe(`${tab} · MAPP`));
     expectCurrentSection('Plans');
   });
 

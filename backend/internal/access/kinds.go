@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // The history kinds of this package (data model §1.1, §1.3).

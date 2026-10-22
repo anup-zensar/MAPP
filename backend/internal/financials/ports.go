@@ -3,8 +3,8 @@ package financials
 import (
 	"context"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
 )
 
 // The ports of financials (D-196): what it reads from other features, as consumer interfaces that

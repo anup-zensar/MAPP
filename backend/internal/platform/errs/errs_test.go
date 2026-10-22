@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 var (
@@ -32,8 +32,8 @@ func TestConstructors_StatusCodeAndMessage_FR020(t *testing.T) {
 			http.StatusBadRequest, errs.CodeValidationFailed, "Some fields need your attention.",
 		},
 		{
-			"BadRequest", errs.BadRequest("NorthStar couldn't read this request. Reload the page and try again."),
-			http.StatusBadRequest, errs.CodeBadRequest, "NorthStar couldn't read this request. Reload the page and try again.",
+			"BadRequest", errs.BadRequest("MAPP couldn't read this request. Reload the page and try again."),
+			http.StatusBadRequest, errs.CodeBadRequest, "MAPP couldn't read this request. Reload the page and try again.",
 		},
 		{
 			"SignInRequired", errs.SignInRequired(),

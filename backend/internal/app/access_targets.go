@@ -5,14 +5,14 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/access"
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/campaigns"
-	"northstar/internal/lineitems"
-	"northstar/internal/plans"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/store"
+	"mapp/internal/access"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/campaigns"
+	"mapp/internal/lineitems"
+	"mapp/internal/plans"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/store"
 )
 
 // planningTargets finds the planning records of features 004–007 that operations name by path, for the

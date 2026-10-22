@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // availability is one ActionAvailability of an answer.

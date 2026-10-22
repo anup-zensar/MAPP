@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // The handler tests of 016's exchange rates and Field help run the real API on the demo data — EUR, GBP, CNY

@@ -294,7 +294,7 @@ export function transactionPage(
   };
 }
 
-const SYSTEM = { id: 'system', name: 'NorthStar' };
+const SYSTEM = { id: 'system', name: 'MAPP' };
 
 export const DEMO_IMPORT: FinancialImport = {
   id: 'FIM-1001',

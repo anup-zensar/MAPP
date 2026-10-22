@@ -1,11 +1,11 @@
-# Final validation report: NorthStar against Shell's MVP requirements
+# Final validation report: MAPP against Shell's MVP requirements
 
 | | |
 |---|---|
 | **Deliverable** | Final validation report confirming alignment with client requirements and MVP scope |
 | **For** | The Shell client team and the product owner |
 | **Date** | 21 October 2026 |
-| **Application** | NorthStar Plan module, branch `plan-module` after the final merge (commit `a1ae8fe`): features 001–011 and 014–017 integrated (012 bulk actions and import is deferred, 013 BCPIR and SP&A waits on Shell's question Q-001) |
+| **Application** | MAPP Plan module, branch `plan-module` after the final merge (commit `a1ae8fe`): features 001–011 and 014–017 integrated (012 bulk actions and import is deferred, 013 BCPIR and SP&A waits on Shell's question Q-001) |
 | **Requirements** | Shell's Business Requirements document, 36 rows, of which 11 are **MVP Requirement** ([transcription](../reference/brd-requirements.md)) |
 | **Starting point** | [BRD gap analysis](brd-gap-analysis.md): of the 11 MVP rows, 2 met, 6 partly met, 3 not met |
 | **How the gaps were closed** | [BRD gap-closure plan](brd-gap-closure-plan.md), features [014](../../specs/014-access-control/spec.md), [015](../../specs/015-financial-transactions/spec.md), [016](../../specs/016-planning-and-currency-extensions/spec.md), [017](../../specs/017-approval-rules/spec.md) and the [011 merge](../../specs/011-activity-log-and-recycle-bin/spec.md) |
@@ -43,7 +43,7 @@ changing screens or rules.
   mirrors the demo roles, so a role changed in Settings does not yet change who may approve. A line manager cannot yet be set
   on the People screen. Section 7 lists each item
   with its task.
-- **NorthStar now follows Shell's design language**: Shell yellow for the one primary action, a light-grey
+- **MAPP now follows Shell's design language**: Shell yellow for the one primary action, a light-grey
   page with white cards, Jost headings and Arial text, WCAG 2.2 AA, red only for danger. The foundation and
   the page-by-page pass of all eight areas are done (section 4).
 - **Shell has 58 defaults to confirm (section 8).** Every one is applied now and can be changed by
@@ -298,7 +298,7 @@ tips show.
   activity type (conditional and automatic approval). A **backup approver** per level.
 - **Submit** shows what each level will do, including "This activity will be approved automatically."
 - **Delegation**: "Delegate my approvals" with a banner saying who approves for whom today.
-- **Reminders and escalation** after set days, with **Run reminders and escalations** until NorthStar is
+- **Reminders and escalation** after set days, with **Run reminders and escalations** until MAPP is
   hosted (then a nightly job).
 - **Monitoring** tab: overdue, escalated, average time to decision, automatic approvals, waiting by level,
   and how long approvals have waited.
@@ -344,7 +344,7 @@ These 25 rows are not MVP. "Before" is the gap analysis; "Now" is after this rou
 | BUS.AI.010 AI capabilities | Future | Not met | Not met (by design) | No AI in scope. The open REST API and the next-year plan copy are the base |
 | BUS.BUD.030 Overspend hard stop or warning; underspend | Future | Partly met | Partly met | Overspending and over-allocation warn in red and never block. No underspend warning, no setting |
 | BUS.FIN.020 Full PR/PO automation | Future | Not met | Not met | Technical track, after the GSAP freeze |
-| BUS.FIN.040 Monthly accruals per PO | Future | Not met | Not met | GSAP's accruals are now **shown** (015); NorthStar does not calculate them |
+| BUS.FIN.040 Monthly accruals per PO | Future | Not met | Not met | GSAP's accruals are now **shown** (015); MAPP does not calculate them |
 | BUS.FIN.050 Review and approve supplier invoices | Future | Not met | Not met | Invoices are now visible, read-only (015); no approve or decline |
 | BUS.FIN.060 PO/invoice documents linked to the PR | Future | Not met | Not met | No file attachments |
 | BUS.PRF.020 PIR linked to business case / SP&A | Future | Not met | Not met | Feature 013, after Shell answers Q-001 |
@@ -373,7 +373,7 @@ These 25 rows are not MVP. "Before" is the gap analysis; "Now" is after this rou
 
 ### 4.1 What changed for users
 
-Following the product owner's decisions of 20 October 2026 (D-310–D-314), NorthStar now looks like a Shell
+Following the product owner's decisions of 20 October 2026 (D-310–D-314), MAPP now looks like a Shell
 enterprise tool rather than the earlier Apple-style look:
 
 - **Colour:** Shell yellow `#FFC800` with dark text for the one primary action per page or dialog; a
@@ -534,7 +534,7 @@ only, on 21 Oct 2026.
 - Confirm or change the 58 defaults in section 8.
 - Send **"the note on financial transactions"** (BUS.FIN.080).
 - Confirm which built-in fields are needed to publish or submit (Q-005).
-- Say whether Shell has an internal design system for staff tools that NorthStar must use, and whether the
+- Say whether Shell has an internal design system for staff tools that MAPP must use, and whether the
   Shell typeface and pecten may be used.
 
 ### 7.3 Recommendations
@@ -570,7 +570,7 @@ it is in brackets ([decision log](../sdd/decision-log.md)).
    (D-227).
 8. Refused attempts are recorded only in the technical log, not shown to administrators (D-241).
 9. New people get the Viewer role for their own teams (D-234).
-10. Roles are assigned in NorthStar while demo sign-in stays. With Microsoft Entra ID they may come from
+10. Roles are assigned in MAPP while demo sign-in stays. With Microsoft Entra ID they may come from
     Entra app roles or groups later (D-223).
 
 **Global and local budgets (014)**
@@ -593,7 +593,7 @@ it is in brackets ([decision log](../sdd/decision-log.md)).
     100,000.00 USD. Shell sets its own on each workflow (D-295).
 19. Only planned cost, dates and line-item amounts or currencies restart an approval; a change of activity
     type does not (D-276).
-20. "Manager" is a line manager kept in NorthStar, to come from Entra ID later (D-282).
+20. "Manager" is a line manager kept in MAPP, to come from Entra ID later (D-282).
 21. "All must approve" means every approver of the level; one decline declines the activity (D-278).
 22. A level that names nobody stops the submission. A level whose people are all left out (inactive, owner,
     submitter) goes to its backup approver or waits for an Administrator (D-283).
@@ -602,11 +602,11 @@ it is in brackets ([decision log](../sdd/decision-log.md)).
     (D-284).
 24. A reminder after 3 days and an escalation after 5 days waiting (calendar days), once each per level.
     Escalation goes to the level's backup approver, who can then decide the whole level (D-285).
-25. Until NorthStar is hosted, reminders and escalations are sent when someone who manages workflows presses
+25. Until MAPP is hosted, reminders and escalations are sent when someone who manages workflows presses
     **Run reminders and escalations**; then a nightly job does it (D-286).
 26. "Overdue" means waited at least the escalation days, or the reminder days when there is no escalation
     (D-287).
-27. Notifications stay in NorthStar (the bell). E-mail and Teams come with BUS.WFL.040.
+27. Notifications stay in MAPP (the bell). E-mail and Teams come with BUS.WFL.040.
 28. Delegation dates and "today" are UTC calendar dates (D-284).
 
 **Financial transactions (015)**
@@ -617,14 +617,14 @@ it is in brackets ([decision log](../sdd/decision-log.md)).
     is sent to GSAP (D-242).
 31. Purchase requests are not shown (D-243).
 32. "Paid" means Shell's actuals: payments released (D-243).
-33. "Accrued" is GSAP's accruals of the latest accrual month in the data. NorthStar calculates no accruals
+33. "Accrued" is GSAP's accruals of the latest accrual month in the data. MAPP calculates no accruals
     (D-244).
 34. Committed (purchase orders) is compared with planned cost ("% of planned cost committed"). "Not yet
     committed" = planned cost − committed. Committed above planned cost shows in red and never blocks.
-35. Matching: the HX key is "HX" + the NorthStar line-item number. Invoices, payments and accruals link
+35. Matching: the HX key is "HX" + the MAPP line-item number. Invoices, payments and accruals link
     through their PO number, then by SWBS code. Unmatched rows are listed as "Not linked" with the reason
     (D-245).
-36. Links made from GSAP data cannot be changed in NorthStar. Unmatched transactions can be linked by hand
+36. Links made from GSAP data cannot be changed in MAPP. Unmatched transactions can be linked by hand
     by people allowed to link (D-253).
 37. Transactions convert to USD at the current rate, like every other amount, not at their posting-date
     rate (D-248, D-303).
@@ -671,13 +671,13 @@ it is in brackets ([decision log](../sdd/decision-log.md)).
     and analysed with "Break down by … then by …".
 
 **Field help (016)**
-56. Field help is plain text of up to 300 characters. NorthStar writes the defaults; an empty text hides
+56. Field help is plain text of up to 300 characters. MAPP writes the defaults; an empty text hides
     the tip; Shell attributes keep their help on each attribute's page (D-271).
 
 **General**
 57. GSAP (transactions and daily rates), single sign-on and the nightly approvals job stay simulated until
     Shell's systems are available. Each sits behind an adapter (D-242, D-259, D-286, D-308).
-58. Which built-in fields are needed to publish or submit (Q-005). NorthStar keeps the markings of the
+58. Which built-in fields are needed to publish or submit (Q-005). MAPP keeps the markings of the
     field catalogue until Shell confirms.
 
 ---

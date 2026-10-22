@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"northstar/internal/history"
+	"mapp/internal/history"
 )
 
 // The history kinds of feature 015 (data model §7, D-254). Both are top level, so no recycle-bin sweep ever

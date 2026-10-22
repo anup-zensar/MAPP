@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"northstar/internal/approvals"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/apitest"
 )
 
 // User story 6 — be told when something needs me, on the demo data: Daniel Okoro has one unread

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // amount returns a pointer to the USD amount text, for conditions.

@@ -6,10 +6,10 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/plans"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/activities"
+	"mapp/internal/plans"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // User story 3 — Shell attributes, % splits and goals.

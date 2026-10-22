@@ -142,11 +142,11 @@ export function fetchLineItemPreview(lineItemId: string): Promise<LineItemPrevie
   return call(api.GET('/api/line-items/{lineItemId}', { params: { path: { lineItemId } } }));
 }
 
-/** Saves the sample file "northstar-gsap-extract-sample.csv" (FR-009). */
+/** Saves the sample file "mapp-gsap-extract-sample.csv" (FR-009). */
 export function downloadSampleFile(): Promise<string> {
   return downloadFromApi(
     api.GET('/api/financials/imports/template', { parseAs: 'blob' }),
-    'northstar-gsap-extract-sample.csv',
+    'mapp-gsap-extract-sample.csv',
   );
 }
 

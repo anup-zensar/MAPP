@@ -20,7 +20,7 @@ Money is `money.Amount` (exact decimal) in USD (D-010).
 | `record.Meta` | | version, createdAt/By, updatedAt/By |
 
 - `builtIn = administrator`: `permissions` is always every key of Table A and `defaultScope` is `all`. Name,
-  description and permissions cannot change (`Lock` reasons in the plan); it cannot be deleted. When NorthStar
+  description and permissions cannot change (`Lock` reasons in the plan); it cannot be deleted. When MAPP
   adds a permission later, the administrator role has it without a data change (`authz` treats this role as
   "everything").
 - Delete: only when no `role_assignments` row references it (409 `in_use`), and never the Administrator role.

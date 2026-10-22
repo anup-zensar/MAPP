@@ -14,7 +14,7 @@
 
 ### User Story 1 - Submit an activity for approval (Priority: P1)
 
-Priya chooses **Submit for approval** on the activity "Launch film". If anything is missing, NorthStar
+Priya chooses **Submit for approval** on the activity "Launch film". If anything is missing, MAPP
 lists every problem at once with links to fix them; otherwise a short confirmation shows the approval
 workflow and who approves each level, and the activity becomes **Submitted**, waiting for level 1.
 
@@ -182,7 +182,7 @@ own action.
 
 **Approval workflows (Settings)**
 
-- **FR-001**: NorthStar MUST provide **Settings › Approval workflows** following the standard CRUD
+- **FR-001**: MAPP MUST provide **Settings › Approval workflows** following the standard CRUD
   pattern (design system §6): list with search by name, Active/Inactive pill filters and a result count;
   create and edit in a side panel; a details view; **Set inactive / Set active**.
 - **FR-002**: A workflow MUST have a name (required, at most 120 characters, unique ignoring letter case
@@ -252,7 +252,7 @@ own action.
   it and MUST explain that the changes of domain model §2.5 need approval again. Anyone may recall in
   this phase (only the owner once roles arrive).
 - **FR-022**: When a change listed in domain model §2.5 is saved on a Submitted or Approved activity
-  (after the confirmation provided by features 006 and 007), NorthStar MUST end any open round as
+  (after the confirmation provided by features 006 and 007), MAPP MUST end any open round as
   "Approval restarted", set the activity to **Created** and record the changed values (old → new) in the
   approval history. Other edits MUST NOT affect approval (D-013).
 - **FR-023**: Deleting a Submitted activity MUST end its round as "Cancelled — activity deleted" and
@@ -303,7 +303,7 @@ own action.
   (full date and time on hover) and an unread marker; a badge MUST show the unread count ("9+" above 9).
 - **FR-034**: Choosing a notification MUST mark it read and open the activity's Approval section;
   **Mark all as read** MUST mark all read; with none, the panel MUST say "You're all caught up."
-- **FR-035**: NorthStar MUST notify the designated approvers of a level when a round reaches it
+- **FR-035**: MAPP MUST notify the designated approvers of a level when a round reaches it
   ("Approval needed"); the activity's owner on every approval, on a decline (with the start of the
   comment), on a recall and on an approval restart; and the approvers of the waiting level when a round
   is recalled or restarted (for a restarted Approved activity, the people who approved it).

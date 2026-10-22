@@ -17,7 +17,7 @@ const META = {
 };
 
 function person(id: string, name: string, jobTitle: string, teams = [EUROPE], active = true) {
-  const email = `${name.toLowerCase().replace(' ', '.')}@northstar.demo`;
+  const email = `${name.toLowerCase().replace(' ', '.')}@shell.com`;
   const initials = name
     .split(' ')
     .map((part) => part[0])

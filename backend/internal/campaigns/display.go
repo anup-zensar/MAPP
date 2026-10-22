@@ -3,10 +3,10 @@ package campaigns
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/money"
+	"mapp/internal/people"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/money"
 )
 
 // The amounts campaigns and initiatives show — the budget, the parent's remaining budget, budget and cost

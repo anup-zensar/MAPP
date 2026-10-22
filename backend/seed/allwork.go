@@ -4,8 +4,8 @@ import (
 	"context"
 	"slices"
 
-	"northstar/internal/allwork"
-	"northstar/internal/platform/ids"
+	"mapp/internal/allwork"
+	"mapp/internal/platform/ids"
 )
 
 // The saved views of feature 010 (plan "Demo data"): two of Priya Raman's, neither her default, so every

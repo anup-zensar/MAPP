@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/plans"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/plans"
+	"mapp/internal/platform/apitest"
 )
 
 // The handler tests run the real API on the demo data (apitest), and every request and answer is checked
@@ -18,9 +18,9 @@ import (
 // FY2026 Mobility China (Draft, no business unit) and P-1003 FY2027 Global Brand (Draft).
 
 const (
-	priyasEmail  = "priya.raman@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
-	meisEmail    = "mei.lin@northstar.demo"
+	priyasEmail  = "priya.raman@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
+	meisEmail    = "mei.lin@shell.com"
 )
 
 const (
@@ -209,7 +209,7 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	china := priya.Do(t, http.MethodGet, "/api/plans/P-1002", nil)
 	gone := priya.Do(t, http.MethodGet, "/api/plans/P-9999", nil)
 
-	system := map[string]any{"id": "system", "name": "NorthStar"}
+	system := map[string]any{"id": "system", "name": "MAPP"}
 	usdOf := func(amount string) map[string]any { return map[string]any{"amount": amount, "currency": "USD"} }
 	assertFields(t, europe, http.StatusOK, map[string]any{
 		"id": "P-1001", "name": "FY2026 Lubricants Europe", "year": 2026, "status": "published",

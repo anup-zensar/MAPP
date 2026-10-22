@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // shellForm stores the attributes most attribute tests start from: the plan's Business unit (Lubricants,

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/store"
 )
 
 // Each entry of the bin says whether it can come back (011 FR-017, data model §5): its parent is stored or

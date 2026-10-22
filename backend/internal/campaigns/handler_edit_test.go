@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // helixForm is Helix launch's form as the seed stores it, ready to change and send.

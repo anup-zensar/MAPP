@@ -21,9 +21,9 @@ describe('EmptyState', () => {
   });
 
   it('can add one more sentence (FR-015)', () => {
-    render(<EmptyState title="Coming soon" text="This part of NorthStar isn't built yet." />);
+    render(<EmptyState title="Coming soon" text="This part of MAPP isn't built yet." />);
 
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
-    expect(screen.getByText("This part of NorthStar isn't built yet.")).toBeInTheDocument();
+    expect(screen.getByText("This part of MAPP isn't built yet.")).toBeInTheDocument();
   });
 });

@@ -5,11 +5,11 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/allwork"
-	"northstar/internal/financials"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/allwork"
+	"mapp/internal/financials"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // The planning adapter of feature 015 answers the seed's tree with the planned costs of data model §6.1:

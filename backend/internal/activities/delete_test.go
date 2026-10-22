@@ -5,9 +5,9 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/history"
-	"northstar/internal/platform/errs"
+	"mapp/internal/activities"
+	"mapp/internal/history"
+	"mapp/internal/platform/errs"
 )
 
 // User story 5 — delete an activity (with Undo).

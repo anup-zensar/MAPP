@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/web"
 )
 
 // The bodies of the API's own refusals, as the web app receives them.
 const (
 	otherSiteBody  = `{"code":"bad_request","message":"This request came from another site and was refused.","fields":[]}`
-	unreadableBody = `{"code":"bad_request","message":"NorthStar couldn't read this request. Reload the page and try again.","fields":[]}`
+	unreadableBody = `{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}`
 	internalBody   = `{"code":"internal_error","message":"Something went wrong on our side. Please try again.","fields":[]}`
 )
 
@@ -157,7 +157,7 @@ func TestReadJSON_AcceptsAJSONBody(t *testing.T) {
 	assertAnswer(t, w, http.StatusOK, `{"name":"Ideas"}`)
 }
 
-// A body NorthStar cannot read safely is refused with a message for the user; the technical detail goes
+// A body MAPP cannot read safely is refused with a message for the user; the technical detail goes
 // only to the server log (research R9, R10).
 func TestReadJSON_RefusesUnreadableBodies(t *testing.T) {
 	tests := []struct {

@@ -130,7 +130,7 @@ describe('HistorySection', () => {
     renderSection({ [LOG]: { status: 500 } });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "NorthStar can't reach its server right now.",
+      "MAPP can't reach its server right now.",
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });

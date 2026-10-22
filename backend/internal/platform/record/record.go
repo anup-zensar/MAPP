@@ -16,8 +16,8 @@ package record
 import (
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
 )
 
 // Meta is the bookkeeping of a business record.

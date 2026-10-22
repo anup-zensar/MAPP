@@ -51,7 +51,7 @@ export function ActionsMenu({ label, items, trigger = 'icon' }: ActionsMenuProps
   const hintId = useId();
 
   return (
-    // Not modal, like every NorthStar menu: the rest of the page stays usable while it is open.
+    // Not modal, like every MAPP menu: the rest of the page stays usable while it is open.
     <DropdownMenu.Root modal={false}>
       {trigger === 'more' ? (
         // A written label needs no tooltip: the button's name is the word on it.

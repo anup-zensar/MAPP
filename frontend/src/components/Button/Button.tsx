@@ -26,7 +26,7 @@ export interface ButtonProps extends ComponentProps<'button'>, ButtonLook {}
 export interface LinkButtonProps extends ComponentProps<typeof Link>, ButtonLook {}
 
 /**
- * NorthStar's button (design system §5): label it with a verb ("Create campaign"), never "OK".
+ * MAPP's button (design system §5): label it with a verb ("Create campaign"), never "OK".
  * Never disable it without saying why next to it (constitution III).
  */
 export function Button({

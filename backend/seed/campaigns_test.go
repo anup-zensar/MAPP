@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/campaigns"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/campaigns"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // The campaigns and initiatives of 005 data model §9, C-1001 … C-1004 and I-1001 … I-1008, with their

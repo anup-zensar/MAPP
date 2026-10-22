@@ -6,19 +6,19 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // The demo people's e-mails, for the access tests (feature 014). Their seeded roles: Alex Administrator;
 // Carlos Global planner (All markets); Daniel Planner and Approver, Priya Planner, Mei Planner, Sara Viewer —
 // each for their own teams (Lubricants Europe: Priya, Daniel, Sara; Mobility China: Mei, Carlos, Sara).
 const (
-	alexsEmail   = "alex.morgan@northstar.demo"
-	priyasEmail  = "priya.raman@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
-	meisEmail    = "mei.lin@northstar.demo"
-	carlosEmail  = "carlos.mendes@northstar.demo"
-	sarasEmail   = "sara.novak@northstar.demo"
+	alexsEmail   = "alex.morgan@shell.com"
+	priyasEmail  = "priya.raman@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
+	meisEmail    = "mei.lin@shell.com"
+	carlosEmail  = "carlos.mendes@shell.com"
+	sarasEmail   = "sara.novak@shell.com"
 )
 
 // errorAnswer is an error answer of the API.

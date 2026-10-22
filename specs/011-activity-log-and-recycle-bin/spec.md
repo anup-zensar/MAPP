@@ -21,7 +21,7 @@ opens a confirmation that says where the item returns and what changes. After th
 item is back with its original IDs.
 
 **Why this priority**: The recycle bin is the safety net behind every delete. In Hive9, restoring takes
-4–7 steps; NorthStar's target is at most 3 (design system §10).
+4–7 steps; MAPP's target is at most 3 (design system §10).
 
 **Independent Test**: Delete an initiative with activities, let the Undo message expire, restore it from
 the recycle bin, and confirm that everything returns with the same IDs and that activities are Created.
@@ -45,7 +45,7 @@ the recycle bin, and confirm that everything returns with the same IDs and that 
 
 ---
 
-### User Story 2 - See what changed across NorthStar (Priority: P1)
+### User Story 2 - See what changed across MAPP (Priority: P1)
 
 Under **MORE › Activity log** the user sees summary cards (**Changes today, Changes this week, People
 active this week, Deletions this week**), filters, and entries grouped by day. Each entry shows an
@@ -117,7 +117,7 @@ both**. Repeat, but delete the initiative permanently, and confirm the activity 
 2. **Given** that row, **When** the user chooses **Restore**, **Then** the dialog explains this, lists
    what the initiative brings back with it, and offers **Restore both**. After confirming, both are back.
 3. **Given** the initiative was deleted permanently, **When** the user chooses **Restore** on the
-   activity, **Then** NorthStar explains "This activity can't be restored because its initiative
+   activity, **Then** MAPP explains "This activity can't be restored because its initiative
    'Digital & social' was permanently deleted." and offers **Delete permanently**. Nothing changes.
 
 ---
@@ -167,7 +167,7 @@ result and the activity-log entries.
 
 **Activity log page**
 
-- **FR-001**: NorthStar MUST provide an **Activity log** page under MORE in the sidebar, with the page
+- **FR-001**: MAPP MUST provide an **Activity log** page under MORE in the sidebar, with the page
   header of design system §2 ("ACTIVITY LOG — Every change, *on the record.*").
 - **FR-002**: The page MUST show four summary cards, each with an ⓘ tip:
   - **Changes today**: entries since midnight;
@@ -230,7 +230,7 @@ result and the activity-log entries.
 
 **Recycle bin page**
 
-- **FR-014**: NorthStar MUST provide a **Recycle bin** page under MORE, with a page header, a count line
+- **FR-014**: MAPP MUST provide a **Recycle bin** page under MORE, with a page header, a count line
   ("3 items in the recycle bin · Items stay here until you restore or delete them") and an **Empty
   recycle bin** danger button while the bin is not empty.
 - **FR-015**: The page MUST list one row per recycle-bin entry, newest first. Each row shows:

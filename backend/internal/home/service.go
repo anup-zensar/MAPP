@@ -6,11 +6,11 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/store"
-	"northstar/internal/rollup"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/store"
+	"mapp/internal/rollup"
 )
 
 // Service calculates the Home dashboard. It only reads: every operation takes the actor, reads its

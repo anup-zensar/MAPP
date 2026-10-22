@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // A membership change is a change of both records (D-057): the edited team and every person who joined or
@@ -149,7 +149,7 @@ func TestImpact_ValidatesLikeUpdate_SC007(t *testing.T) {
 		Name: text("mobility china"), Description: text(strings.Repeat("d", 301)), Colour: text(""), MemberIDs: idList(mei.ID),
 	})
 	_, person := f.service.PersonImpact(t.Context(), alex.Actor(), mei.ID, PersonUpdate{
-		Name: text(""), Email: text("ALEX.MORGAN@northstar.demo"), TeamIDs: idList("T-1002"),
+		Name: text(""), Email: text("ALEX.MORGAN@shell.com"), TeamIDs: idList("T-1002"),
 	})
 	_, teamGone := f.service.TeamImpact(t.Context(), alex.Actor(), "T-9999", TeamUpdate{Name: text("X"), Colour: text("blue")})
 	_, personGone := f.service.PersonImpact(t.Context(), alex.Actor(), "U-9999", PersonUpdate{Name: text("X"), Email: text("x@y.z")})
@@ -162,7 +162,7 @@ func TestImpact_ValidatesLikeUpdate_SC007(t *testing.T) {
 	))
 	assertError(t, person, errs.Validation(
 		errs.FieldError{Field: "name", Message: "Enter a name."},
-		errs.FieldError{Field: "email", Message: "alex.morgan@northstar.demo already belongs to Alex Morgan."},
+		errs.FieldError{Field: "email", Message: "alex.morgan@shell.com already belongs to Alex Morgan."},
 		errs.FieldError{Field: "teamIds", Message: "Mobility China is inactive, so people can't be added to it. Reactivate the team first."},
 	))
 	assertError(t, teamGone, errs.NotFound("This team no longer exists — someone may have deleted it."))

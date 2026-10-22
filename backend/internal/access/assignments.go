@@ -7,12 +7,12 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
 )
 
 // personKind is the history kind of people (feature 003): a change of a person's roles is logged on the
@@ -64,7 +64,7 @@ func (s *Service) PersonRoles(ctx context.Context, a actor.Actor, personID strin
 
 // SetPersonRoles replaces the roles of the person personID with the complete list update sends (FR-017,
 // D-233), with the person's version: every problem is reported at once, an out-of-date version is refused
-// with version_conflict, and no change may leave NorthStar without an active administrator (409
+// with version_conflict, and no change may leave MAPP without an active administrator (409
 // not_allowed, FR-021). A change gives the person a new version and one "changed" entry "Roles: old → new"
 // (FR-037); assignment rows are created, changed or deleted outright to match. It applies to the person's
 // next request, without signing in again (FR-020). A list that changes nothing writes nothing.

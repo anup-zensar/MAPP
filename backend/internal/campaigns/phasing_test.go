@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
-	"northstar/internal/settings"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
+	"mapp/internal/settings"
 )
 
 // quarterly is the custom phasing of the demo campaign "Helix UK & Ireland": 100,000.00 GBP in each of Mar,

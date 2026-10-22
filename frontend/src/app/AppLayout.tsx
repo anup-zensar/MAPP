@@ -31,7 +31,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div className={styles.content}>{children}</div>
         </main>
         <footer className={styles.footer}>
-          <p className={styles.footerText}>© NorthStar — demo data</p>
+          <p className={styles.footerText}>© MAPP — demo data</p>
         </footer>
       </div>
     </div>

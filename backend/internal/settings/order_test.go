@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/history"
+	"mapp/internal/history"
 )
 
 // move moves the attribute id as Alex.

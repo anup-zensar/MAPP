@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/allwork"
+	"mapp/internal/allwork"
 )
 
 // Priya Raman has two saved views, "Lubricants by month" (Budget & cost of FY2026 Lubricants Europe, by

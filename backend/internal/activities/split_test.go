@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/activities"
-	"northstar/internal/platform/money"
+	"mapp/internal/activities"
+	"mapp/internal/platform/money"
 )
 
 // An activity without a planned cost can still be split: its line items move, no amount does, and both

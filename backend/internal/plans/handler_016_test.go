@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/plans"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/plans"
+	"mapp/internal/platform/apitest"
 )
 
 // The handler tests of 016 (plan currency, plan type, Budget by month, Years) on the demo data: P-1004 "FY2027

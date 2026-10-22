@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 /**
- * A fake NorthStar API for component and page tests (research R19).
+ * A fake MAPP API for component and page tests (research R19).
  *
  * mockApi() replaces the browser's fetch with canned answers, one per "METHOD /path":
  *

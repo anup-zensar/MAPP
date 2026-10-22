@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/activities"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/activities"
+	"mapp/internal/platform/apitest"
 )
 
 // The destinations of Launch film are the four initiatives of its plan, its own first, with why it can't go
@@ -34,7 +34,7 @@ func TestActivityDestinations_Contract_FR029(t *testing.T) {
 func TestMoveActivity_Contract_FR029(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	daniel := server.SignIn(t, "daniel.okoro@northstar.demo")
+	daniel := server.SignIn(t, "daniel.okoro@shell.com")
 	server.Advance(time.Hour)
 
 	refused := priya.Do(t, http.MethodPost, "/api/activities/A-1001/move", map[string]any{"initiativeId": "I-1004", "version": 1})

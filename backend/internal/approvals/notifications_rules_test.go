@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/platform/actor"
+	"mapp/internal/platform/actor"
 )
 
 // The notifications of approval rules (017 FR-032, data-model §8): approval-needed reaches the waiting
@@ -45,7 +45,7 @@ func TestNotifications_RuleEvents_FR032(t *testing.T) {
 		t.Errorf("the owner's own automatic approval notified %q, want nobody", got)
 	}
 
-	// Approved at submission, submitted by someone else: only the owner is told, by NorthStar.
+	// Approved at submission, submitted by someone else: only the owner is told, by MAPP.
 	f.addActivity(t, "A-1003", "Billboard winter wave", priya.ID, standardFlow)
 	f.setFacts(t, "A-1003", "5000.00", lubricantsUnit)
 	counts = f.counts(t)

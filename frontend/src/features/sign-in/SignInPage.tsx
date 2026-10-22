@@ -59,7 +59,7 @@ export function SignInPage() {
     <PublicLayout>
       <div className={styles.card}>
         <div className={styles.heading}>
-          <h1 className={styles.title}>Sign in to NorthStar</h1>
+          <h1 className={styles.title}>Sign in to MAPP</h1>
           <p className={styles.subtitle}>Plan your marketing work, from plan to line item.</p>
         </div>
         <Notice />
@@ -279,8 +279,8 @@ function DemoPeopleContent({ query, onChoose }: DemoPeopleSectionProps) {
       <div className={styles.box}>
         <p className={styles.strong}>No demo users found — load the demo data first</p>
         <p>
-          Stop NorthStar's API, run <code>go run ./cmd/seed</code> in the backend folder, start the
-          API again with <code>go run ./cmd/api</code>, then reload this page.
+          Stop MAPP's API, run <code>go run ./cmd/seed</code> in the backend folder, start the API
+          again with <code>go run ./cmd/api</code>, then reload this page.
         </p>
       </div>
     );

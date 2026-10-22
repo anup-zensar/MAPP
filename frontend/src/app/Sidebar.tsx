@@ -38,7 +38,7 @@ export function Sidebar({ inDrawer = false }: SidebarProps) {
     <div className={cx(styles.sidebar, styles[variant])}>
       {inDrawer && (
         <div className={styles.brand}>
-          <Link to="/" className={styles.homeLink} aria-label="NorthStar home">
+          <Link to="/" className={styles.homeLink} aria-label="MAPP home">
             <Logo withWordmark />
           </Link>
         </div>

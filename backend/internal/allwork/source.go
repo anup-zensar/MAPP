@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // Source reads everything All work shows, with the values the owning features calculate (plan, "allwork.

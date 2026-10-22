@@ -10,11 +10,11 @@ import (
 	"encoding/json"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // Workflow is an approval workflow: a named, ordered set of approval levels (table "approval_workflows",
@@ -190,7 +190,7 @@ const (
 	ActionRecalled    ActionKind = "recalled"
 	ActionRestarted   ActionKind = "restarted"
 	ActionCancelled   ActionKind = "cancelled"
-	// Feature 017: what NorthStar records by itself (actor.System).
+	// Feature 017: what MAPP records by itself (actor.System).
 	ActionAutoApproved ActionKind = "autoApproved" // a level approved automatically at submission
 	ActionSkipped      ActionKind = "skipped"      // a level not needed at submission
 	ActionReminded     ActionKind = "reminded"     // the level's approvers were reminded

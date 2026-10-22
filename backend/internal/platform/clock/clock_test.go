@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/clock"
+	"mapp/internal/platform/clock"
 )
 
 // Timestamps are stored in UTC (constitution VI).

@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
 // Access control (feature 014). The access middleware checks every operation that names a plan in its path

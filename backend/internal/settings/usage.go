@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/money"
 )
 
 // Reference is one record outside Settings and the Settings records it uses (data model §10, D-042):

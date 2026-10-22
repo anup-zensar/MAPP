@@ -3,8 +3,8 @@ package people
 import (
 	"net/http"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/web"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/web"
 )
 
 // Handler answers the HTTP requests about people, teams, the signed-in person and their preferences.

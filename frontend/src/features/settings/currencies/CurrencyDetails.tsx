@@ -12,7 +12,7 @@ import { RateHistorySection } from './RateHistorySection';
 import { rateSourceLine } from './rateWords';
 import { CanChange } from '../shared/CanChange';
 
-/** NorthStar's base currency: always 1, without a rate history. */
+/** MAPP's base currency: always 1, without a rate history. */
 const BASE_CURRENCY = 'USD';
 
 export interface CurrencyDetailsProps {

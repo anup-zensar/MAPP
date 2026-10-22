@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/money"
 )
 
 // The spread rules of domain model §4.4 and data model §3.2–§3.4, as pure functions. Only custom month

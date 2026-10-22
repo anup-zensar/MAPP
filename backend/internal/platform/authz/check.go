@@ -3,7 +3,7 @@ package authz
 import (
 	"context"
 
-	"northstar/internal/platform/errs"
+	"mapp/internal/platform/errs"
 )
 
 // contextKey is private, so no other package can put Grants in a context by accident.

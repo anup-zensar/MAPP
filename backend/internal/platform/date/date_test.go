@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/date"
+	"mapp/internal/platform/date"
 )
 
 // A date is read only in the form YYYY-MM-DD and only when the day exists (D-101).

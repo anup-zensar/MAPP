@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 012 Bulk actions and import (fragment)
+  title: MAPP API — feature 012 Bulk actions and import (fragment)
   version: 0.1.0
   description: |
     Fragment merged into backend/api/openapi.yaml. Conventions, error responses and the schemas Error,
@@ -231,7 +231,7 @@ paths:
         - $ref: "#/components/parameters/PlanId"
       responses:
         "200":
-          description: The template. Its name is in Content-Disposition (NorthStar import template – <plan>.xlsx).
+          description: The template. Its name is in Content-Disposition (MAPP import template – <plan>.xlsx).
           headers:
             Content-Disposition:
               schema:

@@ -6,15 +6,15 @@ import (
 	"strings"
 	"testing"
 
-	"northstar/internal/platform/apitest"
+	"mapp/internal/platform/apitest"
 )
 
 // The demo people's e-mails.
 const (
-	alexsEmail   = "alex.morgan@northstar.demo"
-	priyasEmail  = "priya.raman@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
-	sarasEmail   = "sara.novak@northstar.demo"
+	alexsEmail   = "alex.morgan@shell.com"
+	priyasEmail  = "priya.raman@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
+	sarasEmail   = "sara.novak@shell.com"
 )
 
 // The answers of the access API, as far as the tests read them.
@@ -222,7 +222,7 @@ func TestSetPersonRoles_Refusals_FR017_FR021(t *testing.T) {
 		problems.Fields[1].Field != "roles.1.teamIds" || problems.Fields[1].Message != "Choose at least one team." {
 		t.Errorf("problems = %+v", problems.Fields)
 	}
-	assertError(t, stale, http.StatusConflict, "version_conflict", "Not saved — NorthStar changed this person")
+	assertError(t, stale, http.StatusConflict, "version_conflict", "Not saved — MAPP changed this person")
 	only := "Alex Morgan is the only administrator. Give someone else the Administrator role first."
 	assertError(t, lastAdmin, http.StatusConflict, "not_allowed", only)
 	assertError(t, deactivate, http.StatusConflict, "not_allowed", only)
@@ -328,7 +328,7 @@ func TestAccessRules_ChangeAndNewPeople_FR019_FR023(t *testing.T) {
 	alex.Do(t, http.MethodGet, "/api/access-rules", nil).Decode(t, &before)
 	admin := alex.Do(t, http.MethodPatch, "/api/access-rules", map[string]any{"newPersonRoleId": "RL-1001", "version": 1})
 	changed := alex.Do(t, http.MethodPatch, "/api/access-rules", map[string]any{"newPersonRoleId": "RL-1004", "version": 1})
-	created := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Jane Doe", "email": "jane.doe@northstar.demo",
+	created := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Jane Doe", "email": "jane.doe@shell.com",
 		"teamIds": []string{"T-1002"}})
 
 	if !before.NoSelfApproval || before.NewPersonRole == nil || before.NewPersonRole.Name != "Viewer" || before.Version != 1 {

@@ -9,19 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/platform/record"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/platform/record"
 )
 
 // Dated exchange rates (feature 016, FR-001 – FR-005, data-model §2.1, §3.2; D-258). A currency other than
 // USD keeps a rate history: one rate per day at most, each with its source. Its current rate is the one with
 // the latest date on or before today (the API's calendar date in UTC, D-091), so a future-dated rate becomes
-// current on its date without anyone saving anything. Every conversion in NorthStar reads the current rates
+// current on its date without anyone saving anything. Every conversion in MAPP reads the current rates
 // through Rates (or RatesOn for another day) and never stores a converted amount (D-041).
 
 // The history kinds of feature 016 (data-model §7).

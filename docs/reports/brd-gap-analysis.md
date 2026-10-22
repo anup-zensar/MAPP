@@ -1,15 +1,15 @@
-# BRD gap analysis: NorthStar against Shell's Business Requirements
+# BRD gap analysis: MAPP against Shell's Business Requirements
 
 | | |
 |---|---|
 | **Date** | 2026-10-20 |
 | **Readers** | Product owner and the Shell client team |
 | **Requirements** | Shell's latest BRD (`Business Requirements.pdf`, 2 pages), transcribed row by row in [../reference/brd-requirements.md](../reference/brd-requirements.md): 36 rows, of which 11 are **MVP Requirement** |
-| **Application compared** | NorthStar on branch `plan-module` (commit `e4966aa`): features 001–010 built, integrated and tested. Feature 011 (activity log and recycle bin pages) is built on branch `lane-011` but not merged (D-208, D-209); a worktree branch `lane-011b` exists. Feature 012 (bulk actions and import) is deferred, and 013 (BCPIR and SP&A) waits on Q-001 |
+| **Application compared** | MAPP on branch `plan-module` (commit `e4966aa`): features 001–010 built, integrated and tested. Feature 011 (activity log and recycle bin pages) is built on branch `lane-011` but not merged (D-208, D-209); a worktree branch `lane-011b` exists. Feature 012 (bulk actions and import) is deferred, and 013 (BCPIR and SP&A) waits on Q-001 |
 | **Method** | For every BRD row: read the specs (`specs/0NN-*/spec.md`, `plan.md`), the decision log (`docs/sdd/decision-log.md`), the product docs (`docs/product/`) and the code (`backend/internal/*`, `frontend/src/features/*`). The app was not run for this report; behaviour is taken from the code, the specs and the recorded end-to-end tests (D-221) |
 
 **Status key.** **Met**: the requirement works today. **Partly met**: some of it works, with named gaps.
-**Not met**: nothing usable exists yet. **Not applicable**: not a product requirement for NorthStar (the
+**Not met**: nothing usable exists yet. **Not applicable**: not a product requirement for MAPP (the
 client moved it to the technical track, or it is a vendor question).
 
 **Size key.** Rough effort for one *lane*, meaning one backend and one frontend developer working from a
@@ -108,7 +108,7 @@ MVP rows first, then the other dispositions in BRD order. Sections 3 and 4 give 
 
 ---
 
-## 2. What NorthStar already gives Shell against this BRD
+## 2. What MAPP already gives Shell against this BRD
 
 Before the gaps, here is what the BRD asks for that already works on the integrated branch. Each item is
 tested by Go tests, component tests and the end-to-end journeys in `frontend/e2e/core-flow.spec.ts` and
@@ -139,7 +139,7 @@ tested by Go tests, component tests and the end-to-end journeys in `frontend/e2e
 financial data, configurable through access rules rather than code. The client also wants to control who
 can edit and who can only view.
 
-**Today in NorthStar**
+**Today in MAPP**
 - **No roles, by decision.** The product owner postponed roles and authentication. Every signed-in user
   may do everything (D-004, D-020; `docs/architecture/adr/0005-demo-sign-in-rbac-later.md`;
   feature-map cross-cutting rule 4).
@@ -176,7 +176,7 @@ can edit and who can only view.
 **Proposed change**
 - **New feature 014 "Roles and access"** (spec, plan, tasks).
 - **A few roles instead of Hive9's twenty.** Map Hive9's 20 roles
-  (`docs/reference/hive9-functional-analysis.md` §F4) to about six NorthStar roles: Administrator,
+  (`docs/reference/hive9-functional-analysis.md` §F4) to about six MAPP roles: Administrator,
   Global budget owner, Planner (marketer), Approver, Finance viewer, Viewer.
 - **Each assignment is a role plus a scope:** everything, my teams, or chosen markets.
 - **Checks go in the services**, at the actor checkpoint every service already has (ADR-0005
@@ -198,7 +198,7 @@ filter by visibility.
 The client adds: (1) the client must be able to update attributes; (2) the tool must fit the business's
 framework or hierarchy.
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Administrators maintain Shell attributes at every level, without a release.** They set label, type,
   marking, help, section, order, dependent options, business-unit condition and option import (002
   FR-016–FR-027, FR-031; D-014). Comment 1 is met.
@@ -243,7 +243,7 @@ framework or hierarchy.
 **Shell asks:** Global and local budget allocation, with appropriate visibility for global and local
 budget owners respectively.
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Budget flows down one plan's hierarchy.** It goes from plan budget to campaign budget to initiative
   budget, with "Remaining plan/campaign budget". Over-allocation shows in red and never blocks (domain
   model §4.1; D-015; feature 005).
@@ -253,7 +253,7 @@ budget owners respectively.
   (010 Assumptions; D-035).
 
 **What is missing**
-1. **Two kinds of budget.** NorthStar has no **global** budget versus **local** budget, and no global or
+1. **Two kinds of budget.** MAPP has no **global** budget versus **local** budget, and no global or
    local budget owner.
 2. **Allocation across plans.** A global owner cannot split a global amount into local (market) plans or
    see "allocated vs planned" per market.
@@ -286,11 +286,11 @@ budget owners respectively.
 **Shell asks:**
 - currency conversion in planning, analysis and reporting;
 - exchange-rate management;
-- whether NorthStar can consume daily rates from GSAP.
+- whether MAPP can consume daily rates from GSAP.
 
 The client adds: "Ability to plan in local currency and USD".
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Currencies and rates in Settings.** Settings keeps currencies with a rate "units per 1 USD", and
   previews the impact before a rate change (002 FR-028–FR-030;
   `backend/internal/settings/model.go:145-154`).
@@ -340,10 +340,10 @@ The client adds: "Ability to plan in local currency and USD".
 not buried several levels deep. The client adds that it must be simple to reach and intuitive, and
 refers to "the note on financial transactions", which is not in the PDF.
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Finance is out of scope for this phase** (D-008; `docs/product/vision-and-scope.md` "Out of scope
   now"; feature-map "Later").
-- **No transaction exists in the data model.** NorthStar has no PO, invoice, payment or accrual records,
+- **No transaction exists in the data model.** MAPP has no PO, invoice, payment or accrual records,
   and the sidebar has no Finance entry (`frontend/src/app/navigation.ts:45-89`).
 - **The only trace is collapsed and empty.** The activity page and the line-item page each have a
   section **"From finance (coming later)"**. It is *closed by default* and every value shows "—":
@@ -390,7 +390,7 @@ local currencies).
 - strategic, operational and cross-market planning;
 - future or custom development options.
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Annual planning.** A plan covers one fiscal year, which is the calendar year (domain model §1;
   D-011; `backend/internal/plans/model.go:70`). Plans can be made for the current year −1 to +5
   (`backend/internal/plans/validate.go:24`).
@@ -406,7 +406,7 @@ local currencies).
   Strategic/AOP plans (010 FR-004).
 - **Cross-market.** Country/OU split on activities, Cluster/Region on campaigns, and All work across
   every plan of a year.
-- **Custom development.** NorthStar is Shell's own code, with an OpenAPI-documented API (D-002) and
+- **Custom development.** MAPP is Shell's own code, with an OpenAPI-documented API (D-002) and
   configurable Settings.
 
 **What is missing**
@@ -439,7 +439,7 @@ local currencies).
 **Shell asks:** Users can split their budget by month, and split an activity from its original budget.
 The client adds: "Phasing and ongoing updating of budget".
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Line-item costs are split by month**, with four methods: Evenly, All in first month, All in last
   month, Custom (domain model §4.4; 007 FR-017–FR-022; `backend/internal/lineitems/spread.go`).
   - Custom months may lie outside the activity's dates.
@@ -485,7 +485,7 @@ The client adds: "Phasing and ongoing updating of budget".
 **Shell asks:** Re-use prior-year planning content when starting a new planning cycle. The client adds:
 "reuse the historical or prior year plans/inputs to save time from recreating from scratch".
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Copy plan into next year** (004 US6, FR-026–FR-028; `backend/internal/plans/copy.go:68`;
   `frontend/src/features/plans/dialogs/CopyPlanDialog.tsx`).
   - The copy is "Same year" or "Next year", with or without everything below it.
@@ -519,7 +519,7 @@ The client adds: "Phasing and ongoing updating of budget".
 **Shell asks:** Info icons (or equivalent) that explain what data an attribute or field expects,
 maintainable by Shell administrators.
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Shell attributes have help that administrators maintain.** Each attribute has help text of up to
   300 characters, maintained in Settings and shown as an ⓘ tip on every form (002 FR-016, FR-024):
   - `backend/internal/settings/model.go:108`;
@@ -571,7 +571,7 @@ maintainable by Shell administrators.
 - (2) "simplified between approval workflow + approval delegations/control + approval
   tracking/notification".
 
-**Today in NorthStar, capability by capability**
+**Today in MAPP, capability by capability**
 
 | Capability | Status | Evidence | Gap |
 |---|---|---|---|
@@ -628,7 +628,7 @@ simplified parts:
 **Shell asks:** Highlight missing mandatory data, and halt a submission until the required data is
 completed.
 
-**Today in NorthStar**
+**Today in MAPP**
 - **Two levels of "mandatory" (D-009):**
   - **Required** fields block saving, and there are very few of them.
   - **Needed to publish** and **Needed to submit** fields block publishing a plan or submitting an
@@ -671,7 +671,7 @@ future integration points.
 | BUS.FIN.020 Full PR/PO automation | Not met | Finance and GSAP out of scope (D-008). Line items only record "Request SWBS code" and its status (domain model §2.4) | The client moved it to the technical track. Later Finance module, after the GSAP freeze | L (later) |
 | BUS.FIN.040 Monthly accruals per PO | Not met | No POs or accruals | Later, on top of 016 | L (later) |
 | BUS.FIN.050 Review and approve supplier invoices | Not met | No invoices | Later: invoices from 016 plus an approval rule from 008 | M–L (later) |
-| BUS.FIN.060 PO and invoice documents linked to the PR | Not met | NorthStar stores no file attachments anywhere | Later: document links or attachments on transactions in 016 | M (later) |
+| BUS.FIN.060 PO and invoice documents linked to the PR | Not met | MAPP stores no file attachments anywhere | Later: document links or attachments on transactions in 016 | M (later) |
 | BUS.PRF.020 PIR linked to the business case / SP&A activity | Not met | PIR is a Yes/No attribute on activities (field catalogue §4.2 #18). 013 has stories for BCPIR and SP&A views but waits on Q-001 | Later: 013 after Q-001 | L (later) |
 | BUS.PRF.030 Central view of all content, scoped by access | Partly met | Home (009) and All work (010) show plans, budgets, costs and approvals of every plan in one place | No KPIs or PIRs; no access scoping. The scoping in the client's comment comes with 014 | — |
 | BUS.RPT.010 Standard dashboards | Partly met | Home summary cards and "Plans at a glance" (009), plan summary cards (004 FR-012), All work cards and Budget & cost (010) | No executive, regional or KPI dashboards; no business case vs forecast (no forecasts or actuals yet). Belongs to a later reporting (Measure) phase | L (later) |
@@ -699,7 +699,7 @@ future integration points.
 | BUS.BUD.010 Ownership, approvals, transfers, locking, freeze, multi-currency, carry-forward (client: duplicate) | Partly met | Owners at every level (field catalogue) and activity approvals (008) exist. Multi-currency only on line items (§3.4). A next-year copy keeps budgets (004 Assumptions) | No budget transfer action (budgets are edited by hand). No locking or freeze: a Published plan stays editable (domain model §2.1). A "lock plan" option could follow the roles work | S–M |
 | BUS.PLN.010 Global template, standard hierarchy and attributes (client: captured in MVP) | Partly met | Standard five-level hierarchy, configurable attributes and models (002) | No "global template" record. Copying a template plan is the workaround. Covered by §3.2 and §3.3 | — |
 | BUS.PLN.030 Rolling forecasts, phasing, allocation, scenarios (client: duplicate) | Partly met | Cost phasing (007), budget allocation down the hierarchy (005) | No rolling forecasts or scenarios. Later | — |
-| BUS.PLN.060 In-cell formulas (client: not required) | Not applicable | The client says it is Hive9-specific and not required. NorthStar calculates roll-ups, goals and conversions automatically (domain model §4) | None | — |
+| BUS.PLN.060 In-cell formulas (client: not required) | Not applicable | The client says it is Hive9-specific and not required. MAPP calculates roll-ups, goals and conversions automatically (domain model §4) | None | — |
 | BUS.RPT.060 Filters and saved filter sets (client: duplicate) | Met (mostly) | All work filters, search, personal saved views and a default view (010 FR-004–FR-010, FR-029–FR-031); Plans list filters remembered (D-081); approvals filters (008 FR-031) | No Shell-attribute filters (§3.2), and saved views are personal only | — |
 
 ---

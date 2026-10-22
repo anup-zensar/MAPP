@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 010 All work views (fragment)
+  title: MAPP API — feature 010 All work views (fragment)
   version: 0.1.0
   description: |
     Fragment merged into backend/api/openapi.yaml. Conventions, error responses, ActorRef and the Error
@@ -117,7 +117,7 @@ paths:
         - $ref: "#/components/parameters/AllWorkPeriod"
       responses:
         "200":
-          description: The file. Its name is in Content-Disposition, e.g. NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx.
+          description: The file. Its name is in Content-Disposition, e.g. MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx.
           headers:
             Content-Disposition:
               description: attachment with filename (ASCII) and filename* (UTF-8).

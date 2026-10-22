@@ -96,7 +96,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
       ),
     ).toBeInTheDocument();
     expect(within(panel).getByText('Launch of the new Helix range.')).toBeInTheDocument();
-    expect(document.title).toBe('Helix launch · NorthStar');
+    expect(document.title).toBe('Helix launch · MAPP');
 
     const money = within(panel).getByRole('region', { name: 'Budget and cost' });
     // Home's "Open budget" and "Show fields" lead here (feature 009).

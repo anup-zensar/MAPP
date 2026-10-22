@@ -8,7 +8,7 @@ import type { AllWorkResult, ViewState } from './allWorkTypes';
 import { ExportMenu } from './ExportMenu';
 import { DEFAULT_COLUMNS, emptyResult, gridResult, standard2026 } from './testData';
 
-const XLSX_NAME = 'NorthStar All work – Grid – 2026 – 18 Oct 2026.xlsx';
+const XLSX_NAME = 'MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx';
 
 /** The API's file answer, named in Content-Disposition as the contract says. */
 function fileAnswer(name: string, type: string): Response {
@@ -82,7 +82,7 @@ describe('ExportMenu (US7)', () => {
   });
 
   it('exports a CSV of Budget & cost with its period (US7 scenario 2, FR-032)', async () => {
-    const name = 'NorthStar All work – Budget & cost – 2026 – 18 Oct 2026.csv';
+    const name = 'MAPP All work – Budget & cost – 2026 – 18 Oct 2026.csv';
     const { api, user } = renderExport(
       { ...standard2026(), view: 'budget', period: 'quarter' },
       undefined,

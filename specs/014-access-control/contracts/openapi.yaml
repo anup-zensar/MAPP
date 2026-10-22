@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: NorthStar API — feature 014 Access Control and Global Budgets (fragment)
+  title: MAPP API — feature 014 Access Control and Global Budgets (fragment)
   version: 0.14.0
   license:
     name: Proprietary - internal use only

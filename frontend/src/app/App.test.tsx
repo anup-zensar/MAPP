@@ -16,13 +16,13 @@ describe('App', () => {
         status: 401,
         body: { code: 'sign_in_required', message: 'Please sign in to continue.', fields: [] },
       },
-      'GET /api/auth/demo-people': { body: { password: 'northstar', people: [] } },
+      'GET /api/auth/demo-people': { body: { password: 'mapp', people: [] } },
     });
 
     render(<App />);
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Sign in to NorthStar' }),
+      await screen.findByRole('heading', { level: 1, name: 'Sign in to MAPP' }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('Demo environment — sign-in and data are for demonstration only'),

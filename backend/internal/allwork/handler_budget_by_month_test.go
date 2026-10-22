@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"northstar/internal/allwork"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/allwork"
+	"mapp/internal/platform/apitest"
 )
 
 // Budget by month of the demo plan P-1004 "FY2027 Lubricants UK & Ireland" (016 data-model §8): 600,000.00

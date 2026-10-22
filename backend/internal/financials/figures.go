@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // The figures of data model §5 (FR-010 – FR-014): worked out on read, for every request, from the live

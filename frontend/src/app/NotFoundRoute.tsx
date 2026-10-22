@@ -5,7 +5,7 @@ import { SessionCheckPage } from './SessionCheckPage';
 import { useSession } from './useSession';
 
 /**
- * Any address NorthStar does not know (FR-015, plan "Router"): "Page not found" inside the app
+ * Any address MAPP does not know (FR-015, plan "Router"): "Page not found" inside the app
  * layout for a signed-in person, in the public layout for everyone else — never a redirect to
  * the sign-in page.
  */

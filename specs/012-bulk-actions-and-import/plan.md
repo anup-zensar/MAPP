@@ -259,7 +259,7 @@ id)`.
 | Operation | Rules (FR) |
 |---|---|
 | `List(ctx, a, planID) (PlanImportPage, error)` | the plan's imports, newest first; `canImport` and the reason (FR-024, FR-033) |
-| `Template(ctx, a, planID) (File, error)` | refused without a campaign and an initiative (FR-024); columns of data-model §3 for the plan's business unit (R9) with markings; Allowed values (the plan's campaigns "Name (C-…)", initiatives "Campaign › Initiative (I-…)", types allowed by its model, active workflows, active people's e-mails, every option of every choice column); Instructions (D-138); file name "NorthStar import template – <plan>.xlsx" (FR-025) |
+| `Template(ctx, a, planID) (File, error)` | refused without a campaign and an initiative (FR-024); columns of data-model §3 for the plan's business unit (R9) with markings; Allowed values (the plan's campaigns "Name (C-…)", initiatives "Campaign › Initiative (I-…)", types allowed by its model, active workflows, active people's e-mails, every option of every choice column); Instructions (D-138); file name "MAPP import template – <plan>.xlsx" (FR-025) |
 | `Check(ctx, a, planID, Upload) (Check, error)` | `run(…, commit=false, rows=all)` (FR-026 – FR-031) |
 | `Import(ctx, a, planID, Run) (Detail, error)` | `run(…, commit=true, rows=confirmed)`; stores the `Import` (FR-032, FR-033) |
 | `Get(ctx, a, importID) (Detail, error)` | the import with its undo preview: records still there, changed since the import (version > 1 or status no longer *Created*), records added under them since, already deleted (edge case) |
@@ -268,7 +268,7 @@ id)`.
 **`run`** (one Write, discarded when `commit` is false):
 
 1. Decode base64 (≤ 5 MB), read `.xlsx` (zip signature) or CSV, else "Choose an .xlsx or .csv file." /
-   "NorthStar can't read this file — save it as .xlsx or .csv and try again." / "The file is empty — use
+   "MAPP can't read this file — save it as .xlsx or .csv and try again." / "The file is empty — use
    the template.".
 2. Headings: matched by name ignoring case and surrounding spaces, plus the aliases of data-model §3;
    every missing **Required** column → `validation_failed` on `file`, one message each: "The file has no
@@ -341,8 +341,8 @@ end-to-end tests create their own records (`frontend/e2e/bulk.spec.ts`, `import.
 
 | Path | Page | Tab title |
 |---|---|---|
-| `/plans/:planId/import` | `ImportPage` | Import activities · NorthStar |
-| `/plans/:planId/imports/:importId` | `ImportResultsPage` | Import results · NorthStar |
+| `/plans/:planId/import` | `ImportPage` | Import activities · MAPP |
+| `/plans/:planId/imports/:importId` | `ImportResultsPage` | Import results · MAPP |
 
 No sidebar change. Entry points: plan page **⋯ More › Import activities** and the plan page's **Imports**
 card (004's `PlanPage`); All work toolbar **Import activities** → `ChoosePlanDialog` → `/plans/:planId/import`.
@@ -463,7 +463,7 @@ show the API message (FR-020).
 | Import page | Import · Import activities · Add many activities to '<plan>' from a spreadsheet. · 1 Get the template · 2 Upload · 3 Check and import · The template lists this plan's campaigns, initiatives and every allowed value. · Download template · Choose a file · Create missing campaigns and initiatives · New ones get their owner and dates from the plan or campaign. · Check file · Checking your file… |
 | Not ready | Add at least one campaign and one initiative to this plan before importing activities · Add a campaign |
 | Check result | <n> rows · <r> ready · <p> with problems · These columns aren't used and were ignored: <list> · Will create <c> campaigns and <i> initiatives · <k> activities will need more fields before submitting · Row · Column · Value found · Reason · Download problem list · Import <r> activities · Upload a corrected file · No rows are ready to import — fix the file and upload it again. |
-| File problems | Choose an .xlsx or .csv file. · NorthStar can't read this file — save it as .xlsx or .csv and try again. · The file is empty — use the template. · The file is larger than 5 MB — remove unused rows or columns, or split it. · The file has <n> activity rows — import up to 1,000 at a time. · The file has no '<column>' column — download a fresh template |
+| File problems | Choose an .xlsx or .csv file. · MAPP can't read this file — save it as .xlsx or .csv and try again. · The file is empty — use the template. · The file is larger than 5 MB — remove unused rows or columns, or split it. · The file has <n> activity rows — import up to 1,000 at a time. · The file has no '<column>' column — download a fresh template |
 | Row problems | Missing — this column is required · Not a real date · Enter a whole number of 0 or more. · Planned cost can't be negative. · Enter an amount, e.g. 12500.00 · Enter Yes or No · No active person has this e-mail · Not an option of <column> · '<value>' is no longer allowed for <column> · '<value>' doesn't fit <parent column> '<parent value>' · Shares must be numbers from 0 to 100 · <ID> belongs to another plan ('<plan>') · No campaign called '<name>' in this plan — turn on 'Create missing campaigns and initiatives' or use a name from the template · No initiative called '<name>' in '<campaign>' — turn on 'Create missing campaigns and initiatives' or use a name from the template · Appears twice in the file for '<initiative>' (rows <a> and <b>) · Already exists — import only adds new activities · Ongoing activities have no end date — leave End date empty · and 006's field messages (dates, R5, R7, lengths) |
 | Template | Activities · Allowed values · Instructions · Required · Needed to submit · Optional · the instruction lines of data-model §3.4 |
 | Results page | Import results · Activities imported · Campaigns created · Initiatives created · Rows left out · Rows failed · Imported activities · Show all · Rows left out · Rows that failed · Undo import · Undone by <person> on <date> at <HH:mm> |
@@ -550,7 +550,7 @@ action once on seed records), `TestUndoBulkDelete_Contract` (200, 409 `undo_expi
   **Keep only activities**. axe on the bar and each dialog.
 - `frontend/e2e/import.spec.ts` — **US2**: as Mei Lin open FY2026 Mobility China › **Import activities**;
   download the template (file name checked); upload a CSV written by the test (10 rows, a unique campaign
-  and initiative name, type "Event", owner mei.lin@northstar.demo; row 5 date "31 Feb 2026", row 9 type
+  and initiative name, type "Event", owner mei.lin@shell.com; row 5 date "31 Feb 2026", row 9 type
   "Teleportation") with **Create missing campaigns and initiatives** on → "10 rows · 8 ready · 2 with
   problems", both problems listed; **Import 8 activities** → results page; the activities appear in the
   plan tree as *Created*; **Undo import** → confirmation → gone; the plan's Imports card shows *Undone*.

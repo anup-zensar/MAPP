@@ -14,7 +14,7 @@ type Config struct {
 	Env          string // APP_ENV: "local" (the default), "development" or "production"
 	Port         int    // APP_PORT: 1 to 65535, default 8080
 	DataDir      string // DATA_DIR: the folder of the JSON store, default "data"
-	DemoPassword string // DEMO_PASSWORD: the password all demo people share, default "northstar"; never blank
+	DemoPassword string // DEMO_PASSWORD: the password all demo people share, default "mapp"; never blank
 }
 
 // DemoMode reports whether demo sign-in and the developer pages are on: only in the local and
@@ -31,7 +31,7 @@ func LoadConfig(getenv func(name string) string) (Config, error) {
 	cfg := Config{
 		Env:          cmp.Or(getenv("APP_ENV"), "local"),
 		DataDir:      cmp.Or(getenv("DATA_DIR"), "data"),
-		DemoPassword: cmp.Or(getenv("DEMO_PASSWORD"), "northstar"),
+		DemoPassword: cmp.Or(getenv("DEMO_PASSWORD"), "mapp"),
 	}
 	var problems []error
 

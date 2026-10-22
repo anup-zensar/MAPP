@@ -5,7 +5,7 @@
 // development environments.
 package samples
 
-import "northstar/internal/platform/record"
+import "mapp/internal/platform/record"
 
 // Folder is a sample folder, stored in the table "sample_folders".
 type Folder struct {

@@ -421,9 +421,9 @@ fields and A-1008 the 90.00 % split.
 
 | Path | Page | `handle.title` | Tab title |
 |---|---|---|---|
-| `/plans/:planId/initiatives/:initiativeId/activities/new` | `ActivityFormPage` (mode `new`) | New activity | New activity · NorthStar |
-| `/plans/:planId/activities/:activityId` | `ActivityPage` | Activity | `<activity name>` · NorthStar |
-| `/plans/:planId/activities/:activityId/edit` | `ActivityFormPage` (mode `edit`) | Edit activity | Edit `<activity name>` · NorthStar |
+| `/plans/:planId/initiatives/:initiativeId/activities/new` | `ActivityFormPage` (mode `new`) | New activity | New activity · MAPP |
+| `/plans/:planId/activities/:activityId` | `ActivityPage` | Activity | `<activity name>` · MAPP |
+| `/plans/:planId/activities/:activityId/edit` | `ActivityFormPage` (mode `edit`) | Edit activity | Edit `<activity name>` · MAPP |
 
 No sidebar change: the pages sit under `/plans`, so the **Plans** item stays current (D-102). When
 the answer's `plan.id` differs from `:planId`, the page navigates (replace) to the right address.

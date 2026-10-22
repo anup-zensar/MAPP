@@ -3,9 +3,9 @@ package plans
 import (
 	"context"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/rollup"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/rollup"
 )
 
 // SetBudgetPhasing saves the phasing of the plan id's budget (016 FR-020 – FR-023, D-265): Not phased,

@@ -7,7 +7,7 @@ import type { components } from './schema';
 type ErrorBody = components['schemas']['Error'];
 
 const UNREACHABLE =
-  "NorthStar can't reach its server right now. Check that it is running and try again.";
+  "MAPP can't reach its server right now. Check that it is running and try again.";
 
 function errorBody(code: ErrorBody['code'], message: string, extra: Partial<ErrorBody> = {}) {
   return { code, message, fields: [], ...extra };
@@ -92,7 +92,7 @@ describe('call()', () => {
     await expect(call(api.GET('/api/health'))).rejects.toBe(abort);
   });
 
-  it('shows a general message for a failed answer that is not NorthStar JSON (FR-020)', async () => {
+  it('shows a general message for a failed answer that is not MAPP JSON (FR-020)', async () => {
     mockApi({ 'GET /api/health': () => new Response('Not here', { status: 404 }) });
 
     await expect(call(api.GET('/api/health'))).rejects.toMatchObject({

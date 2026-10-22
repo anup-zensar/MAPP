@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/web"
+	"mapp/internal/people"
+	"mapp/internal/platform/web"
 )
 
 // Handler answers the HTTP requests of demo sign-in.

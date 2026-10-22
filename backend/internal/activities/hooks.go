@@ -3,9 +3,9 @@ package activities
 import (
 	"context"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/money"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/money"
 )
 
 // The seams below are declared by activities and implemented by later features through adapters in

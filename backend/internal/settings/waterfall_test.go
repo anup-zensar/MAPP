@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/money"
 )
 
 // model returns a model with the rates and deal size given as text.

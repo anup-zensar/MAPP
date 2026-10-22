@@ -10,7 +10,7 @@
 
 ## Summary
 
-Feature 001 creates NorthStar's two runtime parts and everything later features reuse:
+Feature 001 creates MAPP's two runtime parts and everything later features reuse:
 
 - **Go API** (`backend/`): standard-library HTTP server; shared platform packages (errors, JSON helpers
   and the route recorder, actor, clock, JSON file store with transactions, readable IDs behind a
@@ -70,7 +70,7 @@ entries). 8 signed-in routes + sign-in + not found + 2 developer pages; 16 API o
 |---|---|---|
 | I. Spec first | Every element traces to an FR, acceptance scenario, edge case or SC (tables below). The developer pages are in the spec's Assumptions (D-036); the other-tab sign-in, the refused Undo and the one-Undo-at-a-time rule are in the spec's edge cases and FR-026. No `[NEEDS CLARIFICATION]` in the spec, so clarify was skipped as allowed | Pass |
 | II. Shell business, plain language | Navigation uses Plans, Approvals, All work, Settings, Recycle bin, Activity log; no Hive9 terms; every user-visible message is listed once in *User-visible messages* (spec wording kept verbatim) | Pass |
-| III. Simple, friendly experience | The standard NorthStar layout (design system §2) with the tokens of design system v2 (Shell's design language); delete with confirmation and Undo; unsaved changes protected; all errors at once; nothing disabled without a reason; WCAG 2.2 AA with automated checks of every screen and overlay and AA-safe colours (research R17). One recorded exception: the developer sample page is not a full CRUD page (Complexity Tracking) | Pass (1 exception) |
+| III. Simple, friendly experience | The standard MAPP layout (design system §2) with the tokens of design system v2 (Shell's design language); delete with confirmation and Undo; unsaved changes protected; all errors at once; nothing disabled without a reason; WCAG 2.2 AA with automated checks of every screen and overlay and AA-safe colours (research R17). One recorded exception: the developer sample page is not a full CRUD page (Complexity Tracking) | Pass (1 exception) |
 | IV. Simple, layered architecture | Two runtime parts. Go packages per area (`auth`, `people`, `history`, `samples`), each handler → service → repository; services own every rule; all storage — readable-ID counters included (`ids.Counters`) — goes through repository interfaces plus `store.Transactor`, so PostgreSQL needs no service change; REST + JSON with an OpenAPI 3.1 file; generated web types | Pass |
 | V. Tested business rules | Unit tests for every rule (table *Business rules and the tests that prove them*); a test for every acceptance scenario; end-to-end browser tests for US1–US5; a contract test for every endpoint plus a route-coverage test; Go tests use a fixed clock and temporary data; Vitest runs in UTC with fixed time; end-to-end tests run on their own seeded data (the real-clock exception is in *Complexity Tracking*) | Pass |
 | VI. Safe by default | Demo sign-in only in local/development (and no session works outside them); the demo password is public on purpose (D-004, ADR-0005: fictitious data, local only) and is the only credential in the repository; the actor is on every request and passed to every service call, reads included; the activity log is written in the same transaction as the change (display preferences are not business records and are not logged, D-038); the HttpOnly `SameSite=Strict` cookie carries a random token and the server stores only its SHA-256 hash; cross-origin, wrong-host and non-JSON requests are refused; input validated by the API; personal data never in server logs; timestamps UTC; deletes go to the recycle bin and restore parents first | Pass |
@@ -100,7 +100,7 @@ specs/001-app-shell-and-sign-in/
 
 ```text
 backend/
-├── go.mod                       # module "northstar", go 1.27
+├── go.mod                       # module "mapp", go 1.27
 ├── README.md                    # how to run, test and add a package
 ├── api/
 │   ├── openapi.yaml             # THE contract (source of truth; every feature adds to it)
@@ -184,7 +184,7 @@ frontend/
     │   ├── safeNext.ts          # the only place that decides where to go after sign-in
     │   ├── useUndoableDelete.ts # shared delete message with Undo (US5)
     │   ├── useUnsavedChanges.tsx # Keep editing / Discard changes guard (useBlocker + beforeunload)
-    │   ├── usePageTitle.ts      # "<Page> · NorthStar"
+    │   ├── usePageTitle.ts      # "<Page> · MAPP"
     │   └── cx.ts                # join class names
     ├── styles/
     │   ├── tokens.css           # design tokens, light + dark (values below)
@@ -219,7 +219,7 @@ HTTP request
 
 | Package | Public API (names fixed; bodies up to the implementer) |
 |---|---|
-| `actor` | `type Actor struct{ ID string \`json:"id"\`; Name string \`json:"name"\` }`; `var System = Actor{ID: "system", Name: "NorthStar"}`; `With(ctx, Actor) context.Context`; `From(ctx) (Actor, bool)` |
+| `actor` | `type Actor struct{ ID string \`json:"id"\`; Name string \`json:"name"\` }`; `var System = Actor{ID: "system", Name: "MAPP"}`; `With(ctx, Actor) context.Context`; `From(ctx) (Actor, bool)` |
 | `clock` | `type Clock func() time.Time`; `func System() time.Time` (UTC, truncated to milliseconds) |
 | `errs` | Owns the error parts every package shares: `Error{Status int \`json:"-"\`; Code string \`json:"code"\`; Message string \`json:"message"\`; Fields []FieldError \`json:"fields"\`; Conflict *Conflict \`json:"conflict,omitempty"\`; Parent *RecordRef \`json:"parent,omitempty"\`; Resolution *Resolution \`json:"resolution,omitempty"\`}` implementing `error`; `FieldError{Field \`json:"field"\`; Message \`json:"message"\`}`; `Conflict{ChangedBy string \`json:"changedBy"\`; ChangedAt time.Time \`json:"changedAt"\`}`; `RecordRef{Type \`json:"type"\`; ID \`json:"id"\`; Name \`json:"name"\`}`; `Resolution{How string \`json:"how"\`; By actor.Actor \`json:"by"\`; At time.Time \`json:"at"\`}`. Code constants of research R9 (incl. `already_resolved`, `name_taken`). Constructors (each sets `Fields` to an empty list and uses the messages table): `Validation(...FieldError)`, `BadRequest(msg)`, `SignInRequired()`, `SessionExpired()`, `IncorrectCredentials()`, `NotFound(msg)`, `VersionConflict(noun, changedBy, changedAt)`, `RestoreParentFirst(parent RecordRef)`, `UndoExpired()`, `AlreadyResolved(name string, r Resolution)`, `NameTaken(msg)`, `Internal()`. `Problems.Add(field, message)` / `Problems.Err()` (nil when empty) |
 | `web` | `ReadJSON(w, r, dst) error` — only `Content-Type: application/json`, 1 MB limit, unknown fields rejected, nothing after the JSON value; failure → `bad_request` with the messages-table text (detail only in the log); `WriteJSON(w, status, v)`; `WriteError(w, r, err)` — `errors.As` finds an `*errs.Error`, anything else is logged and becomes `500 internal_error`; `NotFound(w, r)`; `Middleware(next) http.Handler` (as in the request flow; refused cross-origin or wrong-host requests answer `400 bad_request` "This request came from another site and was refused."); `type Wrap func(http.HandlerFunc) http.HandlerFunc`; `type Router` (`NewRouter()`, `Handle(pattern string, h http.HandlerFunc)` registering on its `ServeMux` and recording the pattern, `Patterns() []string`, `ServeHTTP`) |
@@ -315,7 +315,7 @@ Details texts: deletes "with 2 sample notes"; restores "Undo" or "Restored from 
 ### Configuration and commands
 
 - `Config` (environment): `APP_ENV` (`local` default | `development` | `production`), `APP_PORT` (1–65535,
-  default 8080), `DATA_DIR` (default `data`), `DEMO_PASSWORD` (default `northstar`; blank refused);
+  default 8080), `DATA_DIR` (default `data`), `DEMO_PASSWORD` (default `mapp`; blank refused);
   `DemoMode()` = `local` or `development`. No host setting: the API always listens on `127.0.0.1`.
   An empty variable counts as not set (its default applies). Invalid values stop the program with the
   messages-table texts — all of them together, one per line.
@@ -345,18 +345,18 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
 
 | Path | Page | Signed in? | Tab title |
 |---|---|---|---|
-| `/sign-in` | SignInPage (public layout) | public; a signed-in visitor goes on to `safeNext(next)` | Sign in · NorthStar |
-| `/` | HomePage | yes | Home · NorthStar |
-| `/plans` | ComingSoonPage (Plans) | yes | Plans · NorthStar |
-| `/approvals` | ComingSoonPage (Approvals) | yes | Approvals · NorthStar |
-| `/all-work` | ComingSoonPage (All work) | yes | All work · NorthStar |
-| `/settings` | ComingSoonPage (Settings) | yes | Settings · NorthStar |
-| `/recycle-bin` | ComingSoonPage (Recycle bin) | yes | Recycle bin · NorthStar |
-| `/activity-log` | ComingSoonPage (Activity log) | yes | Activity log · NorthStar |
-| `/profile` | ComingSoonPage (My profile; not in the sidebar, reached from the account menu) | yes | My profile · NorthStar |
-| `/dev/sample-records` | SampleRecordsPage inside `DevOnly` | yes | Sample records · NorthStar |
-| `/dev/components` | ComponentGalleryPage inside `DevOnly` | yes | Shared building blocks · NorthStar |
-| anything else | NotFoundPage — inside the app layout when signed in, the public layout otherwise | public | Page not found · NorthStar |
+| `/sign-in` | SignInPage (public layout) | public; a signed-in visitor goes on to `safeNext(next)` | Sign in · MAPP |
+| `/` | HomePage | yes | Home · MAPP |
+| `/plans` | ComingSoonPage (Plans) | yes | Plans · MAPP |
+| `/approvals` | ComingSoonPage (Approvals) | yes | Approvals · MAPP |
+| `/all-work` | ComingSoonPage (All work) | yes | All work · MAPP |
+| `/settings` | ComingSoonPage (Settings) | yes | Settings · MAPP |
+| `/recycle-bin` | ComingSoonPage (Recycle bin) | yes | Recycle bin · MAPP |
+| `/activity-log` | ComingSoonPage (Activity log) | yes | Activity log · MAPP |
+| `/profile` | ComingSoonPage (My profile; not in the sidebar, reached from the account menu) | yes | My profile · MAPP |
+| `/dev/sample-records` | SampleRecordsPage inside `DevOnly` | yes | Sample records · MAPP |
+| `/dev/components` | ComponentGalleryPage inside `DevOnly` | yes | Shared building blocks · MAPP |
+| anything else | NotFoundPage — inside the app layout when signed in, the public layout otherwise | public | Page not found · MAPP |
 
 - `DevOnly` asks `GET /api/health` (query `['health']`): `demoSignIn: true` shows the page, otherwise
   NotFoundPage.
@@ -415,7 +415,7 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   than the cached one, the app removes all other cached data, navigates to `/` and shows the toast from
   the messages table.
 - **Where to go after sign-in**: `safeNext(raw)` parses `raw` with `new URL(raw, location.origin)` and
-  returns `pathname + search + hash` only when the origin is NorthStar's and the path is not `/sign-in`;
+  returns `pathname + search + hash` only when the origin is MAPP's and the path is not `/sign-in`;
   otherwise `/`. `RequireSignIn` redirects (with `replace`) to `/sign-in?` +
   `new URLSearchParams({ next: pathname + search })`. After a typed or demo-person sign-in, and for a
   signed-in visitor of `/sign-in`, the app navigates to `safeNext(next)` with `replace`.
@@ -438,7 +438,7 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
 ### Preferences and theme (research R16)
 
 - `index.html` has a small blocking script in `<head>`, before any stylesheet, that reads
-  `localStorage['northstar.theme']` (`system` | `light` | `dark`, default `system`) and sets
+  `localStorage['mapp.theme']` (`system` | `light` | `dark`, default `system`) and sets
   `data-theme="light|dark"` on `<html>` (falling back to light on any error).
 - `theme.ts` stores the **preference** (never the resolved colour), resolves `system` with
   `matchMedia('(prefers-color-scheme: dark)')` and follows its changes live. `tokens.css` sets
@@ -448,7 +448,7 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   choice and shows the toast "Your choice couldn't be saved." with **Try again** (re-sends the PATCH) —
   except for `sign_in_required` / `session_expired`, which only run the session-lost flow.
 - Signed out (sign-in and public not-found pages): the theme switch changes only
-  `localStorage['northstar.theme']`; after sign-in the person's saved preference takes over and the
+  `localStorage['mapp.theme']`; after sign-in the person's saved preference takes over and the
   visitor's choice is forgotten. After sign-out the sign-in page keeps this browser's last theme (the
   person's own), as a reload would.
 
@@ -460,7 +460,7 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   sidebar, above the page; on phones above the sticky top bar), not sticky; public layout — full width at
   the top. Text from the messages table, `--banner-bg` / `--banner-text`.
 - **Sidebar** (≥ 768 px): fixed from top to bottom, `--gray-bg`, 244 px, right hairline. Header 56 px:
-  28 px logo tile + "NorthStar" (link to Home, accessible name "NorthStar home"). `<nav aria-label="Main">`:
+  28 px logo tile + "MAPP" (link to Home, accessible name "MAPP home"). `<nav aria-label="Main">`:
   Home, Plans, Approvals, All work; the label **More** (10.5 px semibold, upper case, letter-spacing
   .05em, `--ink-2`); Settings, Recycle bin, Activity log. Items: 19 px icon + 13.5 px label, radius 12 px;
   hover moves 2 px right with a 5 % black fill (white 6 % in dark mode; no movement with reduced motion);
@@ -482,10 +482,10 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   Escape always closes it. It closes on Escape, on an overlay click, after choosing an item, and when the
   window becomes 768 px or wider.
 - **Main area**: content column offset by the sidebar width, content max width 1120 px with 20 px side
-  padding (FR-010); footer "© NorthStar — demo data" (small, `--ink-2`, on `--gray-bg`).
+  padding (FR-010); footer "© MAPP — demo data" (small, `--ink-2`, on `--gray-bg`).
 - **Account button** (FR-012, US4, edge case): avatar + first name (ellipsis when long); accessible name
   "<first name> — account menu"; a Radix Tooltip "<full name> — <job title>" (on hover and focus). Menu:
-  Radix DropdownMenu with **`modal={false}`** (every DropdownMenu in NorthStar); header as
+  Radix DropdownMenu with **`modal={false}`** (every DropdownMenu in MAPP); header as
   `DropdownMenu.Label` (not focusable) with the large avatar, full name, e-mail and job title, which wrap
   instead of being cut (no Tooltip inside menu content); separator; **My profile** (→ `/profile`);
   **Sign out**.
@@ -497,11 +497,11 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
 ### Sign-in page (US1, FR-001 – FR-004, FR-009, FR-028)
 
 Public layout: skip link, banner, theme switch top right, then a centred card (max width 440 px, radius
-20 px, large soft shadow) on the grey page background — the NorthStar sign-in layout of design system §2.
-Tab title "Sign in · NorthStar".
+20 px, large soft shadow) on the grey page background — the MAPP sign-in layout of design system §2.
+Tab title "Sign in · MAPP".
 
 1. **Brand header** on `--brand-gradient-strong` with white text: logo tile (white mark on 15 % white) +
-   "NorthStar"; `<h1>` "Welcome back" (22 px semibold); the subtitle.
+   "MAPP"; `<h1>` "Welcome back" (22 px semibold); the subtitle.
 2. **Notice** (after sign-out or a lost session): a `role="status"` region rendered empty and filled in an
    effect after the page appears (so screen readers announce it).
 3. **Demo notice** (blue-tinted box): its two texts, with the password from the API (FR-002).
@@ -522,7 +522,7 @@ Tab title "Sign in · NorthStar".
 
 ### Home (US3, FR-018)
 
-Tab title "Home · NorthStar". `PageHeader`: eyebrow "Home", the greeting and description of the messages
+Tab title "Home · MAPP". `PageHeader`: eyebrow "Home", the greeting and description of the messages
 table. Then a `Card` "Getting started" (subtitle "The Plan module in five steps") with an ordered list.
 Each step: its number in a small `--brand-gradient-strong` circle (`aria-hidden`, because the list already
 numbers it), its title as a link (a standalone link, underlined on hover), and one line:
@@ -552,7 +552,7 @@ literals outside `tokens.css`) and have a component test.
 | `Tooltip` | `content`, `side?`, `children` | Radix Tooltip, dark bubble, 12 px; never inside menus or as the only name of a control |
 | `ActionsMenu` | `label`, `items: { label, onSelect, tone?: 'danger', separatorBefore?: boolean }[]` | "⋯" button with accessible name "Actions for <label>", Radix DropdownMenu `modal={false}`; Delete last and separated; an item that opens a dialog waits until the menu has closed; focus returns to the "⋯" button when the dialog closes |
 | `Avatar` | `initials`, `size?: 'sm' \| 'md' \| 'lg'` (28, 32, 40 px) | Circle with initials on `--brand-gradient-strong`; `aria-hidden` because the name is always next to it |
-| `Logo` | `size?: 'md' \| 'lg'` (28 or 32 px tile), `withWordmark?` | NorthStar mark (white four-point star on the brand gradient tile) |
+| `Logo` | `size?: 'md' \| 'lg'` (28 or 32 px tile), `withWordmark?` | MAPP mark (white four-point star on the brand gradient tile) |
 | `SidePanel` | `open`, `onOpenChange`, `title`, `description?`, `children`, `footer` | Radix Dialog from the right, 480–560 px (full width below 640 px), header with a **Close** button (no tooltip), scrolling body, sticky footer; `aria-describedby={undefined}` when there is no description; on closing, focus returns to the control that opened it |
 | `ConfirmDialog` | `open`, `onOpenChange`, `title`, `children`, `confirmLabel`, `cancelLabel?` (default "Cancel"), `onConfirm`, `tone?: 'danger'`, `busy?` | Radix AlertDialog; **Cancel** has focus; the confirm button names the action; the dialog stays open until the caller closes it, showing `busy` meanwhile (a second click is then ignored); on closing, focus returns to the control that opened it |
 | `ToastProvider` + `useToast()` | `show({ message, action?: { label, altText, onClick }, durationMs? })`, which returns a function that closes the message early | Radix Toast, bottom centre; several messages can be on screen at once; 4 s by default, 10 s with an action (FR-026); pauses on hover and focus; type foreground (announced at once); viewport label "Messages ({hotkey})" |
@@ -647,7 +647,7 @@ White text on a gradient is checked by hand (axe skips gradients): on `--brand-g
 
 ### Design choices (on purpose)
 
-| Alternative considered | NorthStar | Why |
+| Alternative considered | MAPP | Why |
 |---|---|---|
 | Drawer below 1024 px | Drawer below 768 px | The spec says "narrower than a tablet" |
 | Inter from Google Fonts | System font stack (Segoe UI on Windows) | Design system §3; no external font download |
@@ -665,7 +665,7 @@ filled in at run time.
 | Where | Text |
 |---|---|
 | Demo banner | Demo environment — sign-in and data are for demonstration only |
-| Footer | © NorthStar — demo data |
+| Footer | © MAPP — demo data |
 | Skip link | Skip to main content |
 | Sign-in heading / subtitle | Welcome back / Sign in to plan your marketing work. |
 | Demo notice | Demo sign-in — Shell single sign-on comes later · All demo people share the password `<password>`. |
@@ -674,16 +674,16 @@ filled in at run time.
 | Empty e-mail / empty password | Enter your e-mail / Enter the password |
 | Failed sign-in | Incorrect e-mail or password. |
 | After sign-out / after a lost session | You have been signed out. / Please sign in again |
-| No demo people (FR-028) | No demo users found — load the demo data first · Stop NorthStar's API, run `go run ./cmd/seed` in the backend folder, start the API again with `go run ./cmd/api`, then reload this page. |
+| No demo people (FR-028) | No demo users found — load the demo data first · Stop MAPP's API, run `go run ./cmd/seed` in the backend folder, start the API again with `go run ./cmd/api`, then reload this page. |
 | Demo sign-in off | Demo sign-in is turned off in this environment. Shell single sign-on comes later. |
 | Loading (visually hidden) | Loading… |
-| Server unreachable | NorthStar can't reach its server right now. Check that it is running and try again. · **Try again** |
+| Server unreachable | MAPP can't reach its server right now. Check that it is running and try again. · **Try again** |
 | Any other failure without an API message | Something went wrong. Please try again. · **Try again** |
 | Error summary title | 1 problem needs your attention / <n> problems need your attention |
 | Bell | Notifications · You're all caught up. |
-| Coming soon | Coming soon · This part of NorthStar isn't built yet. · **Go to Home** |
+| Coming soon | Coming soon · This part of MAPP isn't built yet. · **Go to Home** |
 | Not found | Page not found · There's no page at this address. Check the address, or go back to Home. · **Go to Home** |
-| Home | Welcome back, <first name>. · Here's how planning works in NorthStar — follow the steps in order. · Getting started · The Plan module in five steps |
+| Home | Welcome back, <first name>. · Here's how planning works in MAPP — follow the steps in order. · Getting started · The Plan module in five steps |
 | Preference not saved | Your choice couldn't be saved. · **Try again** |
 | Another tab switched person | You're now signed in as <name> — this was changed in another tab. |
 | Conflict (FR-029), web | Not saved — <person> changed this <noun> at <HH:mm> (when not today: … on <DD MMM YYYY> at <HH:mm>) · Your changes are still here. Save again to replace their changes, or Cancel to see theirs. |
@@ -701,11 +701,11 @@ filled in at run time.
 | Sample folder / note gone | This sample folder no longer exists — someone may have deleted it. / This sample note no longer exists — someone may have deleted it. |
 | Sample validation | Enter a name. · Use 80 characters or fewer. · There is already a sample folder called '<name>'. Choose another name. · Enter a title. · Use 120 characters or fewer. |
 | Validation, API message / missing version / invalid theme / invalid limit | Some fields need your attention. / Reload the page and try again. / Choose system, light or dark. / Choose a number from 1 to 200. |
-| API: unreadable request / other site / unknown path / internal | NorthStar couldn't read this request. Reload the page and try again. / This request came from another site and was refused. / This page or record doesn't exist. / Something went wrong on our side. Please try again. |
-| API: not signed in / session expired / store failed | Please sign in to continue. / Please sign in again / NorthStar could not save its data folder — restart the API. |
+| API: unreadable request / other site / unknown path / internal | MAPP couldn't read this request. Reload the page and try again. / This request came from another site and was refused. / This page or record doesn't exist. / Something went wrong on our side. Please try again. |
+| API: not signed in / session expired / store failed | Please sign in to continue. / Please sign in again / MAPP could not save its data folder — restart the API. |
 | Store: invalid file (`<table>.json`, or `<table>.jsonl` for the activity log) | <folder>/<file> is not valid JSON (line <n>) — fix it or run go run ./cmd/seed -reset. |
-| Seed | Loaded the demo data into <folder>: 6 people. · The data folder <folder> already has data. Run go run ./cmd/seed -reset to replace it (this deletes the current data). · The NorthStar API is running — stop it, then run the seed again. · The demo data is never loaded when APP_ENV is production. · Unexpected argument '<arg>' — the options are -data <folder> and -reset. |
-| API start-up and config | NorthStar API listening on http://127.0.0.1:<port> (environment: <env>, demo sign-in on\|off) · Port <port> is already in use — stop the other program or set APP_PORT. · APP_ENV must be local, development or production (it is '<value>'). · APP_PORT must be a number from 1 to 65535 (it is '<value>'). · DEMO_PASSWORD can't be blank. |
+| Seed | Loaded the demo data into <folder>: 6 people. · The data folder <folder> already has data. Run go run ./cmd/seed -reset to replace it (this deletes the current data). · The MAPP API is running — stop it, then run the seed again. · The demo data is never loaded when APP_ENV is production. · Unexpected argument '<arg>' — the options are -data <folder> and -reset. |
+| API start-up and config | MAPP API listening on http://127.0.0.1:<port> (environment: <env>, demo sign-in on\|off) · Port <port> is already in use — stop the other program or set APP_PORT. · APP_ENV must be local, development or production (it is '<value>'). · APP_PORT must be a number from 1 to 65535 (it is '<value>'). · DEMO_PASSWORD can't be blank. |
 
 ## Shared files this feature creates and later features extend
 
@@ -791,14 +791,14 @@ Business-level moves, copies and status changes are written by features 004–00
 
 **Configuration** (`playwright.config.ts`): `testDir: './e2e'`, `testMatch: '**/*.spec.ts'`,
 `workers: 1`, `use.baseURL: 'http://127.0.0.1:14173'`, Chromium only, `dataDir =
-path.join(os.tmpdir(), 'northstar-e2e')`, and two web servers (both `reuseExistingServer: false`,
+path.join(os.tmpdir(), 'mapp-e2e')`, and two web servers (both `reuseExistingServer: false`,
 `timeout: 180000`):
 
 - API: `go run ./cmd/seed -reset && go run ./cmd/api` in `../backend` with
   `env: { DATA_DIR: dataDir, APP_PORT: '18080', APP_ENV: 'local' }`, ready at
   `http://127.0.0.1:18080/api/health`;
 - web app: `npm run build && npx vite preview --host 127.0.0.1 --port 14173 --strictPort` with
-  `env: { NORTHSTAR_API_URL: 'http://127.0.0.1:18080' }`, ready at `http://127.0.0.1:14173`.
+  `env: { MAPP_API_URL: 'http://127.0.0.1:18080' }`, ready at `http://127.0.0.1:14173`.
 
 Vitest only includes `src/**/*.test.{ts,tsx}`, so the two never pick up each other's files.
 

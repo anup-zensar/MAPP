@@ -7,10 +7,10 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // SettingsSeed holds the IDs of the Settings records the seed created, by name (002 plan "Demo data"), for
@@ -245,7 +245,7 @@ const (
 // cycling from the oldest day: −0.6 %, −0.3 %, 0, +0.3 %, +0.6 %.
 var seedRateSwing = []int64{-6, -3, 0, 3, 6}
 
-// addRateHistory writes the import RI-1001 "gsap_rates_seed.csv" by NorthStar and, for every currency but USD,
+// addRateHistory writes the import RI-1001 "gsap_rates_seed.csv" by MAPP and, for every currency but USD,
 // a GSAP-imported rate for each of the 30 days before the seed day (the seeded rate × (1 + swing), half up to
 // six decimals) and one on the seed day equal to the seeded rate, so the current rates are the seeded ones
 // (XR-1001 …, currency by currency, oldest first).

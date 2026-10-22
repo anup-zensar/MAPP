@@ -3,10 +3,10 @@ package campaigns
 import (
 	"context"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/date"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/date"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // Activities is what campaigns needs from activities (005 plan, deps.go; D-195): their roll-up facts and

@@ -3,9 +3,9 @@ package plans
 import (
 	"context"
 
-	"northstar/internal/people"
-	"northstar/internal/platform/money"
-	"northstar/internal/settings"
+	"mapp/internal/people"
+	"mapp/internal/platform/money"
+	"mapp/internal/settings"
 )
 
 // Plans reads Settings (feature 002) and people and teams (feature 003) through the two small interfaces

@@ -5,11 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	"northstar/internal/access"
-	"northstar/internal/approvals"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/settings"
+	"mapp/internal/access"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/settings"
 )
 
 // approvalsAccess implements approvals.Access (017 plan, Ports; D-290) over feature 014's access service: who

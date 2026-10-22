@@ -6,18 +6,18 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/approvals"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/apitest"
+	"mapp/internal/approvals"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/apitest"
 )
 
 // The demo people's e-mail addresses (demo-users-and-data.md).
 const (
-	alexsEmail   = "alex.morgan@northstar.demo"
-	priyasEmail  = "priya.raman@northstar.demo"
-	danielsEmail = "daniel.okoro@northstar.demo"
-	meisEmail    = "mei.lin@northstar.demo"
-	carlosEmail  = "carlos.mendes@northstar.demo"
+	alexsEmail   = "alex.morgan@shell.com"
+	priyasEmail  = "priya.raman@shell.com"
+	danielsEmail = "daniel.okoro@shell.com"
+	meisEmail    = "mei.lin@shell.com"
+	carlosEmail  = "carlos.mendes@shell.com"
 )
 
 // now is the time of the test server's clock: 12 Mar 2026 09:00 UTC. The seeded approval history is dated

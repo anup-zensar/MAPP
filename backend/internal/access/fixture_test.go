@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/ids"
-	"northstar/internal/platform/record"
-	"northstar/internal/platform/store"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/ids"
+	"mapp/internal/platform/record"
+	"mapp/internal/platform/store"
 )
 
 // start is the time on the clock when every test begins: 12 Mar 2026 09:00 UTC.
@@ -174,7 +174,7 @@ func newFixture(t *testing.T) *fixture {
 // person is a demo person of the fake directory, at version 1.
 func person(a actor.Actor, jobTitle string, teamIDs ...string) Person {
 	return Person{Ref: authz.PersonRef{ID: a.ID, Name: a.Name, Initials: initials(a.Name), JobTitle: jobTitle, Active: true},
-		Email: a.ID + "@northstar.demo", TeamIDs: teamIDs, Version: 1}
+		Email: a.ID + "@shell.com", TeamIDs: teamIDs, Version: 1}
 }
 
 // initials are the first letters of the first and last name.

@@ -3,17 +3,17 @@ package app
 import (
 	"context"
 
-	"northstar/internal/activities"
-	"northstar/internal/approvals"
-	"northstar/internal/campaigns"
-	"northstar/internal/history"
-	"northstar/internal/home"
-	"northstar/internal/people"
-	"northstar/internal/plans"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/authz"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
+	"mapp/internal/activities"
+	"mapp/internal/approvals"
+	"mapp/internal/campaigns"
+	"mapp/internal/history"
+	"mapp/internal/home"
+	"mapp/internal/people"
+	"mapp/internal/plans"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
 )
 
 // homeSources builds the Sources of feature 009's Home over the services of features 003–008 and 011's

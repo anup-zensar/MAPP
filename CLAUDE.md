@@ -1,10 +1,10 @@
-# CLAUDE.md — guidance for AI agents working on NorthStar
+# CLAUDE.md — guidance for AI agents working on MAPP
 
 Read this with `.specify/memory/constitution.md` (the rules) before doing anything.
 
 ## Project
 
-NorthStar is Shell's marketing planning application replacing the Hive9 Plan module. This phase covers
+MAPP is Shell's marketing planning application replacing the Hive9 Plan module. This phase covers
 only the **Plan module**: demo sign-in, application shell, home dashboard, settings, people and teams,
 plans, campaigns, initiatives, activities, line items, activity approvals, planning views, activity log
 and recycle bin. Spec-driven development with GitHub Spec Kit.
@@ -69,7 +69,7 @@ and recycle bin. Spec-driven development with GitHub Spec Kit.
 Fixed by feature 001 (`specs/001-app-shell-and-sign-in/research.md` explains each choice).
 
 - **API (`backend/`)**: Go 1.27, standard library only at run time (`net/http` ServeMux patterns,
-  `encoding/json`, `log/slog`). Module name `northstar`. Packages: `internal/app` (wiring, config),
+  `encoding/json`, `log/slog`). Module name `mapp`. Packages: `internal/app` (wiring, config),
   `internal/platform/{actor,clock,errs,web,store,ids,record,apitest}`, then one package per business area
   (`auth`, `people`, `history`, `samples`, …), each `model.go · repository.go · store_json.go ·
   service.go · handler.go` plus tests.

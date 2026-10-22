@@ -19,7 +19,7 @@ future integration are kept; participant names are omitted.
 4. **Approve to pay.** The marketer approves the invoice in Hive9; the requisitioner releases the service
    entry in GSAP; payment is made; **actuals** are the payments released.
 
-## Facts for NorthStar's line items
+## Facts for MAPP's line items
 
 - Inputs to the SWBS request: name, currency, planned amount, contracted amount, contracted spend
   (long term / short term), spend category, **spend type** and **GL code** (13 marketing GL codes; one
@@ -37,5 +37,5 @@ future integration are kept; participant names are omitted.
 - Interfaces are flat files over SFTP, run as nightly batches: **FSSI 1523** (SWBS request out, response
   in) and **PGSI 941** (PR/PO/invoice in), moved by SAP Cloud Integration (CPI).
 - GSAP is frozen by the **Nucleus** S/4HANA programme (cut-over Jan 2027, freeze until about March 2027).
-  A temporary manual route (file exports and imports) is needed until then. Not part of NorthStar's
+  A temporary manual route (file exports and imports) is needed until then. Not part of MAPP's
   current phase.

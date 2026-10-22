@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/store"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/store"
 )
 
 // The Person filter keeps the entries by the chosen people only, and Total counts them (011 FR-003).

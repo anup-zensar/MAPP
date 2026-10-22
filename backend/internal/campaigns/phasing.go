@@ -4,11 +4,11 @@ import (
 	"context"
 	"reflect"
 
-	"northstar/internal/history"
-	"northstar/internal/platform/actor"
-	"northstar/internal/platform/errs"
-	"northstar/internal/platform/money"
-	"northstar/internal/rollup"
+	"mapp/internal/history"
+	"mapp/internal/platform/actor"
+	"mapp/internal/platform/errs"
+	"mapp/internal/platform/money"
+	"mapp/internal/rollup"
 )
 
 // Budget by month of campaigns and initiatives (016 FR-020 – FR-025, D-265): the same rules as the plan's,
