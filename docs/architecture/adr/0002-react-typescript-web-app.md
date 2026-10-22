@@ -3,8 +3,7 @@
 **Status:** Accepted · **Date:** 2026-10-18
 
 ## Context
-The product owner asked for a React frontend. Shell's target architecture uses React + TypeScript. The
-ZenReach reference implementation, whose design NorthStar reuses, is React.
+The product owner asked for a React frontend. Shell's target architecture uses React + TypeScript.
 
 ## Decision
 A single-page web app in React with TypeScript in strict mode, built with Vite, in `frontend/`. API types

@@ -124,8 +124,8 @@ for each), and confirm Home greets that person by name.
 
 ## Phase 4: User Story 2 — Find my way around the application (Priority: P1)
 
-**Goal**: the ZenReach layout with collapse, drawer, account menu, bell, light/dark, banner, tab titles,
-Coming soon and Page not found.
+**Goal**: the standard NorthStar layout (design system §2) with collapse, drawer, account menu, bell,
+light/dark, banner, tab titles, Coming soon and Page not found.
 
 **Independent test**: sign in, visit every navigation item, collapse and expand the sidebar, switch to
 dark mode and back, and resize to a phone width.
@@ -204,7 +204,7 @@ with the actor and the changed fields; Undo after the delete brings the record b
 - [X] T081 [P] Write the documentation: `README.md` (what NorthStar is, prerequisites, run, test, URLs, demo password, developer pages), `backend/README.md` (packages, commands, how to add a business package: model, repository, store_json, service, handler, kind, routes, contract), `frontend/README.md` (structure, commands, how to add a page and use shared components, regenerating API types)
 - [X] T082 Run the backend checks from `backend/`: `gofmt -l .` prints nothing, `go vet ./...` and `go test ./...` pass
 - [X] T083 Run the web-app checks from `frontend/`: `npm run check`, `npm run build` and `npm run test:e2e` pass (twice in a row for the end-to-end tests; for now only the smoke test, decision D-040)
-- [ ] T084 Walk through `specs/001-app-shell-and-sign-in/quickstart.md` §4 steps 1–23 with the seed data; compare the screens with `docs/product/design-system.md` and the ZenReach screenshots (`docs/reference/zenreach-screenshots/`); record anything that does not match as a new task
+- [ ] T084 Walk through `specs/001-app-shell-and-sign-in/quickstart.md` §4 steps 1–23 with the seed data; compare the screens with `docs/product/design-system.md`; record anything that does not match as a new task
 - [ ] T085 Run the SC-002 moderated session (at least 5 people who have not used NorthStar) with the product owner and record the results in `specs/001-app-shell-and-sign-in/checklists/usability.md`
 - [ ] T086 Set feature 001 to Done in `docs/sdd/feature-map.md` once the product owner accepts the demo
 

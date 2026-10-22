@@ -8,7 +8,7 @@
 
 **Input**: User description: "Campaigns and initiatives inside a plan; budgets flow down, costs roll up; move, copy, delete"
 
-**References**: Domain model [§1 hierarchy, §2.2 derived statuses, §2.6 completeness, §3 required fields, §4.1–4.2 money, §4.5 goals, §5 rules R2, R3, R4, R7, R8, R9, R13, R14](../../docs/product/domain-model.md) · Field catalogue [§2 Campaign, §3 Initiative](../../docs/product/field-catalogue.md) · Design system [§4 colours, §5 tree table and side panel, §6 CRUD pattern, §7 forms, §10 targets](../../docs/product/design-system.md) · Glossary [planning, money](../../docs/product/glossary.md) · Demo data [planning seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-012, D-015, D-017 · Hive9 as-is steps 2–3; functional analysis A3, B4, B5 · ZenReach spec §7.2 (rules, roll-ups), §8.4 (plan grid), §8.9 (details panel)
+**References**: Domain model [§1 hierarchy, §2.2 derived statuses, §2.6 completeness, §3 required fields, §4.1–4.2 money, §4.5 goals, §5 rules R2, R3, R4, R7, R8, R9, R13, R14](../../docs/product/domain-model.md) · Field catalogue [§2 Campaign, §3 Initiative](../../docs/product/field-catalogue.md) · Design system [§4 colours, §5 tree table and side panel, §6 CRUD pattern, §7 forms, §10 targets](../../docs/product/design-system.md) · Glossary [planning, money](../../docs/product/glossary.md) · Demo data [planning seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-012, D-015, D-017 · Hive9 as-is steps 2–3; functional analysis A3, B4, B5
 
 ## User Scenarios & Testing *(mandatory)*
 

@@ -6,7 +6,7 @@ types, required or not) is in [field-catalogue.md](field-catalogue.md); words ar
 [glossary.md](glossary.md).
 
 Sources: Shell's *Hive9 Plan Module* as-is document (28 Sep 2026), the Hive9 functional analysis
-(Part A and B), the GSAP workshop (10 Sep 2026) and the ZenReach specification (chapters 7–8). See
+(Part A and B), the GSAP workshop (10 Sep 2026) and the Hive9 application itself. See
 [../reference/README.md](../reference/README.md) for precedence.
 
 ---
@@ -268,7 +268,7 @@ Finance module and GSAP are connected". They are never typed by users.
 |---|---|---|
 | R1 | A plan's owner must be a member of at least one of the plan's teams; the owner list offers only those members. | PM, FA B10 |
 | R2 | A campaign's or initiative's owner defaults to its parent's owner. | NorthStar (fewer steps) |
-| R3 | An initiative's dates must lie inside its campaign's dates; an activity's dates must lie inside its initiative's dates, except ongoing activities (no end date). | FA B5, ZR 7.2.2 |
+| R3 | An initiative's dates must lie inside its campaign's dates; an activity's dates must lie inside its initiative's dates, except ongoing activities (no end date). | FA B5 |
 | R4 | Campaign dates are expected inside the plan's fiscal year; a campaign starting before 1 January or ending after 31 December is allowed with a warning. | FA B4 (multi-year), simplified D-017 |
 | R5 | An activity's end date may not be more than 10 years after its plan's year. | FA B6 |
 | R6 | **Ongoing (evergreen)** cannot be undone once the activity is saved; the user is warned before saving. | PM, FA B6 |
@@ -278,8 +278,8 @@ Finance module and GSAP are connected". They are never typed by users.
 | R10 | Multi-select attributes with a percentage split (Country/OU, Brands) must total exactly 100.00 % before submitting; selections start with an even split (remainder on the last value). | PM step 4 |
 | R11 | A line item's GL code options depend on its spend type. | Workshop |
 | R12 | A line item must link to one **finance budget item** of the chosen budget year before submitting. The year defaults to the plan's year; the items of the plan's **default finance budget** are listed first, and the item is pre-selected only when that budget has a single active item. | PM step 5 |
-| R13 | Copying a record copies everything below it; copies start as Draft (plan) / Created (activity) and never copy approvals, comments, activity-log history or GSAP values. Copy names get " (copy)", then " (copy 2)", … | FA B8, ZR 7.4.10 |
-| R14 | **Undo** right after a delete (within its display time) restores everything exactly as it was, statuses and open approval rounds included. **Restoring later from the recycle bin page** requires the parent to exist (restore the parent first, or choose "Restore both"), keeps the readable IDs, and resets statuses: restored plans come back as Draft, restored activities as Created (their approval history is kept, open approval rounds are not resumed). | FA B8, ZR 6.7, D-031 |
+| R13 | Copying a record copies everything below it; copies start as Draft (plan) / Created (activity) and never copy approvals, comments, activity-log history or GSAP values. Copy names get " (copy)", then " (copy 2)", … | FA B8 |
+| R14 | **Undo** right after a delete (within its display time) restores everything exactly as it was, statuses and open approval rounds included. **Restoring later from the recycle bin page** requires the parent to exist (restore the parent first, or choose "Restore both"), keeps the readable IDs, and resets statuses: restored plans come back as Draft, restored activities as Created (their approval history is kept, open approval rounds are not resumed). | FA B8, D-031 |
 
 ---
 

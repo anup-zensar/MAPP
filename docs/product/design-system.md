@@ -4,7 +4,7 @@
 |---|---|
 | **Version** | 2.0 · 20 October 2026 |
 | **Status** | Binding for every screen of the web app. Code that disagrees with this document is a defect. |
-| **Replaces** | Version 1 (ZenReach/Apple look: Apple blue `#0071e3`, blue-to-purple gradient, system font stack, pill shapes) |
+| **Replaces** | Version 1 (Apple-inspired look: Apple blue `#0071e3`, blue-to-purple gradient, system font stack, pill shapes) |
 | **Decided by** | Product owner, 20 October 2026: Shell yellow primary button with dark text, at most one per page or dialog (D-310); light-grey canvas with white cards (D-311); Jost headings and Arial body, no Shell logo (D-312); WCAG 2.2 AA (D-313); red only for danger and errors (D-314) — decision log D-310–D-314 |
 | **Evidence** | [Shell brand research](../reports/ux-research-shell-brand.md) · [Shell UI patterns research](../reports/ux-research-shell-ui-patterns.md) · [UI audit](../reports/ui-audit.md) · [Functional review](../reports/functional-review.md) · [Recommendations](../reports/ux-design-recommendations.md) · [Implementation plan](../reports/ui-ux-implementation-plan.md) |
 | **Code** | Tokens: `frontend/src/styles/tokens.css` · base styles: `frontend/src/styles/global.css` · shared components: `frontend/src/components/` · app shell: `frontend/src/app/` |
@@ -12,7 +12,7 @@
 NorthStar looks like a **Shell enterprise tool**: calm, structured, symmetric and ready for daily
 production use. It follows Shell's current web design language (grey ink text, white cards on a light
 grey canvas, Shell yellow only where you act and where you are, red only for danger and errors) and
-applies it to a working application. ZenReach's layout and interaction patterns stay (left sidebar,
+applies it to a working application. Version 1's layout and interaction patterns stay (left sidebar,
 summary cards, side panels, the standard CRUD pattern). Shell's Hive9 is the *functional* reference only:
 its screens are never copied (D-005, functional part).
 
@@ -636,7 +636,7 @@ on a second row. Every list writes its count the same way: "*n* of *m* <things>"
 - The value is coloured only when the colour means something: `--danger-text` for over-budget or negative,
   `--warning-text` for "waiting". Shortened values ("$1.25M") show the full value on hover and focus.
 - `LinkSummaryCard`: the whole card is one link named "<label>: <value> — <where it goes>"; hover
-  `--shadow-lift`; a 16 px chevron at the top end. **No tinted icon tiles** (ZenReach style; hard to see
+  `--shadow-lift`; a 16 px chevron at the top end. **No tinted icon tiles** (version 1 style; hard to see
   in dark mode, UI audit D-01).
 - Rows: 4 per row at ≥ 960 px; pages with 5 or 6 values use 3 per row; 2 per row below 960 px; an odd
   last card spans the full row below 600 px.
@@ -1127,5 +1127,5 @@ or one component (see the recommendations report for the questions to Shell).
 
 | Version | Date | Change |
 |---|---|---|
-| 1 | 18 Oct 2026 | ZenReach/Apple-inspired design language (D-005), feature 001 tokens (research R17) |
+| 1 | 18 Oct 2026 | Apple-inspired design language (D-005), feature 001 tokens (research R17) |
 | 2 | 20 Oct 2026 | Shell visual language per the product-owner decisions of 20 Oct 2026 (D-310–D-314): Shell tokens light and dark with contrast values, Jost + Arial type scale, spacing, radius, elevation, control heights, breakpoints and widths; top bar and white sidebar with the yellow bar; one page header and five page templates; specs for every shared component; WCAG 2.2 AA; consistency checklist. §6–§8 and §10 kept, with §6.3 (one primary by role), §6.7 (set inactive) and §7 (rail, progress) added. |

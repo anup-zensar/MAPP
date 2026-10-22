@@ -10,6 +10,12 @@ everything and what is still missing.
 It is built with **spec-driven development** (GitHub Spec Kit): every feature is first described in a
 spec, agreed, planned, broken into tasks, and only then built and tested.
 
+The requirements and features were collected from **the available documentation** — Shell's Hive9 Plan
+Module document, Shell's Business Requirements, the GSAP workshop and the Hive9 user guide — and from
+**the Hive9 application itself**, studied in Shell's Hive9 sandbox (see
+[docs/reference/](docs/reference/README.md)). Hive9's screens are not copied: NorthStar has its own simple
+design, in Shell's enterprise design language.
+
 | | |
 |---|---|
 | API | Go 1.27, standard library only at run time (`backend/`) |

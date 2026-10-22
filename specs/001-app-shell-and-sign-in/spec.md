@@ -6,9 +6,9 @@
 
 **Status**: Draft
 
-**Input**: User description: "Keep one single login page in the start same as ZenReach, then a dashboard same as ZenReach. Authentication and RBAC will be done later or be dummy now. The application must be user-friendly and easily understandable for beginner users."
+**Input**: User description: "Keep one single sign-in page at the start, then a simple dashboard. Authentication and RBAC will be done later or be dummy now. The application must be user-friendly and easily understandable for beginner users."
 
-**References**: Design system [§2 layout, §3 tokens, §5 components, §6 CRUD pattern](../../docs/product/design-system.md) · Domain model [§7 cross-cutting records](../../docs/product/domain-model.md) · Demo users [demo-users-and-data.md](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-005, D-019 · ZenReach spec §6.8.3 (auth modal), §12.2–12.3 (shell, sidebar)
+**References**: Design system [§2 layout, §3 tokens, §5 components, §6 CRUD pattern](../../docs/product/design-system.md) · Domain model [§7 cross-cutting records](../../docs/product/domain-model.md) · Demo users [demo-users-and-data.md](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-005, D-019
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -172,10 +172,9 @@ Undo after the delete brings the record back unchanged.
 
 **Sign-in and session**
 
-- **FR-001**: NorthStar MUST show a single sign-in page in Shell's design language (design system v2 §2; layout from
-  ZenReach spec §6.8.3): logo on the brand gradient, "Welcome back", e-mail, password with a show/hide
-  control, **Sign in**, and "Explore as a demo person" listing every active demo person with avatar,
-  name and job title.
+- **FR-001**: NorthStar MUST show a single sign-in page in Shell's design language (design system v2 §2):
+  logo on the brand gradient, "Welcome back", e-mail, password with a show/hide control, **Sign in**, and
+  "Explore as a demo person" listing every active demo person with avatar, name and job title.
 - **FR-002**: The sign-in page MUST state "Demo sign-in — Shell single sign-on comes later" and show the
   shared demo password (decision D-004).
 - **FR-003**: NorthStar MUST sign a user in when the e-mail matches an active demo person (ignoring letter

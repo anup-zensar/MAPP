@@ -171,10 +171,9 @@ documents, backend, frontend) before tasks were written; their findings are fold
   browser sends it automatically (no token code in the web app) and it survives reloads and new tabs
   (FR-006). Entra ID later replaces only the sign-in page and the middleware that produces the actor
   (ADR-0005).
-- **Alternatives**: bearer token in `localStorage` like ZenReach (rejected: readable by any script, more
-  client code); JWT (rejected: cannot be revoked on sign-out without a server list anyway, more
-  concepts); in-memory sessions (rejected: a restart of the API during development would sign everyone
-  out).
+- **Alternatives**: bearer token in `localStorage` (rejected: readable by any script, more client code);
+  JWT (rejected: cannot be revoked on sign-out without a server list anyway, more concepts); in-memory
+  sessions (rejected: a restart of the API during development would sign everyone out).
 
 ## R7. The actor
 
@@ -388,11 +387,10 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
   its own `Name.module.css` (CSS Modules, built into Vite). Class names are combined with a 5-line
   `cx()` helper. No colour literals outside `tokens.css`.
 - **Rationale**: CSS that reads like the design system, scoped per component, no utility-class soup and
-  no runtime styling library. ZenReach's look (white, `#f5f5f7` sidebar, 16 px cards, blue eyebrow,
-  brand gradient) is reproduced from its CSS values (`ZenReach/client/src/index.css`, `Layout.jsx`). Superseded for the look by design system v2 (Shell's design language, D-310–D-314).
-- **Alternatives**: Tailwind (ZenReach uses it, but long class strings are hard for beginners to read
-  and review), Material UI (ZenReach uses it; heavy and opinionated), CSS-in-JS (runtime cost, extra
-  library).
+  no runtime styling library. The look of NorthStar's design system version 1 (white, `#f5f5f7` sidebar,
+  16 px cards, blue eyebrow, brand gradient) is reproduced as tokens. Superseded for the look by design system v2 (Shell's design language, D-310–D-314).
+- **Alternatives**: Tailwind (long class strings are hard for beginners to read and review), Material UI
+  (heavy and opinionated), CSS-in-JS (runtime cost, extra library).
 
 ## R14. Accessible behaviour: Radix primitives
 
@@ -465,11 +463,11 @@ allows. Chosen 18 Oct 2026 from the npm registry, checking that peer dependencie
   screen at once and saves in the background; if the save fails the screen keeps the new choice and a
   toast says "Your choice couldn't be saved." with **Try again**.
 - **Rationale**: "remembered per user" — demo people often share one browser during demonstrations.
-- **Alternatives**: `localStorage` only (ZenReach; rejected: per browser, not per user).
+- **Alternatives**: `localStorage` only (rejected: per browser, not per user).
 
 ## R17. Accessibility decisions (SC-006)
 
-Contrast calculations (WCAG 2.2 formula) show that some ZenReach colours are too light **as small
+Contrast calculations (WCAG 2.2 formula) show that some of the design system's colours are too light **as small
 text** on their tints. The design tokens therefore add text variants; the design system's colours stay
 for dots, bars, borders and tints.
 
@@ -482,7 +480,7 @@ for dots, bars, borders and tints.
 | `--status-done-text` | `#4d5c6a` | `#a9b8c6` | Chip text, slate |
 | `--status-problem-text` | `#b42c2c` | `#ff7b7b` | Chip text and error messages, red |
 | `--button-primary-bg` | `#0071e3` | `#0071e3` | White text on the primary button stays ≥ 4.5:1 in dark mode (`#2a91ff` would be 3.2:1) |
-| `--link` | `#0066cc` | `#59a8ff` | Link text (ZenReach's link blue): ≥ 4.5:1 on white **and** on the grey sidebar, where `--blue` is only 4.3:1 |
+| `--link` | `#0066cc` | `#59a8ff` | Link text: ≥ 4.5:1 on white **and** on the grey sidebar, where `--blue` is only 4.3:1 |
 | `--brand-gradient-strong` | brand gradient darkened by 12 % | same | Surfaces that carry white text (sign-in header, avatars) |
 
 - All chip text tokens were checked at ≥ 4.5:1 on their 12 % tint over white, `#f5f5f7`, `#1c1c1e` and

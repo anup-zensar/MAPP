@@ -70,7 +70,7 @@ entries). 8 signed-in routes + sign-in + not found + 2 developer pages; 16 API o
 |---|---|---|
 | I. Spec first | Every element traces to an FR, acceptance scenario, edge case or SC (tables below). The developer pages are in the spec's Assumptions (D-036); the other-tab sign-in, the refused Undo and the one-Undo-at-a-time rule are in the spec's edge cases and FR-026. No `[NEEDS CLARIFICATION]` in the spec, so clarify was skipped as allowed | Pass |
 | II. Shell business, plain language | Navigation uses Plans, Approvals, All work, Settings, Recycle bin, Activity log; no Hive9 terms; every user-visible message is listed once in *User-visible messages* (spec wording kept verbatim) | Pass |
-| III. Simple, friendly experience | ZenReach layout with the tokens of design system v2 (Shell's design language); delete with confirmation and Undo; unsaved changes protected; all errors at once; nothing disabled without a reason; WCAG 2.2 AA with automated checks of every screen and overlay and AA-safe colours (research R17). One recorded exception: the developer sample page is not a full CRUD page (Complexity Tracking) | Pass (1 exception) |
+| III. Simple, friendly experience | The standard NorthStar layout (design system §2) with the tokens of design system v2 (Shell's design language); delete with confirmation and Undo; unsaved changes protected; all errors at once; nothing disabled without a reason; WCAG 2.2 AA with automated checks of every screen and overlay and AA-safe colours (research R17). One recorded exception: the developer sample page is not a full CRUD page (Complexity Tracking) | Pass (1 exception) |
 | IV. Simple, layered architecture | Two runtime parts. Go packages per area (`auth`, `people`, `history`, `samples`), each handler → service → repository; services own every rule; all storage — readable-ID counters included (`ids.Counters`) — goes through repository interfaces plus `store.Transactor`, so PostgreSQL needs no service change; REST + JSON with an OpenAPI 3.1 file; generated web types | Pass |
 | V. Tested business rules | Unit tests for every rule (table *Business rules and the tests that prove them*); a test for every acceptance scenario; end-to-end browser tests for US1–US5; a contract test for every endpoint plus a route-coverage test; Go tests use a fixed clock and temporary data; Vitest runs in UTC with fixed time; end-to-end tests run on their own seeded data (the real-clock exception is in *Complexity Tracking*) | Pass |
 | VI. Safe by default | Demo sign-in only in local/development (and no session works outside them); the demo password is public on purpose (D-004, ADR-0005: fictitious data, local only) and is the only credential in the repository; the actor is on every request and passed to every service call, reads included; the activity log is written in the same transaction as the change (display preferences are not business records and are not logged, D-038); the HttpOnly `SameSite=Strict` cookie carries a random token and the server stores only its SHA-256 hash; cross-origin, wrong-host and non-JSON requests are refused; input validated by the API; personal data never in server logs; timestamps UTC; deletes go to the recycle bin and restore parents first | Pass |
@@ -465,7 +465,7 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
   .05em, `--ink-2`); Settings, Recycle bin, Activity log. Items: 19 px icon + 13.5 px label, radius 12 px;
   hover moves 2 px right with a 5 % black fill (white 6 % in dark mode; no movement with reduced motion);
   the current item is semibold with a blue icon, a soft blue gradient background and a 3 px blue bar on the
-  left (ZenReach), and has `aria-current="page"` (set by `NavLink`; the CSS styles the current item
+  left, and has `aria-current="page"` (set by `NavLink`; the CSS styles the current item
   through `[aria-current='page']`). Footer (top hairline): **Collapse** (chevron + text);
   then the account button, the bell and the theme switch in a row.
 - **Collapsed** (FR-011): 72 px icon rail. Labels stay in the DOM with `.visually-hidden` (never
@@ -497,11 +497,11 @@ blank page. The data router is what makes `useBlocker` (unsaved changes) work. T
 ### Sign-in page (US1, FR-001 – FR-004, FR-009, FR-028)
 
 Public layout: skip link, banner, theme switch top right, then a centred card (max width 440 px, radius
-20 px, large soft shadow) on the grey page background — ZenReach's auth modal is the model
-(`ZenReach/client/src/components/auth/AuthModal.jsx`). Tab title "Sign in · NorthStar".
+20 px, large soft shadow) on the grey page background — the NorthStar sign-in layout of design system §2.
+Tab title "Sign in · NorthStar".
 
 1. **Brand header** on `--brand-gradient-strong` with white text: logo tile (white mark on 15 % white) +
-   "NorthStar"; `<h1>` "Welcome back" (22 px semibold, as ZenReach); the subtitle.
+   "NorthStar"; `<h1>` "Welcome back" (22 px semibold); the subtitle.
 2. **Notice** (after sign-out or a lost session): a `role="status"` region rendered empty and filled in an
    effect after the page appears (so screen readers announce it).
 3. **Demo notice** (blue-tinted box): its two texts, with the password from the API (FR-002).
@@ -542,7 +542,7 @@ literals outside `tokens.css`) and have a component test.
 
 | Component | Props (essentials) | Behaviour |
 |---|---|---|
-| `Button`, `LinkButton` | `variant: 'primary' \| 'secondary' \| 'danger' \| 'ghost'`, `size: 'md' \| 'sm'`, `icon?` | ZenReach `.btn-pill` shape: radius `--radius-control` (10 px), padding 8 × 16 px, 13.5 px medium. Primary: solid `--button-primary-bg`, hover `--button-primary-bg-hover`, white text; secondary: outlined; danger: `--status-problem-text` text and outline (the confirm button of a delete dialog is filled `--danger-bg` with white text); ghost: text only. Never disabled without a reason next to it |
+| `Button`, `LinkButton` | `variant: 'primary' \| 'secondary' \| 'danger' \| 'ghost'`, `size: 'md' \| 'sm'`, `icon?` | Shape: radius `--radius-control` (10 px), padding 8 × 16 px, 13.5 px medium. Primary: solid `--button-primary-bg`, hover `--button-primary-bg-hover`, white text; secondary: outlined; danger: `--status-problem-text` text and outline (the confirm button of a delete dialog is filled `--danger-bg` with white text); ghost: text only. Never disabled without a reason next to it |
 | `PageHeader` | `eyebrow`, `title`, `highlight?`, `description?`, `actions?` | Blue upper-case 12 px eyebrow; 22 px (26 px from 640 px) bold `<h1>` with an optional `--ink-2` highlight phrase; 13.5 px `--ink-2` description; actions on the right |
 | `SummaryCard` | `label`, `value`, `tip?`, `tone?`, `fullValue?` | White card, label 13 px `--ink-2` with InfoTip, value 27 px bold; colour only from `tone`; when `fullValue` differs, the value is a focusable Tooltip trigger whose accessible name is the full value |
 | `Card` | `title?`, `subtitle?`, `actions?`, `children` | White, radius 16 px, `--card-border`, `--shadow-sm`, 20–24 px padding; 15 px semibold title, 12.5 px subtitle |
@@ -638,16 +638,16 @@ with Undo.
 | `--banner-bg` · `--banner-text` | `#fff4ce` · `#1d1d1f` | `#3a2f00` · `#f5f5f7` |
 | `--overlay` (behind dialogs, side panels and the drawer) · `--tooltip-bg` · `--tooltip-text` | `rgba(0,0,0,.3)` · `#1d1d1f` · `#ffffff` | `rgba(0,0,0,.6)` · `#3a3a3c` · `#f5f5f7` |
 | `--level-plan` … `--level-line-item` | `#2a78d6`, `#4a3aa7`, `#1baf7a`, `#e87ba4`, `#86868b` (used from 004) | same |
-| shadows | `--shadow-sm`, `--shadow-md`, `--shadow-lg` as ZenReach `index.css` | ZenReach dark values |
+| shadows | `--shadow-sm`, `--shadow-md`, `--shadow-lg` (design system §3) | dark values (design system §3) |
 | shape and size | `--radius-card` 16 px, `--radius-control` 10 px, `--radius-chip` 8 px, `--radius-pill` 999 px, `--content-max` 1120 px, `--sidebar` 244 px, `--sidebar-collapsed` 72 px | same |
 | motion and font | `--ease-out` `cubic-bezier(0.22, 1, 0.36, 1)`, `--dur` 0.24 s; `--font` `-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif` | same |
 
 White text on a gradient is checked by hand (axe skips gradients): on `--brand-gradient-strong` it is
 5.4:1 and 5.8:1.
 
-### Deviations from ZenReach (on purpose)
+### Design choices (on purpose)
 
-| ZenReach | NorthStar | Why |
+| Alternative considered | NorthStar | Why |
 |---|---|---|
 | Drawer below 1024 px | Drawer below 768 px | The spec says "narrower than a tablet" |
 | Inter from Google Fonts | System font stack (Segoe UI on Windows) | Design system §3; no external font download |

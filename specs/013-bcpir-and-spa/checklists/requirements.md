@@ -35,7 +35,7 @@
 - **Two `[NEEDS CLARIFICATION]` markers remain on purpose**; they depend on Shell's answer to Q-001 and
   must be resolved with `/speckit-clarify` before `/speckit-plan` (planning gate in the spec):
   1. FR-002 — BCPIR as a yes/no flag on a plan (Shell's form) or a business-case plan paired with an SP&A
-     plan per campaign (ZenReach). Default: flag on the plan, views only.
+     plan per campaign (an alternative interpretation). Default: flag on the plan, views only.
   2. FR-003 — whether the views need their own sign-off (Draft → Submitted → Published). Default: no;
      plan publishing (004) and activity approval (008) are the agreement.
 - "Requirements are testable" holds under the default answers; if Shell chooses the paired-plan model,

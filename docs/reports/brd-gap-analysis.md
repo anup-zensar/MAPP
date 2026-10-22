@@ -454,7 +454,7 @@ The client adds: "Phasing and ongoing updating of budget".
 1. **Budget phasing.** Plan, campaign and initiative **budgets** are one annual amount
    (`backend/internal/plans/model.go:76`; domain model §4.1). Only planned cost is phased. Hive9 offered
    "Budget Distribution" (evenly or by percentage, per month or quarter) and "Copy Planned Cost to
-   Budget" (functional analysis §C2). ZenReach has "allocations by campaign × quarter".
+   Budget" (functional analysis §C2).
 2. **Splitting an activity.** There is no **Split** action to divide one activity, and its line items,
    into two. Move is limited to the same plan, so an activity cannot be taken out of the plan or budget
    it was first planned under.

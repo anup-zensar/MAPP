@@ -64,7 +64,7 @@ application use these definitions. Hive9 names are given in brackets where users
 | **AOP** | Annual operating plan. A plan marked "Strategic / AOP" is a high-level strategic plan, shown with an AOP tag. |
 | **SMP** | Strategic Marketing Plan — a Shell flag on Mobility plans. |
 | **BCPIR** | Business Case & Post-Investment Review — a flag on a plan; its full use is defined in feature 013. |
-| **SP&A** | Shell's spend view of marketing plans (feature 013). The expansion "Sales, Promotion & Advertising" comes from ZenReach and is still to be confirmed with Shell (Q-001). |
+| **SP&A** | Shell's spend view of marketing plans (feature 013). The expansion "Sales, Promotion & Advertising" is an assumption still to be confirmed with Shell (Q-001). |
 | **Business unit** | Lubricants or Mobility. Decides which extra Shell attributes an activity shows. |
 | **Cluster / Region** | Where a campaign runs, e.g. cluster "Retail – China", region "RETAIL – CHINA". |
 | **Country / OU** | Countries or operating units an activity covers, with a percentage share each. |

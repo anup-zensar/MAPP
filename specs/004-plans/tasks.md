@@ -180,7 +180,7 @@ Read the *Consolidation* section at the end of [plan.md](plan.md) and the build 
 ## Phase 5: Polish
 
 - [ ] T063 [P] Documentation: `backend/README.md` (package `plans` in *Packages*; seed now loads plans), `frontend/README.md` (`features/plans` in *Folders*; the new shared components), `docs/sdd/decision-log.md` (the proposed decisions of plan.md with the numbers given by the consolidation step), `docs/architecture/repository-layout.md` if it lists packages
-- [ ] T064 Walk through the demo with the seed (Plans list, create, plan page, edit, publish, unpublish, copy, delete, Undo) and compare every screen with `docs/product/design-system.md` and `docs/reference/zenreach-screenshots/`; record anything that does not match as a new task here
+- [ ] T064 Walk through the demo with the seed (Plans list, create, plan page, edit, publish, unpublish, copy, delete, Undo) and compare every screen with `docs/product/design-system.md`; record anything that does not match as a new task here
 - [ ] T065 Run the SC-002 moderated session (at least 5 first-time users) and record the results, with SC-004 and SC-005, in `specs/004-plans/checklists/usability.md`
 - [ ] T066 Set feature 004 to Done in `docs/sdd/feature-map.md` once the product owner accepts the demo
 

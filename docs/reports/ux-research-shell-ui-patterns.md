@@ -43,7 +43,7 @@
    - use of the Shell font and Pecten logo;
    - yellow or dark blue as the primary-button colour;
    - whether the page background may be light grey;
-   - a decision that replaces the visual part of D-005 ("NorthStar uses ZenReach's design language").
+   - a decision that replaces the visual part of D-005 (NorthStar's version 1 Apple-inspired design language).
 
 ---
 
@@ -303,7 +303,7 @@ All Amidala specs below come from the component source in the app script, confir
 
 | Aspect | NorthStar now | Shell | Gap |
 |---|---|---|---|
-| Design reference | "Looks and behaves like ZenReach … Apple-inspired" (`design-system.md:3-6`, decision D-005) | Shell Amidala | **Visual language changes**; the CRUD rules in design system §6–§8 stay |
+| Design reference | NorthStar's version 1 Apple-inspired design language (`design-system.md:3-6`, decision D-005) | Shell Amidala | **Visual language changes**; the CRUD rules in design system §6–§8 stay |
 | Typeface | System stack `-apple-system, BlinkMacSystemFont, "Segoe UI", Inter…` (`tokens.css:101`), which shows as Segoe UI on Shell's Windows laptops | Shell Heavy headings + Arial text | Change |
 | Font sizes in use | **15 distinct sizes** across 155 CSS files: 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 15, 16, 17, 22, 26, 27, 28 px (e.g. `Sidebar.module.css:107` 10.5 px, `SummaryCard.module.css:20` 27 px, `ConfirmDialog.module.css:29` 17 px) | 6 core styles (12, 14, 20, 28, 32 + bold) | **Main cause of the "unpolished" feel** |
 | Weights | 600 used 162 times; Arial and Jost-at-text-size have no real 600 | 400 / 700 | Change to 400 / 700 |
@@ -676,7 +676,7 @@ Update `docs/product/design-system.md` §2–§5 and §9 in the same change as t
 2. **Primary-button colour.** Shell's current sites use **yellow with dark text**; Fleet Hub uses **Shell Dark Blue with white text**. This report recommends yellow, for consistency with today's Shell brand. Please confirm, or name the colour Shell's digital brand team prefers for staff tools.
 3. **Page background.** Shell's look puts white cards on light-grey bands (`#F5F5F5`). NorthStar's constitution principle VI says "white". Cards, dialogs, top bar and sidebar all stay white; only the canvas behind them turns light grey. Is that acceptable? The alternative is a white canvas with 1 px `#D9D9D9` card borders.
 4. **Shell design system for staff tools.** Does Shell have an internal design system or brand portal for staff and B2B apps (tokens, icons, components)? None is public. If one exists, it should override any value in this report.
-5. **Decision log.** Approve a new decision that replaces the *visual* part of D-005 (ZenReach / Apple look) with "Shell Amidala visual language". The functional rule stays: Hive9 screens are not copied.
+5. **Decision log.** Approve a new decision that replaces the *visual* part of D-005 (the version 1 Apple-inspired look) with "Shell Amidala visual language". The functional rule stays: Hive9 screens are not copied.
 
 ---
 

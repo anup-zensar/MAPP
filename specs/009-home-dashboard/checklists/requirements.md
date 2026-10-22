@@ -41,6 +41,6 @@
 - All figures reuse the rules of domain model §2 and §4 (FR-017) so Home always equals the plan pages;
   the **Waiting for me** definition is feature 008's.
 - The usability criterion SC-003 comes from design system §10 (approve from the inbox ≤ 3 steps); the
-  layout follows the ZenReach home screenshot (eyebrow, greeting with grey first name, currency picker,
+  layout follows the design-system Home layout (eyebrow, greeting with grey first name, currency picker,
   four icon-tile cards, roll-up table with team pills and gradient progress bars).
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`.

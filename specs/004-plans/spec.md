@@ -8,7 +8,7 @@
 
 **Input**: User description: "Plans list and plan page; create, view, edit, copy, publish/unpublish, delete plans; budget, goals, Shell attributes"
 
-**References**: Domain model [§1 hierarchy, §2.1 plan status, §2.6 completeness, §3 required fields, §4.1–4.2 money, §4.5 goals, §5 rules R1, R7, R9, R13, R14, §8 later](../../docs/product/domain-model.md) · Field catalogue [§1 Plan](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 colours, §5 components, §6 CRUD pattern, §7 forms, §10 targets](../../docs/product/design-system.md) · Glossary [planning, money, goals](../../docs/product/glossary.md) · Demo data [planning seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-009, D-011, D-015, D-018, Q-001, Q-004, Q-006 · Hive9 as-is step 1; functional analysis B3, B8, B10 · ZenReach spec §8.4 (plan grid), §8.9 (details panel)
+**References**: Domain model [§1 hierarchy, §2.1 plan status, §2.6 completeness, §3 required fields, §4.1–4.2 money, §4.5 goals, §5 rules R1, R7, R9, R13, R14, §8 later](../../docs/product/domain-model.md) · Field catalogue [§1 Plan](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 colours, §5 components, §6 CRUD pattern, §7 forms, §10 targets](../../docs/product/design-system.md) · Glossary [planning, money, goals](../../docs/product/glossary.md) · Demo data [planning seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-009, D-011, D-015, D-018, Q-001, Q-004, Q-006 · Hive9 as-is step 1; functional analysis B3, B8, B10
 
 ## User Scenarios & Testing *(mandatory)*
 

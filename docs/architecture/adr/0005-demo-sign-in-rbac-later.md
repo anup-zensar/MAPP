@@ -5,8 +5,8 @@ access control replace "every signed-in user may do everything"; the demo sign-i
 **Date:** 2026-10-18
 
 ## Context
-The product owner asked to postpone authentication and role-based access control, while keeping a single
-sign-in page like ZenReach's. Shell's target is Microsoft Entra ID with app roles.
+The product owner asked to postpone authentication and role-based access control, while keeping a single,
+simple sign-in page. Shell's target is Microsoft Entra ID with app roles.
 
 ## Decision
 A demo sign-in page: users choose a seeded demo person (or type its e-mail and the shared demo password).

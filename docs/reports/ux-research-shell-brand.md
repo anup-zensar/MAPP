@@ -302,7 +302,7 @@ NorthStar's design system currently targets WCAG **2.1** AA (`docs/product/desig
 - **Shell's secondary colours** (blue, green, purple, teal) only where colour carries meaning: planning levels, statuses, teams, charts.
 - **No gradients**, no photography in working screens, no logo until Shell approves it.
 
-This replaces the visual part of decision D-005 (ZenReach look). ZenReach's layout and interaction patterns can stay. **This is a decision for the product owner to log** (§10.8).
+This replaces the visual part of decision D-005 (the version 1 Apple-inspired look). NorthStar's layout and interaction patterns (design system §2, §6–§8) can stay. **This is a decision for the product owner to log** (§10.8).
 
 ### 10.2 Proposed tokens: light mode
 
@@ -413,7 +413,7 @@ Until these arrive, the token set in §10.2 and §10.3 is a **provisional, Shell
 
 ### 10.8 Decisions to record (for the product owner)
 
-1. **NorthStar adopts Shell's web colour system** (yellow action, ink text, red for danger only, Shell secondaries for meaning). This replaces ZenReach's blue and gradient. ZenReach layout and interaction patterns stay. This changes the visual part of D-005.
+1. **NorthStar adopts Shell's web colour system** (yellow action, ink text, red for danger only, Shell secondaries for meaning). This replaces version 1's blue and gradient. NorthStar's layout and interaction patterns (design system §2, §6–§8) stay. This changes the visual part of D-005.
 2. **Accessibility target moves from WCAG 2.1 AA to WCAG 2.2 AA**, matching [Shell's statement](https://www.shell.com/accessibility.html).
 3. **No Shell logo or typeface until Shell grants consent.** A neutral NorthStar name mark is used; `--font-display` stays on Arial bold.
 4. **Provisional brand values** are `#FFC800` (yellow) and `#DD1D21` (red), to be confirmed by Shell (new open question).
@@ -473,4 +473,4 @@ NorthStar files referred to
 
 - `docs/product/design-system.md` §1, §3, §4, §8, §9 (current design language)
 - `frontend/src/styles/tokens.css:9-142` (current token values)
-- `docs/sdd/decision-log.md` D-005 (ZenReach look), D-038 (theme follows the computer, then the user's choice)
+- `docs/sdd/decision-log.md` D-005 (the version 1 Apple-inspired look), D-038 (theme follows the computer, then the user's choice)

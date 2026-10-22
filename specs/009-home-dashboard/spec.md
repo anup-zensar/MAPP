@@ -6,15 +6,15 @@
 
 **Status**: Draft
 
-**Input**: User description: "ZenReach-style home: summary cards, my plans, my activities, waiting for my approval, needs attention"
+**Input**: User description: "Simple, modern home: summary cards, my plans, my activities, waiting for my approval, needs attention"
 
-**References**: Domain model [§2.1–2.3 statuses, §2.6 completeness, §4.1 budget flows down, §4.2 cost flows up, §4.3 unassigned balance, §6 team, §7 activity log, §8 later visibility](../../docs/product/domain-model.md) · Design system [§2 layout and summary cards, §4 status and money, §5 components, §6.1 empty states, §10 usability targets](../../docs/product/design-system.md) · Glossary [display currency, budget used](../../docs/product/glossary.md) · Demo data [demo-users-and-data.md](../../docs/product/demo-users-and-data.md) · Feature 001 FR-018 (getting started), feature 008 (approvals) · Decisions D-004, D-005, D-010, D-015, D-016, D-020 · Open question Q-006 · ZenReach spec §6.8.7 (team dashboard), §10.11.5 (home) and screenshot [02-home-full.png](../../docs/reference/zenreach-screenshots/02-home-full.png)
+**References**: Domain model [§2.1–2.3 statuses, §2.6 completeness, §4.1 budget flows down, §4.2 cost flows up, §4.3 unassigned balance, §6 team, §7 activity log, §8 later visibility](../../docs/product/domain-model.md) · Design system [§2 layout and summary cards, §4 status and money, §5 components, §6.1 empty states, §10 usability targets](../../docs/product/design-system.md) · Glossary [display currency, budget used](../../docs/product/glossary.md) · Demo data [demo-users-and-data.md](../../docs/product/demo-users-and-data.md) · Feature 001 FR-018 (getting started), feature 008 (approvals) · Decisions D-004, D-005, D-010, D-015, D-016, D-020 · Open question Q-006
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See my work at a glance (Priority: P1)
 
-Priya signs in and lands on Home, which looks and feels like the ZenReach home: a blue "HOME" eyebrow,
+Priya signs in and lands on Home, which follows the design-system Home layout: a blue "HOME" eyebrow,
 "Welcome back, Priya." with her first name in grey, a one-line subtitle and a currency picker on the
 right. Below, four summary cards show her teams' plans, the activities she owns, what waits for her
 approval, and planned cost against plan budget. Each card opens the matching list.
@@ -42,10 +42,10 @@ figure with the Plans list, the plan page and the Approvals page, and follow eac
 
 ### User Story 2 - See how my teams' plans are doing (Priority: P1)
 
-Under the cards, a **Plans at a glance** card — like ZenReach's "Which team is working on which
-campaign" — lists each plan with its status, its teams as coloured pills, the number of campaigns and
-activities, an approval-progress bar, budget used and planned cost. A **My teams / Everything** switch
-widens the view to every plan.
+Under the cards, a **Plans at a glance** card shows which team is working on which campaign: it lists
+each plan with its status, its teams as coloured pills, the number of campaigns and activities, an
+approval-progress bar, budget used and planned cost. A **My teams / Everything** switch widens the view
+to every plan.
 
 **Why this priority**: Team leaders and approvers watch plan progress; this replaces opening each plan.
 
@@ -160,7 +160,7 @@ empty screen.
 **Page header and scope**
 
 - **FR-001**: Home MUST replace feature 001's getting-started Home and use the page header pattern
-  (design system §2) styled like the ZenReach home: blue eyebrow "HOME", title "Welcome back," with the
+  (design system §2) in NorthStar's Home layout: blue eyebrow "HOME", title "Welcome back," with the
   user's first name as the grey highlight ("Welcome back, Priya."), subtitle "Your plans, your activities
   and what needs you today.", and a **Currency** picker on the right.
 - **FR-002**: The currency picker MUST list active currencies (feature 002), start on the user's display
@@ -295,7 +295,7 @@ approval rounds and the activity log from features 001 and 004–008.
 
 ## Assumptions
 
-- Home is the same for every user (no manager, lead or member variants as in ZenReach §6.8.7), because
+- Home is the same for every user (no manager, lead or member variants), because
   there are no roles in this phase (D-004). The **My teams / Everything** switch shows visibility
   without enforcing it, like the Plans list (domain model §8, Q-006).
 - Teams have no colour of their own (domain model §6); NorthStar gives each team a stable colour from a
@@ -305,4 +305,4 @@ approval rounds and the activity log from features 001 and 004–008.
   feature 008's **Waiting for me** definition is reused unchanged.
 - Line-item problems appear through their activity ("n items below need attention"), not as separate
   items, even when a line item has another owner.
-- Charts, saved dashboards, AI analysis and the floating assistant from ZenReach are out of scope.
+- Charts, saved dashboards, AI analysis and a floating assistant are out of scope.

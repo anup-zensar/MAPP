@@ -8,7 +8,7 @@
 
 **Input**: User description: "Activity log page and record history; recycle bin page with restore and permanent delete. The mechanism (writing entries, moving deletes to the bin, Undo) is in feature 001 — this feature adds the screens and the user-facing restore and purge behaviour."
 
-**References**: Domain model [§1 delete rule, §2.3 and §2.5 activity status and re-approval, §5 R13–R14, §7 activity log and recycle bin entries](../../docs/product/domain-model.md) · Design system [§2 layout, §4 colours, §5 dialog and toast, §6.3 History section, §6.5 delete, §8 words, §10 usability targets](../../docs/product/design-system.md) · Feature 001 [User Story 5, FR-022–FR-027](../001-app-shell-and-sign-in/spec.md) · Demo data [recycle bin and log seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-013, D-016, D-019 · Hive9 functional analysis §B8 (recycle bin, change history) · ZenReach spec §6.6–6.7 (audit log, recycle bin), §6.8.9–6.8.10 (their screens)
+**References**: Domain model [§1 delete rule, §2.3 and §2.5 activity status and re-approval, §5 R13–R14, §7 activity log and recycle bin entries](../../docs/product/domain-model.md) · Design system [§2 layout, §4 colours, §5 dialog and toast, §6.3 History section, §6.5 delete, §8 words, §10 usability targets](../../docs/product/design-system.md) · Feature 001 [User Story 5, FR-022–FR-027](../001-app-shell-and-sign-in/spec.md) · Demo data [recycle bin and log seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-013, D-016, D-019 · Hive9 functional analysis §B8 (recycle bin, change history)
 
 ## User Scenarios & Testing *(mandatory)*
 

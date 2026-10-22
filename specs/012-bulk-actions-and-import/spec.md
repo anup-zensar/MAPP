@@ -8,7 +8,7 @@
 
 **Input**: User description: "Select many rows: change owner/status fields, copy, move, delete; import activities from a template" (P3, depends on 010).
 
-**References**: Domain model [§1 hierarchy, §2.3 activity status, §2.5 re-approval, §3 required fields, §4.3 unassigned balance, §4.5 goals, §5 rules R2, R3, R5, R7, R9, R10, R13, R14](../../docs/product/domain-model.md) · Field catalogue [§2 campaign, §3 initiative, §4 activity](../../docs/product/field-catalogue.md) · Design system [§5 components, §6.5 delete, §6.6 locked and read-only, §8 words ("Select"), §10 usability targets](../../docs/product/design-system.md) · Glossary *Select* · Decisions D-004, D-009, D-013, D-016, D-019 · Shell as-is document, prerequisite 2 (import template) · FA §B8 (bulk actions, copy, import) · ZenReach spec §7.4.10, §7.8.1, §8.4.2 (ideas only)
+**References**: Domain model [§1 hierarchy, §2.3 activity status, §2.5 re-approval, §3 required fields, §4.3 unassigned balance, §4.5 goals, §5 rules R2, R3, R5, R7, R9, R10, R13, R14](../../docs/product/domain-model.md) · Field catalogue [§2 campaign, §3 initiative, §4 activity](../../docs/product/field-catalogue.md) · Design system [§5 components, §6.5 delete, §6.6 locked and read-only, §8 words ("Select"), §10 usability targets](../../docs/product/design-system.md) · Glossary *Select* · Decisions D-004, D-009, D-013, D-016, D-019 · Shell as-is document, prerequisite 2 (import template) · FA §B8 (bulk actions, copy, import)
 
 ## User Scenarios & Testing *(mandatory)*
 

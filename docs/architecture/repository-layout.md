@@ -14,7 +14,7 @@ NorthStar/
 │   ├── product/                 vision, domain model, field catalogue, design system, glossary, demo data
 │   ├── architecture/            overview, this file, ADRs
 │   ├── sdd/                     how we work, feature map, decision log
-│   └── reference/               source material (read-only): Shell documents, Hive9 analysis, ZenReach spec
+│   └── reference/               source material (read-only): Shell documents, Hive9 analysis, BRD
 ├── specs/
 │   └── NNN-short-name/          one folder per feature
 │       ├── spec.md              WHAT and WHY            (/speckit-specify)

@@ -54,7 +54,7 @@ bar and pill also shows its value or name as text (SC-007)
 |---|---|---|
 | I. Spec first | Every element traces to FR-001–FR-022, a story, an edge case or an SC (traceability table). No `[NEEDS CLARIFICATION]` | Pass |
 | II. Shell business, plain language | Shell levels and statuses; every text in *User-visible messages* | Pass |
-| III. Simple, friendly experience | ZenReach home layout; status chips, completeness chips and reasons always visible; each card has its own empty, loading and failure state; every problem links to where it is fixed | Pass |
+| III. Simple, friendly experience | Design-system Home layout; status chips, completeness chips and reasons always visible; each card has its own empty, loading and failure state; every problem links to where it is fixed | Pass |
 | IV. Simple, layered architecture | `internal/home` has handler → service and reads other services through `Sources` (no repository: it stores nothing, Complexity Tracking); every figure, percentage, reason and order is computed in Go; the web app only formats | Pass |
 | V. Tested business rules | Service tests per rule with fakes (named with the FR); contract tests per operation; a seed-wide test that Home equals the plan and approvals pages (SC-002); component tests per card; Playwright for every story | Pass |
 | VI. Safe by default | Read-only endpoints; the actor is passed to every call; the only write is the person's own display preference | Pass |
@@ -315,7 +315,7 @@ fall-back notice. A failed save shows "Your choice couldn't be saved." with **Tr
 ### Summary cards (`SummaryCards`, FR-005–FR-007)
 
 `SummaryCard` gains four optional props (shared change, see Complexity Tracking): `icon` (a 36 px
-tinted tile, ZenReach), `detail` (a node under the value) and `to` (the whole card is a link whose
+tinted tile, version 1 style), `detail` (a node under the value) and `to` (the whole card is a link whose
 accessible name is "<label>: <value> — <linkLabel>", with `linkLabel` the fourth prop).
 
 | Card | Icon / tint | Value | Detail | Link |

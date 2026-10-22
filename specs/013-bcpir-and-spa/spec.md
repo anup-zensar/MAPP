@@ -8,7 +8,7 @@
 
 **Input**: User description: "Shell's BCPIR and SP&A plan views (meaning to be clarified with Shell)" (P3, depends on 004–008).
 
-**References**: Domain model [§4.1 budget flows down, §4.2 cost flows up, §4.3 line items, §4.4 spreads, §4.5 goals, §4.6 values from finance later](../../docs/product/domain-model.md) · Field catalogue [§1 #8 plan budget, #11 BCPIR plan; §2 #5 campaign budget; §4.1 #4 activity type, #8 planned cost; §4.2 #18 PIR; §4.5 goals; §5 #6–8 line-item cost, spread, spend type](../../docs/product/field-catalogue.md) · Design system [§2 summary cards, §4 money and progress bars, §6.6 read-only values](../../docs/product/design-system.md) · Glossary *BCPIR*, *SP&A*, *PIR* · Decisions **Q-001 (open)**, D-008, D-010, D-011, D-015 · Project plan roadmap ("Plan module – BCPIR & SP&A") · FA §B3 (plan form, "BCPIR Plan?"), §E3.1.2 (activity categories BCPIR_Lubes, PIR_Retail …), §F4.4 (Hive9 "SP&A Lubes" and "SP&A Mobility" dashboards) · ZenReach spec §7.7, §8.2–8.3 (ideas only)
+**References**: Domain model [§4.1 budget flows down, §4.2 cost flows up, §4.3 line items, §4.4 spreads, §4.5 goals, §4.6 values from finance later](../../docs/product/domain-model.md) · Field catalogue [§1 #8 plan budget, #11 BCPIR plan; §2 #5 campaign budget; §4.1 #4 activity type, #8 planned cost; §4.2 #18 PIR; §4.5 goals; §5 #6–8 line-item cost, spread, spend type](../../docs/product/field-catalogue.md) · Design system [§2 summary cards, §4 money and progress bars, §6.6 read-only values](../../docs/product/design-system.md) · Glossary *BCPIR*, *SP&A*, *PIR* · Decisions **Q-001 (open)**, D-008, D-010, D-011, D-015 · Project plan roadmap ("Plan module – BCPIR & SP&A") · FA §B3 (plan form, "BCPIR Plan?"), §E3.1.2 (activity categories BCPIR_Lubes, PIR_Retail …), §F4.4 (Hive9 "SP&A Lubes" and "SP&A Mobility" dashboards)
 
 > **Planning gate:** this baseline is written before Shell has answered **Q-001** (decision log). It
 > MUST NOT go to `/speckit-plan` until Q-001 is answered and the two open questions in FR-002 and FR-003
@@ -121,7 +121,7 @@ Sara exports the SP&A view to share with her finance team; Daniel exports the bu
   catalogue §1 #11, owned by feature 004) is Yes and otherwise explains how to set it, with a link.
 - **FR-002**: BCPIR MUST remain a yes/no flag on the plan, and the BCPIR view MUST add no records of its
   own. [NEEDS CLARIFICATION: Is BCPIR a yes/no flag on a plan (Shell's form) or a business-case plan
-  paired with an SP&A spend plan for every campaign (ZenReach's interpretation)? The answer decides
+  paired with an SP&A spend plan for every campaign (an alternative interpretation)? The answer decides
   whether this feature only adds views or adds new plan records with their own life cycle.]
 - **FR-003**: Both views MUST be calculated from the plan's current data each time they open, using the
   same calculations as the plan page and All work (features 004–007, 010), so one plan never shows two
@@ -204,14 +204,14 @@ Sara exports the SP&A view to share with her finance team; Daniel exports the bu
 ## Assumptions
 
 - **Default for FR-002 (until Q-001 is answered):** BCPIR stays a yes/no on the plan, as on Shell's form
-  and in the decision log's default. ZenReach's paired SP&A/BCPIR plans per campaign are not built; if
-  Shell chooses them, this spec is rewritten before planning.
+  and in the decision log's default. Paired SP&A/BCPIR plans per campaign (an alternative
+  interpretation) are not built; if Shell chooses them, this spec is rewritten before planning.
 - **Default for FR-003:** the views need no sign-off of their own; the plan's Publish (feature 004) and
   activity approvals (feature 008) are the agreement.
-- "SP&A" is expanded as *Sales, Promotion & Advertising* only by ZenReach (glossary); Shell has not
-  confirmed it. Hive9 has "SP&A Lubes" and "SP&A Mobility" Measure dashboards (FA §F4.4), which suggests a
-  cross-plan spend report per business unit; this spec covers the per-plan view, and a cross-plan view
-  belongs to All work (010) or Measure later.
+- Expanding "SP&A" as *Sales, Promotion & Advertising* (glossary) is an assumption still to be
+  confirmed with Shell (Q-001). Hive9 has "SP&A Lubes" and "SP&A Mobility" Measure dashboards
+  (FA §F4.4), which suggests a cross-plan spend report per business unit; this spec covers the per-plan
+  view, and a cross-plan view belongs to All work (010) or Measure later.
 - Hive9's activity categories BC_Lubes, BCPIR_Lubes, PIR_Retail, … (FA §E3.1.2) hint that Shell may tag
   activity types for business cases; this is not modelled and may change after Q-001.
 - Planned revenue is the activity revenue goal from the plan's model (§4.5), in USD; expected return is a

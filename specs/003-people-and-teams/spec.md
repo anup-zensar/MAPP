@@ -8,7 +8,7 @@
 
 **Input**: User description: "People directory, teams and memberships, person picker, My profile"
 
-**References**: Domain model [§4 display currency, §5 rule R1, §6 supporting records, §8 visibility later](../../docs/product/domain-model.md) · Field catalogue [§1 #4–#5 plan teams and owner](../../docs/product/field-catalogue.md) · Design system [§5 person picker and avatar, §6 CRUD pattern, §7 forms, §8 date format, §10 usability targets](../../docs/product/design-system.md) · Demo data [demo users and teams](../../docs/product/demo-users-and-data.md) · Features 001 (sign-in, account menu), 002 (Settings page, currencies) · Decisions D-004, D-010, Q-006 · Hive9 functional analysis E6, F5, F6 · ZenReach spec §6.4 (teams), §6.8.5–§6.8.8 (profile, people picker, admin page), §6.10 (gaps)
+**References**: Domain model [§4 display currency, §5 rule R1, §6 supporting records, §8 visibility later](../../docs/product/domain-model.md) · Field catalogue [§1 #4–#5 plan teams and owner](../../docs/product/field-catalogue.md) · Design system [§5 person picker and avatar, §6 CRUD pattern, §7 forms, §8 date format, §10 usability targets](../../docs/product/design-system.md) · Demo data [demo users and teams](../../docs/product/demo-users-and-data.md) · Features 001 (sign-in, account menu), 002 (Settings page, currencies) · Decisions D-004, D-010, Q-006 · Hive9 functional analysis E6, F5, F6
 
 ## User Scenarios & Testing *(mandatory)*
 

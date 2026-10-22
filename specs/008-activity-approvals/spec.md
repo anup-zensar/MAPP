@@ -8,7 +8,7 @@
 
 **Input**: User description: "Approval workflows (Settings), submit / approve / decline / re-submit, approvals inbox, notifications"
 
-**References**: Domain model [§2.3 activity statuses, §2.4 line item, §2.5 re-approval, §3 required fields, §4.3 unassigned balance, §4.4 spreads, §5 R10, R13, R14, §6 supporting records, §7 notification, §8 later roles](../../docs/product/domain-model.md) · Field catalogue [§4 activity, §5 line item](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 status colours, §5 components, §6 CRUD pattern and locked states, §10 usability targets](../../docs/product/design-system.md) · Demo data [demo-users-and-data.md](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-009, D-012, D-013, D-016, D-020 · Open question Q-002 · Hive9 functional analysis §B9, §C6, §E6.1.2 · ZenReach spec §6.5 (notifications), §7.4.7 (approval transitions), §9.7 (approvals inbox, approval chain)
+**References**: Domain model [§2.3 activity statuses, §2.4 line item, §2.5 re-approval, §3 required fields, §4.3 unassigned balance, §4.4 spreads, §5 R10, R13, R14, §6 supporting records, §7 notification, §8 later roles](../../docs/product/domain-model.md) · Field catalogue [§4 activity, §5 line item](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 status colours, §5 components, §6 CRUD pattern and locked states, §10 usability targets](../../docs/product/design-system.md) · Demo data [demo-users-and-data.md](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-009, D-012, D-013, D-016, D-020 · Open question Q-002 · Hive9 functional analysis §B9, §C6, §E6.1.2
 
 ## User Scenarios & Testing *(mandatory)*
 

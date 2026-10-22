@@ -8,7 +8,7 @@
 
 **Input**: User description: "Line items: currency, spread over months, finance coding, finance budget link, SWBS request flag, unassigned balance"
 
-**References**: Domain model [§1 hierarchy, §2.4 line item status, §2.5 re-approval, §2.6 completeness, §3 required fields, §4.3 line items and the unassigned balance, §4.4 spreading, §4.6 from finance, §5 rules R11–R13, §6 currencies and finance budget items](../../docs/product/domain-model.md) · Field catalogue [§5 line item, §1 #9–10 plan defaults](../../docs/product/field-catalogue.md) · Design system [§4 money, §5 money input, §6 CRUD pattern, §6.6 locked and read-only, §7 forms, §8 words, §10 usability targets](../../docs/product/design-system.md) · Glossary [money](../../docs/product/glossary.md) · Decisions D-008, D-009, D-010, D-013, D-016, D-019 · Shell Plan Module doc step 5 · Hive9 functional analysis §B7 · GSAP workshop summary · ZenReach spec §7.4.8, §8.11 (layout and interaction only)
+**References**: Domain model [§1 hierarchy, §2.4 line item status, §2.5 re-approval, §2.6 completeness, §3 required fields, §4.3 line items and the unassigned balance, §4.4 spreading, §4.6 from finance, §5 rules R11–R13, §6 currencies and finance budget items](../../docs/product/domain-model.md) · Field catalogue [§5 line item, §1 #9–10 plan defaults](../../docs/product/field-catalogue.md) · Design system [§4 money, §5 money input, §6 CRUD pattern, §6.6 locked and read-only, §7 forms, §8 words, §10 usability targets](../../docs/product/design-system.md) · Glossary [money](../../docs/product/glossary.md) · Decisions D-008, D-009, D-010, D-013, D-016, D-019 · Shell Plan Module doc step 5 · Hive9 functional analysis §B7 · GSAP workshop summary
 
 ## User Scenarios & Testing *(mandatory)*
 

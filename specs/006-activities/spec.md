@@ -8,7 +8,7 @@
 
 **Input**: User description: "Activities: basics, dates, planned cost, Shell attributes with business-unit groups and % splits, goals, status, completeness"
 
-**References**: Domain model [§1 hierarchy, §2.3 activity status, §2.5 re-approval, §2.6 completeness, §3 required fields, §4.2–4.3 planned cost and unassigned balance, §4.5 goals, §4.6 from finance, §5 rules R3, R5–R7, R9, R10, R13, R14, §6 inactive values](../../docs/product/domain-model.md) · Field catalogue [§4 activity](../../docs/product/field-catalogue.md) · Design system [§4 status colours, §5 split editor, §6 CRUD pattern, §7 forms, §10 usability targets](../../docs/product/design-system.md) · Glossary [planning levels, goals, statuses](../../docs/product/glossary.md) · Decisions D-004, D-009, D-013, D-016, D-017, D-019 · Shell Plan Module doc step 4 · Hive9 functional analysis §B6, §B9–B10 · ZenReach spec §7.4, §8.10 (layout and interaction only)
+**References**: Domain model [§1 hierarchy, §2.3 activity status, §2.5 re-approval, §2.6 completeness, §3 required fields, §4.2–4.3 planned cost and unassigned balance, §4.5 goals, §4.6 from finance, §5 rules R3, R5–R7, R9, R10, R13, R14, §6 inactive values](../../docs/product/domain-model.md) · Field catalogue [§4 activity](../../docs/product/field-catalogue.md) · Design system [§4 status colours, §5 split editor, §6 CRUD pattern, §7 forms, §10 usability targets](../../docs/product/design-system.md) · Glossary [planning levels, goals, statuses](../../docs/product/glossary.md) · Decisions D-004, D-009, D-013, D-016, D-017, D-019 · Shell Plan Module doc step 4 · Hive9 functional analysis §B6, §B9–B10
 
 ## User Scenarios & Testing *(mandatory)*
 

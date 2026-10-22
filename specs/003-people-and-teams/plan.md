@@ -392,7 +392,7 @@ merges the wording).
 | `TeamPill`, `TeamPills` | `team: TeamRef`, `to?` · `teams: TeamRef[]`, `linked?` | Neutral chip with the colour dot (`--team-<colour>`, decorative) + name + " (inactive)"; a link to `/settings/teams/:id` when `to`/`linked`; `TeamPills` wraps several | Coloured team pills (D-025) in people lists, profile, 004 plans, 009 |
 | `SelectField` | `label`, `name`, `value`, `onChange`, `options: {value, label}[]`, `error?`, `hint?`, `marking?` | Native `<select>` with TextField's label, marking, hint and error layout | Short single choices (colour, display currency, date format; 002–008) |
 | `TextAreaField` | TextField's props + `rows?` | Multi-line TextField | Team description; 002 help texts; 004 plan description |
-| `FilterPills` | `label`, `options: {value, label}[]`, `value`, `onChange` | ZenReach pill toggles: a `role="group"` of buttons with `aria-pressed` | Design system §6.1 status pills on every list |
+| `FilterPills` | `label`, `options: {value, label}[]`, `value`, `onChange` | Pill toggles (design system §6.1): a `role="group"` of buttons with `aria-pressed` | Design system §6.1 status pills on every list |
 | `SearchField` | `label` (visually hidden), `placeholder`, `value`, `onChange` | `type="search"` with a search icon and a **Clear search** button | Design system §6.1 list search |
 | `FormPanel` (+ `FailureMessage`, `problemOf`, type `SaveFailure`) | as today in `features/dev/SamplePanels.tsx`, plus `saveLabel?` | Moved unchanged from the dev page; SamplePanels imports it | Every side-panel form (001 dev, 002, 003, 005) |
 | `PageHeader` ~ | `breadcrumbs?: {label, to}[]` | `<nav aria-label="Breadcrumb">` above the eyebrow, items separated by "›" | Settings sub-pages (002 FR-001, here) |

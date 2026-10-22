@@ -109,9 +109,10 @@ brand book is behind a sign-in, so official values still need Shell's confirmati
 | PO-5 (D-314) | **Red only for danger and errors** | Red appears in no interface element on 15 of 17 Shell pages (brand §3.4) | Red for destructive confirm buttons, errors and the problem status family; amber for "waiting"; never decoration |
 
 These decisions, recorded as D-310–D-314 in the decision log, replace the **visual** part of decision
-D-005 (the ZenReach/Apple look). The functional part stays: ZenReach's layout and CRUD patterns are kept
-and Hive9's screens are not copied. Constitution 1.1.0 amends principle III to match (one yellow primary
-action, WCAG 2.2 AA), replacing "one blue primary action" and "WCAG 2.1 AA".
+D-005 (the version 1 Apple-inspired look). The functional part stays: NorthStar's layout and interaction
+patterns (design system §2, §6–§8) are kept and Hive9's screens are not copied. Constitution 1.1.0
+amends principle III to match (one yellow primary action, WCAG 2.2 AA), replacing "one blue primary
+action" and "WCAG 2.1 AA".
 
 ---
 

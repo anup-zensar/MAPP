@@ -8,7 +8,7 @@
 
 **Input**: User description: "Settings: models, activity types, Shell attributes and options, currencies and rates, finance budget items"
 
-**References**: Domain model [§3 markings, §4.3 currency conversion, §4.5 goals, §5 rules R7–R12, §6 supporting records](../../docs/product/domain-model.md) · Field catalogue [§1–§5 Shell attribute rows = seed configuration](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 money, §5 components, §6 CRUD pattern, §7 forms, §10 usability targets](../../docs/product/design-system.md) · Demo data [Settings seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-008, D-010, D-014, Q-003, Q-005 · Hive9 functional analysis E4.5 (attributes), E7.5.1 (models), E7.6 and F6 (currency) · ZenReach spec §7.3 (models)
+**References**: Domain model [§3 markings, §4.3 currency conversion, §4.5 goals, §5 rules R7–R12, §6 supporting records](../../docs/product/domain-model.md) · Field catalogue [§1–§5 Shell attribute rows = seed configuration](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 money, §5 components, §6 CRUD pattern, §7 forms, §10 usability targets](../../docs/product/design-system.md) · Demo data [Settings seed](../../docs/product/demo-users-and-data.md) · Decisions D-004, D-008, D-010, D-014, Q-003, Q-005 · Hive9 functional analysis E4.5 (attributes), E7.5.1 (models), E7.6 and F6 (currency)
 
 ## User Scenarios & Testing *(mandatory)*
 

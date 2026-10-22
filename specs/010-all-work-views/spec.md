@@ -8,7 +8,7 @@
 
 **Input**: User description: "All work: grid with roll-ups, filters and search, calendar, budget & cost by month, saved views, export. The sidebar's 'All work' is a cross-plan view of every campaign, initiative and activity."
 
-**References**: Domain model [§1 hierarchy, §2 statuses, §4.2–4.5 money rules, §7 saved view](../../docs/product/domain-model.md) · Field catalogue [§1–§5 fields per level](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 colours, §5 tree, §6.1 list toolbar, §8 words, §10 usability targets](../../docs/product/design-system.md) · Glossary [All work, Unassigned planned cost, Spread](../../docs/product/glossary.md) · Decisions D-004, D-010, D-011, D-013, D-016 · Open question Q-004 · Hive9 functional analysis §B1 (workspace), §E3.0 (filter panel, saved views) · ZenReach spec §8.1 (view tabs, summary strip, saved views), §8.4–8.6 (grid, Budget & Cost, calendar)
+**References**: Domain model [§1 hierarchy, §2 statuses, §4.2–4.5 money rules, §7 saved view](../../docs/product/domain-model.md) · Field catalogue [§1–§5 fields per level](../../docs/product/field-catalogue.md) · Design system [§2 layout, §4 colours, §5 tree, §6.1 list toolbar, §8 words, §10 usability targets](../../docs/product/design-system.md) · Glossary [All work, Unassigned planned cost, Spread](../../docs/product/glossary.md) · Decisions D-004, D-010, D-011, D-013, D-016 · Open question Q-004 · Hive9 functional analysis §B1 (workspace), §E3.0 (filter panel, saved views)
 
 ## User Scenarios & Testing *(mandatory)*
 

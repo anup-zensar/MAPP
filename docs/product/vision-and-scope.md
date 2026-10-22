@@ -57,7 +57,7 @@ can do everything.
 - Measure reporting dashboards.
 - GSAP integration (SWBS requests are only recorded), e-mail, Microsoft Entra ID sign-in, role-based
   access, Azure hosting, PostgreSQL (all planned).
-- ZenReach's AI assistant, optimizer, attribution, Google Analytics, Kanban board, Trello/Jira and Google
+- An AI assistant, optimizer, attribution, Google Analytics, Kanban board, Trello/Jira and Google
   Calendar integrations (possible later, per Shell's PRISM guidance: foundations before AI).
 
 ## Success for this phase

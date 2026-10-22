@@ -12,7 +12,7 @@ The product owner is right: NorthStar does not yet look production-ready. The ca
 2. **Each feature was assembled its own way.** The pages use 5 different header layouts, the side panels 5 different footers, and the details screens 3 key–value layouts with different label widths. Selects come in 3 styles and table headers in 2. Numbers are right-aligned in some tables and left-aligned in others. Next to each other, these differences read as "misaligned" and "no symmetry".
 3. **The design tokens have no spacing or type scale.** `tokens.css` defines colours, radii and shadows only. The 155 CSS files therefore use 15 font sizes (10.5–28 px), 15 corner radii and about 40 padding values. Without a scale, drift was bound to happen.
 
-A fourth point is outside this audit but matters for the revamp. The visual language is ZenReach/Apple-like: Apple blue `#0071e3`, a blue-to-purple gradient and the `-apple-system`/Segoe UI font stack. Nothing on screen says "Shell". The brand research should define the replacement tokens.
+A fourth point is outside this audit but matters for the revamp. The visual language is the version 1 Apple-inspired look: Apple blue `#0071e3`, a blue-to-purple gradient and the `-apple-system`/Segoe UI font stack. Nothing on screen says "Shell". The brand research should define the replacement tokens.
 
 **Count:** the tables below hold 97 entries: **9 high**, **52 medium**, **36 low**. Many page entries repeat a cross-page problem on one specific page, and the 9 high entries come down to **3 root causes** (X-01, X-02, H-01). The 10 fixes below remove most of the "unpolished" impression. Fixes 1, 2 and 10 are small CSS changes.
 

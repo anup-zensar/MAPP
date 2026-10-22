@@ -1,34 +1,23 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0 (MINOR: four principles materially expanded; none removed or redefined)
+- Version change: 1.1.0 → 1.1.1 (PATCH: wording; no principle added, removed or redefined)
 - Modified principles (titles unchanged):
-  - II Shell Business, Plain Language — ZenReach stays the layout and interaction reference, the visual
-    reference is Shell's (III); live GSAP integration stays out of scope, GSAP data comes from simulated
-    feeds (D-242, D-259, D-308)
-  - III Simple, Friendly Experience — Shell's enterprise design language replaces "ZenReach style … one
-    blue primary action" (D-310–D-312, D-314); WCAG 2.2 AA replaces WCAG 2.1 AA basics (D-313)
-  - IV Simple, Layered Architecture — Shell's systems are reached through adapter interfaces; simulated
-    adapters now, real feeds later (ADR-0009)
-  - VI Safe by Default (Even With Demo Sign-in) — role- and team-based access control, enforced by the
-    server and failing closed, replaces "no roles — every signed-in user can do everything" (feature 014,
-    D-223, D-228, ADR-0008); demo sign-in stays until single sign-on
-- Unchanged principles: I Spec First, V Tested Business Rules, VII Keep It Small and Readable
-- Modified sections: Current Phase & Scope (features 014–017 in scope; out-of-scope list), Technology
-  Choices (sign-in row; new rows for Shell integrations and visual design), Governance (amendment history)
-- Added sections: Governance › Amendment History
+  - II Shell Business, Plain Language — names the sources as they are: requirements and features come
+    from the available documentation and the Hive9 application itself; NorthStar's own design system is
+    the layout and interaction reference (D-318)
+- Unchanged principles: I, III, IV, V, VI, VII
+- Modified sections: Governance › Amendment History
+- Added sections: none
 - Removed sections: none
-- Templates reviewed: plan-template.md (Constitution Check reads this file — OK), spec-template.md (OK),
-  tasks-template.md (OK), checklist-template.md (OK); no template change needed
-- Documents updated with this amendment: CLAUDE.md (non-negotiables 6, 10, 11); ADR-0008 (supersedes
-  ADR-0005's "no roles"); ADR-0009; ADR-0005 and ADR-0006 status lines; decision log D-310–D-315;
-  design system v2 and the UX design recommendations (decision numbers)
-- Follow-up TODOs: done on 21 October 2026 — the specs, plans and tasks of 001–017 name WCAG 2.2 AA, and
-  docs/README.md, docs/product/vision-and-scope.md, the feature map, the specs of 001 and 009 and the
-  READMEs describe Shell's design language (design system v2). Historical records (decision log, reports,
-  reference material, ADR-0006) keep their original wording. The
-  Complexity Tracking exceptions of 014, 015 and 016 for roles and simulated GSAP feeds are resolved by
-  this amendment; no re-plan is needed.
+- Templates reviewed: plan-template.md, spec-template.md, tasks-template.md, checklist-template.md (OK);
+  no template change needed
+- Documents updated with this amendment: decision log (D-004–D-007, D-013, D-025, D-310, Q-001, D-318);
+  docs/reference/README.md; ADR-0006 (now `0006-design-language.md`) and the ADR index; the specs, plans,
+  tasks and checklists of 001–015; the product docs, the architecture docs and the reports. Reference
+  material from other products is removed from docs/reference/.
+- Follow-up TODOs: none
 -->
+
 
 # NorthStar Constitution
 
@@ -57,8 +46,9 @@ unrequested work.
 - NorthStar uses Shell's planning vocabulary on every screen: **Plan → Campaign → Initiative → Activity →
   Line item**. Hive9 product words (Program, Tactic, Inspection Window, Honeycomb, HUD) are never shown
   to users. `docs/product/glossary.md` is the authoritative list of terms.
-- **Shell's process is the functional reference; ZenReach is the layout and interaction reference;
-  Shell's enterprise design language is the visual reference (Principle III).** When sources disagree on
+- **Requirements and features come from the available documentation and the Hive9 application itself;
+  Shell's process is the functional reference; NorthStar's design system is the layout and interaction
+  reference; Shell's enterprise design language is the visual reference (Principle III).** When sources disagree on
   behaviour, follow the precedence in `docs/reference/README.md` (Shell's own documents first). Every
   simplification of Hive9 behaviour is recorded in `docs/sdd/decision-log.md`.
 - The data each level holds, its statuses and its calculations are defined once in
@@ -235,6 +225,7 @@ shared ones are fixed by feature 001.
 | Version | Date | Change | Decisions |
 |---|---|---|---|
 | 1.0.0 | 2026-10-18 | Ratified: principles I–VII, Current Phase & Scope, Technology Choices, Development Workflow, Governance | D-001–D-008 |
-| 1.1.0 | 2026-10-20 | II: ZenReach is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
+| 1.1.0 | 2026-10-20 | II: NorthStar's design system is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
+| 1.1.1 | 2026-10-22 | II (wording): requirements and features come from the available documentation and the Hive9 application itself; NorthStar's design system is the layout and interaction reference | D-318 |
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-20
+**Version**: 1.1.1 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-22
