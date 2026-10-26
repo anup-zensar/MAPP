@@ -24,7 +24,9 @@ import { useSetTeamStatus, useTeams } from './api';
 import type { Team } from './api';
 import { teamMoreItems } from './team-actions';
 import type { TeamActions } from './team-actions';
-import { DeleteTeamDialog, TeamDetailsPanel, TeamFormPanel } from './TeamPanels';
+import { DeleteTeamDialog } from './DeleteTeamDialog';
+import { TeamDetailsPanel } from './TeamDetailsPanel';
+import { TeamFormPanel } from './TeamFormPanel';
 import { usedByText } from './texts';
 import page from './lists.module.css';
 

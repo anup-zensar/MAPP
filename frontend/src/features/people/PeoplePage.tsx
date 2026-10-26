@@ -27,7 +27,8 @@ import { fetchLatestPerson, usePeople, useSetPersonStatus } from './api';
 import type { Person, PersonDetails } from './api';
 import { personStatusItem } from './person-actions';
 import type { PersonActions } from './person-actions';
-import { PersonDetailsPanel, PersonFormPanel } from './PersonPanels';
+import { PersonDetailsPanel } from './PersonDetailsPanel';
+import { PersonFormPanel } from './PersonFormPanel';
 import { deactivateSentences, isInUse, SELF_DEACTIVATION } from './texts';
 
 const PERSON_NOUN = { one: 'person', many: 'people' };
