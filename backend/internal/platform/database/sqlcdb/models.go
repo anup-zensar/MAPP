@@ -199,6 +199,21 @@ type ApprovalWorkflowLevelApprover struct {
 	PersonID    string
 }
 
+type BudgetAllocation struct {
+	ID             string
+	GlobalBudgetID string
+	PlanID         string
+	AmountMinor    int64
+	AmountCurrency string
+	Version        int
+	CreatedAt      time.Time
+	CreatedByID    string
+	CreatedByName  string
+	UpdatedAt      time.Time
+	UpdatedByID    string
+	UpdatedByName  string
+}
+
 type Campaign struct {
 	ID             string
 	PlanID         string
@@ -296,6 +311,22 @@ type FinanceBudgetItem struct {
 	Name          string
 	Code          string
 	Active        bool
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type GlobalBudget struct {
+	ID            string
+	Name          string
+	Year          int
+	AmountMinor   int64
+	OwnerID       string
+	Description   string
 	Version       int
 	CreatedAt     time.Time
 	CreatedByID   string
