@@ -21,6 +21,37 @@ type AccessRule struct {
 	UpdatedByName   string
 }
 
+type Activity struct {
+	ID                   string
+	InitiativeID         string
+	Name                 string
+	ExternalName         string
+	ActivityTypeID       string
+	OwnerID              *string
+	StartDate            *time.Time
+	EndDate              *time.Time
+	Ongoing              bool
+	PlannedCostMinor     *int64
+	PlannedCostCurrency  *string
+	ApprovalWorkflowID   *string
+	Description          string
+	Attributes           []byte
+	Inq                  *int64
+	SetLaterStagesMyself bool
+	Mql                  *int64
+	RevenueMinor         *int64
+	RevenueCurrency      *string
+	Status               string
+	SplitFromID          *string
+	Version              int
+	CreatedAt            time.Time
+	CreatedByID          string
+	CreatedByName        string
+	UpdatedAt            time.Time
+	UpdatedByID          string
+	UpdatedByName        string
+}
+
 type ActivityLog struct {
 	ID              string
 	Seq             int
@@ -229,6 +260,35 @@ type InitiativePhasingMonth struct {
 	InitiativeID string
 	Month        string
 	AmountMinor  int64
+}
+
+type LineItem struct {
+	ID                    string
+	ActivityID            string
+	Name                  string
+	OwnerID               *string
+	Description           string
+	Currency              string
+	PlannedCostMinor      int64
+	SpreadMethod          string
+	Attributes            []byte
+	ContractedAmountMinor *int64
+	RequestSwbs           bool
+	FinanceBudgetYear     *int
+	FinanceBudgetItemID   *string
+	Version               int
+	CreatedAt             time.Time
+	CreatedByID           string
+	CreatedByName         string
+	UpdatedAt             time.Time
+	UpdatedByID           string
+	UpdatedByName         string
+}
+
+type LineItemSpreadMonth struct {
+	LineItemID  string
+	Month       string
+	AmountMinor int64
 }
 
 type Model struct {
