@@ -6,6 +6,7 @@ SELECT id, initiative_id, name, external_name, activity_type_id, owner_id, start
 FROM activities
 WHERE (sqlc.narg(ids)::text[] IS NULL OR id = ANY (sqlc.narg(ids)::text[]))
     AND (sqlc.narg(initiative_ids)::text[] IS NULL OR initiative_id = ANY (sqlc.narg(initiative_ids)::text[]))
+    AND (sqlc.narg(split_from_id)::text IS NULL OR split_from_id = sqlc.narg(split_from_id))
 ORDER BY length(id), id COLLATE "C";
 
 -- name: ListActivitiesInScope :many

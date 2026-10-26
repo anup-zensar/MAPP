@@ -26,6 +26,8 @@ type Repository interface {
 	Put(ctx context.Context, a Activity) error
 	// Delete removes the activity with id; removing one that does not exist changes nothing.
 	Delete(ctx context.Context, id string) error
+	// ListSplitFrom returns the activities split off the activity activityID.
+	ListSplitFrom(ctx context.Context, activityID string) ([]Activity, error)
 	// AddMany saves new activities, whose ids are not stored yet, all at once.
 	AddMany(ctx context.Context, list []Activity) error
 	// DeleteMany removes the activities with ids all at once.

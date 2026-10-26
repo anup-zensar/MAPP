@@ -69,16 +69,18 @@ SELECT id, initiative_id, name, external_name, activity_type_id, owner_id, start
 FROM activities
 WHERE ($1::text[] IS NULL OR id = ANY ($1::text[]))
     AND ($2::text[] IS NULL OR initiative_id = ANY ($2::text[]))
+    AND ($3::text IS NULL OR split_from_id = $3)
 ORDER BY length(id), id COLLATE "C"
 `
 
 type ListActivitiesParams struct {
 	Ids           []string
 	InitiativeIds []string
+	SplitFromID   *string
 }
 
 func (q *Queries) ListActivities(ctx context.Context, arg ListActivitiesParams) ([]Activity, error) {
-	rows, err := q.db.Query(ctx, listActivities, arg.Ids, arg.InitiativeIds)
+	rows, err := q.db.Query(ctx, listActivities, arg.Ids, arg.InitiativeIds, arg.SplitFromID)
 	if err != nil {
 		return nil, err
 	}
