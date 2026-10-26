@@ -22,7 +22,7 @@ func probeRoutes(router *web.Router, cfg Config, db *store.DB) {
 	})
 	router.Handle("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ready(); err != nil {
-			slog.Error("not ready", "error", err)
+			slog.ErrorContext(r.Context(), "not ready", "error", err)
 			web.WriteError(w, r, errs.Unavailable())
 			return
 		}

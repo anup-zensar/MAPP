@@ -84,7 +84,11 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 // answers — an error, or a web page with 200 OK.
 func apiIsRunning(port int) bool {
 	client := http.Client{Timeout: time.Second}
-	response, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/healthz", port))
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/healthz", port), nil)
+	if err != nil {
+		return false
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		return false // nothing answered
 	}

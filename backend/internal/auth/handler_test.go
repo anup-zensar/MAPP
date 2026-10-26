@@ -218,7 +218,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
-	request := httptest.NewRequest(http.MethodPost, "http://127.0.0.1/api/v1/notes", nil)
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://127.0.0.1/api/v1/notes", nil)
 	request.AddCookie(&http.Cookie{Name: auth.CookieName, Value: token})
 	answer := httptest.NewRecorder()
 

@@ -772,7 +772,7 @@ func TestAccess_NoLinkRefusesLinking_FR028(t *testing.T) {
 
 // A person who sees only some plans gets only their transactions; a record or transaction of another plan
 // answers like a missing one, and a link into one is forbidden (FR-028, 014 FR-007, 022 FR-005).
-func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005(t *testing.T) {
+func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005(t *testing.T) { //nolint:gocyclo // 12: one scenario per access rule, kept together so the rules read as one table.
 	f := newFixture(t)
 	f.access.plans = []string{"P-1002"}
 	ctx := t.Context()
@@ -797,9 +797,9 @@ func TestAccess_VisiblePlansScopeEverything_FR028_022_FR005(t *testing.T) {
 		t.Errorf("overview = %+v, %v", overview.Figures, err)
 	}
 	_, err = f.service.Link(ctx, priya, "FT-1004", LinkRequest{LineItemID: "L-1003", Version: version(1)})
-	assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
+	_ = assertCode(t, err, http.StatusForbidden, errs.CodeForbidden)
 	_, err = f.service.Transactions(ctx, priya, Query{Type: filterAll, Link: filterAll, Page: 1, PageSize: 50, PlanID: "P-1001"})
-	assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
+	_ = assertCode(t, err, http.StatusBadRequest, errs.CodeValidationFailed)
 }
 
 // FactsByLineItem gives All work the same figures as the cards (FR-023, SC-002).

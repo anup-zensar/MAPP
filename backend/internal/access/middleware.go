@@ -74,7 +74,7 @@ func (s *Service) Authorize(next http.HandlerFunc) http.HandlerFunc {
 
 // logRefusal writes the technical log line of a refusal: the operation, the person's ID and the code.
 func logRefusal(r *http.Request, personID, code string) {
-	slog.Warn("request refused", "operation", r.Pattern, "person", personID, "code", code)
+	slog.WarnContext(r.Context(), "request refused", "operation", r.Pattern, "person", personID, "code", code)
 }
 
 // statusWriter passes the answer on and remembers its status, so Authorize can log refusals made by

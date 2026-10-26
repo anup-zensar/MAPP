@@ -206,7 +206,7 @@ func TestWriteError_WrappedErrorKeepsItsStatus(t *testing.T) {
 func TestWriteError_UnexpectedErrorHidesDetails_FR020(t *testing.T) {
 	w := httptest.NewRecorder()
 
-	web.WriteError(w, newRequest(http.MethodGet, "/api/v1/test", ""), errors.New("open data/people.json: Access is denied."))
+	web.WriteError(w, newRequest(http.MethodGet, "/api/v1/test", ""), errors.New("open data/people.json: access is denied"))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
 }
