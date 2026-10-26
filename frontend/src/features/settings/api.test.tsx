@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import {
   SETTINGS_KEYS,
   useAttributeForm,
@@ -43,9 +43,11 @@ describe('settingsQueries (feature 002)', () => {
 
   it('reads the lists from the API', async () => {
     const api = mockApi([
-      looseReply('GET /api/v1/models', { body: { items: [], total: 2 } }),
-      looseReply('GET /api/v1/currencies', { body: { items: [], total: 5 } }),
-      looseReply('GET /api/v1/finance-budgets', { body: { year: 2026, years: [2026], items: [] } }),
+      reply('GET /api/v1/models', { body: { items: [], total: 2 } }),
+      reply('GET /api/v1/currencies', { body: { items: [], total: 5 } }),
+      reply('GET /api/v1/finance-budgets', {
+        body: { year: 2026, years: [2026], items: [], total: 0 },
+      }),
     ]);
     renderWithProviders(<Lists />);
 
@@ -57,7 +59,7 @@ describe('settingsQueries (feature 002)', () => {
 
   it('asks for the attribute form again every time a form opens (SC-008)', async () => {
     const api = mockApi([
-      looseReply(
+      reply(
         'GET /api/v1/shell-attribute-forms/{level}',
         { body: campaignForm() },
         { level: 'campaign' },

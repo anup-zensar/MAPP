@@ -19,8 +19,8 @@ const LINKED_TYPES: PlanningRecordType[] = [
  * yet", then a link to each plan using it (models and finance budgets).
  */
 export function UsageLine({ usage }: { usage: Usage }) {
-  const links = usage.records.filter((record) =>
-    LINKED_TYPES.includes(record.type as PlanningRecordType),
+  const links = usage.records.flatMap(({ type, id, name }) =>
+    isLinked(type) ? [{ type, id, name }] : [],
   );
 
   return (
@@ -30,13 +30,15 @@ export function UsageLine({ usage }: { usage: Usage }) {
         <ul role="list" className={styles.usageLinks}>
           {links.map((record) => (
             <li key={`${record.type}-${record.id}`}>
-              <Link to={recordHref(record.type as PlanningRecordType, record.id)}>
-                {record.name}
-              </Link>
+              <Link to={recordHref(record.type, record.id)}>{record.name}</Link>
             </li>
           ))}
         </ul>
       )}
     </div>
   );
+}
+
+function isLinked(type: string): type is PlanningRecordType {
+  return LINKED_TYPES.some((linked) => linked === type);
 }
