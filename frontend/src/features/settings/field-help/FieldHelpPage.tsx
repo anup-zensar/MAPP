@@ -1,6 +1,6 @@
 import { Info } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -20,70 +20,23 @@ import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
 import settingsStyles from '@/ui/settings-table.module.css';
 import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import { useFieldHelpEntries } from './api';
-import type { FieldHelpEntry, FieldHelpLevel } from './api';
+import type { FieldHelpEntry } from './api';
 import { FieldHelpPanel } from './FieldHelpPanel';
 import {
   attributesWithoutHelp,
   HELP_LEVEL_WORDS,
   HELP_LEVELS,
-  isHelpLevel,
   MISSING_HELP_PATH,
 } from './field-help-words';
 import { ResetHelpDialog } from './ResetHelpDialog';
 import styles from './field-help.module.css';
+import { useHelpFilters } from './useHelpFilters';
+import type { HelpFilters } from './useHelpFilters';
 
 const FIELD_NOUN = { one: 'field', many: 'fields' };
 
 /** Why Reset to default does nothing for a text that was never edited. */
 const ALREADY_DEFAULT = 'This field already uses the default text.';
-
-type Shown = 'all' | 'edited';
-
-/** The page's choices, kept in the address so Back and links keep them. */
-function useHelpFilters() {
-  const [params, setParams] = useSearchParams();
-  const levelParam = params.get('level');
-  const level: FieldHelpLevel = isHelpLevel(levelParam) ? levelParam : 'plan';
-  const shown: Shown = params.get('show') === 'edited' ? 'edited' : 'all';
-  const q = params.get('q') ?? '';
-  const openKey = params.get('key') ?? '';
-
-  function change(name: string, value: string, defaultValue: string) {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (value === defaultValue) {
-          next.delete(name);
-        } else {
-          next.set(name, value);
-        }
-        return next;
-      },
-      { replace: true },
-    );
-  }
-
-  return {
-    level,
-    shown,
-    q,
-    openKey,
-    setLevel: (value: FieldHelpLevel) => change('level', value, 'plan'),
-    setShown: (value: Shown) => change('show', value, 'all'),
-    setQ: (value: string) => change('q', value, ''),
-    setOpenKey: (value: string) => change('key', value, ''),
-    clear: () =>
-      setParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          next.delete('q');
-          next.delete('show');
-          return next;
-        },
-        { replace: true },
-      ),
-  };
-}
 
 /** True when the label or the text contains the search, ignoring letter case. */
 function matches(entry: FieldHelpEntry, q: string): boolean {
@@ -136,7 +89,7 @@ export function FieldHelpPage() {
 interface HelpListProps {
   items: FieldHelpEntry[];
   withoutHelp: number;
-  filters: ReturnType<typeof useHelpFilters>;
+  filters: HelpFilters;
 }
 
 /** The note, the level tabs and the selected level's fields. */

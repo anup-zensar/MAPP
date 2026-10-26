@@ -5,16 +5,14 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { expectNoAxeViolations } from '@/testing/axe';
+import { closestTo } from '@/testing/dom';
 import { validationFailed, versionConflict } from '@/testing/fixtures/settings';
 import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { FieldHelpPage } from './FieldHelpPage';
 
 function renderHelp(answers: HttpHandler[] = [], route = '/settings/field-help') {
-  const api = mockApi([
-    looseReply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE }),
-    ...answers,
-  ]);
+  const api = mockApi([reply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE }), ...answers]);
   const rendered = renderWithProviders(<FieldHelpPage />, {
     route,
     path: '/settings/field-help',
@@ -24,7 +22,7 @@ function renderHelp(answers: HttpHandler[] = [], route = '/settings/field-help')
 }
 
 function row(label: string): HTMLElement {
-  return screen.getByRole('rowheader', { name: label }).closest('tr') as HTMLElement;
+  return closestTo(screen.getByRole('rowheader', { name: label }), 'tr');
 }
 
 function fieldNames(): string[] {
@@ -91,9 +89,7 @@ describe('FieldHelpPage: the list (016 FR-045, FR-048)', () => {
   });
 
   it('says when the help texts cannot be loaded', async () => {
-    renderHelp([
-      looseReply('GET /api/v1/field-help', () => Promise.reject(new TypeError('offline'))),
-    ]);
+    renderHelp([reply('GET /api/v1/field-help', () => Promise.reject(new TypeError('offline')))]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent("can't reach its server");
   });
@@ -103,7 +99,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   it('edits a text in a side panel and saves it with its version (US7-2)', async () => {
     const newText = 'What the plan may spend in its year.';
     const { user, api, router } = renderHelp([
-      looseReply(
+      reply(
         'PATCH /api/v1/field-help/{helpKey}',
         {
           body: { ...PLAN_BUDGET, text: newText, isDefault: false, version: 1 },
@@ -134,7 +130,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
 
   it('refuses a text over 300 characters; an empty text is allowed (US7-4)', async () => {
     const { user, api } = renderHelp([
-      looseReply(
+      reply(
         'PATCH /api/v1/field-help/{helpKey}',
         {
           body: { ...PLAN_BUDGET, text: '', isDefault: false, version: 1 },
@@ -168,7 +164,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
 
   it('names who saved first and keeps the typed text (001 FR-029)', async () => {
     const { user } = renderHelp([
-      looseReply(
+      reply(
         'PATCH /api/v1/field-help/{helpKey}',
         { status: 409, body: versionConflict() },
         { helpKey: 'plan.plannedCost' },
@@ -190,7 +186,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
 
   it('shows the problem the API finds under the text', async () => {
     const { user } = renderHelp([
-      looseReply(
+      reply(
         'PATCH /api/v1/field-help/{helpKey}',
         {
           status: 400,
@@ -211,7 +207,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
 
   it('resets an edited text to the default after asking (US7-3)', async () => {
     const { user, api } = renderHelp([
-      looseReply(
+      reply(
         'PATCH /api/v1/field-help/{helpKey}',
         {
           body: { ...PLAN_PLANNED_COST, text: PLAN_PLANNED_COST.defaultText, isDefault: true },
