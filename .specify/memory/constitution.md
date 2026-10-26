@@ -1,22 +1,18 @@
 <!--
 Sync Impact Report
-- Version change: 3.1.0 → 3.1.1 (PATCH: B6's error example shows `fields` as the list the API sends,
-  feature 022). Before it, 3.0.0 → 3.1.0 (MINOR: a supply-chain rule added to Principle VII; no
-  principle removed or redefined). It ships together with 3.0.0 on the same branch:
-  IV PostgreSQL in every environment, Docker optional; V file-length limit; VI store and
-  end-to-end tests on PostgreSQL.
-- Modified principles: VII Security and Privacy by Design — release age: a package version must be
-  at least 24 hours old before it is installed or added
-- Modified sections: Amendment History
+- Version change: 3.1.1 → 4.0.0 (MAJOR: store tests on PostgreSQL were required; database tests
+  other than scope isolation are now forbidden, so existing store tests no longer comply).
+- Modified principles: VI Meaningful Tests — only end-to-end tests and the scope-isolation tests of
+  scoped store reads use a real database; every other test uses fakes; queries, constraints and
+  migrations are not tested on a database
+- Modified sections: B9 Go Testing, Technology Choices (Testing row), Amendment History
 - Added sections: none
 - Removed sections: none
-- Files changed with this amendment: frontend/.npmrc (`min-release-age=1`), frontend/package.json
-  (`engines.npm`); CLAUDE.md
+- Files changed with this amendment: CLAUDE.md, backend/CLAUDE.md, backend/docs/GO_STANDARDS.md
 - Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
+  - Feature 023 keeps one scope-isolation test per scoped area and deletes its other store tests
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
-  - A decision-log entry for 2.0.0–3.1.0; docs/product/design-system.md and ADR-0004 to be
-    aligned with them
 -->
 
 
@@ -200,7 +196,9 @@ industry-standard but not complex.
   - for every bug fix, a test that reproduces the bug and fails before the fix.
 - Tests MUST NOT be written for the sake of having them. Forbidden: tests that restate the
   implementation line by line; tests of the language, a framework, a library or generated code
-  (that React renders a prop, that a getter returns its field, that sqlc maps a column); tests
+  (that React renders a prop, that a getter returns its field, that sqlc maps a column); database
+  tests of queries, constraints or migrations other than the scope-isolation tests (sqlc checks
+  every query against the schema, and end-to-end tests run the migrations); tests
   whose only assertion is that a mock was called; a second test that proves what another test at
   the same level already proves; snapshots of a rendered DOM tree; tests that only execute code to
   raise coverage.
@@ -215,8 +213,11 @@ industry-standard but not complex.
 - Tests MUST be deterministic: fixed dates, an injected clock and seed data; no dependence on the
   real clock, execution order, network services outside the test's control, or `sleep`-based
   synchronisation.
-- Store, integration and end-to-end tests run against PostgreSQL, the same engine and major
-  version as every other environment. No test requires Docker.
+- Only two kinds of test touch a real database: end-to-end tests, and the scope-isolation test of
+  each store read of scoped records (the scope filter is a security boundary written in SQL, which
+  a fake cannot check). Both run against PostgreSQL, the engine and major version of every other
+  environment. Every other test (unit, service, handler, contract) uses hand-written fakes and
+  needs no database. No test requires Docker.
 
 **Rationale:** planning money must be trustworthy and calculations cannot be checked by eye; but
 tests that prove nothing cost time to write, read and maintain, and erode trust in the suite.
@@ -499,7 +500,7 @@ These rules apply to everything under `backend/` and refine the Core Principles 
 | Logging | `log/slog` with the JSON handler |
 | Telemetry | OpenTelemetry (traces and metrics) |
 | Contract tests | `github.com/pb33f/libopenapi-validator` against `backend/api/openapi.yaml` |
-| Testing | standard `testing`, `net/http/httptest`, `github.com/google/go-cmp`; store tests on PostgreSQL databases created per test from `TEST_DATABASE_URL`; no test requires Docker (no testcontainers) |
+| Testing | standard `testing`, `net/http/httptest`, `github.com/google/go-cmp`; scope-isolation store tests on PostgreSQL databases created per test from `TEST_DATABASE_URL`, every other test on fakes; no test requires Docker (no testcontainers) |
 | Static analysis | `golangci-lint` v2 with `backend/.golangci.yml`, `govulncheck`, SonarQube |
 
 - ORMs (e.g. GORM, ent) and runtime auto-migration MUST NOT be used.
@@ -624,10 +625,10 @@ These rules apply to everything under `backend/` and refine the Core Principles 
 - Tests use the standard `testing` package with `go-cmp` for comparisons; a test with several
   input cases is table-driven with a descriptive name per case, and tests call `t.Parallel()`
   where they share no state.
-- Store and integration tests run against real PostgreSQL: each test gets its own database,
-  created from a migrated template on the server named by `TEST_DATABASE_URL` (a native install
-  or the Compose service) and dropped afterwards. They skip under `-short`, so unit tests need no
-  database. Handler tests use `net/http/httptest`; handler tests are external test packages
+- Scope-isolation tests of store reads are the only Go tests on a real database: each gets its own
+  PostgreSQL database, created from a migrated template on the server named by `TEST_DATABASE_URL`
+  (a native install or the Compose service) and dropped afterwards, and skips under `-short`.
+  Service, handler and contract tests use fakes. Handler tests use `net/http/httptest`; handler tests are external test packages
   (`package <name>_test`).
 - Time-dependent code MUST receive an injected clock or be tested with `testing/synctest`;
   `time.Sleep` in tests is forbidden.
@@ -1117,5 +1118,6 @@ amended to match.
 | 3.0.0 | 2026-10-26 | IV: PostgreSQL in every environment from the start (pgx, sqlc, goose), replacing "SQLite now, PostgreSQL later"; Docker optional — `compose.yaml` runs PostgreSQL for those who want it, a native install works as well, and no test requires Docker. V: file length limit of 300 non-blank lines (401+ never merged) | Product owner instruction of 2026-10-26 |
 | 3.1.0 | 2026-10-26 | VII: release age — a package version (npm package or Go module) must have been published at least 24 hours before it is installed or added; npm's built-in `min-release-age=1` in `frontend/.npmrc`, reviewers for Go modules | Product owner instruction of 2026-10-26 |
 | 3.1.1 | 2026-10-26 | B6: the error envelope's `fields` is a list of `{field, message}` — it keeps the order and allows several messages for one field (feature 022) | Product owner decision of 2026-10-26 |
+| 4.0.0 | 2026-10-26 | VI, B9: only end-to-end tests and the scope-isolation tests of scoped store reads use a real database; every other test uses fakes, and database tests of queries, constraints or migrations are forbidden (they were required store tests before) | Product owner decision of 2026-10-26 |
 
-**Version**: 3.1.1 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 4.0.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

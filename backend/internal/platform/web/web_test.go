@@ -1,37 +1,40 @@
 package web_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
+
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/logging"
 	"mapp/internal/platform/web"
 )
 
-// The bodies of the API's own refusals, as the web app receives them.
 const (
 	otherSiteBody  = `{"error":{"code":"bad_request","message":"This request came from another site and was refused.","fields":[]}}`
 	unreadableBody = `{"error":{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`
 	internalBody   = `{"error":{"code":"internal_error","message":"Something went wrong on our side. Please try again.","fields":[]}}`
+	notFoundBody   = `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`
+	testPath       = "/api/v1/test"
+	uploadPath     = "/api/v1/upload"
 )
 
-// Requests that a browser marks as coming from another site or origin are refused, so another web page
-// on this computer cannot act for the signed-in person. Reads (GET) change nothing and stay allowed
-// (research R6).
-func TestMiddleware_RefusesCrossOriginRequests(t *testing.T) {
+// Requests that a browser marks as coming from another site or origin are refused; reads stay allowed.
+func TestEngine_RefusesCrossOriginRequests(t *testing.T) {
 	tests := []struct {
-		name    string
-		method  string
-		header  string
-		value   string
-		refused bool
+		name, method, header, value string
+		refused                     bool
 	}{
 		{"POST from another site", http.MethodPost, "Sec-Fetch-Site", "same-site", true},
 		{"PATCH from another site", http.MethodPatch, "Sec-Fetch-Site", "cross-site", true},
@@ -42,101 +45,60 @@ func TestMiddleware_RefusesCrossOriginRequests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, called := countingHandler()
-			r := newRequest(tt.method, "/api/v1/test", "")
+			r := newRequest(tt.method, testPath, "")
 			if tt.header != "" {
 				r.Header.Set(tt.header, tt.value)
 			}
-
-			w := serve(web.Middleware(handler), r)
-
-			if tt.refused {
-				assertAnswer(t, w, http.StatusBadRequest, otherSiteBody)
-				if *called {
-					t.Error("the handler ran for a refused request")
-				}
-			} else if w.Code != http.StatusOK || !*called {
-				t.Errorf("status %d, handler ran %v; want 200 and the handler to run", w.Code, *called)
-			}
+			assertRefused(t, r, tt.refused)
 		})
 	}
 }
 
-// Only requests addressed to this computer are answered, which protects against DNS rebinding
-// (research R6). Any port is fine.
-func TestMiddleware_RefusesOtherHosts(t *testing.T) {
-	tests := []struct {
-		host    string
-		refused bool
-	}{
-		{"127.0.0.1:8080", false},
-		{"127.0.0.1", false},
-		{"localhost:5173", false},
-		{"LOCALHOST", false},
-		{"[::1]:8080", false},
-		{"[::1]", false},
-		{"evil.example", true},
-		{"evil.example:8080", true},
-		{"127.0.0.1.evil.example", true},
-		{"localhost.evil.example:8080", true},
-		{"", true},
+// Only requests addressed to this computer are answered (DNS rebinding); any port is fine.
+func TestEngine_RefusesOtherHosts(t *testing.T) {
+	hosts := map[string]bool{
+		"127.0.0.1:8080": false, "127.0.0.1": false, "localhost:5173": false, "LOCALHOST": false,
+		"[::1]:8080": false, "[::1]": false, "evil.example": true, "evil.example:8080": true,
+		"127.0.0.1.evil.example": true, "localhost.evil.example:8080": true, "": true,
 	}
-	for _, tt := range tests {
-		t.Run(tt.host, func(t *testing.T) {
-			handler, called := countingHandler()
-			r := newRequest(http.MethodGet, "/api/v1/test", "")
-			r.Host = tt.host
-
-			w := serve(web.Middleware(handler), r)
-
-			if tt.refused {
-				assertAnswer(t, w, http.StatusBadRequest, otherSiteBody)
-				if *called {
-					t.Error("the handler ran for a refused request")
-				}
-			} else if w.Code != http.StatusOK || !*called {
-				t.Errorf("status %d, handler ran %v; want 200 and the handler to run", w.Code, *called)
-			}
+	for host, refused := range hosts {
+		t.Run(host, func(t *testing.T) {
+			r := newRequest(http.MethodGet, testPath, "")
+			r.Host = host
+			assertRefused(t, r, refused)
 		})
 	}
 }
 
-// A panic in a handler answers a plain-language 500, never a stack trace (FR-020).
-func TestMiddleware_PanicAnswersInternalError_FR020(t *testing.T) {
-	panicking := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })
-
-	w := serve(web.Middleware(panicking), newRequest(http.MethodGet, "/api/v1/test", ""))
+func TestEngine_PanicAnswersInternalError_024_FR009(t *testing.T) {
+	w := serve(t, func(*gin.Context) { panic("boom") }, newRequest(http.MethodGet, testPath, ""))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
 }
 
-// A panic after the answer has started cannot change it any more: nothing is added to what was sent.
-func TestMiddleware_PanicAfterTheAnswerStartedAddsNothing(t *testing.T) {
-	startedThenPanics := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		web.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
+func TestEngine_PanicAfterTheAnswerStartedAddsNothing(t *testing.T) {
+	startedThenPanics := func(c *gin.Context) {
+		web.Respond(c, http.StatusOK, map[string]bool{"ok": true})
 		panic("boom")
-	})
+	}
 
-	w := serve(web.Middleware(startedThenPanics), newRequest(http.MethodGet, "/api/v1/test", ""))
+	w := serve(t, startedThenPanics, newRequest(http.MethodGet, testPath, ""))
 
 	assertAnswer(t, w, http.StatusOK, `{"ok":true}`)
 }
 
-// Every answer tells the browser not to keep a copy (so signed-out users never see cached data) and not
-// to guess content types (research R10).
-func TestMiddleware_APIHeadersOnEveryAnswer(t *testing.T) {
-	ok, _ := countingHandler()
-	panicking := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })
-	otherHost := newRequest(http.MethodGet, "/api/v1/test", "")
+// Every answer, refusals, panics and unknown paths included, forbids caching and content sniffing.
+func TestEngine_APIHeadersOnEveryAnswer(t *testing.T) {
+	otherHost := newRequest(http.MethodGet, testPath, "")
 	otherHost.Host = "evil.example"
-	crossSite := newRequest(http.MethodPost, "/api/v1/test", "")
+	crossSite := newRequest(http.MethodPost, testPath, "")
 	crossSite.Header.Set("Sec-Fetch-Site", "cross-site")
-
 	answers := map[string]*httptest.ResponseRecorder{
-		"normal answer":      serve(web.Middleware(ok), newRequest(http.MethodGet, "/api/v1/test", "")),
-		"refused host":       serve(web.Middleware(ok), otherHost),
-		"refused cross-site": serve(web.Middleware(ok), crossSite),
-		"panic":              serve(web.Middleware(panicking), newRequest(http.MethodGet, "/api/v1/test", "")),
+		"normal answer":      serve(t, ok, newRequest(http.MethodGet, testPath, "")),
+		"refused host":       serve(t, ok, otherHost),
+		"refused cross-site": serve(t, ok, crossSite),
+		"panic":              serve(t, func(*gin.Context) { panic("boom") }, newRequest(http.MethodGet, testPath, "")),
+		"unknown path":       serve(t, ok, newRequest(http.MethodGet, "/api/v1/nowhere", "")),
 	}
 	for name, w := range answers {
 		if got := w.Header().Get("Cache-Control"); got != "no-store" {
@@ -148,23 +110,62 @@ func TestMiddleware_APIHeadersOnEveryAnswer(t *testing.T) {
 	}
 }
 
-func TestReadJSON_AcceptsAJSONBody(t *testing.T) {
-	r := newRequest(http.MethodPost, "/api/v1/test", `{"name":"Ideas"}`+"\n")
-	r.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	w := serve(http.HandlerFunc(echoName), r)
-
-	assertAnswer(t, w, http.StatusOK, `{"name":"Ideas"}`)
+func TestEngine_UnknownPathsAndMethodsAnswerJSONNotFound(t *testing.T) {
+	for _, r := range []*http.Request{
+		newRequest(http.MethodGet, "/api/v1/nowhere", ""),
+		newRequest(http.MethodGet, testPath+"/", ""),
+		newRequest(http.MethodDelete, testPath, ""),
+	} {
+		assertAnswer(t, serve(t, ok, r), http.StatusNotFound, notFoundBody)
+	}
 }
 
-// A body MAPP cannot read safely is refused with a message for the user; the technical detail goes
-// only to the server log (research R9, R10).
-func TestReadJSON_RefusesUnreadableBodies(t *testing.T) {
-	tests := []struct {
-		name        string
-		contentType string
-		body        string
-	}{
+func TestEngine_RequestIDMadeByTheServer_024_FR005(t *testing.T) {
+	sent := newRequest(http.MethodGet, testPath, "")
+	sent.Header.Set("X-Request-ID", "chosen-by-the-client")
+
+	first := serve(t, ok, sent).Header().Get("X-Request-ID")
+	second := serve(t, ok, newRequest(http.MethodGet, testPath, "")).Header().Get("X-Request-ID")
+
+	if first == "" || first == "chosen-by-the-client" || first == second {
+		t.Errorf("request IDs %q and %q, want two different IDs made by the server", first, second)
+	}
+}
+
+func TestEngine_OneRequestRecordPerRequest_024_FR007(t *testing.T) {
+	var out bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(logging.New(&out, slog.LevelInfo))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+
+	w := serve(t, ok, newRequest(http.MethodGet, testPath, ""))
+
+	var record map[string]any
+	if err := json.Unmarshal(out.Bytes(), &record); err != nil {
+		t.Fatalf("log %q is not one JSON record: %v", out.String(), err)
+	}
+	want := map[string]any{"msg": "request", "method": "GET", "path": testPath, "route": testPath,
+		"status": float64(http.StatusOK), "request_id": w.Header().Get("X-Request-ID")}
+	for key, value := range want {
+		if record[key] != value {
+			t.Errorf("%s = %v, want %v", key, record[key], value)
+		}
+	}
+	if _, found := record["duration_ms"]; !found {
+		t.Error("the request record has no duration_ms")
+	}
+}
+
+func TestBindJSON_AcceptsAJSONBody(t *testing.T) {
+	r := newRequest(http.MethodPost, testPath, `{"name":"Ideas"}`+"\n")
+	r.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	assertAnswer(t, serve(t, echoName, r), http.StatusOK, `{"name":"Ideas"}`)
+}
+
+// A body MAPP cannot read safely is refused with a message for the user; the detail goes only to the log.
+func TestBindJSON_RefusesUnreadableBodies(t *testing.T) {
+	tests := []struct{ name, contentType, body string }{
 		{"plain text content type", "text/plain", `{"name":"Ideas"}`},
 		{"no content type", "", `{"name":"Ideas"}`},
 		{"data after the JSON value", "application/json", `{"name":"Ideas"} {"name":"Other"}`},
@@ -173,54 +174,52 @@ func TestReadJSON_RefusesUnreadableBodies(t *testing.T) {
 		{"not JSON", "application/json", `name=Ideas`},
 		{"wrong type", "application/json", `{"name":42}`},
 		{"empty body", "application/json", ``},
-		{"larger than 1 MB", "application/json", `{"name":"` + strings.Repeat("a", 1<<20) + `"}`},
+		{"larger than 1 MB", "application/json", bigName(1 << 20)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := newRequest(http.MethodPost, "/api/v1/test", tt.body)
+			r := newRequest(http.MethodPost, testPath, tt.body)
 			r.Header.Del("Content-Type")
 			if tt.contentType != "" {
 				r.Header.Set("Content-Type", tt.contentType)
 			}
 
-			w := serve(http.HandlerFunc(echoName), r)
-
-			assertAnswer(t, w, http.StatusBadRequest, unreadableBody)
+			assertAnswer(t, serve(t, echoName, r), http.StatusBadRequest, unreadableBody)
 		})
 	}
 }
 
-// An *errs.Error keeps its status and message even when it was wrapped on its way up, for example
-// through a store transaction (research R9).
-func TestWriteError_WrappedErrorKeepsItsStatus(t *testing.T) {
-	err := fmt.Errorf("deleting folder: %w", errs.NotFound("This sample folder no longer exists — someone may have deleted it."))
-	w := httptest.NewRecorder()
+func TestLimitBody_AnOperationMayRaiseTheLimit_024_FR010(t *testing.T) {
+	w := serve(t, echoName, newRequest(http.MethodPost, uploadPath, bigName(2<<20)))
 
-	web.WriteError(w, newRequest(http.MethodDelete, "/api/v1/sample-folders/SF-1001", ""), err)
+	if w.Code != http.StatusOK {
+		t.Errorf("a 2 MB body to %s = %d %s, want 200", uploadPath, w.Code, w.Body.String()[:min(w.Body.Len(), 200)])
+	}
+}
+
+func TestRespondError_WrappedErrorKeepsItsStatus(t *testing.T) {
+	err := fmt.Errorf("deleting folder: %w", errs.NotFound("This sample folder no longer exists — someone may have deleted it."))
+
+	w := serve(t, failWith(err), newRequest(http.MethodGet, testPath, ""))
 
 	assertAnswer(t, w, http.StatusNotFound,
 		`{"error":{"code":"not_found","message":"This sample folder no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
-// Any other error becomes a plain-language 500; its technical text never reaches the user (FR-020).
-func TestWriteError_UnexpectedErrorHidesDetails_FR020(t *testing.T) {
-	w := httptest.NewRecorder()
-
-	web.WriteError(w, newRequest(http.MethodGet, "/api/v1/test", ""), errors.New("open data/people.json: access is denied"))
+func TestRespondError_UnexpectedErrorHidesDetails_FR020(t *testing.T) {
+	w := serve(t, failWith(errors.New("open data/people.json: access is denied")), newRequest(http.MethodGet, testPath, ""))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
 }
 
-// Every error answer has "fields", an empty list when no field is wrong (research R9, FR-020).
-func TestWriteError_FieldsAlwaysPresent_FR020(t *testing.T) {
+func TestRespondError_FieldsAlwaysPresent_FR020(t *testing.T) {
 	failures := map[string]error{
 		"sign in required": errs.SignInRequired(),
 		"version conflict": errs.VersionConflict("sample folder", "Daniel Okoro", time.Date(2026, 3, 12, 14, 32, 0, 0, time.UTC)),
 		"unexpected":       errors.New("disk full"),
 	}
 	for name, err := range failures {
-		w := httptest.NewRecorder()
-		web.WriteError(w, newRequest(http.MethodGet, "/api/v1/test", ""), err)
+		w := serve(t, failWith(err), newRequest(http.MethodGet, testPath, ""))
 
 		var body struct {
 			Error map[string]json.RawMessage `json:"error"`
@@ -234,53 +233,6 @@ func TestWriteError_FieldsAlwaysPresent_FR020(t *testing.T) {
 	}
 }
 
-func TestNotFound_AnswersJSON(t *testing.T) {
-	w := httptest.NewRecorder()
-
-	web.NotFound(w, newRequest(http.MethodGet, "/api/v1/nowhere", ""))
-
-	assertAnswer(t, w, http.StatusNotFound, `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`)
-}
-
-func TestWriteJSON_StatusContentTypeAndBody(t *testing.T) {
-	w := httptest.NewRecorder()
-
-	web.WriteJSON(w, http.StatusCreated, map[string]string{"id": "SF-1001"})
-
-	assertAnswer(t, w, http.StatusCreated, `{"id":"SF-1001"}`)
-}
-
-// The router records every pattern it registers, so a test can compare the API's routes with the
-// contract (research R11).
-func TestRouter_RecordsPatterns(t *testing.T) {
-	ok, _ := countingHandler()
-	router := web.NewRouter()
-	router.Handle("GET /api/v1/health", ok)
-	router.Handle("POST /api/v1/auth/sign-in", ok)
-
-	got := router.Patterns()
-	if want := []string{"GET /api/v1/health", "POST /api/v1/auth/sign-in"}; !slices.Equal(got, want) {
-		t.Fatalf("Patterns() = %q, want %q", got, want)
-	}
-
-	got[0] = "changed by the caller"
-	if again := router.Patterns(); again[0] != "GET /api/v1/health" {
-		t.Errorf("changing the returned list changed the router: %q", again)
-	}
-}
-
-func TestRouter_ServesRegisteredPatterns(t *testing.T) {
-	router := web.NewRouter()
-	router.Handle("GET /api/v1/sample-folders/{folderId}", func(w http.ResponseWriter, r *http.Request) {
-		web.WriteJSON(w, http.StatusOK, map[string]string{"folderId": r.PathValue("folderId")})
-	})
-
-	w := serve(router, newRequest(http.MethodGet, "/api/v1/sample-folders/SF-1001", ""))
-
-	assertAnswer(t, w, http.StatusOK, `{"folderId":"SF-1001"}`)
-}
-
-// newRequest builds a request the way the web app sends it to the local API.
 func newRequest(method, path, body string) *http.Request {
 	r := httptest.NewRequest(method, "http://127.0.0.1:8080"+path, strings.NewReader(body))
 	if body != "" {
@@ -289,35 +241,61 @@ func newRequest(method, path, body string) *http.Request {
 	return r
 }
 
-// serve sends r to h and returns the answer.
-func serve(h http.Handler, r *http.Request) *httptest.ResponseRecorder {
+// serve answers r with the API's engine, whose GET, POST and PATCH /api/v1/test and POST /api/v1/upload
+// (body limit 3 MB) run h.
+func serve(t *testing.T, h gin.HandlerFunc, r *http.Request) *httptest.ResponseRecorder {
+	t.Helper()
+	engine, err := web.NewEngine(web.Options{Tracer: tracenoop.NewTracerProvider(), Meter: metricnoop.NewMeterProvider(),
+		BodyLimits: map[string]int64{"POST " + uploadPath: 3 << 20}})
+	if err != nil {
+		t.Fatalf("NewEngine: %v", err)
+	}
+	for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodPatch} {
+		engine.Handle(method, testPath, h)
+	}
+	engine.POST(uploadPath, h)
 	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
+	engine.ServeHTTP(w, r)
 	return w
 }
 
-// countingHandler answers 200 {"ok":true} and records whether it ran.
-func countingHandler() (http.HandlerFunc, *bool) {
-	called := false
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		called = true
-		web.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
-	}), &called
+func assertRefused(t *testing.T, r *http.Request, refused bool) {
+	t.Helper()
+	ran := false
+	w := serve(t, func(c *gin.Context) { ran = true; ok(c) }, r)
+	if refused {
+		assertAnswer(t, w, http.StatusBadRequest, otherSiteBody)
+		if ran {
+			t.Error("the handler ran for a refused request")
+		}
+	} else if w.Code != http.StatusOK || !ran {
+		t.Errorf("status %d, handler ran %v; want 200 and the handler to run", w.Code, ran)
+	}
 }
 
-// echoName reads {"name"} with ReadJSON and answers it back.
-func echoName(w http.ResponseWriter, r *http.Request) {
+func ok(c *gin.Context) {
+	web.Respond(c, http.StatusOK, map[string]bool{"ok": true})
+}
+
+func failWith(err error) gin.HandlerFunc {
+	return func(c *gin.Context) { web.RespondError(c, err) }
+}
+
+func echoName(c *gin.Context) {
 	var input struct {
 		Name string `json:"name"`
 	}
-	if err := web.ReadJSON(w, r, &input); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &input); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, input)
+	web.Respond(c, http.StatusOK, input)
 }
 
-// assertAnswer checks the status, the JSON content type and the exact body of an answer.
+func bigName(size int) string {
+	return `{"name":"` + strings.Repeat("a", size) + `"}`
+}
+
 func assertAnswer(t *testing.T, w *httptest.ResponseRecorder, status int, body string) {
 	t.Helper()
 	if w.Code != status {

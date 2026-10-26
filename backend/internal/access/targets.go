@@ -2,8 +2,6 @@ package access
 
 import (
 	"context"
-	"net/http"
-	"strings"
 
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
@@ -51,35 +49,6 @@ func (s *Service) UseTargets(finders map[string]TargetFinder) {
 	}
 	for name, find := range finders {
 		s.targets[name] = find
-	}
-}
-
-// targetOf finds the record the request's path names, through the finder of the pattern's path parameter;
-// false when the pattern has no parameter with a finder or the record does not exist.
-func (s *Service) targetOf(r *http.Request) (Target, bool, error) {
-	for _, name := range pathParameters(r.Pattern) {
-		if find, known := s.targets[name]; known {
-			return find(r.Context(), r.PathValue(name))
-		}
-	}
-	return Target{}, false, nil
-}
-
-// pathParameters returns the names of the path parameters of a ServeMux pattern, in order:
-// "GET /api/v1/campaigns/{campaignId}/move" gives ["campaignId"].
-func pathParameters(pattern string) []string {
-	var names []string
-	for rest := pattern; ; {
-		open := strings.IndexByte(rest, '{')
-		if open < 0 {
-			return names
-		}
-		end := strings.IndexByte(rest[open:], '}')
-		if end < 0 {
-			return names
-		}
-		names = append(names, strings.TrimSuffix(rest[open+1:open+end], "..."))
-		rest = rest[open+end+1:]
 	}
 }
 

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"mapp/internal/auth"
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
@@ -207,22 +209,25 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 		t.Fatalf("SignIn: %v", err)
 	}
 	var who actor.Actor
-	saveANote := service.RequireSignIn(func(w http.ResponseWriter, r *http.Request) {
-		who, _ = actor.From(r.Context())
-		err := db.Write(r.Context(), func(ctx context.Context) error {
+	saveANote := func(c *gin.Context) {
+		who, _ = actor.From(c.Request.Context())
+		saveErr := db.Write(c.Request.Context(), func(ctx context.Context) error {
 			return store.Put(ctx, "notes", "N-1", map[string]string{"writtenBy": who.Name})
 		})
-		if err != nil {
-			web.WriteError(w, r, err)
+		if saveErr != nil {
+			web.RespondError(c, saveErr)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
-	})
+		c.Status(http.StatusNoContent)
+	}
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.New()
+	engine.POST("/api/v1/notes", service.RequireSignIn, saveANote)
 	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://127.0.0.1/api/v1/notes", nil)
 	request.AddCookie(&http.Cookie{Name: auth.CookieName, Value: token})
 	answer := httptest.NewRecorder()
 
-	saveANote(answer, request)
+	engine.ServeHTTP(answer, request)
 
 	if answer.Code != http.StatusNoContent {
 		t.Fatalf("status = %d %s, want 204", answer.Code, answer.Body)

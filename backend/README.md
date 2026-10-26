@@ -17,7 +17,7 @@ Run them in this folder (`backend/`).
 | `go run ./cmd/seed` | Loads the demo data (people, teams, roles and access rules, Settings with dated exchange rates, plans with their campaigns, initiatives, activities and line items, approval workflows with rules and a delegation, a global budget with its allocations, simulated GSAP transactions, activity-log history and a recycle-bin entry, two saved All work views) into an empty data folder — stop the API first |
 | `go run ./cmd/seed -reset` | Deletes the data files (`*.json`, `*.jsonl`, `*.tmp`) and loads the demo data again |
 | `go run ./cmd/seed -data <folder>` | Uses another data folder |
-| `go run ./cmd/api` | Starts the API on <http://127.0.0.1:8080>; Ctrl+C stops it |
+| `go run ./cmd/api` | Starts the API on <http://127.0.0.1:8080>, logging JSON lines on standard output; Ctrl+C or SIGTERM stops it once the requests in progress finish |
 | `gofmt -l .` | Lists files that are not formatted (prints nothing when all is well; `gofmt -w .` fixes them) |
 | `go vet ./...` | Finds suspicious code |
 | `go test ./...` | Runs every unit and contract test (one package: `go test ./internal/samples/`) |
@@ -37,6 +37,9 @@ Environment variables; an empty one counts as not set. Invalid values stop the A
 | `APP_PORT` | Port number, 1–65535. There is no host setting: the API listens on `127.0.0.1` only | `8080` |
 | `DATA_DIR` | Folder of the JSON store (`data` is git-ignored) | `data` |
 | `DEMO_PASSWORD` | The password every demo person shares; may not be blank | `mapp` |
+| `LOG_LEVEL` | `debug`, `info`, `warn` or `error` | `info` |
+| `SHUTDOWN_TIMEOUT` | How long the requests in progress may take to finish when the API stops, 1s–60s | `10s` |
+| `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER` | `none`, or `console` to write traces or metrics to standard error; nothing is ever sent off this computer | `none` |
 
 Example, PowerShell: `$env:APP_PORT = '18081'; go run ./cmd/api` · Git Bash: `APP_PORT=18081 go run ./cmd/api`
 
@@ -53,7 +56,9 @@ internal/
     actor/            who is acting: Actor{ID, Name}; actor.With and actor.From on the context
     clock/            "now" as a function, so tests can fix the time
     errs/             the one error format, its codes and constructors; errs.Problems collects field errors
-    web/              ReadJSON, WriteJSON, WriteError, the middleware, and the Router that records every route
+    web/              the Gin engine and its middleware; BindJSON, Respond and RespondError for handlers
+    logging/          JSON log lines that carry the request ID, trace ID and actor ID
+    telemetry/        OpenTelemetry tracing and metrics, exported to the console at most
     store/            the JSON file store: transactions (Read, Write) and table helpers (Get, List, Put, …)
     ids/              readable IDs such as SF-1001, from counters that only ever go up
     record/           record.Meta — version, created and updated by and at — with Touch and CheckVersion

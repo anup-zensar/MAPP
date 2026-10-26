@@ -2,8 +2,8 @@
 //
 //	go run ./cmd/api
 //
-// It reads APP_ENV, APP_PORT, DATA_DIR and DEMO_PASSWORD (see app.LoadConfig), loads the data folder and
-// serves until Ctrl+C, letting the requests in progress finish before it stops.
+// It reads its settings from the environment (see app.LoadConfig), writes its log as JSON lines on standard
+// output and serves until Ctrl+C or SIGTERM, letting the requests in progress finish before it stops.
 package main
 
 import (
@@ -12,33 +12,34 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
 
 	"mapp/internal/app"
 	"mapp/internal/platform/clock"
+	"mapp/internal/platform/logging"
 	"mapp/internal/platform/store"
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	slog.SetDefault(logging.New(os.Stdout, slog.LevelInfo))
+	if err := run(context.Background()); err != nil {
+		slog.Error("MAPP API stopped", "error", err)
 		os.Exit(1)
 	}
 }
 
-// run starts the API and serves until Ctrl+C. An error stops the program with its message.
-func run() error {
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil))) // the server log (research R24)
+func run(ctx context.Context) error {
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	cfg, err := app.LoadConfig(os.Getenv)
 	if err != nil {
 		return err
 	}
+	slog.SetDefault(logging.New(os.Stdout, cfg.LogLevel))
 	db, err := store.Open(cfg.DataDir)
 	if err != nil {
 		return err
@@ -51,27 +52,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
-
-	interrupted, stopListening := signal.NotifyContext(context.Background(), os.Interrupt) // Ctrl+C
-	defer stopListening()
-
-	server := &http.Server{
-		Handler:           api.Handler,
-		ReadHeaderTimeout: 10 * time.Second, // a client that never finishes its headers cannot block a connection
-	}
-	served := make(chan error, 1)
-	go func() { served <- server.Serve(listener) }()
-	fmt.Println(startupLine(cfg))
-
-	select {
-	case err := <-served:
-		return err // the server stopped by itself
-	case <-interrupted.Done():
-	}
-	// Stop accepting requests and give the ones in progress up to 10 seconds to finish.
-	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	slog.InfoContext(ctx, "MAPP API listening", "url", "http://"+listener.Addr().String(),
+		"environment", cfg.Env, "demo_sign_in", cfg.DemoMode())
+	served := app.Serve(ctx, listener, api.Handler, cfg.ShutdownTimeout)
+	closing, cancel := context.WithTimeout(context.WithoutCancel(ctx), cfg.ShutdownTimeout)
 	defer cancel()
-	return server.Shutdown(shutdown)
+	return errors.Join(served, api.Close(closing))
 }
 
 // listen opens port on 127.0.0.1 only, so that other computers cannot reach the API.
@@ -96,14 +82,4 @@ func isPortInUse(err error) bool {
 	var errno syscall.Errno
 	return errors.Is(err, syscall.EADDRINUSE) ||
 		(errors.As(err, &errno) && (errno == windowsAddressInUse || errno == windowsAccessDenied))
-}
-
-// startupLine is what the API prints once it is ready.
-func startupLine(cfg app.Config) string {
-	demoSignIn := "off"
-	if cfg.DemoMode() {
-		demoSignIn = "on"
-	}
-	return fmt.Sprintf("MAPP API listening on http://127.0.0.1:%d (environment: %s, demo sign-in %s)",
-		cfg.Port, cfg.Env, demoSignIn)
 }

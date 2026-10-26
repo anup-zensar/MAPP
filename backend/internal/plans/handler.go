@@ -2,11 +2,11 @@ package plans
 
 import (
 	"net/http"
-	"strconv"
+
+	"github.com/gin-gonic/gin"
 
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
-	"mapp/internal/platform/errs"
 	"mapp/internal/platform/web"
 	"mapp/internal/rollup"
 )
@@ -21,221 +21,190 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// Routes registers the plan routes on r. All of them need a signed-in person, so all are wrapped in
-// signedIn.
-func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/v1/plan-defaults", signedIn(h.defaults))
-	r.Handle("GET /api/v1/plans", signedIn(h.list))
-	r.Handle("POST /api/v1/plans", signedIn(h.create))
-	r.Handle("GET /api/v1/plans/{planId}", signedIn(h.get))
-	r.Handle("PATCH /api/v1/plans/{planId}", signedIn(h.update))
-	r.Handle("DELETE /api/v1/plans/{planId}", signedIn(h.delete))
-	r.Handle("POST /api/v1/plans/{planId}/change-effects", signedIn(h.changeEffects))
-	r.Handle("POST /api/v1/plans/{planId}/publish", signedIn(h.publish))
-	r.Handle("POST /api/v1/plans/{planId}/unpublish", signedIn(h.unpublish))
-	r.Handle("GET /api/v1/plans/{planId}/copy-options", signedIn(h.copyOptions))
-	r.Handle("POST /api/v1/plans/{planId}/copy", signedIn(h.copy))
-	r.Handle("PUT /api/v1/plans/{planId}/budget-phasing", signedIn(h.setBudgetPhasing)) // 016 FR-020
+// RegisterRoutes registers the plan routes on r.
+func (h *Handler) RegisterRoutes(r gin.IRoutes) {
+	r.GET("/plan-defaults", h.defaults)
+	r.GET("/plans", h.list)
+	r.POST("/plans", h.create)
+	r.GET("/plans/:planId", h.get)
+	r.PATCH("/plans/:planId", h.update)
+	r.DELETE("/plans/:planId", h.delete)
+	r.POST("/plans/:planId/change-effects", h.changeEffects)
+	r.POST("/plans/:planId/publish", h.publish)
+	r.POST("/plans/:planId/unpublish", h.unpublish)
+	r.GET("/plans/:planId/copy-options", h.copyOptions)
+	r.POST("/plans/:planId/copy", h.copy)
+	r.PUT("/plans/:planId/budget-phasing", h.setBudgetPhasing) // 016 FR-020
 }
 
 // setBudgetPhasing answers PUT /api/v1/plans/{planId}/budget-phasing with the plan after the save (016 FR-020).
-func (h *Handler) setBudgetPhasing(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setBudgetPhasing(c *gin.Context) {
 	var input rollup.PhasingInput
-	if err := web.ReadJSON(w, r, &input); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &input); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	plan, err := h.service.SetBudgetPhasing(r.Context(), a, r.PathValue("planId"), input)
+	a, _ := actor.From(c.Request.Context())
+	plan, err := h.service.SetBudgetPhasing(c.Request.Context(), a, c.Param("planId"), input)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, plan)
+	web.Respond(c, http.StatusOK, plan)
 }
 
 // defaults answers GET /api/v1/plan-defaults: what a new plan starts with for the signed-in person.
-func (h *Handler) defaults(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	defaults, err := h.service.Defaults(r.Context(), a)
+func (h *Handler) defaults(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	defaults, err := h.service.Defaults(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, defaults)
+	web.Respond(c, http.StatusOK, defaults)
 }
 
 // create answers POST /api/v1/plans with 201 and the new plan.
-func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) create(c *gin.Context) {
 	var input PlanInput
-	if err := web.ReadJSON(w, r, &input); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &input); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	plan, err := h.service.Create(r.Context(), a, input)
+	a, _ := actor.From(c.Request.Context())
+	plan, err := h.service.Create(c.Request.Context(), a, input)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusCreated, plan)
+	web.Respond(c, http.StatusCreated, plan)
 }
 
 // get answers GET /api/v1/plans/{planId} with the plan and its calculated values.
-func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	plan, err := h.service.Get(r.Context(), a, r.PathValue("planId"))
+func (h *Handler) get(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	plan, err := h.service.Get(c.Request.Context(), a, c.Param("planId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, plan)
+	web.Respond(c, http.StatusOK, plan)
 }
 
 // list answers GET /api/v1/plans: the plans matching the query's scope, status, years (year, or yearFrom and
 // yearTo, 016 FR-033), plan types and search, with the summary cards (FR-001 – FR-004). Every wrong
 // parameter is reported at once.
-func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	filter := ListFilter{Scope: query.Get("scope"), Status: query.Get("status"), Q: query.Get("q"), Types: query["type"]}
-	var yearProblems errs.Problems
-	for _, year := range []struct {
-		name   string
-		target **int
-	}{{"year", &filter.Year}, {"yearFrom", &filter.YearFrom}, {"yearTo", &filter.YearTo}} {
-		name, target := year.name, year.target
-		if text := query.Get(name); text != "" {
-			year, err := strconv.Atoi(text)
-			if err != nil {
-				yearProblems.Add(name, msgChooseListYear)
-				continue
-			}
-			*target = &year
-		}
-	}
-	// In the order of the query: scope and status, then the years, then the range and the plan types.
-	var problems errs.Problems
-	others := filterProblems(filter)
-	for _, p := range others {
-		if p.Field == "scope" || p.Field == "status" {
-			problems.Add(p.Field, p.Message)
-		}
-	}
-	problems = append(problems, yearProblems...)
-	for _, p := range others {
-		if p.Field != "scope" && p.Field != "status" {
-			problems.Add(p.Field, p.Message)
-		}
-	}
-	if err := problems.Err(); err != nil {
-		web.WriteError(w, r, err)
-		return
-	}
-	a, _ := actor.From(r.Context())
-	list, err := h.service.List(r.Context(), a, filter)
+func (h *Handler) list(c *gin.Context) {
+	filter, err := parseListFilter(c.Request.URL.Query())
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, list)
+	a, _ := actor.From(c.Request.Context())
+	list, err := h.service.List(c.Request.Context(), a, filter)
+	if err != nil {
+		web.RespondError(c, err)
+		return
+	}
+	web.Respond(c, http.StatusOK, list)
 }
 
 // update answers PATCH /api/v1/plans/{planId} with the plan after the save.
-func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) update(c *gin.Context) {
 	var update PlanUpdate
-	if err := web.ReadJSON(w, r, &update); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &update); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	plan, err := h.service.Update(r.Context(), a, r.PathValue("planId"), update)
+	a, _ := actor.From(c.Request.Context())
+	plan, err := h.service.Update(c.Request.Context(), a, c.Param("planId"), update)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, plan)
+	web.Respond(c, http.StatusOK, plan)
 }
 
 // delete answers DELETE /api/v1/plans/{planId} with the recycle-bin entry of the plan, so the web app can
 // offer Undo.
-func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	entry, err := h.service.Delete(r.Context(), a, r.PathValue("planId"))
+func (h *Handler) delete(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	entry, err := h.service.Delete(c.Request.Context(), a, c.Param("planId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
+	web.Respond(c, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
 }
 
 // changeEffects answers POST /api/v1/plans/{planId}/change-effects with what a new model and business unit
 // would change; nothing is saved.
-func (h *Handler) changeEffects(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) changeEffects(c *gin.Context) {
 	var request ChangeEffectsRequest
-	if err := web.ReadJSON(w, r, &request); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &request); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	effects, err := h.service.ChangeEffects(r.Context(), a, r.PathValue("planId"), request)
+	a, _ := actor.From(c.Request.Context())
+	effects, err := h.service.ChangeEffects(c.Request.Context(), a, c.Param("planId"), request)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, effects)
+	web.Respond(c, http.StatusOK, effects)
 }
 
 // publish answers POST /api/v1/plans/{planId}/publish with the Published plan, or 409 not_ready listing
 // every missing field.
-func (h *Handler) publish(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	plan, err := h.service.Publish(r.Context(), a, r.PathValue("planId"))
+func (h *Handler) publish(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	plan, err := h.service.Publish(c.Request.Context(), a, c.Param("planId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, plan)
+	web.Respond(c, http.StatusOK, plan)
 }
 
 // unpublish answers POST /api/v1/plans/{planId}/unpublish with the plan back in Draft.
-func (h *Handler) unpublish(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) unpublish(c *gin.Context) {
 	var request UnpublishRequest
-	if err := web.ReadJSON(w, r, &request); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &request); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	plan, err := h.service.Unpublish(r.Context(), a, r.PathValue("planId"), request)
+	a, _ := actor.From(c.Request.Context())
+	plan, err := h.service.Unpublish(c.Request.Context(), a, c.Param("planId"), request)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, plan)
+	web.Respond(c, http.StatusOK, plan)
 }
 
 // copyOptions answers GET /api/v1/plans/{planId}/copy-options: what the copy dialog offers.
-func (h *Handler) copyOptions(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	options, err := h.service.CopyOptions(r.Context(), a, r.PathValue("planId"))
+func (h *Handler) copyOptions(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	options, err := h.service.CopyOptions(c.Request.Context(), a, c.Param("planId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, options)
+	web.Respond(c, http.StatusOK, options)
 }
 
 // copy answers POST /api/v1/plans/{planId}/copy with 201, the new plan and what the copy changed on purpose.
-func (h *Handler) copy(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) copy(c *gin.Context) {
 	var request CopyRequest
-	if err := web.ReadJSON(w, r, &request); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &request); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	result, err := h.service.Copy(r.Context(), a, r.PathValue("planId"), request)
+	a, _ := actor.From(c.Request.Context())
+	result, err := h.service.Copy(c.Request.Context(), a, c.Param("planId"), request)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusCreated, result)
+	web.Respond(c, http.StatusCreated, result)
 }
