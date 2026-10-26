@@ -23,7 +23,7 @@ import { moreActions } from './model-actions';
 import type { ModelActions } from './model-actions';
 import { ModelDetails } from './ModelDetails';
 import { ModelForm } from './ModelForm';
-import type { ModelFormMode } from './ModelForm';
+import type { ModelFormMode } from './model-values';
 import { MODEL_LISTS, setModelStatus, useDeleteModel } from './api';
 import type { Model } from './api';
 import { useModels } from '../api';
