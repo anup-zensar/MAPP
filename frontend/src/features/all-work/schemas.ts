@@ -44,12 +44,10 @@ const ids = z
   .array(z.string())
   .transform((values) => values.map((id): FilterValue => ({ id, label: id })));
 
-/** The values of a fixed list (its labels' keys), in the address's order; others are left out. */
 function known<T extends string>(labels: Record<T, string>) {
   return z.array(z.string()).transform((values) => values.filter(isLabelled(labels)));
 }
 
-/** The first known value of a single-choice filter, else its "not filtered" value. */
 function firstKnown<T extends string>(labels: Record<T, string>, fallback: NoInfer<T>) {
   return known(labels).transform((values) => values.at(0) ?? fallback);
 }
@@ -58,7 +56,6 @@ const currencyCodes = z
   .array(z.string())
   .transform((codes) => codes.filter((code) => CURRENCY_CODE.test(code)));
 
-/** The All work filters, years and search an address names; values that are not valid go. */
 const addressSchema = z.object({
   year: yearParam,
   yearFrom: yearParam,
@@ -145,19 +142,16 @@ function readAddress(params: URLSearchParams): Address {
   return parsed.success ? parsed.data : NO_ADDRESS;
 }
 
-/** A saved view's name: required and at most 60 characters (data-model §1.1, FR-029). */
 const viewName = z
   .string()
   .refine((name) => name.trim() !== '', 'Enter a name for the view.')
   // Characters, not UTF-16 units: "é" or an emoji counts once.
   .refine((name) => [...name.trim()].length <= NAME_MAX, 'Use 60 characters or fewer.');
 
-/** Save current view (FR-029): a name the person already uses is replaced after a question. */
 export const saveViewSchema = z.object({ name: viewName, isDefault: z.boolean() });
 
 export type SaveViewValues = z.infer<typeof saveViewSchema>;
 
-/** Rename view (FR-029): the same name rules, and not the name of another of the views. */
 export function renameViewSchema(views: SavedView[], viewId: string) {
   return z.object({
     name: viewName.superRefine((name, context) => {

@@ -1,4 +1,3 @@
-/** The filter chips of All work and Clear all (FR-008). */
 import {
   ACTIVITY_STATUS_LABELS,
   CONTAINER_STATUS_LABELS,

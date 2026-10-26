@@ -1,4 +1,3 @@
-/** The Calendar's timeline columns and its legend (US5, FR-025, 016 FR-036). */
 import type { AllWorkRow, AllWorkStatus } from './all-work-types';
 import { monthDays, quarterDays, yearDays } from './calendar';
 import { statusWord } from './status-words';

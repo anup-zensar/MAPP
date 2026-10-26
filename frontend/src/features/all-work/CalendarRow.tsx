@@ -26,7 +26,6 @@ export interface CalendarRowProps {
   onOpen: (row: AllWorkRow) => void;
 }
 
-/** One row of the Calendar: its name and its bar on the timeline. */
 export function CalendarRow({
   visible,
   year,

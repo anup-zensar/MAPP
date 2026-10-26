@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { nth } from '@/testing/dom';
-import { seedRows, standard2026 } from '@/testing/fixtures/all-work';
+import { seedRows } from '@/testing/fixtures/all-work-seed';
+import { standard2026 } from '@/testing/fixtures/all-work';
 import type { AllWorkRow, ViewState } from './all-work-types';
 import { continuedPath, pageOf, toggleRow, visibleRows } from './view-rows';
 

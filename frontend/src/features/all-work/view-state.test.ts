@@ -1,11 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_COLUMNS,
-  allWorkOptions,
-  defaultPreferences,
-  standard2026,
-} from '@/testing/fixtures/all-work';
+import { DEFAULT_COLUMNS } from '@/testing/fixtures/all-work-rows';
+import { allWorkOptions, defaultPreferences, standard2026 } from '@/testing/fixtures/all-work';
 import type { ViewState } from './all-work-types';
 import { leftOutOf, sameState, standardState, toQueryParams } from './view-state';
 

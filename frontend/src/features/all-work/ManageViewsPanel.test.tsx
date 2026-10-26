@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
+import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { savedView } from '@/testing/fixtures/all-work';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { ManageViewsPanel } from './ManageViewsPanel';
 
 const DECLINED = savedView();
@@ -14,7 +15,7 @@ const VIEWS = [DECLINED, BY_MONTH];
 
 function renderPanel(answers: HttpHandler[] = []) {
   const api = mockApi([
-    looseReply('GET /api/v1/saved-views', { body: { items: VIEWS, total: 2 } }),
+    reply('GET /api/v1/saved-views', { body: { items: VIEWS, total: 2 } }),
     ...answers,
   ]);
   const rendered = renderWithProviders(
@@ -38,7 +39,7 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
       'Lubricants by monthDefault',
     ]);
     expect(
-      within(items[0])
+      within(nth(items, 0))
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toEqual([
@@ -47,18 +48,18 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
       'Delete Declined activities',
     ]);
     expect(
-      within(items[1]).getByRole('button', { name: 'Remove default Lubricants by month' }),
+      within(nth(items, 1)).getByRole('button', { name: 'Remove default Lubricants by month' }),
     ).toBeVisible();
   });
 
   it('sets and removes the default view (FR-031)', async () => {
     const { api, user } = renderPanel([
-      looseReply(
+      reply(
         'PATCH /api/v1/saved-views/{viewId}',
         { body: { ...DECLINED, isDefault: true } },
         { viewId: 'SV-1001' },
       ),
-      looseReply(
+      reply(
         'PATCH /api/v1/saved-views/{viewId}',
         { body: { ...BY_MONTH, isDefault: false } },
         { viewId: 'SV-1002' },
@@ -84,7 +85,7 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
 
   it('renames a view, refusing a name the person already uses (FR-029, FR-031)', async () => {
     const { api, user } = renderPanel([
-      looseReply(
+      reply(
         'PATCH /api/v1/saved-views/{viewId}',
         { body: { ...DECLINED, name: 'Declined in Europe' } },
         { viewId: 'SV-1001' },
@@ -115,8 +116,8 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
   it('deletes a view after asking, and Undo saves it again (FR-031)', async () => {
     const restored = { ...DECLINED, id: 'SV-1003' };
     const { api, user } = renderPanel([
-      looseReply('DELETE /api/v1/saved-views/{viewId}', { body: DECLINED }, { viewId: 'SV-1001' }),
-      looseReply('POST /api/v1/saved-views', { status: 201, body: restored }),
+      reply('DELETE /api/v1/saved-views/{viewId}', { body: DECLINED }, { viewId: 'SV-1001' }),
+      reply('POST /api/v1/saved-views', { status: 201, body: restored }),
     ]);
 
     await user.click(within(panel()).getByRole('button', { name: 'Delete Declined activities' }));
@@ -140,11 +141,11 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
 
   it('says when a view was deleted in another tab (plan "States")', async () => {
     const { user } = renderPanel([
-      looseReply(
+      reply(
         'PATCH /api/v1/saved-views/{viewId}',
         {
           status: 404,
-          body: { error: { code: 'not_found', message: 'Not found' } },
+          body: { error: { code: 'not_found', message: 'Not found', fields: [] } },
         },
         { viewId: 'SV-1001' },
       ),
