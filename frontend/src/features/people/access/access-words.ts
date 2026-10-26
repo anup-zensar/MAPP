@@ -192,6 +192,9 @@ export const ADMINISTRATOR_SCOPE = 'The Administrator role always applies to all
 /** Text 37: a scope that covers no team any more. */
 export const SCOPE_EMPTY = 'No teams left in this scope';
 
+/** The rule of FR-026, as the card and the form say it. */
+export const NO_SELF_APPROVAL = 'Nobody approves an activity they own or submitted';
+
 /** "Alex Morgan changed person 'Sara Novak'", as the activity log writes it (FR-038). */
 export function changeText(entry: ActivityLogEntry): string {
   return `${entry.actor.name} ${entry.verb} ${entry.recordTypeLabel} '${entry.recordName}'`;

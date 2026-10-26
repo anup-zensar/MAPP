@@ -6,6 +6,7 @@ import type { components } from '@/api/generated/schema';
 
 type BinItem = components['schemas']['RecycleBinListItem'];
 type RestorePreview = components['schemas']['RestorePreview'];
+type ErrorDetail = components['schemas']['ErrorDetail'];
 
 export const PRIYA_REF = { id: 'U-1002', name: 'Priya Raman' };
 
@@ -93,4 +94,13 @@ export function restorePreview(overrides: Partial<RestorePreview> = {}): Restore
     notes: [],
     ...overrides,
   };
+}
+
+/** A refusal's body, without field problems unless `extra` has some. */
+export function errorBody(
+  code: ErrorDetail['code'],
+  message: string,
+  extra: Partial<ErrorDetail> = {},
+): { error: ErrorDetail } {
+  return { error: { code, message, fields: [], ...extra } };
 }

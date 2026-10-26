@@ -6,7 +6,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import type { BinItem } from './bin-text';
 import { PurgeDialog } from './PurgeDialog';
 
@@ -71,7 +71,7 @@ describe('PurgeDialog', () => {
 
   it('deletes it permanently and says so (FR-030)', async () => {
     const { user, api, onClose } = renderDialog([
-      looseReply(
+      reply(
         'DELETE /api/v1/recycle-bin/{entryId}',
         {
           body: {
@@ -95,7 +95,7 @@ describe('PurgeDialog', () => {
 
   it('says who already restored it, and closes (FR-032)', async () => {
     const { user } = renderDialog([
-      looseReply(
+      reply(
         'DELETE /api/v1/recycle-bin/{entryId}',
         {
           status: 409,
@@ -103,6 +103,7 @@ describe('PurgeDialog', () => {
             error: {
               code: 'already_resolved',
               message: 'This item is no longer in the recycle bin.',
+              fields: [],
               resolution: {
                 how: 'restored',
                 by: { id: 'U-1003', name: 'Daniel Okoro' },
@@ -125,7 +126,7 @@ describe('PurgeDialog', () => {
 
   it('shows any other failure in the dialog and stays open', async () => {
     const { user, onClose } = renderDialog([
-      looseReply('DELETE /api/v1/recycle-bin/{entryId}', { status: 500 }, { entryId: 'BIN-1001' }),
+      reply('DELETE /api/v1/recycle-bin/{entryId}', { status: 500 }, { entryId: 'BIN-1001' }),
     ]);
 
     await user.click(screen.getByRole('button', { name: 'Delete permanently' }));

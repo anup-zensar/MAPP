@@ -17,8 +17,9 @@ import {
   restoreTitle,
   restoredHref,
   restoredMessage,
-} from './bin-text';
-import type { BinItem, RestorePreview } from './bin-text';
+} from './restore-text';
+import type { BinItem } from './bin-text';
+import type { RestorePreview } from './restore-text';
 import { asApiError, closingMessage, refetchBin } from './dialog-failure';
 import { useRestore, useRestorePreview } from './api';
 import styles from './dialogs.module.css';

@@ -15,7 +15,8 @@ import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { YourAccessCard } from './access/YourAccessCard';
 import { useDisplayCurrencies } from './api';
-import { EditDetailsPanel, EditPreferencesPanel } from './ProfilePanels';
+import { EditDetailsPanel } from './EditDetailsPanel';
+import { EditPreferencesPanel } from './EditPreferencesPanel';
 import { currencyLabel, DISPLAY_CURRENCY_NOTE } from './texts';
 import styles from './ProfilePage.module.css';
 

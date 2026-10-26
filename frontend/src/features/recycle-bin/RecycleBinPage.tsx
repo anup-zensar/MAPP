@@ -24,6 +24,7 @@ import { EmptyBinDialog } from './EmptyBinDialog';
 import { PurgeDialog } from './PurgeDialog';
 import { useRecycleBin } from './api';
 import { RestoreDialog } from './RestoreDialog';
+import { highlightedRecordOf } from './schemas';
 import styles from './RecycleBinPage.module.css';
 
 /** The dialog the page shows, if any. */
@@ -89,7 +90,7 @@ export function RecycleBinPage() {
           onSearch={setSearch}
           type={type}
           onType={setType}
-          highlight={params.get('record') ?? ''}
+          highlight={highlightedRecordOf(params)}
           onRestore={(item) => setDialog({ kind: 'restore', item })}
           onPurge={(item) => setDialog({ kind: 'purge', item })}
         />

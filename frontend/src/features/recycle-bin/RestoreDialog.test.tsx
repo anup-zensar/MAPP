@@ -6,8 +6,8 @@ import { SESSION_KEY } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
-import { looseReply } from '@/testing/replies';
+import { binItem, errorBody, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
+import { reply } from '@/testing/replies';
 import { RestoreDialog } from './RestoreDialog';
 import type { BinItem } from './bin-text';
 
@@ -58,14 +58,10 @@ function renderDialog(answers: HttpHandler[], item: BinItem = binItem()) {
   return { ...rendered, api, onClose, onPurge };
 }
 
-function errorBody(code: string, message: string, extra: object = {}) {
-  return { error: { code, message, fields: [], ...extra } };
-}
-
 describe('RestoreDialog', () => {
   it('says where it returns, what changes and the notes, then restores (FR-018, FR-019, FR-022)', async () => {
     const { user, api, onClose } = renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         {
           body: restorePreview({
@@ -98,7 +94,7 @@ describe('RestoreDialog', () => {
         },
         { entryId: 'BIN-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/restore',
         { body: RESTORED },
         { entryId: 'BIN-1001' },
@@ -133,12 +129,12 @@ describe('RestoreDialog', () => {
 
   it('names the restored record with View, and asks every page again but the session (FR-026)', async () => {
     const { user, router, queryClient } = renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         { body: restorePreview() },
         { entryId: 'BIN-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/restore',
         { body: RESTORED },
         { entryId: 'BIN-1001' },
@@ -168,14 +164,14 @@ describe('RestoreDialog', () => {
     });
     const { user, api } = renderDialog(
       [
-        looseReply(
+        reply(
           'GET /api/v1/recycle-bin/{entryId}/restore-preview',
           {
             body: restorePreview({ entry: item, parentEntries: [binItem({ id: 'BIN-1000' })] }),
           },
           { entryId: 'BIN-1001' },
         ),
-        looseReply(
+        reply(
           'POST /api/v1/recycle-bin/{entryId}/restore',
           { body: { ...RESTORED, recordType: 'lineItem', recordTypeLabel: 'line item' } },
           { entryId: 'BIN-1001' },
@@ -204,7 +200,7 @@ describe('RestoreDialog', () => {
 
   it('offers Restore all <N> when more parents come back first (FR-023)', async () => {
     renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         {
           body: restorePreview({
@@ -242,7 +238,7 @@ describe('RestoreDialog', () => {
 
   it('says who already resolved the entry, and closes (FR-032)', async () => {
     const { onClose } = renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         {
           status: 409,
@@ -269,12 +265,12 @@ describe('RestoreDialog', () => {
   it('closes with the API’s words when the parent is missing after all (FR-023, FR-024)', async () => {
     const message = "Restore the initiative 'Trade shows' first.";
     const { user, onClose } = renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         { body: restorePreview() },
         { entryId: 'BIN-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/restore',
         {
           status: 409,
@@ -292,12 +288,12 @@ describe('RestoreDialog', () => {
 
   it('shows any other failure in the dialog and stays open', async () => {
     const { user, onClose } = renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         { body: restorePreview() },
         { entryId: 'BIN-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/restore',
         { status: 400, body: errorBody('bad_request', 'That did not work.') },
         { entryId: 'BIN-1001' },
@@ -312,7 +308,7 @@ describe('RestoreDialog', () => {
 
   it('shows placeholders while the preview loads', () => {
     renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         () => new Promise<never>(() => {}),
         { entryId: 'BIN-1001' },

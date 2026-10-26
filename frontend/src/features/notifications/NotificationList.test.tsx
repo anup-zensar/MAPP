@@ -6,7 +6,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { DECLINED, NOW, notificationOf, pageOf } from '@/testing/fixtures/notifications';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { NotificationList } from './NotificationList';
 
 const READ_ALL = 'POST /api/v1/notifications/read-all';
@@ -35,7 +35,7 @@ describe('NotificationList (feature 008, US6)', () => {
 
   it('lists the notifications newest first with title, text, time and unread marker (FR-033)', async () => {
     renderList([
-      looseReply('GET /api/v1/notifications', { body: pageOf([notificationOf(), DECLINED]) }),
+      reply('GET /api/v1/notifications', { body: pageOf([notificationOf(), DECLINED]) }),
     ]);
 
     const unread = await screen.findByRole('button', { name: /^Approval needed/ });
@@ -60,7 +60,7 @@ describe('NotificationList (feature 008, US6)', () => {
   it('shows the kinds of approval rules: automatic, reminder, escalation (017 FR-032)', async () => {
     const MAPP = { id: 'system', name: 'MAPP' };
     renderList([
-      looseReply('GET /api/v1/notifications', {
+      reply('GET /api/v1/notifications', {
         body: pageOf([
           notificationOf({
             id: 'NT-1010',
@@ -101,8 +101,8 @@ describe('NotificationList (feature 008, US6)', () => {
   it('marks a notification read and opens its activity at the Approval section (FR-034)', async () => {
     let read = false;
     const { user, api, router, onClose } = renderList([
-      looseReply('GET /api/v1/notifications', () => ({ body: pageOf([notificationOf({ read })]) })),
-      looseReply(
+      reply('GET /api/v1/notifications', () => ({ body: pageOf([notificationOf({ read })]) })),
+      reply(
         'POST /api/v1/notifications/{notificationId}/read',
         () => {
           read = true;
@@ -128,7 +128,7 @@ describe('NotificationList (feature 008, US6)', () => {
 
   it('opens an activity again without marking a read notification twice', async () => {
     const { user, api, router } = renderList([
-      looseReply('GET /api/v1/notifications', { body: pageOf([DECLINED]) }),
+      reply('GET /api/v1/notifications', { body: pageOf([DECLINED]) }),
     ]);
 
     await user.click(await screen.findByRole('button', { name: /^Activity declined/ }));
@@ -143,7 +143,7 @@ describe('NotificationList (feature 008, US6)', () => {
       activity: { id: 'A-1042', name: 'Launch film', exists: false },
     });
     const { user, router } = renderList([
-      looseReply('GET /api/v1/notifications', { body: pageOf([gone]) }),
+      reply('GET /api/v1/notifications', { body: pageOf([gone]) }),
     ]);
 
     const item = await screen.findByRole('button', { name: /^Approval needed/ });
@@ -161,10 +161,10 @@ describe('NotificationList (feature 008, US6)', () => {
       kind: 'levelApproved',
     });
     const { user, api } = renderList([
-      looseReply('GET /api/v1/notifications', () => ({
+      reply('GET /api/v1/notifications', () => ({
         body: pageOf([notificationOf({ read: allRead }), { ...second, read: allRead }]),
       })),
-      looseReply('POST /api/v1/notifications/read-all', () => {
+      reply('POST /api/v1/notifications/read-all', () => {
         allRead = true;
         return { body: { marked: 2, unread: 0 } };
       }),
@@ -182,8 +182,8 @@ describe('NotificationList (feature 008, US6)', () => {
 
   it('says so when Mark all as read fails, and keeps the items unread', async () => {
     const { user } = renderList([
-      looseReply('GET /api/v1/notifications', { body: pageOf([notificationOf()]) }),
-      looseReply('POST /api/v1/notifications/read-all', { status: 500 }),
+      reply('GET /api/v1/notifications', { body: pageOf([notificationOf()]) }),
+      reply('POST /api/v1/notifications/read-all', { status: 500 }),
     ]);
 
     await user.click(await screen.findByRole('button', { name: 'Mark all as read' }));
@@ -197,14 +197,14 @@ describe('NotificationList (feature 008, US6)', () => {
   });
 
   it('says "You\'re all caught up." when there are none (FR-034)', async () => {
-    renderList([looseReply('GET /api/v1/notifications', { body: pageOf([]) })]);
+    renderList([reply('GET /api/v1/notifications', { body: pageOf([]) })]);
 
     expect(await screen.findByText("You're all caught up.")).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mark all as read' })).not.toBeInTheDocument();
   });
 
   it('shows loading shapes while the notifications are on their way', () => {
-    renderList([looseReply('GET /api/v1/notifications', () => new Promise(() => {}))]);
+    renderList([reply('GET /api/v1/notifications', () => new Promise(() => {}))]);
 
     expect(screen.getByRole('heading', { name: 'Notifications' })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
@@ -213,7 +213,7 @@ describe('NotificationList (feature 008, US6)', () => {
   it('says when the notifications could not be loaded, with Try again', async () => {
     let calls = 0;
     const { user } = renderList([
-      looseReply('GET /api/v1/notifications', () => {
+      reply('GET /api/v1/notifications', () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: pageOf([notificationOf()]) };
       }),

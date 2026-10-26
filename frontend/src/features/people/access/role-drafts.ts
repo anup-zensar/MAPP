@@ -31,6 +31,28 @@ export function draftsOf(person: PersonRoles): RoleDraft[] {
   }));
 }
 
+/** Drafts follow the order of the roles list, so problems "roles.<i>…" find their role. */
+export function inRolesOrder(drafts: RoleDraft[], roles: Role[]): RoleDraft[] {
+  return roles.flatMap((role) => drafts.filter((draft) => draft.roleId === role.id));
+}
+
+/** `role` ticked, at its default scope (Administrator: all markets), or not ticked. */
+export function withRoleTicked(drafts: RoleDraft[], role: Role, ticked: boolean): RoleDraft[] {
+  if (!ticked) {
+    return drafts.filter((draft) => draft.roleId !== role.id);
+  }
+  const scope = role.builtIn === 'administrator' ? 'all' : role.defaultScope;
+  return [...drafts, { roleId: role.id, scope, teamIds: [] }];
+}
+
+export function withDraftChange(
+  drafts: RoleDraft[],
+  roleId: string,
+  changes: Partial<RoleDraft>,
+): RoleDraft[] {
+  return drafts.map((draft) => (draft.roleId === roleId ? { ...draft, ...changes } : draft));
+}
+
 /** The body of PUT …/roles and of the impact check: the complete list, in the panel's order. */
 export function rolesBody(drafts: RoleDraft[], version: number): PersonRolesUpdate {
   return {

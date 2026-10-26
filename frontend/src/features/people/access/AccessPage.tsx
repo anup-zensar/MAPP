@@ -6,9 +6,9 @@ import { PeopleAccessTab } from './PeopleAccessTab';
 import { RecentAccessChanges } from './RecentAccessChanges';
 import { RolesTab } from './RolesTab';
 import { RulesTab } from './RulesTab';
+import { accessTabOf, withAccessTab } from './schemas';
+import type { AccessTab } from './schemas';
 import styles from './access.module.css';
-
-type AccessTab = 'people' | 'roles' | 'rules';
 
 const TABS: { value: AccessTab; label: string }[] = [
   { value: 'people', label: 'People' },
@@ -24,23 +24,10 @@ const TABS: { value: AccessTab; label: string }[] = [
 export function AccessPage() {
   usePageTitle('Roles and access');
   const [params, setParams] = useSearchParams();
-  const raw = params.get('tab');
-  const tab: AccessTab = raw === 'roles' || raw === 'rules' ? raw : 'people';
+  const tab = accessTabOf(params);
 
   function chooseTab(next: AccessTab) {
-    setParams(
-      (previous) => {
-        const changed = new URLSearchParams(previous);
-        changed.delete('person');
-        if (next === 'people') {
-          changed.delete('tab');
-        } else {
-          changed.set('tab', next);
-        }
-        return changed;
-      },
-      { replace: true },
-    );
+    setParams((previous) => withAccessTab(previous, next), { replace: true });
   }
 
   return (
