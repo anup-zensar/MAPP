@@ -110,7 +110,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	}
 	settingsService.UseRateFeed(settings.GSAPRateFile{})
 	// Features 003–007 tell Settings where its records are used at the end of New, once they are built.
-	settings.NewHandler(settingsService).Routes(router, unwrapped)
+	settings.NewHandler(settingsService).RegisterRoutes(signedIn)
 
 	// Plans (004). Plans reads Settings (002) and people and teams (003) through their services. Its history
 	// kind comes before the kinds of the levels below the plan (005–007), which also register themselves
