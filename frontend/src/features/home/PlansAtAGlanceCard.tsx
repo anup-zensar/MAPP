@@ -87,7 +87,7 @@ function PlansTable({ rows }: { rows: HomePlanRow[] }) {
 
   /** A click anywhere on a row opens the plan; its links keep working on their own. */
   function openRow(event: MouseEvent<HTMLTableRowElement>, href: string) {
-    if (!(event.target as HTMLElement).closest('a, button')) {
+    if (!(event.target instanceof Element && event.target.closest('a, button'))) {
       navigate(href);
     }
   }

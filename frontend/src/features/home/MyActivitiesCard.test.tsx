@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { closestTo } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { groupOf, myActivityOf, usd } from '@/testing/fixtures/home';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import type { MyActivityGroup } from './api';
 import { MyActivitiesCard } from './MyActivitiesCard';
 
@@ -25,8 +26,8 @@ const page = (groups: MyActivityGroup[]) => ({
   body: { groups, total: groups.reduce((sum, group) => sum + group.count, 0) },
 });
 
-function renderCard(answer: LooseAnswer = page(GROUPS)) {
-  mockApi([looseReply('GET /api/v1/home/my-activities', answer)]);
+function renderCard(answer: Answer<'GET /api/v1/home/my-activities'> = page(GROUPS)) {
+  mockApi([reply('GET /api/v1/home/my-activities', answer)]);
   return renderWithProviders(<MyActivitiesCard />, { user: testUser(), path: '/' });
 }
 
@@ -35,7 +36,7 @@ function card() {
 }
 
 function rowOf(name: string): HTMLElement {
-  return within(card()).getByRole('link', { name }).closest('li') as HTMLElement;
+  return closestTo(within(card()).getByRole('link', { name }), 'li');
 }
 
 describe('MyActivitiesCard', () => {

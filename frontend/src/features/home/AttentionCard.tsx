@@ -11,16 +11,14 @@ import { useFormatters } from '@/format/useFormatters';
 import styles from './AttentionCard.module.css';
 import { useHomeAttention } from './api';
 import type { HomeAttentionItem } from './api';
-import type { ReasonFormatters } from './home-text';
+import type { ReasonFormatters } from './attention-text';
 import {
-  ATTENTION_SUBTITLE,
   NOTHING_NEEDS_ATTENTION,
-  SHOW_FEWER,
   reasonLinkName,
   reasonLinkOf,
   reasonText,
-  viewAllText,
-} from './home-text';
+} from './attention-text';
+import { ATTENTION_SUBTITLE, SHOW_FEWER, viewAllText } from './home-text';
 import { SectionError } from './SectionError';
 
 /**

@@ -1,19 +1,20 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { parentOf } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { summaryOf, usd } from '@/testing/fixtures/home';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import type { HomeScope, HomeSummary } from './api';
 import { SummaryCards } from './SummaryCards';
 
 function renderCards(
   scope: HomeScope = 'myTeams',
-  answer: LooseAnswer = { body: summaryOf({ scope }) },
+  answer: Answer<'GET /api/v1/home/summary'> = { body: summaryOf({ scope }) },
 ) {
-  const api = mockApi([looseReply('GET /api/v1/home/summary', answer)]);
+  const api = mockApi([reply('GET /api/v1/home/summary', answer)]);
   const rendered = renderWithProviders(<SummaryCards scope={scope} />, {
     user: testUser(),
     path: '/',
@@ -23,7 +24,7 @@ function renderCards(
 
 function cardOf(link: HTMLElement): HTMLElement {
   // The link lies over its card, which holds the label, the value and the lines under it.
-  return link.parentElement as HTMLElement;
+  return parentOf(link);
 }
 
 const plannedCost = (overrides: Partial<HomeSummary['plannedCost']>) =>

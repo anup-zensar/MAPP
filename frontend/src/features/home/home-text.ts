@@ -3,16 +3,9 @@
  * the cards and their tests read the same. Fixed labels that appear once stay in the components.
  */
 import { formatWhole } from '@/format/decimal';
-import { joinWithAnd, midSentence, plural } from '@/format/text';
-import { formatWaitingTime, localDate } from '@/format/intl';
-import type {
-  ActivityLogEntry,
-  HomeAttentionItem,
-  HomeAttentionReason,
-  HomeScope,
-  Money,
-  MyActivityRow,
-} from './api';
+import { joinWithAnd, midSentence } from '@/format/text';
+import { formatWaitingTime } from '@/format/intl';
+import type { ActivityLogEntry, HomeScope, Money, MyActivityRow } from './api';
 
 /**
  * Home's title (FR-001; design system §2.3: Home is the only page whose title greets), one
@@ -140,104 +133,6 @@ export function viewAllText(total: number): string {
 /** Folds a list opened with View all again. */
 export const SHOW_FEWER = 'Show fewer';
 
-/** How a reason's sentence shows amounts and dates: the signed-in person's formatters. */
-export interface ReasonFormatters {
-  /** "$1,200.00" for an amount. */
-  money: (value: Money | null | undefined) => string;
-  /** "12 Mar 2026" (or the person's format) for a calendar date "YYYY-MM-DD". */
-  date: (date: string) => string;
-}
-
-/**
- * "3 fields needed · 1 line item needs attention": what is missing on a record and below it
- * (FR-011 e); only the parts that apply. An activity's items below are its line items, so it says
- * so — the same words My activities uses for the same activity (functional review X-07).
- */
-export function missingFieldsText(
-  missing: number,
-  itemsBelow: number,
-  recordType: HomeAttentionItem['recordType'] = 'plan',
-): string {
-  const parts: string[] = [];
-  if (missing > 0) {
-    parts.push(missing === 1 ? '1 field needed' : `${formatWhole(missing)} fields needed`);
-  }
-  if (itemsBelow > 0) {
-    parts.push(
-      recordType === 'activity'
-        ? lineItemsNeedAttentionText(itemsBelow)
-        : itemsBelow === 1
-          ? '1 item below needs attention'
-          : `${formatWhole(itemsBelow)} items below need attention`,
-    );
-  }
-  return parts.join(' · ');
-}
-
-/** The sentence of one reason a record needs attention (FR-011). */
-export function reasonText(
-  reason: HomeAttentionReason,
-  format: ReasonFormatters,
-  recordType: HomeAttentionItem['recordType'] = 'plan',
-): string {
-  switch (reason.kind) {
-    case 'declined': {
-      const by = reason.declinedBy ? ` by ${reason.declinedBy.name}` : '';
-      const on = reason.declinedAt ? ` on ${format.date(localDate(reason.declinedAt))}` : '';
-      const comment = reason.comment ? `: '${reason.comment}'` : '';
-      return `Declined${by}${on}${comment}`;
-    }
-    case 'negativeBalance':
-      return `Line items exceed the planned cost by ${format.money(reason.amount)}`;
-    case 'overAllocated':
-      return `Over-allocated by ${format.money(reason.amount)}`;
-    case 'overBudget':
-      return `Planned cost is ${format.money(reason.amount)} over budget`;
-    case 'missingFields':
-      return missingFieldsText(reason.missing.length, reason.itemsBelow, recordType);
-  }
-}
-
-/** A link to where a reason is fixed: its words and the section of the record's page. */
-export interface ReasonLink {
-  label: string;
-  hash: string;
-}
-
-/** Where each reason is fixed: the link's words and the section of the record's page (FR-012). */
-export const REASON_LINK: Record<HomeAttentionReason['kind'], ReasonLink> = {
-  declined: { label: 'Open approval', hash: '#approval' },
-  negativeBalance: { label: 'Open line items', hash: '#line-items' },
-  overAllocated: { label: 'Open budget', hash: '#budget' },
-  overBudget: { label: 'Open budget', hash: '#budget' },
-  missingFields: { label: 'Show fields', hash: '#completeness' },
-};
-
-/**
- * The link of a reason. "Show fields" only where fields are missing: when only items below need
- * attention, an activity opens its line items and other records show what is needed below them
- * (functional review X-07).
- */
-export function reasonLinkOf(
-  reason: HomeAttentionReason,
-  recordType: HomeAttentionItem['recordType'],
-): ReasonLink {
-  if (reason.kind === 'missingFields' && reason.missing.length === 0) {
-    return recordType === 'activity'
-      ? REASON_LINK.negativeBalance
-      : { label: 'Show items below', hash: '#completeness' };
-  }
-  return REASON_LINK[reason.kind];
-}
-
-/** "Open approval for activity 'Launch film'": a reason link's name names its record. */
-export function reasonLinkName(label: string, typeLabel: string, name: string): string {
-  return `${label} for ${typeLabel} '${name}'`;
-}
-
-/** Shown when nothing the person owns has a problem (FR-021, US3 scenario 6). */
-export const NOTHING_NEEDS_ATTENTION = 'Nothing needs your attention right now.';
-
 /** Shown when nothing waits for the person's decision (FR-021, US3 scenario 6). */
 export const NOTHING_WAITING = 'Nothing is waiting for your approval right now.';
 
@@ -330,90 +225,10 @@ export function recentSentence(entry: ActivityLogEntry): RecentSentence {
 
 /** "PR" for Priya Raman: the first letters of the first and the last name. */
 export function initialsOf(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) {
+  const [first, ...others] = name.trim().split(/\s+/).filter(Boolean);
+  if (first === undefined) {
     return '?';
   }
-  const first = words[0][0];
-  const last = words.length > 1 ? words[words.length - 1][0] : '';
-  return `${first}${last}`.toUpperCase();
-}
-
-/**
- * The Financials card (015 FR-025, 015 plan "User-visible messages"): its title, the tips of its
- * figures and its lines.
- */
-export const FINANCIALS_CARD = {
-  open: 'Open Financials',
-  committed: 'Committed',
-  committedTip: 'The value of purchase orders GSAP has issued for these line items.',
-  invoiced: 'Invoiced',
-  invoicedTip: 'Supplier invoices GSAP has received against them, less credit notes.',
-  paid: 'Paid',
-  paidTip: "Payments GSAP has released — Shell's actuals.",
-  accrued: 'Accrued',
-  noPlannedCost: 'No planned cost yet',
-  empty: 'No purchase orders or invoices for your plans yet.',
-  noData: 'No GSAP data loaded yet.',
-  meterLabel: 'Committed of planned cost',
-} as const;
-
-/** "Financials · 2026": the card's title. */
-export function financialsTitle(year: number): string {
-  return `Financials · ${year}`;
-}
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** "Sep 2026" for the accrual month "2026-09" (or a date in it); the text itself otherwise. */
-export function monthText(month: string): string {
-  const match = /^(\d{4})-(\d{2})/.exec(month);
-  const name = match ? MONTHS[Number(match[2]) - 1] : undefined;
-  return match && name ? `${name} ${match[1]}` : month;
-}
-
-/** "Accrued (Sep 2026)": Accrued counts only the latest accrual month in the data. */
-export function accruedLabel(accrualMonth: string | null): string {
-  return accrualMonth ? `Accrued (${monthText(accrualMonth)})` : 'Accrued';
-}
-
-/** The Accrued tip, naming the month GSAP accrued it for. */
-export function accruedTip(accrualMonth: string | null): string {
-  return accrualMonth
-    ? `Money owed for work received but not yet invoiced, as GSAP accrued it for ${monthText(accrualMonth)}.`
-    : 'Money owed for work received but not yet invoiced, as GSAP accrued it.';
-}
-
-/** "of $460,000.00 planned": Committed against planned cost. */
-export function ofPlannedText(planned: string): string {
-  return `of ${planned} planned`;
-}
-
-/** "Committed above planned cost by $2,000.00" (015 FR-013: words, not colour alone). */
-export function aboveByText(amount: string): string {
-  return `Committed above planned cost by ${amount}`;
-}
-
-/** "1 activity committed above planned cost" (links to All work with that filter). */
-export function aboveThePlannedText(count: number): string {
-  return `${plural(count, 'activity', 'activities')} committed above planned cost`;
-}
-
-/** "1 transaction not linked to a line item" (links to Financials › Not linked). */
-export function notLinkedText(count: number): string {
-  return `${plural(count, 'transaction')} not linked to a line item`;
-}
-
-/** "GSAP data as of 19 Oct 2026, 02:00 · Demo data (simulated GSAP) 'gsap-2026-10.csv'". */
-export function sourceText(
-  source: { dataAsOf: string | null; feedName: string | null; fileName: string | null },
-  dateTime: (timestamp: string) => string,
-): string {
-  if (!source.dataAsOf) {
-    return FINANCIALS_CARD.noData;
-  }
-  const feed = [source.feedName, source.fileName && `'${source.fileName}'`]
-    .filter(Boolean)
-    .join(' ');
-  return `GSAP data as of ${dateTime(source.dataAsOf)}${feed ? ` · ${feed}` : ''}`;
+  const last = others.at(-1) ?? '';
+  return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 }

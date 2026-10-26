@@ -1,18 +1,19 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { closestTo, nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from '@/testing/fixtures/home';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import { AttentionCard } from './AttentionCard';
 import type { HomeAttentionItem } from './api';
 
 const page = (items: HomeAttentionItem[]) => ({ body: { items, total: items.length } });
 
-function renderCard(answer: LooseAnswer = page([attentionItemOf()])) {
-  mockApi([looseReply('GET /api/v1/home/attention', answer)]);
+function renderCard(answer: Answer<'GET /api/v1/home/attention'> = page([attentionItemOf()])) {
+  mockApi([reply('GET /api/v1/home/attention', answer)]);
   return renderWithProviders(<AttentionCard />, { user: testUser(), path: '/' });
 }
 
@@ -22,7 +23,7 @@ function card() {
 
 /** The item of the card whose name link is `name`. */
 function itemOf(name: string): HTMLElement {
-  return within(card()).getByRole('link', { name }).closest('li') as HTMLElement;
+  return closestTo(within(card()).getByRole('link', { name }), 'li');
 }
 
 const GLOBAL_BRAND = { type: 'plan', id: 'P-1003', name: 'FY2027 Global Brand' };
@@ -131,7 +132,7 @@ describe('AttentionCard', () => {
       page([
         attentionItemOf({
           reasons: [
-            attentionItemOf().reasons[0],
+            nth(attentionItemOf().reasons, 0),
             reasonOf('negativeBalance', { amount: usd('1200.00') }),
             reasonOf('missingFields', { missing: [{ field: 'region', label: 'Region' }] }),
           ],
