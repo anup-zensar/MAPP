@@ -216,6 +216,46 @@ type Person struct {
 	UpdatedByName string
 }
 
+type Plan struct {
+	ID                     string
+	Name                   string
+	Year                   int
+	ModelID                string
+	OwnerID                *string
+	Aop                    bool
+	Description            string
+	BudgetMinor            *int64
+	DefaultFinanceBudgetID *string
+	DefaultSpread          string
+	Bcpir                  bool
+	GoalStage              string
+	GoalAmount             string
+	Attributes             []byte
+	Status                 string
+	Currency               string
+	PlanType               string
+	PhasingMethod          string
+	Version                int
+	CreatedAt              time.Time
+	CreatedByID            string
+	CreatedByName          string
+	UpdatedAt              time.Time
+	UpdatedByID            string
+	UpdatedByName          string
+}
+
+type PlanPhasingMonth struct {
+	PlanID      string
+	Month       string
+	AmountMinor int64
+}
+
+type PlanTeam struct {
+	PlanID   string
+	Position int
+	TeamID   string
+}
+
 type Preference struct {
 	PersonID             string
 	Theme                string
