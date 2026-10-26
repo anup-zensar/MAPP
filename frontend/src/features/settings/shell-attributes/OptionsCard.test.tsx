@@ -31,7 +31,7 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
 
   it('finds an option among 1,217 by any part of its label, asking the API', async () => {
     const match = shellOption({ id: 'SO-2220', label: 'CN04000220', attributeId: 'SA-1010' });
-    const many = Array.from({ length: 100 }, (_, index) =>
+    const firstPage = Array.from({ length: 3 }, (_, index) =>
       shellOption({
         id: `SO-${3000 + index}`,
         label: `CN0400${1000 + index}`,
@@ -44,13 +44,13 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
         (request) =>
           new URL(request.url).searchParams.get('q') === '0220'
             ? { body: page([match]) }
-            : { body: page(many, 1217) },
+            : { body: page(firstPage, 1217) },
         { attributeId: 'SA-1010' },
       ),
     ]);
 
     expect(
-      await screen.findByText('Showing 100 of 1,217 — search to find the others.'),
+      await screen.findByText('Showing 3 of 1,217 — search to find the others.'),
     ).toBeInTheDocument();
     await user.type(screen.getByRole('searchbox', { name: 'Search options' }), '0220');
 
@@ -70,7 +70,7 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
         attributeId: 'SA-1010',
       }),
     );
-    const second = Array.from({ length: 100 }, (_, index) =>
+    const second = Array.from({ length: 2 }, (_, index) =>
       shellOption({
         id: `SO-${4000 + index}`,
         label: `Option ${index + 101}`,
@@ -91,10 +91,11 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     await user.click(await screen.findByRole('button', { name: 'Show more' }));
 
     expect(
-      await screen.findByText('Showing 200 of 1,217 — search to find the others.'),
+      await screen.findByText('Showing 102 of 1,217 — search to find the others.'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'Option 200' })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Option 102' })).toBeInTheDocument();
     expect(optionQueries(api).map((query) => query.get('offset'))).toEqual(['0', '100']);
+    expect(optionQueries(api).map((query) => query.get('limit'))).toEqual(['100', '100']);
   });
 
   it('filters by status and clears the filters when nothing matches', async () => {

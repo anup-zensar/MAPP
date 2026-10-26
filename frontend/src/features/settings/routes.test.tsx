@@ -1,10 +1,9 @@
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 import { reply } from '@/testing/replies';
 
-/** The requests the section pages make when they open, answered with empty lists. */
 const PAGE_ANSWERS: HttpHandler[] = [
   reply('GET /api/v1/settings/overview', {
     body: { models: 0, activityTypes: 0, shellAttributes: 0, currencies: 1, financeBudgetItems: 0 },
@@ -23,9 +22,7 @@ const PAGE_ANSWERS: HttpHandler[] = [
   reply('GET /api/v1/exchange-rates/imports', { body: { items: [], total: 0 } }),
 ];
 
-// Feature 002's addresses (build guide §5). Feature 002 keeps this file up to date as it replaces
-// the stub pages (their own requests go into renderApp's answers). The Shell attribute pages are
-// in shell-attributes/routes.test.tsx.
+// The Shell attribute pages are in shell-attributes/routes.test.tsx.
 describe('Settings routes (feature 002)', () => {
   it.each([
     ['/settings', 'Settings'],
@@ -39,28 +36,5 @@ describe('Settings routes (feature 002)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
     expect(document.title).toBe(`${title} · MAPP`);
     expectCurrentSection('Settings');
-  });
-
-  it('lists every Settings section, those of features 003 and 008 included (FR-001)', async () => {
-    renderApp('/settings', PAGE_ANSWERS);
-
-    const sections = await screen.findByRole('list', { name: 'Sections' });
-    expect(
-      within(sections)
-        .getAllByRole('heading')
-        .map((heading) => heading.textContent),
-    ).toEqual([
-      'Models',
-      'Activity types',
-      'Shell attributes',
-      'Currencies',
-      'Finance budget items',
-      'Field help',
-      'People',
-      'Teams',
-      'Approval workflows',
-      'Roles and access',
-    ]);
-    expect(await within(sections).findByText('1 active')).toBeInTheDocument();
   });
 });

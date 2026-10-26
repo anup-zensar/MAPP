@@ -94,6 +94,22 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
       user: testUser(),
     });
 
+    expect(
+      within(screen.getByRole('list', { name: 'Sections' }))
+        .getAllByRole('heading')
+        .map((heading) => heading.textContent),
+    ).toEqual([
+      'Models',
+      'Activity types',
+      'Shell attributes',
+      'Currencies',
+      'Finance budget items',
+      'Field help',
+      'People',
+      'Teams',
+      'Approval workflows',
+      'Roles and access',
+    ]);
     const people = card('People');
     expect(within(people).getByText('Everyone who can sign in to MAPP.')).toBeInTheDocument();
     expect(await within(people).findByText('6 active')).toBeInTheDocument();

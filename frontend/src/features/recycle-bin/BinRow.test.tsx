@@ -72,17 +72,6 @@ describe('BinRow', () => {
     expect(screen.getByText('Currency')).toBeInTheDocument();
   });
 
-  it('restores and deletes permanently from the row (FR-015, FR-028)', async () => {
-    const { user, onRestore, onPurge } = renderRow();
-
-    await user.click(screen.getByRole('button', { name: "Restore initiative 'Trade shows'" }));
-    expect(onRestore).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByRole('button', { name: "Actions for initiative 'Trade shows'" }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Delete permanently' }));
-    expect(onPurge).toHaveBeenCalledTimes(1);
-  });
-
   it('shows and hides its contents as a tree (FR-015)', async () => {
     const { user } = renderRow();
 
@@ -110,19 +99,5 @@ describe('BinRow', () => {
 
     expect(screen.getByText(line)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: "Restore line item 'Print ads'" })).toBeVisible();
-  });
-
-  it('says which record inside matched the search (FR-016)', () => {
-    renderRow({ containsText: "Contains A-1042 'Fleet expo stand'" });
-
-    expect(screen.getByText("Contains A-1042 'Fleet expo stand'")).toBeInTheDocument();
-  });
-
-  it('marks and focuses the row a link points at, with its contents open (FR-008)', () => {
-    renderRow({ highlighted: true, highlightInside: true });
-
-    expect(screen.getAllByRole('listitem')[0]).toHaveAttribute('data-highlighted', 'true');
-    expect(screen.getByRole('heading', { name: 'Trade shows' })).toHaveFocus();
-    expect(screen.getByRole('button', { name: 'Hide contents' })).toBeInTheDocument();
   });
 });

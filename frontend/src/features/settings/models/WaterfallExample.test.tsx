@@ -15,16 +15,11 @@ describe('WaterfallExample (FR-010, SC-006)', () => {
 
     expect(screen.getByRole('heading', { name: 'Worked example' })).toBeInTheDocument();
     expect(screen.getByText('Calculated — not saved')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'About Worked example' })).toBeInTheDocument();
     expect(inquiries()).toHaveValue('250,000');
     expect(
       screen.getByText('250,000 INQ → 5,000 MQL → 250 deals → 2,500,000.00 USD revenue'),
     ).toBeInTheDocument();
-  });
-
-  it('explains the formula in an ⓘ tip', () => {
-    renderWithProviders(<WaterfallExample {...LUBRICANTS} />);
-
-    expect(screen.getByRole('button', { name: 'About Worked example' })).toBeInTheDocument();
   });
 
   it('updates as soon as the example number of inquiries changes; nothing is saved', async () => {
