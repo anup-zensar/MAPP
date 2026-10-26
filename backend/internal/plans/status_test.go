@@ -25,6 +25,7 @@ func statusTexts(e history.Entry) [][3]string {
 // A complete Draft plan becomes Published, with a new version and one "statusChanged" entry "published"
 // that shows the status going from Draft to Published (FR-024, FR-031, US5 scenario 1).
 func TestPublish_CompleteDraft_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Test"))
 	f.clock.Advance(time.Hour)
@@ -51,6 +52,7 @@ func TestPublish_CompleteDraft_FR024(t *testing.T) {
 // A plan that misses fields is not published: the answer lists every missing field, the plan's own first,
 // then each campaign or initiative that blocks publishing, and nothing changes (FR-024, US5 scenario 2).
 func TestPublish_ListsMissingGrouped_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("FY2026 Mobility Test")
 	in.Attributes = settings.AttributeValues{} // no business unit
@@ -79,6 +81,7 @@ func TestPublish_ListsMissingGrouped_FR024(t *testing.T) {
 
 // A plan missing only one field says so in the singular (plan "User-visible messages").
 func TestPublish_OneMissingField_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("FY2026 Mobility Test")
 	in.Attributes = settings.AttributeValues{}
@@ -95,6 +98,7 @@ func TestPublish_OneMissingField_FR024(t *testing.T) {
 // Warnings never block publishing: a negative remaining budget, and activities or line items that still
 // need fields (FR-024, US5 scenario 4).
 func TestPublish_WarningsDoNotBlock_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("FY2026 Lubricants Test")
 	in.Budget = &money.Input{Amount: "100000", Currency: "USD"}
@@ -117,6 +121,7 @@ func TestPublish_WarningsDoNotBlock_FR024(t *testing.T) {
 
 // Publishing a Published plan changes nothing and logs nothing (D-083).
 func TestPublish_AlreadyPublished_NoChange(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Test"))
 	if _, err := f.service.Publish(t.Context(), priya, plan.ID); err != nil {
@@ -135,6 +140,7 @@ func TestPublish_AlreadyPublished_NoChange(t *testing.T) {
 
 // A plan that does not exist can be neither published nor unpublished.
 func TestPublishAndUnpublish_NotFound_FR024_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, publishErr := f.service.Publish(t.Context(), priya, "P-9999")
@@ -147,6 +153,7 @@ func TestPublishAndUnpublish_NotFound_FR024_FR025(t *testing.T) {
 // Unpublishing needs a reason of 1 to 500 characters, without its surrounding spaces; a refused unpublish
 // changes nothing (FR-025, US5 scenario 3).
 func TestUnpublish_ReasonRules_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished))
 	cases := []struct {
@@ -176,6 +183,7 @@ func TestUnpublish_ReasonRules_FR025(t *testing.T) {
 // Unpublishing returns the plan to Draft and records the reason in one "statusChanged" entry
 // "unpublished"; unpublishing a Draft plan changes nothing and logs nothing (FR-025, FR-031, D-083).
 func TestUnpublish_ReturnsToDraftAndLogsReason_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished))
 	f.clock.Advance(time.Hour)

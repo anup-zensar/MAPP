@@ -33,6 +33,7 @@ func digitalForm(version int) map[string]any {
 // Saving Helix launch with a new budget and owner answers the campaign with its new version, and the plan's
 // remaining budget follows at once (FR-012, FR-018, US3 scenario 2).
 func TestUpdateCampaign_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.Advance(time.Hour)
@@ -58,6 +59,7 @@ func TestUpdateCampaign_Contract(t *testing.T) {
 // An update without a version is refused next to "version" with the other problems; narrowing Helix
 // launch's dates past Digital & social names it (FR-007, FR-018).
 func TestUpdateCampaign_MissingVersion400(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	form := helixForm(1)
@@ -82,6 +84,7 @@ func TestUpdateCampaign_MissingVersion400(t *testing.T) {
 
 // A save from an out-of-date copy answers 409 naming who changed the campaign and when (FR-018).
 func TestUpdateCampaign_Conflict409(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -96,9 +99,10 @@ func TestUpdateCampaign_Conflict409(t *testing.T) {
 		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}}`)
 }
 
-// Saving Digital & social answers the initiative with its new version; dates outside Helix launch are
-// refused with the allowed range (FR-006, FR-018).
+// Saving Digital & social answers the initiative with its new version; a save from the old version answers
+// 409, and dates outside Helix launch are refused with the allowed range (FR-006, FR-018).
 func TestUpdateInitiative_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	form := digitalForm(1)
@@ -112,6 +116,9 @@ func TestUpdateInitiative_Contract(t *testing.T) {
 	if digital.Version != 2 || digital.Name != "Digital, social & search" || *digital.EndDate != "2026-09-30" {
 		t.Errorf("Digital & social = %+v", digital)
 	}
+	assertBody(t, priya.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", digitalForm(1)), http.StatusConflict,
+		`{"error":{"code":"version_conflict","message":"Not saved — Priya Raman changed this initiative",`+
+			`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T09:00:00Z"}}}`)
 	outside := digitalForm(2)
 	outside["endDate"] = "2027-01-31"
 	assertBody(t, priya.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", outside), http.StatusBadRequest, validationBody(
@@ -119,26 +126,9 @@ func TestUpdateInitiative_Contract(t *testing.T) {
 	assertBody(t, priya.Do(t, http.MethodPatch, "/api/v1/initiatives/I-9999", digitalForm(1)), http.StatusNotFound, initiativeGoneBody)
 }
 
-// A save of an initiative from an out-of-date copy answers 409 (FR-018).
-func TestUpdateInitiative_Conflict409(t *testing.T) {
-	server := apitest.New(t)
-	meiLin := server.SignIn(t, meiLinsEmail)
-	server.GrantRole(t, meiLinsEmail, "globalPlanner", "all") // 014: every market's plans
-	daniel := server.SignIn(t, danielsEmail)
-	server.GrantRole(t, danielsEmail, "globalPlanner", "all") // 014: every market's plans
-	server.Advance(2 * time.Hour)
-	first := digitalForm(1)
-	first["description"] = "Social first"
-	assertStatus(t, meiLin.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", first), http.StatusOK)
-
-	response := daniel.Do(t, http.MethodPatch, "/api/v1/initiatives/I-1001", digitalForm(1))
-
-	assertBody(t, response, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Mei Lin changed this initiative",`+
-		`"fields":[],"conflict":{"changedBy":"Mei Lin","changedAt":"2026-03-12T11:00:00Z"}}}`)
-}
-
 // Daniel edits a campaign Priya created: there are no role checks (FR-031, D-004).
 func TestAnyoneCanChangeAnyCampaign_FR031(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)

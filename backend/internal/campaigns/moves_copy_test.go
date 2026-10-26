@@ -95,6 +95,7 @@ func summaries(list DestinationList) []string {
 // name, or whose dates do not contain its dates, is listed but not available, with every reason and the fix;
 // a campaign without dates fits any dates (FR-023, US6 scenario 2). They come by start date, then name.
 func TestInitiativeDestinations_Move_UnavailableWithReasonAndFix_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	late := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Late launch", StartDate: day("2026-06-01"), EndDate: day("2026-12-31")})
@@ -127,6 +128,7 @@ func TestInitiativeDestinations_Move_UnavailableWithReasonAndFix_FR023(t *testin
 // only dates that do not fit make one unavailable, and each suggests the first free copy name there
 // (FR-026).
 func TestInitiativeDestinations_Copy_CurrentFirstSuggestedNames_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.createInitiative(t, priya, d.helix.ID, InitiativeInput{Name: "Digital & social (copy)"})
@@ -155,6 +157,7 @@ func TestInitiativeDestinations_Copy_CurrentFirstSuggestedNames_FR026(t *testing
 // A campaign moves only to another plan of its plan's year, Draft or Published: other years are not
 // offered, and a plan that already has a campaign with its name is listed but not available (FR-023, D-017).
 func TestCampaignDestinations_Move_SameYearOnly_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.plans.plans["P-1004"] = PlanFacts{ID: "P-1004", Name: "FY2026 Benelux", Year: 2026, Status: "published", ModelID: "MOD-1001",
@@ -181,6 +184,7 @@ func TestCampaignDestinations_Move_SameYearOnly_FR023(t *testing.T) {
 // attribute groups hidden there — their values kept — or shown (FR-024, R7, R9). A plan with the same model
 // and business unit has no consequences.
 func TestCampaignDestinations_Consequences_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.plans.plans["P-1004"] = PlanFacts{ID: "P-1004", Name: "FY2026 Benelux", Year: 2026, Status: "draft", ModelID: "MOD-1001",
@@ -205,6 +209,7 @@ func TestCampaignDestinations_Consequences_FR024(t *testing.T) {
 // Every destination says what the record's budget would leave there; a copy that over-allocates its
 // destination says by how much, and is still allowed (FR-026, D-015).
 func TestDestinations_OverAllocationWarning_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.createCampaign(t, priya, "P-1002", CampaignInput{Name: "Retail growth", Budget: input("500000.00")})
@@ -226,6 +231,7 @@ func TestDestinations_OverAllocationWarning_FR026(t *testing.T) {
 
 // With nowhere to go, the list is empty, so the dialog can say so (edge case).
 func TestDestinations_NoneAvailable_EmptyList_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	only := f.createCampaign(t, priya, "P-1003", CampaignInput{Name: "Brand platform"})
 	alone := f.createInitiative(t, priya, only.ID, InitiativeInput{Name: "Brand film"})
@@ -241,6 +247,7 @@ func TestDestinations_NoneAvailable_EmptyList_EdgeCase(t *testing.T) {
 
 // Destinations are only for a move or a copy, of a record that exists.
 func TestDestinations_BadPurpose_Refused(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 
@@ -258,6 +265,7 @@ func TestDestinations_BadPurpose_Refused(t *testing.T) {
 // A moved initiative keeps its ID, dates, values and everything below it; the roll-ups of both campaigns
 // follow, a negative remaining budget included (FR-025, US6 scenario 1).
 func TestMoveInitiative_KeepsIDDatesValuesAndChildren_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.advance(time.Hour)
@@ -294,6 +302,7 @@ func TestMoveInitiative_KeepsIDDatesValuesAndChildren_FR025(t *testing.T) {
 // one that already has the name and whose dates do not fit is refused with both reasons at once, and a
 // missing version with the others (FR-023).
 func TestMoveInitiative_RefusedWithEveryReason_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	late := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Late launch", StartDate: day("2026-06-01"), EndDate: day("2026-12-31")})
@@ -321,6 +330,7 @@ func TestMoveInitiative_RefusedWithEveryReason_FR023(t *testing.T) {
 // A campaign moves only to another plan of the same year that has no campaign with its name; it takes
 // everything below it along (FR-023, FR-025, D-017).
 func TestMoveCampaign_SameYearOnly_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.createCampaign(t, priya, "P-1002", CampaignInput{Name: "helix launch"})
@@ -351,6 +361,7 @@ func TestMoveCampaign_SameYearOnly_FR023(t *testing.T) {
 // A campaign whose dates leave its plan's year keeps the R4 warning in the plan it moves to; its dates do
 // not change (FR-023, R4).
 func TestMoveCampaign_KeepsOutsideYearWarning_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	winter := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Winter wave", StartDate: day("2026-12-01"), EndDate: day("2027-03-31")})
 
@@ -364,6 +375,7 @@ func TestMoveCampaign_KeepsOutsideYearWarning_FR023(t *testing.T) {
 // A move writes one "moved" entry with the change of parent, both named, and the record's new place as its
 // path (FR-030, data model §8).
 func TestMove_LogsParentChange_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 
@@ -397,6 +409,7 @@ func TestMove_LogsParentChange_FR030(t *testing.T) {
 // A move from an out-of-date version is refused with version_conflict, naming who changed the record and
 // when; nothing moves (FR-025, D-030).
 func TestMove_VersionConflict_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.advance(time.Hour)
@@ -420,6 +433,7 @@ func TestMove_VersionConflict_FR025(t *testing.T) {
 // bookkeeping; its initiatives are copied with their names and fields, and their activities and line items
 // through feature 006, within the year (FR-027, R13, US6 scenario 5).
 func TestCopyCampaign_CopiesEverythingBelow_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.advance(time.Hour)
@@ -458,6 +472,7 @@ func TestCopyCampaign_CopiesEverythingBelow_FR027(t *testing.T) {
 // A copy is made completely or not at all: when copying the activities fails, no campaign, initiative or
 // log entry is stored and no ID is used up (FR-027).
 func TestCopyCampaign_AllOrNothing_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.activities.copyErr = errors.New("disk full")
@@ -482,6 +497,7 @@ func TestCopyCampaign_AllOrNothing_FR027(t *testing.T) {
 // The copy's name is checked like a new campaign's name in the destination plan, and the destination must
 // be a plan of the same year; all problems come at once. The same name is fine in another plan (FR-026).
 func TestCopyCampaign_NameCheckedInDestination_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	f.createCampaign(t, priya, "P-1002", CampaignInput{Name: "HELIX launch"})
@@ -509,6 +525,7 @@ func TestCopyCampaign_NameCheckedInDestination_FR026(t *testing.T) {
 // An initiative is copied only into a campaign of its plan whose dates contain its dates; the name is
 // checked in that campaign (FR-026, R3).
 func TestCopyInitiative_DatesMustFit_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	late := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Late launch", StartDate: day("2026-06-01"), EndDate: day("2026-12-31")})
@@ -538,6 +555,7 @@ func TestCopyInitiative_DatesMustFit_FR026(t *testing.T) {
 // A copy writes one "copied" entry, on the new record only, naming the original and what came with it;
 // the records copied below it get none (D-097, FR-030).
 func TestCopy_OneCopiedEntryWithDetails_DecisionH(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	d := f.newDemo(t)
 	initiativeEntries := len(f.log(t, initiativeKind, ""))
@@ -568,6 +586,7 @@ func TestCopy_OneCopiedEntryWithDetails_DecisionH(t *testing.T) {
 // A copy suggests "<name> (copy)", then "(copy 2)", "(copy 3)", … — the first name taken does not report
 // (R13).
 func TestSuggestCopyName_CopyThenNumbers_R13(t *testing.T) {
+	t.Parallel()
 	taken := []string{"helix launch (COPY)", "Helix launch (copy 2)"}
 	isTaken := func(name string) bool {
 		return slices.ContainsFunc(taken, func(t string) bool { return strings.EqualFold(t, name) })
@@ -584,6 +603,7 @@ func TestSuggestCopyName_CopyThenNumbers_R13(t *testing.T) {
 // A copy name stays within 120 characters: the original part is shortened, without trailing spaces, so the
 // suffix fits (edge case).
 func TestSuggestCopyName_ShortensLongNames_EdgeCase(t *testing.T) {
+	t.Parallel()
 	long := strings.Repeat("ü", 112) + " " + strings.Repeat("x", 7) // 120 characters
 	if got, want := suggestCopyName(long, func(string) bool { return false }), strings.Repeat("ü", 112)+" (copy)"; got != want {
 		t.Errorf("copy name = %q, want %q", got, want)

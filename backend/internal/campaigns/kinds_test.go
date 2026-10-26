@@ -19,6 +19,7 @@ var lubricants = errs.RecordRef{Type: planKind, ID: "P-1001", Name: "FY2026 Lubr
 // entry, which counts what was below; one "deleted" log entry says so, and the plan tree no longer shows
 // any of them (FR-028, US5 scenario 1).
 func TestDeleteCampaign_EverythingInOneBinEntry_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("300000.00")})
 	digital := f.createInitiative(t, priya, helix.ID, InitiativeInput{Name: "Digital & social"})
@@ -70,6 +71,7 @@ func TestDeleteCampaign_EverythingInOneBinEntry_FR028(t *testing.T) {
 
 // Deleting an initiative takes its activities; its campaign and the other initiatives stay (FR-028).
 func TestDeleteInitiative_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	digital := f.createInitiative(t, priya, helix.ID, InitiativeInput{Name: "Digital & social", Budget: input("100000.00")})
@@ -106,6 +108,7 @@ func TestDeleteInitiative_FR028(t *testing.T) {
 // Undo right after a delete puts the campaign, its initiatives and their activities back exactly: same IDs,
 // versions, values and plan tree (FR-029, US5 scenario 2).
 func TestUndoDelete_RestoresExactly_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{
 		Name: "Helix launch", OwnerID: ptr("U-1002"), StartDate: day("2026-02-01"), EndDate: day("2026-11-30"), Budget: input("300000.00"),
@@ -144,6 +147,7 @@ func TestUndoDelete_RestoresExactly_FR029(t *testing.T) {
 // An Undo must put the record back exactly, so when another campaign of the plan (or initiative of the
 // campaign) has taken the name meanwhile it is refused, and the record stays in the recycle bin (FR-029).
 func TestUndo_NameTaken_Refused_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	digital := f.createInitiative(t, priya, helix.ID, InitiativeInput{Name: "Digital & social"})
@@ -177,6 +181,7 @@ func TestUndo_NameTaken_Refused_FR029(t *testing.T) {
 // "<name> (restored)", or "(restored 2)", … when that is taken too, gets a new version and the note says so
 // (FR-029, feature 011 FR-022).
 func TestRestore_NameTaken_GetsRestoredSuffix_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	digital := f.createInitiative(t, priya, helix.ID, InitiativeInput{Name: "Digital & social"})
@@ -218,6 +223,7 @@ func TestRestore_NameTaken_GetsRestoredSuffix_FR029(t *testing.T) {
 // budgets as "400,000.00 USD", the parent's name for a move and the Shell attribute's label and options
 // (FR-030, data model §7).
 func TestDescribe_ReadableValues_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	kinds := f.service.Kinds()
@@ -256,6 +262,7 @@ func TestDescribe_ReadableValues_FR030(t *testing.T) {
 
 // Deleting a campaign or an initiative that no longer exists answers its "no longer exists" message.
 func TestDelete_Gone_NotFound(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.service.DeleteCampaign(t.Context(), priya, "C-9999")

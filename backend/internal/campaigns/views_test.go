@@ -20,6 +20,7 @@ func count(n int64) *int64 { return &n }
 // planned cost is 150,000.00, budget used 125 %, over budget, and the plan's planned cost includes it
 // (FR-011, US4 scenario 1, domain model §4.2).
 func TestCampaignView_PlannedCostRollsUp_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("120000.00")})
 	first := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social"})
@@ -50,6 +51,7 @@ func TestCampaignView_PlannedCostRollsUp_FR011(t *testing.T) {
 // With nothing below, planned cost and budget used are "—" (nil), Approval progress is "No activities"
 // and goals are nil (FR-011, FR-013).
 func TestViews_NothingBelow_DashAndNoActivities_FR011_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("100.00")})
 	i := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social", Budget: input("10.00")})
@@ -82,6 +84,7 @@ func TestViews_NothingBelow_DashAndNoActivities_FR011_FR013(t *testing.T) {
 // A campaign shows what it allocated to its initiatives and what remains for them (FR-010): 700,000 −
 // (300,000 + 250,000) = 150,000.00.
 func TestCampaignView_RemainingForInitiatives_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("700000.00")})
 	f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social", Budget: input("300000.00")})
@@ -103,6 +106,7 @@ func TestCampaignView_RemainingForInitiatives_FR010(t *testing.T) {
 // The parent's remaining budget counts every child's budget, the record's own included (FR-010): the plan
 // has 1,200,000 − (700,000 + 450,000) = 50,000.00 left; the campaign 450,000 − (200,000 + 150,000).
 func TestViews_ParentRemainingIncludesOwnBudget_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("700000.00")})
 	rimula := f.createCampaign(t, daniel, "P-1001", CampaignInput{Name: "Rimula fleet", Budget: input("450000.00")})
@@ -125,6 +129,7 @@ func TestViews_ParentRemainingIncludesOwnBudget_FR010(t *testing.T) {
 // Without a parent budget there is nothing to allocate from: the remaining budget is nil, shown "—" (spec
 // edge case).
 func TestViews_ParentWithoutBudget_Nil_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, alex, "P-1003", CampaignInput{Name: "Brand platform"})
 	i := f.createInitiative(t, alex, c.ID, InitiativeInput{Name: "Brand film", Budget: input("250000.00")})
@@ -143,6 +148,7 @@ func TestViews_ParentWithoutBudget_Nil_EdgeCase(t *testing.T) {
 // Approval progress counts the activities whose status is approved (shown Approved, In progress or
 // Complete): "0 of 5", "3 of 5", All approved (FR-013, US4 scenario 2).
 func TestViews_ApprovalProgressCountsApproved_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	i := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social"})
@@ -176,6 +182,7 @@ func TestViews_ApprovalProgressCountsApproved_FR013(t *testing.T) {
 // Timing compares the dates with today, 12 Mar 2026: Not started, Running, Finished, or nil without dates
 // (FR-013, US4 scenario 3).
 func TestViews_TimingAgainstToday_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	tests := []struct {
 		name, start, end string
@@ -212,6 +219,7 @@ func deref(s *string) string {
 // field), then the attributes Settings reports — "2 fields needed" without cluster and region (FR-014,
 // US4 scenario 4, D-092).
 func TestCampaignView_CompletenessOwnFields_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	bare := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Bare"})
@@ -233,6 +241,7 @@ func TestCampaignView_CompletenessOwnFields_FR014(t *testing.T) {
 // A region nobody can choose — the chosen cluster has no regions set up — is not counted as missing (spec
 // edge case, D-034).
 func TestCampaignView_RegionWithoutOptionsNotMissing_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", OwnerID: ptr("U-1002"),
@@ -247,6 +256,7 @@ func TestCampaignView_RegionWithoutOptionsNotMissing_EdgeCase(t *testing.T) {
 // Items below needing attention count incomplete initiatives, activities and line items below; the plan's
 // rollup lists the incomplete campaigns and initiatives (FR-014).
 func TestViews_ItemsBelowNeedingAttention_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	complete := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Complete", OwnerID: ptr("U-1002"),
@@ -271,6 +281,7 @@ func TestViews_ItemsBelowNeedingAttention_FR014(t *testing.T) {
 // Goals are the sums of the activities' INQ, MQL and revenue below; a goal no activity has stays nil
 // (FR-016).
 func TestViews_GoalSums_FR016(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	first := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social"})
@@ -295,6 +306,7 @@ func TestViews_GoalSums_FR016(t *testing.T) {
 // Rows are ordered by start date, then name ignoring case, records without dates last — campaigns and,
 // inside each, initiatives (FR-020).
 func TestListPlanCampaigns_OrderByStartThenNameUndatedLast_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for _, in := range []CampaignInput{
 		{Name: "Zulu undated"},
@@ -334,6 +346,7 @@ func TestListPlanCampaigns_OrderByStartThenNameUndatedLast_FR020(t *testing.T) {
 // The totals row counts campaigns, initiatives and activities, sums the campaign budgets ("Allocated to
 // campaigns") and gives the plan's planned cost and remaining budget (FR-022, US4 scenario 5).
 func TestListPlanCampaigns_Totals_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("700000.00")})
 	rimula := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Rimula fleet", Budget: input("450000.00")})
@@ -363,6 +376,7 @@ func TestListPlanCampaigns_Totals_FR022(t *testing.T) {
 // Nothing derived is stored: when an activity's planned cost or status changes below, the next read shows
 // the new planned cost, budget used and progress (FR-012, FR-015, D-090).
 func TestViews_FollowChangesBelow_FR012_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("1000.00")})
 	i := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social"})

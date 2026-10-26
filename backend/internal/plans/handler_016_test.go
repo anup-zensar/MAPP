@@ -30,6 +30,7 @@ func getPlan(t *testing.T, client *apitest.Client, id string) plans.PlanView {
 // The plan page answers its amounts in the plan currency (planFigures) and in the display currency beside them
 // (figures), with the plan type, the phasing and the currency lock (FR-012, FR-013, FR-020, FR-032).
 func TestGetPlan_PlanCurrency_Contract_FR013(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -57,6 +58,7 @@ func TestGetPlan_PlanCurrency_Contract_FR013(t *testing.T) {
 // A new plan gets the chosen plan currency and type; its budget must be in that currency, and an unknown type
 // is refused (FR-011, FR-032).
 func TestCreatePlan_CurrencyAndType_Contract_FR011_FR032(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	body := newPlanBody()
@@ -84,6 +86,7 @@ func TestCreatePlan_CurrencyAndType_Contract_FR011_FR032(t *testing.T) {
 // The Plans list takes a range of years and plan types; its rows carry the plan type, the plan currency and
 // the amounts in it beside the display amounts (FR-014, FR-033).
 func TestListPlans_YearRangeAndType_Contract_FR033(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -112,6 +115,7 @@ func TestListPlans_YearRangeAndType_Contract_FR033(t *testing.T) {
 // add up is saved and becomes its problem; a month outside the plan's year is refused; an old version
 // conflicts (FR-020 – FR-023).
 func TestSetPlanPhasing_Contract_FR020(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	before := getPlan(t, priya, "P-1004")

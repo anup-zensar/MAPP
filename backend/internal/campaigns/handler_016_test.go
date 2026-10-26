@@ -41,6 +41,7 @@ func getPhased(t *testing.T, client *apitest.Client, path string) phased {
 
 // A campaign's budget is in the plan currency, its display amount converted from it (FR-011, FR-013).
 func TestCampaignBudget_PlanCurrency_Contract_FR011_FR013(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -61,6 +62,7 @@ func TestCampaignBudget_PlanCurrency_Contract_FR011_FR013(t *testing.T) {
 // splits the budget over the 12 months; Custom months that add up to the budget leave no problem; an old
 // version conflicts; an unknown record is not found.
 func TestSetBudgetPhasing_CampaignAndInitiative_Contract_FR020(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	helix := getPhased(t, priya, "/api/v1/campaigns/C-1005")
