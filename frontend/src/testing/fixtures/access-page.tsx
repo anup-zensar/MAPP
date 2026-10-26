@@ -4,7 +4,7 @@
  */
 import { screen } from '@testing-library/react';
 import type { HttpHandler } from 'msw';
-import { AccessPage } from '@/features/people/access/AccessPage';
+import { AccessPage } from '@/features/people';
 import { mockApi } from '../mock-api';
 import { renderWithProviders } from '../render';
 import { reply } from '../replies';
