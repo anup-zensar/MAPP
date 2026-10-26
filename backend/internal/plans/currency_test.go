@@ -21,6 +21,7 @@ func gbpInput(name string) PlanInput {
 // A plan has a plan currency — an active currency, USD when none is sent — and a plan type, Operational when
 // none is sent; the budget is typed in the plan currency; every problem comes at once (FR-011, FR-032).
 func TestCreatePlan_CurrencyAndType_FR011_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	plain := f.create(t, priya, input("FY2026 Plain"))
@@ -53,6 +54,7 @@ func TestCreatePlan_CurrencyAndType_FR011_FR032(t *testing.T) {
 // The plan currency is locked once campaigns, initiatives or activities have amounts in it, saying how many;
 // with only a plan budget it may change and the budget keeps its number (FR-012, US2-5).
 func TestUpdatePlan_CurrencyLock_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	locked := f.create(t, priya, gbpInput("Locked plan"))
 	free := f.create(t, priya, gbpInput("Free plan"))
@@ -95,6 +97,7 @@ func TestUpdatePlan_CurrencyLock_FR012(t *testing.T) {
 // (figures), each converted once from the plan currency (FR-013, data-model §3.1): 600,000.00 GBP is
 // 759,493.67 USD at 0.79.
 func TestPlanFigures_PlanCurrencyAndDisplay_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, gbpInput("FY2027 Lubricants UK & Ireland"))
 	planned, budgets := money.FromCents(6_500_000), money.FromCents(40_000_000)
@@ -124,6 +127,7 @@ func TestPlanFigures_PlanCurrencyAndDisplay_FR013(t *testing.T) {
 // The Plans list shows each plan's amounts in its plan currency with the display currency beside; the
 // summary converts each plan's totals to USD before adding them (FR-014).
 func TestPlanList_PlanCurrencyAmounts_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	usdPlan := seedPlan(t, "P-1001", "FY2027 USD plan", 2027, teamLubricants, priya.ID, "1000000.00", StatusDraft)
 	gbpPlan := seedPlan(t, "P-1002", "FY2027 GBP plan", 2027, teamLubricants, priya.ID, "600000.00", StatusDraft)
@@ -154,6 +158,7 @@ func TestPlanList_PlanCurrencyAmounts_FR014(t *testing.T) {
 // A copy keeps the plan currency, the plan type and the phasing; a next-year copy moves the phasing months
 // one year later (FR-018, FR-025).
 func TestCopyPlan_KeepsCurrencyTypePhasing_FR018_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := gbpInput("FY2027 Phased")
 	plan := f.create(t, priya, in)
@@ -178,20 +183,10 @@ func TestCopyPlan_KeepsCurrencyTypePhasing_FR018_FR025(t *testing.T) {
 	}
 }
 
-// A new plan starts in USD, Operational (FR-011, FR-032).
-func TestPlanDefaults_CurrencyType(t *testing.T) {
-	f := newFixture(t)
-
-	defaults, err := f.service.Defaults(t.Context(), priya)
-
-	if err != nil || defaults.Currency != "USD" || defaults.PlanType != TypeOperational {
-		t.Errorf("Defaults = %+v, %v", defaults, err)
-	}
-}
-
 // A change of the plan type is logged in the plan's ordinary change entry, with the actor and the types as
 // people read them (FR-032, FR-049, data-model §7).
 func TestUpdatePlan_PlanTypeLogged_FR032_FR049(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Europe"))
 

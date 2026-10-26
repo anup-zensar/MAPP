@@ -31,6 +31,7 @@ func moneyOf(t *testing.T, amount, currency string) *money.Money {
 // has: 1,200,000.00 − 1,300,000.00 = −100,000.00, over-allocated by 100,000.00; without a plan budget there
 // is no remaining budget (FR-012, D-015, US3 scenario 2).
 func TestFigures_RemainingBudgetNegative_FR012(t *testing.T) {
+	t.Parallel()
 	overAllocated := figuresOf(planWithBudget(t, "1200000.00"), Facts{CampaignBudgets: usd(t, "1300000.00")}, usdConverter)
 	within := figuresOf(planWithBudget(t, "1200000.00"), Facts{CampaignBudgets: usd(t, "1000000.00")}, usdConverter)
 	noBudget := figuresOf(planWithBudget(t, ""), Facts{CampaignBudgets: usd(t, "1000000.00")}, usdConverter)
@@ -54,6 +55,7 @@ func TestFigures_RemainingBudgetNegative_FR012(t *testing.T) {
 // 108 and over budget. Without a budget or with a budget of 0 it is empty; a budget of 0 with a planned
 // cost is still over budget (FR-012, D-088, US3 scenario 3).
 func TestFigures_BudgetUsed_FR012(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, budget, planned string
 		wantPercent           *int
@@ -86,6 +88,7 @@ func TestFigures_BudgetUsed_FR012(t *testing.T) {
 // Activities approved are "n of m" with the progress: no activities, in progress, all approved (FR-012,
 // D-026).
 func TestFigures_ApprovalProgress_FR012(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		activities, approved int
 		want                 ApprovalProgress
@@ -107,6 +110,7 @@ func TestFigures_ApprovalProgress_FR012(t *testing.T) {
 // Every amount is shown in the reader's display currency, converted from USD at the end and rounded half
 // up to the cent: EUR at 0.92 (FR-015, D-079). An unusable rate falls back to USD.
 func TestFigures_DisplayCurrency_FR015(t *testing.T) {
+	t.Parallel()
 	eur := converterOf(people.DisplayRate{Code: "EUR", Rate: "0.92"})
 	planned := usd(t, "0.05") // 0.046 EUR → 0.05
 	f := Facts{CampaignBudgets: usd(t, "1300000.00"), PlannedCost: &planned}
@@ -130,6 +134,7 @@ func TestFigures_DisplayCurrency_FR015(t *testing.T) {
 // none of the plan's teams), the needed Shell attributes, Goal stage — and every record below that is not
 // complete (FR-017, D-085).
 func TestCompleteness_OwnFieldsAndItemsBelow_FR017(t *testing.T) {
+	t.Parallel()
 	businessUnitMissing := []settings.MissingField{{Field: "attributes.SA-BU", Label: "Business unit"}}
 	teams := settings.MissingField{Field: "teamIds", Label: "Teams"}
 	owner := settings.MissingField{Field: "ownerId", Label: "Owner"}

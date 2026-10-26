@@ -20,6 +20,7 @@ import (
 // The copy dialog suggests "<name> (copy)", then "(copy 2)", "(copy 3)", … — the first name no plan has,
 // ignoring letter case (FR-026, R13).
 func TestCopyName_Suffixes_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	source := f.create(t, priya, input("FY2026 Lubricants Europe"))
 
@@ -39,6 +40,7 @@ func TestCopyName_Suffixes_FR026(t *testing.T) {
 // A copy's name stays within 120 characters: the original part is shortened, without trailing spaces, so
 // the suffix fits (edge case). Characters, not bytes, are counted.
 func TestCopyName_ShortenedTo120_EdgeCase(t *testing.T) {
+	t.Parallel()
 	long := strings.Repeat("é", 112) + " " + strings.Repeat("b", 7) // 120 characters, a space at 113
 	free := func(string) bool { return false }
 	copyTaken := func(name string) bool { return strings.HasSuffix(name, " (copy)") }
@@ -58,6 +60,7 @@ func TestCopyName_ShortenedTo120_EdgeCase(t *testing.T) {
 // (up to the current year + 5, D-084), and the counts of what the copy can take with it (FR-026, FR-028).
 // The copy itself refuses a year the dialog does not offer.
 func TestCopyOptions_NextYearAvailability_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addLevel(t, "campaign", map[string]Facts{
 		"P-1001": {Campaigns: 2, Initiatives: 4, Activities: 7, ApprovedActivities: 4, LineItems: 15},
@@ -93,6 +96,7 @@ func TestCopyOptions_NextYearAvailability_FR028(t *testing.T) {
 // The name of a copy is checked as on create — required, at most 120 characters, unique ignoring letter
 // case — and every problem, the year's included, is reported at once; nothing is saved (FR-026, FR-010).
 func TestCopy_Validation_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	source := f.create(t, priya, input("FY2026 Lubricants Europe"))
 	entries := len(f.entries(t))
@@ -113,6 +117,7 @@ func TestCopy_Validation_FR026(t *testing.T) {
 // its creator, also when the original is Published; the levels below copy nothing, and one "copied" entry
 // on the new plan names where it came from (FR-027, D-035, D-082).
 func TestCopy_PlanOnly_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	level := f.addLevel(t, "campaign", nil)
 	in := input("FY2026 Lubricants Europe")
@@ -157,6 +162,7 @@ func TestCopy_PlanOnly_FR027(t *testing.T) {
 // the old → new IDs copied above it, the plan first; the log entry counts what came with the copy (FR-027,
 // D-195, D-082).
 func TestCopy_WithContents_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.registerStubKind(t, "campaign", "campaigns", kindName)
 	f.registerStubKind(t, "initiative", "initiatives", "campaign")
@@ -204,6 +210,7 @@ func TestCopy_WithContents_FR027(t *testing.T) {
 // A copy is made completely or not at all: when a level below fails, neither the plan nor anything a level
 // copied is saved, no log entry is written and no ID is used up (FR-027).
 func TestCopy_AllOrNothing_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	first := f.addLevel(t, "campaign", nil)
 	first.copy = func(ctx context.Context, _ *CopyJob) error {
@@ -239,6 +246,7 @@ func TestCopy_AllOrNothing_FR027(t *testing.T) {
 // A next-year copy is a plan of the next year whose default finance budget, which belongs to the plan's
 // year, is cleared — and a note says so; a plan without one gets no note (FR-028).
 func TestCopy_NextYear_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	withBudget := input("FY2026 Lubricants Europe")
 	withBudget.DefaultFinanceBudgetID = ptr(budget2026)

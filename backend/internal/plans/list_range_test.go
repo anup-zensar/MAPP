@@ -33,6 +33,7 @@ func listIDsOf(t *testing.T, f *fixture, filter ListFilter) (PlanList, []string)
 // Years from–to lists the plans of every year of the range, newest first; one bound leaves the other open
 // (FR-033).
 func TestListPlans_YearRange_FR033(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	rangePlans(t, f)
 
@@ -50,6 +51,7 @@ func TestListPlans_YearRange_FR033(t *testing.T) {
 
 // year is the alias of a one-year range (D-269).
 func TestListPlans_YearAlias(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	rangePlans(t, f)
 
@@ -63,6 +65,7 @@ func TestListPlans_YearAlias(t *testing.T) {
 
 // Plan type narrows the list to the chosen types; an unknown type is refused (FR-033, FR-032).
 func TestListPlans_TypeFilter_FR033(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	rangePlans(t, f)
 
@@ -78,6 +81,7 @@ func TestListPlans_TypeFilter_FR033(t *testing.T) {
 
 // The summary cards cover the range and the types, whatever the status and the search (FR-033).
 func TestListPlans_SummaryOverRange_FR033(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	rangePlans(t, f)
 	planned := money.FromCents(5_000_000)

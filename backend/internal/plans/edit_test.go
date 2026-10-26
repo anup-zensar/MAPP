@@ -18,6 +18,7 @@ import (
 // Every save sends the version it started from; without one, or with one below 1, the save is refused
 // next to the field "version", together with every other problem, and nothing changes (FR-023).
 func TestUpdate_MissingVersion_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.create(t, priya, input("Versioned plan"))
 	stored := f.stored(t, created.ID)
@@ -39,6 +40,7 @@ func TestUpdate_MissingVersion_FR023(t *testing.T) {
 // A save from an out-of-date version is refused, naming who changed the plan and when; nothing is
 // overwritten or logged (FR-023, spec edge case).
 func TestUpdate_VersionConflict_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.create(t, priya, input("Shared plan"))
 	stored := f.stored(t, created.ID)
@@ -65,6 +67,7 @@ func TestUpdate_VersionConflict_FR023(t *testing.T) {
 
 // A save that changes nothing creates no version and no log entry (FR-031, research R5).
 func TestUpdate_NoChangeNoLog_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.create(t, priya, input("Unchanged plan"))
 	stored := f.stored(t, created.ID)
@@ -85,6 +88,7 @@ func TestUpdate_NoChangeNoLog_FR031(t *testing.T) {
 // field's old and new value in words, each Shell attribute on its own; the year never changes (FR-018,
 // FR-022, FR-031, US4 scenario 5).
 func TestUpdate_PublishedStaysPublishedAndLogsFields_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished))
 	edit := updateOf(f.stored(t, "P-1001"))
@@ -123,6 +127,7 @@ func TestUpdate_PublishedStaysPublishedAndLogsFields_FR022(t *testing.T) {
 // When the owner is in none of the chosen teams, the save is refused naming the person, until another
 // owner is chosen or the field is cleared (FR-021, R1, US4 scenario 4).
 func TestUpdate_OwnerNotInTeams_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.create(t, priya, input("Owned plan"))
 	edit := updateOf(f.stored(t, created.ID))
@@ -141,6 +146,7 @@ func TestUpdate_OwnerNotInTeams_FR021(t *testing.T) {
 // A model, team or owner that became inactive stays on the plan when it is saved again; only choosing
 // one anew is refused (spec edge case, 002 FR-027).
 func TestUpdate_InactiveValuesKept_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	p := seedPlan(t, "P-1001", "Old settings", 2026, teamClosed, "U-1009", "", StatusDraft)
 	p.ModelID = oldModel
@@ -161,6 +167,7 @@ func TestUpdate_InactiveValuesKept_EdgeCase(t *testing.T) {
 // Values of Shell attributes that a business-unit change hides are kept, so they come back when the
 // business unit is added again (FR-020, R9, US4 scenario 3).
 func TestUpdate_HiddenAttributeValuesKept_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("Mobility plan")
 	in.Attributes = settings.AttributeValues{businessUnit: json.RawMessage(`["SO-MOB"]`), smp: json.RawMessage(`true`)}
@@ -180,6 +187,7 @@ func TestUpdate_HiddenAttributeValuesKept_FR020(t *testing.T) {
 // Before a model change is saved, the activities whose type the new model does not allow are listed; the
 // same model lists nothing, and an unknown one is refused (FR-019, R7, US4 scenario 2).
 func TestChangeEffects_DisallowedActivities_FR019(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.create(t, priya, input("Model change"))
 	activities := []errs.RecordRef{{Type: "activity", ID: "A-1003", Name: "Launch film"}, {Type: "activity", ID: "A-1005", Name: "Fleet day"}}
@@ -206,6 +214,7 @@ func TestChangeEffects_DisallowedActivities_FR019(t *testing.T) {
 // Before a business-unit change is saved, the attribute groups it hides or shows are listed by unit, with
 // the levels they are on and their labels (FR-020, R9, US4 scenario 3).
 func TestChangeEffects_AttributeGroups_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	in := input("Both units")
 	in.Attributes = attributesOf(mobility, lubricants)

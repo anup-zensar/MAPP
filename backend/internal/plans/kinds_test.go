@@ -64,6 +64,7 @@ func (f *fixture) deletePlan(t *testing.T, id string) history.BinEntry {
 // Deleting a plan moves it, with everything below it, to the recycle bin as one entry, and logs one
 // "deleted" entry naming what it held; the plan is gone (FR-029, US6 scenario 3).
 func TestDelete_MovesToBin_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Test"))
 	var campaigns fakeChildren
@@ -94,6 +95,7 @@ func TestDelete_MovesToBin_FR029(t *testing.T) {
 
 // A plan that does not exist cannot be deleted (FR-029).
 func TestDelete_NotFound_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.service.Delete(t.Context(), priya, "P-9999")
@@ -104,6 +106,7 @@ func TestDelete_NotFound_FR029(t *testing.T) {
 // Undo puts the plan back exactly as it was: the same ID, version and status, Published included, and
 // what was below it (FR-030, US6 scenario 4).
 func TestUndo_RestoresExactly_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.put(t, seedPlan(t, "P-1001", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "1200000.00", StatusPublished))
 	before := f.stored(t, "P-1001")
@@ -128,6 +131,7 @@ func TestUndo_RestoresExactly_FR030(t *testing.T) {
 // While the plan was in the bin, another plan took its name: Undo is refused and says to restore it from
 // the recycle bin instead (spec edge case, plan "Restore notes").
 func TestUndo_NameTaken_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Test"))
 	entry := f.deletePlan(t, plan.ID)
@@ -145,6 +149,7 @@ func TestUndo_NameTaken_EdgeCase(t *testing.T) {
 // A Restore from the recycle bin renames a plan whose name is taken and returns a Published plan as Draft,
 // saying both in its notes, with a new version (R14, plan "Restore notes").
 func TestRestore_RenamesAndReturnsDraft_R14(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.put(t, seedPlan(t, "P-1050", "FY2026 Lubricants Europe", 2026, teamLubricants, priya.ID, "", StatusPublished))
 	entry := f.deletePlan(t, "P-1050")
@@ -168,6 +173,7 @@ func TestRestore_RenamesAndReturnsDraft_R14(t *testing.T) {
 
 // A deleted plan's name is free again (spec edge case, FR-010).
 func TestCreate_DeletedNameReusable_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	plan := f.create(t, priya, input("FY2026 Lubricants Test"))
 	f.deletePlan(t, plan.ID)
@@ -182,6 +188,7 @@ func TestCreate_DeletedNameReusable_EdgeCase(t *testing.T) {
 // The activity log shows a plan's fields by their form labels and its values as people read them: names
 // for ids, money with its currency, and the words of the choices (FR-031, plan "Activity log").
 func TestDescribe_ReadableLog_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	cases := []struct {
 		field       string

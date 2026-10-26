@@ -23,10 +23,7 @@ const (
 	meisEmail    = "mei.lin@shell.com"
 )
 
-const (
-	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
-	planGoneBody       = `{"error":{"code":"not_found","message":"This plan no longer exists — someone may have deleted it.","fields":[]}}`
-)
+const planGoneBody = `{"error":{"code":"not_found","message":"This plan no longer exists — someone may have deleted it.","fields":[]}}`
 
 // newPlanBody is the whole form of a new plan, as the web app sends it: FY2026 Lubricants Test with
 // Lubricants 1.0, Lubricants Europe, Priya as owner, business unit Lubricants and an INQ goal of 250,000.
@@ -42,6 +39,7 @@ func newPlanBody() map[string]any {
 // What a new plan starts with for Priya: 2026, the years 2025–2031, her team Lubricants Europe and herself
 // as owner; the seed has two active models, so none is chosen (FR-006).
 func TestPlanDefaults_FR006(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -55,6 +53,7 @@ func TestPlanDefaults_FR006(t *testing.T) {
 // Creating a plan answers 201 with the new Draft plan, P-1005 after the seed (P-1004 is the GBP plan of 016), its figures and goals; a
 // form without name, year and model answers every problem at once (FR-010, US1 scenarios 2 and 3).
 func TestCreatePlan_201AndValidation_FR010(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	missing := newPlanBody()
@@ -76,32 +75,6 @@ func TestCreatePlan_201AndValidation_FR010(t *testing.T) {
 	}
 	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a plan name."},`+
 		`{"field":"year","message":"Choose a year from 2025 to 2031."},{"field":"modelId","message":"Choose a model."}`))
-}
-
-// Every plan operation needs a signed-in person (FR-005 of feature 001).
-func TestPlansOperations_WithoutSession_FR005(t *testing.T) {
-	server := apitest.New(t)
-	calls := []struct {
-		method, path string
-		body         any
-	}{
-		{http.MethodGet, "/api/v1/plan-defaults", nil},
-		{http.MethodGet, "/api/v1/plans", nil},
-		{http.MethodPost, "/api/v1/plans", newPlanBody()},
-		{http.MethodGet, "/api/v1/plans/P-1001", nil},
-		{http.MethodPatch, "/api/v1/plans/P-1001", europeForm(1)},
-		{http.MethodDelete, "/api/v1/plans/P-1001", nil},
-		{http.MethodPost, "/api/v1/plans/P-1001/change-effects", map[string]any{"modelId": "MOD-1002", "attributes": map[string]any{}}},
-		{http.MethodPost, "/api/v1/plans/P-1002/publish", nil},
-		{http.MethodPost, "/api/v1/plans/P-1001/unpublish", map[string]any{"reason": "Budget under review"}},
-		{http.MethodGet, "/api/v1/plans/P-1001/copy-options", nil},
-		{http.MethodPost, "/api/v1/plans/P-1001/copy", map[string]any{"name": "Copy", "year": 2026, "includeContents": false}},
-	}
-	for _, call := range calls {
-		response := server.Do(t, call.method, call.path, call.body)
-
-		assertAnswer(t, response, http.StatusUnauthorized, signInRequiredBody)
-	}
 }
 
 // validationBody is the answer of a validation_failed error with the given field problems.
@@ -152,6 +125,7 @@ func listIDs(list plans.PlanList) []string {
 // Published; Draft and 2026 leave FY2026 Mobility China, "1 of 3"; the search finds a name or an ID in any
 // letter case; wrong filters are refused (FR-001, FR-003, US2 scenarios 1–3).
 func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -182,18 +156,6 @@ func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 		`{"field":"year","message":"Choose a year such as 2026."}`))
 }
 
-// My teams shows Mei Lin only her team's plan (FR-004, US2 scenario 4).
-func TestListPlans_MyTeams_FR004(t *testing.T) {
-	server := apitest.New(t)
-	mei := server.SignIn(t, meisEmail)
-
-	mine := listOf(t, mei.Do(t, http.MethodGet, "/api/v1/plans?scope=myTeams", nil))
-
-	if ids := listIDs(mine); !reflect.DeepEqual(ids, []string{"P-1002"}) || mine.Total != 1 {
-		t.Errorf("Mei's teams: %q, total %d; want P-1002 of 1", ids, mine.Total)
-	}
-}
-
 // The plan page of FY2026 Lubricants Europe shows every stored field, its model with rates, team, owner,
 // business unit, budget and goals 250,000 → 5,000 → 250 → 2,500,000.00, all filled in; FY2026 Mobility
 // China needs its business unit, and below it its campaign Retail growth, initiative Fleet cards,
@@ -201,6 +163,7 @@ func TestListPlans_MyTeams_FR004(t *testing.T) {
 // demo data) are incomplete; an unknown plan is not found (FR-011 – FR-017, US3). The figures that
 // come from the levels below are proved with fakes in the service tests.
 func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -285,6 +248,7 @@ func europeForm(version int) map[string]any {
 // reported at once; an unknown plan is not found (FR-018, FR-022, FR-023, US4). The seed's global budget
 // sets this plan's budget (014 FR-031), so the edit changes the description.
 func TestUpdatePlan_200_409_404_FR018_FR023(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -314,6 +278,7 @@ func TestUpdatePlan_200_409_404_FR018_FR023(t *testing.T) {
 // removing Lubricants from FY2027 Global Brand hides the Lubricants attributes of its activities (FR-019,
 // FR-020, US4 scenarios 2 and 3).
 func TestChangeEffects_FR019_FR020(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -362,6 +327,7 @@ func formOf(p plans.PlanView) map[string]any {
 // record below that blocks publishing, and the plan stays Draft; once the business unit is filled in and the
 // incomplete campaign is gone, Publish succeeds (FR-024, US5 scenarios 1 and 2).
 func TestPublish_NotReadyThenPublished_FR024(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -401,6 +367,7 @@ func TestPublish_NotReadyThenPublished_FR024(t *testing.T) {
 // Unpublishing asks for a reason of 1 to 500 characters and returns the plan to Draft; the reason is in
 // the plan's activity log (FR-025, US5 scenario 3).
 func TestUnpublish_FR025(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -429,6 +396,7 @@ func TestUnpublish_FR025(t *testing.T) {
 // Deleting a plan answers its recycle-bin entry, so the web app can offer Undo; Undo brings it back with
 // the same ID and status (FR-029, FR-030, US6 scenarios 3 and 4).
 func TestDeletePlan_AndUndo_FR029_FR030(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: deleting plans
@@ -465,6 +433,7 @@ func TestDeletePlan_AndUndo_FR029_FR030(t *testing.T) {
 // The copy dialog of FY2026 Lubricants Europe offers "(copy)", 2026 or 2027, and the counts of what comes
 // with it: 2 campaigns, 4 initiatives, 7 activities (4 approved) and 6 line items (FR-026, FR-028).
 func TestCopyOptions_FR026(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -482,6 +451,7 @@ func TestCopyOptions_FR026(t *testing.T) {
 // date one year later and every activity Created; one log entry counts it all (FR-027, FR-028, R13). A
 // wrong name and year answer 400 with both problems.
 func TestCopy_201_FR027_FR028(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 

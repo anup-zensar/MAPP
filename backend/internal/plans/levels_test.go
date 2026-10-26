@@ -8,6 +8,7 @@ import (
 // Levels below the plan register once each, with a name and the functions AddFacts and Copy; anything
 // else stops the API from starting (D-072).
 func TestRegisterLevel_RefusesIncompleteOrTwice(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	addFacts := func(context.Context, []string, map[string]*Facts) error { return nil }
 	copyLevel := func(context.Context, *CopyJob) error { return nil }
