@@ -55,6 +55,14 @@ type ActivityType struct {
 	UpdatedByName              string
 }
 
+type AllWorkPreference struct {
+	PersonID      string
+	Columns       []string
+	SortColumn    *string
+	SortDirection *string
+	UpdatedAt     time.Time
+}
+
 type ApprovalWorkflow struct {
 	ID             string
 	Name           string
@@ -317,6 +325,16 @@ type SampleNote struct {
 	UpdatedAt     time.Time
 	UpdatedByID   string
 	UpdatedByName string
+}
+
+type SavedView struct {
+	ID        string
+	PersonID  string
+	Name      string
+	IsDefault bool
+	State     []byte
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Session struct {
