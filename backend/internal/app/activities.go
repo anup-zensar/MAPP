@@ -33,6 +33,16 @@ func (x activitiesForCampaigns) CopyAll(ctx context.Context, a actor.Actor, from
 	return campaigns.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
 }
 
+// CopyMany copies the activities of many initiatives at once: a campaign copy.
+func (x activitiesForCampaigns) CopyMany(ctx context.Context, a actor.Actor, pairs []campaigns.CopyPair, yearShift int) (campaigns.ActivityCopyCounts, error) {
+	converted := make([]activities.CopyPair, 0, len(pairs))
+	for _, p := range pairs {
+		converted = append(converted, activities.CopyPair{FromID: p.FromID, ToID: p.ToID})
+	}
+	counts, err := x.svc.CopyMany(ctx, a, converted, yearShift)
+	return campaigns.ActivityCopyCounts{Activities: counts.Activities, LineItems: counts.LineItems}, err
+}
+
 // activityLevel is the activity level of feature 004's registry: the activities' figures and the
 // activities that need attention (AddPlanFacts), their copies in a plan copy (the activities of every
 // copied initiative; their line items are the next level's), and the activities a new model would not

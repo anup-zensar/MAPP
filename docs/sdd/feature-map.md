@@ -37,6 +37,7 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 025 | — | Backend layout: singular packages, `internal/platform/database`, files within 300 lines | P2 | 023, 024 | Planned |
 | 026 | [026-web-app-structure](../../specs/026-web-app-structure/spec.md) | Web-app structure: constitution F2 folders, React Hook Form + Zod, MSW, per-route splitting | P2 | 019, 020, 022 | Done |
 | 027 | [027-test-hygiene](../../specs/027-test-hygiene/spec.md) | Test hygiene: drop tests that prove nothing, fast and deterministic suites; coverage threshold once SonarQube exists | P3 | 019 | In progress — phase 1 (web app, end-to-end, auth, samples, app, platform helpers) in review; phase 2 (business packages) after 028 |
+| 028 | [028-query-efficiency](../../specs/028-query-efficiency/spec.md) | Query efficiency: no page or operation sends statements that grow with its records (N+1); reference data read once per transaction; statements per request in the request log; benchmarks at the scale targets' volumes | P1 | 023 | In review |
 
 ## Scope boundaries
 

@@ -57,7 +57,7 @@ type formData struct {
 // once per record and a page such as Home or the Plans list checks every record of every plan. The form
 // must not be changed by its callers. Code that changes Settings uses loadForm.
 func (s *Service) formOf(ctx context.Context, level Level) (formData, error) {
-	return store.Memo(ctx, "settings.form:"+string(level), func(ctx context.Context) (formData, error) {
+	return store.Memo(ctx, "settings:form:"+string(level), func(ctx context.Context) (formData, error) {
 		return s.loadForm(ctx, level)
 	})
 }

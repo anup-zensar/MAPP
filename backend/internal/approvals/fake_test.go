@@ -57,20 +57,28 @@ func (f *fakeActivities) Activity(_ context.Context, id string) (ActivityFacts, 
 	return facts, found, nil
 }
 
-func (f *fakeActivities) List(context.Context) ([]ActivityFacts, error) {
+func (f *fakeActivities) ListOf(_ context.Context, activityIDs []string) ([]ActivityFacts, error) {
 	list := []ActivityFacts{}
 	for _, id := range f.order {
-		if facts, found := f.facts[id]; found {
+		if facts, found := f.facts[id]; found && slices.Contains(activityIDs, id) {
 			list = append(list, facts)
 		}
 	}
 	return list, nil
 }
 
+func (f *fakeActivities) WorkflowFields(context.Context) (map[string]string, error) {
+	fields := map[string]string{}
+	for id, facts := range f.facts {
+		fields[id] = facts.WorkflowID
+	}
+	return fields, nil
+}
+
 // ListInScope applies the scope to the plan and the owner; the fake knows no round's approvers.
-func (f *fakeActivities) ListInScope(ctx context.Context, scope authz.Scope) ([]ActivityFacts, error) {
-	all, err := f.List(ctx)
-	return slices.DeleteFunc(all, func(facts ActivityFacts) bool {
+func (f *fakeActivities) ListInScope(ctx context.Context, scope authz.Scope, activityIDs []string) ([]ActivityFacts, error) {
+	listed, err := f.ListOf(ctx, activityIDs)
+	return slices.DeleteFunc(listed, func(facts ActivityFacts) bool {
 		return !scope.SeesActivity(authz.ActivityFacts{Plan: facts.Access, OwnerID: facts.OwnerID})
 	}), err
 }

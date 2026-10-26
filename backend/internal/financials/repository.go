@@ -15,6 +15,8 @@ type Repository interface {
 	GetTransaction(ctx context.Context, id string) (Transaction, bool, error)
 	// PutTransaction saves t, replacing the transaction with the same id.
 	PutTransaction(ctx context.Context, t Transaction) error
+	// AddTransactions saves new transactions, whose ids are not stored yet, all at once.
+	AddTransactions(ctx context.Context, list []Transaction) error
 	// DeleteTransaction removes the transaction with id. Only history's Kind uses it (Remove): no feature
 	// deletes a transaction (FR-002).
 	DeleteTransaction(ctx context.Context, id string) error

@@ -70,6 +70,15 @@ func (m *memRepository) GetTransaction(_ context.Context, id string) (Transactio
 	return m.transactions[i], true, nil
 }
 
+func (m *memRepository) AddTransactions(ctx context.Context, list []Transaction) error {
+	for _, t := range list {
+		if err := m.PutTransaction(ctx, t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m *memRepository) PutTransaction(_ context.Context, t Transaction) error {
 	if i := slices.IndexFunc(m.transactions, func(x Transaction) bool { return x.ID == t.ID }); i >= 0 {
 		m.transactions[i] = t

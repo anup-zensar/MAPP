@@ -53,18 +53,23 @@ func (p *approvalsActivities) Activity(ctx context.Context, id string) (approval
 	return facts, err == nil, err
 }
 
-// List returns every stored activity as approvals needs it.
-func (p *approvalsActivities) List(ctx context.Context) ([]approvals.ActivityFacts, error) {
-	all, err := p.activities.List(ctx)
+// ListOf returns the stored activities among ids as approvals needs them.
+func (p *approvalsActivities) ListOf(ctx context.Context, ids []string) ([]approvals.ActivityFacts, error) {
+	stored, err := p.activities.ListByIDs(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
-	return p.factsOf(ctx, all)
+	return p.factsOf(ctx, stored)
 }
 
-// ListInScope returns the stored activities the scope sees as approvals needs them.
-func (p *approvalsActivities) ListInScope(ctx context.Context, scope authz.Scope) ([]approvals.ActivityFacts, error) {
-	seen, err := p.activities.ListInScope(ctx, scope)
+// WorkflowFields returns the Approval workflow field of every stored activity.
+func (p *approvalsActivities) WorkflowFields(ctx context.Context) (map[string]string, error) {
+	return p.activities.WorkflowIDs(ctx)
+}
+
+// ListInScope returns the stored activities among ids that the scope sees as approvals needs them.
+func (p *approvalsActivities) ListInScope(ctx context.Context, scope authz.Scope, ids []string) ([]approvals.ActivityFacts, error) {
+	seen, err := p.activities.ListInScopeOf(ctx, scope, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +77,9 @@ func (p *approvalsActivities) ListInScope(ctx context.Context, scope authz.Scope
 }
 
 func (p *approvalsActivities) factsOf(ctx context.Context, all []activities.Activity) ([]approvals.ActivityFacts, error) {
+	if err := p.readAround(ctx, all); err != nil {
+		return nil, err
+	}
 	list := make([]approvals.ActivityFacts, 0, len(all))
 	for _, act := range all {
 		facts, err := p.facts(ctx, act)
@@ -150,7 +158,7 @@ func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, acti
 	if err != nil {
 		return nil, err
 	}
-	rates, err := p.rates(ctx)
+	rates, err := p.currentRates(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -185,11 +193,12 @@ func (p *approvalsActivities) LineItems(ctx context.Context, _ actor.Actor, acti
 // facts returns act as approvals needs it: with its plan, campaign and initiative, type name, display
 // status and unassigned planned cost, all derived now (D-041).
 func (p *approvalsActivities) facts(ctx context.Context, act activities.Activity) (approvals.ActivityFacts, error) {
-	path, plan, err := p.path(ctx, act.InitiativeID)
+	place, err := p.placeOf(ctx, act.InitiativeID)
 	if err != nil {
 		return approvals.ActivityFacts{}, err
 	}
-	units, err := p.businessUnits(ctx, plan.Attributes)
+	path, plan := slices.Clone(place.path), place.plan
+	units, err := p.unitsOf(ctx, plan)
 	if err != nil {
 		return approvals.ActivityFacts{}, err
 	}
@@ -313,11 +322,11 @@ func (p *approvalsActivities) unassigned(ctx context.Context, act activities.Act
 	if act.PlannedCost == nil && len(items) == 0 {
 		return nil, nil
 	}
-	rates, err := p.rates(ctx)
+	rates, err := p.currentRates(ctx)
 	if err != nil {
 		return nil, err
 	}
-	currency, err := p.planCurrency(ctx, act.InitiativeID)
+	currency, err := p.keptPlanCurrency(ctx, act.InitiativeID)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +349,7 @@ func (p *approvalsActivities) inUSD(ctx context.Context, m *money.Money) (*money
 	if m == nil || m.Currency == money.BaseCurrency {
 		return m, nil
 	}
-	rates, err := p.rates(ctx)
+	rates, err := p.currentRates(ctx)
 	if err != nil {
 		return nil, err
 	}

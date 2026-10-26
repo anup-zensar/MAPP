@@ -83,13 +83,13 @@ SELECT plans.id, plans.name, plans.year, plans.model_id, plans.owner_id, plans.a
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM plan_phasing_months m
         WHERE m.plan_id = plans.id), '{}')::bigint[] AS phasing_amounts
 FROM plans
-WHERE ($1::text IS NULL OR id = $1)
+WHERE ($1::text[] IS NULL OR id = ANY ($1::text[]))
     AND ($2::integer IS NULL OR year = $2)
 ORDER BY length(id), id COLLATE "C"
 `
 
 type ListPlansParams struct {
-	ID   *string
+	Ids  []string
 	Year *int
 }
 
@@ -101,7 +101,7 @@ type ListPlansRow struct {
 }
 
 func (q *Queries) ListPlans(ctx context.Context, arg ListPlansParams) ([]ListPlansRow, error) {
-	rows, err := q.db.Query(ctx, listPlans, arg.ID, arg.Year)
+	rows, err := q.db.Query(ctx, listPlans, arg.Ids, arg.Year)
 	if err != nil {
 		return nil, err
 	}

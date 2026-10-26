@@ -20,6 +20,9 @@ type Repository interface {
 	// DeleteCampaign removes the campaign with id; removing one that does not exist changes nothing.
 	DeleteCampaign(ctx context.Context, id string) error
 
+	// CampaignsByIDs and InitiativesByIDs return the stored records among ids, at once, in the order of their ids.
+	CampaignsByIDs(ctx context.Context, ids []string) ([]Campaign, error)
+	InitiativesByIDs(ctx context.Context, ids []string) ([]Initiative, error)
 	// GetInitiative returns the initiative with id, and false when there is none.
 	GetInitiative(ctx context.Context, id string) (Initiative, bool, error)
 	// ListInitiatives returns every initiative of every campaign.
@@ -32,4 +35,13 @@ type Repository interface {
 	PutInitiative(ctx context.Context, i Initiative) error
 	// DeleteInitiative removes the initiative with id.
 	DeleteInitiative(ctx context.Context, id string) error
+	// AddCampaigns and AddInitiatives save new records, whose ids are not stored yet, all at once.
+	AddCampaigns(ctx context.Context, list []Campaign) error
+	AddInitiatives(ctx context.Context, list []Initiative) error
+	// DeleteCampaigns and DeleteInitiatives remove the records with ids all at once.
+	DeleteCampaigns(ctx context.Context, ids []string) error
+	DeleteInitiatives(ctx context.Context, ids []string) error
+	// CountCampaignsOwnedBy and CountInitiativesOwnedBy count the stored records the person owns.
+	CountCampaignsOwnedBy(ctx context.Context, personID string) (int, error)
+	CountInitiativesOwnedBy(ctx context.Context, personID string) (int, error)
 }

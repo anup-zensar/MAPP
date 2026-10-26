@@ -20,36 +20,14 @@ const (
 	datesLabel = "Dates"
 )
 
-// planCampaigns builds the campaign tree of plan as the API returns it: every campaign with its
-// initiatives, every derived value (data model §4) and the totals row. It reads the plan's campaigns, their
-// initiatives and the activities below once, and works out every roll-up in one pass with package rollup
-// (D-090), so nothing derived is ever stored (FR-012, FR-015). It runs inside the caller's transaction.
-func (s *Service) planCampaigns(ctx context.Context, plan PlanFacts) (PlanCampaigns, error) {
-	campaigns, err := s.repo.CampaignsOfPlan(ctx, plan.ID)
-	if err != nil {
-		return PlanCampaigns{}, err
-	}
-	campaignIDs := make([]string, 0, len(campaigns))
+// buildTree builds the campaign tree of plan as the API returns it from its campaigns, the initiatives of
+// each campaign and the activities of each initiative: every derived value (data model §4) and the totals
+// row, worked out in one pass with package rollup (D-090), so nothing derived is ever stored (FR-012, FR-015).
+func (s *Service) buildTree(ctx context.Context, plan PlanFacts, campaigns []Campaign, below treeBelow) (PlanCampaigns, error) {
+	initiativesOf, activitiesOf := below.initiativesOf, below.activitiesOf
+	initiatives := 0
 	for _, c := range campaigns {
-		campaignIDs = append(campaignIDs, c.ID)
-	}
-	initiatives, err := s.repo.InitiativesOfCampaigns(ctx, campaignIDs)
-	if err != nil {
-		return PlanCampaigns{}, err
-	}
-	initiativeIDs := make([]string, 0, len(initiatives))
-	initiativesOf := map[string][]Initiative{}
-	for _, i := range initiatives {
-		initiativeIDs = append(initiativeIDs, i.ID)
-		initiativesOf[i.CampaignID] = append(initiativesOf[i.CampaignID], i)
-	}
-	summaries, err := s.deps.Activities.Summaries(ctx, initiativeIDs)
-	if err != nil {
-		return PlanCampaigns{}, err
-	}
-	activitiesOf := map[string][]ActivitySummary{}
-	for _, a := range summaries {
-		activitiesOf[a.InitiativeID] = append(activitiesOf[a.InitiativeID], a)
+		initiatives += len(initiativesOf[c.ID])
 	}
 	businessUnit, err := s.deps.Settings.BusinessUnit(ctx, plan.Attributes)
 	if err != nil {
@@ -92,7 +70,7 @@ func (s *Service) planCampaigns(ctx context.Context, plan PlanFacts) (PlanCampai
 		Total:     len(views),
 		Totals: PlanCampaignTotals{
 			Campaigns:            len(views),
-			Initiatives:          len(initiatives),
+			Initiatives:          initiatives,
 			Activities:           activities,
 			AllocatedToCampaigns: allocated,
 			PlanBudget:           plan.Budget,

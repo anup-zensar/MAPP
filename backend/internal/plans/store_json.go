@@ -36,6 +36,14 @@ func (jsonRepository) List(ctx context.Context) ([]Plan, error) {
 	return plans, err
 }
 
+func (r jsonRepository) GetInScope(ctx context.Context, scope authz.Scope, id string) (Plan, bool, error) {
+	p, found, err := r.Get(ctx, id)
+	if err != nil || !found || !scope.Sees(AccessFacts(p)) {
+		return Plan{}, false, err
+	}
+	return p, true, nil
+}
+
 // ListInScope reads every plan and keeps those the scope sees, as plan_in_scope() does in SQL.
 func (r jsonRepository) ListInScope(ctx context.Context, scope authz.Scope) ([]Plan, error) {
 	all, err := r.List(ctx)

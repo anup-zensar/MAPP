@@ -32,6 +32,8 @@ type Activities interface {
 	// Facts returns the activity activityID with its plan's facts, and false when the activity is not
 	// stored (deleted, or never there).
 	Facts(ctx context.Context, activityID string) (ActivityFacts, bool, error)
+	// FactsOf returns the facts of each stored activity among activityIDs, reading each level once for all.
+	FactsOf(ctx context.Context, activityIDs []string) (map[string]ActivityFacts, error)
 	// RestartApproval sends a Submitted or Approved activity back to Created (006 FR-027; 008 ends the open
 	// round), logging the reasons, inside the caller's Write.
 	RestartApproval(ctx context.Context, a actor.Actor, activityID string, reasons []string) error

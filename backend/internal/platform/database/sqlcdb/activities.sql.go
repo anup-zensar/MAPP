@@ -10,6 +10,47 @@ import (
 	"time"
 )
 
+type AddActivitiesParams struct {
+	ID                   string
+	InitiativeID         string
+	Name                 string
+	ExternalName         string
+	ActivityTypeID       string
+	OwnerID              *string
+	StartDate            *time.Time
+	EndDate              *time.Time
+	Ongoing              bool
+	PlannedCostMinor     *int64
+	PlannedCostCurrency  *string
+	ApprovalWorkflowID   *string
+	Description          string
+	Attributes           []byte
+	Inq                  *int64
+	SetLaterStagesMyself bool
+	Mql                  *int64
+	RevenueMinor         *int64
+	RevenueCurrency      *string
+	Status               string
+	SplitFromID          *string
+	Version              int
+	CreatedAt            time.Time
+	CreatedByID          string
+	CreatedByName        string
+	UpdatedAt            time.Time
+	UpdatedByID          string
+	UpdatedByName        string
+}
+
+const deleteActivities = `-- name: DeleteActivities :exec
+DELETE FROM activities
+WHERE id = ANY ($1::text[])
+`
+
+func (q *Queries) DeleteActivities(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, deleteActivities, ids)
+	return err
+}
+
 const deleteActivity = `-- name: DeleteActivity :exec
 DELETE FROM activities
 WHERE id = $1
@@ -26,18 +67,20 @@ SELECT id, initiative_id, name, external_name, activity_type_id, owner_id, start
     set_later_stages_myself, mql, revenue_minor, revenue_currency, status, split_from_id, version, created_at,
     created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
 FROM activities
-WHERE ($1::text IS NULL OR id = $1)
+WHERE ($1::text[] IS NULL OR id = ANY ($1::text[]))
     AND ($2::text[] IS NULL OR initiative_id = ANY ($2::text[]))
+    AND ($3::text IS NULL OR split_from_id = $3)
 ORDER BY length(id), id COLLATE "C"
 `
 
 type ListActivitiesParams struct {
-	ID            *string
+	Ids           []string
 	InitiativeIds []string
+	SplitFromID   *string
 }
 
 func (q *Queries) ListActivities(ctx context.Context, arg ListActivitiesParams) ([]Activity, error) {
-	rows, err := q.db.Query(ctx, listActivities, arg.ID, arg.InitiativeIds)
+	rows, err := q.db.Query(ctx, listActivities, arg.Ids, arg.InitiativeIds, arg.SplitFromID)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +193,111 @@ func (q *Queries) ListActivitiesInScope(ctx context.Context, arg ListActivitiesI
 			&i.UpdatedByID,
 			&i.UpdatedByName,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActivitiesInScopeOf = `-- name: ListActivitiesInScopeOf :many
+SELECT id, initiative_id, name, external_name, activity_type_id, owner_id, start_date, end_date, ongoing,
+    planned_cost_minor, planned_cost_currency, approval_workflow_id, description, attributes, inq,
+    set_later_stages_myself, mql, revenue_minor, revenue_currency, status, split_from_id, version, created_at,
+    created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+FROM activities
+WHERE id = ANY ($1::text[])
+    AND activity_in_scope(id, $2::boolean, $3::text,
+        $4::boolean, $5::text[])
+ORDER BY length(id), id COLLATE "C"
+`
+
+type ListActivitiesInScopeOfParams struct {
+	Ids            []string
+	SeesEverything bool
+	ViewerID       string
+	ViewsPlans     bool
+	ViewerTeamIds  []string
+}
+
+func (q *Queries) ListActivitiesInScopeOf(ctx context.Context, arg ListActivitiesInScopeOfParams) ([]Activity, error) {
+	rows, err := q.db.Query(ctx, listActivitiesInScopeOf,
+		arg.Ids,
+		arg.SeesEverything,
+		arg.ViewerID,
+		arg.ViewsPlans,
+		arg.ViewerTeamIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Activity{}
+	for rows.Next() {
+		var i Activity
+		if err := rows.Scan(
+			&i.ID,
+			&i.InitiativeID,
+			&i.Name,
+			&i.ExternalName,
+			&i.ActivityTypeID,
+			&i.OwnerID,
+			&i.StartDate,
+			&i.EndDate,
+			&i.Ongoing,
+			&i.PlannedCostMinor,
+			&i.PlannedCostCurrency,
+			&i.ApprovalWorkflowID,
+			&i.Description,
+			&i.Attributes,
+			&i.Inq,
+			&i.SetLaterStagesMyself,
+			&i.Mql,
+			&i.RevenueMinor,
+			&i.RevenueCurrency,
+			&i.Status,
+			&i.SplitFromID,
+			&i.Version,
+			&i.CreatedAt,
+			&i.CreatedByID,
+			&i.CreatedByName,
+			&i.UpdatedAt,
+			&i.UpdatedByID,
+			&i.UpdatedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActivityWorkflows = `-- name: ListActivityWorkflows :many
+SELECT id, coalesce(approval_workflow_id, '')::text AS approval_workflow_id
+FROM activities
+`
+
+type ListActivityWorkflowsRow struct {
+	ID                 string
+	ApprovalWorkflowID string
+}
+
+func (q *Queries) ListActivityWorkflows(ctx context.Context) ([]ListActivityWorkflowsRow, error) {
+	rows, err := q.db.Query(ctx, listActivityWorkflows)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActivityWorkflowsRow{}
+	for rows.Next() {
+		var i ListActivityWorkflowsRow
+		if err := rows.Scan(&i.ID, &i.ApprovalWorkflowID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

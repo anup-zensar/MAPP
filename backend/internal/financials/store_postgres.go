@@ -50,6 +50,28 @@ func (s *PostgresStore) TransactionsInScope(ctx context.Context, plans, finance 
 }
 
 func (s *PostgresStore) PutTransaction(ctx context.Context, t Transaction) error {
+	if err := s.db.Queries(ctx).PutTransaction(ctx, transactionParams(t)); err != nil {
+		return fmt.Errorf("save financial transaction %s: %w", t.ID, err)
+	}
+	return nil
+}
+
+// AddTransactions stores new transactions in one statement whatever their number.
+func (s *PostgresStore) AddTransactions(ctx context.Context, list []Transaction) error {
+	if len(list) == 0 {
+		return nil
+	}
+	rows := make([]sqlcdb.AddTransactionsParams, 0, len(list))
+	for _, t := range list {
+		rows = append(rows, sqlcdb.AddTransactionsParams(transactionParams(t)))
+	}
+	if _, err := s.db.Queries(ctx).AddTransactions(ctx, rows); err != nil {
+		return fmt.Errorf("add financial transactions: %w", err)
+	}
+	return nil
+}
+
+func transactionParams(t Transaction) sqlcdb.PutTransactionParams {
 	params := sqlcdb.PutTransactionParams{
 		ID: t.ID, Type: string(t.Type), DocumentNumber: t.DocumentNumber, LineNumber: t.LineNumber,
 		PoNumber: t.PONumber, PoLineNumber: t.POLineNumber, PostingDate: t.PostingDate.Time(),
@@ -63,10 +85,7 @@ func (s *PostgresStore) PutTransaction(ctx context.Context, t Transaction) error
 	if link := t.ManualLink; link != nil {
 		params.ManualLinkByID, params.ManualLinkByName, params.ManualLinkAt = &link.By.ID, &link.By.Name, &link.At
 	}
-	if err := s.db.Queries(ctx).PutTransaction(ctx, params); err != nil {
-		return fmt.Errorf("save financial transaction %s: %w", t.ID, err)
-	}
-	return nil
+	return params
 }
 
 func (s *PostgresStore) DeleteTransaction(ctx context.Context, id string) error {

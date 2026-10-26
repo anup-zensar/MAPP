@@ -10,6 +10,39 @@ import (
 	"time"
 )
 
+type AddTransactionsParams struct {
+	ID               string
+	Type             string
+	DocumentNumber   string
+	LineNumber       string
+	PoNumber         string
+	PoLineNumber     string
+	PostingDate      time.Time
+	AccrualMonth     *string
+	AmountMinor      int64
+	Currency         string
+	VendorCode       string
+	VendorName       string
+	Description      string
+	SwbsCode         string
+	TrackingKey      string
+	SentLineItemID   string
+	LineItemID       *string
+	MatchedBy        string
+	NotLinkedReason  string
+	ManualLinkByID   *string
+	ManualLinkByName *string
+	ManualLinkAt     *time.Time
+	ImportID         string
+	Version          int
+	CreatedAt        time.Time
+	CreatedByID      string
+	CreatedByName    string
+	UpdatedAt        time.Time
+	UpdatedByID      string
+	UpdatedByName    string
+}
+
 const deleteFinancialImport = `-- name: DeleteFinancialImport :exec
 DELETE FROM financial_imports
 WHERE id = $1

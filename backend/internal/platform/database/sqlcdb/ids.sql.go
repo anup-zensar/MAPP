@@ -9,6 +9,26 @@ import (
 	"context"
 )
 
+const advanceCounter = `-- name: AdvanceCounter :one
+INSERT INTO counters (prefix, last)
+VALUES ($1, $2::integer + $3::integer - 1)
+ON CONFLICT (prefix) DO UPDATE SET last = counters.last + $3::integer
+RETURNING last
+`
+
+type AdvanceCounterParams struct {
+	Prefix      string
+	FirstNumber int
+	Count       int
+}
+
+func (q *Queries) AdvanceCounter(ctx context.Context, arg AdvanceCounterParams) (int, error) {
+	row := q.db.QueryRow(ctx, advanceCounter, arg.Prefix, arg.FirstNumber, arg.Count)
+	var last int
+	err := row.Scan(&last)
+	return last, err
+}
+
 const anyCounter = `-- name: AnyCounter :one
 SELECT EXISTS (SELECT 1 FROM counters)
 `
@@ -18,23 +38,4 @@ func (q *Queries) AnyCounter(ctx context.Context) (bool, error) {
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
-}
-
-const incrementCounter = `-- name: IncrementCounter :one
-INSERT INTO counters (prefix, last)
-VALUES ($1, $2)
-ON CONFLICT (prefix) DO UPDATE SET last = counters.last + 1
-RETURNING last
-`
-
-type IncrementCounterParams struct {
-	Prefix      string
-	FirstNumber int
-}
-
-func (q *Queries) IncrementCounter(ctx context.Context, arg IncrementCounterParams) (int, error) {
-	row := q.db.QueryRow(ctx, incrementCounter, arg.Prefix, arg.FirstNumber)
-	var last int
-	err := row.Scan(&last)
-	return last, err
 }

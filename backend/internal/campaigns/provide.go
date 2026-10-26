@@ -44,22 +44,23 @@ type InitiativeFacts struct {
 func (s *Service) PlanRollups(ctx context.Context, planIDs []string) (map[string]PlanRollup, error) {
 	rollups := make(map[string]PlanRollup, len(planIDs))
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		var found []PlanFacts
 		for _, planID := range planIDs {
-			plan, found, err := s.deps.Plans.Plan(ctx, planID)
+			plan, stored, err := s.deps.Plans.Plan(ctx, planID)
 			if err != nil {
 				return err
 			}
-			if !found {
+			if !stored {
 				rollups[planID] = PlanRollup{AllocatedToCampaigns: money.USD(money.Amount{}), PublishProblems: []RecordProblems{}}
 				continue
 			}
-			tree, err := s.planCampaigns(ctx, plan)
-			if err != nil {
-				return err
-			}
-			rollups[planID] = rollupOf(tree)
+			found = append(found, plan)
 		}
-		return nil
+		trees, err := s.planTrees(ctx, found) // every plan at once, so many plans cost what one does
+		for i, tree := range trees {
+			rollups[found[i].ID] = rollupOf(tree)
+		}
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -132,29 +133,56 @@ func (s *Service) InitiativeFacts(ctx context.Context, id string) (InitiativeFac
 // InitiativesOfPlan returns every initiative of the plan planID, campaign by campaign in tree order. It
 // joins the caller's transaction.
 func (s *Service) InitiativesOfPlan(ctx context.Context, planID string) ([]InitiativeFacts, error) {
+	outlines, err := s.PlanOutlines(ctx, []string{planID})
+	if err != nil {
+		return nil, err
+	}
 	list := []InitiativeFacts{}
+	for _, c := range outlines[planID] {
+		for _, i := range c.Initiatives {
+			list = append(list, initiativeFacts(i, c.Campaign))
+		}
+	}
+	return list, nil
+}
+
+type CampaignOutline struct {
+	Campaign    Campaign
+	Initiatives []Initiative
+}
+
+// PlanOutlines returns the campaigns of each plan of planIDs in the plan tree's order, each with its
+// initiatives in that order, reading each level once for all the plans. It joins the caller's transaction.
+func (s *Service) PlanOutlines(ctx context.Context, planIDs []string) (map[string][]CampaignOutline, error) {
+	outlines := map[string][]CampaignOutline{}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		campaigns, err := s.repo.CampaignsOfPlan(ctx, planID)
+		campaigns, err := s.repo.CampaignsOfPlans(ctx, planIDs)
 		if err != nil {
 			return err
 		}
 		sortInTree(campaigns, func(c Campaign) (*date.Date, string, string) { return c.StartDate, c.Name, c.ID })
+		campaignIDs := make([]string, 0, len(campaigns))
 		for _, c := range campaigns {
-			initiatives, err := s.repo.InitiativesOfCampaign(ctx, c.ID)
-			if err != nil {
-				return err
-			}
-			sortInTree(initiatives, func(i Initiative) (*date.Date, string, string) { return i.StartDate, i.Name, i.ID })
-			for _, i := range initiatives {
-				list = append(list, initiativeFacts(i, c))
-			}
+			campaignIDs = append(campaignIDs, c.ID)
+		}
+		initiatives, err := s.repo.InitiativesOfCampaigns(ctx, campaignIDs)
+		if err != nil {
+			return err
+		}
+		sortInTree(initiatives, func(i Initiative) (*date.Date, string, string) { return i.StartDate, i.Name, i.ID })
+		initiativesOf := map[string][]Initiative{}
+		for _, i := range initiatives {
+			initiativesOf[i.CampaignID] = append(initiativesOf[i.CampaignID], i)
+		}
+		for _, c := range campaigns {
+			outlines[c.PlanID] = append(outlines[c.PlanID], CampaignOutline{Campaign: c, Initiatives: initiativesOf[c.ID]})
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return list, nil
+	return outlines, nil
 }
 
 // initiativeFacts returns initiative i of campaign c as feature 006 needs it.

@@ -10,6 +10,33 @@ import (
 	"time"
 )
 
+type AddInitiativePhasingMonthsParams struct {
+	InitiativeID string
+	Month        string
+	AmountMinor  int64
+}
+
+type AddInitiativesParams struct {
+	ID             string
+	CampaignID     string
+	Name           string
+	Description    string
+	OwnerID        *string
+	StartDate      *time.Time
+	EndDate        *time.Time
+	BudgetMinor    *int64
+	BudgetCurrency *string
+	Attributes     []byte
+	PhasingMethod  string
+	Version        int
+	CreatedAt      time.Time
+	CreatedByID    string
+	CreatedByName  string
+	UpdatedAt      time.Time
+	UpdatedByID    string
+	UpdatedByName  string
+}
+
 const deleteInitiative = `-- name: DeleteInitiative :exec
 DELETE FROM initiatives
 WHERE id = $1
@@ -27,6 +54,16 @@ WHERE initiative_id = $1
 
 func (q *Queries) DeleteInitiativePhasingMonths(ctx context.Context, initiativeID string) error {
 	_, err := q.db.Exec(ctx, deleteInitiativePhasingMonths, initiativeID)
+	return err
+}
+
+const deleteInitiatives = `-- name: DeleteInitiatives :exec
+DELETE FROM initiatives
+WHERE id = ANY ($1::text[])
+`
+
+func (q *Queries) DeleteInitiatives(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, deleteInitiatives, ids)
 	return err
 }
 
@@ -55,13 +92,13 @@ SELECT initiatives.id, initiatives.campaign_id, initiatives.name, initiatives.de
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM initiative_phasing_months m
         WHERE m.initiative_id = initiatives.id), '{}')::bigint[] AS phasing_amounts
 FROM initiatives
-WHERE ($1::text IS NULL OR id = $1)
+WHERE ($1::text[] IS NULL OR id = ANY ($1::text[]))
     AND ($2::text[] IS NULL OR campaign_id = ANY ($2::text[]))
 ORDER BY length(id), id COLLATE "C"
 `
 
 type ListInitiativesParams struct {
-	ID          *string
+	Ids         []string
 	CampaignIds []string
 }
 
@@ -72,7 +109,7 @@ type ListInitiativesRow struct {
 }
 
 func (q *Queries) ListInitiatives(ctx context.Context, arg ListInitiativesParams) ([]ListInitiativesRow, error) {
-	rows, err := q.db.Query(ctx, listInitiatives, arg.ID, arg.CampaignIds)
+	rows, err := q.db.Query(ctx, listInitiatives, arg.Ids, arg.CampaignIds)
 	if err != nil {
 		return nil, err
 	}
