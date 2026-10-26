@@ -20,4 +20,12 @@ type Repository interface {
 	Put(ctx context.Context, li LineItem) error
 	// Delete removes the line item with id; removing one that does not exist changes nothing.
 	Delete(ctx context.Context, id string) error
+	// AddMany saves new line items, whose ids are not stored yet, all at once.
+	AddMany(ctx context.Context, list []LineItem) error
+	// ListByIDs returns the line items with ids that are stored.
+	ListByIDs(ctx context.Context, ids []string) ([]LineItem, error)
+	// DeleteMany removes the line items with ids all at once.
+	DeleteMany(ctx context.Context, ids []string) error
+	// CountOwnedBy counts the stored line items the person owns.
+	CountOwnedBy(ctx context.Context, personID string) (int, error)
 }

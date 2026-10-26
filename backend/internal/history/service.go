@@ -186,24 +186,7 @@ func (s *Service) pathOf(ctx context.Context, k Kind, recordID, parentID string)
 // ancestors returns the record id of the kind called kindName followed upwards by its own ancestors, as a
 // path: top level first. An empty kindName (the parent of a top-level record) gives an empty path.
 func (s *Service) ancestors(ctx context.Context, kindName, id string) ([]RecordRef, error) {
-	path := []RecordRef{}
-	for kindName != "" {
-		k, err := s.registeredKind(kindName)
-		if err != nil {
-			return nil, err
-		}
-		snapshot, found, err := k.Snapshot(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			return nil, fmt.Errorf("history: the %s %s is not stored", k.Singular, id)
-		}
-		path = append(path, RecordRef{Type: k.Name, ID: id, Name: snapshot.Name})
-		kindName, id = k.Parent, snapshot.ParentID // one level up
-	}
-	slices.Reverse(path) // collected from the bottom up; a path starts at the top level
-	return path, nil
+	return s.newReadSnapshots().ancestors(ctx, kindName, id)
 }
 
 // describeChanges returns changes with the label and texts people read, fixed at the time of the change
@@ -302,54 +285,6 @@ func (s *Service) MoveToBin(ctx context.Context, a actor.Actor, kindName, id str
 		return BinEntry{}, err
 	}
 	return entry, nil
-}
-
-// collect returns the snapshots of the record id of kind k and of everything under it: the record first,
-// then each child followed by everything under that child, so parents always come before their children.
-// Child kinds are visited in the order they were registered and the records of each kind in the order of
-// their ids, so the result never depends on the order in which a repository lists records.
-func (s *Service) collect(ctx context.Context, k Kind, id string) ([]Snapshot, error) {
-	snapshot, found, err := k.Snapshot(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, fmt.Errorf("history: there is no %s %s", k.Singular, id)
-	}
-	snapshot.Kind = k.Name
-	snapshots := []Snapshot{snapshot}
-
-	for _, childKind := range s.childKinds(k.Name) {
-		childIDs, err := childKind.ChildIDs(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		slices.Sort(childIDs)
-		for _, childID := range childIDs {
-			// The same steps one level down: the child, then everything under it.
-			below, err := s.collect(ctx, childKind, childID)
-			if err != nil {
-				return nil, err
-			}
-			snapshots = append(snapshots, below...)
-		}
-	}
-	return snapshots, nil
-}
-
-// remove deletes the records of snapshots from storage, children first (the list backwards), so that no
-// record is ever left without its parent.
-func (s *Service) remove(ctx context.Context, snapshots []Snapshot) error {
-	for _, snapshot := range slices.Backward(snapshots) {
-		k, err := s.registeredKind(snapshot.Kind)
-		if err != nil {
-			return err
-		}
-		if err := k.Remove(ctx, snapshot.ID); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // contentsOf counts the records under a deleted record by kind, in the order the kinds were registered,
@@ -573,30 +508,24 @@ func (s *Service) knowsKindsOf(entry BinEntry) bool {
 	return true
 }
 
-// putSnapshots puts the records of snapshots back in storage, parents before children, each after its
-// kind's PrepareRestore when it has one. It returns every record as it was put back, in the same order, and
-// the notes of the PrepareRestore hooks, in order.
+// putSnapshots puts the records of snapshots back in storage, a kind at a time, parents' kinds first, each
+// record after its kind's PrepareRestore when it has one. It returns every record as it was put back, in the
+// same order, and the notes of the PrepareRestore hooks, in that order too.
 func (s *Service) putSnapshots(ctx context.Context, rc RestoreContext, snapshots []Snapshot) ([]Snapshot, []string, error) {
-	afters := make([]Snapshot, 0, len(snapshots))
-	var notes []string
-	for _, snapshot := range snapshots {
-		k, err := s.registeredKind(snapshot.Kind)
+	r := &restoring{rc: rc, snapshots: slices.Clone(snapshots), notes: make([][]string, len(snapshots))}
+	for _, g := range groupsByKind(snapshots) {
+		k, err := s.registeredKind(g.kind)
 		if err != nil {
 			return nil, nil, err
 		}
-		if k.PrepareRestore != nil {
-			kindNotes, err := k.PrepareRestore(ctx, rc, &snapshot) // it may change this copy of the snapshot
-			if err != nil {
-				return nil, nil, err
-			}
-			notes = append(notes, kindNotes...)
-		}
-		if err := k.Put(ctx, snapshot); err != nil {
+		if err := r.prepare(ctx, k, g.positions); err != nil {
 			return nil, nil, err
 		}
-		afters = append(afters, snapshot)
+		if err := r.put(ctx, k, g.positions); err != nil {
+			return nil, nil, err
+		}
 	}
-	return afters, notes, nil
+	return r.snapshots, slices.Concat(r.notes...), nil
 }
 
 // restoreDetails writes the details of a "restored" log entry: how it came back ("Undo" or "Restored from

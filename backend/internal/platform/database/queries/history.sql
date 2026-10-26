@@ -47,3 +47,9 @@ SELECT id, record_type, record_type_label, record_id, record_name, path, parent,
     deleted_by_name, contents, snapshots, resolution_how, resolution_by_id, resolution_by_name, resolution_at
 FROM recycle_bin
 ORDER BY length(id), id COLLATE "C";
+
+-- name: PurgeBinEntries :exec
+UPDATE recycle_bin
+SET snapshots = '[]', resolution_how = sqlc.arg(resolution_how), resolution_by_id = sqlc.arg(resolution_by_id),
+    resolution_by_name = sqlc.arg(resolution_by_name), resolution_at = sqlc.arg(resolution_at)
+WHERE id = ANY (sqlc.arg(ids)::text[]);

@@ -10,6 +10,60 @@ import (
 	"time"
 )
 
+const listOpenRounds = `-- name: ListOpenRounds :many
+SELECT id, activity_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
+    submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,
+    version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+FROM approval_rounds
+WHERE outcome = 'open'
+ORDER BY length(id), id COLLATE "C"
+`
+
+func (q *Queries) ListOpenRounds(ctx context.Context) ([]ApprovalRound, error) {
+	rows, err := q.db.Query(ctx, listOpenRounds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ApprovalRound{}
+	for rows.Next() {
+		var i ApprovalRound
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActivityID,
+			&i.Number,
+			&i.WorkflowID,
+			&i.WorkflowName,
+			&i.Levels,
+			&i.CurrentLevel,
+			&i.Outcome,
+			&i.SubmittedAt,
+			&i.SubmittedByID,
+			&i.SubmittedByName,
+			&i.Comment,
+			&i.EndedAt,
+			&i.Facts,
+			&i.ReminderDays,
+			&i.EscalationDays,
+			&i.AutoApproved,
+			&i.Version,
+			&i.CreatedAt,
+			&i.CreatedByID,
+			&i.CreatedByName,
+			&i.UpdatedAt,
+			&i.UpdatedByID,
+			&i.UpdatedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRounds = `-- name: ListRounds :many
 SELECT id, activity_id, number, workflow_id, workflow_name, levels, current_level, outcome, submitted_at,
     submitted_by_id, submitted_by_name, comment, ended_at, facts, reminder_days, escalation_days, auto_approved,

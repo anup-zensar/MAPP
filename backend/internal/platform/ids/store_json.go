@@ -24,9 +24,9 @@ func NewJSONCounters() Counters {
 	return jsonCounters{}
 }
 
-// Increment raises the counter of prefix inside the caller's Write. A prefix without a counter yet starts
+// Advance raises the counter of prefix inside the caller's Write. A prefix without a counter yet starts
 // at 1001.
-func (jsonCounters) Increment(ctx context.Context, prefix string) (int, error) {
+func (jsonCounters) Advance(ctx context.Context, prefix string, count int) (int, error) {
 	c, found, err := store.Get[counter](ctx, countersTable, prefix)
 	if err != nil {
 		return 0, err
@@ -34,7 +34,7 @@ func (jsonCounters) Increment(ctx context.Context, prefix string) (int, error) {
 	if !found {
 		c = counter{Prefix: prefix, Last: firstNumber - 1}
 	}
-	c.Last++
+	c.Last += count
 	if err := store.Put(ctx, countersTable, prefix, c); err != nil {
 		return 0, err
 	}

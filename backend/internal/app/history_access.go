@@ -8,6 +8,7 @@ import (
 	"mapp/internal/plans"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/memo"
 )
 
 // historyAccess implements history.Access (feature 014, D-238, D-304): who sees which activity-log and
@@ -124,24 +125,50 @@ func (h historyAccess) planOf(ctx context.Context, kind, id string, path []histo
 		}
 		planID = path[0].ID
 	}
-	if p, found, err := h.plans.Get(ctx, planID); err == nil && found {
-		return plans.AccessFacts(p), true
+	known, err := h.knownPlans(ctx)
+	if err != nil {
+		return authz.PlanFacts{}, false
+	}
+	if facts, stored := known.stored[planID]; stored {
+		return facts, true
 	}
 	for _, s := range snapshots {
 		if s.Kind == "plan" && s.ID == planID {
 			return planSnapshotFacts(s)
 		}
 	}
-	inBin, err := h.history.SnapshotsInBin(ctx, "plan")
-	if err != nil {
-		return authz.PlanFacts{}, false
-	}
-	for _, s := range inBin {
-		if s.ID == planID {
-			return planSnapshotFacts(s)
+	facts, inBin := known.inBin[planID]
+	return facts, inBin
+}
+
+// knownPlans are the access facts of every stored plan and of every plan in the recycle bin.
+type knownPlans struct {
+	stored, inBin map[string]authz.PlanFacts
+}
+
+// knownPlans reads every plan, stored and in the recycle bin, once per transaction until data changes: the
+// log and the bin ask for the plan of each of their entries, and there are fewer plans than entries.
+func (h historyAccess) knownPlans(ctx context.Context) (knownPlans, error) {
+	return memo.Get(ctx, memo.Derived+":historyPlans", func(ctx context.Context) (knownPlans, error) {
+		known := knownPlans{stored: map[string]authz.PlanFacts{}, inBin: map[string]authz.PlanFacts{}}
+		all, err := h.plans.List(ctx)
+		if err != nil {
+			return knownPlans{}, err
 		}
-	}
-	return authz.PlanFacts{}, false
+		for _, p := range all {
+			known.stored[p.ID] = plans.AccessFacts(p)
+		}
+		inBin, err := h.history.SnapshotsInBin(ctx, "plan")
+		if err != nil {
+			return knownPlans{}, err
+		}
+		for _, s := range inBin {
+			if facts, ok := planSnapshotFacts(s); ok {
+				known.inBin[s.ID] = facts
+			}
+		}
+		return known, nil
+	})
 }
 
 // planSnapshotFacts returns the access facts of a plan as the recycle bin keeps it.

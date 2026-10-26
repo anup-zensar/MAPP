@@ -64,14 +64,28 @@ var _ allwork.Source = allWorkSource{}
 // activities' goals — are read only when columns names one of those columns, because the owning features
 // work them out record by record.
 func (s allWorkSource) Year(ctx context.Context, year int, today date.Date, columns []string) (allwork.YearData, error) {
-	data := allwork.YearData{Nodes: []allwork.Node{}}
 	yearPlans, err := plansOfYear(ctx, s.plansRepo, year) // rows, totals, calendar and export: what the person may see
 	if err != nil {
+		return allwork.YearData{Nodes: []allwork.Node{}}, err
+	}
+	data, err := s.nodesOf(ctx, yearPlans, year, columns)
+	if err != nil || len(data.Nodes) == 0 {
 		return data, err
 	}
+	if err := s.addFinance(ctx, &data); err != nil { // feature 015 (financials.go)
+		return allwork.YearData{}, err
+	}
+	return data, nil
+}
+
+// nodesOf returns the nodes of the plans yearPlans of year and of everything below them, without the GSAP
+// figures.
+func (s allWorkSource) nodesOf(ctx context.Context, yearPlans []plans.Plan, year int, columns []string) (allwork.YearData, error) {
+	data := allwork.YearData{Nodes: []allwork.Node{}}
 	if len(yearPlans) == 0 {
 		return data, nil
 	}
+	var err error
 	y := yearReader{s: s, owners: map[string]*allwork.Owner{}, columns: columns, plans: map[string]plans.Plan{}}
 	if err := y.loadAttributes(ctx); err != nil {
 		return allwork.YearData{}, err
@@ -85,22 +99,27 @@ func (s allWorkSource) Year(ctx context.Context, year int, today date.Date, colu
 			return allwork.YearData{}, err
 		}
 	}
-	for _, p := range yearPlans {
-		if err := y.addPlan(ctx, p, missing[p.ID]); err != nil {
-			return allwork.YearData{}, err
-		}
-	}
-	if err := y.addActivityDetails(ctx); err != nil {
-		return allwork.YearData{}, err
-	}
-	if err := y.addLineItems(ctx); err != nil {
+	if err := y.addPlans(ctx, yearPlans, missing); err != nil {
 		return allwork.YearData{}, err
 	}
 	data.Nodes = y.nodes
-	if err := s.addFinance(ctx, &data); err != nil { // feature 015 (financials.go)
-		return allwork.YearData{}, err
-	}
 	return data, nil
+}
+
+// addPlans adds the plans with their own missing fields and everything below them.
+func (y *yearReader) addPlans(ctx context.Context, yearPlans []plans.Plan, missing map[string]int) error {
+	if err := y.s.readTrees(ctx, yearPlans); err != nil {
+		return err
+	}
+	for _, p := range yearPlans {
+		if err := y.addPlan(ctx, p, missing[p.ID]); err != nil {
+			return err
+		}
+	}
+	if err := y.addActivityDetails(ctx); err != nil {
+		return err
+	}
+	return y.addLineItems(ctx)
 }
 
 // planMissing returns the number of each plan's own needed-to-publish fields still empty, from 004's Plans

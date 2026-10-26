@@ -18,10 +18,13 @@ type Activities interface {
 	// Activity returns the stored activity id, and false when it is not stored (never created, or in the
 	// recycle bin).
 	Activity(ctx context.Context, id string) (ActivityFacts, bool, error)
-	// List returns every stored activity.
-	List(ctx context.Context) ([]ActivityFacts, error)
-	// ListInScope returns the stored activities the scope sees (authz.Scope.SeesActivity).
-	ListInScope(ctx context.Context, scope authz.Scope) ([]ActivityFacts, error)
+	// ListOf returns the stored activities among ids, in the order of their ids.
+	ListOf(ctx context.Context, ids []string) ([]ActivityFacts, error)
+	// WorkflowFields returns the Approval workflow field of every stored activity by its id; "" when empty.
+	WorkflowFields(ctx context.Context) (map[string]string, error)
+	// ListInScope returns the stored activities among ids that the scope sees (authz.Scope.SeesActivity), in the
+	// order of their ids.
+	ListInScope(ctx context.Context, scope authz.Scope, ids []string) ([]ActivityFacts, error)
 	// SetStatus stores the activity's new status with record.Meta.Touch — a new version, last changed by a —
 	// and returns the activity as stored now. It writes no log entry: approvals writes it (FR-026).
 	SetStatus(ctx context.Context, a actor.Actor, id, status string) (ActivityFacts, error)

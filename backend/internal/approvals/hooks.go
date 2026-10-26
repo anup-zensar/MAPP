@@ -95,13 +95,9 @@ func (s *Service) ApprovalRestarted(ctx context.Context, a actor.Actor, activity
 func (s *Service) ActivityRestored(ctx context.Context, rc history.RestoreContext, activityID string) ([]string, error) {
 	var notes []string
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		rounds, err := s.repo.RoundsOf(ctx, activityID)
-		if err != nil {
+		open, found, err := s.openRoundOf(ctx, activityID)
+		if err != nil || !found {
 			return err
-		}
-		open, found := openRound(rounds)
-		if !found {
-			return nil
 		}
 		deletedAt := rc.DeletedAt
 		open.Outcome, open.EndedAt = OutcomeCancelled, &deletedAt
@@ -119,6 +115,16 @@ func (s *Service) ActivityRestored(ctx context.Context, rc history.RestoreContex
 		return nil, err
 	}
 	return notes, nil
+}
+
+// openRoundOf returns the open round of the activity activityID, and false when it has none.
+func (s *Service) openRoundOf(ctx context.Context, activityID string) (Round, bool, error) {
+	rounds, err := s.repo.OpenRounds(ctx)
+	if err != nil {
+		return Round{}, false, err
+	}
+	open, found := openRound(where(rounds, func(r Round) bool { return r.ActivityID == activityID }))
+	return open, found, nil
 }
 
 // lastApproved returns the approved round with the highest number among rounds, which are ordered by

@@ -65,6 +65,11 @@ func (ap applier) apply(ctx context.Context, d Delivery) (applied, error) {
 		return applied{}, err
 	}
 	x := newIndex(stored)
+	ordered := inApplyOrder(accepted)
+	run, err := ap.startRun(ctx, x, ordered, importID)
+	if err != nil {
+		return applied{}, err
+	}
 	imp := Import{
 		ID: importID, Source: ap.feed.Source(), FeedName: ap.feed.Name(), FileName: d.FileName,
 		Rows: len(accepted) + refusedRows(problems), Refused: refusedRows(problems), Meta: record.NewMeta(ap.actor, ap.now),
@@ -74,8 +79,8 @@ func (ap applier) apply(ctx context.Context, d Delivery) (applied, error) {
 	}
 	var notLinked []NotLinkedRow
 	touched := map[*Transaction]bool{}
-	for _, in := range inApplyOrder(accepted) {
-		t, outcome, err := ap.applyRow(ctx, x, in, importID)
+	for _, in := range ordered {
+		t, outcome, err := ap.applyRow(ctx, run, in)
 		if err != nil {
 			return applied{}, err
 		}
@@ -92,6 +97,9 @@ func (ap applier) apply(ctx context.Context, d Delivery) (applied, error) {
 			imp.NotLinked++
 			notLinked = append(notLinked, NotLinkedRow{Row: in.Row, Name: t.Name(), Reason: t.NotLinkedReason})
 		}
+	}
+	if err := ap.repo.AddTransactions(ctx, run.added); err != nil {
+		return applied{}, err
 	}
 	for _, t := range inRetryOrder(x.all) {
 		if touched[t] || t.MatchedBy != MatchedByNone || !relink(t, x, ap.items) {
@@ -119,19 +127,46 @@ const (
 	rowUnchanged
 )
 
+// rowRun is what applying the rows of one delivery shares: the index, the import, the IDs taken for the new
+// transactions in apply order, and the new transactions, stored together after the last row.
+type rowRun struct {
+	x        *index
+	importID string
+	newIDs   []string
+	added    []Transaction
+}
+
+// startRun takes the IDs of the new transactions among rows at once, in apply order.
+func (ap applier) startRun(ctx context.Context, x *index, rows []Incoming, importID string) (*rowRun, error) {
+	newIDs, err := ap.ids.NextIDs(ctx, ids.PrefixFinancialTransaction, newRows(x, rows))
+	if err != nil {
+		return nil, err
+	}
+	return &rowRun{x: x, importID: importID, newIDs: newIDs}, nil
+}
+
+// newRows counts the rows whose key no stored transaction has: the delivery's keys are unique (check).
+func newRows(x *index, rows []Incoming) int {
+	n := 0
+	for _, in := range rows {
+		if _, known := x.byKey[in.key()]; !known {
+			n++
+		}
+	}
+	return n
+}
+
 // applyRow applies one accepted row and returns its transaction and outcome.
-func (ap applier) applyRow(ctx context.Context, x *index, in Incoming, importID string) (*Transaction, int, error) {
+func (ap applier) applyRow(ctx context.Context, run *rowRun, in Incoming) (*Transaction, int, error) {
+	x, importID := run.x, run.importID
 	t, known := x.byKey[in.key()]
 	switch {
 	case !known:
-		id, err := ap.ids.Next(ctx, ids.PrefixFinancialTransaction)
-		if err != nil {
-			return nil, 0, err
-		}
-		t = &Transaction{ID: id, Fields: in.Fields, ImportID: importID, Meta: record.NewMeta(ap.actor, ap.now)}
+		t = &Transaction{ID: run.newIDs[len(run.added)], Fields: in.Fields, ImportID: importID, Meta: record.NewMeta(ap.actor, ap.now)}
 		relink(t, x, ap.items)
 		x.add(t)
-		return t, rowNew, ap.repo.PutTransaction(ctx, *t)
+		run.added = append(run.added, *t)
+		return t, rowNew, nil
 	case t.Fields != in.Fields:
 		x.unbucket(t)
 		t.Fields, t.ImportID = in.Fields, importID

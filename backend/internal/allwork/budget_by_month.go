@@ -67,7 +67,7 @@ func (s *Service) BudgetByMonth(ctx context.Context, a actor.Actor, planID strin
 		if !found || location.Level != LevelPlan {
 			return errs.NotFound(msgPlanGone)
 		}
-		data, err := s.src.Year(ctx, location.Year, date.Today(s.now()), nil)
+		data, err := s.src.PlanYear(ctx, planID, location.Year, date.Today(s.now()))
 		if err != nil {
 			return err
 		}

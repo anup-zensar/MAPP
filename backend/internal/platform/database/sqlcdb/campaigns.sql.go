@@ -10,6 +10,33 @@ import (
 	"time"
 )
 
+type AddCampaignPhasingMonthsParams struct {
+	CampaignID  string
+	Month       string
+	AmountMinor int64
+}
+
+type AddCampaignsParams struct {
+	ID             string
+	PlanID         string
+	Name           string
+	Description    string
+	OwnerID        *string
+	StartDate      *time.Time
+	EndDate        *time.Time
+	BudgetMinor    *int64
+	BudgetCurrency *string
+	Attributes     []byte
+	PhasingMethod  string
+	Version        int
+	CreatedAt      time.Time
+	CreatedByID    string
+	CreatedByName  string
+	UpdatedAt      time.Time
+	UpdatedByID    string
+	UpdatedByName  string
+}
+
 const deleteCampaign = `-- name: DeleteCampaign :exec
 DELETE FROM campaigns
 WHERE id = $1
@@ -27,6 +54,16 @@ WHERE campaign_id = $1
 
 func (q *Queries) DeleteCampaignPhasingMonths(ctx context.Context, campaignID string) error {
 	_, err := q.db.Exec(ctx, deleteCampaignPhasingMonths, campaignID)
+	return err
+}
+
+const deleteCampaigns = `-- name: DeleteCampaigns :exec
+DELETE FROM campaigns
+WHERE id = ANY ($1::text[])
+`
+
+func (q *Queries) DeleteCampaigns(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, deleteCampaigns, ids)
 	return err
 }
 
@@ -55,13 +92,13 @@ SELECT campaigns.id, campaigns.plan_id, campaigns.name, campaigns.description, c
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM campaign_phasing_months m
         WHERE m.campaign_id = campaigns.id), '{}')::bigint[] AS phasing_amounts
 FROM campaigns
-WHERE ($1::text IS NULL OR id = $1)
+WHERE ($1::text[] IS NULL OR id = ANY ($1::text[]))
     AND ($2::text[] IS NULL OR plan_id = ANY ($2::text[]))
 ORDER BY length(id), id COLLATE "C"
 `
 
 type ListCampaignsParams struct {
-	ID      *string
+	Ids     []string
 	PlanIds []string
 }
 
@@ -72,7 +109,7 @@ type ListCampaignsRow struct {
 }
 
 func (q *Queries) ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([]ListCampaignsRow, error) {
-	rows, err := q.db.Query(ctx, listCampaigns, arg.ID, arg.PlanIds)
+	rows, err := q.db.Query(ctx, listCampaigns, arg.Ids, arg.PlanIds)
 	if err != nil {
 		return nil, err
 	}

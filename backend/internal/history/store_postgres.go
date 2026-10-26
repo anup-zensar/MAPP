@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
-
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/database/sqlcdb"
+	"mapp/internal/platform/memo"
 )
+
+// keptArea is what the transaction memo keeps of history: the recycle bin.
+const keptArea = "history"
 
 // PostgresStore is the Repository on PostgreSQL. The documents of an entry (its path, changes and
 // snapshots) are json columns, which keep the text exactly as written.
@@ -34,7 +36,7 @@ func (s *PostgresStore) AppendEntry(ctx context.Context, e Entry) error {
 	if err := errors.Join(pathErr, changesErr, itemsErr); err != nil {
 		return fmt.Errorf("encode log entry %s: %w", e.ID, err)
 	}
-	err := s.db.Queries(ctx).AppendLogEntry(ctx, sqlcdb.AppendLogEntryParams{
+	err := s.change(ctx).AppendLogEntry(ctx, sqlcdb.AppendLogEntryParams{
 		ID: e.ID, Seq: e.Seq, At: e.At, ActorID: e.Actor.ID, ActorName: e.Actor.Name, Action: string(e.Action),
 		Verb: e.Verb, RecordType: e.RecordType, RecordTypeLabel: e.RecordTypeLabel, RecordID: e.RecordID,
 		RecordName: e.RecordName, Path: path, Changes: changes, Comment: e.Comment, Details: e.Details, Items: itemsJSON,
@@ -73,31 +75,29 @@ func (s *PostgresStore) PutBinEntry(ctx context.Context, e BinEntry) error {
 	if err != nil {
 		return fmt.Errorf("encode bin entry %s: %w", e.ID, err)
 	}
-	if err = s.db.Queries(ctx).PutBinEntry(ctx, params); err != nil {
+	if err = s.change(ctx).PutBinEntry(ctx, params); err != nil {
 		return fmt.Errorf("save bin entry %s: %w", e.ID, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) GetBinEntry(ctx context.Context, id string) (BinEntry, bool, error) {
-	row, err := s.db.Queries(ctx).GetBinEntry(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return BinEntry{}, false, nil
-	}
-	if err != nil {
-		return BinEntry{}, false, fmt.Errorf("select bin entry %s: %w", id, err)
+	rows, err := s.binRows(ctx)
+	row, found := rows.Find(id)
+	if err != nil || !found {
+		return BinEntry{}, false, err
 	}
 	e, err := binEntryFromRow(row)
 	return e, err == nil, err
 }
 
 func (s *PostgresStore) BinEntries(ctx context.Context) ([]BinEntry, error) {
-	rows, err := s.db.Queries(ctx).ListBinEntries(ctx)
+	rows, err := s.binRows(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select bin entries: %w", err)
+		return nil, err
 	}
-	entries := make([]BinEntry, 0, len(rows))
-	for _, row := range rows {
+	entries := make([]BinEntry, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
 		e, err := binEntryFromRow(row)
 		if err != nil {
 			return nil, err
@@ -105,6 +105,33 @@ func (s *PostgresStore) BinEntries(ctx context.Context) ([]BinEntry, error) {
 		entries = append(entries, e)
 	}
 	return entries, nil
+}
+
+func (s *PostgresStore) PurgeBinEntries(ctx context.Context, ids []string, r Resolution) error {
+	err := s.change(ctx).PurgeBinEntries(ctx, sqlcdb.PurgeBinEntriesParams{
+		ResolutionHow: &r.How, ResolutionByID: &r.By.ID, ResolutionByName: &r.By.Name, ResolutionAt: &r.At, Ids: ids,
+	})
+	if err != nil {
+		return fmt.Errorf("purge bin entries: %w", err)
+	}
+	return nil
+}
+
+// binRows reads the recycle bin once per transaction (memo): the bin page, a restore and the access checks
+// of the log each read it, and only this store changes it.
+func (s *PostgresStore) binRows(ctx context.Context) (memo.Table[sqlcdb.RecycleBin], error) {
+	rows, err := memo.GetTable(ctx, keptArea+":bin", func(ctx context.Context) ([]sqlcdb.RecycleBin, error) {
+		return s.db.Queries(ctx).ListBinEntries(ctx)
+	}, func(r sqlcdb.RecycleBin) string { return r.ID })
+	if err != nil {
+		return memo.Table[sqlcdb.RecycleBin]{}, fmt.Errorf("select bin entries: %w", err)
+	}
+	return rows, nil
+}
+
+func (s *PostgresStore) change(ctx context.Context) *sqlcdb.Queries {
+	memo.Forget(ctx, keptArea)
+	return s.db.Queries(ctx)
 }
 
 func binParams(e BinEntry) (sqlcdb.PutBinEntryParams, error) {

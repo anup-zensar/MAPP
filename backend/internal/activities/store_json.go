@@ -28,6 +28,12 @@ func (jsonRepository) List(ctx context.Context) ([]Activity, error) {
 	return store.List[Activity](ctx, activitiesTable)
 }
 
+// ListSplitFrom reads every activity to find those split off one.
+func (r jsonRepository) ListSplitFrom(ctx context.Context, activityID string) ([]Activity, error) {
+	all, err := r.List(ctx)
+	return slices.DeleteFunc(all, func(a Activity) bool { return a.SplitFromID != activityID }), err
+}
+
 // ListByInitiative reads every activity to find those of one initiative.
 func (r jsonRepository) ListByInitiative(ctx context.Context, initiativeID string) ([]Activity, error) {
 	return r.ListByInitiatives(ctx, []string{initiativeID})

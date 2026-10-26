@@ -58,7 +58,7 @@ func (s *Service) OwnedBy(ctx context.Context, a actor.Actor, personID string) (
 				}
 				contexts[act.InitiativeID] = pc
 			}
-			d, err := s.derive(ctx, act, pc, facts[act.ID])
+			d, err := s.storedDerive(ctx, act, pc, facts[act.ID])
 			if err != nil {
 				return err
 			}

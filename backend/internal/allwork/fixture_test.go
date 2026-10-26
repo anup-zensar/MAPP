@@ -3,6 +3,7 @@ package allwork
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -404,6 +405,12 @@ func (f *fakeSource) Year(_ context.Context, year int, _ date.Date, _ []string) 
 		return YearData{Nodes: []Node{}}, nil
 	}
 	return data, nil
+}
+
+func (f *fakeSource) PlanYear(ctx context.Context, planID string, year int, today date.Date) (YearData, error) {
+	data, err := f.Year(ctx, year, today, nil)
+	data.Nodes = slices.DeleteFunc(slices.Clone(data.Nodes), func(n Node) bool { return n.PlanID != planID })
+	return data, err
 }
 
 // RatesUsed answers the rates of the fixtures (016 FR-009).

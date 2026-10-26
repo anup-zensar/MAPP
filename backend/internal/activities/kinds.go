@@ -48,6 +48,10 @@ func (s *Service) Kinds() []history.Kind {
 		ChildIDs:       s.childIDs,
 		Remove:         s.repo.Delete,
 		Put:            s.putSnapshot,
+		AllChildIDs:    s.allChildIDs,
+		SnapshotsOf:    s.snapshotsOf,
+		RemoveAll:      s.repo.DeleteMany,
+		PutAll:         s.putSnapshots,
 		Describe:       s.describe,
 		PrepareRestore: s.prepareRestore,
 	}}

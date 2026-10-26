@@ -195,21 +195,15 @@ func (s *Service) ApplyRateRows(ctx context.Context, a actor.Actor, feedName, so
 		if err != nil {
 			return err
 		}
+		written, err := s.importedRates(ctx, a, review.write, importID)
+		if err != nil {
+			return err
+		}
+		if err := s.repo.PutRates(ctx, written); err != nil {
+			return err
+		}
 		var first, last *date.Date
-		for _, r := range review.write {
-			r.Source, r.ImportID = RateGSAPImport, importID
-			if r.ID == "" {
-				id, err := s.ids.Next(ctx, ids.PrefixExchangeRate)
-				if err != nil {
-					return err
-				}
-				r.ID, r.Meta = id, record.NewMeta(a, s.now())
-			} else {
-				r.Touch(a, s.now())
-			}
-			if err := s.repo.PutRate(ctx, r); err != nil {
-				return err
-			}
+		for _, r := range written {
 			day := r.Date
 			if first == nil || day.Before(*first) {
 				first = &day
@@ -238,6 +232,31 @@ func (s *Service) ApplyRateRows(ctx context.Context, a actor.Actor, feedName, so
 		return nil
 	})
 	return view, err
+}
+
+// importedRates returns the rates as saved: new ones get the next IDs in their order, replaced ones are touched.
+func (s *Service) importedRates(ctx context.Context, a actor.Actor, rates []ExchangeRate, importID string) ([]ExchangeRate, error) {
+	added := 0
+	for _, r := range rates {
+		if r.ID == "" {
+			added++
+		}
+	}
+	newIDs, err := s.ids.NextIDs(ctx, ids.PrefixExchangeRate, added)
+	if err != nil {
+		return nil, err
+	}
+	written := make([]ExchangeRate, 0, len(rates))
+	for _, r := range rates {
+		r.Source, r.ImportID = RateGSAPImport, importID
+		if r.ID == "" {
+			r.ID, r.Meta, newIDs = newIDs[0], record.NewMeta(a, s.now()), newIDs[1:]
+		} else {
+			r.Touch(a, s.now())
+		}
+		written = append(written, r)
+	}
+	return written, nil
 }
 
 // dateSpan writes the dates of an import: "19 Oct 2026", or "19 Sep – 19 Oct 2026".

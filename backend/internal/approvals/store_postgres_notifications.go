@@ -37,7 +37,7 @@ func (s *PostgresStore) NotificationsOf(ctx context.Context, personID string) ([
 }
 
 func (s *PostgresStore) PutNotification(ctx context.Context, n Notification) error {
-	err := s.db.Queries(ctx).PutNotification(ctx, sqlcdb.PutNotificationParams{
+	err := s.change(ctx).PutNotification(ctx, sqlcdb.PutNotificationParams{
 		ID: n.ID, RecipientID: n.RecipientID, Kind: string(n.Kind), Title: n.Title, Text: n.Text,
 		ActivityID: n.ActivityID, ActivityName: n.ActivityName, ActorID: n.Actor.ID, ActorName: n.Actor.Name,
 		At: n.At, Read: n.Read, ReadAt: n.ReadAt,
@@ -79,7 +79,7 @@ func (s *PostgresStore) PutDelegation(ctx context.Context, dl Delegation) error 
 		UpdatedAt: dl.UpdatedAt, UpdatedByID: dl.UpdatedBy.ID, UpdatedByName: dl.UpdatedBy.Name,
 	}
 	params.CancelledByID, params.CancelledByName = actorColumns(dl.CancelledBy)
-	if err := s.db.Queries(ctx).PutDelegation(ctx, params); err != nil {
+	if err := s.change(ctx).PutDelegation(ctx, params); err != nil {
 		return fmt.Errorf("save approval delegation %s: %w", dl.ID, err)
 	}
 	return nil

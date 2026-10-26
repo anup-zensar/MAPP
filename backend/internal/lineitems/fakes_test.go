@@ -228,6 +228,16 @@ func (f *fakeActivities) Facts(_ context.Context, id string) (ActivityFacts, boo
 	return facts, found, nil
 }
 
+func (f *fakeActivities) FactsOf(ctx context.Context, activityIDs []string) (map[string]ActivityFacts, error) {
+	found := map[string]ActivityFacts{}
+	for _, id := range activityIDs {
+		if facts, stored, _ := f.Facts(ctx, id); stored {
+			found[id] = facts
+		}
+	}
+	return found, nil
+}
+
 // RestartApproval records the call and sets the activity to Created.
 func (f *fakeActivities) RestartApproval(_ context.Context, _ actor.Actor, id string, reasons []string) error {
 	f.restarts = append(f.restarts, restartCall{activityID: id, reasons: reasons})

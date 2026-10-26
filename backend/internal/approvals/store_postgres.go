@@ -7,13 +7,15 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/jackc/pgx/v5"
-
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/database/sqlcdb"
+	"mapp/internal/platform/memo"
 	"mapp/internal/platform/record"
 )
+
+// keptArea is what the transaction memo keeps of approvals: the workflows.
+const keptArea = "approvals"
 
 // PostgresStore is the Repository on PostgreSQL: workflows here, rounds and history entries in
 // store_postgres_rounds.go, notifications and delegations in store_postgres_notifications.go.
@@ -26,32 +28,56 @@ func NewPostgresStore(db *database.DB) *PostgresStore {
 }
 
 func (s *PostgresStore) GetWorkflow(ctx context.Context, id string) (Workflow, bool, error) {
-	row, err := s.db.Queries(ctx).GetWorkflow(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Workflow{}, false, nil
-	}
-	if err != nil {
-		return Workflow{}, false, fmt.Errorf("select approval workflow %s: %w", id, err)
-	}
-	workflows, err := s.withLevels(ctx, []sqlcdb.ApprovalWorkflow{row}, &id)
+	workflows, err := s.workflows(ctx)
 	if err != nil {
 		return Workflow{}, false, err
 	}
-	return workflows[0], true, nil
+	i := slices.IndexFunc(workflows, func(w Workflow) bool { return w.ID == id })
+	if i < 0 {
+		return Workflow{}, false, nil
+	}
+	return copyOfWorkflow(workflows[i]), true, nil
 }
 
 func (s *PostgresStore) ListWorkflows(ctx context.Context) ([]Workflow, error) {
-	rows, err := s.db.Queries(ctx).ListWorkflows(ctx)
+	workflows, err := s.workflows(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select approval workflows: %w", err)
+		return nil, err
 	}
-	return s.withLevels(ctx, rows, nil)
+	copies := make([]Workflow, 0, len(workflows))
+	for _, w := range workflows {
+		copies = append(copies, copyOfWorkflow(w))
+	}
+	return copies, nil
+}
+
+// workflows reads every workflow with its levels once per transaction (memo): a page checks the workflow of
+// each activity it shows, and only this store changes them.
+func (s *PostgresStore) workflows(ctx context.Context) ([]Workflow, error) {
+	return memo.Get(ctx, keptArea+":workflows", func(ctx context.Context) ([]Workflow, error) {
+		rows, err := s.db.Queries(ctx).ListWorkflows(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("select approval workflows: %w", err)
+		}
+		return s.withLevels(ctx, rows)
+	})
+}
+
+func (s *PostgresStore) change(ctx context.Context) *sqlcdb.Queries {
+	memo.Forget(ctx, keptArea)
+	return s.db.Queries(ctx)
+}
+
+// copyOfWorkflow returns w with a list of levels of its own, so a caller never changes the kept one.
+func copyOfWorkflow(w Workflow) Workflow {
+	w.Levels = slices.Clone(w.Levels)
+	return w
 }
 
 // PutWorkflow saves w with its levels normalised, which is how the JSON store reads every level back, so a
 // workflow read from either store is the same.
 func (s *PostgresStore) PutWorkflow(ctx context.Context, w Workflow) error {
-	q := s.db.Queries(ctx)
+	q := s.change(ctx)
 	err := q.PutWorkflow(ctx, sqlcdb.PutWorkflowParams{
 		ID: w.ID, Name: w.Name, Description: w.Description, Active: w.Active, ReminderDays: w.ReminderDays,
 		EscalationDays: w.EscalationDays, Version: w.Version, CreatedAt: w.CreatedAt, CreatedByID: w.CreatedBy.ID,
@@ -73,7 +99,7 @@ func (s *PostgresStore) PutWorkflow(ctx context.Context, w Workflow) error {
 }
 
 func (s *PostgresStore) DeleteWorkflow(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteWorkflow(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteWorkflow(ctx, id); err != nil {
 		return fmt.Errorf("delete approval workflow %s: %w", id, err)
 	}
 	return nil
@@ -99,9 +125,9 @@ func (s *PostgresStore) insertLevel(ctx context.Context, workflowID string, numb
 	})
 }
 
-// withLevels reads the levels of the workflows rows (of the one workflowID, or of all) in one query.
-func (s *PostgresStore) withLevels(ctx context.Context, rows []sqlcdb.ApprovalWorkflow, workflowID *string) ([]Workflow, error) {
-	levelRows, err := s.db.Queries(ctx).ListWorkflowLevels(ctx, workflowID)
+// withLevels reads the levels of every workflow in one query.
+func (s *PostgresStore) withLevels(ctx context.Context, rows []sqlcdb.ApprovalWorkflow) ([]Workflow, error) {
+	levelRows, err := s.db.Queries(ctx).ListWorkflowLevels(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("select approval workflow levels: %w", err)
 	}
