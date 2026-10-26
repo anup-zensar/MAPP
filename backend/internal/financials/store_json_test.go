@@ -6,7 +6,7 @@ import (
 	"mapp/internal/platform/actor"
 )
 
-// The stored data keeps the invariants of data model §1 (FR-001, FR-002).
+// The stored data keeps the invariants of data model §1.
 func TestJSONRepository_Invariants_FR001(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

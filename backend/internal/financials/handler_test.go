@@ -93,7 +93,7 @@ const extractHeader = "type,document_number,line,po_number,po_line,posting_date,
 	"vendor_code,vendor_name,description,swbs_code,tracking_key,line_item_id"
 
 // The activity Social always-on (A-1002) answers its figures, its line items as the breakdown, its latest
-// transactions and the data's source; a line item and a plan answer their own shapes (FR-015 – FR-018).
+// transactions and the data's source; a line item and a plan answer their own shapes.
 func TestRecord_Contract_FR015(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -142,7 +142,7 @@ func TestRecord_NotFoundAndDisplayCurrency_FR011(t *testing.T) {
 }
 
 // The Financials page on the seed: the 2026 tab counts and paging by default, and the type, sort, record and
-// page-size parameters (FR-021, spec US3 scenario 1).
+// page-size parameters.
 func TestTransactions_Contract_FR021(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)
@@ -320,8 +320,7 @@ func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
 	}
 }
 
-// Check a three-row file, which saves nothing, and import it; a whole-file refusal of each (FR-004 – FR-007,
-// SC-003, spec US4).
+// Check a three-row file, which saves nothing, and import it; a whole-file refusal of each.
 func TestImport_Contract_FR004(t *testing.T) {
 	t.Parallel()
 	server := apitest.New(t)

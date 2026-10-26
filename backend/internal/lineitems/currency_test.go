@@ -41,7 +41,7 @@ func TestPlannedCostPlan_FR015(t *testing.T) {
 }
 
 // The unassigned planned cost is worked out in the plan currency: 40,000.00 − (15,000.00 + 19,750.00) =
-// 5,250.00 GBP, shown in the reader's display currency from it, each amount converted once (FR-015, US2-3).
+// 5,250.00 GBP, shown in the reader's display currency from it (FR-015, US2-3).
 func TestBalance_PlanCurrency_FR015(t *testing.T) {
 	t.Parallel()
 	f := newTestService(t)

@@ -132,7 +132,7 @@ func TestNewForm_AttributesAndNames_FR014(t *testing.T) {
 
 // Only the name and the type are needed to save; the needed-to-submit fields may stay empty (FR-003). An
 // activity is created as Created with the next readable ID, and one "created" entry names the actor and the
-// initiative (FR-004); an initiative that is gone answers not found.
+// initiative (FR-004).
 func TestCreate_OnlyNameAndTypeRequired_FR003_FR004(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -290,7 +290,7 @@ func TestCreate_OwnerAndWorkflowMustBeActive_FR008_FR012(t *testing.T) {
 }
 
 // Shell attribute values are checked on save with Settings' rules: unknown attributes and options, an
-// option of another attribute, a wrong share; a split may be saved with any total (FR-016, FR-017).
+// option of another attribute, a wrong share; a split may be saved with any total.
 func TestCreate_AttributeValuesChecked_FR016_FR017(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
