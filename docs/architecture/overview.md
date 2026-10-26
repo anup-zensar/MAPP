@@ -5,7 +5,7 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 
 ```
  Browser                                   Developer laptop (now)          Azure (later)
-┌──────────────────────────┐   /api/*   ┌──────────────────────────────┐
+┌──────────────────────────┐ /api/v1/*  ┌──────────────────────────────┐
 │ React + TypeScript app   │──────────►│ Go API (one program)          │
 │  pages · components ·    │  JSON      │  handler → service → repo     │
 │  generated API types     │◄──────────│  demo sign-in · activity log  │
@@ -34,7 +34,7 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 
 | Layer | Responsibility | Example |
 |---|---|---|
-| **Handler** | Read the HTTP request, call the service, write JSON. No business rules. | `POST /api/plans` |
+| **Handler** | Read the HTTP request, call the service, write JSON. No business rules. | `POST /api/v1/plans` |
 | **Service** | All business rules: validation, calculations, status changes, activity log. Receives the actor. | `plans.Service.Create(ctx, actor, input)` |
 | **Repository** | Read and write records. An interface plus one implementation per storage. | `plans.Repository` → JSON store now, PostgreSQL later |
 
@@ -49,10 +49,13 @@ fit together. Exact library versions are fixed in feature 001's `plan.md` and `r
 
 ### API conventions (detailed in feature 001's contract)
 
-- REST + JSON under `/api`; resource names in plural (`/api/plans/{id}/campaigns`).
+- REST + JSON under `/api/v1`; resource names in plural (`/api/v1/plans/{id}/campaigns`). The probes
+  `/healthz` (liveness) and `/readyz` (readiness, checks the store) sit outside it (feature 022).
 - One OpenAPI file in the repository is the source of truth; each feature adds its endpoints to it.
-- One error format for every failure: a message for the user plus a list of field problems, so the web
-  app can show **all** validation errors at once.
+- One error format for every failure, the envelope `{"error": {"code", "message", "fields"}}`: a message
+  for the user plus a list of field problems, so the web app can show **all** validation errors at once.
+- A record outside the person's access answers 404 `not_found`, exactly like a missing record; 403
+  `forbidden` only refuses an action the person's roles do not allow on a record they can see.
 - Lists support search, filters and paging; responses include totals where the screen needs them.
 - Every write returns the updated record, including recalculated values and status.
 - Optimistic concurrency: records carry a version; a stale save is refused with a clear message instead
