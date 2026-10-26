@@ -1,11 +1,10 @@
-import os from 'node:os';
-import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
-// The end-to-end tests start their own API and web app on ports of their own, with freshly seeded demo
-// data in a temporary folder, so a development server and backend/data are never touched (research R19).
-// E2E_API_PORT, E2E_WEB_PORT and E2E_DATA_DIR move them, so two checkouts can run their tests at once.
-const dataDir = process.env.E2E_DATA_DIR || path.join(os.tmpdir(), 'mapp-e2e');
+// The end-to-end tests start their own API and web app on ports of their own, on a PostgreSQL database of
+// their own (mapp_e2e, created when missing) that the seed empties and reloads, so a development server
+// and its database are never touched (research R19). E2E_API_PORT, E2E_WEB_PORT and E2E_DATABASE_URL move
+// them, so two checkouts can run their tests at once.
+const databaseURL = process.env.E2E_DATABASE_URL || 'postgres://mapp@127.0.0.1:5432/mapp_e2e?sslmode=disable';
 const apiPort = process.env.E2E_API_PORT || '18080';
 const webPort = process.env.E2E_WEB_PORT || '14173';
 
@@ -28,10 +27,10 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      // Load the demo data into an empty temporary folder, then start the API on 127.0.0.1 only.
+      // Migrate the database and reload the demo data, then start the API on 127.0.0.1 only.
       command: 'go run ./cmd/seed -reset && go run ./cmd/api',
       cwd: '../backend',
-      env: { ...process.env, DATA_DIR: dataDir, APP_PORT: apiPort, APP_ENV: 'local' },
+      env: { ...process.env, DATABASE_URL: databaseURL, APP_PORT: apiPort, APP_ENV: 'local' },
       url: `http://127.0.0.1:${apiPort}/healthz`,
       timeout: 180_000,
       reuseExistingServer: false,
