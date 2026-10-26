@@ -55,6 +55,41 @@ type ActivityType struct {
 	UpdatedByName              string
 }
 
+type ApprovalWorkflow struct {
+	ID             string
+	Name           string
+	Description    string
+	Active         bool
+	ReminderDays   *int
+	EscalationDays *int
+	Version        int
+	CreatedAt      time.Time
+	CreatedByID    string
+	CreatedByName  string
+	UpdatedAt      time.Time
+	UpdatedByID    string
+	UpdatedByName  string
+}
+
+type ApprovalWorkflowLevel struct {
+	WorkflowID       string
+	Number           int
+	Name             string
+	ApproverType     string
+	RoleID           string
+	Mode             string
+	AppliesWhen      []byte
+	AutoApproveWhen  []byte
+	BackupApproverID *string
+}
+
+type ApprovalWorkflowLevelApprover struct {
+	WorkflowID  string
+	LevelNumber int
+	Position    int
+	PersonID    string
+}
+
 type Counter struct {
 	Prefix string
 	Last   int
