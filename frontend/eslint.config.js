@@ -26,6 +26,10 @@ const ALIGNED = [
   'financials',
   'settings',
   'plans',
+  'all-work',
+  'home',
+  'activity-log',
+  'dev',
 ];
 const NOT_ALIGNED_YET = FEATURES.filter((feature) => !ALIGNED.includes(feature));
 const TEST_ONLY = {
