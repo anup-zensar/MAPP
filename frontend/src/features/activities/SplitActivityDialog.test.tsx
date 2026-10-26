@@ -1,14 +1,15 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { ActivitySplitOptions, ActivitySplitPreview, ActivitySplitSide } from './splitApi';
+import type { HttpHandler } from 'msw';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { launchFilm } from '@/testing/fixtures/activities';
+import { destination, OWN_INITIATIVE } from '@/testing/fixtures/activity-destinations';
+import { reply } from '@/testing/replies';
+import type { ActivitySplitOptions, ActivitySplitPreview, ActivitySplitSide } from './split-api';
 import { SplitActivityDialog } from './SplitActivityDialog';
-import { destination, launchFilm, OWN_INITIATIVE } from './testData';
 
-const OPTIONS = 'GET /api/v1/activities/A-1042/split-options';
 const PREVIEW = 'POST /api/v1/activities/A-1042/split-preview';
 const SPLIT = 'POST /api/v1/activities/A-1042/split';
 
@@ -75,19 +76,31 @@ const PREVIEWED: ActivitySplitPreview = {
   problems: [],
 };
 
-function openDialog(answers: Record<string, MockHandler> = {}, activity = launchFilm()) {
+function openDialog(answers: HttpHandler[] = [], activity = launchFilm()) {
   const onClose = vi.fn();
-  const api = mockApi({
-    [OPTIONS]: { body: options() },
-    [PREVIEW]: { body: PREVIEWED },
-    [SPLIT]: {
-      body: {
-        activity: launchFilm(),
-        newActivity: launchFilm({ id: 'A-1050', name: 'Ireland roadshow' }),
+  const api = mockApi([
+    reply(
+      'GET /api/v1/activities/{activityId}/split-options',
+      { body: options() },
+      { activityId: 'A-1042' },
+    ),
+    reply(
+      'POST /api/v1/activities/{activityId}/split-preview',
+      { body: PREVIEWED },
+      { activityId: 'A-1042' },
+    ),
+    reply(
+      'POST /api/v1/activities/{activityId}/split',
+      {
+        body: {
+          activity: launchFilm(),
+          newActivity: launchFilm({ id: 'A-1050', name: 'Ireland roadshow' }),
+        },
       },
-    },
+      { activityId: 'A-1042' },
+    ),
     ...answers,
-  });
+  ]);
   return {
     api,
     onClose,
@@ -159,7 +172,13 @@ describe('SplitActivityDialog (016 US4, FR-026 – FR-029)', () => {
 
   it('says an approved activity will need approval again and asks for it (scenario 3, FR-029)', async () => {
     const { user, api } = openDialog(
-      { [OPTIONS]: { body: options({ status: 'approved', needsRestart: true }) } },
+      [
+        reply(
+          'GET /api/v1/activities/{activityId}/split-options',
+          { body: options({ status: 'approved', needsRestart: true }) },
+          { activityId: 'A-1042' },
+        ),
+      ],
       launchFilm({ status: 'approved', displayStatus: 'approved' }),
     );
 
@@ -178,19 +197,23 @@ describe('SplitActivityDialog (016 US4, FR-026 – FR-029)', () => {
   });
 
   it('lists an initiative that cannot take the activity with Move’s reason (scenario 5)', async () => {
-    openDialog({
-      [OPTIONS]: {
-        body: options({
-          destinations: [
-            OWN_INITIATIVE,
-            destination({
-              initiative: { type: 'initiative', id: 'I-1006', name: 'Retail events' },
-              moveProblem: "Its dates (01 Jul – 30 Sep 2026) don't contain the activity's dates.",
-            }),
-          ],
-        }),
-      },
-    });
+    openDialog([
+      reply(
+        'GET /api/v1/activities/{activityId}/split-options',
+        {
+          body: options({
+            destinations: [
+              OWN_INITIATIVE,
+              destination({
+                initiative: { type: 'initiative', id: 'I-1006', name: 'Retail events' },
+                moveProblem: "Its dates (01 Jul – 30 Sep 2026) don't contain the activity's dates.",
+              }),
+            ],
+          }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('dialog', { name: "Split 'Launch film'" });
     expect(await within(dialog).findByRole('radio', { name: /Retail events/ })).toBeDisabled();
@@ -202,23 +225,27 @@ describe('SplitActivityDialog (016 US4, FR-026 – FR-029)', () => {
   });
 
   it('shows every problem the preview finds at once', async () => {
-    const { user } = openDialog({
-      [PREVIEW]: {
-        body: {
-          ...PREVIEWED,
-          problems: [
-            {
-              field: 'plannedCost',
-              message: "Move at most 40,000.00 GBP, the activity's planned cost.",
-            },
-            {
-              field: 'name',
-              message: "'Ireland roadshow' is already an activity of this initiative.",
-            },
-          ],
+    const { user } = openDialog([
+      reply(
+        'POST /api/v1/activities/{activityId}/split-preview',
+        {
+          body: {
+            ...PREVIEWED,
+            problems: [
+              {
+                field: 'plannedCost',
+                message: "Move at most 40,000.00 GBP, the activity's planned cost.",
+              },
+              {
+                field: 'name',
+                message: "'Ireland roadshow' is already an activity of this initiative.",
+              },
+            ],
+          },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('dialog', { name: "Split 'Launch film'" });
     await user.click(await within(dialog).findByRole('checkbox', { name: 'Venue' }));

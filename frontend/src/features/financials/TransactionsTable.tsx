@@ -1,19 +1,19 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, CircleAlert } from 'lucide-react';
 import { Link } from 'react-router';
-import { StatusChip } from '@/components';
-import type { StatusTone } from '@/components';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import type { FinancialTransactionRow, FinancialTransactionType } from './financialsApi';
-import { transactionHref } from './financialsLinks';
-import type { SortColumn, SortDirection } from './financialsLinks';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import type { StatusTone } from '@/ui/StatusChip/StatusChip';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import type { FinancialTransactionRow, FinancialTransactionType } from './api';
+import { transactionHref } from './financials-links';
+import type { SortColumn, SortDirection } from './financials-links';
 import {
   currencyMissingText,
   LINE_ITEM_IN_BIN,
   NOT_LINKED,
   recordLabel,
   TYPE_WORDS,
-} from './financialsText';
+} from './financials-text';
 import { ScrollBox } from './ScrollBox';
 import styles from './TransactionsTable.module.css';
 

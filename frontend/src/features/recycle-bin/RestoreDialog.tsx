@@ -2,8 +2,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
 import type { ApiError } from '@/api/errors';
-import { ConfirmDialog, Skeleton, useToast } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useToast } from '@/ui/Toast/useToast';
+import { useFormatters } from '@/format/useFormatters';
+import { asApiError } from '@/api/errors';
 import {
   blockedText,
   blockedTitle,
@@ -15,10 +18,11 @@ import {
   restoreTitle,
   restoredHref,
   restoredMessage,
-} from './binText';
-import type { BinItem, RestorePreview } from './binText';
-import { asApiError, closingMessage, refetchBin } from './dialogFailure';
-import { useRestore, useRestorePreview } from './recycleBinApi';
+} from './restore-text';
+import type { BinItem } from './bin-text';
+import type { RestorePreview } from './restore-text';
+import { closingMessage, refetchBin } from './dialog-failure';
+import { useRestore, useRestorePreview } from './api';
 import styles from './dialogs.module.css';
 
 export interface RestoreDialogProps {

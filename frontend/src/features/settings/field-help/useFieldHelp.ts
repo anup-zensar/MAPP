@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useFieldHelpEntries } from './fieldHelpApi';
+import { useFieldHelpEntries } from './api';
 
 /** What useFieldHelp() gives a page. */
 export interface FieldHelp {

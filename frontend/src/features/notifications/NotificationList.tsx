@@ -11,13 +11,15 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { Button, Skeleton, useToast } from '@/components';
-import { asApiError, isSessionLost } from '@/features/approvals/messages';
-import { cx } from '@/lib/cx';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import { useMarkAllRead, useMarkRead, useNotifications } from './notificationsApi';
-import type { AppNotification } from './notificationsApi';
+import { Button } from '@/ui/Button/Button';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useToast } from '@/ui/Toast/useToast';
+import { cx } from '@/ui/cx';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
+import { useMarkAllRead, useMarkRead, useNotifications } from './api';
+import type { AppNotification } from './api';
 import styles from './NotificationList.module.css';
 
 /**

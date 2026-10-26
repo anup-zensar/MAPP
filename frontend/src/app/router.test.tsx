@@ -1,16 +1,18 @@
 import { screen, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HOME_ANSWERS } from '@/features/home/testData';
-import { mockApi } from '@/test/mockApi';
-import { renderRoutes } from '@/test/render';
-import { testUser } from '@/test/users';
+import { HOME_ANSWERS } from '@/testing/fixtures/home';
+import { mockApi } from '@/testing/mock-api';
+import { renderRoutes } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { nth } from '@/testing/dom';
+import { reply } from '@/testing/replies';
+import { ENVIRONMENT_LOCAL } from '@/testing/fixtures/environment';
 import { COMING_SOON_SECTIONS, MAIN_ITEMS, MORE_ITEMS } from './navigation';
-import { routes } from './router';
+import '@/testing/pages';
+import { routes } from './routes';
 
 const PRIYA = testUser();
-
-const ENVIRONMENT_LOCAL = { environment: 'local', demoSignIn: true };
 
 function BrokenPage(): never {
   throw new Error('A programming mistake');
@@ -18,7 +20,7 @@ function BrokenPage(): never {
 
 /** The app's root route — its layout and its error page — with one test page inside. */
 function renderInRoot(page: ReactElement) {
-  const [root] = routes;
+  const root = nth(routes, 0);
   renderRoutes(
     [
       {
@@ -67,7 +69,7 @@ describe('routes', () => {
   )(
     'opens %s from the sidebar address %s, highlighted, with its tab title (US2 scenario 1, SC-003)',
     async (label, path) => {
-      mockApi({ 'GET /api/v1/me': { body: PRIYA }, ...HOME_ANSWERS });
+      mockApi([reply('GET /api/v1/me', { body: PRIYA }), ...HOME_ANSWERS]);
       renderRoutes(routes, { route: path });
 
       const title = label === 'Home' ? 'Welcome back, Priya.' : label;
@@ -101,7 +103,7 @@ describe('routes', () => {
   ])(
     'names %s in the browser tab already while the session is checked (plan "Session")',
     async (path, title) => {
-      mockApi({ 'GET /api/v1/me': () => new Promise<never>(() => {}) });
+      mockApi([reply('GET /api/v1/me', () => new Promise<never>(() => {}))]);
       renderRoutes(routes, { route: path });
 
       await screen.findByRole('status');
@@ -115,13 +117,13 @@ describe('routes', () => {
   ])(
     'opens the developer page %s in the app layout, outside the navigation, where demo sign-in is on (research R23)',
     async (path, title) => {
-      mockApi({
-        'GET /api/v1/me': { body: PRIYA },
-        'GET /api/v1/environment': { body: ENVIRONMENT_LOCAL },
-        'GET /api/v1/sample-folders': { body: { items: [], total: 0 } },
-        'GET /api/v1/recycle-bin': { body: { items: [], total: 0 } },
-        'GET /api/v1/activity-log': { body: { items: [], total: 0 } },
-      });
+      mockApi([
+        reply('GET /api/v1/me', { body: PRIYA }),
+        reply('GET /api/v1/environment', { body: ENVIRONMENT_LOCAL }),
+        reply('GET /api/v1/sample-folders', { body: { items: [], total: 0 } }),
+        reply('GET /api/v1/recycle-bin', { body: { items: [], total: 0 } }),
+        reply('GET /api/v1/activity-log', { body: { items: [], total: 0 } }),
+      ]);
       renderRoutes(routes, { route: path });
 
       expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
@@ -134,12 +136,12 @@ describe('routes', () => {
   it.each(['/dev/sample-records', '/dev/components'])(
     'shows "Page not found" at %s where demo sign-in is off (FR-009, D-036)',
     async (path) => {
-      const api = mockApi({
-        'GET /api/v1/me': { body: PRIYA },
-        'GET /api/v1/environment': {
+      const api = mockApi([
+        reply('GET /api/v1/me', { body: PRIYA }),
+        reply('GET /api/v1/environment', {
           body: { ...ENVIRONMENT_LOCAL, environment: 'production', demoSignIn: false },
-        },
-      });
+        }),
+      ]);
       renderRoutes(routes, { route: path });
 
       expect(

@@ -1,8 +1,10 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Button, FilterChips, SearchField } from '@/components';
-import { cx } from '@/lib/cx';
-import { formatWhole } from '@/lib/decimal';
+import { Button } from '@/ui/Button/Button';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { cx } from '@/ui/cx';
+import { formatWhole } from '@/format/decimal';
 import styles from './FilterBar.module.css';
 import {
   ACTIVITY_STATUS_LABELS,
@@ -10,30 +12,24 @@ import {
   countText,
   FILTER_LABELS,
   FINANCE_LABELS,
+  isLabelled,
   PLAN_STATUS_LABELS,
   PLAN_TYPE_LABELS,
   SHOW_LEVELS_LABELS,
   STRATEGIC_LABELS,
-} from './allWorkText';
+} from './all-work-text';
 import type {
   AllWorkOptions,
   AllWorkResult,
   FilterValue,
   Filters,
   ViewState,
-} from './allWorkTypes';
+} from './all-work-types';
 import { FilterMenu } from './FilterMenu';
 import type { FilterChoice } from './FilterMenu';
-import {
-  chipsOf,
-  choicesOf,
-  clearAll,
-  hasFilters,
-  removeChip,
-  withYears,
-  yearRange,
-} from './viewState';
-import type { IdFilter } from './viewState';
+import { chipsOf, clearAll, hasFilters, removeChip } from './view-chips';
+import { choicesOf, withYears, yearRange } from './view-state';
+import type { IdFilter, ValueFilter } from './view-state';
 import { YearRangeMenu } from './YearRangeMenu';
 
 /** How long the search waits after the last key before the view follows (plan "Page layout"). */
@@ -117,16 +113,13 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
   }
 
   /** The menu of a filter that holds fixed values. */
-  function valueMenu<
-    K extends
-      | 'planStatuses'
-      | 'containerStatuses'
-      | 'activityStatuses'
-      | 'planTypes'
-      | 'planCurrencies'
-      | 'finance',
-  >(filter: K, labels: Record<string, string>, groupOf?: (value: string) => string) {
-    const chosen = (filters[filter] ?? []) as string[];
+  function valueMenu(
+    filter: ValueFilter,
+    labels: Record<string, string>,
+    set: (values: string[]) => void,
+    groupOf?: (value: string) => string,
+  ) {
+    const chosen: string[] = filters[filter] ?? [];
     return {
       label: FILTER_LABELS[filter],
       multiple: true,
@@ -137,7 +130,7 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
       })),
       selected: chosen,
       summary: chosen.length > 0 ? formatWhole(chosen.length) : undefined,
-      onChange: (values: string[]) => setFilters({ [filter]: values } as Partial<Filters>),
+      onChange: set,
     };
   }
 
@@ -147,15 +140,31 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
   const currencies = options?.planCurrencies ?? [];
   const menus = [
     idMenu('plans'),
-    valueMenu('planStatuses', PLAN_STATUS_LABELS),
-    valueMenu('planTypes', PLAN_TYPE_LABELS),
-    ...(currencies.length > 0 || (filters.planCurrencies?.length ?? 0) > 0
-      ? [valueMenu('planCurrencies', Object.fromEntries(currencies.map((code) => [code, code])))]
-      : []),
-    valueMenu('containerStatuses', CONTAINER_STATUS_LABELS, (value) =>
-      APPROVAL_PROGRESS.includes(value) ? 'Approval progress' : 'Timing',
+    valueMenu('planStatuses', PLAN_STATUS_LABELS, (values) =>
+      setFilters({ planStatuses: values.filter(isLabelled(PLAN_STATUS_LABELS)) }),
     ),
-    valueMenu('activityStatuses', ACTIVITY_STATUS_LABELS),
+    valueMenu('planTypes', PLAN_TYPE_LABELS, (values) =>
+      setFilters({ planTypes: values.filter(isLabelled(PLAN_TYPE_LABELS)) }),
+    ),
+    ...(currencies.length > 0 || (filters.planCurrencies?.length ?? 0) > 0
+      ? [
+          valueMenu(
+            'planCurrencies',
+            Object.fromEntries(currencies.map((code) => [code, code])),
+            (planCurrencies) => setFilters({ planCurrencies }),
+          ),
+        ]
+      : []),
+    valueMenu(
+      'containerStatuses',
+      CONTAINER_STATUS_LABELS,
+      (values) =>
+        setFilters({ containerStatuses: values.filter(isLabelled(CONTAINER_STATUS_LABELS)) }),
+      (value) => (APPROVAL_PROGRESS.includes(value) ? 'Approval progress' : 'Timing'),
+    ),
+    valueMenu('activityStatuses', ACTIVITY_STATUS_LABELS, (values) =>
+      setFilters({ activityStatuses: values.filter(isLabelled(ACTIVITY_STATUS_LABELS)) }),
+    ),
     idMenu('owners'),
     {
       ...idMenu('teams'),
@@ -167,14 +176,20 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
     },
     idMenu('businessUnits'),
     idMenu('activityTypes'),
-    valueMenu('finance', FINANCE_LABELS),
+    valueMenu('finance', FINANCE_LABELS, (values) =>
+      setFilters({ finance: values.filter(isLabelled(FINANCE_LABELS)) }),
+    ),
     {
       label: FILTER_LABELS.strategic,
       multiple: false,
       choices: Object.entries(STRATEGIC_LABELS).map(([value, label]) => ({ value, label })),
       selected: [filters.strategic],
       summary: filters.strategic === 'include' ? undefined : STRATEGIC_LABELS[filters.strategic],
-      onChange: ([value]: string[]) => setFilters({ strategic: value as Filters['strategic'] }),
+      onChange: ([value = '']: string[]) => {
+        if (isLabelled(STRATEGIC_LABELS)(value)) {
+          setFilters({ strategic: value });
+        }
+      },
     },
     {
       label: FILTER_LABELS.showLevels,
@@ -183,7 +198,11 @@ export function FilterBar({ state, options, count, updating, onChange }: FilterB
       selected: [filters.showLevels],
       summary:
         filters.showLevels === 'everything' ? undefined : SHOW_LEVELS_LABELS[filters.showLevels],
-      onChange: ([value]: string[]) => setFilters({ showLevels: value as Filters['showLevels'] }),
+      onChange: ([value = '']: string[]) => {
+        if (isLabelled(SHOW_LEVELS_LABELS)(value)) {
+          setFilters({ showLevels: value });
+        }
+      },
     },
   ];
 

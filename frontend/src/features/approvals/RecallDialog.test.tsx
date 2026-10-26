@@ -1,12 +1,13 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import type { HttpHandler } from 'msw';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { approvalOf, DANIEL, roundOf } from '@/testing/fixtures/approvals';
+import { reply } from '@/testing/replies';
 import { APPROVED_NO_RECALL } from './messages';
 import { RecallDialog } from './RecallDialog';
-import { approvalOf, DANIEL, roundOf } from './testData';
 
 const RECALL = 'POST /api/v1/activities/A-1042/approval/recall';
 
@@ -17,7 +18,7 @@ const RECALLED = approvalOf({
   rounds: [roundOf({ outcome: 'recalled', endedAt: '2026-03-12T10:00:00Z' })],
 });
 
-function renderDialog(answers: Record<string, MockHandler> = {}) {
+function renderDialog(answers: HttpHandler[] = []) {
   const api = mockApi(answers);
   const onClose = vi.fn();
   const rendered = renderWithProviders(<RecallDialog approval={approvalOf()} onClose={onClose} />, {
@@ -42,7 +43,13 @@ describe('RecallDialog (feature 008, US5)', () => {
   });
 
   it('recalls the round the person saw, with the reason, and says so (FR-021)', async () => {
-    const { user, api, onClose } = renderDialog({ [RECALL]: { body: RECALLED } });
+    const { user, api, onClose } = renderDialog([
+      reply(
+        'POST /api/v1/activities/{activityId}/approval/recall',
+        { body: RECALLED },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.type(
       screen.getByRole('textbox', { name: 'Reason (optional)' }),
@@ -56,7 +63,13 @@ describe('RecallDialog (feature 008, US5)', () => {
   });
 
   it('sends no reason when none is given', async () => {
-    const { user, api } = renderDialog({ [RECALL]: { body: RECALLED } });
+    const { user, api } = renderDialog([
+      reply(
+        'POST /api/v1/activities/{activityId}/approval/recall',
+        { body: RECALLED },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Recall submission' }));
 
@@ -64,19 +77,23 @@ describe('RecallDialog (feature 008, US5)', () => {
   });
 
   it('explains a round that ended meanwhile, with its time, and changes nothing (FR-018)', async () => {
-    const { user, onClose } = renderDialog({
-      [RECALL]: {
-        status: 409,
-        body: {
-          error: {
-            code: 'version_conflict',
-            message: 'Approval was restarted by Daniel Okoro',
-            fields: [],
-            conflict: { changedBy: DANIEL.name, changedAt: new Date().toISOString() },
+    const { user, onClose } = renderDialog([
+      reply(
+        'POST /api/v1/activities/{activityId}/approval/recall',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'version_conflict',
+              message: 'Approval was restarted by Daniel Okoro',
+              fields: [],
+              conflict: { changedBy: DANIEL.name, changedAt: new Date().toISOString() },
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Recall submission' }));
 
@@ -87,12 +104,16 @@ describe('RecallDialog (feature 008, US5)', () => {
   });
 
   it('shows why an Approved activity cannot be recalled (FR-021)', async () => {
-    const { user } = renderDialog({
-      [RECALL]: {
-        status: 400,
-        body: { error: { code: 'bad_request', message: APPROVED_NO_RECALL, fields: [] } },
-      },
-    });
+    const { user } = renderDialog([
+      reply(
+        'POST /api/v1/activities/{activityId}/approval/recall',
+        {
+          status: 400,
+          body: { error: { code: 'bad_request', message: APPROVED_NO_RECALL, fields: [] } },
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Recall submission' }));
 
@@ -100,18 +121,22 @@ describe('RecallDialog (feature 008, US5)', () => {
   });
 
   it('shows a problem with the reason under the field and keeps the dialog open', async () => {
-    const { user, onClose } = renderDialog({
-      [RECALL]: {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Check the reason.',
-            fields: [{ field: 'reason', message: 'Use 2,000 characters or fewer.' }],
+    const { user, onClose } = renderDialog([
+      reply(
+        'POST /api/v1/activities/{activityId}/approval/recall',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Check the reason.',
+              fields: [{ field: 'reason', message: 'Use 2,000 characters or fewer.' }],
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.type(screen.getByRole('textbox', { name: 'Reason (optional)' }), 'Too long');
     await user.click(screen.getByRole('button', { name: 'Recall submission' }));

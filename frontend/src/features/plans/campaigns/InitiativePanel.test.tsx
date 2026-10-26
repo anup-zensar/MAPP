@@ -1,0 +1,246 @@
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { Outlet } from 'react-router';
+import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
+import { SessionProvider } from '@/session/SessionProvider';
+import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
+import { financialsNotServed } from '@/testing/fixtures/plans';
+import { campaignForm } from '@/testing/fixtures/attribute-forms';
+import { mockApi } from '@/testing/mock-api';
+import { renderRoutes } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { pending, reply } from '@/testing/replies';
+import { launchFilmRow } from '@/testing/fixtures/activities';
+import { initiative, PEOPLE, planAnswer, usd } from '@/testing/fixtures/campaigns';
+import { InitiativePanel } from './InitiativePanel';
+
+const DETAILS = '/plans/P-1001/initiatives/I-1001';
+
+function renderPanel(route: string, answers: HttpHandler[] = []) {
+  const api = mockApi([
+    ...HISTORY_ANSWERS,
+    ...financialsNotServed('I-1001'),
+    reply(
+      'GET /api/v1/initiatives/{initiativeId}',
+      { body: initiative() },
+      { initiativeId: 'I-1001' },
+    ),
+    reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+    reply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      {
+        body: { ...campaignForm(), level: 'initiative' },
+      },
+      { level: 'initiative' },
+    ),
+    reply('GET /api/v1/people', { body: PEOPLE }),
+    // Feature 006's list of the initiative's activities stays loading unless a test answers it.
+    reply('GET /api/v1/plans/{planId}/activities', pending, { planId: 'P-1001' }),
+    ...answers,
+  ]);
+  const rendered = renderRoutes(
+    [
+      {
+        element: (
+          <SessionProvider>
+            <Outlet />
+          </SessionProvider>
+        ),
+        children: [
+          {
+            path: '/plans/:planId',
+            element: <Outlet />,
+            children: [
+              { path: 'initiatives/:initiativeId', element: <InitiativePanel mode="details" /> },
+              { path: 'initiatives/:initiativeId/edit', element: <InitiativePanel mode="edit" /> },
+              { path: '*', element: <p>Another panel</p> },
+              { index: true, element: <p>Plan page</p> },
+            ],
+          },
+          { path: '*', element: <p>Another page</p> },
+        ],
+      },
+    ],
+    { route, user: testUser() },
+  );
+  return { api, ...rendered };
+}
+
+async function findForm() {
+  await screen.findByLabelText('Initiative name');
+  await screen.findByText(/Priya Raman/);
+  return screen.getByRole('dialog', { name: 'Edit initiative' });
+}
+
+describe('InitiativePanel (feature 005, US3)', () => {
+  it('shows its campaign, the remaining campaign budget and what is below it (FR-016)', async () => {
+    renderPanel(DETAILS, [
+      reply(
+        'GET /api/v1/initiatives/{initiativeId}',
+        {
+          body: initiative({
+            counts: { activities: 3, approvedActivities: 1, lineItems: 5 },
+            parentRemainingBudget: usd('-50000.00'),
+          }),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+      reply(
+        'GET /api/v1/plans/{planId}/activities',
+        { body: { items: [launchFilmRow()], total: 1 } },
+        { planId: 'P-1001' },
+      ),
+    ]);
+    const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
+
+    expect(within(panel).getByText('INITIATIVE')).toBeInTheDocument();
+    // Its plan and campaign are values with links, not a second breadcrumb (UI audit C-02).
+    expect(within(panel).queryByRole('navigation', { name: /breadcrumb/i })).toBeNull();
+    expect(within(panel).getByRole('link', { name: 'Helix launch' })).toHaveAttribute(
+      'href',
+      '/plans/P-1001/campaigns/C-1001',
+    );
+    expect(within(panel).getByText('01 Feb – 30 Nov 2026 · Running')).toBeInTheDocument();
+    const money = within(panel).getByRole('region', { name: 'Budget and cost' });
+    expect(within(money).getByText('Remaining campaign budget')).toBeInTheDocument();
+    expect(within(money).getByText('Over-allocated by $50,000.00')).toBeInTheDocument();
+    expect(
+      within(panel).getByText('Activities: 3 (1 approved) · Line items: 5'),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(within(panel).getByRole('region', { name: 'Activities' })).toHaveTextContent(
+        launchFilmRow().name,
+      ),
+    );
+  });
+
+  it('says when nothing is below it yet', async () => {
+    renderPanel(DETAILS);
+    const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
+
+    expect(within(panel).getByText('No activities yet.')).toBeInTheDocument();
+  });
+
+  it('offers View history and feature 006’s actions under More', async () => {
+    const { user, router } = renderPanel(DETAILS);
+    const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
+
+    await user.click(within(panel).getByRole('button', { name: 'Actions for Digital & social' }));
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual([
+      'Copy',
+      'Move to…',
+      'View history',
+      'Add activity',
+      'Delete',
+    ]);
+    await user.click(screen.getByRole('menuitem', { name: 'Add activity' }));
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(
+        '/plans/P-1001/initiatives/I-1001/activities/new',
+      ),
+    );
+  });
+
+  it('shows the initiative’s History, which View history brings up (011 FR-011, FR-012)', async () => {
+    const { user } = renderPanel(DETAILS);
+    const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
+    const history = within(panel).getByRole('region', { name: 'History' });
+    expect(
+      within(history).getByText('Every change to this initiative, newest first'),
+    ).toBeVisible();
+    expect(within(history).getByRole('checkbox', { name: 'Include items inside' })).toBeVisible();
+
+    await user.click(within(panel).getByRole('button', { name: 'Actions for Digital & social' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
+
+    await waitFor(() =>
+      expect(within(history).getByRole('heading', { level: 3, name: 'History' })).toHaveFocus(),
+    );
+  });
+
+  it('edits with the campaign read-only and its dates as the allowed range (FR-006, FR-018)', async () => {
+    const { user, api, router } = renderPanel(`${DETAILS}/edit`, [
+      reply(
+        'PATCH /api/v1/initiatives/{initiativeId}',
+        { body: initiative({ version: 4 }) },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
+    const form = await findForm();
+
+    expect(within(form).getByLabelText('Campaign')).toHaveValue('Helix launch');
+    expect(
+      within(form).getByText("Must be inside the campaign's dates (01 Jan 2026 – 31 Dec 2026)"),
+    ).toBeInTheDocument();
+    expect(within(form).getByText('$100,000.00')).toBeInTheDocument();
+
+    await user.type(within(form).getByLabelText('Description'), 'Paid social.');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(DETAILS));
+    expect(api.bodiesOf('PATCH /api/v1/initiatives/I-1001')).toEqual([
+      expect.objectContaining({ description: 'Paid social.', version: 3 }),
+    ]);
+  });
+
+  it('shows the API’s R3 and FR-007 messages under the dates (FR-006, FR-007)', async () => {
+    const r3 = "Dates must be inside the campaign's dates (01 Jan 2026 – 31 Dec 2026).";
+    const fr007 =
+      'Launch webinar (01 Mar – 31 Mar 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
+    const { user } = renderPanel(`${DETAILS}/edit`, [
+      reply(
+        'PATCH /api/v1/initiatives/{initiativeId}',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [
+                { field: 'startDate', message: fr007 },
+                { field: 'endDate', message: r3 },
+              ],
+            },
+          },
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
+    const form = await findForm();
+
+    fireEvent.change(within(form).getByLabelText('Start date'), {
+      target: { value: '2026-04-01' },
+    });
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+
+    expect(await within(form).findByText('2 problems need your attention')).toBeInTheDocument();
+    expect(within(form).getByLabelText('Start date')).toHaveAccessibleDescription(fr007);
+    expect(within(form).getByLabelText('End date')).toHaveAccessibleDescription(r3);
+  });
+
+  it('says when the initiative no longer exists', async () => {
+    renderPanel(DETAILS, [
+      reply(
+        'GET /api/v1/initiatives/{initiativeId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This initiative no longer exists — someone may have deleted it.',
+              fields: [],
+            },
+          },
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
+
+    expect(
+      await screen.findByText('This initiative no longer exists — someone may have deleted it.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to the plan' })).toBeInTheDocument();
+  });
+});

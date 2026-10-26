@@ -1,34 +1,32 @@
 import { Pencil } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import {
-  ActionsMenu,
-  Card,
-  ErrorState,
-  LevelTag,
-  LinkButton,
-  LockedNote,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-} from '@/components';
-import { localDate } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { LockedNote } from '@/ui/LockedNote/LockedNote';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { localDate } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import {
   conditionText,
   isChoiceType,
   LEVEL_WORDS,
   MARKING_WORDS,
   TYPE_WORDS,
-} from './attributeWords';
+} from './attribute-words';
 import { AttributePreview } from './AttributePreview';
 import { OptionsCard } from './OptionsCard';
-import { useShellAttribute } from './shellAttributesApi';
-import type { ShellAttribute } from './shellAttributesApi';
+import { useShellAttribute } from './api';
+import type { ShellAttribute } from './api';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
 
 const NOT_FOUND = 'This Shell attribute no longer exists — someone may have deleted it.';
 

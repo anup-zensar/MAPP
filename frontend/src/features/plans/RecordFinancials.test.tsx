@@ -1,10 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { components } from '@/api/schema';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import type { components } from '@/api/generated/schema';
+import { mockApi } from '@/testing/mock-api';
+import type { Answer } from '@/testing/replies';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { RecordFinancials } from './RecordFinancials';
 
 type FinancialRecordView = components['schemas']['FinancialRecordView'];
@@ -54,8 +55,11 @@ function view(overrides: Partial<FinancialRecordView> = {}): FinancialRecordView
   };
 }
 
-function renderSection(answer: MockHandler, variant: 'page' | 'panel' = 'page') {
-  mockApi({ 'GET /api/v1/financials/records/P-1001': answer });
+function renderSection(
+  answer: Answer<'GET /api/v1/financials/records/{recordId}'>,
+  variant: 'page' | 'panel' = 'page',
+) {
+  mockApi([reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'P-1001' })]);
   return renderWithProviders(
     <RecordFinancials recordId="P-1001" planId="P-1001" variant={variant} />,
     { user: testUser(), route: '/plans/P-1001', path: '/plans/:planId' },

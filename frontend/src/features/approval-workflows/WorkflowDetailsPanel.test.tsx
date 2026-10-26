@@ -1,18 +1,26 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ALEX, DANIEL } from '@/features/approvals/testData';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { CHINA_WORKFLOW, detailsOf, workflowOf } from './testData';
+import { ALEX, DANIEL } from '@/testing/fixtures/approvals';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import {
+  CHINA_WORKFLOW,
+  detailsOf,
+  WORKFLOW_LEVEL_1,
+  WORKFLOW_LEVEL_2,
+  workflowOf,
+} from '@/testing/fixtures/approval-workflows';
+import { htmlElement } from '@/testing/dom';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
-import { WORKFLOW_GONE } from './workflowTexts';
+import { WORKFLOW_GONE } from './workflow-texts';
 
-const DETAILS = 'GET /api/v1/approval-workflows/WF-1001';
-
-function renderPanel(answer: MockHandler) {
-  mockApi({ [DETAILS]: answer });
+function renderPanel(answer: Answer<'GET /api/v1/approval-workflows/{workflowId}'>) {
+  mockApi([
+    reply('GET /api/v1/approval-workflows/{workflowId}', answer, { workflowId: 'WF-1001' }),
+  ]);
   const actions = { edit: vi.fn(), setInactive: vi.fn(), setActive: vi.fn(), remove: vi.fn() };
   const onClose = vi.fn();
   const rendered = renderWithProviders(
@@ -48,10 +56,7 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
 
   it('warns about a level without active approver, marked "(inactive)" (edge case)', async () => {
     const workflow = workflowOf({
-      levels: [
-        workflowOf().levels[0],
-        { ...workflowOf().levels[1], approvers: [{ ...ALEX, active: false }] },
-      ],
+      levels: [WORKFLOW_LEVEL_1, { ...WORKFLOW_LEVEL_2, approvers: [{ ...ALEX, active: false }] }],
       warnings: ['Level 2 has no active approver'],
     });
     renderPanel({ body: detailsOf(workflow) });
@@ -162,11 +167,11 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
     const items = within(levels)
       .getAllByRole('listitem')
       .filter((item) => item.closest('ol'));
-    const first = items.find((item) => item.textContent?.startsWith('L1')) as HTMLElement;
+    const first = htmlElement(items.find((item) => item.textContent?.startsWith('L1')));
     expect(first).toHaveTextContent("The owner's line manager");
     expect(first).toHaveTextContent('Approved automatically when planned cost is below $10,000.00');
     expect(first).toHaveTextContent('Backup approver: Alex Morgan');
-    const second = items.find((item) => item.textContent?.startsWith('L2')) as HTMLElement;
+    const second = htmlElement(items.find((item) => item.textContent?.startsWith('L2')));
     expect(second).toHaveTextContent('Role: Approver');
     expect(second).toHaveTextContent('All must approve');
     expect(second).toHaveTextContent('Only needed when planned cost is at least $100,000.00');

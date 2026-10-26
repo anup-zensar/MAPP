@@ -1,10 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
 import { BinRow } from './BinRow';
 import type { BinRowProps } from './BinRow';
-import { binItem, lineItemEntry } from './testData';
 
 const PARENT = { type: 'initiative', typeLabel: 'initiative', id: 'I-1009', name: 'Trade shows' };
 

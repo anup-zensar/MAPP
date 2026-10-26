@@ -1,25 +1,22 @@
 import { ClipboardList } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
-import {
-  Button,
-  Card,
-  EmptyState,
-  InfoTip,
-  LinkButton,
-  ProgressBar,
-  Skeleton,
-  StatusChip,
-  TeamPills,
-} from '@/components';
-import { STATUS } from '@/features/plans/planText';
-import { cx } from '@/lib/cx';
-import { formatWhole } from '@/lib/decimal';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import { useHomePlans } from './homeApi';
-import type { HomePlanRow, HomeScope } from './homeApi';
-import { plansListHref } from './homeLinks';
+import { Button, LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import { STATUS } from '@/features/plans';
+import { cx } from '@/ui/cx';
+import { formatWhole } from '@/format/decimal';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import { useHomePlans } from './api';
+import type { HomePlanRow, HomeScope } from './api';
+import { plansListHref } from './home-links';
 import {
   NOTHING_PLANNED,
   PLANS_AT_A_GLANCE,
@@ -28,7 +25,7 @@ import {
   isZero,
   percentText,
   viewAllPlansText,
-} from './homeText';
+} from './home-text';
 import styles from './PlansAtAGlanceCard.module.css';
 import { SectionError } from './SectionError';
 
@@ -90,7 +87,7 @@ function PlansTable({ rows }: { rows: HomePlanRow[] }) {
 
   /** A click anywhere on a row opens the plan; its links keep working on their own. */
   function openRow(event: MouseEvent<HTMLTableRowElement>, href: string) {
-    if (!(event.target as HTMLElement).closest('a, button')) {
+    if (!(event.target instanceof Element && event.target.closest('a, button'))) {
       navigate(href);
     }
   }

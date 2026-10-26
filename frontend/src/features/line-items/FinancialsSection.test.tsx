@@ -1,32 +1,36 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
+import { nth } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
+import type { Answer } from '@/testing/replies';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { usd } from '@/testing/fixtures/line-items';
 import {
   activityRecord,
   figures,
   lineItemRecord,
   transaction,
   transactionPage,
-  usd,
-} from './testData';
+} from '@/testing/fixtures/line-item-financials';
+import { reply } from '@/testing/replies';
+import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 
-function renderActivity(answer: MockHandler) {
-  mockApi({ 'GET /api/v1/financials/records/A-1001': answer });
+function renderActivity(answer: Answer<'GET /api/v1/financials/records/{recordId}'>) {
+  mockApi([reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'A-1001' })]);
   return renderWithProviders(<ActivityFinancials activityId="A-1001" />, { user: testUser() });
 }
 
 function renderLineItem(
-  answer: MockHandler,
-  transactions: MockHandler = { body: transactionPage([transaction()]) },
+  answer: Answer<'GET /api/v1/financials/records/{recordId}'>,
+  transactions: Answer<'GET /api/v1/financials/transactions'> = {
+    body: transactionPage([transaction()]),
+  },
 ) {
-  mockApi({
-    'GET /api/v1/financials/records/L-1001': answer,
-    'GET /api/v1/financials/transactions': transactions,
-  });
+  mockApi([
+    reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'L-1001' }),
+    reply('GET /api/v1/financials/transactions', transactions),
+  ]);
   return renderWithProviders(<LineItemFinancials lineItemId="L-1001" />, { user: testUser() });
 }
 
@@ -48,12 +52,14 @@ describe('ActivityFinancials (015 US1, FR-011 – FR-015)', () => {
 
     const byLineItem = within(card).getByRole('table', { name: 'Financial figures by line item' });
     const rows = within(byLineItem).getAllByRole('row');
-    expect(within(rows[1]).getByRole('link', { name: 'Agency fee' })).toHaveAttribute(
+    expect(within(nth(rows, 1)).getByRole('link', { name: 'Agency fee' })).toHaveAttribute(
       'href',
       '/line-items/L-1001',
     );
-    expect(within(rows[2]).getAllByRole('cell')[1]).toHaveTextContent('52,000.00 USD');
-    expect(within(rows[2]).getAllByRole('cell')[1]).toHaveTextContent('Above planned cost');
+    expect(nth(within(nth(rows, 2)).getAllByRole('cell'), 1)).toHaveTextContent('52,000.00 USD');
+    expect(nth(within(nth(rows, 2)).getAllByRole('cell'), 1)).toHaveTextContent(
+      'Above planned cost',
+    );
 
     const latest = within(card).getByRole('table', {
       name: 'The latest transactions, newest first',

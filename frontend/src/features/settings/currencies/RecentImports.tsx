@@ -1,9 +1,11 @@
-import { Card, ErrorState, Skeleton } from '@/components';
-import { formatWhole } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import settingsStyles from '../shared/SettingsTable.module.css';
-import { RECENT_IMPORTS, useRateImports } from './ratesApi';
-import type { RateImport } from './ratesApi';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { formatWhole } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
+import settingsStyles from '@/ui/settings-table.module.css';
+import { RECENT_IMPORTS, useRateImports } from './rates-api';
+import type { RateImport } from './rates-api';
 import styles from './rates.module.css';
 
 /**

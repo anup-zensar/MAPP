@@ -1,22 +1,18 @@
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import type { components } from '@/api/schema';
-import { Button, problemOf, TextField, Tooltip } from '@/components';
-import type { FieldProblem } from '@/components';
+import type { components } from '@/api/generated/schema';
+import { Button } from '@/ui/Button/Button';
+import { problemOf } from '@/ui/FormPanel/problem-of';
+import { TextField } from '@/ui/TextField/TextField';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { LinkedToField } from './LinkedToField';
+import type { OptionRow } from './schemas';
 import styles from './ShellAttributes.module.css';
 
 type FormAttribute = components['schemas']['FormAttribute'];
 type FormOption = components['schemas']['FormOption'];
-
-/** One option being typed; `key` keeps the row's field while rows move. */
-export interface OptionRow {
-  key: number;
-  label: string;
-  /** The parent options it is linked to (dependent attributes only). */
-  parentOptionIds: string[];
-}
 
 export interface OptionsEditorProps {
   rows: OptionRow[];
@@ -55,9 +51,11 @@ export function OptionsEditor({ rows, onChange, problems, parent }: OptionsEdito
   }
 
   function move(index: number, by: -1 | 1) {
-    const next = [...rows];
-    [next[index], next[index + by]] = [next[index + by], next[index]];
-    onChange(next);
+    const row = rows[index];
+    const other = rows[index + by];
+    if (row && other) {
+      onChange(rows.with(index, other).with(index + by, row));
+    }
   }
 
   function update(key: number, change: Partial<OptionRow>) {

@@ -90,5 +90,15 @@ export async function callApi<T>(
   if (!response.ok()) {
     throw new Error(`${method} ${url} answered ${response.status()}: ${await response.text()}`);
   }
-  return (await response.json()) as T;
+  const body: T = await response.json();
+  return body;
+}
+
+/** The item at `index`; fails the test when there is none. */
+export function itemAt<T>(items: readonly T[], index: number): T {
+  const item = items.at(index);
+  if (item === undefined) {
+    throw new Error(`Expected an item at ${index} of ${items.length}.`);
+  }
+  return item;
 }

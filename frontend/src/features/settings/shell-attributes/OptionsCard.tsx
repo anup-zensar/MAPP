@@ -1,31 +1,30 @@
 import { Download, Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  SearchField,
-  SegmentedFilter,
-  Skeleton,
-  StatusChip,
-  useToast,
-} from '@/components';
-import type { ActionsMenuItem } from '@/components';
-import { formatWhole } from '@/lib/decimal';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { formatWhole } from '@/format/decimal';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import { ImportOptionsDialog } from './ImportOptionsDialog';
-import { downloadOptionsTemplate } from './importTemplate';
+import { downloadOptionsTemplate } from './import-template';
 import { OptionPanel } from './OptionPanel';
+import { CHANGED_BY_ANY_CHANGE } from './api';
+import type { ShellAttribute } from './api';
 import {
-  CHANGED_BY_ANY_CHANGE,
   useDeleteOption,
   useMoveOption,
   useSetOptionStatus,
   useShellAttributeOptions,
-} from './shellAttributesApi';
-import type { OptionStatus, ShellAttribute, ShellAttributeOption } from './shellAttributesApi';
+} from './options-api';
+import type { OptionStatus, ShellAttributeOption } from './options-api';
 import styles from './ShellAttributes.module.css';
 import { useFailureToast, useStatusChange } from './useStatusChange';
 

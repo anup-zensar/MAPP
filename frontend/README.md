@@ -2,7 +2,7 @@
 
 The MAPP web app: React 19 + TypeScript (strict), built with Vite (ADR-0002). It talks to the Go API
 only through a small client whose types are generated from the API contract. Styles are plain CSS
-Modules on the design tokens of `src/styles/tokens.css`; how screens look is in
+Modules on the design tokens of `src/ui/tokens.css`; how screens look is in
 [docs/product/design-system.md](../docs/product/design-system.md).
 
 ## Commands
@@ -10,17 +10,17 @@ Modules on the design tokens of `src/styles/tokens.css`; how screens look is in
 Run them in this folder (`frontend/`). Start the API first (see [backend/README.md](../backend/README.md)):
 the development server forwards `/api` to <http://127.0.0.1:8080> (or to `MAPP_API_URL`).
 
-| Command             | What it does                                                                         |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| `npm install`       | Installs the dependencies (first time, and after `package.json` changes)             |
-| `npm run dev`       | Development server on <http://127.0.0.1:5173>                                        |
-| `npm run build`     | Type-checks the app code (not the tests) and builds it into `dist/`                  |
-| `npm run preview`   | Serves that build on <http://127.0.0.1:4173>                                         |
-| `npm run check`     | All checks: API types up to date, type check, lint, format, unit and component tests |
-| `npm test`          | Unit and component tests once (`npm run test:watch` keeps watching)                  |
-| `npm run test:e2e`  | Browser tests (Playwright), see below                                                |
-| `npm run api:types` | Regenerates `src/api/schema.d.ts` after a change to `backend/api/openapi.yaml`       |
-| `npm run format`    | Formats every file with Prettier (`npm run lint` runs ESLint alone)                  |
+| Command             | What it does                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `npm install`       | Installs the dependencies (first time, and after `package.json` changes)                 |
+| `npm run dev`       | Development server on <http://127.0.0.1:5173>                                            |
+| `npm run build`     | Type-checks the app code (not the tests) and builds it into `dist/`                      |
+| `npm run preview`   | Serves that build on <http://127.0.0.1:4173>                                             |
+| `npm run check`     | All checks: API types up to date, type check, lint, format, unit and component tests     |
+| `npm test`          | Unit and component tests once (`npm run test:watch` keeps watching)                      |
+| `npm run test:e2e`  | Browser tests (Playwright), see below                                                    |
+| `npm run api:types` | Regenerates `src/api/generated/schema.d.ts` after a change to `backend/api/openapi.yaml` |
+| `npm run format`    | Formats every file with Prettier (`npm run lint` runs ESLint alone)                      |
 
 `npm run test:e2e` builds the app and starts its own API and web app on ports 18080 and 14173, with
 fresh demo data in a temporary folder, so Go must be installed too. On a new computer, run
@@ -30,37 +30,57 @@ Ports are strict: when one is busy, the server stops with a message instead of m
 
 ## Folders
 
+The layout of constitution F2 (feature 026). Every folder may import only the folders below it, and
+`npm run lint` checks it.
+
 ```
 src/
-  app/          the frame: router.tsx (every page and its address), navigation.ts (sidebar items),
-                layouts, sidebar, account menu, session (SessionProvider, useSession) and theme
-  components/   shared building blocks (Button, PageHeader, Card, SidePanel, ConfirmDialog, Toast, …):
-                one folder per component, all exported from components/index.ts
-  features/     the pages of each area: sign-in/, home/, placeholders/ (Coming soon, Page not found,
-                and BuildingPage — the stub of a page still being built), dev/ (the developer pages),
-                and the Plan module's settings/, people/, plans/, campaigns/, activities/, line-items/,
-                approvals/, approval-workflows/, notifications/ (002–008), home/ (009, the Home
-                dashboard), all-work/ (010), activity-log/ and recycle-bin/ (011), access/ (Settings ›
-                Roles and access, Your access) and global-budgets/ (014), financials/ (015: the
-                Financials page, transaction panel, GSAP import and link dialogs), budget-phasing/
-                (016: Budget by month) and settings/currencies/ (rate history, GSAP rate import) and
-                settings/field-help/ (016)
-  api/          client.ts (api and call()), errors.ts (ApiError and its messages), settingsQueries.ts
-                (Settings read hooks) and schema.d.ts — generated from the contract: never edit it by hand
-  lib/          small helpers: format.ts (dates, date ranges, relative times and money), decimal.ts
-                (typed amounts, percentages, rates — exact, with BigInt), text.ts, waterfall.ts,
-                recordLinks.ts (the address of every planning record), useFormatters (dates and money
-                for the signed-in person), download.ts (files the API sends: All work's export),
-                safeNext.ts, usePageTitle, useUndoableDelete, useUnsavedChanges, cx
-  styles/       tokens.css (every colour and size, light and dark) and global.css
-  test/         test helpers: setup.ts, mockApi.ts, render.tsx, users.ts (testUser()) and
-                attributeForms.ts (Shell attribute forms)
-e2e/            Playwright end-to-end tests: smoke.spec.ts (001), core-flow.spec.ts (002–008 core),
-                module-rest.spec.ts (the rest of the module, D-221), activity-log.spec.ts,
-                recycle-bin.spec.ts and activity-log-and-recycle-bin.spec.ts (011); helpers fixtures.ts
-                and planning.ts (records prepared through the API). Each journey signs in as the demo
-                person whose role allows its steps (014). The journeys of 014–017 are not written yet
+  main.tsx      mounts <App /> and nothing else
+  app/          the frame: App.tsx (providers, fonts, tokens), routes.tsx (every page and its address),
+                pages.tsx (each page, loaded with its feature's code), layouts, sidebar, top bar,
+                account menu, notification bell, navigation.ts (sidebar items), settings-sections.ts
+                (the cards of the Settings page), error pages
+  features/     one folder per business area: sign-in, home, plans (with campaigns/ and phasing/),
+                activities, line-items, approvals, approval-workflows, notifications, all-work,
+                activity-log, recycle-bin, people (with access/ — roles and access), global-budgets,
+                financials, settings (models, activity types, Shell attributes, currencies, finance
+                budget items, field help), placeholders and dev. Each has one index.ts — the only way
+                in for other code —, api.ts (TanStack Query hooks) and schemas.ts (Zod schemas)
+  ui/           the design tokens (tokens.css, global.css) and the shared building blocks: one folder
+                per component (Button/, PageHeader/, FormField/, …) and small helpers (cx, usePageTitle,
+                useUndoableDelete, useUnsavedChanges, useFormProblems, record-links, theme). No index.ts:
+                import `@/ui/Button/Button`
+  api/          client.ts (api and call()), errors.ts (ApiError and its messages), download.ts, and
+                generated/schema.d.ts — generated from the contract: never edit it by hand
+  session/      the signed-in person: SessionProvider, useSession, RequireSignIn, RequirePermission,
+                access.ts (permissions), safe-next.ts, api.ts
+  format/       intl.ts (dates, times and money through Intl), decimal.ts (exact amounts, percentages
+                and rates with BigInt), text.ts, useFormatters
+  testing/      test set-up (setup.ts), the fake API (mock-api.ts, replies.ts), render helpers,
+                dom.ts, axe.ts and fixtures/ (test data per feature)
+e2e/            Playwright end-to-end tests and their helpers (fixtures.ts, planning.ts)
 ```
+
+Imports across top-level folders use the `@/` alias; inside one folder or one feature they are
+relative. A feature reaches another feature only through `@/features/<name>`. Components never call
+the API client or `fetch`: they use the hooks of an `api.ts` module. Tests sit next to the code they test
+(`Name.test.tsx`).
+
+## Forms
+
+Every form uses React Hook Form with a Zod schema in its feature's `schemas.ts`, and shows its
+problems on Save, all at once (`src/features/sign-in/SignInForm.tsx` is the shortest example):
+
+```tsx
+const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues, ...CHECK_ON_SAVE });
+const { problems, onInvalid, showServerProblems } = useFormProblems(form, FIELDS);
+// <FormErrorSummary errors={problems} />
+// <FormField control={form.control} name="email" render={(field) => <TextField label="E-mail" {...field} />} />
+```
+
+A 400 from the API goes to `showServerProblems(error.fields)`; `form.formState.isDirty` feeds
+`useUnsavedChanges`. URL parameters and stored preferences are parsed with Zod too, falling back to
+their default, and each such parser has a `fast-check` property test.
 
 ## Roles in the web app (014)
 
@@ -71,47 +91,48 @@ explain a refusal or a view-only page. Record answers carry `access` (what the r
 record); pages use it, and `useAccess().has(permission)`, to hide or explain actions. Sign in as the demo
 person with the role you want to see (see the root [README](../README.md#demo-people-and-their-roles)).
 
-Import from `src` with the `@/` alias: `import { Button, PageHeader } from '@/components';`. Tests sit
-next to the code they test (`Name.test.tsx`).
-
 ## How to add a page
 
 1. Create the page in `src/features/<area>/`, for example `PlansPage.tsx` with `PlansPage.module.css` and
-   `PlansPage.test.tsx`. Build it from the shared components of `@/components`, and name the browser
-   tab with `usePageTitle('Plans')` ("Plans · MAPP").
-2. Add its route in `src/app/router.tsx`. A page for signed-in people goes inside the `RequireSignIn`
-   group and needs `handle: { title: 'Plans' }`: the tab shows that title while the session is checked.
-3. Add or change its sidebar item in `src/app/navigation.ts`. When a section is built, it gets its real
-   page and leaves `COMING_SOON_SECTIONS`.
-4. Ask the API with TanStack Query, `api` and `call()`, as `src/features/dev/sampleApi.ts` does:
+   `PlansPage.test.tsx`. Build it from the shared components of `src/ui/`, name the browser tab with
+   `usePageTitle('Plans')` ("Plans · MAPP"), and export it from the feature's `index.ts`.
+2. Declare it in `src/app/pages.tsx` (`lazy(() => plans().then((feature) => ({ default: feature.PlansPage })))`)
+   and give it its address in `src/app/routes.tsx`. A page for signed-in people goes inside the
+   `RequireSignIn` group and needs `handle: { title: 'Plans' }`: the tab shows that title while the
+   session is checked. Its code is then loaded with its feature, the first time a page of it opens.
+3. Add or change its sidebar item in `src/app/navigation.ts`.
+4. Ask the API with TanStack Query in the feature's `api.ts`, with `api` and `call()`:
    `useQuery({ queryKey: ['sample-folders'], queryFn: () => call(api.GET('/api/v1/sample-folders')) })`.
-   `call()` returns the data or throws an `ApiError` with a plain-language message.
-5. Need a new shared component? Only with a reason in the feature's plan: its own folder in
-   `src/components/`, a test, and an export in `index.ts`.
+   `call()` returns the data or throws an `ApiError` with a plain-language message. Components use
+   these hooks and never the client itself.
+5. Need a new shared component? Only with a reason in the feature's plan: its own folder in `src/ui/`,
+   with a test.
 
 ## Testing tips
 
 Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
 
-- **Fake API.** `mockApi({ 'GET /api/v1/me': { body: priya }, 'POST /api/v1/auth/sign-out': { status: 204 } })`
-  answers each `"METHOD /path"`; a function as the answer covers special cases (a slow answer, a network
-  failure). A request without an answer **fails the test** — except the app frame's background
-  requests (`FRAME_ANSWERS`: the Approvals count and the notifications, answered "nothing waiting"
-  unless the test answers them). To see what the code sent, keep what `mockApi` returns:
-  `api.requests`, or `api.bodiesOf('POST /api/v1/auth/sign-in')` for one endpoint.
-- **People.** `testUser(overrides)` (`src/test/users.ts`) is a complete signed-in person (Priya Raman);
-  `src/test/attributeForms.ts` has Shell attribute forms for form tests.
-- **Rendering** (`src/test/render.tsx`). Both helpers return `{ router, queryClient, user }`:
+- **Fake API.** Tests answer requests through Mock Service Worker: `mockApi([reply('GET /api/v1/me', { body: priya }), reply('POST /api/v1/auth/sign-out', { status: 204 })])`.
+  `reply` names an operation of the contract (`'GET /api/v1/plans/{planId}'`, with `{ planId: 'P-1004' }`
+  to answer one plan only), and its body must fit the contract, so a contract change that breaks a
+  test fails the type check. A function as the answer covers special cases (answers that change, a
+  slow answer, a network failure); `apiError(code, message)` builds an error body. A request without
+  an answer **fails the test** — except the app frame's background requests (`FRAME_ANSWERS`). To see
+  what the code sent, keep what `mockApi` returns: `api.requests`, or `api.bodiesOf('POST /api/v1/auth/sign-in')`.
+  Tests never replace the project's own modules with `vi.mock`.
+- **Test data.** `src/testing/fixtures/` holds the test data of each feature; `testUser(overrides)`
+  (`fixtures/users.ts`) is a complete signed-in person (Priya Raman). `src/testing/dom.ts` finds
+  elements without type assertions (`closestTo`, `parentOf`, `nextOf`, `nth`).
+- **Rendering** (`src/testing/render.tsx`). Both helpers return `{ router, queryClient, user }`:
   `router.state.location` is the current address, `user` clicks and types.
   - `renderWithProviders(ui, { route, user, path })` shows one page with the app's providers. `user` is the
     signed-in person (`null`, the default: nobody); `ui` is shown at `path` (every address unless given);
     other addresses show the stand-ins "Sign-in page" and "Another page".
   - `renderRoutes(routes, { route, user })` renders the app's real routes. Without `user`, the app asks
-    `GET /api/v1/me` as on a real page load, so mock it.
-  - `renderApp(path, answers)` (`src/test/app.tsx`) opens the whole app at an address as `testUser()`,
-    with `answers` for the page's requests; `expectCurrentSection('Plans')` checks the sidebar. Each
-    feature folder's `routes.test.tsx` uses them; it stands in for other features' parts with
-    `vi.mock`, so their changes never break it.
+    `GET /api/v1/me` as on a real page load, so answer it.
+  - `renderApp(path, answers)` (`src/testing/app.tsx`) opens the whole app at an address as `testUser()`,
+    with `answers` for the page's requests; `expectCurrentSection('Plans')` checks the sidebar. Pages load
+    lazily, so wait for them with `findBy…`.
 - **Toast buttons.** `await findMessages()` before clicking a button in a message (Try again, Undo): the
   messages area takes clicks only a moment after the text appears.
 - **After a navigation, wait in two steps**: first for the address,
@@ -138,9 +159,9 @@ Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
 
 MAPP looks like a Shell enterprise tool (product owner decisions of 20 October 2026; design system
 §2–§5): a white 56 px top bar and a white 240 px sidebar on a light grey page (`#F5F5F5`), white cards,
-Shell yellow (`#FFC800`, dark text) for the one primary button of a page or dialog and for the "you are
+Shell yellow (`#FFC600`, dark text) for the one primary button of a page or dialog and for the "you are
 here" bar, red only for danger and errors, Jost for headings and Arial for text. Every colour, size and
-space is a token in `src/styles/tokens.css` (light and dark); components use `var(--token)` and never
+space is a token in `src/ui/tokens.css` (light and dark); components use `var(--token)` and never
 raw colours, font sizes or off-grid spacing:
 
 - type: `--text-xs` 12 px … `--text-3xl` 32 px (14 px base), headings in `--font-heading`;
@@ -157,5 +178,5 @@ inside it cannot widen the whole page.
 - **Jost** (headings), from `@fontsource/jost` 5.3.0: Copyright 2020 The Jost Project Authors
   (<https://github.com/indestructible-type/Jost>), licensed under the SIL Open Font License, Version 1.1
   (OFL-1.1). The full licence text ships with the package (`node_modules/@fontsource/jost/LICENSE`) and is
-  at <https://openfontlicense.org>. Only the Latin 600 and 700 weights are bundled, by `src/main.tsx`.
+  at <https://openfontlicense.org>. Only the Latin 600 and 700 weights are bundled, by `src/app/App.tsx`.
 - No Shell logo (pecten) or Shell typeface is used: both need Shell's written consent.

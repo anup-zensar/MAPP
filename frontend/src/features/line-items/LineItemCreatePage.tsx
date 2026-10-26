@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useAttributeForm } from '@/api/settingsQueries';
-import { useToast } from '@/components';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { useAttributeForm } from '@/features/settings';
+import { useToast } from '@/ui/Toast/useToast';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { LineItemForm } from './LineItemForm';
-import { newFormState } from './lineItemFormState';
-import { activityLineItemsHref } from './lineItemLinks';
+import { newFormState } from './line-item-form-state';
+import { activityLineItemsHref } from './line-item-links';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
-import { useCreateLineItem, useLineItemFormOptions } from './lineItemsApi';
-import { createdToast, NEW_TITLE } from './lineItemText';
+import { useCreateLineItem, useLineItemFormOptions } from './api';
+import { createdToast, NEW_TITLE } from './line-item-text';
 
 /**
  * New line item (US2, FR-006 – FR-010), at /activities/:activityId/line-items/new: the form filled

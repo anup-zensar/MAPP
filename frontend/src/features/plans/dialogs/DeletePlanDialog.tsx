@@ -1,6 +1,7 @@
-import { ConfirmDialog, Skeleton } from '@/components';
-import { usePlan } from '../plansApi';
-import { contentsText } from '../planText';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { usePlan } from '../api';
+import { contentsText } from '../plan-text';
 import styles from './dialogs.module.css';
 
 export interface DeletePlanDialogProps {

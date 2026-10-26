@@ -1,15 +1,20 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { useAttributeForm } from '@/api/settingsQueries';
-import { Button, Card, PersonLabel, ShellAttributeValues, Skeleton, TeamPills } from '@/components';
-import { formatAmount, formatPercent } from '@/lib/decimal';
-import { localDate } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
+import { useAttributeForm } from '@/features/settings';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { ShellAttributeValues } from '@/ui/ShellAttributeFields/ShellAttributeValues';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { TeamPills } from '@/ui/TeamPill/TeamPill';
+import { formatAmount, formatPercent } from '@/format/decimal';
+import { localDate } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 import { AmountPair } from './AmountPair';
-import { PLAN_TYPE_LABELS } from './planCurrency';
+import { PLAN_TYPE_LABELS } from './plan-currency';
 import styles from './PlanDetails.module.css';
-import type { Plan } from './plansApi';
-import { SPREAD_LABELS } from './planText';
+import type { Plan } from './api';
+import { SPREAD_LABELS } from './plan-text';
 
 const NOTHING = '—';
 

@@ -1,9 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useId } from 'react';
-import { Button } from '@/components';
-import { formatWhole } from '@/lib/decimal';
-import { PAGE_SIZES } from './financialsLinks';
-import type { PageSize } from './financialsLinks';
+import { Button } from '@/ui/Button/Button';
+import { formatWhole } from '@/format/decimal';
+import { PAGE_SIZES } from './financials-links';
+import type { PageSize } from './financials-links';
+import { pageSizeOf } from './schemas';
 import styles from './Pager.module.css';
 
 export interface PagerProps {
@@ -29,7 +30,12 @@ export function Pager({ page, pageSize, total, onPage, onPageSize }: PagerProps)
           id={id}
           className={styles.select}
           value={pageSize}
-          onChange={(event) => onPageSize(Number(event.target.value) as PageSize)}
+          onChange={(event) => {
+            const size = pageSizeOf(event.target.value);
+            if (size !== null) {
+              onPageSize(size);
+            }
+          }}
         >
           {PAGE_SIZES.map((size) => (
             <option key={size} value={size}>

@@ -1,25 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import type { components } from '@/api/schema';
+import type { components } from '@/api/generated/schema';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
-import type { ActionsMenuItem } from '@/components';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { useToast } from '@/ui/Toast/useToast';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
+import { gateItem } from '@/session/gate-action';
 import { CopyPlanDialog } from './dialogs/CopyPlanDialog';
-import { gateItem } from './gateAction';
 import type { CopyRefusal } from './dialogs/CopyPlanDialog';
 import { DeletePlanDialog } from './dialogs/DeletePlanDialog';
 import { PublishBlockedDialog } from './dialogs/PublishBlockedDialog';
 import { UnpublishDialog } from './dialogs/UnpublishDialog';
-import {
-  PLAN_KEYS,
-  useCopyPlan,
-  useDeletePlan,
-  usePublishPlan,
-  useUnpublishPlan,
-} from './plansApi';
-import type { PlanCopyRequest } from './plansApi';
-import type { PlanStatus } from './planText';
+import { PLAN_KEYS, useCopyPlan, useDeletePlan, usePublishPlan, useUnpublishPlan } from './api';
+import type { PlanCopyRequest } from './api';
+import type { PlanStatus } from './plan-text';
 
 type ReadinessGroup = components['schemas']['ReadinessGroup'];
 type PlanAccess = components['schemas']['PlanAccess'];

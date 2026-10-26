@@ -1,22 +1,24 @@
 import { CircleAlert, CircleCheckBig } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Button, Card, EmptyState, LevelTag, Skeleton } from '@/components';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { LevelTag } from '@/ui/LevelTag/LevelTag';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
 import styles from './AttentionCard.module.css';
-import { useHomeAttention } from './homeApi';
-import type { HomeAttentionItem } from './homeApi';
-import type { ReasonFormatters } from './homeText';
+import { useHomeAttention } from './api';
+import type { HomeAttentionItem } from './api';
+import type { ReasonFormatters } from './attention-text';
 import {
-  ATTENTION_SUBTITLE,
   NOTHING_NEEDS_ATTENTION,
-  SHOW_FEWER,
   reasonLinkName,
   reasonLinkOf,
   reasonText,
-  viewAllText,
-} from './homeText';
+} from './attention-text';
+import { ATTENTION_SUBTITLE, SHOW_FEWER, viewAllText } from './home-text';
 import { SectionError } from './SectionError';
 
 /**

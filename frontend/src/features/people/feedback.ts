@@ -3,10 +3,11 @@
  * a failed status change as a message.
  */
 import { ApiError, conflictMessage } from '@/api/errors';
-import { useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
-import type { DateFormat } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
+import { useToast } from '@/ui/Toast/useToast';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import type { DateFormat } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 
 /** What the person can do after a conflict (feature 001's next step). */
 const CONFLICT_NEXT_STEP =

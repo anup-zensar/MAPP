@@ -1,34 +1,34 @@
 import { Plus, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import {
-  ActionsMenu,
-  Avatar,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  StatusChip,
-  TeamPill,
-} from '@/components';
-import { ListToolbar } from '@/features/settings/shared/ListToolbar';
-import styles from '@/features/settings/shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
-import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
-import { formatWhole } from '@/lib/decimal';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { TeamPill } from '@/ui/TeamPill/TeamPill';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import { useStatusFlow } from '@/ui/useStatusFlow';
+import { formatWhole } from '@/format/decimal';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 import { useShowFailure } from './feedback';
-import { useSetTeamStatus, useTeams } from './peopleApi';
-import type { Team } from './peopleApi';
-import { teamMoreItems } from './teamActions';
-import type { TeamActions } from './teamActions';
-import { DeleteTeamDialog, TeamDetailsPanel, TeamFormPanel } from './TeamPanels';
+import { useSetTeamStatus, useTeams } from './api';
+import type { Team } from './api';
+import { teamMoreItems } from './team-actions';
+import type { TeamActions } from './team-actions';
+import { DeleteTeamDialog } from './DeleteTeamDialog';
+import { TeamDetailsPanel } from './TeamDetailsPanel';
+import { TeamFormPanel } from './TeamFormPanel';
 import { usedByText } from './texts';
 import page from './lists.module.css';
-import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
-import { useCanChange } from '../settings/shared/useCanChange';
 
 const TEAM_NOUN = { one: 'team', many: 'teams' };
 

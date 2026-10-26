@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { UnpublishDialog } from './UnpublishDialog';
 
 describe('UnpublishDialog (FR-025)', () => {

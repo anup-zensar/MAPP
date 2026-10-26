@@ -1,11 +1,12 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { routes } from '@/app/router';
-import type { CurrentUser } from '@/app/useSession';
-import { mockApi } from '@/test/mockApi';
-import { renderRoutes, renderWithProviders } from '@/test/render';
+import type { CurrentUser } from '@/session/useSession';
+import { mockApi } from '@/testing/mock-api';
+import { renderAppRoutes } from '@/testing/app';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { NotFoundPage } from './NotFoundPage';
-import { testUser } from '@/test/users';
 
 const PRIYA: CurrentUser = testUser();
 
@@ -31,8 +32,8 @@ describe('NotFoundPage', () => {
   });
 
   it('is shown inside the app layout to a signed-in person (US2 scenario 6)', async () => {
-    mockApi({ 'GET /api/v1/me': { body: PRIYA } });
-    const { router } = renderRoutes(routes, { route: '/nowhere' });
+    mockApi([reply('GET /api/v1/me', { body: PRIYA })]);
+    const { router } = renderAppRoutes({ route: '/nowhere' });
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Page not found' }),
@@ -43,15 +44,15 @@ describe('NotFoundPage', () => {
   });
 
   it('is shown in the public layout to a visitor who is not signed in, without a redirect (US2 scenario 6)', async () => {
-    mockApi({
-      'GET /api/v1/me': {
+    mockApi([
+      reply('GET /api/v1/me', {
         status: 401,
         body: {
           error: { code: 'sign_in_required', message: 'Please sign in to continue.', fields: [] },
         },
-      },
-    });
-    const { router } = renderRoutes(routes, { route: '/nowhere' });
+      }),
+    ]);
+    const { router } = renderAppRoutes({ route: '/nowhere' });
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Page not found' }),
@@ -63,8 +64,8 @@ describe('NotFoundPage', () => {
   });
 
   it('shows the full-page loading placeholder while the session is checked (plan "Session")', async () => {
-    mockApi({ 'GET /api/v1/me': () => new Promise<never>(() => {}) });
-    renderRoutes(routes, { route: '/nowhere' });
+    mockApi([reply('GET /api/v1/me', () => new Promise<never>(() => {}))]);
+    renderAppRoutes({ route: '/nowhere' });
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
     expect(document.title).toBe('Page not found · MAPP');

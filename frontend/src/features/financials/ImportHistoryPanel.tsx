@@ -1,10 +1,14 @@
 import { FileText } from 'lucide-react';
 import { ApiError } from '@/api/errors';
-import { Button, EmptyState, ErrorState, SidePanel, Skeleton } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { useFinancialImports } from './financialsApi';
-import type { FinancialImport } from './financialsApi';
-import { importCountsText, NO_ACCESS, NO_DATA, relinkedText } from './financialsText';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useFormatters } from '@/format/useFormatters';
+import { useFinancialImports } from './api';
+import type { FinancialImport } from './api';
+import { importCountsText, NO_ACCESS, NO_DATA, relinkedText } from './financials-text';
 import styles from './ImportHistoryPanel.module.css';
 
 export interface ImportHistoryPanelProps {
@@ -32,6 +36,7 @@ export function ImportHistoryPanel({ onClose }: ImportHistoryPanelProps) {
           <EmptyState icon={<FileText />} title={NO_DATA} />
         ) : (
           // Focusable, so the keyboard can scroll a long history, which holds no link or button.
+          // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- the list scrolls
           <ol className={styles.list} tabIndex={0} aria-label="Imports, newest first">
             {imports.data.items.map((item) => (
               <ImportItem key={item.id} item={item} />

@@ -1,9 +1,10 @@
 import { CircleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { InfoTip, ProgressBar } from '@/components';
-import { cx } from '@/lib/cx';
-import { recordHref } from '@/lib/recordLinks';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
+import { cx } from '@/ui/cx';
+import { recordHref } from '@/ui/record-links';
 import {
   aboveByText,
   aboveOnText,
@@ -12,10 +13,10 @@ import {
   FIGURE_TIP,
   meterText,
   NO_PLANNED_COST,
-} from './gsapFinancials';
-import type { FinancialFiguresData } from './gsapFinancials';
+} from './gsap-financials';
+import type { FinancialFiguresData } from './gsap-financials';
 import styles from './GsapFigures.module.css';
-import { formatMonth, moneyText } from './lineItemMath';
+import { formatMonth, moneyText } from './line-item-math';
 
 export interface GsapFiguresProps {
   figures: FinancialFiguresData;

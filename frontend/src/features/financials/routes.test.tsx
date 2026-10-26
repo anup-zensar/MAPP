@@ -1,9 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { expectCurrentSection, renderApp } from '@/test/app';
-import { FT_1003, transactionOf, transactionPage } from './testData';
+import { expectCurrentSection, renderApp } from '@/testing/app';
+import { transactionOf } from '@/testing/fixtures/financial-transactions';
+import { FT_1003, transactionPage } from '@/testing/fixtures/financials';
+import { reply } from '@/testing/replies';
 
-const LIST = { 'GET /api/v1/financials/transactions': { body: transactionPage() } };
+const LIST = [reply('GET /api/v1/financials/transactions', { body: transactionPage() })];
 
 describe('Financials routes (015 FR-020, FR-022)', () => {
   it('opens /financials: in the sidebar after All work, current, with its tab title', async () => {
@@ -21,10 +23,14 @@ describe('Financials routes (015 FR-020, FR-022)', () => {
   });
 
   it('opens a transaction at its own address over the list', async () => {
-    renderApp('/financials/transactions/FT-1003', {
+    renderApp('/financials/transactions/FT-1003', [
       ...LIST,
-      'GET /api/v1/financials/transactions/FT-1003': { body: transactionOf(FT_1003) },
-    });
+      reply(
+        'GET /api/v1/financials/transactions/{transactionId}',
+        { body: transactionOf(FT_1003) },
+        { transactionId: 'FT-1003' },
+      ),
+    ]);
 
     expect(await screen.findByRole('dialog', { name: 'PO 4500001003 / 10' })).toBeInTheDocument();
     expect(document.title).toBe('Financials · MAPP');

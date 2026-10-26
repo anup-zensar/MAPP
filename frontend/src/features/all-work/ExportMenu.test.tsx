@@ -1,12 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { AllWorkResult, ViewState } from './allWorkTypes';
+import { mockApi } from '@/testing/mock-api';
+import type { Answer } from '@/testing/replies';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { DEFAULT_COLUMNS } from '@/testing/fixtures/all-work-rows';
+import { emptyResult, gridResult, standard2026 } from '@/testing/fixtures/all-work';
+import { reply } from '@/testing/replies';
+import type { AllWorkResult, ViewState } from './all-work-types';
 import { ExportMenu } from './ExportMenu';
-import { DEFAULT_COLUMNS, emptyResult, gridResult, standard2026 } from './testData';
 
 const XLSX_NAME = 'MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx';
 
@@ -39,9 +41,10 @@ afterEach(() => vi.restoreAllMocks());
 function renderExport(
   state: ViewState,
   result: AllWorkResult | undefined,
-  answer: MockHandler = () => fileAnswer(XLSX_NAME, 'application/octet-stream'),
+  answer: Answer<'GET /api/v1/all-work/export'> = () =>
+    fileAnswer(XLSX_NAME, 'application/octet-stream'),
 ) {
-  const api = mockApi({ 'GET /api/v1/all-work/export': answer });
+  const api = mockApi([reply('GET /api/v1/all-work/export', answer)]);
   const rendered = renderWithProviders(<ExportMenu state={state} result={result} />, {
     user: testUser(),
   });

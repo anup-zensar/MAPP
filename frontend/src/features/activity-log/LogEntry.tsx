@@ -1,8 +1,10 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router';
-import { Avatar, StatusChip, Tooltip } from '@/components';
-import { formatTime } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
+import { Avatar } from '@/ui/Avatar/Avatar';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import { formatTime } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 import {
   ACTION_CHIPS,
   detailLines,
@@ -10,8 +12,8 @@ import {
   pathText,
   recordLink,
   sentenceLead,
-} from './logText';
-import type { ActivityLogEntry } from './logText';
+} from './log-text';
+import type { ActivityLogEntry } from './log-text';
 import styles from './LogEntry.module.css';
 
 export interface LogEntryProps {

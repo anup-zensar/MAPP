@@ -1,6 +1,6 @@
 import { CircleAlert, CircleCheck, Clock, Info } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import styles from './ApprovalAlert.module.css';
 
 /** The feedback families of design system §5.6: what the message is about. */

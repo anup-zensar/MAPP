@@ -1,12 +1,15 @@
-import { ChoiceField, InfoTip, MoneyField, problemOf } from '@/components';
-import type { FieldProblem } from '@/components';
-import { formatRate } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { problemOf } from '@/ui/FormPanel/problem-of';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { formatRate } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import styles from './LineItemForm.module.css';
-import { rateOf } from './lineItemFormState';
-import type { LineItemFormState } from './lineItemFormState';
-import { centsInput, convert, parseAmount } from './lineItemMath';
-import type { LineItemCurrency } from './lineItemsApi';
+import { rateOf } from './line-item-form-state';
+import type { LineItemFormState } from './line-item-form-state';
+import { centsInput, convert, parseAmount } from './line-item-math';
+import type { LineItemCurrency } from './api';
 import {
   CALCULATED,
   conversionText,
@@ -15,7 +18,7 @@ import {
   inactiveCurrencyNote,
   LABEL,
   rateDatesText,
-} from './lineItemText';
+} from './line-item-text';
 import { useCurrentRates } from './rates';
 
 export interface CostFieldsProps {
@@ -119,9 +122,9 @@ function Conversion({
   const dates = parts.map(
     (part) => rates.data?.items.find((item) => item.currency === part.code)?.rateDate ?? null,
   );
-  const known = dates.every((day) => day !== null)
-    ? rateDatesText(dates.map((day) => date(day as string)))
-    : null;
+  const knownDates = dates.filter((day) => day !== null);
+  const known =
+    knownDates.length === dates.length ? rateDatesText(knownDates.map((day) => date(day))) : null;
   return (
     <p className={styles.conversion}>
       <span className={styles.calculated}>{CALCULATED}</span>

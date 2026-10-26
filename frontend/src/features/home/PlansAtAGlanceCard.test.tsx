@@ -1,12 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { HomePlanRow, HomeScope } from './homeApi';
+import { closestTo, nth } from '@/testing/dom';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { planRowOf, usd } from '@/testing/fixtures/home';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
+import type { HomePlanRow, HomeScope } from './api';
 import { PlansAtAGlanceCard } from './PlansAtAGlanceCard';
-import { planRowOf, usd } from './testData';
 
 const LUBRICANTS = planRowOf();
 const CHINA = planRowOf({
@@ -44,10 +46,10 @@ const page = (items: HomePlanRow[], total = items.length) => ({ body: { items, t
 
 function renderCard(
   scope: HomeScope = 'myTeams',
-  plans: MockHandler = page([LUBRICANTS, CHINA]),
+  plans: Answer<'GET /api/v1/home/plans'> = page([LUBRICANTS, CHINA]),
   onShowEverything = vi.fn(),
 ) {
-  const api = mockApi({ 'GET /api/v1/home/plans': plans });
+  const api = mockApi([reply('GET /api/v1/home/plans', plans)]);
   const rendered = renderWithProviders(
     <PlansAtAGlanceCard scope={scope} onShowEverything={onShowEverything} />,
     { user: testUser(), path: '/' },
@@ -56,7 +58,7 @@ function renderCard(
 }
 
 function rowOf(name: string): HTMLElement {
-  return screen.getByRole('link', { name }).closest('tr') as HTMLElement;
+  return closestTo(screen.getByRole('link', { name }), 'tr');
 }
 
 describe('PlansAtAGlanceCard', () => {
@@ -79,9 +81,9 @@ describe('PlansAtAGlanceCard', () => {
       '$1,003,000.00',
     ]);
     expect(
-      within(cells[4]).getByRole('progressbar', { name: 'Approval progress' }),
+      within(nth(cells, 4)).getByRole('progressbar', { name: 'Approval progress' }),
     ).toHaveAttribute('aria-valuenow', '43');
-    expect(within(cells[5]).getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
+    expect(within(nth(cells, 5)).getByRole('progressbar', { name: 'Budget used' })).toHaveAttribute(
       'aria-valuenow',
       '84',
     );

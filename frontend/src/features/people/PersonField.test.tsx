@@ -1,9 +1,10 @@
 import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { PersonField } from './PersonField';
 
 const EUROPE = { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true } as const;
@@ -58,7 +59,7 @@ function Members({ start = [] }: { start?: string[] }) {
 
 describe('PersonField (feature 003, US3)', () => {
   it('loads the people and offers them, the signed-in person first', async () => {
-    mockApi({ 'GET /api/v1/people': { body: PEOPLE } });
+    mockApi([reply('GET /api/v1/people', { body: PEOPLE })]);
     const { user } = renderWithProviders(<Owner />, { user: testUser() });
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
@@ -69,12 +70,12 @@ describe('PersonField (feature 003, US3)', () => {
 
   it('says when the people could not be loaded, with Try again', async () => {
     let calls = 0;
-    mockApi({
-      'GET /api/v1/people': () => {
+    mockApi([
+      reply('GET /api/v1/people', () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: PEOPLE };
-      },
-    });
+      }),
+    ]);
     const { user } = renderWithProviders(<Owner />, { user: testUser() });
 
     expect(await screen.findByText("People couldn't be loaded.")).toBeInTheDocument();
@@ -87,7 +88,7 @@ describe('PersonField (feature 003, US3)', () => {
     const many = Array.from({ length: 300 }, (_, index) =>
       person(`U-${2000 + index}`, `Person ${String(index).padStart(3, '0')}`, 'Marketer'),
     );
-    mockApi({ 'GET /api/v1/people': { body: { items: many, total: many.length } } });
+    mockApi([reply('GET /api/v1/people', { body: { items: many, total: many.length } })]);
     const { user } = renderWithProviders(<Owner />, { user: testUser() });
 
     await user.click(await screen.findByRole('combobox', { name: 'Owner' }));
@@ -99,7 +100,7 @@ describe('PersonField (feature 003, US3)', () => {
   });
 
   it('in team mode says when no member of the chosen teams matches (FR-019)', async () => {
-    mockApi({ 'GET /api/v1/people': { body: PEOPLE } });
+    mockApi([reply('GET /api/v1/people', { body: PEOPLE })]);
     const { user } = renderWithProviders(<Owner teamIds={[CHINA.id]} />, { user: testUser() });
 
     await user.click(await screen.findByRole('combobox', { name: 'Owner' }));
@@ -112,7 +113,7 @@ describe('PersonField (feature 003, US3)', () => {
   });
 
   it('chooses several people with the keyboard and removes the last with Backspace (US3-7)', async () => {
-    mockApi({ 'GET /api/v1/people': { body: PEOPLE } });
+    mockApi([reply('GET /api/v1/people', { body: PEOPLE })]);
     const { user } = renderWithProviders(<Members />, { user: testUser() });
 
     await user.click(await screen.findByRole('combobox', { name: 'Members' }));
@@ -130,7 +131,7 @@ describe('PersonField (feature 003, US3)', () => {
       ...PEOPLE,
       items: [...PEOPLE.items, person('U-1009', 'Old Timer', '', [EUROPE], false)],
     };
-    mockApi({ 'GET /api/v1/people': { body: inactive } });
+    mockApi([reply('GET /api/v1/people', { body: inactive })]);
     const { user } = renderWithProviders(<Members start={['U-1009']} />, { user: testUser() });
 
     expect(await screen.findByText('Old Timer (inactive)')).toBeInTheDocument();

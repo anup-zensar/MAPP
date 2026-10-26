@@ -1,10 +1,14 @@
 import { Link } from 'react-router';
-import { ActionsMenu, PersonLabel, TeamPill, Tooltip } from '@/components';
-import type { ActionsMenuItem, TeamRef } from '@/components';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { TeamPill } from '@/ui/TeamPill/TeamPill';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import type { TeamRef } from '@/ui/TeamPill/TeamPill';
 import { AmountPair } from './AmountPair';
 import { PinButton } from './PinButton';
 import { PlanCompleteness, PlanStatusChip } from './PlanFacts';
-import type { PlanSummary } from './plansApi';
+import type { PlanSummary } from './api';
 import styles from './PlanTable.module.css';
 import { PlanTypeTag } from './PlanTypeTag';
 

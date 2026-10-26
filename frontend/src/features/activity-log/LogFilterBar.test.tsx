@@ -2,12 +2,12 @@ import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { logSummary } from '@/testing/fixtures/activity-log';
 import { LogFilterBar, SEARCH_DELAY_MS } from './LogFilterBar';
-import { NO_FILTERS } from './logFilters';
-import type { LogFilterState } from './logFilters';
-import { logSummary } from './testData';
+import { NO_FILTERS } from './log-filters';
+import type { LogFilterState } from './log-filters';
 
 type OnChange = (filters: LogFilterState, typing?: boolean) => void;
 

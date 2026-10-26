@@ -1,22 +1,30 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useCurrentUser } from '@/app/useSession';
+import { useForm, useWatch } from 'react-hook-form';
+import { useCurrentUser } from '@/session/useSession';
 import { conflictMessage } from '@/api/errors';
-import { DateRangeField, FormPanel, problemOf, TextAreaField, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
+import { DateRangeField } from '@/ui/DateRangeField/DateRangeField';
+import { FormField } from '@/ui/FormField/FormField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { problemOf } from '@/ui/FormPanel/problem-of';
+import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { PersonField, usePeople } from '@/features/people';
-import { useFormatters } from '@/lib/useFormatters';
-import { fetchLatestDelegation, useCreateDelegation, useUpdateDelegation } from './delegationsApi';
-import type { ApprovalDelegation, DelegationScope, DelegationUpdate } from './delegationsApi';
-import { asApiError, isSessionLost } from './messages';
+import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
+import { fetchLatestDelegation, useCreateDelegation, useUpdateDelegation } from './delegations-api';
+import type { ApprovalDelegation, DelegationScope } from './delegations-api';
+import { delegationChanges, delegationSchema, delegationValuesOf, newDelegation } from './schemas';
+import type { DelegationValues } from './schemas';
 
 /** The longest note the API takes. */
 const NOTE_MAX = 500;
+const FIELDS = ['personId', 'delegateId', 'startDate', 'endDate', 'note'] as const;
 /** The date fields' ids: the API's keys with the field's prefix (DateRangeField's ids). */
-const DATE_IDS: Record<string, string> = {
-  startDate: 'delegation-startDate',
-  endDate: 'delegation-endDate',
-};
+const DATE_IDS = { startDate: 'delegation-startDate', endDate: 'delegation-endDate' } as const;
 const GONE = 'This delegation no longer exists.';
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
@@ -51,98 +59,75 @@ export function DelegationForm({
   const { dateFormat } = useFormatters();
   const create = useCreateDelegation();
   const update = useUpdateDelegation();
-  const [start] = useState(() => ({
-    personId: delegation?.person.id ?? user.id,
-    delegateId: delegation?.delegate.id ?? '',
-    startDate: delegation?.startDate ?? '',
-    endDate: delegation?.endDate ?? '',
-    note: delegation?.note ?? '',
-  }));
-  const [values, setValues] = useState(start);
+  const form = useForm<DelegationValues>({
+    resolver: zodResolver(delegationSchema),
+    defaultValues: delegationValuesOf(delegation, user.id),
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
+  const [startDate, endDate] = useWatch({ control: form.control, name: ['startDate', 'endDate'] });
   const [version, setVersion] = useState(delegation?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
-  const isDirty = (Object.keys(start) as (keyof typeof start)[]).some(
-    (key) => values[key] !== start[key],
-  );
-
-  function set<K extends keyof typeof values>(key: K, value: (typeof values)[K]) {
-    setValues((current) => ({ ...current, [key]: value }));
-  }
 
   /** The delegate's name for the message, from the people list (the API answers it too). */
-  function delegateName(saved: ApprovalDelegation): string {
+  function delegateName(saved: ApprovalDelegation, delegateId: string): string {
     return (
       saved.delegate.name ||
-      people.data?.items.find((person) => person.id === values.delegateId)?.name ||
+      people.data?.items.find((person) => person.id === delegateId)?.name ||
       ''
     );
   }
 
-  async function save() {
+  function saveDelegation(values: DelegationValues): Promise<ApprovalDelegation> {
+    if (delegation) {
+      const start = delegationValuesOf(delegation, user.id);
+      const changes = delegationChanges(values, start, version);
+      return update.mutateAsync({ id: delegation.id, changes });
+    }
+    return create.mutateAsync(newDelegation(values, user.id, canManageOthers));
+  }
+
+  async function save(values: DelegationValues) {
     setSaving(true);
     try {
-      let saved: ApprovalDelegation;
-      if (delegation) {
-        const changes: DelegationUpdate = { version };
-        if (values.delegateId !== start.delegateId) {
-          changes.delegateId = values.delegateId;
-        }
-        if (values.startDate !== start.startDate) {
-          changes.startDate = values.startDate;
-        }
-        if (values.endDate !== start.endDate) {
-          changes.endDate = values.endDate;
-        }
-        if (values.note !== start.note) {
-          changes.note = values.note.trim();
-        }
-        saved = await update.mutateAsync({ id: delegation.id, changes });
-      } else {
-        saved = await create.mutateAsync({
-          ...(canManageOthers && values.personId !== user.id ? { personId: values.personId } : {}),
-          delegateId: values.delegateId,
-          startDate: values.startDate,
-          endDate: values.endDate,
-          ...(values.note.trim() ? { note: values.note.trim() } : {}),
-        });
-      }
-      show({ message: `Delegation to ${delegateName(saved)} saved` });
+      const saved = await saveDelegation(values);
+      show({ message: `Delegation to ${delegateName(saved, values.delegateId)} saved` });
       onClose();
     } catch (error) {
-      const apiError = asApiError(error);
-      if (apiError.kind === 'validation') {
-        // The date problems point at DateRangeField's inputs, so the summary's links reach them.
-        setProblems(
-          apiError.fields.map((problem) => ({
-            ...problem,
-            field: DATE_IDS[problem.field] ?? problem.field,
-          })),
-        );
-        setFailure(null);
-      } else if (isSessionLost(apiError)) {
-        setProblems([]);
-        setFailure(null);
-      } else if (apiError.kind === 'conflict' && apiError.conflict && delegation) {
-        setProblems([]);
-        // The typed changes stay; Save again replaces the other change on purpose.
-        const latest = await fetchLatestDelegation(queryClient, scope, delegation.id).catch(
-          () => undefined,
-        );
-        if (latest) {
-          setVersion(latest.version);
-        }
-        setFailure({
-          message: conflictMessage(apiError, 'delegation', dateFormat),
-          nextStep: CONFLICT_NEXT_STEP,
-        });
-      } else {
-        setProblems([]);
-        setFailure({ message: apiError.kind === 'notFound' ? GONE : apiError.message });
-      }
+      await showFailure(error);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function showFailure(error: unknown) {
+    const apiError = asApiError(error);
+    if (apiError.kind === 'validation') {
+      // The date problems point at DateRangeField's inputs, so the summary's links reach them.
+      showServerProblems(
+        apiError.fields.map((problem) => ({ ...problem, field: idOf(problem.field) })),
+      );
+      setFailure(null);
+      return;
+    }
+    clearProblems();
+    if (isSessionLost(apiError)) {
+      setFailure(null);
+    } else if (apiError.kind === 'conflict' && apiError.conflict && delegation) {
+      // The typed changes stay; Save again replaces the other change on purpose.
+      const latest = await fetchLatestDelegation(queryClient, scope, delegation.id).catch(
+        () => undefined,
+      );
+      if (latest) {
+        setVersion(latest.version);
+      }
+      setFailure({
+        message: conflictMessage(apiError, 'delegation', dateFormat),
+        nextStep: CONFLICT_NEXT_STEP,
+      });
+    } else {
+      setFailure({ message: apiError.kind === 'notFound' ? GONE : apiError.message });
     }
   }
 
@@ -150,56 +135,61 @@ export function DelegationForm({
     <FormPanel
       title={delegation ? 'Edit delegation' : 'Add delegation'}
       description="Your delegate approves for you on these days, as well as you."
-      isDirty={isDirty}
+      isDirty={form.formState.isDirty}
       saving={saving}
       problems={problems}
       failure={failure}
-      onSave={() => void save()}
+      onSave={() => void form.handleSubmit(save, onInvalid)()}
       onClose={onClose}
     >
       {canManageOthers && !delegation && (
-        <PersonField
-          label="Delegating person"
+        <FormField
+          control={form.control}
           name="personId"
-          marking="Required"
-          value={values.personId}
-          onChange={(personId) => set('personId', personId)}
-          error={problemOf(problems, 'personId')}
+          render={(field) => (
+            <PersonField label="Delegating person" marking="Required" {...field} />
+          )}
         />
       )}
-      <PersonField
-        label="Delegate"
+      <FormField
+        control={form.control}
         name="delegateId"
-        marking="Required"
-        hint="Someone with a role that approves activities."
-        value={values.delegateId}
-        onChange={(delegateId) => set('delegateId', delegateId)}
-        error={problemOf(problems, 'delegateId')}
+        render={(field) => (
+          <PersonField
+            label="Delegate"
+            marking="Required"
+            hint="Someone with a role that approves activities."
+            {...field}
+          />
+        )}
       />
       <DateRangeField
         label="From – To"
         idPrefix="delegation"
         marking="Required"
         hint="At most 90 days, from today or later."
-        start={values.startDate}
-        end={values.endDate}
-        onChange={({ start: startDate, end: endDate }) =>
-          setValues((current) => ({ ...current, startDate, endDate }))
-        }
+        start={startDate}
+        end={endDate}
+        onChange={({ start, end }) => {
+          form.setValue('startDate', start, { shouldDirty: true });
+          form.setValue('endDate', end, { shouldDirty: true });
+        }}
         errors={{
           start: problemOf(problems, DATE_IDS.startDate),
           end: problemOf(problems, DATE_IDS.endDate),
         }}
       />
-      <TextAreaField
-        label="Note (optional)"
+      <FormField
+        control={form.control}
         name="note"
-        rows={3}
-        maxLength={NOTE_MAX}
-        value={values.note}
-        onChange={(note) => set('note', note)}
-        error={problemOf(problems, 'note')}
+        render={(field) => (
+          <TextAreaField label="Note (optional)" rows={3} maxLength={NOTE_MAX} {...field} />
+        )}
       />
     </FormPanel>
   );
+}
+
+function idOf(field: string): string {
+  return field === 'startDate' || field === 'endDate' ? DATE_IDS[field] : field;
 }

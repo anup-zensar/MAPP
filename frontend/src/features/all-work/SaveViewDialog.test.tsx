@@ -1,12 +1,13 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { SavedView, ViewState } from './allWorkTypes';
+import type { HttpHandler } from 'msw';
+import { mockApi } from '@/testing/mock-api';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { savedView, standard2026 } from '@/testing/fixtures/all-work';
+import { reply } from '@/testing/replies';
+import type { SavedView, ViewState } from './all-work-types';
 import { SaveViewDialog } from './SaveViewDialog';
-import { savedView, standard2026 } from './testData';
 
 const STATE: ViewState = {
   ...standard2026(),
@@ -17,14 +18,11 @@ const STATE: ViewState = {
   },
 };
 
-function renderDialog(
-  answers: Record<string, MockHandler> = {},
-  views: SavedView[] = [savedView()],
-) {
-  const api = mockApi({
-    'GET /api/v1/saved-views': { body: { items: views, total: views.length } },
+function renderDialog(answers: HttpHandler[] = [], views: SavedView[] = [savedView()]) {
+  const api = mockApi([
+    reply('GET /api/v1/saved-views', { body: { items: views, total: views.length } }),
     ...answers,
-  });
+  ]);
   const onSaved = vi.fn();
   const onOpenChange = vi.fn();
   const rendered = renderWithProviders(
@@ -42,9 +40,9 @@ describe('SaveViewDialog (US6)', () => {
       state: STATE,
       isDefault: true,
     });
-    const { api, user, onSaved, onOpenChange } = renderDialog({
-      'POST /api/v1/saved-views': { status: 201, body: saved },
-    });
+    const { api, user, onSaved, onOpenChange } = renderDialog([
+      reply('POST /api/v1/saved-views', { status: 201, body: saved }),
+    ]);
 
     const dialog = screen.getByRole('dialog', { name: 'Save current view' });
     await user.type(
@@ -82,9 +80,13 @@ describe('SaveViewDialog (US6)', () => {
 
   it('asks before replacing a view with the same name, ignoring letter case (FR-029)', async () => {
     const existing = savedView();
-    const { api, user, onSaved } = renderDialog({
-      'PATCH /api/v1/saved-views/SV-1001': { body: { ...existing, state: STATE } },
-    });
+    const { api, user, onSaved } = renderDialog([
+      reply(
+        'PATCH /api/v1/saved-views/{viewId}',
+        { body: { ...existing, state: STATE } },
+        { viewId: 'SV-1001' },
+      ),
+    ]);
 
     const dialog = screen.getByRole('dialog', { name: 'Save current view' });
     await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'declined ACTIVITIES');
@@ -117,8 +119,8 @@ describe('SaveViewDialog (US6)', () => {
   });
 
   it('shows the API’s refusal at the field (FR-029)', async () => {
-    const { user } = renderDialog({
-      'POST /api/v1/saved-views': {
+    const { user } = renderDialog([
+      reply('POST /api/v1/saved-views', {
         status: 400,
         body: {
           error: {
@@ -127,8 +129,8 @@ describe('SaveViewDialog (US6)', () => {
             fields: [{ field: 'name', message: "You already have a view called 'Q4 review'." }],
           },
         },
-      },
-    });
+      }),
+    ]);
 
     const dialog = screen.getByRole('dialog', { name: 'Save current view' });
     await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'Q4 review');

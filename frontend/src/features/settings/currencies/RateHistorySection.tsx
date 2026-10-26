@@ -1,16 +1,21 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import { ActionsMenu, Button, ErrorState, Skeleton, StatusChip, useToast } from '@/components';
-import { formatRate } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
-import settingsStyles from '../shared/SettingsTable.module.css';
-import { inverseLine } from './currencyActions';
+import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
+import { Button } from '@/ui/Button/Button';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useToast } from '@/ui/Toast/useToast';
+import { formatRate } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
+import settingsStyles from '@/ui/settings-table.module.css';
+import { inverseLine } from './currency-actions';
 import { RateDialog } from './RateDialog';
-import { RATE_LISTS, useDeleteRate, useRateHistory } from './ratesApi';
-import type { ExchangeRateRecord } from './ratesApi';
-import { lastRateReason, sourceOf } from './rateWords';
+import { RATE_LISTS, useDeleteRate, useRateHistory } from './rates-api';
+import type { ExchangeRateRecord } from './rates-api';
+import { lastRateReason, sourceOf } from './rate-words';
 import styles from './rates.module.css';
 
 export interface RateHistorySectionProps {

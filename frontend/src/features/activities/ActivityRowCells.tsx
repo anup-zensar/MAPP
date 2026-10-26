@@ -1,11 +1,11 @@
 import { CircleAlert } from 'lucide-react';
 import { Link } from 'react-router';
-import { StatusChip } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import type { ActivitySummary } from './activitiesApi';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { useFormatters } from '@/format/useFormatters';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import type { ActivitySummary } from './api';
 import styles from './ActivityRowCells.module.css';
-import { ActivityStatusChip } from './ActivityStatusChip';
-import { lineItemsAttentionText } from './activityText';
+import { lineItemsAttentionText } from './activity-text';
 
 /**
  * The status cell of an activity row (FR-033): the status chip and the completeness — "All filled

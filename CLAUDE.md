@@ -152,9 +152,9 @@ Fixed by feature 001 (`specs/001-app-shell-and-sign-in/research.md` explains eac
   of service, handler and contract tests until feature 025 replaces it with fakes.
 - **Contract**: paths under `/api/v1`; contract tests use `libopenapi-validator` through
   `internal/platform/apitest`; handler tests are external test packages (`package <name>_test`).
-- **Web app**: as in the target, but without React Hook Form, Zod, MSW or `fast-check`; folders
-  `components/`, `lib/`, `styles/` (`src/styles/tokens.css`) and `test/`; generated types in
-  `src/api/schema.d.ts`.
+- **Web app**: aligned with the target by feature 026 — F2 folders, React Hook Form + Zod, MSW with
+  answers typed from the contract (`reply()` in `src/testing/replies.ts`), `fast-check`, pages loaded
+  per feature (`src/app/pages.tsx`); component axe checks still use `src/testing/axe.ts` (027).
 - **Commands**: backend `go run ./cmd/seed`, `go run ./cmd/api`, `go vet ./...`, `go test ./...`;
   frontend `npm run dev`, `npm run check`, `npm run test:e2e`, `npm run api:types`.
 

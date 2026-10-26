@@ -1,11 +1,13 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { nextOf } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
+import { launchFilm, MODEL } from '@/testing/fixtures/activities';
+import { activityAttributeForm } from '@/testing/fixtures/activity-forms';
 import { ActivityAttributes, ActivityDetails, ActivityGoals } from './ActivitySections';
-import { activityAttributeForm, launchFilm, MODEL } from './testData';
 
 function value(label: string): HTMLElement {
-  return screen.getByText(label, { selector: 'dt' }).nextElementSibling as HTMLElement;
+  return nextOf(screen.getByText(label, { selector: 'dt' }));
 }
 
 describe('ActivityDetails (feature 006, FR-013, FR-020)', () => {

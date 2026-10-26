@@ -1,7 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { nth } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
 import { GettingStartedCard } from './GettingStartedCard';
 
 const NO_TEAM_SENTENCE =
@@ -50,7 +51,7 @@ describe('GettingStartedCard', () => {
   it('hides the step numbers from screen readers, because the list numbers the steps', () => {
     renderWithProviders(<GettingStartedCard reason="noTeamPlans" />, { user: testUser() });
 
-    const firstStep = within(card()).getAllByRole('listitem')[0];
+    const firstStep = nth(within(card()).getAllByRole('listitem'), 0);
     expect(within(firstStep).getByText('1')).toHaveAttribute('aria-hidden', 'true');
     expect(within(card()).getByRole('list').tagName).toBe('OL');
   });

@@ -1,9 +1,12 @@
 import { Plus } from 'lucide-react';
 import { Link } from 'react-router';
-import { Card, ErrorState, LinkButton, Skeleton } from '@/components';
-import { usePlanActivities } from './activitiesApi';
-import { ActivityStatusChip } from './ActivityStatusChip';
-import { activityHref, newActivityHref } from './activityText';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import { usePlanActivities } from './api';
+import { activityHref, newActivityHref } from './activity-text';
 import styles from './InitiativeActivities.module.css';
 
 export interface InitiativeActivitiesProps {

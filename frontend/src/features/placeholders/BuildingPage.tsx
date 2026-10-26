@@ -2,9 +2,13 @@ import { Construction } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Card, EmptyState, PageHeader, SidePanel } from '@/components';
-import type { BreadcrumbItem } from '@/components';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { SidePanel } from '@/ui/SidePanel/SidePanel';
+import type { BreadcrumbItem } from '@/ui/Breadcrumb/Breadcrumb';
+import { usePageTitle } from '@/ui/usePageTitle';
 import styles from './BuildingPage.module.css';
 
 /** What a stub says until its feature builds it. */

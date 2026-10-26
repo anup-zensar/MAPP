@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import type { ActionsMenuItem } from '@/components';
-import { showHistory } from '@/features/activity-log/showHistory';
-import { gateItem } from '@/features/plans/gateAction';
-import type { Activity } from './activitiesApi';
+import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { showHistory } from '@/features/activity-log';
+import { gateItem } from '@/session/gate-action';
+import type { Activity } from './api';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { CopyActivityDialog } from './CopyActivityDialog';
 import { MoveActivityDialog } from './MoveActivityDialog';
 import { SplitActivityDialog } from './SplitActivityDialog';
-import { SPLIT_ACTIVITY } from './splitText';
+import { SPLIT_ACTIVITY } from './split-text';
 
 /** The actions of an activity's More menu, and the dialog they open (render it once). */
 export interface ActivityActions {

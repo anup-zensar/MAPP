@@ -2,17 +2,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { ErrorState, PageHeader, useToast } from '@/components';
-import type { FieldProblem, SaveFailure } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { useToast } from '@/ui/Toast/useToast';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { ChangeEffectsDialog } from './dialogs/ChangeEffectsDialog';
-import { PlanForm, PlanFormSkeleton } from './PlanForm';
-import { answers016, toUpdateBody, valuesFromPlan } from './planFormValues';
-import type { PlanFormValues } from './planFormValues';
+import { PlanForm } from './PlanForm';
+import type { PlanSaveAnswer } from './PlanForm';
+import { PlanFormSkeleton } from './PlanFormSkeleton';
+import { answers016, toUpdateBody, valuesFromPlan } from './plan-form-values';
 import { PlanNotFound } from './PlanNotFound';
-import { fetchLatestPlan, useChangeEffects, usePlan, useUpdatePlan } from './plansApi';
-import type { Plan, PlanChangeEffects } from './plansApi';
+import { fetchLatestPlan, useChangeEffects, usePlan, useUpdatePlan } from './api';
+import type { Plan, PlanChangeEffects } from './api';
+import { focusOf } from './schemas';
+import type { PlanFormValues } from './schemas';
 
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';
@@ -55,15 +60,14 @@ export function PlanEditPage() {
 /** The form, with the plan as it was when the page opened (the edit-form rule). */
 function EditForm({ plan: loaded }: { plan: Plan }) {
   const [plan] = useState(loaded);
-  const [initial] = useState(() => valuesFromPlan(loaded));
-  const [focusField] = useSearchParams();
+  const initial = valuesFromPlan(plan);
+  const [search] = useSearchParams();
   const queryClient = useQueryClient();
   const { show } = useToast();
   const { dateFormat } = useFormatters();
   const updatePlan = useUpdatePlan(plan.id);
   const changeEffects = useChangeEffects(plan.id);
   const [version, setVersion] = useState(plan.version);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [effects, setEffects] = useState<{ data: PlanChangeEffects; modelOnly: boolean } | null>(
     null,
@@ -103,28 +107,27 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
     });
   }
 
-  async function save(values: PlanFormValues): Promise<string | null> {
+  async function save(values: PlanFormValues): Promise<PlanSaveAnswer> {
     try {
       if (!(await confirmEffects(values))) {
         return null;
       }
       const saved = await updatePlan.mutateAsync(toUpdateBody(values, version, answers016(plan)));
       show({ message: `Plan '${saved.name}' saved` });
-      return `/plans/${encodeURIComponent(saved.id)}`;
+      return { to: `/plans/${encodeURIComponent(saved.id)}` };
     } catch (error) {
-      await showFailure(error);
-      return null;
+      const apiError = error instanceof ApiError ? error : new ApiError('other');
+      await showFailure(apiError);
+      return { problems: apiError.kind === 'validation' ? apiError.fields : [] };
     }
   }
 
-  async function showFailure(error: unknown) {
-    const apiError = error instanceof ApiError ? error : new ApiError('other');
+  /** A failure that is not about one field: a conflict, or the API's message. */
+  async function showFailure(apiError: ApiError) {
     if (apiError.kind === 'validation') {
-      setProblems(apiError.fields);
       setFailure(null);
       return;
     }
-    setProblems([]);
     if (apiError.kind === 'conflict') {
       // The typed values stay; the form takes the version with the other person's change, so
       // Save again replaces it on purpose (FR-023).
@@ -147,11 +150,10 @@ function EditForm({ plan: loaded }: { plan: Plan }) {
         mode="edit"
         initial={initial}
         plan={plan}
-        problems={problems}
         failure={failure}
         onSave={save}
         cancelTo={`/plans/${encodeURIComponent(plan.id)}`}
-        focusField={focusField.get('focus')}
+        focusField={focusOf(search)}
       />
       <ChangeEffectsDialog
         effects={effects?.data ?? null}

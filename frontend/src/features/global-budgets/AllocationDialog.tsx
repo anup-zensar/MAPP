@@ -1,17 +1,25 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
-import { ChoiceField, FormDialog, MoneyField, problemOf, Skeleton, useToast } from '@/components';
-import type { FieldProblem } from '@/components';
-import { formatAmount, parseMoneyInput } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { useAllocate, useAllocationOptions, useUpdateAllocation } from './globalBudgetsApi';
-import type { AllocationOption, BudgetAllocationRow, GlobalBudget } from './globalBudgetsApi';
-import { toasts } from './globalBudgetsText';
-import { saveFailureOf } from './saveFailure';
+import { useForm, useWatch } from 'react-hook-form';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import { formatAmount } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
+import { useAllocate, useAllocationOptions, useUpdateAllocation } from './api';
+import type { AllocationOption, BudgetAllocationRow, GlobalBudget, MoneyInput } from './api';
+import { toasts } from './global-budgets-text';
+import { saveFailureOf } from './save-failure';
+import { allocationSchema, amountOf } from './schemas';
+import type { AllocationValues } from './schemas';
 import styles from './AllocationDialog.module.css';
 
-const AMOUNT_PROBLEM = 'Enter an amount of 0 or more.';
-const PLAN_PROBLEM = 'Choose a plan.';
+const FIELDS = ['planId', 'amount'] as const;
 
 export type AllocationTarget =
   { kind: 'new'; option?: AllocationOption } | { kind: 'change'; row: BudgetAllocationRow };
@@ -34,40 +42,46 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
   const change = useUpdateAllocation();
   const choosing = target.kind === 'new' && !target.option;
   const options = useAllocationOptions(budget.id, choosing);
-  const [planId, setPlanId] = useState(target.kind === 'new' ? (target.option?.plan.id ?? '') : '');
-  const [amount, setAmount] = useState(
-    target.kind === 'change' ? formatAmount(target.row.amount.amount) : '',
-  );
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
-  const [failure, setFailure] = useState<string | null>(null);
-  const busy = allocate.isPending || change.isPending;
-
-  const option =
+  const optionOf = (planId: string) =>
     target.kind === 'new'
       ? (target.option ?? options.data?.items.find((item) => item.plan.id === planId))
       : undefined;
+  const form = useForm<AllocationValues>({
+    resolver: zodResolver(
+      allocationSchema((planId) => target.kind !== 'new' || optionOf(planId) !== undefined),
+    ),
+    defaultValues: {
+      planId: target.kind === 'new' ? (target.option?.plan.id ?? '') : '',
+      amount: target.kind === 'change' ? formatAmount(target.row.amount.amount) : '',
+    },
+    ...CHECK_ON_SAVE,
+  });
+  const { showServerProblems } = useFormProblems(form, FIELDS);
+  const [failure, setFailure] = useState<string | null>(null);
+  const busy = allocate.isPending || change.isPending;
+  const option = optionOf(useWatch({ control: form.control, name: 'planId' }));
   const planName = target.kind === 'change' ? target.row.plan.name : option?.plan.name;
   const currency =
     target.kind === 'change' ? target.row.amount.currency : (option?.budget?.currency ?? 'USD');
 
-  async function submit() {
-    if (busy) {
+  const planChoices = (options.data?.items ?? []).map((item) => ({
+    id: item.plan.id,
+    label: item.plan.name,
+    active: true,
+  }));
+
+  function submit() {
+    if (!busy) {
+      setFailure(null);
+      void form.handleSubmit(({ amount }) => save(amountOf(amount)))();
+    }
+  }
+
+  async function save(amount: string | null) {
+    if (amount === null) {
       return;
     }
-    const found: FieldProblem[] = [];
-    const parsed = parseMoneyInput(amount);
-    if (target.kind === 'new' && !option) {
-      found.push({ field: 'planId', message: PLAN_PROBLEM });
-    }
-    if (!parsed || parsed.amount.startsWith('-')) {
-      found.push({ field: 'amount', message: AMOUNT_PROBLEM });
-    }
-    setProblems(found);
-    setFailure(null);
-    if (found.length > 0 || !parsed) {
-      return;
-    }
-    const allocated = { amount: parsed.amount, currency };
+    const allocated: MoneyInput = { amount, currency };
     try {
       if (target.kind === 'change') {
         await change.mutateAsync({
@@ -92,7 +106,7 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
         onClose();
         return;
       }
-      setProblems(view.problems);
+      showServerProblems(view.problems);
       setFailure(
         view.failure
           ? [view.failure.message, view.failure.nextStep].filter(Boolean).join(' ')
@@ -115,7 +129,7 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
       description="The plan's budget becomes this amount when you save. Its owner sees it but can't change it."
       submitLabel={target.kind === 'change' ? 'Save allocation' : 'Allocate'}
       busy={busy}
-      onSubmit={() => void submit()}
+      onSubmit={submit}
     >
       <div className={styles.body}>
         {failure && (
@@ -126,19 +140,18 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
         )}
         {choosing &&
           (options.data ? (
-            <ChoiceField
-              label="Plan"
+            <FormField
+              control={form.control}
               name="planId"
-              marking="Required"
-              hint={`Plans of ${budget.year} without an allocation.`}
-              options={options.data.items.map((item) => ({
-                id: item.plan.id,
-                label: item.plan.name,
-                active: true,
-              }))}
-              value={planId}
-              onChange={setPlanId}
-              error={problemOf(problems, 'planId')}
+              render={(field) => (
+                <ChoiceField
+                  label="Plan"
+                  marking="Required"
+                  hint={`Plans of ${budget.year} without an allocation.`}
+                  options={planChoices}
+                  {...field}
+                />
+              )}
             />
           ) : options.isError ? (
             <p className={styles.failure} role="alert">
@@ -159,14 +172,12 @@ export function AllocationDialog({ budget, target, onClose }: AllocationDialogPr
             {option.budget ? `Its budget now: ${money(option.budget)}` : 'It has no budget yet.'}
           </p>
         )}
-        <MoneyField
-          label="Amount"
+        <FormField
+          control={form.control}
           name="amount"
-          marking="Required"
-          currency={currency}
-          value={amount}
-          onChange={setAmount}
-          error={problemOf(problems, 'amount')}
+          render={(field) => (
+            <MoneyField label="Amount" marking="Required" currency={currency} {...field} />
+          )}
         />
       </div>
     </FormDialog>

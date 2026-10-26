@@ -1,23 +1,19 @@
-import {
-  Card,
-  ErrorState,
-  InfoTip,
-  PersonLabel,
-  ShellAttributeValues,
-  Skeleton,
-} from '@/components';
-import type { AttributeForm } from '@/components';
-import { Detail, DetailsList } from '@/features/line-items/DetailsList';
-import { moneyText } from '@/features/line-items/lineItemMath';
-import { MoneyPair } from '@/features/line-items/MoneyPair';
-import { formatWhole } from '@/lib/decimal';
-import { localDate } from '@/lib/format';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import type { Activity } from './activitiesApi';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
+import { ShellAttributeValues } from '@/ui/ShellAttributeFields/ShellAttributeValues';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
+import { Detail, DetailsList, MoneyPair, moneyText } from '@/features/line-items';
+import { formatWhole } from '@/format/decimal';
+import { localDate } from '@/format/intl';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import type { Activity } from './api';
 import styles from './ActivitySections.module.css';
-import { EMPTY, goalsFormula } from './activityText';
-import type { ModelFacts } from './activityText';
+import { EMPTY, goalsFormula } from './activity-text';
+import type { ModelFacts } from './activity-text';
 
 /**
  * The Details card of an activity's page (FR-020): every value in the one key–value layout, "—"

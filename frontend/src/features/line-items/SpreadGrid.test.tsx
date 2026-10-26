@@ -2,8 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Tooltip } from 'radix-ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { launchFilmSection, usd } from '@/testing/fixtures/line-items';
 import { SpreadGrid } from './SpreadGrid';
-import { launchFilmSection, usd } from './testData';
 
 const KEY = 'mapp.lineItemGrid';
 

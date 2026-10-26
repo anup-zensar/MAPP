@@ -2,19 +2,14 @@ import { Check, CircleAlert } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { useEffect, useEffectEvent, useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { components } from '@/api/schema';
-import { FilterChips, SearchField, SegmentedFilter } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import {
-  ACTION_FILTERS,
-  DATE_RANGES,
-  NO_FILTERS,
-  customRangeError,
-  filterChips,
-  removeFilter,
-  typeLabel,
-} from './logFilters';
-import type { ActionFilter, DateRangeKey, LogFilterState } from './logFilters';
+import type { components } from '@/api/generated/schema';
+import { FilterChips } from '@/ui/FilterChips/FilterChips';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { useFormatters } from '@/format/useFormatters';
+import { filterChips, removeFilter, typeLabel } from './filter-chips';
+import { ACTION_FILTERS, DATE_RANGES, NO_FILTERS, customRangeError } from './log-filters';
+import type { ActionFilter, DateRangeKey, LogFilterState } from './log-filters';
 import styles from './LogFilterBar.module.css';
 
 type ActivityLogSummary = components['schemas']['ActivityLogSummary'];

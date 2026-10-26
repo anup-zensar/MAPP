@@ -1,8 +1,9 @@
 import { useId, useState } from 'react';
-import { DecimalField, InfoTip } from '@/components';
-import { formatAmount, formatWhole, parseWholeInput } from '@/lib/decimal';
-import { plural } from '@/lib/text';
-import { waterfall } from '@/lib/waterfall';
+import { DecimalField } from '@/ui/DecimalField/DecimalField';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { formatAmount, formatWhole, parseWholeInput } from '@/format/decimal';
+import { plural } from '@/format/text';
+import { waterfall } from './waterfall';
 import styles from './WaterfallExample.module.css';
 
 /** The most inquiries the example takes. */
@@ -19,7 +20,7 @@ export interface WaterfallExampleProps {
 /**
  * The model's worked example (FR-010, SC-006): for an example number of inquiries (250,000 at
  * first; changing it saves nothing) "250,000 INQ → 5,000 MQL → 250 deals → 2,500,000.00 USD
- * revenue", worked out as goals are (lib/waterfall.ts) and updated as soon as any value changes.
+ * revenue", worked out as goals are (waterfall.ts) and updated as soon as any value changes.
  */
 export function WaterfallExample({
   inqToMqlRate,

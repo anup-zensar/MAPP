@@ -1,9 +1,10 @@
 import { Bell } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useId, useState } from 'react';
-import { Button, CountBadge, Tooltip } from '@/components';
-import { NotificationList } from '@/features/notifications/NotificationList';
-import { useUnreadNotificationCount } from '@/features/notifications/useUnreadNotificationCount';
+import { Button } from '@/ui/Button/Button';
+import { CountBadge } from '@/ui/CountBadge/CountBadge';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import { NotificationList, useUnreadNotificationCount } from '@/features/notifications';
 import styles from './NotificationBell.module.css';
 
 /**

@@ -1,45 +1,41 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useModels } from '@/api/settingsQueries';
+import { useForm, useWatch } from 'react-hook-form';
+import { FormField } from '@/ui/FormField/FormField';
+import { FormPanel } from '@/ui/FormPanel/FormPanel';
+import { MoneyField } from '@/ui/MoneyField/MoneyField';
+import { TextField } from '@/ui/TextField/TextField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { ImpactDialog } from '../ImpactDialog';
+import { saveFailureOf } from '../save-failure';
 import {
-  ChoiceField,
-  ErrorState,
-  FormPanel,
-  MoneyField,
-  problemOf,
-  Skeleton,
-  TextField,
-  useToast,
-} from '@/components';
-import type { ChoiceOption, FieldProblem, SaveFailure } from '@/components';
-import { formatAmount, parseMoneyInput, toCents } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
-import { ImpactDialog } from '../shared/ImpactDialog';
-import { saveFailureOf } from '../shared/saveFailure';
-import styles from '../shared/SettingsTable.module.css';
+  changedFields,
+  createBody,
+  removesModels,
+  sameCost,
+  startValues,
+} from './activity-type-values';
 import {
   checkActivityTypeImpact,
   fetchActivityType,
   useCreateActivityType,
   useUpdateActivityType,
-} from './activityTypesApi';
-import type {
-  ActivityType,
-  ActivityTypeCreate,
-  ActivityTypeUpdate,
-  ChangeImpact,
-} from './activityTypesApi';
+} from './api';
+import type { ActivityType, ActivityTypeUpdate, ChangeImpact } from './api';
+import { ModelsField } from './ModelsField';
+import { activityTypeSchema } from './schemas';
+import type { ActivityTypeValues } from './schemas';
+
+const FIELDS = ['name', 'defaultPlannedCost', 'modelIds'] as const;
 
 export interface ActivityTypeFormProps {
   /** The activity type to change; without one, the form adds a new activity type. */
   type?: ActivityType;
   onClose: () => void;
-}
-
-/** The typed values, as text, exactly as they are in the fields. */
-interface ActivityTypeValues {
-  name: string;
-  defaultPlannedCost: string;
-  modelIds: string[];
 }
 
 /** A save that waits for "Save changes" in the impact dialog. */
@@ -60,27 +56,22 @@ export function ActivityTypeForm({ type, onClose }: ActivityTypeFormProps) {
   const createType = useCreateActivityType();
   const updateType = useUpdateActivityType();
   // The edit-form rule: the type is copied into the form once, when the panel opens.
-  const [start] = useState<ActivityTypeValues>(() => ({
-    name: type?.name ?? '',
-    defaultPlannedCost: type?.defaultPlannedCost
-      ? formatAmount(type.defaultPlannedCost.amount)
-      : '',
-    modelIds: type?.models.map((model) => model.id) ?? [],
-  }));
-  const [values, setValues] = useState(start);
+  const [start] = useState(() => startValues(type));
+  const form = useForm<ActivityTypeValues>({
+    resolver: zodResolver(activityTypeSchema),
+    defaultValues: start,
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [version, setVersion] = useState(type?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [pendingImpact, setPendingImpact] = useState<PendingImpact | null>(null);
-  const costChanged =
-    type !== undefined && !sameCost(values.defaultPlannedCost, type.defaultPlannedCost);
+  const cost = useWatch({ control: form.control, name: 'defaultPlannedCost' });
+  const costChanged = type !== undefined && !sameCost(cost, type.defaultPlannedCost);
 
-  function set<K extends keyof ActivityTypeValues>(field: K, value: ActivityTypeValues[K]) {
-    setValues((previous) => ({ ...previous, [field]: value }));
-  }
-
-  async function save() {
+  async function save(values: ActivityTypeValues) {
+    clearProblems();
     setSaving(true);
     try {
       if (!type) {
@@ -133,7 +124,7 @@ export function ActivityTypeForm({ type, onClose }: ActivityTypeFormProps) {
 
   async function showFailure(error: unknown) {
     const view = saveFailureOf(error, 'activityType', dateFormat);
-    setProblems(view.problems);
+    showServerProblems(view.problems);
     setFailure(view.failure);
     if (view.conflict && type) {
       // Typed values stay; the next Save replaces the other person's change on purpose.
@@ -144,42 +135,44 @@ export function ActivityTypeForm({ type, onClose }: ActivityTypeFormProps) {
     }
   }
 
+  const submit = form.handleSubmit(save, onInvalid);
+
   return (
     <>
       <FormPanel
         title={type ? 'Edit activity type' : 'New activity type'}
-        isDirty={!sameValues(values, start)}
+        isDirty={form.formState.isDirty}
         saving={saving}
         problems={problems}
         failure={failure}
-        onSave={() => void save()}
+        onSave={() => void submit()}
         onClose={onClose}
       >
         <div className={styles.formFields}>
-          <TextField
-            label="Name"
+          <FormField
+            control={form.control}
             name="name"
-            marking="Required"
-            maxLength={120}
-            value={values.name}
-            onChange={(name) => set('name', name)}
-            error={problemOf(problems, 'name')}
+            render={(field) => (
+              <TextField label="Name" marking="Required" maxLength={120} {...field} />
+            )}
           />
-          <MoneyField
-            label="Default planned cost"
+          <FormField
+            control={form.control}
             name="defaultPlannedCost"
-            currency="USD"
-            hint="Offered when someone picks this type for an activity."
-            note={costChanged ? 'Applies when someone picks this type from now on.' : undefined}
-            value={values.defaultPlannedCost}
-            onChange={(cost) => set('defaultPlannedCost', cost)}
-            error={problemOf(problems, 'defaultPlannedCost')}
+            render={(field) => (
+              <MoneyField
+                label="Default planned cost"
+                currency="USD"
+                hint="Offered when someone picks this type for an activity."
+                note={costChanged ? 'Applies when someone picks this type from now on.' : undefined}
+                {...field}
+              />
+            )}
           />
-          <ModelsField
-            type={type}
-            value={values.modelIds}
-            onChange={(ids) => set('modelIds', ids)}
-            error={problemOf(problems, 'modelIds')}
+          <FormField
+            control={form.control}
+            name="modelIds"
+            render={(field) => <ModelsField type={type} {...field} />}
           />
         </div>
       </FormPanel>
@@ -195,112 +188,4 @@ export function ActivityTypeForm({ type, onClose }: ActivityTypeFormProps) {
       )}
     </>
   );
-}
-
-interface ModelsFieldProps {
-  /** The type being edited: the models allowing it stay offered even when inactive. */
-  type?: ActivityType;
-  value: string[];
-  onChange: (ids: string[]) => void;
-  error?: string;
-}
-
-/** Allowed in models: the active models, plus those that already allow the type. */
-function ModelsField({ type, value, onChange, error }: ModelsFieldProps) {
-  const models = useModels();
-
-  if (!models.data) {
-    return models.isError ? (
-      <ErrorState error={models.error} onRetry={() => void models.refetch()} />
-    ) : (
-      <Skeleton lines={3} />
-    );
-  }
-
-  const options: ChoiceOption[] = models.data.items.map((model) => ({
-    id: model.id,
-    label: model.name,
-    active: model.active,
-  }));
-  for (const allowing of type?.models ?? []) {
-    if (!options.some((option) => option.id === allowing.id)) {
-      options.push({ id: allowing.id, label: allowing.name, active: allowing.active });
-    }
-  }
-
-  return (
-    <ChoiceField
-      label="Allowed in models"
-      name="modelIds"
-      hint="Plans using these models can choose this type."
-      multiple
-      options={options}
-      value={value}
-      onChange={onChange}
-      error={error}
-    />
-  );
-}
-
-function sameValues(a: ActivityTypeValues, b: ActivityTypeValues): boolean {
-  return (
-    a.name === b.name &&
-    a.defaultPlannedCost === b.defaultPlannedCost &&
-    sameIds(a.modelIds, b.modelIds)
-  );
-}
-
-function sameIds(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((id) => b.includes(id));
-}
-
-/** Whether a model that allowed the type is left out of the new list. */
-function removesModels(before: string[], after: string[]): boolean {
-  return before.some((id) => !after.includes(id));
-}
-
-/** A typed cost as the API takes it; null when nothing is typed (no default). */
-function costInput(text: string): ActivityTypeCreate['defaultPlannedCost'] {
-  if (text.trim() === '') {
-    return null;
-  }
-  return { amount: parseMoneyInput(text)?.amount ?? text.trim(), currency: 'USD' };
-}
-
-/** "5,000" and 5000.00 USD are the same cost; empty is the same as no default. */
-function sameCost(typed: string, saved: ActivityType['defaultPlannedCost']): boolean {
-  if (typed.trim() === '' || saved === null) {
-    return typed.trim() === '' && saved === null;
-  }
-  const amount = parseMoneyInput(typed);
-  return amount !== null && toCents(amount.amount) === toCents(saved.amount);
-}
-
-function createBody(values: ActivityTypeValues): ActivityTypeCreate {
-  return {
-    name: values.name,
-    defaultPlannedCost: costInput(values.defaultPlannedCost),
-    modelIds: values.modelIds,
-  };
-}
-
-/** The fields people changed, with the version (D-203); null when nothing changed. */
-function changedFields(
-  type: ActivityType,
-  start: ActivityTypeValues,
-  values: ActivityTypeValues,
-  version: number,
-): ActivityTypeUpdate | null {
-  const body: ActivityTypeUpdate = { version };
-  if (values.name !== start.name) {
-    body.name = values.name;
-  }
-  if (!sameCost(values.defaultPlannedCost, type.defaultPlannedCost)) {
-    body.defaultPlannedCost = costInput(values.defaultPlannedCost);
-  }
-  if (!sameIds(values.modelIds, start.modelIds)) {
-    // The complete new list of models allowing the type.
-    body.modelIds = values.modelIds;
-  }
-  return Object.keys(body).length > 1 ? body : null;
 }

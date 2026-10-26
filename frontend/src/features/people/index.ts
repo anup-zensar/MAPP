@@ -1,20 +1,23 @@
-/**
- * What feature 003 offers other features' forms and pages: person and team fields that load their
- * own choices, and the people and team lists.
- *
- *   import { PersonField, TeamField, usePeople } from '@/features/people';
- */
+// People, teams, roles and access (features 003 and 014), and My profile.
+export { PeoplePage } from './PeoplePage';
 export { PersonField } from './PersonField';
-export type { PersonFieldProps } from './PersonField';
+export { ProfilePage } from './ProfilePage';
 export { TeamField } from './TeamField';
-export type { TeamFieldProps } from './TeamField';
-export {
-  DISPLAY_CURRENCIES_KEY,
-  PEOPLE_KEY,
-  TEAMS_KEY,
-  useDisplayCurrencies,
-  usePeople,
-  useTeams,
-} from './peopleApi';
-export type { DisplayCurrencyOption, Person, PersonRef, Team, TeamRef } from './peopleApi';
+export { TeamsPage } from './TeamsPage';
+export type {
+  AccessRules,
+  PermissionCatalogue,
+  PermissionKey,
+  PersonRoles,
+  Role,
+  RoleAssignment,
+} from './access/api';
+export { AccessPage } from './access/AccessPage';
+export { RoleFormPage } from './access/RoleFormPage';
+export { RolePage } from './access/RolePage';
+export { PERMISSIONS } from './access/access-words';
+export { ACCESS_SETTINGS_SECTIONS } from './access/settings-sections';
+export { DISPLAY_CURRENCIES_KEY, useDisplayCurrencies, usePeople } from './api';
+export type { DisplayCurrencyOption } from './api';
+export { PEOPLE_SETTINGS_SECTIONS } from './settings-sections';
 export { currencyLabel } from './texts';

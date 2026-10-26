@@ -1,13 +1,14 @@
 import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import type { BinItem } from './binText';
+import type { HttpHandler } from 'msw';
+import { mockApi } from '@/testing/mock-api';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
+import { reply } from '@/testing/replies';
+import type { BinItem } from './bin-text';
 import { EmptyBinDialog } from './EmptyBinDialog';
-import { binItem, lineItemEntry } from './testData';
 
 const EMPTY = 'POST /api/v1/recycle-bin/empty';
 
@@ -17,14 +18,14 @@ function Harness({ items }: { items: BinItem[] }) {
   return open ? <EmptyBinDialog items={items} onClose={() => setOpen(false)} /> : <p>Closed</p>;
 }
 
-function renderDialog(answers: Record<string, MockHandler>, items: BinItem[]) {
+function renderDialog(answers: HttpHandler[], items: BinItem[]) {
   const api = mockApi(answers);
   return { ...renderWithProviders(<Harness items={items} />, { user: testUser() }), api };
 }
 
 describe('EmptyBinDialog', () => {
   it('counts the entries and what is inside them, with Cancel focused (FR-029)', () => {
-    renderDialog({}, [binItem(), lineItemEntry()]);
+    renderDialog([], [binItem(), lineItemEntry()]);
 
     const dialog = screen.getByRole('alertdialog', { name: 'Empty the recycle bin?' });
     expect(dialog).toHaveTextContent(
@@ -35,10 +36,10 @@ describe('EmptyBinDialog', () => {
   });
 
   it('deletes exactly the entries it listed and says how many (FR-029, FR-030)', async () => {
-    const { user, api } = renderDialog({ [EMPTY]: { body: { count: 2 } } }, [
-      binItem(),
-      lineItemEntry(),
-    ]);
+    const { user, api } = renderDialog(
+      [reply('POST /api/v1/recycle-bin/empty', { body: { count: 2 } })],
+      [binItem(), lineItemEntry()],
+    );
 
     await user.click(screen.getByRole('button', { name: 'Empty recycle bin' }));
 
@@ -53,7 +54,10 @@ describe('EmptyBinDialog', () => {
     [1, 'The recycle bin is empty — 1 item deleted permanently'],
     [0, 'Nothing was deleted — someone else already emptied the recycle bin.'],
   ])('says so when %i entries were deleted (FR-030)', async (count, message) => {
-    const { user } = renderDialog({ [EMPTY]: { body: { count } } }, [binItem()]);
+    const { user } = renderDialog(
+      [reply('POST /api/v1/recycle-bin/empty', { body: { count } })],
+      [binItem()],
+    );
 
     await user.click(screen.getByRole('button', { name: 'Empty recycle bin' }));
 
@@ -62,7 +66,10 @@ describe('EmptyBinDialog', () => {
   });
 
   it('shows a failure in the dialog and stays open', async () => {
-    const { user } = renderDialog({ [EMPTY]: { status: 500 } }, [binItem()]);
+    const { user } = renderDialog(
+      [reply('POST /api/v1/recycle-bin/empty', { status: 500 })],
+      [binItem()],
+    );
 
     await user.click(screen.getByRole('button', { name: 'Empty recycle bin' }));
 

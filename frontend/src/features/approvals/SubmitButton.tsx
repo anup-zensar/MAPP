@@ -1,12 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 import { useState } from 'react';
-import { Button, useToast } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { fetchSubmission, useSubmitActivity } from './approvalsApi';
-import type { ApprovalSubmission } from './approvalsApi';
-import type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';
-import { asApiError, isSessionLost, submitConflictMessage } from './messages';
+import { Button } from '@/ui/Button/Button';
+import { useToast } from '@/ui/Toast/useToast';
+import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
+import { fetchSubmission, useSubmitActivity } from './api';
+import type { ApprovalSubmission } from './api';
+import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
+import { submitConflictMessage } from './decision-messages';
 import { SubmitDialog } from './SubmitDialog';
 
 export interface SubmitButtonProps {

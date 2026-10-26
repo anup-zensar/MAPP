@@ -1,6 +1,6 @@
 import { useRouteError } from 'react-router';
-import { ErrorState } from '@/components';
-import { PublicLayout } from './PublicLayout';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PublicLayout } from '@/ui/PublicLayout/PublicLayout';
 
 /**
  * Shown instead of a page that failed to draw, so an unexpected error never leaves a blank screen

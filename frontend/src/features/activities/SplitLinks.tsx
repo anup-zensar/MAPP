@@ -1,10 +1,10 @@
 import { Split } from 'lucide-react';
 import { Link } from 'react-router';
-import type { Activity } from './activitiesApi';
-import { activityHref } from './activityText';
+import type { Activity } from './api';
+import { activityHref } from './activity-text';
 import styles from './SplitLinks.module.css';
-import { splitFromText, splitIntoText } from './splitText';
-import type { SplitLink } from './splitApi';
+import { splitFromText, splitIntoText } from './split-text';
+import type { SplitLink } from './split-api';
 
 /**
  * Where a split activity came from and what was split off it (016 FR-031), under the header: "Split

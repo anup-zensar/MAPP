@@ -1,7 +1,12 @@
 import { CircleAlert } from 'lucide-react';
 import { ApiError } from '@/api/errors';
-import { Card, EmptyState, ErrorState, LinkButton, PageHeader, Skeleton } from '@/components';
-import { ACTIVITY_GONE, GO_TO_BIN, GO_TO_PLANS } from './lineItemText';
+import { LinkButton } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { ACTIVITY_GONE, GO_TO_BIN, GO_TO_PLANS } from './line-item-text';
 
 /** While the line item is not known: the breadcrumb row is kept, so the title never moves. */
 function Header({ title }: { title: string }) {

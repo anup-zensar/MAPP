@@ -1,9 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import type { PlanCopyOptions } from '../plansApi';
+import { mockApi } from '@/testing/mock-api';
+import type { Answer } from '@/testing/replies';
+import { renderWithProviders } from '@/testing/render';
+import { reply } from '@/testing/replies';
+import type { PlanCopyOptions } from '../api';
 import { CopyPlanDialog } from './CopyPlanDialog';
 import type { CopyRefusal } from './CopyPlanDialog';
 
@@ -18,10 +19,12 @@ function copyOptions(overrides: Partial<PlanCopyOptions> = {}): PlanCopyOptions 
 }
 
 function renderDialog(
-  answer: MockHandler = { body: copyOptions() },
+  answer: Answer<'GET /api/v1/plans/{planId}/copy-options'> = { body: copyOptions() },
   onCopy: (request: unknown) => Promise<CopyRefusal | null> = async () => null,
 ) {
-  const api = mockApi({ 'GET /api/v1/plans/P-1001/copy-options': answer });
+  const api = mockApi([
+    reply('GET /api/v1/plans/{planId}/copy-options', answer, { planId: 'P-1001' }),
+  ]);
   const copy = vi.fn(onCopy);
   const onClose = vi.fn();
   const result = renderWithProviders(

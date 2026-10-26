@@ -1,13 +1,12 @@
 import { Download, LoaderCircle } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { useRef, useState } from 'react';
-import { api } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import { Button, useToast } from '@/components';
-import { downloadFromApi } from '@/lib/download';
-import type { AllWorkResult, ViewState } from './allWorkTypes';
+import { Button } from '@/ui/Button/Button';
+import { useToast } from '@/ui/Toast/useToast';
+import type { AllWorkResult, ViewState } from './all-work-types';
 import styles from './ExportMenu.module.css';
-import { toQueryParams } from './viewState';
+import { exportAllWork } from './api';
 
 type Format = 'xlsx' | 'csv';
 
@@ -35,15 +34,7 @@ export function ExportMenu({ state, result }: ExportMenuProps) {
     }
     setPreparing(true);
     try {
-      const fileName = await downloadFromApi(
-        api.GET('/api/v1/all-work/export', {
-          params: {
-            query: { ...toQueryParams(state), format, unassigned: state.showUnassigned },
-          },
-          parseAs: 'blob',
-        }),
-        `MAPP All work.${format}`,
-      );
+      const fileName = await exportAllWork(state, format);
       show({ message: `Exported '${fileName}'` });
     } catch (error) {
       const failure = error instanceof ApiError ? error : new ApiError('other');

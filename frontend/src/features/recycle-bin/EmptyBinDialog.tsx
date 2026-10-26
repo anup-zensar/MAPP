@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import type { ApiError } from '@/api/errors';
-import { ConfirmDialog, useToast } from '@/components';
-import { emptiedMessage, emptyBinText } from './binText';
-import type { BinItem } from './binText';
-import { asApiError } from './dialogFailure';
-import { useEmptyBin } from './recycleBinApi';
+import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { useToast } from '@/ui/Toast/useToast';
+import { asApiError } from '@/api/errors';
+import type { BinItem } from './bin-text';
+import { emptiedMessage, emptyBinText } from './purge-text';
+import { useEmptyBin } from './api';
 import styles from './dialogs.module.css';
 
 export interface EmptyBinDialogProps {

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import type { components } from '@/api/schema';
-import { InfoTip, SegmentedFilter } from '@/components';
-import { cx } from '@/lib/cx';
-import { formatAmount } from '@/lib/decimal';
-import { monthColumns, quarterColumns } from './lineItemMath';
+import type { components } from '@/api/generated/schema';
+import { InfoTip } from '@/ui/InfoTip/InfoTip';
+import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
+import { cx } from '@/ui/cx';
+import { formatAmount } from '@/format/decimal';
+import { monthColumns, quarterColumns } from './spread-grid-columns';
 import {
   EMPTY,
   GRID_NO_DATES,
@@ -15,12 +16,13 @@ import {
   OUTSIDE_TIP,
   QUARTERLY,
   TOTAL,
-} from './lineItemText';
+} from './line-item-text';
+import { gridPeriodOf } from './schemas';
+import type { GridPeriod } from './schemas';
 import styles from './SpreadGrid.module.css';
 
 type Grid = components['schemas']['SpreadGrid'];
 type Money = components['schemas']['Money'];
-type Period = 'monthly' | 'quarterly';
 
 /** Where the browser remembers Monthly or Quarterly (007 plan, "Line items section"). */
 const GRID_PERIOD_KEY = 'mapp.lineItemGrid';
@@ -38,11 +40,11 @@ export interface SpreadGridProps {
  * the months scroll sideways inside the card.
  */
 export function SpreadGrid({ grid, noDates }: SpreadGridProps) {
-  const [period, setPeriod] = useState<Period>(readPeriod);
+  const [period, setPeriod] = useState<GridPeriod>(readPeriod);
   const shown = period === 'quarterly' ? quarterColumns(grid) : monthColumns(grid);
   const code = grid.total.currency;
 
-  function choose(next: Period) {
+  function choose(next: GridPeriod) {
     setPeriod(next);
     try {
       localStorage.setItem(GRID_PERIOD_KEY, next);
@@ -96,9 +98,9 @@ export function SpreadGrid({ grid, noDates }: SpreadGridProps) {
                 <th scope="row" className={styles.sticky}>
                   {row.name}
                 </th>
-                {row.cells.map((cell, index) => (
-                  <td key={shown.columns[index].key} className={styles.number}>
-                    {amount(cell)}
+                {shown.columns.map((column, index) => (
+                  <td key={column.key} className={styles.number}>
+                    {amount(row.cells[index] ?? null)}
                   </td>
                 ))}
                 <td className={styles.number}>{amount(row.total)}</td>
@@ -110,9 +112,9 @@ export function SpreadGrid({ grid, noDates }: SpreadGridProps) {
               <th scope="row" className={styles.sticky}>
                 {TOTAL}
               </th>
-              {shown.totals.map((cell, index) => (
-                <td key={shown.columns[index].key} className={cx(styles.number, styles.strong)}>
-                  {amount(cell)}
+              {shown.columns.map((column, index) => (
+                <td key={column.key} className={cx(styles.number, styles.strong)}>
+                  {amount(shown.totals[index] ?? null)}
                 </td>
               ))}
               <td className={cx(styles.number, styles.strong)}>{amount(shown.total)}</td>
@@ -129,9 +131,9 @@ function amount(money: Money | null): string {
 }
 
 /** The remembered choice; Monthly when there is none or storage cannot be read. */
-function readPeriod(): Period {
+function readPeriod(): GridPeriod {
   try {
-    return localStorage.getItem(GRID_PERIOD_KEY) === 'quarterly' ? 'quarterly' : 'monthly';
+    return gridPeriodOf(localStorage.getItem(GRID_PERIOD_KEY));
   } catch {
     return 'monthly';
   }

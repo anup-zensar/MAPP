@@ -1,11 +1,12 @@
-import { StatusChip, Tooltip } from '@/components';
-import { cx } from '@/lib/cx';
-import { useFormatters } from '@/lib/useFormatters';
-import type { AllWorkCell } from './allWorkTypes';
-import { cellText, isProblem, NOTHING } from './cellText';
+import { StatusChip } from '@/ui/StatusChip/StatusChip';
+import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import { cx } from '@/ui/cx';
+import { useFormatters } from '@/format/useFormatters';
+import type { AllWorkCell } from './all-work-types';
+import { cellText, isProblem, NOTHING } from './cell-text';
 import styles from './CellValue.module.css';
 import { Highlight } from './Highlight';
-import { statusWord } from './statusWords';
+import { statusWord } from './status-words';
 
 /** Text longer than this is cut to one line and shown in full in a tip. */
 const LONG_TEXT = 40;
@@ -85,6 +86,7 @@ function LongText({ text, search }: { text: string; search: string }) {
   }
   return (
     <Tooltip content={text}>
+      {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- opens the tooltip */}
       <span tabIndex={0} className={cx(styles.text, styles.cut)}>
         <Highlight text={text} search={search} />
       </span>

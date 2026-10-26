@@ -1,11 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useMatches } from 'react-router';
-import { api, call } from '@/api/client';
-import { ErrorState, Skeleton } from '@/components';
-import { NotFoundPage } from '@/features/placeholders/NotFoundPage';
-import { usePageTitle } from '@/lib/usePageTitle';
-import type { PageHandle } from './RequireSignIn';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { NotFoundPage } from '@/features/placeholders';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { useEnvironment } from '@/session/api';
+import { requestedPageTitle } from '@/session/page-handle';
 
 /**
  * The gate in front of the developer pages (research R23, D-036): they exist only where demo
@@ -14,10 +14,7 @@ import type { PageHandle } from './RequireSignIn';
  * used, because the end-to-end tests run the production build.
  */
 export function DevOnly({ children }: { children: ReactNode }) {
-  const environment = useQuery({
-    queryKey: ['environment'],
-    queryFn: () => call(api.GET('/api/v1/environment')),
-  });
+  const environment = useEnvironment();
 
   if (environment.data) {
     return environment.data.demoSignIn ? children : <NotFoundPage />;
@@ -43,7 +40,7 @@ interface EnvironmentCheckProps {
 function EnvironmentCheck({ error, onRetry }: EnvironmentCheckProps) {
   const matches = useMatches();
   // Every developer route names its page in its handle, as every signed-in route does (router.tsx).
-  usePageTitle((matches[matches.length - 1].handle as PageHandle).title);
+  usePageTitle(requestedPageTitle(matches));
 
   return error ? (
     <ErrorState error={error} onRetry={onRetry} />

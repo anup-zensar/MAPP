@@ -2,25 +2,20 @@ import { ChevronRight, Landmark, Lock, Plus } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { Button, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components';
-import { plural } from '@/lib/text';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { Button } from '@/ui/Button/Button';
+import { EmptyState } from '@/ui/EmptyState/EmptyState';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { plural } from '@/format/text';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { BudgetFigures } from './BudgetFigures';
 import { GlobalBudgetForm } from './GlobalBudgetForm';
-import { useGlobalBudgets } from './globalBudgetsApi';
-import type { GlobalBudgetSummary } from './globalBudgetsApi';
-import { emptyText, PAGE_DESCRIPTION } from './globalBudgetsText';
+import { useGlobalBudgets } from './api';
+import type { GlobalBudgetSummary } from './api';
+import { emptyText, PAGE_DESCRIPTION } from './global-budgets-text';
+import { yearOf } from './schemas';
 import styles from './GlobalBudgetsPage.module.css';
-
-/** "?year=all" lists every year; no year means the current one. */
-function readYear(params: URLSearchParams, currentYear: number): number | null {
-  const value = params.get('year');
-  if (value === 'all') {
-    return null;
-  }
-  const year = Number(value);
-  return value && Number.isInteger(year) && year >= 2000 && year <= 2100 ? year : currentYear;
-}
 
 /**
  * Global budgets (014 US6, FR-036), at /budgets: the global budgets of a year (the current year
@@ -31,7 +26,7 @@ export function GlobalBudgetsPage() {
   usePageTitle('Global budgets');
   const [params, setParams] = useSearchParams();
   const currentYear = new Date().getFullYear();
-  const year = readYear(params, currentYear);
+  const year = yearOf(params, currentYear);
   const budgets = useGlobalBudgets(year);
   const [creating, setCreating] = useState(false);
   // The new global budget opens once its form has closed (its unsaved-changes guard is gone).

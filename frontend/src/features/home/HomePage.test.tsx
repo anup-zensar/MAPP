@@ -1,12 +1,12 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { CurrentUser } from '@/app/useSession';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
-import { HomePage } from './HomePage';
+import type { HttpHandler } from 'msw';
+import type { CurrentUser } from '@/session/useSession';
+import { mockApi } from '@/testing/mock-api';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
 import {
+  EMPTY_SUMMARY,
   HOME_ANSWERS,
   attentionItemOf,
   groupOf,
@@ -15,16 +15,15 @@ import {
   overviewOf,
   summaryOf,
   waitingItemOf,
-} from './testData';
-
-/** The summary of a person who has nothing yet, as HOME_ANSWERS gives it. */
-const HOME_EMPTY_SUMMARY = HOME_ANSWERS['GET /api/v1/home/summary'].body as object;
+} from '@/testing/fixtures/home';
+import { reply } from '@/testing/replies';
+import { HomePage } from './HomePage';
 
 const NO_TEAM_SENTENCE =
   "You're not in a team yet. Plans belong to teams — add yourself to one on the Teams page.";
 
-function renderHome(answers: Record<string, MockHandler> = {}, user: CurrentUser = testUser()) {
-  const api = mockApi({ ...HOME_ANSWERS, ...answers });
+function renderHome(answers: HttpHandler[] = [], user: CurrentUser = testUser()) {
+  const api = mockApi([...HOME_ANSWERS, ...answers]);
   const rendered = renderWithProviders(<HomePage />, { user, path: '/' });
   return { ...rendered, api };
 }
@@ -52,7 +51,7 @@ describe('HomePage', () => {
 
   it('tells a person without any role whom to ask, instead of empty cards (014 edge case "No role")', () => {
     renderHome(
-      {},
+      [],
       testUser({
         access: {
           roles: [],
@@ -83,7 +82,7 @@ describe('HomePage', () => {
 
   it('starts on the scope the person chose last time (FR-003)', async () => {
     const { api } = renderHome(
-      {},
+      [],
       testUser({ preferences: { ...testUser().preferences, homeScope: 'everything' } }),
     );
 
@@ -96,9 +95,9 @@ describe('HomePage', () => {
   });
 
   it('shows Getting started with the no-team sentence to a person in no team (FR-020, US5 scenario 1)', async () => {
-    renderHome({
-      'GET /api/v1/home/summary': { body: summaryOf({ gettingStarted: 'notInTeam' }) },
-    });
+    renderHome([
+      reply('GET /api/v1/home/summary', { body: summaryOf({ gettingStarted: 'notInTeam' }) }),
+    ]);
 
     const card = await screen.findByRole('region', { name: 'Getting started' });
     expect(within(card).getAllByRole('listitem')).toHaveLength(5);
@@ -106,16 +105,18 @@ describe('HomePage', () => {
   });
 
   it('shows Getting started without that sentence when no team of the person has a plan (FR-020)', async () => {
-    renderHome({
-      'GET /api/v1/home/summary': { body: summaryOf({ gettingStarted: 'noTeamPlans' }) },
-    });
+    renderHome([
+      reply('GET /api/v1/home/summary', {
+        body: summaryOf({ gettingStarted: 'noTeamPlans' }),
+      }),
+    ]);
 
     const card = await screen.findByRole('region', { name: 'Getting started' });
     expect(within(card).queryByText(/You're not in a team yet/)).not.toBeInTheDocument();
   });
 
   it('leaves Getting started out once a team of the person has a plan (US5 scenario 2)', async () => {
-    renderHome({ 'GET /api/v1/home/summary': { body: summaryOf() } });
+    renderHome([reply('GET /api/v1/home/summary', { body: summaryOf() })]);
 
     await screen.findByRole('link', { name: "My teams' plans: 1 — open the Plans list" });
     expect(screen.queryByRole('region', { name: 'Getting started' })).not.toBeInTheDocument();
@@ -133,7 +134,7 @@ describe('HomePage', () => {
   });
 
   it('keeps the page when the summary cannot load, with Try again in its place (FR-022)', async () => {
-    renderHome({ 'GET /api/v1/home/summary': { status: 500 } });
+    renderHome([reply('GET /api/v1/home/summary', { status: 500 })]);
 
     const summary = await screen.findByRole('region', { name: 'Summary' });
     expect(await within(summary).findByRole('alert')).toHaveTextContent(
@@ -168,11 +169,11 @@ describe('HomePage', () => {
   });
 
   it('widens the plans cards to Everything at once and remembers the choice (FR-003, US2 scenario 4)', async () => {
-    const { api, user } = renderHome({
-      'PATCH /api/v1/me/preferences': {
+    const { api, user } = renderHome([
+      reply('PATCH /api/v1/me/preferences', {
         body: { ...testUser().preferences, homeScope: 'everything' },
-      },
-    });
+      }),
+    ]);
     await screen.findByRole('link', { name: "My teams' plans: 0 — open the Plans list" });
 
     await user.click(screen.getByRole('button', { name: 'Everything' }));
@@ -206,9 +207,7 @@ describe('HomePage', () => {
   });
 
   it('shows the Financials card right under the summary cards, for the Home scope (015 FR-025)', async () => {
-    const { api } = renderHome({
-      'GET /api/v1/financials/overview': { body: overviewOf() },
-    });
+    const { api } = renderHome([reply('GET /api/v1/financials/overview', { body: overviewOf() })]);
 
     const financials = await screen.findByRole('region', { name: 'Financials · 2026' });
     const summary = screen.getByRole('region', { name: 'Summary' });
@@ -217,12 +216,12 @@ describe('HomePage', () => {
   });
 
   it('shows what needs the person and what waits for their approval (US3)', async () => {
-    renderHome({
-      'GET /api/v1/home/attention': {
+    renderHome([
+      reply('GET /api/v1/home/attention', {
         body: { items: [attentionItemOf()], total: 1 },
-      },
-      'GET /api/v1/home/waiting': { body: { items: [waitingItemOf()], total: 1 } },
-    });
+      }),
+      reply('GET /api/v1/home/waiting', { body: { items: [waitingItemOf()], total: 1 } }),
+    ]);
 
     const attention = await screen.findByRole('region', { name: 'Needs your attention' });
     expect(await within(attention).findByRole('link', { name: 'Launch film' })).toBeInTheDocument();
@@ -233,12 +232,12 @@ describe('HomePage', () => {
   });
 
   it('shows my activities and the recent changes of the plans in scope (US4)', async () => {
-    renderHome({
-      'GET /api/v1/home/my-activities': {
+    renderHome([
+      reply('GET /api/v1/home/my-activities', {
         body: { groups: [groupOf('approved', [myActivityOf()])], total: 1 },
-      },
-      'GET /api/v1/home/recent-changes': { body: { items: [logEntryOf()], total: 1 } },
-    });
+      }),
+      reply('GET /api/v1/home/recent-changes', { body: { items: [logEntryOf()], total: 1 } }),
+    ]);
 
     const activities = await screen.findByRole('region', { name: 'My activities' });
     expect(
@@ -250,9 +249,11 @@ describe('HomePage', () => {
   });
 
   it('gives a brand-new person an empty state in every card, never a blank one (FR-021, SC-006)', async () => {
-    renderHome({
-      'GET /api/v1/home/summary': { body: { ...HOME_EMPTY_SUMMARY, gettingStarted: 'notInTeam' } },
-    });
+    renderHome([
+      reply('GET /api/v1/home/summary', {
+        body: { ...EMPTY_SUMMARY, gettingStarted: 'notInTeam' },
+      }),
+    ]);
 
     expect(await screen.findByRole('region', { name: 'Getting started' })).toBeInTheDocument();
     expect(await screen.findByText('No plans in scope')).toBeInTheDocument();
@@ -266,7 +267,7 @@ describe('HomePage', () => {
   });
 
   it('keeps every other card when one card cannot load (FR-022)', async () => {
-    renderHome({ 'GET /api/v1/home/attention': { status: 500 } });
+    renderHome([reply('GET /api/v1/home/attention', { status: 500 })]);
 
     const attention = await screen.findByRole('region', { name: 'Needs your attention' });
     expect(await within(attention).findByRole('alert')).toHaveTextContent(
@@ -282,11 +283,11 @@ describe('HomePage', () => {
   });
 
   it('switches to Everything from the empty Plans at a glance (FR-021)', async () => {
-    const { api, user } = renderHome({
-      'PATCH /api/v1/me/preferences': {
+    const { api, user } = renderHome([
+      reply('PATCH /api/v1/me/preferences', {
         body: { ...testUser().preferences, homeScope: 'everything' },
-      },
-    });
+      }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Switch to Everything' }));
 
@@ -297,7 +298,7 @@ describe('HomePage', () => {
   });
 
   it('says when the scope could not be saved, with Try again (FR-003)', async () => {
-    const { user } = renderHome({ 'PATCH /api/v1/me/preferences': { status: 500 } });
+    const { user } = renderHome([reply('PATCH /api/v1/me/preferences', { status: 500 })]);
     await screen.findByRole('link', { name: /My teams' plans/ });
 
     await user.click(screen.getByRole('button', { name: 'Everything' }));

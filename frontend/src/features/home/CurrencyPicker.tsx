@@ -1,11 +1,11 @@
 import { useId } from 'react';
 import { ApiError } from '@/api/errors';
-import { useToast } from '@/components';
+import { useToast } from '@/ui/Toast/useToast';
 import { currencyLabel, useDisplayCurrencies } from '@/features/people';
 import type { DisplayCurrencyOption } from '@/features/people';
-import { useFormatters } from '@/lib/useFormatters';
-import { useSaveDisplayCurrency } from './homeApi';
-import { CHOICE_NOT_SAVED } from './homeText';
+import { useFormatters } from '@/format/useFormatters';
+import { useSaveDisplayCurrency } from './api';
+import { CHOICE_NOT_SAVED } from './home-text';
 import styles from './CurrencyPicker.module.css';
 
 interface CurrencyOption {

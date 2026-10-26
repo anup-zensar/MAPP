@@ -1,15 +1,15 @@
 import { TriangleAlert } from 'lucide-react';
 import type { MouseEvent } from 'react';
-import { cx } from '@/lib/cx';
-import { useFormatters } from '@/lib/useFormatters';
+import { cx } from '@/ui/cx';
+import { useFormatters } from '@/format/useFormatters';
 import gridStyles from './AllWorkGrid.module.css';
-import { NOT_PHASED, PHASED_BUDGET_ROW, totalText } from './allWorkText';
-import type { AllWorkResult, AllWorkRow, Money } from './allWorkTypes';
+import { NOT_PHASED, PHASED_BUDGET_ROW, totalText } from './all-work-text';
+import type { AllWorkResult, AllWorkRow, Money } from './all-work-types';
 import styles from './BudgetView.module.css';
-import { isControl, NOTHING } from './cellText';
+import { isControl, NOTHING } from './cell-text';
 import { RowName } from './RowName';
 import { ScrollBox } from './ScrollBox';
-import type { VisibleRow } from './viewState';
+import type { VisibleRow } from './view-rows';
 
 export interface BudgetViewProps {
   /** The answer for view=budget: its periods and each row's amounts. */

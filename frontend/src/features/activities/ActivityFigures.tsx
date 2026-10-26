@@ -1,12 +1,11 @@
 import type { ReactNode } from 'react';
-import { SummaryCard } from '@/components';
-import { amountText, moneyText } from '@/features/line-items/lineItemMath';
-import type { Money } from '@/features/line-items/lineItemsApi';
-import { RateTip } from '@/features/line-items/MoneyPair';
-import { toCents } from '@/lib/decimal';
-import type { Activity } from './activitiesApi';
+import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
+import { amountText, moneyText, RateTip } from '@/features/line-items';
+import type { Money } from '@/features/line-items';
+import { toCents } from '@/format/decimal';
+import type { Activity } from './api';
 import styles from './ActivityPage.module.css';
-import { lineItemsAttentionText, lineItemsText } from './activityText';
+import { lineItemsAttentionText, lineItemsText } from './activity-text';
 
 const UNASSIGNED_TIP =
   "The activity's planned cost minus its line items' planned costs, in the plan currency (Sys_Gen_Balance). Aim for 0.00.";

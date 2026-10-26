@@ -1,4 +1,4 @@
-import { useNotifications } from './notificationsApi';
+import { useNotifications } from './api';
 
 /**
  * How many notifications the signed-in person has not read (FR-033), from the bell's list query

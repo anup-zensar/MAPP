@@ -1,50 +1,32 @@
-import { Pencil, Plus, Wallet } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import {
-  ActionsMenu,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  PageHeader,
-  SegmentedFilter,
-  Skeleton,
-  StatusChip,
-} from '@/components';
-import { plural } from '@/lib/text';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { ListToolbar } from '../shared/ListToolbar';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
-import styles from '../shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '../shared/useListFilters';
-import type { ListFilters } from '../shared/useListFilters';
-import { useSettingStatus } from '../shared/useSettingStatus';
-import { FinanceBudgetItemDetails } from './FinanceBudgetItemDetails';
-import { FinanceBudgetItemForm } from './FinanceBudgetItemForm';
-import page from './FinanceBudgetItemsPage.module.css';
+import { Button } from '@/ui/Button/Button';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { Card } from '@/ui/Card/Card';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { PageHeader } from '@/ui/PageHeader/PageHeader';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import { useListFilters } from '@/ui/useListFilters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
+import { useSettingStatus } from '../useSettingStatus';
 import {
   FINANCE_LISTS,
   setFinanceBudgetItemStatus,
   useDeleteFinanceBudgetItem,
   useFinanceBudgetPage,
-} from './financeBudgetsApi';
-import type { FinanceBudget, FinanceBudgetItem, FinanceBudgetPage } from './financeBudgetsApi';
-import { moreActions } from './financeItemActions';
-import type { FinanceItemActions } from './financeItemActions';
+} from './api';
+import type { FinanceBudget, FinanceBudgetItem } from './api';
+import { BudgetCards } from './BudgetCards';
+import type { FinanceItemActions } from './finance-item-actions';
+import { FinanceBudgetItemDetails } from './FinanceBudgetItemDetails';
+import { FinanceBudgetItemForm } from './FinanceBudgetItemForm';
 import { RenameBudgetDialog } from './RenameBudgetDialog';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
-import { useCanChange } from '../shared/useCanChange';
-
-const ITEM_NOUN = { one: 'finance budget item', many: 'finance budget items' };
+import { budgetYearOf } from './schemas';
 
 /** The side-panel form that is open: a new item, or one being changed. */
 type OpenForm = { kind: 'new' } | { kind: 'edit'; item: FinanceBudgetItem };
-
-/** What the search looks in: the item, its budget and its code (FR-014). */
-function searchText(item: FinanceBudgetItem): string {
-  return `${item.name} ${item.budgetName} ${item.code}`;
-}
 
 /**
  * Finance budget items (feature 002, US5, FR-014, FR-015): the items line items link to, a simple
@@ -57,8 +39,7 @@ export function FinanceBudgetItemsPage() {
   usePageTitle('Finance budget items');
   const filters = useListFilters();
   const [params, setParams] = useSearchParams();
-  const yearParam = Number.parseInt(params.get('year') ?? '', 10);
-  const requestedYear = Number.isInteger(yearParam) ? yearParam : undefined;
+  const requestedYear = budgetYearOf(params);
   const budgets = useFinanceBudgetPage(requestedYear);
   const deleteItem = useDeleteFinanceBudgetItem();
   const [form, setForm] = useState<OpenForm | null>(null);
@@ -175,189 +156,5 @@ export function FinanceBudgetItemsPage() {
       )}
       {status.dialog}
     </>
-  );
-}
-
-interface BudgetCardsProps {
-  data: FinanceBudgetPage;
-  /** The year chosen in the filter. */
-  year: number;
-  /** Another year's budgets are on their way; the last ones are shown meanwhile. */
-  loading: boolean;
-  filters: ListFilters;
-  actions: FinanceItemActions;
-  onYear: (year: string) => void;
-  onNew: () => void;
-  onRename: (budget: FinanceBudget) => void;
-}
-
-/** The filters, then one card per finance budget of the year — or what to show instead. */
-function BudgetCards({
-  data,
-  year,
-  loading,
-  filters,
-  actions,
-  onYear,
-  onNew,
-  onRename,
-}: BudgetCardsProps) {
-  const all = data.items.flatMap((budget) => budget.items);
-  const { counts } = filterRecords(all, filters, searchText);
-  const shown = data.items
-    .map((budget) => ({ budget, items: filterRecords(budget.items, filters, searchText).shown }))
-    .filter((group) => group.items.length > 0);
-  const shownCount = shown.reduce((sum, group) => sum + group.items.length, 0);
-
-  return (
-    <div className={page.stack} aria-busy={loading || undefined}>
-      <Card>
-        <div className={page.filters}>
-          <SegmentedFilter
-            label="Budget year"
-            options={data.years.map((each) => ({ value: String(each), label: String(each) }))}
-            value={String(year)}
-            onChange={onYear}
-          />
-          <ListToolbar
-            search={{
-              label: 'Search finance budget items',
-              placeholder: 'Search item, budget or code',
-              value: filters.q,
-              onChange: filters.setQ,
-            }}
-            status={{ value: filters.status, onChange: filters.setStatus, counts }}
-            count={{ shown: shownCount, total: all.length, noun: ITEM_NOUN }}
-          />
-        </div>
-      </Card>
-      {loading ? (
-        <Card>
-          <Skeleton lines={5} height="18px" />
-        </Card>
-      ) : all.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={<Wallet />}
-            title={`No finance budget items for ${data.year} yet — create the first one`}
-            action={
-              <CanChange>
-                <Button icon={<Plus />} onClick={onNew}>
-                  New finance budget item
-                </Button>
-              </CanChange>
-            }
-          />
-        </Card>
-      ) : shown.length === 0 ? (
-        <Card>
-          <div className={styles.noMatch}>
-            <p>Nothing matches these filters</p>
-            <Button onClick={filters.clear}>Clear filters</Button>
-          </div>
-        </Card>
-      ) : (
-        shown.map(({ budget, items }) => (
-          <BudgetCard
-            key={budget.id}
-            budget={budget}
-            items={items}
-            actions={actions}
-            onRename={() => onRename(budget)}
-          />
-        ))
-      )}
-    </div>
-  );
-}
-
-interface BudgetCardProps {
-  budget: FinanceBudget;
-  /** The budget's items that match the filters. */
-  items: FinanceBudgetItem[];
-  actions: FinanceItemActions;
-  onRename: () => void;
-}
-
-/** One finance budget: its name, item count and the plans using it, with Rename budget. */
-function BudgetCard({ budget, items, actions, onRename }: BudgetCardProps) {
-  const canChange = useCanChange();
-  return (
-    <Card
-      title={budget.name}
-      subtitle={`${plural(budget.items.length, 'item')} · ${budget.usage.summary}`}
-      actions={
-        canChange ? (
-          <Button
-            size="sm"
-            icon={<Pencil />}
-            aria-label={`Rename budget '${budget.name}'`}
-            onClick={onRename}
-          >
-            Rename budget
-          </Button>
-        ) : undefined
-      }
-    >
-      <div className={styles.tableScroll}>
-        {/* Fixed column widths, so the columns of every budget's table line up (UI audit ST-04). */}
-        <table className={`${styles.table} ${styles.fixed}`}>
-          <colgroup>
-            <col className={page.itemColumn} />
-            <col className={page.codeColumn} />
-            <col />
-            <col className={page.statusColumn} />
-            <col className={page.actionsColumn} />
-          </colgroup>
-          <thead>
-            <tr>
-              <th scope="col">Item</th>
-              <th scope="col">Code</th>
-              <th scope="col">Linked to</th>
-              <th scope="col">Status</th>
-              <th scope="col">
-                <span className="visually-hidden">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <th scope="row">
-                  <button
-                    type="button"
-                    className={styles.nameButton}
-                    onClick={() => actions.view(item)}
-                  >
-                    {item.name}
-                  </button>
-                </th>
-                <td className={styles.nowrap}>{item.code || '—'}</td>
-                <td>{item.usage.summary}</td>
-                <td className={styles.nowrap}>
-                  <StatusChip tone={item.active ? 'positive' : 'neutral'}>
-                    {item.active ? 'Active' : 'Inactive'}
-                  </StatusChip>
-                </td>
-                <td className={styles.actionsCell}>
-                  <ActionsMenu
-                    label={item.name}
-                    items={[
-                      { label: 'View', onSelect: () => actions.view(item) },
-                      ...(canChange
-                        ? [
-                            { label: 'Edit', onSelect: () => actions.edit(item) },
-                            ...moreActions(item, actions),
-                          ]
-                        : []),
-                    ]}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
   );
 }

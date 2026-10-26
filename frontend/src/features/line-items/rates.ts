@@ -6,8 +6,8 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
-import type { components } from '@/api/schema';
-import { formatRate } from '@/lib/decimal';
+import type { components } from '@/api/generated/schema';
+import { formatRate } from '@/format/decimal';
 
 export type RateUsed = components['schemas']['RateUsed'];
 type RateSource = components['schemas']['RateSource'];

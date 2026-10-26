@@ -1,10 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { mockApi } from '@/test/mockApi';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { mockApi } from '@/testing/mock-api';
+import { testUser } from '@/testing/fixtures/users';
+import { DEMO_IMPORT } from '@/testing/fixtures/financial-imports';
+import { reply } from '@/testing/replies';
 import { ImportHistoryPanel } from './ImportHistoryPanel';
-import { DEMO_IMPORT } from './testData';
 
 const FILE_IMPORT = {
   ...DEMO_IMPORT,
@@ -19,9 +20,11 @@ const FILE_IMPORT = {
 
 describe('ImportHistoryPanel (015 FR-008)', () => {
   it('lists every import newest first with its file, source, who, when and counts', async () => {
-    mockApi({
-      'GET /api/v1/financials/imports': { body: { items: [FILE_IMPORT, DEMO_IMPORT], total: 2 } },
-    });
+    mockApi([
+      reply('GET /api/v1/financials/imports', {
+        body: { items: [FILE_IMPORT, DEMO_IMPORT], total: 2 },
+      }),
+    ]);
     renderWithProviders(<ImportHistoryPanel onClose={vi.fn()} />, { user: testUser() });
 
     const panel = await screen.findByRole('dialog', { name: 'Import history' });
@@ -43,7 +46,7 @@ describe('ImportHistoryPanel (015 FR-008)', () => {
   });
 
   it('says when nothing was ever imported', async () => {
-    mockApi({ 'GET /api/v1/financials/imports': { body: { items: [], total: 0 } } });
+    mockApi([reply('GET /api/v1/financials/imports', { body: { items: [], total: 0 } })]);
     renderWithProviders(<ImportHistoryPanel onClose={vi.fn()} />, { user: testUser() });
 
     expect(await screen.findByText('No GSAP data loaded yet.')).toBeInTheDocument();

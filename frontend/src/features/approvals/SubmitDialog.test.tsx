@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { ALEX, CARLOS, DANIEL, PRIYA, submissionOf } from '@/testing/fixtures/approvals';
 import { SubmitDialog } from './SubmitDialog';
-import { ALEX, CARLOS, DANIEL, PRIYA, submissionOf } from './testData';
 
 function renderDialog(submission = submissionOf(), commentError?: string) {
   const onConfirm = vi.fn();

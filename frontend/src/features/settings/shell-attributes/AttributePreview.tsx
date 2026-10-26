@@ -1,22 +1,19 @@
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import { useAttributeForm } from '@/api/settingsQueries';
-import {
-  businessUnitOf,
-  Button,
-  Card,
-  ChoiceField,
-  CompletenessChip,
-  ErrorState,
-  FormErrorSummary,
-  missingAttributes,
-  ShellAttributeFields,
-  Skeleton,
-} from '@/components';
-import type { AttributeForm, AttributeValues } from '@/components';
-import { LEVEL_WORDS } from './attributeWords';
-import { checkAttributeValues } from './shellAttributesApi';
-import type { AttributeCheckResult, ShellAttribute } from './shellAttributesApi';
+import { Button } from '@/ui/Button/Button';
+import { Card } from '@/ui/Card/Card';
+import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
+import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
+import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
+import { businessUnitOf, missingAttributes } from '@/ui/ShellAttributeFields/rules';
+import { Skeleton } from '@/ui/Skeleton/Skeleton';
+import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
+import { useAttributeForm } from '../api';
+import { LEVEL_WORDS } from './attribute-words';
+import { checkAttributeValues } from './api';
+import type { AttributeCheckResult, ShellAttribute } from './api';
 import styles from './AttributePreview.module.css';
 
 /**

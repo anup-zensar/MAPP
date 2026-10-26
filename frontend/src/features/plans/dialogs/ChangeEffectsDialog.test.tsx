@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import type { PlanChangeEffects } from '../plansApi';
+import { renderWithProviders } from '@/testing/render';
+import type { PlanChangeEffects } from '../api';
 import { ChangeEffectsDialog } from './ChangeEffectsDialog';
 
 function renderDialog(effects: PlanChangeEffects, modelOnly = false) {

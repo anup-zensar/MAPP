@@ -1,21 +1,29 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { FailureMessage, FormDialog, SearchField, useToast } from '@/components';
-import { useFormatters } from '@/lib/useFormatters';
-import { useActivityDestinations, useMoveActivity } from './activitiesApi';
-import type { Activity, ActivityDestination } from './activitiesApi';
+import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
+import { FailureMessage } from '@/ui/FormPanel/FormPanel';
+import { SearchField } from '@/ui/SearchField/SearchField';
+import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
+import type { DateFormat } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
+import { useActivityDestinations, useMoveActivity } from './api';
+import type { Activity, ActivityDestination } from './api';
 import {
-  CHOOSE_ANOTHER_INITIATIVE,
   moveIntro,
   movedToast,
   moveTitle,
   NO_OTHER_INITIATIVE,
   noInitiativeMatches,
   SEARCH_INITIATIVES,
-} from './activityText';
+} from './activity-text';
 import { DestinationList, DestinationsState } from './DestinationList';
 import styles from './DestinationList.module.css';
-import { focusOnArrival } from './focusOnArrival';
+import { focusOnArrival } from './focus-on-arrival';
+import { moveSchema } from './schemas';
 
 export interface MoveActivityDialogProps {
   /** The activity as stored now: the move sends its version. */
@@ -34,19 +42,19 @@ export function MoveActivityDialog({ activity, onClose }: MoveActivityDialogProp
   const { dateFormat } = useFormatters();
   const destinations = useActivityDestinations(activity.id);
   const move = useMoveActivity();
-  const [query, setQuery] = useState('');
-  const [chosen, setChosen] = useState('');
-  const [choiceError, setChoiceError] = useState<string | undefined>();
+  const items = destinations.data?.items ?? [];
+  const form = useForm({
+    resolver: zodResolver(moveSchema(items)),
+    defaultValues: { initiativeId: '', search: '' },
+    ...CHECK_ON_SAVE,
+  });
+  const query = useWatch({ control: form.control, name: 'search' });
   const [failure, setFailure] = useState<string | null>(null);
 
-  async function submit(items: ActivityDestination[]) {
-    if (!items.some((item) => !item.current)) {
-      // Nowhere to go: the dialog already says so.
-      return;
-    }
-    const target = items.find((item) => item.initiative.id === chosen && item.moveProblem === null);
+  const submit = form.handleSubmit(async ({ initiativeId }) => {
+    const target = items.find((item) => item.initiative.id === initiativeId);
     if (!target) {
-      setChoiceError(CHOOSE_ANOTHER_INITIATIVE);
+      // Nowhere to go: the dialog already says so.
       return;
     }
     setFailure(null);
@@ -61,17 +69,10 @@ export function MoveActivityDialog({ activity, onClose }: MoveActivityDialogProp
     } catch (error) {
       // The initiative changed meanwhile, or someone else changed the activity: said here, with
       // the initiatives asked again.
-      const apiError = error instanceof ApiError ? error : new ApiError('other');
-      if (apiError.kind === 'conflict') {
-        setFailure(conflictMessage(apiError, 'activity', dateFormat));
-      } else if (apiError.fields.length > 0) {
-        setFailure(apiError.fields.map((field) => field.message).join(' '));
-      } else {
-        setFailure(apiError.message);
-      }
+      setFailure(refusalOf(error instanceof ApiError ? error : new ApiError('other'), dateFormat));
       void destinations.refetch();
     }
-  }
+  });
 
   return (
     <FormDialog
@@ -80,46 +81,87 @@ export function MoveActivityDialog({ activity, onClose }: MoveActivityDialogProp
       title={moveTitle(activity.name)}
       description={moveIntro(activity.plan.name)}
       submitLabel="Move activity"
-      onSubmit={() => destinations.data && void submit(destinations.data.items)}
+      onSubmit={() => destinations.data && void submit()}
       busy={move.isPending}
     >
       <DestinationsState query={destinations}>
-        {(items) => {
-          if (!items.some((item) => !item.current)) {
+        {(loaded) => {
+          if (!loaded.some((item) => !item.current)) {
             return <p className={styles.muted}>{NO_OTHER_INITIATIVE}</p>;
           }
-          const shown = matching(items, query);
           return (
             <div className={styles.stack} ref={focusOnArrival}>
               {failure && <FailureMessage failure={{ message: failure }} />}
-              <SearchField
-                label={SEARCH_INITIATIVES}
-                placeholder={SEARCH_INITIATIVES}
-                value={query}
-                onChange={setQuery}
+              <FormField
+                control={form.control}
+                name="search"
+                render={(field) => (
+                  <SearchField
+                    label={SEARCH_INITIATIVES}
+                    placeholder={SEARCH_INITIATIVES}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
-              {shown.length === 0 ? (
-                <p className={styles.muted}>{noInitiativeMatches(query.trim())}</p>
-              ) : (
-                <DestinationList
-                  legend={moveTitle(activity.name)}
-                  legendHidden
-                  destinations={shown}
-                  purpose="move"
-                  value={chosen}
-                  onChange={(initiativeId) => {
-                    setChosen(initiativeId);
-                    setChoiceError(undefined);
-                  }}
-                  error={choiceError}
-                />
-              )}
+              <FormField
+                control={form.control}
+                name="initiativeId"
+                render={(field) => (
+                  <Destinations
+                    activity={activity}
+                    items={matching(loaded, query)}
+                    query={query}
+                    value={field.value}
+                    onChange={(initiativeId) => {
+                      field.onChange(initiativeId);
+                      form.clearErrors('initiativeId');
+                    }}
+                    error={field.error}
+                  />
+                )}
+              />
             </div>
           );
         }}
       </DestinationsState>
     </FormDialog>
   );
+}
+
+interface DestinationsProps {
+  activity: Activity;
+  items: ActivityDestination[];
+  query: string;
+  value: string;
+  onChange: (initiativeId: string) => void;
+  error?: string;
+}
+
+function Destinations({ activity, items, query, value, onChange, error }: DestinationsProps) {
+  if (items.length === 0) {
+    return <p className={styles.muted}>{noInitiativeMatches(query.trim())}</p>;
+  }
+  return (
+    <DestinationList
+      legend={moveTitle(activity.name)}
+      legendHidden
+      destinations={items}
+      purpose="move"
+      value={value}
+      onChange={onChange}
+      error={error}
+    />
+  );
+}
+
+function refusalOf(error: ApiError, dateFormat: DateFormat): string {
+  if (error.kind === 'conflict') {
+    return conflictMessage(error, 'activity', dateFormat);
+  }
+  return error.fields.length > 0
+    ? error.fields.map((field) => field.message).join(' ')
+    : error.message;
 }
 
 /** The initiatives whose name, or whose campaign's name, contains the typed text (any case). */

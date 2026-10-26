@@ -1,13 +1,14 @@
 import { cleanup, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { parentOf } from '@/testing/dom';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/fixtures/users';
+import { gridResult } from '@/testing/fixtures/all-work';
 import { SummaryCards } from './SummaryCards';
-import { gridResult } from './testData';
 
 function card(label: string): HTMLElement {
   const summary = screen.getByRole('region', { name: 'Summary' });
-  return within(summary).getByText(label, { selector: 'p' }).parentElement as HTMLElement;
+  return parentOf(within(summary).getByText(label, { selector: 'p' }));
 }
 
 describe('SummaryCards (FR-003)', () => {
