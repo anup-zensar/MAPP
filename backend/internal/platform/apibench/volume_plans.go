@@ -44,6 +44,13 @@ func (v *volume) lubricantsPlans() {
 }
 
 func (v *volume) growTemplate(planID string) {
+	v.growActivities(planID)
+	v.growLineItems(planID)
+	v.growInitiatives(planID)
+	v.progress("template %s: %d activities, %d line items", planID, len(v.activitiesOf(planID)), len(v.lineItemsOf(planID)))
+}
+
+func (v *volume) growActivities(planID string) {
 	for _, i := range v.initiativesOf(planID) {
 		have, err := v.set.Activities.ListByInitiative(v.ctx, i.ID)
 		v.must(err)
@@ -52,6 +59,9 @@ func (v *volume) growTemplate(planID string) {
 			v.alex.Do(v.tb, http.MethodPost, "/api/v1/activities/"+model.ID+"/copy", map[string]any{"initiativeId": i.ID})
 		}
 	}
+}
+
+func (v *volume) growLineItems(planID string) {
 	for _, a := range v.activitiesOf(planID) {
 		items, err := v.set.LineItems.ListByActivity(v.ctx, a.ID)
 		v.must(err)
@@ -67,6 +77,9 @@ func (v *volume) growTemplate(planID string) {
 			v.alex.Do(v.tb, http.MethodPost, "/api/v1/line-items/"+first+"/duplicate", map[string]any{"restartApproval": false})
 		}
 	}
+}
+
+func (v *volume) growInitiatives(planID string) {
 	for _, c := range v.campaignsOf(planID) {
 		have, err := v.set.Campaigns.InitiativesOfCampaign(v.ctx, c.ID)
 		v.must(err)
@@ -75,7 +88,6 @@ func (v *volume) growTemplate(planID string) {
 			v.alex.Do(v.tb, http.MethodPost, "/api/v1/initiatives/"+have[0].ID+"/copy", body)
 		}
 	}
-	v.progress("template %s: %d activities, %d line items", planID, len(v.activitiesOf(planID)), len(v.lineItemsOf(planID)))
 }
 
 // globalPlans copies the template into Global Marketing Ops' plans, 50 a year from 2027 to 2030.

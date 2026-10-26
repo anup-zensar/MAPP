@@ -128,20 +128,33 @@ func (c *Client) Measure(b *testing.B, method, path string, body any) {
 	b.Helper()
 	var queries, stopped int64
 	for b.Loop() {
-		ctx, cancel := context.WithTimeout(querycount.With(b.Context()), requestLimit)
-		answer := c.server.do(ctx, request{method: method, path: path, body: body, cookie: c.cookie})
-		queries += querycount.Of(ctx)
-		if ctx.Err() != nil {
+		sent, cut := c.once(b, request{method: method, path: path, body: body, cookie: c.cookie})
+		queries += sent
+		if cut {
 			stopped++
-		} else if answer.Code >= http.StatusMultipleChoices {
-			b.Fatalf("apibench: %s %s: %d %s", method, path, answer.Code, answer.Body)
 		}
-		cancel()
 	}
 	b.ReportMetric(float64(queries)/float64(b.N), "queries/op")
 	if stopped > 0 {
 		b.ReportMetric(float64(stopped)/float64(b.N), "stopped/op")
 	}
+}
+
+// once sends r and returns the statements it sent, and true when it was stopped at requestLimit.
+func (c *Client) once(b *testing.B, r request) (int64, bool) {
+	b.Helper()
+	ctx, cancel := limited(b)
+	defer cancel()
+	answer := c.server.do(ctx, r)
+	if ctx.Err() == nil && answer.Code >= http.StatusMultipleChoices {
+		b.Fatalf("apibench: %s %s: %d %s", r.method, r.path, answer.Code, answer.Body)
+	}
+	return querycount.Of(ctx), ctx.Err() != nil
+}
+
+func limited(b *testing.B) (context.Context, context.CancelFunc) {
+	b.Helper()
+	return context.WithTimeout(querycount.With(b.Context()), requestLimit)
 }
 
 func (s *Server) do(ctx context.Context, r request) *httptest.ResponseRecorder {

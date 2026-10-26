@@ -66,8 +66,8 @@ func (ap applier) apply(ctx context.Context, d Delivery) (applied, error) {
 	}
 	x := newIndex(stored)
 	ordered := inApplyOrder(accepted)
-	run := &rowRun{x: x, importID: importID}
-	if run.newIDs, err = ap.ids.NextIDs(ctx, ids.PrefixFinancialTransaction, newRows(x, ordered)); err != nil {
+	run, err := ap.startRun(ctx, x, ordered, importID)
+	if err != nil {
 		return applied{}, err
 	}
 	imp := Import{
@@ -134,6 +134,15 @@ type rowRun struct {
 	importID string
 	newIDs   []string
 	added    []Transaction
+}
+
+// startRun takes the IDs of the new transactions among rows at once, in apply order.
+func (ap applier) startRun(ctx context.Context, x *index, rows []Incoming, importID string) (*rowRun, error) {
+	newIDs, err := ap.ids.NextIDs(ctx, ids.PrefixFinancialTransaction, newRows(x, rows))
+	if err != nil {
+		return nil, err
+	}
+	return &rowRun{x: x, importID: importID, newIDs: newIDs}, nil
 }
 
 // newRows counts the rows whose key no stored transaction has: the delivery's keys are unique (check).

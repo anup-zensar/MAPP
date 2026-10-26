@@ -165,8 +165,7 @@ func (s *Service) board(ctx context.Context) (*board, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Every tab and count is over the activities with a round, so only those are read, in the scope.
-	list, err := s.activities.ListInScope(ctx, authz.ScopeOf(ctx), activitiesOf(rounds))
+	list, err := s.activitiesWithRounds(ctx, rounds)
 	if err != nil {
 		return nil, err
 	}
@@ -204,6 +203,11 @@ func (s *Service) board(ctx context.Context) (*board, error) {
 		b.workflows[w.ID] = w
 	}
 	return b, nil
+}
+
+// activitiesWithRounds reads the activities of rounds in the scope: every tab and count is over them alone.
+func (s *Service) activitiesWithRounds(ctx context.Context, rounds []Round) ([]ActivityFacts, error) {
+	return s.activities.ListInScope(ctx, authz.ScopeOf(ctx), activitiesOf(rounds))
 }
 
 // activitiesOf returns the ids of the activities of rounds, each once, in the order of their ids.

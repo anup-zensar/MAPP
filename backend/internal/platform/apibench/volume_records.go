@@ -28,21 +28,25 @@ func (v *volume) people() {
 	teams, err := v.set.People.ListTeams(v.ctx)
 	v.must(err)
 	v.write(func(ctx context.Context, next func(string) string) error {
-		for n := len(existing) + 1; n <= peopleWanted; n++ {
-			p := people.Person{ID: next(ids.PrefixPerson), Name: fmt.Sprintf("Volume Person %04d", n),
-				Email: fmt.Sprintf("volume.person%04d@shell.com", n), JobTitle: "Marketer", Active: true, Meta: systemMeta()}
-			m := people.Membership{ID: next(ids.PrefixTeamMembership), TeamID: teams[n%len(teams)].ID, PersonID: p.ID,
-				Meta: systemMeta()}
-			if err := v.set.People.Put(ctx, p); err != nil {
-				return err
-			}
-			if err := v.set.People.PutMembership(ctx, m); err != nil {
-				return err
-			}
-		}
-		return nil
+		return v.addPeople(ctx, next, len(existing)+1, teams)
 	})
 	v.progress("%d people", peopleWanted)
+}
+
+func (v *volume) addPeople(ctx context.Context, next func(string) string, from int, teams []people.Team) error {
+	for n := from; n <= peopleWanted; n++ {
+		p := people.Person{ID: next(ids.PrefixPerson), Name: fmt.Sprintf("Volume Person %04d", n),
+			Email: fmt.Sprintf("volume.person%04d@shell.com", n), JobTitle: "Marketer", Active: true, Meta: systemMeta()}
+		m := people.Membership{ID: next(ids.PrefixTeamMembership), TeamID: teams[n%len(teams)].ID, PersonID: p.ID,
+			Meta: systemMeta()}
+		if err := v.set.People.Put(ctx, p); err != nil {
+			return err
+		}
+		if err := v.set.People.PutMembership(ctx, m); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // waitingForApproval has Priya submit activities of her volume plans until 500 wait for Daniel.
@@ -128,27 +132,36 @@ func (v *volume) logEntries() {
 	existing, err := v.set.History.Entries(v.ctx)
 	v.must(err)
 	paths := v.activityPaths(v.planNamed(TemplatePlan))
-	priyaActor := actor.Actor{ID: "U-1002", Name: "Priya Raman"}
 	v.write(func(ctx context.Context, _ func(string) string) error {
-		generator := ids.NewGenerator(v.set.Counters)
-		for n := len(existing); n < logEntriesWanted; n++ {
-			seq, err := generator.NextNumber(ctx, ids.PrefixLogEntry)
-			if err != nil {
-				return err
-			}
-			path := paths[n%len(paths)]
-			last := path[len(path)-1]
-			e := history.Entry{ID: ids.PrefixLogEntry + "-" + strconv.Itoa(seq), Seq: seq, At: startTime(), Actor: priyaActor,
-				Action: history.ActionChanged, Verb: string(history.ActionChanged), RecordType: last.Type,
-				RecordTypeLabel: last.Type, RecordID: last.ID, RecordName: last.Name, Path: path[:len(path)-1],
-				Changes: []history.Change{}}
-			if err := v.set.History.AppendEntry(ctx, e); err != nil {
-				return err
-			}
-		}
-		return nil
+		return v.appendEntries(ctx, len(existing), paths)
 	})
 	v.progress("%d log entries", logEntriesWanted)
+}
+
+// appendEntries appends entries from number from on, up to logEntriesWanted, about each of paths in turn.
+func (v *volume) appendEntries(ctx context.Context, from int, paths [][]history.RecordRef) error {
+	generator := ids.NewGenerator(v.set.Counters)
+	for n := from; n < logEntriesWanted; n++ {
+		seq, err := generator.NextNumber(ctx, ids.PrefixLogEntry)
+		if err != nil {
+			return err
+		}
+		if err := v.set.History.AppendEntry(ctx, logEntry(seq, paths[n%len(paths)])); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func logEntry(seq int, path []history.RecordRef) history.Entry {
+	last := path[len(path)-1]
+	return history.Entry{
+		ID: ids.PrefixLogEntry + "-" + strconv.Itoa(seq), Seq: seq, At: startTime(),
+		Actor:  actor.Actor{ID: "U-1002", Name: "Priya Raman"},
+		Action: history.ActionChanged, Verb: string(history.ActionChanged), RecordType: last.Type,
+		RecordTypeLabel: last.Type, RecordID: last.ID, RecordName: last.Name, Path: path[:len(path)-1],
+		Changes: []history.Change{},
+	}
 }
 
 // activityPaths returns, for every activity of the plan, its path from the plan down to the activity itself.

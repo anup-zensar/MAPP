@@ -64,7 +64,11 @@ func (s *Service) newBook(ctx context.Context, personID string, nodes []Node) (*
 		}
 	}
 	b.index(stored, rates)
-	b.accrualMonth = latestAccrualMonth(b.all)
+	b.tree = buildTree(nodes, b.factsByLineItem())
+	return b, nil
+}
+
+func (b *book) factsByLineItem() map[string]Facts {
 	facts := make(map[string]Facts, len(b.byLineItem))
 	for id, list := range b.byLineItem {
 		var f Facts
@@ -73,11 +77,11 @@ func (s *Service) newBook(ctx context.Context, personID string, nodes []Node) (*
 		}
 		facts[id] = f
 	}
-	b.tree = buildTree(nodes, facts)
-	return b, nil
+	return facts
 }
 
-// index keeps every stored transaction with its amount in USD, and the linked ones by line item.
+// index keeps every stored transaction with its amount in USD, the linked ones by line item, and the latest
+// accrual month.
 func (b *book) index(stored []Transaction, rates money.Rates) {
 	for i := range stored {
 		t := &stored[i]
@@ -87,6 +91,7 @@ func (b *book) index(stored []Transaction, rates money.Rates) {
 			b.byLineItem[t.LineItemID] = append(b.byLineItem[t.LineItemID], t)
 		}
 	}
+	b.accrualMonth = latestAccrualMonth(b.all)
 }
 
 // lineItemOf returns the live line item t is linked to, nil when it is not linked or its line item is
