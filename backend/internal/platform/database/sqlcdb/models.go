@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+type Counter struct {
+	Prefix string
+	Last   int
+}
+
 type SampleFolder struct {
 	ID            string
 	Name          string
