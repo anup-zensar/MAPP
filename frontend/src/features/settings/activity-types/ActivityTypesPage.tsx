@@ -17,16 +17,12 @@ import styles from '@/ui/settings-table.module.css';
 import { filterRecords, useListFilters } from '@/ui/useListFilters';
 import type { ListFilters } from '@/ui/useListFilters';
 import { useSettingStatus } from '../useSettingStatus';
-import { modelNames, moreActions } from './activityTypeActions';
-import type { ActivityTypeActions } from './activityTypeActions';
+import { modelNames, moreActions } from './activity-type-actions';
+import type { ActivityTypeActions } from './activity-type-actions';
 import { ActivityTypeDetails } from './ActivityTypeDetails';
 import { ActivityTypeForm } from './ActivityTypeForm';
-import {
-  ACTIVITY_TYPE_LISTS,
-  setActivityTypeStatus,
-  useDeleteActivityType,
-} from './activityTypesApi';
-import type { ActivityType } from './activityTypesApi';
+import { ACTIVITY_TYPE_LISTS, setActivityTypeStatus, useDeleteActivityType } from './api';
+import type { ActivityType } from './api';
 import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import { useCanChange } from '@/ui/useCanChange';
 

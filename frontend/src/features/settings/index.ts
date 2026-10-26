@@ -10,16 +10,16 @@ export type {
   RateImport,
   RateImportCheck,
   RateImportRow,
-} from './currencies/ratesApi';
-export type { FieldHelpEntry, FieldHelpPage } from './field-help/fieldHelpApi';
-export { FIELD_HELP_SETTINGS_SECTIONS } from './field-help/settingsSections';
+} from './currencies/rates-api';
+export type { FieldHelpEntry, FieldHelpPage } from './field-help/api';
+export { FIELD_HELP_SETTINGS_SECTIONS } from './field-help/settings-sections';
 export { FinanceBudgetItemsPage } from './finance-budget-items/FinanceBudgetItemsPage';
 export { ModelsPage } from './models/ModelsPage';
 export { waterfall } from './models/waterfall';
 export type { WaterfallModel } from './models/waterfall';
 export { SETTINGS_OWN_SECTIONS } from './sections';
 export type { SettingsSection } from './sections';
-export { SETTINGS_016_ROUTES } from './settingsRoutes';
+export { SETTINGS_016_ROUTES } from './settings-routes';
 export { ShellAttributeEditorPage } from './shell-attributes/ShellAttributeEditorPage';
 export { ShellAttributePage } from './shell-attributes/ShellAttributePage';
 export { ShellAttributesPage } from './shell-attributes/ShellAttributesPage';

@@ -22,16 +22,16 @@ import {
   remember,
   toSearchParams,
   yearRangeLabel,
-} from './listPreferences';
-import type { PlanListFilters } from './listPreferences';
+} from './list-preferences';
+import type { PlanListFilters } from './list-preferences';
 import { PlanCard } from './PlanCard';
 import { PlansFilters } from './PlansFilters';
 import styles from './PlansPage.module.css';
-import { usePlans } from './plansApi';
-import type { PlanSummary } from './plansApi';
-import { PLAN_TYPE_LABELS } from './planCurrency';
+import { usePlans } from './api';
+import type { PlanSummary } from './api';
+import { PLAN_TYPE_LABELS } from './plan-currency';
 import { PlanTable } from './PlanTable';
-import { MY_TEAMS_HINT, STATUS } from './planText';
+import { MY_TEAMS_HINT, STATUS } from './plan-text';
 import { usePlanActions } from './usePlanActions';
 
 /** How long the search waits after the last key before it asks the API (plan "Plans list"). */

@@ -8,9 +8,9 @@ import { MetaLine } from '../MetaLine';
 import { SETTING_NOUNS } from '../settings-nouns';
 import styles from '@/ui/settings-table.module.css';
 import { UsageLine } from '../UsageLine';
-import { moreActions } from './activityTypeActions';
-import type { ActivityTypeActions } from './activityTypeActions';
-import type { ActivityType } from './activityTypesApi';
+import { moreActions } from './activity-type-actions';
+import type { ActivityTypeActions } from './activity-type-actions';
+import type { ActivityType } from './api';
 import { CanChange } from '@/ui/CanChange/CanChange';
 
 export interface ActivityTypeDetailsProps {

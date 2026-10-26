@@ -11,10 +11,10 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import list from '@/ui/settings-table.module.css';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { usePermissionCatalogue, useRole } from './accessApi';
-import type { PermissionCatalogue, Role } from './accessApi';
-import { ADMINISTRATOR_LOCK, peopleText, SCOPE_WORDS } from './accessWords';
-import { roleCopyPath, roleEditPath, rolesTabPath } from './accessPaths';
+import { usePermissionCatalogue, useRole } from './api';
+import type { PermissionCatalogue, Role } from './api';
+import { ADMINISTRATOR_LOCK, peopleText, SCOPE_WORDS } from './access-words';
+import { roleCopyPath, roleEditPath, rolesTabPath } from './access-paths';
 import { useRoleDelete } from './useRoleDelete';
 import styles from './access.module.css';
 

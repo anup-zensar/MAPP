@@ -4,8 +4,8 @@ import { ApiError } from '@/api/errors';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
 import { useToast } from '@/ui/Toast/useToast';
-import { useActivityDestinations, useCopyActivity } from './activitiesApi';
-import type { Activity, ActivityDestination } from './activitiesApi';
+import { useActivityDestinations, useCopyActivity } from './api';
+import type { Activity, ActivityDestination } from './api';
 import {
   activityHref,
   CHOOSE_ANOTHER_INITIATIVE,
@@ -13,10 +13,10 @@ import {
   copyIntro,
   copyTitle,
   createdToast,
-} from './activityText';
+} from './activity-text';
 import { DestinationList, DestinationsState } from './DestinationList';
 import styles from './DestinationList.module.css';
-import { focusOnArrival } from './focusOnArrival';
+import { focusOnArrival } from './focus-on-arrival';
 
 export interface CopyActivityDialogProps {
   activity: Activity;

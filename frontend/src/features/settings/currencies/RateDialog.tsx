@@ -4,7 +4,7 @@ import { ApiError, conflictMessage } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
@@ -13,16 +13,16 @@ import { localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { CONFLICT_NEXT_STEP } from '../save-failure';
 import settingsStyles from '@/ui/settings-table.module.css';
-import { inverseLine, rateLine } from './currencyActions';
+import { inverseLine, rateLine } from './currency-actions';
 import {
   checkAddRateImpact,
   checkUpdateRateImpact,
   fetchRate,
   useAddRate,
   useUpdateRate,
-} from './ratesApi';
-import type { ChangeImpact, ExchangeRateRecord } from './ratesApi';
-import { futureRateNote } from './rateWords';
+} from './rates-api';
+import type { ChangeImpact, ExchangeRateRecord } from './rates-api';
+import { futureRateNote } from './rate-words';
 import styles from './rates.module.css';
 
 /** Why a rate keeps its date (data-model §2.1). */

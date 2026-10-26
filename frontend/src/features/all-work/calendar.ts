@@ -3,7 +3,7 @@
  * ("YYYY-MM-DD", read as days, never as local times): bars on the year's timeline, the Today line,
  * and the weeks of one month.
  */
-import type { AllWorkRow } from './allWorkTypes';
+import type { AllWorkRow } from './all-work-types';
 
 const DAY_MS = 86_400_000;
 

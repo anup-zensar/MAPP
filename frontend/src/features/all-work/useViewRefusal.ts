@@ -2,8 +2,8 @@ import { useCallback } from 'react';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { VIEW_GONE } from './allWorkText';
-import { problemsOf } from './viewNames';
+import { VIEW_GONE } from './all-work-text';
+import { problemsOf } from './view-names';
 
 /**
  * What a refused saved-view change shows (plan "States"): the field problems for the form; a view

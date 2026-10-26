@@ -6,11 +6,11 @@ import { FailureMessage } from '@/ui/FormPanel/FormPanel';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { useToast } from '@/ui/Toast/useToast';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { formatCents, formatMoneyText, toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
-import { useSetPhasing } from './phasingApi';
-import type { BudgetPhasing, PhasingLevel, PhasingMethod } from './phasingApi';
+import { useSetPhasing } from './api';
+import type { BudgetPhasing, PhasingLevel, PhasingMethod } from './api';
 import styles from './BudgetByMonth.module.css';
 import {
   amountText,
@@ -23,7 +23,7 @@ import {
   readAmount,
   splitEvenly,
   withQuarter,
-} from './phasingMath';
+} from './phasing-math';
 
 type Money = { amount: string; currency: string };
 

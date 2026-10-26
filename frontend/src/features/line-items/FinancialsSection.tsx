@@ -23,17 +23,17 @@ import {
   useFinancialRecord,
   useRecordTransactions,
   viewAllText,
-} from './gsapFinancials';
+} from './gsap-financials';
 import type {
   FinancialFiguresData,
   FinancialLevel,
   FinancialRecordView,
   FinancialTransactionRow,
-} from './gsapFinancials';
+} from './gsap-financials';
 import { GsapFigures } from './GsapFigures';
 import styles from './FinancialsSection.module.css';
-import { formatMonth, moneyText } from './lineItemMath';
-import { LABEL } from './lineItemText';
+import { formatMonth, moneyText } from './line-item-math';
+import { LABEL } from './line-item-text';
 
 /** Latest transactions shown on the activity page (015 FR-015). */
 const LATEST = 5;

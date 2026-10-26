@@ -9,9 +9,9 @@ import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { recordHref } from '@/ui/record-links';
 import type { PlanningRecordType } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { useHomeRecentChanges } from './homeApi';
-import type { ActivityLogEntry, HomeScope } from './homeApi';
-import { RECENT_CHANGES, initialsOf, recentSentence } from './homeText';
+import { useHomeRecentChanges } from './api';
+import type { ActivityLogEntry, HomeScope } from './api';
+import { RECENT_CHANGES, initialsOf, recentSentence } from './home-text';
 import styles from './RecentChangesCard.module.css';
 import { SectionError } from './SectionError';
 

@@ -2,14 +2,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
-import { fetchLatestFolder, useAddNote, useCreateFolder, useRenameFolder } from './sampleApi';
-import type { SampleFolder } from './sampleApi';
+import { fetchLatestFolder, useAddNote, useCreateFolder, useRenameFolder } from './api';
+import type { SampleFolder } from './api';
 
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';

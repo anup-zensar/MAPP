@@ -3,10 +3,10 @@ import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { WaterfallModel } from '@/features/settings';
 import styles from './PlanForm.module.css';
-import { goalRows } from './goalWaterfall';
-import type { WaterfallStage } from './goalWaterfall';
-import { goalAmountLabel, STAGE_OPTIONS } from './planText';
-import type { GoalStage } from './planText';
+import { goalRows } from './goal-waterfall';
+import type { WaterfallStage } from './goal-waterfall';
+import { goalAmountLabel, STAGE_OPTIONS } from './plan-text';
+import type { GoalStage } from './plan-text';
 
 const ROW_LABELS: Record<WaterfallStage, string> = {
   inq: 'INQ',

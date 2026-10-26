@@ -1,7 +1,7 @@
-import { useActivityApproval } from './approvalsApi';
-import type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';
+import { useActivityApproval } from './api';
+import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 import { DecisionButtons } from './DecisionActions';
-import { decisionRole } from './decisionRole';
+import { decisionRole } from './decision-role';
 import { SubmitButton } from './SubmitButton';
 
 export interface ApprovalStatusActionProps {

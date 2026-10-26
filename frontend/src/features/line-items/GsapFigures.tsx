@@ -13,10 +13,10 @@ import {
   FIGURE_TIP,
   meterText,
   NO_PLANNED_COST,
-} from './gsapFinancials';
-import type { FinancialFiguresData } from './gsapFinancials';
+} from './gsap-financials';
+import type { FinancialFiguresData } from './gsap-financials';
 import styles from './GsapFigures.module.css';
-import { formatMonth, moneyText } from './lineItemMath';
+import { formatMonth, moneyText } from './line-item-math';
 
 export interface GsapFiguresProps {
   figures: FinancialFiguresData;

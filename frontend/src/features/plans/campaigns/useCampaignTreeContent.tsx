@@ -7,8 +7,8 @@ import type { TreeNode, TreeTableFooter } from '@/ui/TreeTable/TreeTable';
 import { allows, gateItem } from '@/session/gate-action';
 import type { Availability } from '@/session/access';
 import { useFormatters } from '@/format/useFormatters';
-import { usePlanCampaigns } from './campaignApi';
-import { campaignRows, totalsFooter } from './campaignRows';
+import { usePlanCampaigns } from './api';
+import { campaignRows, totalsFooter } from './campaign-rows';
 import { useRowsBelowInitiatives } from './extensions';
 import { ADD_CAMPAIGN } from './texts';
 import { useRecordActions } from './useRecordActions';
@@ -17,7 +17,7 @@ import { useRecordActions } from './useRecordActions';
 export interface CampaignTreeContent {
   /**
    * One node per campaign with its initiatives as children: the plan node's children. Cells by
-   * column key: name, owner, dates, status, budget, plannedCost, budgetUsed (campaignRows.tsx).
+   * column key: name, owner, dates, status, budget, plannedCost, budgetUsed (campaign-rows.tsx).
    * Plan and campaign rows start expanded (FR-020); the highlighted row's ancestors open too.
    */
   nodes: TreeNode[];

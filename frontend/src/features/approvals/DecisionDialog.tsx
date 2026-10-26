@@ -4,8 +4,8 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
-import { useDecide } from './approvalsApi';
-import type { ActivityApproval } from './approvalsApi';
+import { useDecide } from './api';
+import type { ActivityApproval } from './api';
 import {
   alreadyDecidedMessage,
   approvedToast,
@@ -15,7 +15,7 @@ import {
   levelOf,
   names,
 } from './messages';
-import styles from './approvalDialogs.module.css';
+import styles from './approval-dialogs.module.css';
 
 /** The longest comment the API takes. */
 const COMMENT_MAX = 2000;

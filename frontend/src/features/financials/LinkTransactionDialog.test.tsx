@@ -1,8 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import { LinkTransactionDialog } from './LinkTransactionDialog';
 import {

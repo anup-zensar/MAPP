@@ -6,16 +6,16 @@ import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/ui/record-links';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { LineItemForm } from './LineItemForm';
-import { editFormState } from './lineItemFormState';
+import { editFormState } from './line-item-form-state';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
 import {
   useFetchLatestLineItem,
   useLineItem,
   useLineItemFormOptions,
   useUpdateLineItem,
-} from './lineItemsApi';
-import type { LineItemDetails, LineItemFormOptions } from './lineItemsApi';
-import { EDIT_TITLE, savedToast } from './lineItemText';
+} from './api';
+import type { LineItemDetails, LineItemFormOptions } from './api';
+import { EDIT_TITLE, savedToast } from './line-item-text';
 
 const LOADING_TITLE = 'Edit line item';
 

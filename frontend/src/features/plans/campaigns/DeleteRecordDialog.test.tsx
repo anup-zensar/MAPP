@@ -3,11 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { components } from '@/api/generated/schema';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { RecordTarget } from './campaignRows';
+import type { RecordTarget } from './campaign-rows';
 import { DeleteRecordDialog } from './DeleteRecordDialog';
 
 type DeleteResult = components['schemas']['DeleteResult'];

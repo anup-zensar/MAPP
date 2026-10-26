@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { FinanceBudgetFields } from './FinanceBudgetFields';
-import { changeBudgetYear, newFormState, withField } from './lineItemFormState';
-import type { LineItemFormState } from './lineItemFormState';
-import type { FinanceBudgetItemRef } from './lineItemsApi';
+import { changeBudgetYear, newFormState, withField } from './line-item-form-state';
+import type { LineItemFormState } from './line-item-form-state';
+import type { FinanceBudgetItemRef } from './api';
 import {
   activity,
   BRAND_INACTIVE,

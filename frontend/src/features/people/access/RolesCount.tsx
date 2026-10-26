@@ -1,5 +1,5 @@
 import { SettingsCount } from '@/ui/SettingsCount/SettingsCount';
-import { useRoles } from './accessApi';
+import { useRoles } from './api';
 
 /** "5 roles" on the Roles and access card of the Settings page (014 plan, "Settings cards"). */
 export function RolesCount() {

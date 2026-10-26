@@ -14,9 +14,9 @@ import { cx } from '@/ui/cx';
 import { formatWhole } from '@/format/decimal';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { useHomePlans } from './homeApi';
-import type { HomePlanRow, HomeScope } from './homeApi';
-import { plansListHref } from './homeLinks';
+import { useHomePlans } from './api';
+import type { HomePlanRow, HomeScope } from './api';
+import { plansListHref } from './home-links';
 import {
   NOTHING_PLANNED,
   PLANS_AT_A_GLANCE,
@@ -25,7 +25,7 @@ import {
   isZero,
   percentText,
   viewAllPlansText,
-} from './homeText';
+} from './home-text';
 import styles from './PlansAtAGlanceCard.module.css';
 import { SectionError } from './SectionError';
 

@@ -1,10 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { ActivityApproval } from './approvalsApi';
+import type { ActivityApproval } from './api';
 import { DecisionDialog } from './DecisionDialog';
 import type { DecisionDialogProps } from './DecisionDialog';
 import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from '@/testing/fixtures/approvals';

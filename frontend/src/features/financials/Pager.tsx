@@ -2,8 +2,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useId } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { formatWhole } from '@/format/decimal';
-import { PAGE_SIZES } from './financialsLinks';
-import type { PageSize } from './financialsLinks';
+import { PAGE_SIZES } from './financials-links';
+import type { PageSize } from './financials-links';
 import styles from './Pager.module.css';
 
 export interface PagerProps {

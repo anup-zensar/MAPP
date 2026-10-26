@@ -4,7 +4,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ViewOnlyNote } from './ViewOnlyNote';
-import { viewOnlyText } from './viewOnlyText';
+import { viewOnlyText } from './view-only-text';
 
 const ALEX = {
   id: 'U-1001',

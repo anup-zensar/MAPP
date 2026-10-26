@@ -16,14 +16,14 @@ import {
   PLAN_TYPE_LABELS,
   SHOW_LEVELS_LABELS,
   STRATEGIC_LABELS,
-} from './allWorkText';
+} from './all-work-text';
 import type {
   AllWorkOptions,
   AllWorkResult,
   FilterValue,
   Filters,
   ViewState,
-} from './allWorkTypes';
+} from './all-work-types';
 import { FilterMenu } from './FilterMenu';
 import type { FilterChoice } from './FilterMenu';
 import {
@@ -34,8 +34,8 @@ import {
   removeChip,
   withYears,
   yearRange,
-} from './viewState';
-import type { IdFilter } from './viewState';
+} from './view-state';
+import type { IdFilter } from './view-state';
 import { YearRangeMenu } from './YearRangeMenu';
 
 /** How long the search waits after the last key before the view follows (plan "Page layout"). */

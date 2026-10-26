@@ -7,11 +7,11 @@ import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { formatAmount, toCents } from '@/format/decimal';
 import styles from './BudgetByMonth.module.css';
-import { useBudgetByMonth } from './phasingApi';
-import type { BudgetByMonthPeriods, BudgetPhasing, PhasingLevel } from './phasingApi';
-import { amountText, MONTH_NAMES, overBy } from './phasingMath';
+import { useBudgetByMonth } from './api';
+import type { BudgetByMonthPeriods, BudgetPhasing, PhasingLevel } from './api';
+import { amountText, MONTH_NAMES, overBy } from './phasing-math';
 import { PhasingEditor } from './PhasingEditor';
-import { phasingAnchor } from './phasingLinks';
+import { phasingAnchor } from './phasing-links';
 
 type Money = { amount: string; currency: string };
 

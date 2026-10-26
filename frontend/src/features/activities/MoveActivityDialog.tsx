@@ -5,8 +5,8 @@ import { FailureMessage } from '@/ui/FormPanel/FormPanel';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
-import { useActivityDestinations, useMoveActivity } from './activitiesApi';
-import type { Activity, ActivityDestination } from './activitiesApi';
+import { useActivityDestinations, useMoveActivity } from './api';
+import type { Activity, ActivityDestination } from './api';
 import {
   CHOOSE_ANOTHER_INITIATIVE,
   moveIntro,
@@ -15,10 +15,10 @@ import {
   NO_OTHER_INITIATIVE,
   noInitiativeMatches,
   SEARCH_INITIATIVES,
-} from './activityText';
+} from './activity-text';
 import { DestinationList, DestinationsState } from './DestinationList';
 import styles from './DestinationList.module.css';
-import { focusOnArrival } from './focusOnArrival';
+import { focusOnArrival } from './focus-on-arrival';
 
 export interface MoveActivityDialogProps {
   /** The activity as stored now: the move sends its version. */

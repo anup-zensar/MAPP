@@ -2,13 +2,13 @@ import { CircleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { useFormatters } from '@/format/useFormatters';
-import { useLineItemPreview, useLinkTransaction } from './financialsApi';
-import type { FinancialTransaction, LineItemPreview } from './financialsApi';
+import { useLineItemPreview, useLinkTransaction } from './api';
+import type { FinancialTransaction, LineItemPreview } from './api';
 import styles from './LinkTransactionDialog.module.css';
 
 const LINE_ITEM_ID = /^L-[0-9]+$/;

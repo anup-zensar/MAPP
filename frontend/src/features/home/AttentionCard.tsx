@@ -9,9 +9,9 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import styles from './AttentionCard.module.css';
-import { useHomeAttention } from './homeApi';
-import type { HomeAttentionItem } from './homeApi';
-import type { ReasonFormatters } from './homeText';
+import { useHomeAttention } from './api';
+import type { HomeAttentionItem } from './api';
+import type { ReasonFormatters } from './home-text';
 import {
   ATTENTION_SUBTITLE,
   NOTHING_NEEDS_ATTENTION,
@@ -20,7 +20,7 @@ import {
   reasonLinkOf,
   reasonText,
   viewAllText,
-} from './homeText';
+} from './home-text';
 import { SectionError } from './SectionError';
 
 /**

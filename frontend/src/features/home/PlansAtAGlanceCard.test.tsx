@@ -1,10 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { HomePlanRow, HomeScope } from './homeApi';
+import type { HomePlanRow, HomeScope } from './api';
 import { PlansAtAGlanceCard } from './PlansAtAGlanceCard';
 import { planRowOf, usd } from '@/testing/fixtures/home';
 

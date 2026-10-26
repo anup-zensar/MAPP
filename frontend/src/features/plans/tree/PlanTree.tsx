@@ -6,14 +6,14 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TreeTable } from '@/ui/TreeTable/TreeTable';
-import { filterTree } from '@/ui/TreeTable/filterTree';
+import { filterTree } from '@/ui/TreeTable/filter-tree';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { TreeNode, TreeTableColumn, TreeTableFooter } from '@/ui/TreeTable/TreeTable';
 import { BudgetCell, PlannedCostCell } from '../campaigns/BudgetCost';
 import { useFormatters } from '@/format/useFormatters';
 import { PlanCompleteness, PlanStatusChip } from '../PlanFacts';
-import type { Plan } from '../plansApi';
-import { NO_CAMPAIGNS, yearDates } from '../planText';
+import type { Plan } from '../api';
+import { NO_CAMPAIGNS, yearDates } from '../plan-text';
 import styles from './PlanTree.module.css';
 
 /**

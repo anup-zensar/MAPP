@@ -14,7 +14,7 @@ import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { formatWhole } from '@/format/decimal';
 import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import { ImportOptionsDialog } from './ImportOptionsDialog';
-import { downloadOptionsTemplate } from './importTemplate';
+import { downloadOptionsTemplate } from './import-template';
 import { OptionPanel } from './OptionPanel';
 import {
   CHANGED_BY_ANY_CHANGE,
@@ -22,8 +22,8 @@ import {
   useMoveOption,
   useSetOptionStatus,
   useShellAttributeOptions,
-} from './shellAttributesApi';
-import type { OptionStatus, ShellAttribute, ShellAttributeOption } from './shellAttributesApi';
+} from './api';
+import type { OptionStatus, ShellAttribute, ShellAttributeOption } from './api';
 import styles from './ShellAttributes.module.css';
 import { useFailureToast, useStatusChange } from './useStatusChange';
 

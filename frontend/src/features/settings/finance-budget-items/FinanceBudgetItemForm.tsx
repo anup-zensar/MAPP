@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { saveFailureOf } from '../save-failure';
 import styles from '@/ui/settings-table.module.css';
@@ -15,9 +15,9 @@ import {
   useCreateFinanceBudgetItem,
   useFinanceBudgetPage,
   useUpdateFinanceBudgetItem,
-} from './financeBudgetsApi';
-import type { FinanceBudgetItem, FinanceBudgetItemUpdate } from './financeBudgetsApi';
-import { yearLock } from './financeItemActions';
+} from './api';
+import type { FinanceBudgetItem, FinanceBudgetItemUpdate } from './api';
+import { yearLock } from './finance-item-actions';
 
 export interface FinanceBudgetItemFormProps {
   /** The item to change; without one, the form adds a new item. */

@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api, call } from '@/api/client';
 import type { CurrentUser } from '@/session/useSession';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { useUnsavedChanges } from './useUnsavedChanges';
 import { testUser } from '@/testing/fixtures/users';

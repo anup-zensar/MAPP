@@ -2,8 +2,8 @@ import { TriangleAlert } from 'lucide-react';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
-import type { GlobalBudgetFigures } from './globalBudgetsApi';
-import { FIGURE_TIPS, overAllocatedText } from './globalBudgetsText';
+import type { GlobalBudgetFigures } from './api';
+import { FIGURE_TIPS, overAllocatedText } from './global-budgets-text';
 import styles from './BudgetFigures.module.css';
 
 /** The four figures with "Over-allocated by X" when Unallocated is below zero (D-015). */

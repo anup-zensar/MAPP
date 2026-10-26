@@ -4,14 +4,14 @@ import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import {
   formatAmount,
   parseDecimalInput,
@@ -23,8 +23,8 @@ import { useFormatters } from '@/format/useFormatters';
 import { ImpactDialog } from '../ImpactDialog';
 import { saveFailureOf } from '../save-failure';
 import styles from '@/ui/settings-table.module.css';
-import { checkModelImpact, fetchModel, useCreateModel, useUpdateModel } from './modelsApi';
-import type { ChangeImpact, Model, ModelCreate, ModelUpdate } from './modelsApi';
+import { checkModelImpact, fetchModel, useCreateModel, useUpdateModel } from './api';
+import type { ChangeImpact, Model, ModelCreate, ModelUpdate } from './api';
 import { WaterfallExample } from './WaterfallExample';
 
 /** What the form does: create a new model (blank or a copy of another) or change one. */

@@ -1,11 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { BudgetByMonthCard } from './BudgetByMonthCard';
-import type { BudgetPhasing } from './phasingApi';
+import type { BudgetPhasing } from './api';
 import { budgetByMonth, gbp, periods, phasing, twelve } from '@/testing/fixtures/phasing';
 
 const PLAN = {

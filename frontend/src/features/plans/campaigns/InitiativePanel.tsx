@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { useInitiative } from './campaignApi';
+import { useInitiative } from './api';
 import { RecordPanel } from './RecordPanel';
 
 export interface InitiativePanelProps {

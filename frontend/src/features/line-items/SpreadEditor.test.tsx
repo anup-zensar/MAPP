@@ -10,9 +10,9 @@ import {
   changeSpreadMethod,
   editFormState,
   newFormState,
-} from './lineItemFormState';
-import type { LineItemFormState } from './lineItemFormState';
-import type { ActivityDates } from './lineItemMath';
+} from './line-item-form-state';
+import type { LineItemFormState } from './line-item-form-state';
+import type { ActivityDates } from './line-item-math';
 import { SpreadEditor } from './SpreadEditor';
 import { EUR, eur, formOptions, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
 

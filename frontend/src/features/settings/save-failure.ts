@@ -1,6 +1,6 @@
 import { ApiError, conflictMessage } from '@/api/errors';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import type { DateFormat } from '@/format/intl';
 import { SETTING_NOUNS } from './settings-nouns';
 import type { SettingKind } from './settings-nouns';

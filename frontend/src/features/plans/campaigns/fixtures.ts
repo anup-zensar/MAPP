@@ -11,7 +11,7 @@ import type {
   Money,
   PersonRef,
   PlanCampaigns,
-} from './campaignApi';
+} from './api';
 
 type BudgetAndCost = components['schemas']['BudgetAndCost'];
 

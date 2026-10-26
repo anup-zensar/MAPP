@@ -1,11 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { AttentionCard } from './AttentionCard';
-import type { HomeAttentionItem } from './homeApi';
+import type { HomeAttentionItem } from './api';
 import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from '@/testing/fixtures/home';
 
 const page = (items: HomeAttentionItem[]) => ({ body: { items, total: items.length } });

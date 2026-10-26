@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, it } from 'vitest';
 import { expectNoAxeViolations } from '@/testing/axe';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { AccessPage } from './AccessPage';

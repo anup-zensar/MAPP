@@ -5,7 +5,7 @@ import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { financialsNotServed } from '@/testing/fixtures/plans';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { renderApp } from '@/testing/app';
-import type { MockHandler } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mock-api';
 import { campaign, initiative, PEOPLE, planAnswer, planCampaigns } from './fixtures';
 
 // The plan page (004) and an initiative's activities (006) are tested by their features; here

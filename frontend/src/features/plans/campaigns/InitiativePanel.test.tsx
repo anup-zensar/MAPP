@@ -5,15 +5,15 @@ import { SessionProvider } from '@/session/SessionProvider';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { financialsNotServed } from '@/testing/fixtures/plans';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { initiative, PEOPLE, planAnswer, usd } from './fixtures';
 import { InitiativePanel } from './InitiativePanel';
 
 // Feature 006 fills the initiative's extension points; here they stand in.
-vi.mock('@/features/activities/activityTreeRows', () => ({
+vi.mock('@/features/activities/activity-tree-rows', () => ({
   useActivityRows: () => new Map(),
   activityActionsForInitiative: (initiative: { id: string }, navigate: (to: string) => void) => [
     {

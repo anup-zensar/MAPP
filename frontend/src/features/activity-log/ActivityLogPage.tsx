@@ -8,7 +8,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatWhole } from '@/format/decimal';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { LOG_PAGE_SIZE, logEntriesKey, useLogEntries, useLogSummary } from './activityLogApi';
+import { LOG_PAGE_SIZE, logEntriesKey, useLogEntries, useLogSummary } from './api';
 import { LogEntryList } from './LogEntryList';
 import { LogFilterBar } from './LogFilterBar';
 import {
@@ -19,9 +19,9 @@ import {
   isFiltered,
   todayStart,
   weekStart,
-} from './logFilters';
-import type { LogFilterState } from './logFilters';
-import { countLine } from './logText';
+} from './log-filters';
+import type { LogFilterState } from './log-filters';
+import { countLine } from './log-text';
 import styles from './ActivityLogPage.module.css';
 
 /** The four summary cards (FR-002): label, tip and the filters a click applies. */

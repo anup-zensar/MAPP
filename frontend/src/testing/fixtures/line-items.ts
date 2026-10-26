@@ -6,7 +6,7 @@
  */
 import type { components } from '@/api/generated/schema';
 import { attribute, option } from './attribute-forms';
-import type { MockHandler } from '../mockApi';
+import type { MockHandler } from '../mock-api';
 
 type LineItem = components['schemas']['LineItem'];
 type LineItemActivity = components['schemas']['LineItemActivity'];

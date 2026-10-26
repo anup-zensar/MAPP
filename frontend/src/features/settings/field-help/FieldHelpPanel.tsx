@@ -3,19 +3,19 @@ import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { CONFLICT_NEXT_STEP } from '../save-failure';
 import { useCloseAfterSave } from '@/ui/useCloseAfterSave';
-import { fetchFieldHelp, HELP_MAX_LENGTH, useUpdateFieldHelp } from './fieldHelpApi';
-import type { FieldHelpEntry } from './fieldHelpApi';
-import { entryName, TOO_LONG } from './fieldHelpWords';
+import { fetchFieldHelp, HELP_MAX_LENGTH, useUpdateFieldHelp } from './api';
+import type { FieldHelpEntry } from './api';
+import { entryName, TOO_LONG } from './field-help-words';
 import { ResetHelpDialog } from './ResetHelpDialog';
-import styles from './fieldHelp.module.css';
+import styles from './field-help.module.css';
 
 export interface FieldHelpPanelProps {
   entry: FieldHelpEntry;

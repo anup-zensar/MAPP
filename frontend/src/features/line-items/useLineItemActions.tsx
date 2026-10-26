@@ -6,11 +6,11 @@ import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/ui/record-links';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { DeleteLineItemDialog } from './DeleteLineItemDialog';
-import { isRestartRefusal } from './lineItemFormState';
-import { moneyText } from './lineItemMath';
-import { LINE_ITEM_CHANGE_KEYS, useDeleteLineItem, useDuplicateLineItem } from './lineItemsApi';
-import type { LineItem, LineItemActivity } from './lineItemsApi';
-import { copyReason, createdToast } from './lineItemText';
+import { isRestartRefusal } from './line-item-form-state';
+import { moneyText } from './line-item-math';
+import { LINE_ITEM_CHANGE_KEYS, useDeleteLineItem, useDuplicateLineItem } from './api';
+import type { LineItem, LineItemActivity } from './api';
+import { copyReason, createdToast } from './line-item-text';
 import { RestartApprovalDialog } from './RestartApprovalDialog';
 
 interface Target {

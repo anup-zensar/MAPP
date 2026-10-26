@@ -13,9 +13,9 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import list from '@/ui/settings-table.module.css';
 import { formatWhole } from '@/format/decimal';
-import { usePeopleAccess, useRoles } from './accessApi';
-import type { PersonRoles } from './accessApi';
-import { assignmentText, SCOPE_EMPTY } from './accessWords';
+import { usePeopleAccess, useRoles } from './api';
+import type { PersonRoles } from './api';
+import { assignmentText, SCOPE_EMPTY } from './access-words';
 import { PersonRolesPanel } from './PersonRolesPanel';
 import styles from './access.module.css';
 

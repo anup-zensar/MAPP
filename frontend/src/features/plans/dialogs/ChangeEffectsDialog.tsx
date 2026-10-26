@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { recordHref } from '@/ui/record-links';
 import { joinWithAnd } from '@/format/text';
-import type { PlanChangeEffects } from '../plansApi';
+import type { PlanChangeEffects } from '../api';
 import styles from './dialogs.module.css';
 
 type GroupChange = PlanChangeEffects['hiddenGroups'][number];

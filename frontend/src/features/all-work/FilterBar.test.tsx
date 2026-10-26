@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { AllWorkOptions, AllWorkResult, ViewState } from './allWorkTypes';
+import type { AllWorkOptions, AllWorkResult, ViewState } from './all-work-types';
 import { FilterBar } from './FilterBar';
 import { allWorkOptions, standard2026 } from '@/testing/fixtures/all-work';
 

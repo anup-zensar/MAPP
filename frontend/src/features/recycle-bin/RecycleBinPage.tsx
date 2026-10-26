@@ -17,11 +17,11 @@ import {
   matchSearch,
   showingLine,
   typePills,
-} from './binText';
-import type { BinItem } from './binText';
+} from './bin-text';
+import type { BinItem } from './bin-text';
 import { EmptyBinDialog } from './EmptyBinDialog';
 import { PurgeDialog } from './PurgeDialog';
-import { useRecycleBin } from './recycleBinApi';
+import { useRecycleBin } from './api';
 import { RestoreDialog } from './RestoreDialog';
 import styles from './RecycleBinPage.module.css';
 import { useAccess } from '@/session/access';

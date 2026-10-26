@@ -87,7 +87,7 @@ export function formatAmount(amount: string): string {
 
 /**
  * "1,234.50 EUR" — also for US dollars: the code after the amount, as the API writes amounts in its
- * messages (Go's Money.Format). Screens that show "$1,234.50" use formatMoney from format.ts.
+ * messages (Go's Money.Format). Screens that show "$1,234.50" use formatMoney from intl.ts.
  */
 export function formatMoneyText(money: { amount: string; currency: string }): string {
   return `${formatAmount(money.amount)} ${money.currency}`;

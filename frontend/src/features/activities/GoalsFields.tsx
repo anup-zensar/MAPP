@@ -6,10 +6,10 @@ import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { formatAmount, formatWhole, parseWholeInput } from '@/format/decimal';
 import { formatMoney } from '@/format/intl';
 import { waterfall } from '@/features/settings';
-import type { GoalsState } from './activityFormState';
-import { fieldId, usdOf } from './activityFormState';
-import { EMPTY, goalsFormula } from './activityText';
-import type { ModelFacts } from './activityText';
+import type { GoalsState } from './activity-form-state';
+import { fieldId, usdOf } from './activity-form-state';
+import { EMPTY, goalsFormula } from './activity-text';
+import type { ModelFacts } from './activity-text';
 import styles from './GoalsFields.module.css';
 
 const WHOLE_NUMBER = 'Enter a whole number of 0 or more.';

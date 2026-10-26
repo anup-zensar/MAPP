@@ -7,11 +7,11 @@ import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { useCreateView, useDeleteView, useUpdateView } from './allWorkApi';
-import type { SavedView } from './allWorkTypes';
+import { useCreateView, useDeleteView, useUpdateView } from './api';
+import type { SavedView } from './all-work-types';
 import styles from './ManageViewsPanel.module.css';
 import { useViewRefusal } from './useViewRefusal';
-import { nameProblem, nameTaken, viewNamed } from './viewNames';
+import { nameProblem, nameTaken, viewNamed } from './view-names';
 
 export interface ManageViewsPanelProps {
   open: boolean;

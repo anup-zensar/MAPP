@@ -4,7 +4,7 @@ import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { approvalOf } from '@/testing/fixtures/approvals';
 import { activityRecord } from '@/testing/fixtures/line-items';
 import { expectCurrentSection, renderApp } from '@/testing/app';
-import type { MockHandler } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mock-api';
 import {
   activityAttributeForm,
   editForm,

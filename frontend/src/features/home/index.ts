@@ -11,4 +11,4 @@ export type {
   MyActivityGroup,
   MyActivityRow,
   WaitingItem,
-} from './homeApi';
+} from './api';

@@ -22,7 +22,7 @@ export interface ActionsMenuItem {
   /**
    * An action the person may not take on this record now (feature 014, FR-011): shown, not chosen,
    * with its reason as the hint — never greyed out without one (constitution III). See
-   * availabilityProps in @/lib/access.
+   * availabilityProps in @/session/access.
    */
   disabled?: boolean;
 }

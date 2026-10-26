@@ -1,11 +1,11 @@
 import type { MouseEvent } from 'react';
 import { cx } from '@/ui/cx';
 import styles from './AllWorkGrid.module.css';
-import type { AllWorkColumn, AllWorkRow } from './allWorkTypes';
+import type { AllWorkColumn, AllWorkRow } from './all-work-types';
 import { CellValue } from './CellValue';
-import { isControl, isNumeric, isSearched } from './cellText';
+import { isControl, isNumeric, isSearched } from './cell-text';
 import { RowName } from './RowName';
-import type { VisibleRow } from './viewState';
+import type { VisibleRow } from './view-state';
 
 export interface GridRowProps {
   visible: VisibleRow;

@@ -4,12 +4,12 @@ import { useCurrentUser } from '@/session/useSession';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { DATE_FORMATS } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { formFailure } from './feedback';
@@ -19,8 +19,8 @@ import {
   useDisplayCurrencies,
   useUpdateDisplayPreferences,
   useUpdateProfile,
-} from './peopleApi';
-import type { DisplayCurrencyOption } from './peopleApi';
+} from './api';
+import type { DisplayCurrencyOption } from './api';
 import { currencyLabel, DISPLAY_CURRENCY_NOTE } from './texts';
 
 /** "EUR — Euro"; an inactive one the person keeps gets " (inactive)" from ChoiceField. */

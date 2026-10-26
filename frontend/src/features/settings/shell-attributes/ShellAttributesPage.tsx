@@ -25,10 +25,10 @@ import {
   MARKING_WORDS,
   shownWhenText,
   TYPE_WORDS,
-} from './attributeWords';
-import type { AttributeLevel } from './attributeWords';
-import { useAllShellAttributes, useMoveAttribute } from './shellAttributesApi';
-import type { AttributeMove, ShellAttribute } from './shellAttributesApi';
+} from './attribute-words';
+import type { AttributeLevel } from './attribute-words';
+import { useAllShellAttributes, useMoveAttribute } from './api';
+import type { AttributeMove, ShellAttribute } from './api';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
 import { useFailureToast } from './useStatusChange';

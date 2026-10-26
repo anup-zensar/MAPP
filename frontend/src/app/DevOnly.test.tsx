@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { DevOnly } from './DevOnly';
 import type { PageHandle } from '@/session/RequireSignIn';

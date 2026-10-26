@@ -2,12 +2,12 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { planForm } from '@/testing/fixtures/attribute-forms';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { PlanPage } from './PlanPage';
-import type { Plan } from './plansApi';
+import type { Plan } from './api';
 import { financialsNotServed, plan } from '@/testing/fixtures/plans';
 
 // Feature 005 fills the plan tree; its own tests cover that.

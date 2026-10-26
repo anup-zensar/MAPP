@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { routes } from '@/app/router';
 import type { CurrentUser } from '@/session/useSession';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { renderRoutes, renderWithProviders } from '@/testing/render';
 import { NotFoundPage } from './NotFoundPage';
 import { testUser } from '@/testing/fixtures/users';

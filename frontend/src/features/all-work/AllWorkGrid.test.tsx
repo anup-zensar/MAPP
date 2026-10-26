@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { AllWorkGrid } from './AllWorkGrid';
-import type { AllWorkResult, AllWorkRow, ViewState } from './allWorkTypes';
+import type { AllWorkResult, AllWorkRow, ViewState } from './all-work-types';
 import { gridResult, seedRows, standard2026, usd } from '@/testing/fixtures/all-work';
-import { continuedPath, nextSort, pageOf, toggleRow, visibleRows } from './viewState';
+import { continuedPath, nextSort, pageOf, toggleRow, visibleRows } from './view-state';
 
 /** The grid with its expansion kept the way the page keeps it. */
 function Harness({

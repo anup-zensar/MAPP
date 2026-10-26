@@ -1,8 +1,8 @@
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
-import type { ConditionDraft } from './levelDrafts';
-import type { ApprovalRuleOptions } from './workflowsApi';
+import type { ConditionDraft } from './level-drafts';
+import type { ApprovalRuleOptions } from './api';
 import styles from './RuleConditionFields.module.css';
 
 export interface RuleConditionFieldsProps {

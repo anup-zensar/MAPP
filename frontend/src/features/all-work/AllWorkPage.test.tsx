@@ -1,11 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { AllWorkPage } from './AllWorkPage';
-import { resetAllWorkStore } from './allWorkStore';
+import { resetAllWorkStore } from './all-work-store';
 import type {
   AllWorkResult,
   AllWorkRow,
@@ -13,7 +13,7 @@ import type {
   SavedViewCreate,
   SavedViewUpdate,
   ViewState,
-} from './allWorkTypes';
+} from './all-work-types';
 import {
   allWorkOptions,
   budgetResult,

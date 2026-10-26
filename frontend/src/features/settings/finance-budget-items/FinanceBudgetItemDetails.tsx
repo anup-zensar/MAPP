@@ -7,9 +7,9 @@ import { MetaLine } from '../MetaLine';
 import { SETTING_NOUNS } from '../settings-nouns';
 import styles from '@/ui/settings-table.module.css';
 import { UsageLine } from '../UsageLine';
-import type { FinanceBudget, FinanceBudgetItem } from './financeBudgetsApi';
-import { moreActions } from './financeItemActions';
-import type { FinanceItemActions } from './financeItemActions';
+import type { FinanceBudget, FinanceBudgetItem } from './api';
+import { moreActions } from './finance-item-actions';
+import type { FinanceItemActions } from './finance-item-actions';
 import { CanChange } from '@/ui/CanChange/CanChange';
 
 export interface FinanceBudgetItemDetailsProps {

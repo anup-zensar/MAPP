@@ -2,8 +2,8 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatWhole } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
-import { negativeBalanceText } from './allWorkText';
-import type { AllWorkSummary } from './allWorkTypes';
+import { negativeBalanceText } from './all-work-text';
+import type { AllWorkSummary } from './all-work-types';
 import styles from './SummaryCards.module.css';
 
 /** The cards' tips (plan "User-visible messages"). */

@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { useCampaign } from './campaignApi';
+import { useCampaign } from './api';
 import { RecordPanel } from './RecordPanel';
 
 export interface CampaignPanelProps {

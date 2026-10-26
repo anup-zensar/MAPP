@@ -2,13 +2,13 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { cx } from '@/ui/cx';
 import styles from './AllWorkGrid.module.css';
-import { COLUMN_TIPS, totalText } from './allWorkText';
-import type { AllWorkColumn, AllWorkResult, AllWorkRow, Sort } from './allWorkTypes';
+import { COLUMN_TIPS, totalText } from './all-work-text';
+import type { AllWorkColumn, AllWorkResult, AllWorkRow, Sort } from './all-work-types';
 import { CellValue } from './CellValue';
-import { isNumeric } from './cellText';
+import { isNumeric } from './cell-text';
 import { GridRow } from './GridRow';
 import { ScrollBox } from './ScrollBox';
-import type { VisibleRow } from './viewState';
+import type { VisibleRow } from './view-state';
 
 export interface AllWorkGridProps {
   result: AllWorkResult;

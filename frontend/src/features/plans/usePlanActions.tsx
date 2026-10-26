@@ -11,15 +11,9 @@ import type { CopyRefusal } from './dialogs/CopyPlanDialog';
 import { DeletePlanDialog } from './dialogs/DeletePlanDialog';
 import { PublishBlockedDialog } from './dialogs/PublishBlockedDialog';
 import { UnpublishDialog } from './dialogs/UnpublishDialog';
-import {
-  PLAN_KEYS,
-  useCopyPlan,
-  useDeletePlan,
-  usePublishPlan,
-  useUnpublishPlan,
-} from './plansApi';
-import type { PlanCopyRequest } from './plansApi';
-import type { PlanStatus } from './planText';
+import { PLAN_KEYS, useCopyPlan, useDeletePlan, usePublishPlan, useUnpublishPlan } from './api';
+import type { PlanCopyRequest } from './api';
+import type { PlanStatus } from './plan-text';
 
 type ReadinessGroup = components['schemas']['ReadinessGroup'];
 type PlanAccess = components['schemas']['PlanAccess'];

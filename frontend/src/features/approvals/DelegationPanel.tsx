@@ -13,8 +13,8 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/format/useFormatters';
 import { DelegationForm } from './DelegationForm';
-import { useCancelDelegation, useDelegations } from './delegationsApi';
-import type { ApprovalDelegation, DelegationScope } from './delegationsApi';
+import { useCancelDelegation, useDelegations } from './delegations-api';
+import type { ApprovalDelegation, DelegationScope } from './delegations-api';
 import { asApiError, isSessionLost } from './messages';
 import styles from './DelegationPanel.module.css';
 

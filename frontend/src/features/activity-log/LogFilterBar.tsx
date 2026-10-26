@@ -15,8 +15,8 @@ import {
   filterChips,
   removeFilter,
   typeLabel,
-} from './logFilters';
-import type { ActionFilter, DateRangeKey, LogFilterState } from './logFilters';
+} from './log-filters';
+import type { ActionFilter, DateRangeKey, LogFilterState } from './log-filters';
 import styles from './LogFilterBar.module.css';
 
 type ActivityLogSummary = components['schemas']['ActivityLogSummary'];

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useToast } from '@/ui/Toast/useToast';
-import { useSavedViews, useUpdateView } from './allWorkApi';
-import type { SavedView, ViewState } from './allWorkTypes';
+import { useSavedViews, useUpdateView } from './api';
+import type { SavedView, ViewState } from './all-work-types';
 import { ManageViewsPanel } from './ManageViewsPanel';
 import { SaveViewDialog } from './SaveViewDialog';
 import { useViewRefusal } from './useViewRefusal';
-import { sameState, savedStateOf } from './viewState';
+import { sameState, savedStateOf } from './view-state';
 import { ViewsMenu } from './ViewsMenu';
 
 export interface ViewsControlProps {

@@ -1,6 +1,6 @@
 import styles from './PlanTypeTag.module.css';
-import { PLAN_TYPE_LABELS, planTypeOf } from './planCurrency';
-import type { PlanType } from './planCurrency';
+import { PLAN_TYPE_LABELS, planTypeOf } from './plan-currency';
+import type { PlanType } from './plan-currency';
 
 /**
  * The plan type as a quiet tag (016 FR-032): "Operational", "Strategic", "Cross-market". It is a

@@ -1,7 +1,7 @@
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
-import { linkedTransactionsText, useFinancialRecord } from './gsapFinancials';
-import { moneyText } from './lineItemMath';
-import type { LineItem } from './lineItemsApi';
+import { linkedTransactionsText, useFinancialRecord } from './gsap-financials';
+import { moneyText } from './line-item-math';
+import type { LineItem } from './api';
 import {
   CANCEL,
   DELETE_CONFIRM,
@@ -9,7 +9,7 @@ import {
   DELETE_TO_BIN,
   deleteEffect,
   deleteTitle,
-} from './lineItemText';
+} from './line-item-text';
 
 export interface DeleteLineItemDialogProps {
   /** The line item to delete; null closes the dialog. */

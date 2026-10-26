@@ -3,18 +3,13 @@ import { useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useCurrentUser } from '@/session/useSession';
 import { useToast } from '@/ui/Toast/useToast';
-import {
-  fetchOptionsOf,
-  useAllWorkOptions,
-  useAllWorkPreferences,
-  useSavedViews,
-} from './allWorkApi';
-import { useAllWorkState } from './allWorkStore';
-import type { AllWorkEntry } from './allWorkStore';
-import { leftOutMessage } from './allWorkText';
-import type { SavedView, ViewState } from './allWorkTypes';
-import { fromAddress, hasAddressFilters, leftOutOf, standardState, yearRange } from './viewState';
-import type { PageSize } from './viewState';
+import { fetchOptionsOf, useAllWorkOptions, useAllWorkPreferences, useSavedViews } from './api';
+import { useAllWorkState } from './all-work-store';
+import type { AllWorkEntry } from './all-work-store';
+import { leftOutMessage } from './all-work-text';
+import type { SavedView, ViewState } from './all-work-types';
+import { fromAddress, hasAddressFilters, leftOutOf, standardState, yearRange } from './view-state';
+import type { PageSize } from './view-state';
 
 /** A new state, or a change of the state as it is when the change applies. */
 export type StateChange = ViewState | ((current: ViewState) => ViewState);

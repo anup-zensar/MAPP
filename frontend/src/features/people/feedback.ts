@@ -5,7 +5,7 @@
 import { ApiError, conflictMessage } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import type { DateFormat } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 

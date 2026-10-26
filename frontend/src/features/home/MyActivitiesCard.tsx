@@ -11,15 +11,15 @@ import { cx } from '@/ui/cx';
 import { formatWhole } from '@/format/decimal';
 import { fieldHref, recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { useHomeMyActivities } from './homeApi';
-import type { MyActivityGroup, MyActivityRow } from './homeApi';
+import { useHomeMyActivities } from './api';
+import type { MyActivityGroup, MyActivityRow } from './api';
 import {
   NO_ACTIVITIES,
   SHOW_FEWER,
   datesText,
   lineItemsNeedAttentionText,
   viewAllText,
-} from './homeText';
+} from './home-text';
 import styles from './MyActivitiesCard.module.css';
 import { SectionError } from './SectionError';
 

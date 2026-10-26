@@ -2,8 +2,8 @@ import { LoaderCircle } from 'lucide-react';
 import { Button } from '@/ui/Button/Button';
 import { localDate } from '@/format/intl';
 import { LogEntry } from './LogEntry';
-import { dayLabel, entriesText, loadedLine } from './logText';
-import type { ActivityLogEntry } from './logText';
+import { dayLabel, entriesText, loadedLine } from './log-text';
+import type { ActivityLogEntry } from './log-text';
 import styles from './LogEntryList.module.css';
 
 export interface LogEntryListProps {

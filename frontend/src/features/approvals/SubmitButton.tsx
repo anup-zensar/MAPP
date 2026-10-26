@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
-import { fetchSubmission, useSubmitActivity } from './approvalsApi';
-import type { ApprovalSubmission } from './approvalsApi';
-import type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';
+import { fetchSubmission, useSubmitActivity } from './api';
+import type { ApprovalSubmission } from './api';
+import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 import { asApiError, isSessionLost, submitConflictMessage } from './messages';
 import { SubmitDialog } from './SubmitDialog';
 

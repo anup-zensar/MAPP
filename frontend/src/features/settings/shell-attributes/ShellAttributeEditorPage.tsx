@@ -10,7 +10,7 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { FormFooter } from '@/ui/FormFooter/FormFooter';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { FormSection } from '@/ui/FormSection/FormSection';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
@@ -20,7 +20,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
@@ -41,8 +41,8 @@ import {
   parentCandidates,
   TYPE_WORDS,
   typesFor,
-} from './attributeWords';
-import type { AttributeLevel, FormAttribute } from './attributeWords';
+} from './attribute-words';
+import type { AttributeLevel, FormAttribute } from './attribute-words';
 import { OptionLinksEditor, OptionsEditor } from './OptionsEditor';
 import type { OptionRow } from './OptionsEditor';
 import {
@@ -52,8 +52,8 @@ import {
   useCreateAttribute,
   useShellAttribute,
   useUpdateAttribute,
-} from './shellAttributesApi';
-import type { ChangeImpact, ShellAttribute, ShellAttributeUpdate } from './shellAttributesApi';
+} from './api';
+import type { ChangeImpact, ShellAttribute, ShellAttributeUpdate } from './api';
 import { AttributeNotFound } from './ShellAttributePage';
 import styles from './ShellAttributes.module.css';
 

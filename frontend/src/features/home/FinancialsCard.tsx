@@ -10,9 +10,9 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
 import styles from './FinancialsCard.module.css';
-import { useFinancialOverview } from './homeApi';
-import type { FinancialOverview, HomeScope } from './homeApi';
-import { committedAboveHref, FINANCIALS_HREF, NOT_LINKED_HREF } from './homeLinks';
+import { useFinancialOverview } from './api';
+import type { FinancialOverview, HomeScope } from './api';
+import { committedAboveHref, FINANCIALS_HREF, NOT_LINKED_HREF } from './home-links';
 import {
   FINANCIALS_CARD,
   aboveThePlannedText,
@@ -24,7 +24,7 @@ import {
   ofPlannedText,
   percentText,
   sourceText,
-} from './homeText';
+} from './home-text';
 import { SectionError } from './SectionError';
 
 /**

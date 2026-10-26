@@ -2,8 +2,8 @@ import { useId } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { formatWhole } from '@/format/decimal';
 import styles from './Pager.module.css';
-import { PAGE_SIZES } from './viewState';
-import type { PageSize, RowPage } from './viewState';
+import { PAGE_SIZES } from './view-state';
+import type { PageSize, RowPage } from './view-state';
 
 export interface PagerProps {
   page: RowPage;

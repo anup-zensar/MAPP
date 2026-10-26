@@ -2,8 +2,8 @@ import { screen, within } from '@testing-library/react';
 import { expect } from 'vitest';
 import { routes } from '@/app/router';
 import type { CurrentUser } from '@/session/useSession';
-import { mockApi } from './mockApi';
-import type { MockHandler } from './mockApi';
+import { mockApi } from './mock-api';
+import type { MockHandler } from './mock-api';
 import { renderRoutes } from './render';
 import { testUser } from './fixtures/users';
 

@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { DateRangeField } from '@/ui/DateRangeField/DateRangeField';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { FormSection } from '@/ui/FormSection/FormSection';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
@@ -10,11 +10,11 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { PersonField } from '@/features/people';
 import { useFormatters } from '@/format/useFormatters';
-import { PHASING_REMOVED } from '../planText';
+import { PHASING_REMOVED } from '../plan-text';
 import { RemainingBudgetLine } from './BudgetCost';
-import type { Money } from './campaignApi';
-import { attributeErrors, outsideYear } from './formValues';
-import type { RecordFormValues } from './formValues';
+import type { Money } from './api';
+import { attributeErrors, outsideYear } from './form-values';
+import type { RecordFormValues } from './form-values';
 import styles from './RecordForm.module.css';
 import {
   allowedRange,

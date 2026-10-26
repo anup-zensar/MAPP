@@ -10,10 +10,10 @@ import { formatWhole } from '@/format/decimal';
 import { localDate } from '@/format/intl';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import type { Activity } from './activitiesApi';
+import type { Activity } from './api';
 import styles from './ActivitySections.module.css';
-import { EMPTY, goalsFormula } from './activityText';
-import type { ModelFacts } from './activityText';
+import { EMPTY, goalsFormula } from './activity-text';
+import type { ModelFacts } from './activity-text';
 
 /**
  * The Details card of an activity's page (FR-020): every value in the one key–value layout, "—"

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { PlanTable } from './PlanTable';
-import type { PlanSummary } from './plansApi';
+import type { PlanSummary } from './api';
 import { seedList } from '@/testing/fixtures/plans';
 
 function renderTable(

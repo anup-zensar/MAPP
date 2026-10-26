@@ -11,9 +11,9 @@ import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFi
 import { businessUnitOf, missingAttributes } from '@/ui/ShellAttributeFields/rules';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
-import { LEVEL_WORDS } from './attributeWords';
-import { checkAttributeValues } from './shellAttributesApi';
-import type { AttributeCheckResult, ShellAttribute } from './shellAttributesApi';
+import { LEVEL_WORDS } from './attribute-words';
+import { checkAttributeValues } from './api';
+import type { AttributeCheckResult, ShellAttribute } from './api';
 import styles from './AttributePreview.module.css';
 
 /**

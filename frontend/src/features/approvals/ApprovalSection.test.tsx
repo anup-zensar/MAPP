@@ -1,12 +1,12 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ApprovalSection } from './ApprovalSection';
-import type { ActivityApproval } from './approvalsApi';
-import type { ApprovalActivity } from './approvalTypes';
+import type { ActivityApproval } from './api';
+import type { ApprovalActivity } from './approval-types';
 import { APPROVED_NO_RECALL } from './messages';
 import {
   ALEX,

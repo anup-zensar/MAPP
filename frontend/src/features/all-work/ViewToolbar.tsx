@@ -3,8 +3,8 @@ import { Button } from '@/ui/Button/Button';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { cx } from '@/ui/cx';
 import { formatTime } from '@/format/intl';
-import { COMPARE_PHASED, PERIOD_LABELS } from './allWorkText';
-import type { ViewState } from './allWorkTypes';
+import { COMPARE_PHASED, PERIOD_LABELS } from './all-work-text';
+import type { ViewState } from './all-work-types';
 import { Switch } from './Switch';
 import styles from './ViewToolbar.module.css';
 

@@ -1,9 +1,9 @@
 import { Navigate, useLocation, useParams } from 'react-router';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { useActivity } from './activitiesApi';
+import { useActivity } from './api';
 import { LoadFailed, PageSkeleton } from './ActivityLoadStates';
-import { activityHref } from './activityText';
+import { activityHref } from './activity-text';
 
 /**
  * The short address /activities/:activityId (D-194) for links that know only the activity (007 –

@@ -2,17 +2,17 @@ import { useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { plural } from '@/format/text';
 import { useFormatters } from '@/format/useFormatters';
 import { CONFLICT_NEXT_STEP } from '../save-failure';
 import styles from '@/ui/settings-table.module.css';
-import { fetchFinanceBudget, useRenameFinanceBudget } from './financeBudgetsApi';
-import type { FinanceBudget } from './financeBudgetsApi';
+import { fetchFinanceBudget, useRenameFinanceBudget } from './api';
+import type { FinanceBudget } from './api';
 
 const NOT_FOUND = 'This finance budget no longer exists — someone may have deleted it.';
 

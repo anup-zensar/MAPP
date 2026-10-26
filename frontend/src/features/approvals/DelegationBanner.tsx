@@ -1,7 +1,7 @@
 import { useCurrentUser } from '@/session/useSession';
 import { useFormatters } from '@/format/useFormatters';
 import { ApprovalAlert } from './ApprovalAlert';
-import { useDelegations } from './delegationsApi';
+import { useDelegations } from './delegations-api';
 
 /**
  * The delegations in force today that concern the signed-in person (017 US4, FR-024), above the

@@ -9,11 +9,11 @@ import { MetaLine } from '../MetaLine';
 import { SETTING_NOUNS } from '../settings-nouns';
 import styles from '@/ui/settings-table.module.css';
 import { UsageLine } from '../UsageLine';
-import type { Currency } from './currenciesApi';
-import { inverseLine, lockOf, moreActions, rateLine } from './currencyActions';
-import type { CurrencyActions } from './currencyActions';
+import type { Currency } from './api';
+import { inverseLine, lockOf, moreActions, rateLine } from './currency-actions';
+import type { CurrencyActions } from './currency-actions';
 import { RateHistorySection } from './RateHistorySection';
-import { rateSourceLine } from './rateWords';
+import { rateSourceLine } from './rate-words';
 import { CanChange } from '@/ui/CanChange/CanChange';
 
 /** MAPP's base currency: always 1, without a rate history. */

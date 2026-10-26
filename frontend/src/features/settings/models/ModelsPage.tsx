@@ -18,13 +18,13 @@ import styles from '@/ui/settings-table.module.css';
 import { filterRecords, useListFilters } from '@/ui/useListFilters';
 import type { ListFilters } from '@/ui/useListFilters';
 import { useSettingStatus } from '../useSettingStatus';
-import { moreActions } from './modelActions';
-import type { ModelActions } from './modelActions';
+import { moreActions } from './model-actions';
+import type { ModelActions } from './model-actions';
 import { ModelDetails } from './ModelDetails';
 import { ModelForm } from './ModelForm';
 import type { ModelFormMode } from './ModelForm';
-import { MODEL_LISTS, setModelStatus, useDeleteModel } from './modelsApi';
-import type { Model } from './modelsApi';
+import { MODEL_LISTS, setModelStatus, useDeleteModel } from './api';
+import type { Model } from './api';
 import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import { useCanChange } from '@/ui/useCanChange';
 

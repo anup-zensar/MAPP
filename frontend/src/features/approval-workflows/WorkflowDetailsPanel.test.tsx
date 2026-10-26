@@ -1,13 +1,13 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ALEX, DANIEL } from '@/testing/fixtures/approvals';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { CHINA_WORKFLOW, detailsOf, workflowOf } from '@/testing/fixtures/approval-workflows';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
-import { WORKFLOW_GONE } from './workflowTexts';
+import { WORKFLOW_GONE } from './workflow-texts';
 
 const DETAILS = 'GET /api/v1/approval-workflows/WF-1001';
 

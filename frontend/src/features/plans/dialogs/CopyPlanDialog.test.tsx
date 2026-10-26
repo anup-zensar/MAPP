@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import type { PlanCopyOptions } from '../plansApi';
+import type { PlanCopyOptions } from '../api';
 import { CopyPlanDialog } from './CopyPlanDialog';
 import type { CopyRefusal } from './CopyPlanDialog';
 

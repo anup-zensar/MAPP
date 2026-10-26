@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import type { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { SpreadEffectNote } from './SpreadEffectNote';

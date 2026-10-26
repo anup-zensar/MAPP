@@ -9,7 +9,7 @@ import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
@@ -19,7 +19,7 @@ import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { formFailure, useShowFailure } from './feedback';
@@ -32,12 +32,12 @@ import {
   useDeleteTeam,
   useTeam,
   useUpdateTeam,
-} from './peopleApi';
-import type { ImpactWarning, Team, TeamColour, TeamUpdate } from './peopleApi';
+} from './api';
+import type { ImpactWarning, Team, TeamColour, TeamUpdate } from './api';
 import { RecordLine } from './RecordLine';
-import { teamMoreItems } from './teamActions';
-import type { TeamActions } from './teamActions';
-import { removedIds } from './removedIds';
+import { teamMoreItems } from './team-actions';
+import type { TeamActions } from './team-actions';
+import { removedIds } from './removed-ids';
 import { deleteTeamText, teamInUseText, usedByText } from './texts';
 import list from '@/ui/settings-table.module.css';
 import styles from './panels.module.css';

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { gateItem } from '@/session/gate-action';
-import type { RecordTarget } from './campaignRows';
+import type { RecordTarget } from './campaign-rows';
 import { CopyDialog } from './CopyDialog';
 import { DeleteRecordDialog } from './DeleteRecordDialog';
 import { MoveDialog } from './MoveDialog';

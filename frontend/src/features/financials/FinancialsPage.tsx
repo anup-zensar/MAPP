@@ -16,10 +16,10 @@ import type { TabItem } from '@/ui/Tabs/Tabs';
 import { useAccess } from '@/session/access';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useFormatters } from '@/format/useFormatters';
-import { useFinancialTransactions } from './financialsApi';
-import type { FinancialRecordRef, FinancialTransactionPage } from './financialsApi';
-import { DEFAULT_FILTERS, readFilters, TABS, writeFilters } from './financialsLinks';
-import type { FinancialFilters, FinancialTab } from './financialsLinks';
+import { useFinancialTransactions } from './api';
+import type { FinancialRecordRef, FinancialTransactionPage } from './api';
+import { DEFAULT_FILTERS, readFilters, TABS, writeFilters } from './financials-links';
+import type { FinancialFilters, FinancialTab } from './financials-links';
 import {
   accruedLabel,
   countLine,
@@ -32,7 +32,7 @@ import {
   TAB_LABELS,
   tabLabel,
   TILE_TIPS,
-} from './financialsText';
+} from './financials-text';
 import { ImportDialog } from './ImportDialog';
 import { ImportHistoryPanel } from './ImportHistoryPanel';
 import { Pager } from './Pager';

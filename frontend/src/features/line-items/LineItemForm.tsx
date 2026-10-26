@@ -7,7 +7,7 @@ import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { FormFooter } from '@/ui/FormFooter/FormFooter';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
@@ -15,7 +15,7 @@ import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { FormCard, FormCardFrame, FormLayout } from '@/ui/FormRail/FormRail';
 import { PersonField } from '@/features/people';
@@ -40,12 +40,12 @@ import {
   restartReasons,
   toCreateBody,
   withField,
-} from './lineItemFormState';
-import type { LineItemFormState } from './lineItemFormState';
-import { LINE_ITEM_SECTION, lineItemRailSections } from './lineItemFormProgress';
-import { convert, parseAmount } from './lineItemMath';
-import { activityBreadcrumb } from './lineItemLinks';
-import type { LineItem, LineItemCreate, LineItemFormOptions } from './lineItemsApi';
+} from './line-item-form-state';
+import type { LineItemFormState } from './line-item-form-state';
+import { LINE_ITEM_SECTION, lineItemRailSections } from './line-item-form-progress';
+import { convert, parseAmount } from './line-item-math';
+import { activityBreadcrumb } from './line-item-links';
+import type { LineItem, LineItemCreate, LineItemFormOptions } from './api';
 import {
   ACTIVITY_GONE,
   CANCEL,
@@ -63,7 +63,7 @@ import {
   SECTION_SPREAD,
   SWBS_HELP,
   SWBS_LATER,
-} from './lineItemText';
+} from './line-item-text';
 import { LineItemSummaryBar } from './LineItemSummaryBar';
 import { RestartApprovalDialog } from './RestartApprovalDialog';
 import { SpreadEditor } from './SpreadEditor';

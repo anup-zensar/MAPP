@@ -2,7 +2,7 @@ import { useCurrentUser } from '@/session/useSession';
 import { PersonPicker } from '@/ui/PersonPicker/PersonPicker';
 import type { PersonPickerProps } from '@/ui/PersonPicker/PersonPicker';
 import { FieldLoadFailed, FieldLoading } from './FieldLoadStates';
-import { usePeople } from './peopleApi';
+import { usePeople } from './api';
 
 /** Omit for each member of a union, so `multiple` keeps choosing the value's type. */
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;

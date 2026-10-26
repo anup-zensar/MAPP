@@ -5,7 +5,7 @@ import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { formatWaitingTime, localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import type { Formatters } from '@/format/useFormatters';
-import type { ApprovalRow, ApprovalTab } from './approvalsApi';
+import type { ApprovalRow, ApprovalTab } from './api';
 import { levelOf, names, progressText } from './messages';
 import { useIsPhone } from './useIsPhone';
 import styles from './ApprovalsTable.module.css';

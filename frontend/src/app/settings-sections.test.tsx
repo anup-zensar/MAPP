@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ROLES } from '@/testing/fixtures/access';
 import { CHINA_WORKFLOW, workflowOf } from '@/testing/fixtures/approval-workflows';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { FIELD_HELP_PAGE } from '@/testing/fixtures/field-help';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';

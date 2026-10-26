@@ -37,7 +37,7 @@ import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import { ViewOnlyNote } from '@/ui/ViewOnlyNote/ViewOnlyNote';
 import type { AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import type { SplitShare } from '@/ui/SplitEditor/SplitEditor';
-import { CAMPAIGN_FORM, COST_CENTRES, PEOPLE, PLAN_TREE, TEAMS } from './galleryData';
+import { CAMPAIGN_FORM, COST_CENTRES, PEOPLE, PLAN_TREE, TEAMS } from './gallery-data';
 import styles from './ComponentGalleryPage.module.css';
 
 /** The levels of the plan tree, each with its tag. */

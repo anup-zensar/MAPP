@@ -5,14 +5,14 @@ import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { useCopyOptions } from '../plansApi';
-import type { PlanCopyOptions, PlanCopyRequest } from '../plansApi';
-import { contentsText } from '../planText';
+import { useCopyOptions } from '../api';
+import type { PlanCopyOptions, PlanCopyRequest } from '../api';
+import { contentsText } from '../plan-text';
 import styles from './dialogs.module.css';
 
 /** Why the API did not copy: problems for the fields, or a message for the whole form. */

@@ -1,8 +1,8 @@
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useId } from 'react';
-import type { PlanListFilters } from './listPreferences';
-import { PLAN_TYPE_LABELS, PLAN_TYPES } from './planCurrency';
+import type { PlanListFilters } from './list-preferences';
+import { PLAN_TYPE_LABELS, PLAN_TYPES } from './plan-currency';
 import styles from './PlansFilters.module.css';
 
 export interface PlansFiltersProps {

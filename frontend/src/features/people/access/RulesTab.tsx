@@ -7,16 +7,16 @@ import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import list from '@/ui/settings-table.module.css';
 import { useFormatters } from '@/format/useFormatters';
-import { useAccessRules, useRoles, useUpdateAccessRules } from './accessApi';
-import type { AccessRules, AccessRulesUpdate, Role } from './accessApi';
-import { SCOPE_WORDS } from './accessWords';
+import { useAccessRules, useRoles, useUpdateAccessRules } from './api';
+import type { AccessRules, AccessRulesUpdate, Role } from './api';
+import { SCOPE_WORDS } from './access-words';
 import styles from './access.module.css';
 
 /** The rule of FR-026, as the card and the form say it. */

@@ -8,7 +8,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { mockApi } from './mockApi';
+import { mockApi } from './mock-api';
 import { findMessages, renderRoutes, renderWithProviders } from './render';
 import { testUser } from './fixtures/users';
 

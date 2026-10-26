@@ -6,16 +6,16 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { ChangeEffectsDialog } from './dialogs/ChangeEffectsDialog';
 import { PlanForm, PlanFormSkeleton } from './PlanForm';
-import { answers016, toUpdateBody, valuesFromPlan } from './planFormValues';
-import type { PlanFormValues } from './planFormValues';
+import { answers016, toUpdateBody, valuesFromPlan } from './plan-form-values';
+import type { PlanFormValues } from './plan-form-values';
 import { PlanNotFound } from './PlanNotFound';
-import { fetchLatestPlan, useChangeEffects, usePlan, useUpdatePlan } from './plansApi';
-import type { Plan, PlanChangeEffects } from './plansApi';
+import { fetchLatestPlan, useChangeEffects, usePlan, useUpdatePlan } from './api';
+import type { Plan, PlanChangeEffects } from './api';
 
 const CONFLICT_NEXT_STEP =
   'Your changes are still here. Save again to replace their changes, or Cancel to see theirs.';

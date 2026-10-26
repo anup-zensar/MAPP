@@ -12,8 +12,8 @@ import {
   pathText,
   recordLink,
   sentenceLead,
-} from './logText';
-import type { ActivityLogEntry } from './logText';
+} from './log-text';
+import type { ActivityLogEntry } from './log-text';
 import styles from './LogEntry.module.css';
 
 export interface LogEntryProps {

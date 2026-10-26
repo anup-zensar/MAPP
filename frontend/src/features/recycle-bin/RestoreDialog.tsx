@@ -17,10 +17,10 @@ import {
   restoreTitle,
   restoredHref,
   restoredMessage,
-} from './binText';
-import type { BinItem, RestorePreview } from './binText';
-import { asApiError, closingMessage, refetchBin } from './dialogFailure';
-import { useRestore, useRestorePreview } from './recycleBinApi';
+} from './bin-text';
+import type { BinItem, RestorePreview } from './bin-text';
+import { asApiError, closingMessage, refetchBin } from './dialog-failure';
+import { useRestore, useRestorePreview } from './api';
 import styles from './dialogs.module.css';
 
 export interface RestoreDialogProps {

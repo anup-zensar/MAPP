@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { AllWorkResult, AllWorkRow } from './allWorkTypes';
+import type { AllWorkResult, AllWorkRow } from './all-work-types';
 import { MonthCalendar } from './MonthCalendar';
 import { calendarResult, row } from '@/testing/fixtures/all-work';
 

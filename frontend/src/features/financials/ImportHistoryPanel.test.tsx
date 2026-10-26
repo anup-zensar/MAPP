@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import { ImportHistoryPanel } from './ImportHistoryPanel';
 import { DEMO_IMPORT } from '@/testing/fixtures/financials';

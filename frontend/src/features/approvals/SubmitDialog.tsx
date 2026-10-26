@@ -3,9 +3,9 @@ import type { components } from '@/api/generated/schema';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useFormatters } from '@/format/useFormatters';
-import type { ApprovalSubmission } from './approvalsApi';
+import type { ApprovalSubmission } from './api';
 import { leftOutText, names } from './messages';
-import styles from './approvalDialogs.module.css';
+import styles from './approval-dialogs.module.css';
 
 type SubmissionLevel = components['schemas']['ApprovalSubmissionLevel'];
 

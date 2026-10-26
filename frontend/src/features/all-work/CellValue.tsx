@@ -2,11 +2,11 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
-import type { AllWorkCell } from './allWorkTypes';
-import { cellText, isProblem, NOTHING } from './cellText';
+import type { AllWorkCell } from './all-work-types';
+import { cellText, isProblem, NOTHING } from './cell-text';
 import styles from './CellValue.module.css';
 import { Highlight } from './Highlight';
-import { statusWord } from './statusWords';
+import { statusWord } from './status-words';
 
 /** Text longer than this is cut to one line and shown in full in a tip. */
 const LONG_TEXT = 40;

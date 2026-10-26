@@ -6,9 +6,15 @@ import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { useHomeWaiting } from './homeApi';
-import { waitingForMeHref } from './homeLinks';
-import { NOTHING_WAITING, WAITING_SUBTITLE, levelText, viewAllText, waitingText } from './homeText';
+import { useHomeWaiting } from './api';
+import { waitingForMeHref } from './home-links';
+import {
+  NOTHING_WAITING,
+  WAITING_SUBTITLE,
+  levelText,
+  viewAllText,
+  waitingText,
+} from './home-text';
 import { SectionError } from './SectionError';
 import styles from './WaitingCard.module.css';
 

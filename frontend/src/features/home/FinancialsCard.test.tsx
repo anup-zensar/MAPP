@@ -1,11 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { FinancialsCard } from './FinancialsCard';
-import type { FinancialOverview, HomeScope } from './homeApi';
+import type { FinancialOverview, HomeScope } from './api';
 import { emptyOverview, overviewOf, usd } from '@/testing/fixtures/home';
 
 function renderCard(answer: MockHandler = { body: overviewOf() }, scope: HomeScope = 'myTeams') {

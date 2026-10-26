@@ -4,10 +4,10 @@ import type { components } from '@/api/generated/schema';
 import { formatMoneyText, formatWhole } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { AmountPair } from '../AmountPair';
-import { differentCurrency } from '../planCurrency';
+import { differentCurrency } from '../plan-currency';
 import { isNegative, remainingWhileTyping, withoutSign } from './budget';
 import styles from './BudgetCost.module.css';
-import type { Campaign } from './campaignApi';
+import type { Campaign } from './api';
 import { Fact, Facts, PanelSection } from './PanelSection';
 import {
   ALLOCATED_TO_INITIATIVES,

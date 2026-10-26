@@ -10,4 +10,4 @@ export type {
   FinancialTransactionPage,
   FinancialTransactionRow,
   LineItemPreview,
-} from './financialsApi';
+} from './api';

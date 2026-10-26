@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { components } from '@/api/generated/schema';
 import { useFormatters } from '@/format/useFormatters';
-import type { ApprovalRound } from './approvalsApi';
+import type { ApprovalRound } from './api';
 import {
   approversText,
   historyActorText,

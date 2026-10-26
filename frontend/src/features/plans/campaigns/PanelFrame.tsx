@@ -9,7 +9,7 @@ import { FailureMessage } from '@/ui/FormPanel/FormPanel';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { ApiError } from '@/api/errors';
 import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
 import styles from './PanelFrame.module.css';

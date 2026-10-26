@@ -4,7 +4,7 @@ import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { cx } from '@/ui/cx';
 import { formatAmount } from '@/format/decimal';
-import { monthColumns, quarterColumns } from './lineItemMath';
+import { monthColumns, quarterColumns } from './line-item-math';
 import {
   EMPTY,
   GRID_NO_DATES,
@@ -16,7 +16,7 @@ import {
   OUTSIDE_TIP,
   QUARTERLY,
   TOTAL,
-} from './lineItemText';
+} from './line-item-text';
 import styles from './SpreadGrid.module.css';
 
 type Grid = components['schemas']['SpreadGrid'];

@@ -1,5 +1,5 @@
 import { SettingsCount } from '@/ui/SettingsCount/SettingsCount';
-import { usePeople, useTeams } from './peopleApi';
+import { usePeople, useTeams } from './api';
 
 /** "6 active" on the People card of the Settings page, as every Settings card shows its count. */
 export function ActivePeopleCount() {

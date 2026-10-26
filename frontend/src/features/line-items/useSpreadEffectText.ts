@@ -1,6 +1,6 @@
-import { spreadEffect } from './lineItemMath';
-import { useLineItemSection } from './lineItemsApi';
-import { spreadEffectText } from './lineItemText';
+import { spreadEffect } from './line-item-math';
+import { useLineItemSection } from './api';
+import { spreadEffectText } from './line-item-text';
 
 /** The dates typed in the activity form. */
 export interface ActivityDates {

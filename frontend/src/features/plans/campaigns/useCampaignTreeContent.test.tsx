@@ -5,11 +5,11 @@ import { SessionProvider } from '@/session/SessionProvider';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { CELL_KEYS } from './campaignRows';
+import { CELL_KEYS } from './campaign-rows';
 import {
   campaign,
   destination,

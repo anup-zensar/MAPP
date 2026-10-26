@@ -3,17 +3,17 @@ import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { recordHref } from '@/ui/record-links';
-import { useCopyRecord, useDestinations } from './campaignApi';
-import type { DestinationList } from './campaignApi';
-import type { RecordTarget } from './campaignRows';
+import { useCopyRecord, useDestinations } from './api';
+import type { DestinationList } from './api';
+import type { RecordTarget } from './campaign-rows';
 import { DestinationChoice, DestinationNotes, DestinationsLoad } from './Destinations';
 import styles from './Destinations.module.css';
-import { focusOnArrival } from './focusOnArrival';
+import { focusOnArrival } from './focus-on-arrival';
 import {
   contentsSentence,
   COPY_INTO,

@@ -8,8 +8,8 @@ export { ApprovalsPage } from './ApprovalsPage';
 export { DecisionButton } from './DecisionButton';
 export { DecisionDialog } from './DecisionDialog';
 export { SubmitButton } from './SubmitButton';
-export type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';
-export { invalidateAllButSession, useActivityApproval } from './approvalsApi';
+export type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
+export { invalidateAllButSession, useActivityApproval } from './api';
 export type {
   ActivityApproval,
   ApprovalPerson,
@@ -17,7 +17,7 @@ export type {
   ApprovalRound,
   ApprovalRow,
   ApprovalSubmission,
-} from './approvalsApi';
+} from './api';
 export {
   activitiesCount,
   asApiError,

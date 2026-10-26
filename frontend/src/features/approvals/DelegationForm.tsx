@@ -4,15 +4,15 @@ import { useCurrentUser } from '@/session/useSession';
 import { conflictMessage } from '@/api/errors';
 import { DateRangeField } from '@/ui/DateRangeField/DateRangeField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { PersonField, usePeople } from '@/features/people';
 import { useFormatters } from '@/format/useFormatters';
-import { fetchLatestDelegation, useCreateDelegation, useUpdateDelegation } from './delegationsApi';
-import type { ApprovalDelegation, DelegationScope, DelegationUpdate } from './delegationsApi';
+import { fetchLatestDelegation, useCreateDelegation, useUpdateDelegation } from './delegations-api';
+import type { ApprovalDelegation, DelegationScope, DelegationUpdate } from './delegations-api';
 import { asApiError, isSessionLost } from './messages';
 
 /** The longest note the API takes. */

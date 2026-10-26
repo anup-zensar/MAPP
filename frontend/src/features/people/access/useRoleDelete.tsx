@@ -4,8 +4,8 @@ import { ApiError } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
-import { ROLES_KEY, useDeleteRole } from './accessApi';
-import type { Role } from './accessApi';
+import { ROLES_KEY, useDeleteRole } from './api';
+import type { Role } from './api';
 
 export interface RoleDelete {
   /** Delete: a role people hold says why it can't go; another asks first. */

@@ -4,10 +4,10 @@ import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { formatMoneyText } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
-import { differentCurrency } from './planCurrency';
-import type { Plan } from './plansApi';
+import { differentCurrency } from './plan-currency';
+import type { Plan } from './api';
 import styles from './PlanSummaryCards.module.css';
-import { APPROVAL_PROGRESS } from './planText';
+import { APPROVAL_PROGRESS } from './plan-text';
 
 type Money = components['schemas']['Money'];
 type PlanAllocation = components['schemas']['PlanAllocation'];

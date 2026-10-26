@@ -11,9 +11,9 @@ import { plural } from '@/format/text';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { BudgetFigures } from './BudgetFigures';
 import { GlobalBudgetForm } from './GlobalBudgetForm';
-import { useGlobalBudgets } from './globalBudgetsApi';
-import type { GlobalBudgetSummary } from './globalBudgetsApi';
-import { emptyText, PAGE_DESCRIPTION } from './globalBudgetsText';
+import { useGlobalBudgets } from './api';
+import type { GlobalBudgetSummary } from './api';
+import { emptyText, PAGE_DESCRIPTION } from './global-budgets-text';
 import styles from './GlobalBudgetsPage.module.css';
 
 /** "?year=all" lists every year; no year means the current one. */

@@ -4,12 +4,12 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { PlanForm, PlanFormSkeleton } from './PlanForm';
-import { answers016, toCreateBody, valuesFromDefaults } from './planFormValues';
-import type { PlanFormValues } from './planFormValues';
-import { useCreatePlan, usePlanDefaults } from './plansApi';
+import { answers016, toCreateBody, valuesFromDefaults } from './plan-form-values';
+import type { PlanFormValues } from './plan-form-values';
+import { useCreatePlan, usePlanDefaults } from './api';
 
 /**
  * New plan (US1, FR-005 – FR-010): the plan form filled in with the person's defaults. Saving

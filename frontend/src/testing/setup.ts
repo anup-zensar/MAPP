@@ -9,7 +9,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
-import { mockApi, takeUnmockedRequests } from './mockApi';
+import { mockApi, takeUnmockedRequests } from './mock-api';
 
 // findBy… and waitFor wait up to 3 seconds: on a busy laptop a page can need more than the default 1 s.
 configure({ asyncUtilTimeout: 3000 });

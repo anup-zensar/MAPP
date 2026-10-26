@@ -2,15 +2,15 @@ import { ArrowDown, ArrowUp, CircleAlert, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/ui/Button/Button';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { PersonField } from '@/features/people';
-import { emptyLevel, levelFieldName } from './levelDrafts';
-import type { ApproverType, LevelDraft, LevelField, LevelMode } from './levelDrafts';
+import { emptyLevel, levelFieldName } from './level-drafts';
+import type { ApproverType, LevelDraft, LevelField, LevelMode } from './level-drafts';
 import { RuleConditionFields } from './RuleConditionFields';
-import { useRuleOptions } from './workflowsApi';
-import type { ApprovalRuleOptions } from './workflowsApi';
+import { useRuleOptions } from './api';
+import type { ApprovalRuleOptions } from './api';
 import styles from './LevelsEditor.module.css';
 
 export interface LevelsEditorProps {

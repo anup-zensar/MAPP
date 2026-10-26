@@ -1,8 +1,8 @@
 import { Link } from 'react-router';
 import styles from '@/ui/settings-table.module.css';
-import { usePersonRoles } from './accessApi';
-import { personRolesPath } from './accessPaths';
-import { rolesText } from './accessWords';
+import { usePersonRoles } from './api';
+import { personRolesPath } from './access-paths';
+import { rolesText } from './access-words';
 
 /**
  * The "Roles" line of a person's details panel (014 plan, "Changes to existing web features"): each

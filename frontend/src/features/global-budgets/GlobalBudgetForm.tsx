@@ -1,25 +1,21 @@
 import { useState } from 'react';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { PersonField } from '@/features/people';
 import { formatAmount, parseMoneyInput } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
-import {
-  fetchGlobalBudget,
-  useCreateGlobalBudget,
-  useUpdateGlobalBudget,
-} from './globalBudgetsApi';
-import type { GlobalBudget, GlobalBudgetCreate, GlobalBudgetUpdate } from './globalBudgetsApi';
-import { toasts, yearChoices } from './globalBudgetsText';
-import { saveFailureOf } from './saveFailure';
+import { fetchGlobalBudget, useCreateGlobalBudget, useUpdateGlobalBudget } from './api';
+import type { GlobalBudget, GlobalBudgetCreate, GlobalBudgetUpdate } from './api';
+import { toasts, yearChoices } from './global-budgets-text';
+import { saveFailureOf } from './save-failure';
 import styles from './GlobalBudgetForm.module.css';
 
 const AMOUNT_PROBLEM = 'Enter an amount of 0 or more.';

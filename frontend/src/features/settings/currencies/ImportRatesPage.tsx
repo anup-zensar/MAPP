@@ -11,14 +11,14 @@ import { formatRate, formatWhole } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import settingsStyles from '@/ui/settings-table.module.css';
-import { CURRENCIES_PATH } from './currencyPaths';
-import { checkRateImport, downloadRateSample, useImportRates } from './ratesApi';
+import { CURRENCIES_PATH } from './currency-paths';
+import { checkRateImport, downloadRateSample, useImportRates } from './rates-api';
 import type {
   RateImportCheck,
   RateImportOutcome,
   RateImportRow,
   RateImportUpload,
-} from './ratesApi';
+} from './rates-api';
 import {
   FILE_TOO_LARGE,
   importedMessage,
@@ -29,7 +29,7 @@ import {
   OUTCOME_WORDS,
   OUTCOMES,
   rowsToImport,
-} from './rateWords';
+} from './rate-words';
 import styles from './rates.module.css';
 
 /** A group of the review lists at most this many rows; the counts above cover all of them. */

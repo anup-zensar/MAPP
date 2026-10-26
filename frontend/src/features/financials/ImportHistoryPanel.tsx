@@ -6,9 +6,9 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useFormatters } from '@/format/useFormatters';
-import { useFinancialImports } from './financialsApi';
-import type { FinancialImport } from './financialsApi';
-import { importCountsText, NO_ACCESS, NO_DATA, relinkedText } from './financialsText';
+import { useFinancialImports } from './api';
+import type { FinancialImport } from './api';
+import { importCountsText, NO_ACCESS, NO_DATA, relinkedText } from './financials-text';
 import styles from './ImportHistoryPanel.module.css';
 
 export interface ImportHistoryPanelProps {

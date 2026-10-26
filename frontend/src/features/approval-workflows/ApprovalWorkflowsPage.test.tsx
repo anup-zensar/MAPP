@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import { ApprovalWorkflowsPage } from './ApprovalWorkflowsPage';
 import {

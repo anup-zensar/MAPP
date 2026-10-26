@@ -10,8 +10,8 @@ import { useFormatters } from '@/format/useFormatters';
 import { allows } from '@/session/gate-action';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import styles from './PlanHeader.module.css';
-import type { Plan } from './plansApi';
-import { yearDates } from './planText';
+import type { Plan } from './api';
+import { yearDates } from './plan-text';
 import { PlanTypeTag } from './PlanTypeTag';
 
 export interface PlanHeaderProps {

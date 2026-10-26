@@ -1,6 +1,6 @@
 import { formatWhole } from '@/format/decimal';
 import { SettingsCount } from '@/ui/SettingsCount/SettingsCount';
-import { useFieldHelpEntries } from './fieldHelpApi';
+import { useFieldHelpEntries } from './api';
 
 /** "3 edited" on the Field help card of the Settings page (016 plan, "Pages"). */
 export function FieldHelpCount() {

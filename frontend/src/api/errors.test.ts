@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { api, call, setSessionLostHandler } from './client';
 import { ApiError, conflictMessage, resolvedMessage } from './errors';
 import type { components } from './generated/schema';

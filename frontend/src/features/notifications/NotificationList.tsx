@@ -18,8 +18,8 @@ import { asApiError, isSessionLost } from '@/features/approvals';
 import { cx } from '@/ui/cx';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { useMarkAllRead, useMarkRead, useNotifications } from './notificationsApi';
-import type { AppNotification } from './notificationsApi';
+import { useMarkAllRead, useMarkRead, useNotifications } from './api';
+import type { AppNotification } from './api';
 import styles from './NotificationList.module.css';
 
 /**

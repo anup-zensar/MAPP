@@ -10,10 +10,10 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import list from '@/ui/settings-table.module.css';
 import { formatWhole } from '@/format/decimal';
-import { useRoles } from './accessApi';
-import type { Role } from './accessApi';
-import { SCOPE_WORDS } from './accessWords';
-import { roleEditPath, rolePath, roleCopyPath, NEW_ROLE_PATH } from './accessPaths';
+import { useRoles } from './api';
+import type { Role } from './api';
+import { SCOPE_WORDS } from './access-words';
+import { roleEditPath, rolePath, roleCopyPath, NEW_ROLE_PATH } from './access-paths';
 import { deleteLock, useRoleDelete } from './useRoleDelete';
 import styles from './access.module.css';
 

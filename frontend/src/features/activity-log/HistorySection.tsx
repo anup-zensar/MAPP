@@ -10,10 +10,10 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
 import { cx } from '@/ui/cx';
-import { HISTORY_PAGE_SIZE, historyKey, useLogEntries } from './activityLogApi';
+import { HISTORY_PAGE_SIZE, historyKey, useLogEntries } from './api';
 import { LogEntryList } from './LogEntryList';
-import { planningLabel } from './logText';
-import { HISTORY_ID, historyHref } from './showHistory';
+import { planningLabel } from './log-text';
+import { HISTORY_ID, historyHref } from './show-history';
 import styles from './HistorySection.module.css';
 
 /** The include option of each level (FR-012): line items have nothing inside them. */

@@ -22,18 +22,13 @@ import { useStatusFlow } from '@/ui/useStatusFlow';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
-import { workflowMoreItems } from './workflowActions';
-import type { WorkflowActions } from './workflowActions';
+import { workflowMoreItems } from './workflow-actions';
+import type { WorkflowActions } from './workflow-actions';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
 import { WorkflowFormPanel } from './WorkflowFormPanel';
-import { cantDeleteText, setInactiveEffects, usedByText } from './workflowTexts';
-import {
-  WORKFLOWS_KEY,
-  useDeleteWorkflow,
-  useSetWorkflowActive,
-  useWorkflows,
-} from './workflowsApi';
-import type { ApprovalWorkflow } from './workflowsApi';
+import { cantDeleteText, setInactiveEffects, usedByText } from './workflow-texts';
+import { WORKFLOWS_KEY, useDeleteWorkflow, useSetWorkflowActive, useWorkflows } from './api';
+import type { ApprovalWorkflow } from './api';
 import styles from './ApprovalWorkflowsPage.module.css';
 import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import { useCanChange } from '@/ui/useCanChange';

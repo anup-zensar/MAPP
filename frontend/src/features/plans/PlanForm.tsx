@@ -9,7 +9,7 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { FormFooter } from '@/ui/FormFooter/FormFooter';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { FormSection } from '@/ui/FormSection/FormSection';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
@@ -25,18 +25,18 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { PersonField, TeamField, usePeople } from '@/features/people';
 import { formatAmount, formatMoneyText, formatPercent } from '@/format/decimal';
 import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
 import { GoalFields } from './GoalFields';
-import { PLAN_TYPE_LABELS, PLAN_TYPES } from './planCurrency';
-import type { PlanType } from './planCurrency';
-import { answers016, sameValues } from './planFormValues';
-import type { PlanFormValues } from './planFormValues';
+import { PLAN_TYPE_LABELS, PLAN_TYPES } from './plan-currency';
+import type { PlanType } from './plan-currency';
+import { answers016, sameValues } from './plan-form-values';
+import type { PlanFormValues } from './plan-form-values';
 import styles from './PlanForm.module.css';
-import type { Plan, PlanDefaults } from './plansApi';
+import type { Plan, PlanDefaults } from './api';
 import {
   allocationLockText,
   APPLIES_FROM_NOW,
@@ -44,8 +44,8 @@ import {
   PUBLISHED_BANNER,
   SPREAD_LABELS,
   YEAR_LOCKED,
-} from './planText';
-import type { SpreadMethod } from './planText';
+} from './plan-text';
+import type { SpreadMethod } from './plan-text';
 
 /** The choice that stands for "no default finance budget" (ChoiceField's empty entry is "Choose…"). */
 const NO_DEFAULT = 'none';

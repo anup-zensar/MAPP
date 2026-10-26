@@ -1,5 +1,5 @@
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
-import type { ReapprovalChange } from './activityFormState';
+import type { ReapprovalChange } from './activity-form-state';
 import styles from './ReapprovalDialog.module.css';
 
 export interface ReapprovalDialogProps {

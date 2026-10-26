@@ -1,15 +1,15 @@
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { formatRate } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import styles from './LineItemForm.module.css';
-import { rateOf } from './lineItemFormState';
-import type { LineItemFormState } from './lineItemFormState';
-import { centsInput, convert, parseAmount } from './lineItemMath';
-import type { LineItemCurrency } from './lineItemsApi';
+import { rateOf } from './line-item-form-state';
+import type { LineItemFormState } from './line-item-form-state';
+import { centsInput, convert, parseAmount } from './line-item-math';
+import type { LineItemCurrency } from './api';
 import {
   CALCULATED,
   conversionText,
@@ -18,7 +18,7 @@ import {
   inactiveCurrencyNote,
   LABEL,
   rateDatesText,
-} from './lineItemText';
+} from './line-item-text';
 import { useCurrentRates } from './rates';
 
 export interface CostFieldsProps {

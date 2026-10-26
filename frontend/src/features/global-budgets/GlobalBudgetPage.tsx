@@ -28,8 +28,8 @@ import {
   useDeleteGlobalBudget,
   useGlobalBudget,
   useRemoveAllocation,
-} from './globalBudgetsApi';
-import type { AllocationOption, BudgetAllocationRow, GlobalBudget } from './globalBudgetsApi';
+} from './api';
+import type { AllocationOption, BudgetAllocationRow, GlobalBudget } from './api';
 import {
   budgetUsedText,
   inUseText,
@@ -38,8 +38,8 @@ import {
   removeQuestion,
   toasts,
   withoutAllocationHeading,
-} from './globalBudgetsText';
-import { BUDGET_GONE } from './saveFailure';
+} from './global-budgets-text';
+import { BUDGET_GONE } from './save-failure';
 import styles from './GlobalBudgetPage.module.css';
 
 type Dialog =

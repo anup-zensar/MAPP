@@ -4,8 +4,8 @@ import { useToast } from '@/ui/Toast/useToast';
 import { currencyLabel, useDisplayCurrencies } from '@/features/people';
 import type { DisplayCurrencyOption } from '@/features/people';
 import { useFormatters } from '@/format/useFormatters';
-import { useSaveDisplayCurrency } from './homeApi';
-import { CHOICE_NOT_SAVED } from './homeText';
+import { useSaveDisplayCurrency } from './api';
+import { CHOICE_NOT_SAVED } from './home-text';
 import styles from './CurrencyPicker.module.css';
 
 interface CurrencyOption {

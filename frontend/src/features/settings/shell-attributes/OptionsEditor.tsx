@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { components } from '@/api/generated/schema';
 import { Button } from '@/ui/Button/Button';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { TextField } from '@/ui/TextField/TextField';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';

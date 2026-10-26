@@ -2,7 +2,7 @@ import { KeyRound } from 'lucide-react';
 import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
-import { NO_ROLE_TITLE, noRoleText } from './homeText';
+import { NO_ROLE_TITLE, noRoleText } from './home-text';
 
 export interface NoRoleCardProps {
   /** The active administrators' names, from the person's access ("Ask … to give you a role"). */

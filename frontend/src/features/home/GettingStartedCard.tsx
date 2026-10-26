@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { Card } from '@/ui/Card/Card';
-import type { HomeSummary } from './homeApi';
+import type { HomeSummary } from './api';
 import styles from './GettingStartedCard.module.css';
 
 /** One step of the Plan module, in the order people do them (001 plan "Home"). */

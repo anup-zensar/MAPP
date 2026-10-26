@@ -1,10 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { remember, DEFAULT_FILTERS } from './listPreferences';
+import { remember, DEFAULT_FILTERS } from './list-preferences';
 import { PlansPage } from './PlansPage';
 import { seedList } from '@/testing/fixtures/plans';
 

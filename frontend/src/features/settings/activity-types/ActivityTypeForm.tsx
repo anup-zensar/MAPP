@@ -3,14 +3,14 @@ import { useModels } from '../api';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { formatAmount, parseMoneyInput, toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { ImpactDialog } from '../ImpactDialog';
@@ -21,13 +21,8 @@ import {
   fetchActivityType,
   useCreateActivityType,
   useUpdateActivityType,
-} from './activityTypesApi';
-import type {
-  ActivityType,
-  ActivityTypeCreate,
-  ActivityTypeUpdate,
-  ChangeImpact,
-} from './activityTypesApi';
+} from './api';
+import type { ActivityType, ActivityTypeCreate, ActivityTypeUpdate, ChangeImpact } from './api';
 
 export interface ActivityTypeFormProps {
   /** The activity type to change; without one, the form adds a new activity type. */

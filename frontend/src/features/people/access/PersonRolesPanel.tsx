@@ -5,35 +5,30 @@ import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TeamPicker } from '@/ui/TeamPicker/TeamPicker';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import type { TeamRef } from '@/ui/TeamPill/TeamPill';
-import { useTeams } from '../peopleApi';
+import { useTeams } from '../api';
 import { firstName } from '../texts';
 import { useCloseAfterSave } from '@/ui/useCloseAfterSave';
 import { useFormatters } from '@/format/useFormatters';
-import {
-  useCheckPersonRolesImpact,
-  usePersonRoles,
-  useRoles,
-  useSetPersonRoles,
-} from './accessApi';
-import type { AccessScopeType, ImpactWarning, PersonRoles, Role } from './accessApi';
-import { ADMINISTRATOR_SCOPE, SCOPE_WORDS, summariseAccess } from './accessWords';
+import { useCheckPersonRolesImpact, usePersonRoles, useRoles, useSetPersonRoles } from './api';
+import type { AccessScopeType, ImpactWarning, PersonRoles, Role } from './api';
+import { ADMINISTRATOR_SCOPE, SCOPE_WORDS, summariseAccess } from './access-words';
 import {
   draftsDiffer,
   draftsOf,
   needsImpactCheck,
   previewPermissions,
   rolesBody,
-} from './roleDrafts';
-import type { RoleDraft } from './roleDrafts';
+} from './role-drafts';
+import type { RoleDraft } from './role-drafts';
 import styles from './access.module.css';
 
 export interface PersonRolesPanelProps {

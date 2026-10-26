@@ -4,9 +4,9 @@ import { useRef, useState } from 'react';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
-import type { AllWorkResult, ViewState } from './allWorkTypes';
+import type { AllWorkResult, ViewState } from './all-work-types';
 import styles from './ExportMenu.module.css';
-import { exportAllWork } from './allWorkApi';
+import { exportAllWork } from './api';
 
 type Format = 'xlsx' | 'csv';
 

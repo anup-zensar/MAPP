@@ -11,5 +11,5 @@ export type {
   Money,
   SavedView,
   ViewState,
-} from './allWorkTypes';
-export { standardState } from './viewState';
+} from './all-work-types';
+export { standardState } from './view-state';

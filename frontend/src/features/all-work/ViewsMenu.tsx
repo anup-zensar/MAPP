@@ -2,7 +2,7 @@ import { Bookmark, Check } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { useRef } from 'react';
 import { Button } from '@/ui/Button/Button';
-import type { SavedView } from './allWorkTypes';
+import type { SavedView } from './all-work-types';
 import styles from './ViewsMenu.module.css';
 
 export interface ViewsMenuProps {

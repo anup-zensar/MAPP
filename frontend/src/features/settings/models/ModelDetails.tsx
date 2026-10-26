@@ -9,9 +9,9 @@ import { MetaLine } from '../MetaLine';
 import { SETTING_NOUNS } from '../settings-nouns';
 import styles from '@/ui/settings-table.module.css';
 import { UsageLine } from '../UsageLine';
-import { moreActions } from './modelActions';
-import type { ModelActions } from './modelActions';
-import type { Model } from './modelsApi';
+import { moreActions } from './model-actions';
+import type { ModelActions } from './model-actions';
+import type { Model } from './api';
 import { WaterfallExample } from './WaterfallExample';
 import { CanChange } from '@/ui/CanChange/CanChange';
 

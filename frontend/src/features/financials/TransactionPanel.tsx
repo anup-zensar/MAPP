@@ -13,8 +13,8 @@ import { useToast } from '@/ui/Toast/useToast';
 import { localDate } from '@/format/intl';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { useFinancialTransaction, useUnlinkTransaction } from './financialsApi';
-import type { FinancialRecordRef, FinancialTransaction } from './financialsApi';
+import { useFinancialTransaction, useUnlinkTransaction } from './api';
+import type { FinancialRecordRef, FinancialTransaction } from './api';
 import {
   currencyMissingText,
   LINE_ITEM_IN_BIN,
@@ -27,7 +27,7 @@ import {
   TRANSACTION_GONE,
   TYPE_WORDS,
   unlinkQuestion,
-} from './financialsText';
+} from './financials-text';
 import { LinkTransactionDialog } from './LinkTransactionDialog';
 import styles from './TransactionPanel.module.css';
 

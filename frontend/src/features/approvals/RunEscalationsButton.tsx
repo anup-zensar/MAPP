@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
-import { useRunEscalations } from './approvalsApi';
+import { useRunEscalations } from './api';
 import { asApiError, escalationRunText, isSessionLost, notEscalatedText } from './messages';
 
 /** Long enough to read a list of activities that could not be escalated. */

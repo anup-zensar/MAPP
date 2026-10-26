@@ -4,16 +4,16 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import type { FinancialTransactionRow, FinancialTransactionType } from './financialsApi';
-import { transactionHref } from './financialsLinks';
-import type { SortColumn, SortDirection } from './financialsLinks';
+import type { FinancialTransactionRow, FinancialTransactionType } from './api';
+import { transactionHref } from './financials-links';
+import type { SortColumn, SortDirection } from './financials-links';
 import {
   currencyMissingText,
   LINE_ITEM_IN_BIN,
   NOT_LINKED,
   recordLabel,
   TYPE_WORDS,
-} from './financialsText';
+} from './financials-text';
 import { ScrollBox } from './ScrollBox';
 import styles from './TransactionsTable.module.css';
 

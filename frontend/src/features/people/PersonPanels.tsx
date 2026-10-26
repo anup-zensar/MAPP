@@ -9,7 +9,7 @@ import { Avatar } from '@/ui/Avatar/Avatar';
 import { Button } from '@/ui/Button/Button';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
@@ -18,7 +18,7 @@ import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { formFailure } from './feedback';
 import { OwnerImpactDialog } from './OwnerImpactDialog';
@@ -28,15 +28,15 @@ import {
   useCreatePerson,
   usePerson,
   useUpdatePerson,
-} from './peopleApi';
-import type { ImpactWarning, Person, PersonDetails, PersonUpdate } from './peopleApi';
+} from './api';
+import type { ImpactWarning, Person, PersonDetails, PersonUpdate } from './api';
 import { RecordLine } from './RecordLine';
-import { removedIds } from './removedIds';
+import { removedIds } from './removed-ids';
 import { TeamField } from './TeamField';
 import { PersonRolesFact } from './access/PersonRolesFact';
 import styles from '@/ui/settings-table.module.css';
-import { personStatusItem } from './personActions';
-import type { PersonActions } from './personActions';
+import { personStatusItem } from './person-actions';
+import type { PersonActions } from './person-actions';
 import { approvesInText, ownsText } from './texts';
 import panel from './panels.module.css';
 import { CanChange } from '@/ui/CanChange/CanChange';

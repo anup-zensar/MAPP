@@ -26,10 +26,10 @@ import {
   setFinanceBudgetItemStatus,
   useDeleteFinanceBudgetItem,
   useFinanceBudgetPage,
-} from './financeBudgetsApi';
-import type { FinanceBudget, FinanceBudgetItem, FinanceBudgetPage } from './financeBudgetsApi';
-import { moreActions } from './financeItemActions';
-import type { FinanceItemActions } from './financeItemActions';
+} from './api';
+import type { FinanceBudget, FinanceBudgetItem, FinanceBudgetPage } from './api';
+import { moreActions } from './finance-item-actions';
+import type { FinanceItemActions } from './finance-item-actions';
 import { RenameBudgetDialog } from './RenameBudgetDialog';
 import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import { useCanChange } from '@/ui/useCanChange';

@@ -1,8 +1,8 @@
 import { Lock } from 'lucide-react';
 import { useAccess } from '@/session/access';
 import styles from './ViewOnlyNote.module.css';
-import { viewOnlyText } from './viewOnlyText';
-import type { ViewOnlyArea } from './viewOnlyText';
+import { viewOnlyText } from './view-only-text';
+import type { ViewOnlyArea } from './view-only-text';
 
 export interface ViewOnlyNoteProps {
   area: ViewOnlyArea;

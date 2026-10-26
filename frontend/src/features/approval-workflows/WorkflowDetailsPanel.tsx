@@ -12,11 +12,11 @@ import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { localDate } from '@/format/intl';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { workflowMoreItems } from './workflowActions';
-import type { WorkflowActions } from './workflowActions';
-import { usedByText, WORKFLOW_GONE } from './workflowTexts';
-import { useWorkflowDetails } from './workflowsApi';
-import type { ApprovalWorkflowDetails } from './workflowsApi';
+import { workflowMoreItems } from './workflow-actions';
+import type { WorkflowActions } from './workflow-actions';
+import { usedByText, WORKFLOW_GONE } from './workflow-texts';
+import { useWorkflowDetails } from './api';
+import type { ApprovalWorkflowDetails } from './api';
 import { CanChange } from '@/ui/CanChange/CanChange';
 import styles from './WorkflowDetailsPanel.module.css';
 

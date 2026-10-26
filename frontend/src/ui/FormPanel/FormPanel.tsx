@@ -7,7 +7,7 @@ import { FormErrorSummary } from '../FormErrorSummary/FormErrorSummary';
 import type { FieldProblem } from '../FormErrorSummary/FormErrorSummary';
 import { SidePanel } from '../SidePanel/SidePanel';
 import styles from './FormPanel.module.css';
-import type { SaveFailure } from './problemOf';
+import type { SaveFailure } from './problem-of';
 
 export interface FormPanelProps {
   title: string;

@@ -2,11 +2,11 @@ import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { emptyLevel, toInputs } from './levelDrafts';
-import type { LevelDraft } from './levelDrafts';
+import { emptyLevel, toInputs } from './level-drafts';
+import type { LevelDraft } from './level-drafts';
 import { LevelsEditor } from './LevelsEditor';
 import { PEOPLE, RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
 

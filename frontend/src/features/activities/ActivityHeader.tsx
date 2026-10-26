@@ -14,10 +14,10 @@ import { DecisionButton, DecisionDialog, SubmitButton } from '@/features/approva
 import { allows, gateItem } from '@/session/gate-action';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import type { Activity } from './activitiesApi';
+import type { Activity } from './api';
 import styles from './ActivityHeader.module.css';
 import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
-import { activityEditHref, datesText, lineItemsAttentionText } from './activityText';
+import { activityEditHref, datesText, lineItemsAttentionText } from './activity-text';
 
 export interface ActivityHeaderProps {
   activity: Activity;

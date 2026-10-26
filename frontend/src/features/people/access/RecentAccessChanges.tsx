@@ -3,8 +3,8 @@ import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useFormatters } from '@/format/useFormatters';
-import { useAccessChanges } from './accessApi';
-import { changeText } from './accessWords';
+import { useAccessChanges } from './api';
+import { changeText } from './access-words';
 import styles from './access.module.css';
 
 /**

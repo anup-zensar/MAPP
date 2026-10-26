@@ -8,7 +8,7 @@ import type { TeamRef } from '@/ui/TeamPill/TeamPill';
 import { AmountPair } from './AmountPair';
 import { PinButton } from './PinButton';
 import { PlanCompleteness, PlanStatusChip } from './PlanFacts';
-import type { PlanSummary } from './plansApi';
+import type { PlanSummary } from './api';
 import styles from './PlanTable.module.css';
 import { PlanTypeTag } from './PlanTypeTag';
 

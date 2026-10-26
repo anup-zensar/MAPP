@@ -6,11 +6,11 @@ import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { useCreateView, useUpdateView } from './allWorkApi';
-import type { SavedView, ViewState } from './allWorkTypes';
+import { useCreateView, useUpdateView } from './api';
+import type { SavedView, ViewState } from './all-work-types';
 import { useViewRefusal } from './useViewRefusal';
-import { nameProblem, viewNamed } from './viewNames';
-import { savedStateOf } from './viewState';
+import { nameProblem, viewNamed } from './view-names';
+import { savedStateOf } from './view-state';
 
 export interface SaveViewDialogProps {
   onOpenChange: (open: boolean) => void;

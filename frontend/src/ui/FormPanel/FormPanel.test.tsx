@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { TextField } from '../TextField/TextField';
 import { FormPanel } from './FormPanel';
-import { problemOf } from './problemOf';
-import type { SaveFailure } from './problemOf';
+import { problemOf } from './problem-of';
+import type { SaveFailure } from './problem-of';
 
 const PROBLEMS = [{ field: 'teamName', message: 'Enter a name.' }];
 

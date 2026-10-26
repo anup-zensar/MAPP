@@ -19,11 +19,11 @@ import {
   LEVEL_WORDS,
   MARKING_WORDS,
   TYPE_WORDS,
-} from './attributeWords';
+} from './attribute-words';
 import { AttributePreview } from './AttributePreview';
 import { OptionsCard } from './OptionsCard';
-import { useShellAttribute } from './shellAttributesApi';
-import type { ShellAttribute } from './shellAttributesApi';
+import { useShellAttribute } from './api';
+import type { ShellAttribute } from './api';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
 import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';

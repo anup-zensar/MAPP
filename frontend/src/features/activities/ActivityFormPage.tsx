@@ -13,7 +13,7 @@ import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
 import { useToast } from '@/ui/Toast/useToast';
 import type { BreadcrumbItem } from '@/ui/Breadcrumb/Breadcrumb';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import type { ClearedValue } from '@/ui/ShellAttributeFields/rules';
 import { useSpreadEffectText } from '@/features/line-items';
 import { recordHref } from '@/ui/record-links';
@@ -27,10 +27,10 @@ import {
   useEditActivityForm,
   useNewActivityForm,
   useUpdateActivity,
-} from './activitiesApi';
-import type { Activity, ActivityFormData } from './activitiesApi';
+} from './api';
+import type { Activity, ActivityFormData } from './api';
 import { ActivityForm } from './ActivityForm';
-import { activityRailSections } from './activityFormProgress';
+import { activityRailSections } from './activity-form-progress';
 import {
   fieldId,
   fromActivity,
@@ -41,11 +41,11 @@ import {
   toCreateBody,
   toUpdateBody,
   validate,
-} from './activityFormState';
-import type { ReapprovalChange } from './activityFormState';
+} from './activity-form-state';
+import type { ReapprovalChange } from './activity-form-state';
 import styles from './ActivityFormPage.module.css';
 import { FormSkeleton, LoadFailed } from './ActivityLoadStates';
-import { activityHref } from './activityText';
+import { activityHref } from './activity-text';
 import { FormLayout } from '@/ui/FormRail/FormRail';
 import { ReapprovalDialog } from './ReapprovalDialog';
 

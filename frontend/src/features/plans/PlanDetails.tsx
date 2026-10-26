@@ -11,10 +11,10 @@ import { formatAmount, formatPercent } from '@/format/decimal';
 import { localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { AmountPair } from './AmountPair';
-import { PLAN_TYPE_LABELS } from './planCurrency';
+import { PLAN_TYPE_LABELS } from './plan-currency';
 import styles from './PlanDetails.module.css';
-import type { Plan } from './plansApi';
-import { SPREAD_LABELS } from './planText';
+import type { Plan } from './api';
+import { SPREAD_LABELS } from './plan-text';
 
 const NOTHING = '—';
 

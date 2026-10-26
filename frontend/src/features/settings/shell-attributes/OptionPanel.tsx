@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { useAttributeForm } from '../api';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { saveFailureOf } from '../save-failure';
-import { findFormAttribute, linkOptionText } from './attributeWords';
+import { findFormAttribute, linkOptionText } from './attribute-words';
 import { LinkedToField } from './LinkedToField';
-import { fetchOption, useCreateOption, useUpdateOption } from './shellAttributesApi';
-import type { OptionChange, ShellAttribute, ShellAttributeOption } from './shellAttributesApi';
+import { fetchOption, useCreateOption, useUpdateOption } from './api';
+import type { OptionChange, ShellAttribute, ShellAttributeOption } from './api';
 import styles from './ShellAttributes.module.css';
 
 export interface OptionPanelProps {

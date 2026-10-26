@@ -1,26 +1,21 @@
 import { useState } from 'react';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problemOf';
+import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { inverseRate, parseDecimalInput } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { ImpactDialog } from '../ImpactDialog';
 import { saveFailureOf } from '../save-failure';
 import styles from '@/ui/settings-table.module.css';
-import {
-  checkCurrencyImpact,
-  fetchCurrency,
-  useCreateCurrency,
-  useUpdateCurrency,
-} from './currenciesApi';
-import type { ChangeImpact, Currency, CurrencyCreate, CurrencyUpdate } from './currenciesApi';
-import { inverseLine, lockOf, rateLine } from './currencyActions';
-import { rateSourceLine } from './rateWords';
+import { checkCurrencyImpact, fetchCurrency, useCreateCurrency, useUpdateCurrency } from './api';
+import type { ChangeImpact, Currency, CurrencyCreate, CurrencyUpdate } from './api';
+import { inverseLine, lockOf, rateLine } from './currency-actions';
+import { rateSourceLine } from './rate-words';
 
 /** A changed rate becomes today's dated rate (016 FR-004). */
 const TODAYS_RATE_HINT = "A new rate is saved as today's rate; the rate history keeps the others.";

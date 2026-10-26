@@ -1,12 +1,12 @@
 import { Plus } from 'lucide-react';
 import { useId } from 'react';
 import { Button } from '@/ui/Button/Button';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { cx } from '@/ui/cx';
-import { monthFieldId } from './lineItemFormState';
-import type { CustomMonth } from './lineItemFormState';
+import { monthFieldId } from './line-item-form-state';
+import type { CustomMonth } from './line-item-form-state';
 import {
   addMonths,
   amountText,
@@ -15,8 +15,8 @@ import {
   isOutsideDates,
   parseAmount,
   spreadMonths,
-} from './lineItemMath';
-import type { ActivityDates, SpreadMethod } from './lineItemMath';
+} from './line-item-math';
+import type { ActivityDates, SpreadMethod } from './line-item-math';
 import {
   ADD_MONTH_AFTER,
   ADD_MONTH_BEFORE,
@@ -31,7 +31,7 @@ import {
   previewLine,
   SPREAD_LABELS,
   USE_MONTH_TOTAL,
-} from './lineItemText';
+} from './line-item-text';
 import styles from './SpreadEditor.module.css';
 
 const METHODS: SpreadMethod[] = ['evenly', 'firstMonth', 'lastMonth', 'custom'];

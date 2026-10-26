@@ -4,10 +4,10 @@ import type { ApiError } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
-import { insideEntriesWarning, purgeContentsText, purgeTitle, purgedMessage } from './binText';
-import type { BinItem } from './binText';
-import { asApiError, closingMessage, refetchBin } from './dialogFailure';
-import { usePurge } from './recycleBinApi';
+import { insideEntriesWarning, purgeContentsText, purgeTitle, purgedMessage } from './bin-text';
+import type { BinItem } from './bin-text';
+import { asApiError, closingMessage, refetchBin } from './dialog-failure';
+import { usePurge } from './api';
 import styles from './dialogs.module.css';
 
 export interface PurgeDialogProps {

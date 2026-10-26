@@ -6,4 +6,4 @@ export type {
   BudgetAllocationRow,
   GlobalBudget,
   GlobalBudgetSummary,
-} from './globalBudgetsApi';
+} from './api';

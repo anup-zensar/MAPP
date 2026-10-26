@@ -10,7 +10,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { recordHref } from '@/ui/record-links';
 import type { PlanningRecordType } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { financialsHref, useRecordFinancials } from './financialsApi';
+import { financialsHref, useRecordFinancials } from './financials-api';
 import styles from './RecordFinancials.module.css';
 
 type FinancialRecordView = components['schemas']['FinancialRecordView'];

@@ -12,15 +12,10 @@ import { Tabs } from '@/ui/Tabs/Tabs';
 import { useToast } from '@/ui/Toast/useToast';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import { usePageTitle } from '@/ui/usePageTitle';
-import {
-  useAllWork,
-  useAllWorkOptions,
-  useAllWorkPreferences,
-  usePreferencesSaver,
-} from './allWorkApi';
+import { useAllWork, useAllWorkOptions, useAllWorkPreferences, usePreferencesSaver } from './api';
 import styles from './AllWorkPage.module.css';
-import { ALL_WORK_DESCRIPTION, VIEW_LABELS } from './allWorkText';
-import type { AllWorkResult, Sort, ViewState, ViewType } from './allWorkTypes';
+import { ALL_WORK_DESCRIPTION, VIEW_LABELS } from './all-work-text';
+import type { AllWorkResult, Sort, ViewState, ViewType } from './all-work-types';
 import { AllWorkGrid } from './AllWorkGrid';
 import { BudgetView } from './BudgetView';
 import { CalendarView } from './CalendarView';
@@ -46,7 +41,7 @@ import {
   visibleRows,
   withoutRefused,
   yearRange,
-} from './viewState';
+} from './view-state';
 
 /** The views as pill tabs (FR-001). */
 const TABS: TabItem<ViewType>[] = [

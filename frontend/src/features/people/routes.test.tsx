@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectCurrentSection, renderApp } from '@/testing/app';
-import type { MockHandler } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 
 const META = {

@@ -1,8 +1,8 @@
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { cx } from '@/ui/cx';
 import { useFormatters } from '@/format/useFormatters';
-import { moneyText } from './lineItemMath';
-import type { Money } from './lineItemsApi';
+import { moneyText } from './line-item-math';
+import type { Money } from './api';
 import styles from './MoneyPair.module.css';
 import { factsOf, RATES_UNKNOWN, rateText, useCurrentRates } from './rates';
 

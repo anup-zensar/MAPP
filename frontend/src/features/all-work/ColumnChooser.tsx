@@ -5,9 +5,9 @@ import { Button } from '@/ui/Button/Button';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
-import type { AllWorkColumnGroup } from './allWorkTypes';
+import type { AllWorkColumnGroup } from './all-work-types';
 import styles from './ColumnChooser.module.css';
-import { dropColumn, moveColumn } from './viewState';
+import { dropColumn, moveColumn } from './view-state';
 
 export interface ColumnChooserProps {
   open: boolean;

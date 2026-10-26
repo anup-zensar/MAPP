@@ -4,13 +4,13 @@ import { ApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { useToast } from '@/ui/Toast/useToast';
-import { downloadSampleFile, useCheckImport, useImportExtract } from './financialsApi';
+import { downloadSampleFile, useCheckImport, useImportExtract } from './api';
 import type {
   FinancialImportCheck,
   FinancialImportNotLinkedRow,
   FinancialImportProblem,
   FinancialImportRequest,
-} from './financialsApi';
+} from './api';
 import {
   importButtonLabel,
   importCountsText,
@@ -21,7 +21,7 @@ import {
   problemLine,
   refusedText,
   relinkedText,
-} from './financialsText';
+} from './financials-text';
 import styles from './ImportDialog.module.css';
 
 /** The largest file the API takes (FR-004): 700 KB. */

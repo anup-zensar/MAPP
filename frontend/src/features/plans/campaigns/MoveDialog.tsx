@@ -6,12 +6,12 @@ import { FailureMessage } from '@/ui/FormPanel/FormPanel';
 import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
-import { useDestinations, useMoveRecord } from './campaignApi';
-import type { DestinationList } from './campaignApi';
-import type { RecordTarget } from './campaignRows';
+import { useDestinations, useMoveRecord } from './api';
+import type { DestinationList } from './api';
+import type { RecordTarget } from './campaign-rows';
 import { DestinationChoice, DestinationNotes, DestinationsLoad } from './Destinations';
 import styles from './Destinations.module.css';
-import { focusOnArrival } from './focusOnArrival';
+import { focusOnArrival } from './focus-on-arrival';
 import {
   CHOOSE_WHERE_TO_MOVE,
   MOVE_INTRO,

@@ -1,8 +1,8 @@
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
-import { problemOf } from '@/ui/FormPanel/problemOf';
+import { problemOf } from '@/ui/FormPanel/problem-of';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { LineItemFormState } from './lineItemFormState';
-import type { FinanceBudgetItemRef, LineItemActivity } from './lineItemsApi';
+import type { LineItemFormState } from './line-item-form-state';
+import type { FinanceBudgetItemRef, LineItemActivity } from './api';
 import {
   BUDGET_SEARCH,
   inactiveItemText,
@@ -10,7 +10,7 @@ import {
   LABEL,
   listedFirstText,
   noBudgetItemsText,
-} from './lineItemText';
+} from './line-item-text';
 
 /** ChoiceField turns into a searchable list above this many options (design system §5). */
 const SEARCHABLE_ABOVE = 10;

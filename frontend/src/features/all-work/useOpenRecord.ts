@@ -3,9 +3,9 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
-import { ALL_WORK_KEYS, locateRecord } from './allWorkApi';
-import type { AllWorkRow } from './allWorkTypes';
-import { rowHref } from './rowHref';
+import { ALL_WORK_KEYS, locateRecord } from './api';
+import type { AllWorkRow } from './all-work-types';
+import { rowHref } from './row-href';
 
 /**
  * Opens a row's record (FR-016, D-123): first asks whether it still exists; then remembers where

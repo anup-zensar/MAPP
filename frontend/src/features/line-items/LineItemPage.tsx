@@ -22,11 +22,11 @@ import { usePageTitle } from '@/ui/usePageTitle';
 import { Detail, DetailsList } from './DetailsList';
 import { LineItemFinancials } from './FinancialsSection';
 import styles from './LineItemPage.module.css';
-import { activityBreadcrumb, activityLineItemsHref, planIdOf } from './lineItemLinks';
-import { centsInput, formatMonth, moneyText } from './lineItemMath';
+import { activityBreadcrumb, activityLineItemsHref, planIdOf } from './line-item-links';
+import { centsInput, formatMonth, moneyText } from './line-item-math';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
-import { useLineItem } from './lineItemsApi';
-import type { LineItem, LineItemActivity, UnassignedBalance } from './lineItemsApi';
+import { useLineItem } from './api';
+import type { LineItem, LineItemActivity, UnassignedBalance } from './api';
 import {
   bookkeepingText,
   conversionText,
@@ -42,7 +42,7 @@ import {
   SECTION_SPREAD,
   SPREAD_LABELS,
   VIEW_HISTORY,
-} from './lineItemText';
+} from './line-item-text';
 import { RateTip } from './MoneyPair';
 import { SwbsChip } from './SwbsChip';
 import { useLineItemActions } from './useLineItemActions';

@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { Construction } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { SettingsPage } from './SettingsPage';

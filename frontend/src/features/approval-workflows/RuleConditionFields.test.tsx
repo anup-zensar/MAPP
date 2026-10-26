@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { emptyCondition } from './levelDrafts';
-import type { ConditionDraft } from './levelDrafts';
+import { emptyCondition } from './level-drafts';
+import type { ConditionDraft } from './level-drafts';
 import { RuleConditionFields } from './RuleConditionFields';
 import { RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
 

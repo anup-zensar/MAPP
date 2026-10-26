@@ -5,7 +5,7 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import type { DateFormat } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
-import type { ApprovalPerson, ApprovalRound } from './approvalsApi';
+import type { ApprovalPerson, ApprovalRound } from './api';
 import {
   chainState,
   escalatedText,

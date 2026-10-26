@@ -14,7 +14,7 @@ import { YourAccessCard } from './access/YourAccessCard';
 import { DATE_FORMATS } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { useDisplayCurrencies } from './peopleApi';
+import { useDisplayCurrencies } from './api';
 import { EditDetailsPanel, EditPreferencesPanel } from './ProfilePanels';
 import { currencyLabel, DISPLAY_CURRENCY_NOTE } from './texts';
 import styles from './ProfilePage.module.css';

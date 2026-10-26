@@ -1,12 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
-import { mockApi } from '@/testing/mockApi';
-import type { MockHandler } from '@/testing/mockApi';
+import { mockApi } from '@/testing/mock-api';
+import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { HistorySection } from './HistorySection';
-import { showHistory } from './showHistory';
+import { showHistory } from './show-history';
 import { logEntry, logPage } from '@/testing/fixtures/activity-log';
 
 const LOG = 'GET /api/v1/activity-log';

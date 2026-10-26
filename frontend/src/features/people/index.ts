@@ -11,11 +11,11 @@ export type {
   PersonRoles,
   Role,
   RoleAssignment,
-} from './access/accessApi';
-export { ACCESS_ROUTES } from './access/accessRoutes';
-export { PERMISSIONS } from './access/accessWords';
-export { ACCESS_SETTINGS_SECTIONS } from './access/settingsSections';
-export { DISPLAY_CURRENCIES_KEY, useDisplayCurrencies, usePeople } from './peopleApi';
-export type { DisplayCurrencyOption } from './peopleApi';
-export { PEOPLE_SETTINGS_SECTIONS } from './settingsSections';
+} from './access/api';
+export { ACCESS_ROUTES } from './access/access-routes';
+export { PERMISSIONS } from './access/access-words';
+export { ACCESS_SETTINGS_SECTIONS } from './access/settings-sections';
+export { DISPLAY_CURRENCIES_KEY, useDisplayCurrencies, usePeople } from './api';
+export type { DisplayCurrencyOption } from './api';
+export { PEOPLE_SETTINGS_SECTIONS } from './settings-sections';
 export { currencyLabel } from './texts';

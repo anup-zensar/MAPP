@@ -22,11 +22,11 @@ import {
   filterChips,
   filterOptions,
   filtersInUse,
-} from './approvalFilters';
-import type { ApprovalFilterKey, ApprovalFilterValues } from './approvalFilters';
+} from './approval-filters';
+import type { ApprovalFilterKey, ApprovalFilterValues } from './approval-filters';
 import { ApprovalPreviewPanel } from './ApprovalPreviewPanel';
-import { useApprovalRows } from './approvalsApi';
-import type { ApprovalRow, ApprovalTab } from './approvalsApi';
+import { useApprovalRows } from './api';
+import type { ApprovalRow, ApprovalTab } from './api';
 import { ApprovalsFilters } from './ApprovalsFilters';
 import { ApprovalsTable } from './ApprovalsTable';
 import { DelegationBanner } from './DelegationBanner';

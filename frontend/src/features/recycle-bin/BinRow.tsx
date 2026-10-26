@@ -10,8 +10,14 @@ import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
 import { availabilityProps, isShown } from '@/session/access';
 import { initialsOf } from '@/features/activity-log';
 import { useFormatters } from '@/format/useFormatters';
-import { capitalise, insideRecords, restoreStateLine, rowContentsText, wasInText } from './binText';
-import type { BinItem, BinRecord } from './binText';
+import {
+  capitalise,
+  insideRecords,
+  restoreStateLine,
+  rowContentsText,
+  wasInText,
+} from './bin-text';
+import type { BinItem, BinRecord } from './bin-text';
 import styles from './BinRow.module.css';
 
 const LEVELS: string[] = ['plan', 'campaign', 'initiative', 'activity', 'lineItem'];

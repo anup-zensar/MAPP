@@ -12,14 +12,14 @@ import { useToast } from '@/ui/Toast/useToast';
 import { centsInput, moneyText } from '@/features/line-items';
 import { parseMoneyInput, toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
-import type { Activity } from './activitiesApi';
+import type { Activity } from './api';
 import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
-import { activityHref } from './activityText';
+import { activityHref } from './activity-text';
 import { DestinationList } from './DestinationList';
-import { useSplitActivity, useSplitOptions, useSplitPreview } from './splitApi';
-import type { ActivitySplitRequest, ActivitySplitSide } from './splitApi';
+import { useSplitActivity, useSplitOptions, useSplitPreview } from './split-api';
+import type { ActivitySplitRequest, ActivitySplitSide } from './split-api';
 import styles from './SplitActivityDialog.module.css';
-import { goalsStayText, NOTHING_CHOSEN, REAPPROVAL, splitToast, splitTitle } from './splitText';
+import { goalsStayText, NOTHING_CHOSEN, REAPPROVAL, splitToast, splitTitle } from './split-text';
 
 /** How long the dialog waits after the last change before it asks for the preview. */
 const PREVIEW_DELAY_MS = 300;

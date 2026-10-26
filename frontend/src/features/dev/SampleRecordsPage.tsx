@@ -24,8 +24,8 @@ import {
   useRecycleBin,
   useRestoreFromBin,
   useSampleFolders,
-} from './sampleApi';
-import type { ActivityLogEntry, RecycleBinEntry, SampleFolder, SampleNote } from './sampleApi';
+} from './api';
+import type { ActivityLogEntry, RecycleBinEntry, SampleFolder, SampleNote } from './api';
 import { FolderPanel, NotePanel } from './SamplePanels';
 import styles from './SampleRecordsPage.module.css';
 
