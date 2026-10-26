@@ -4,7 +4,8 @@ import { Button } from '@/ui/Button/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
 import { useRunEscalations } from './api';
-import { asApiError, escalationRunText, isSessionLost, notEscalatedText } from './messages';
+import { escalationRunText, notEscalatedText } from './decision-messages';
+import { asApiError, isSessionLost } from './messages';
 
 /** Long enough to read a list of activities that could not be escalated. */
 const NOT_ESCALATED_MS = 10_000;

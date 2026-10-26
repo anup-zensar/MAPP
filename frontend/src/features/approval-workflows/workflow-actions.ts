@@ -1,6 +1,8 @@
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { ApprovalWorkflow } from './api';
 
+export const WORKFLOWS_PATH = '/settings/approval-workflows';
+
 /** What the list and the details panel let people do with a workflow. */
 export interface WorkflowActions {
   edit: (workflow: ApprovalWorkflow) => void;

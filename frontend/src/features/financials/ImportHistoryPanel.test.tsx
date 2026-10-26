@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
-import { DEMO_IMPORT } from '@/testing/fixtures/financials';
+import { DEMO_IMPORT } from '@/testing/fixtures/financial-imports';
 import { reply } from '@/testing/replies';
 import { ImportHistoryPanel } from './ImportHistoryPanel';
 

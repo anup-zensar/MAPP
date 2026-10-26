@@ -27,6 +27,10 @@ export const NO_FILTERS: ApprovalFilterValues = {
   to: '',
 };
 
+export function isFilterKey(key: string): key is ApprovalFilterKey {
+  return Object.hasOwn(NO_FILTERS, key);
+}
+
 export interface ApprovalFilterOptions {
   plans: ChoiceOption[];
   workflows: ChoiceOption[];

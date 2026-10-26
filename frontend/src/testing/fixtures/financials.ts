@@ -3,10 +3,7 @@
  * FIM-1001, in USD display with the seeded rates EUR 0.92 and GBP 0.79.
  */
 import type {
-  FinancialImport,
-  FinancialImportCheck,
   FinancialRecordRef,
-  FinancialTransaction,
   FinancialTransactionPage,
   FinancialTransactionRow,
 } from '@/features/financials';
@@ -292,104 +289,3 @@ export function transactionPage(
     ...overrides,
   };
 }
-
-const SYSTEM = { id: 'system', name: 'MAPP' };
-
-export const DEMO_IMPORT: FinancialImport = {
-  id: 'FIM-1001',
-  source: 'demo',
-  feedName: 'Demo data (simulated GSAP)',
-  fileName: '',
-  importedAt: '2026-10-19T02:00:00Z',
-  importedBy: SYSTEM,
-  counts: { rows: 11, new: 11, updated: 0, unchanged: 0, refused: 0, notLinked: 1, relinked: 0 },
-};
-
-/** A transaction with the panel's fields, from one of the rows above. */
-export function transactionOf(
-  source: FinancialTransactionRow,
-  overrides: Partial<FinancialTransaction> = {},
-): FinancialTransaction {
-  const notLinked = source.link.state === 'notLinked';
-  return {
-    ...source,
-    amountUsd: source.amountDisplay,
-    trackingKey:
-      source.type === 'purchaseOrder'
-        ? `HX${source.id === 'FT-1004' ? '1099' : (source.link.lineItemId ?? '').slice(2)}`
-        : '',
-    sentLineItemId: '',
-    import: {
-      id: DEMO_IMPORT.id,
-      feedName: DEMO_IMPORT.feedName,
-      fileName: '',
-      importedAt: DEMO_IMPORT.importedAt,
-      importedBy: SYSTEM,
-    },
-    canLink: notLinked,
-    canUnlink: false,
-    version: 1,
-    createdAt: '2026-10-19T02:00:00Z',
-    updatedAt: '2026-10-19T02:00:00Z',
-    updatedBy: SYSTEM,
-    ...overrides,
-  };
-}
-
-/** FT-1004 after Alex Morgan linked it to L-1007 by hand (US7 scenario 1). */
-export function manuallyLinked(): FinancialTransaction {
-  return transactionOf(FT_1004, {
-    link: {
-      state: 'linked',
-      matchedBy: 'manual',
-      reason: null,
-      lineItemId: 'L-1007',
-      path: [
-        { type: 'plan', id: 'P-1002', name: 'FY2026 Mobility China' },
-        { type: 'campaign', id: 'C-1003', name: 'Retail growth' },
-        { type: 'initiative', id: 'I-1005', name: 'Station promotions' },
-        { type: 'activity', id: 'A-1008', name: 'Grand opening Shanghai' },
-        { type: 'lineItem', id: 'L-1007', name: 'Station signage' },
-      ],
-      manualBy: { id: 'U-1001', name: 'Alex Morgan' },
-      manualAt: '2026-10-20T09:00:00Z',
-    },
-    canLink: false,
-    canUnlink: true,
-    version: 2,
-  });
-}
-
-/** What the check of a 4-row file says (US4 scenario 2). */
-export function checkResult(overrides: Partial<FinancialImportCheck> = {}): FinancialImportCheck {
-  return {
-    fileName: 'gsap-2026-10-19.csv',
-    counts: { rows: 4, new: 2, updated: 1, unchanged: 1, refused: 0, notLinked: 1, relinked: 0 },
-    problems: [],
-    problemsTotal: 0,
-    notLinked: [
-      {
-        row: 5,
-        name: 'PO 4500001009 / 10',
-        reason: 'No line item for HX key HX1099 — check the tracking key in GSAP.',
-      },
-    ],
-    notLinkedTotal: 1,
-    unusedColumns: [],
-    ...overrides,
-  };
-}
-
-/** GET /api/v1/line-items/L-1007 for the link dialog's preview. */
-export const STATION_SIGNAGE = {
-  lineItem: { id: 'L-1007', activityId: 'A-1008', name: 'Station signage' },
-  activity: {
-    id: 'A-1008',
-    name: 'Grand opening Shanghai',
-    path: [
-      { type: 'plan', id: 'P-1002', name: 'FY2026 Mobility China' },
-      { type: 'campaign', id: 'C-1003', name: 'Retail growth' },
-      { type: 'initiative', id: 'I-1005', name: 'Station promotions' },
-    ],
-  },
-};

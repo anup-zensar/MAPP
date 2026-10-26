@@ -2,8 +2,11 @@
  * Approval workflows and people for feature 008's Settings tests, shaped as the contract answers
  * them (the seeded "Lubricants EU approval" and "China BC approval workflow").
  */
+import type { components } from '@/api/generated/schema';
 import type { ApprovalWorkflow, ApprovalWorkflowDetails } from '@/features/approval-workflows';
 import { ALEX, CARLOS, DANIEL } from './approvals';
+
+type ApprovalWorkflowLevel = components['schemas']['ApprovalWorkflowLevel'];
 
 const META = {
   version: 4,
@@ -13,6 +16,19 @@ const META = {
   updatedBy: { id: ALEX.id, name: ALEX.name },
 };
 
+export const WORKFLOW_LEVEL_1: ApprovalWorkflowLevel = {
+  number: 1,
+  name: '',
+  label: 'Level 1',
+  approvers: [CARLOS],
+};
+export const WORKFLOW_LEVEL_2: ApprovalWorkflowLevel = {
+  number: 2,
+  name: 'Global brand',
+  label: 'Global brand',
+  approvers: [ALEX],
+};
+
 /** "Lubricants EU approval": Carlos, then Alex; used by 3 activities, 2 waiting. */
 export function workflowOf(overrides: Partial<ApprovalWorkflow> = {}): ApprovalWorkflow {
   return {
@@ -20,10 +36,7 @@ export function workflowOf(overrides: Partial<ApprovalWorkflow> = {}): ApprovalW
     name: 'Lubricants EU approval',
     description: 'Every Lubricants Europe activity.',
     active: true,
-    levels: [
-      { number: 1, name: '', label: 'Level 1', approvers: [CARLOS] },
-      { number: 2, name: 'Global brand', label: 'Global brand', approvers: [ALEX] },
-    ],
+    levels: [WORKFLOW_LEVEL_1, WORKFLOW_LEVEL_2],
     levelsText: 'Level 1 · Carlos Mendes → Global brand · Alex Morgan',
     usedByCount: 3,
     waitingCount: 2,

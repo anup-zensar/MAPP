@@ -13,13 +13,13 @@ import {
   NO_DELEGATIONS,
   PRIYA,
 } from '@/testing/fixtures/approvals';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { DelegationPanel } from './DelegationPanel';
 
 const CREATE = 'POST /api/v1/approval-delegations';
 
 function renderPanel(answers: HttpHandler[]) {
-  const api = mockApi([looseReply('GET /api/v1/people', PEOPLE), ...answers]);
+  const api = mockApi([reply('GET /api/v1/people', PEOPLE), ...answers]);
   const onClose = vi.fn();
   const rendered = renderWithProviders(<DelegationPanel onClose={onClose} />, {
     user: testUser(),
@@ -34,7 +34,7 @@ const listOf = (items: ReturnType<typeof delegationOf>[], canManageOthers = fals
 describe('DelegationPanel (feature 017, US4)', () => {
   it('groups the delegations, with Edit and Cancel only where they may change (FR-024)', async () => {
     renderPanel([
-      looseReply(
+      reply(
         'GET /api/v1/approval-delegations',
         listOf([
           delegationOf({ id: 'DLG-1002', state: 'current', startDate: '2026-10-19' }),
@@ -69,7 +69,7 @@ describe('DelegationPanel (feature 017, US4)', () => {
   });
 
   it('says what to do when there is no delegation yet', async () => {
-    renderPanel([looseReply('GET /api/v1/approval-delegations', NO_DELEGATIONS)]);
+    renderPanel([reply('GET /api/v1/approval-delegations', NO_DELEGATIONS)]);
 
     expect(
       await screen.findByText(
@@ -80,8 +80,8 @@ describe('DelegationPanel (feature 017, US4)', () => {
 
   it('adds a delegation and says so (FR-022)', async () => {
     const { user, api } = renderPanel([
-      looseReply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
-      looseReply('POST /api/v1/approval-delegations', {
+      reply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
+      reply('POST /api/v1/approval-delegations', {
         status: 201,
         body: delegationOf({ person: PRIYA, delegate: DANIEL }),
       }),
@@ -112,8 +112,8 @@ describe('DelegationPanel (feature 017, US4)', () => {
 
   it('shows every problem of the API at its field (FR-022)', async () => {
     const { user } = renderPanel([
-      looseReply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
-      looseReply('POST /api/v1/approval-delegations', {
+      reply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
+      reply('POST /api/v1/approval-delegations', {
         status: 400,
         body: {
           error: {
@@ -149,7 +149,7 @@ describe('DelegationPanel (feature 017, US4)', () => {
 
   it('lets someone who manages delegations see everyone and add one for another person (FR-022, FR-024)', async () => {
     const { user, api } = renderPanel([
-      looseReply('GET /api/v1/approval-delegations', (request) =>
+      reply('GET /api/v1/approval-delegations', (request) =>
         new URL(request.url).searchParams.get('scope') === 'all'
           ? listOf([delegationOf({ person: CARLOS, delegate: ALEX })], true)
           : listOf([], true),
@@ -167,8 +167,8 @@ describe('DelegationPanel (feature 017, US4)', () => {
 
   it('cancels a delegation after asking, and says so (FR-024)', async () => {
     const { user, api } = renderPanel([
-      looseReply('GET /api/v1/approval-delegations', listOf([delegationOf()])),
-      looseReply(
+      reply('GET /api/v1/approval-delegations', listOf([delegationOf()])),
+      reply(
         'POST /api/v1/approval-delegations/{delegationId}/cancel',
         {
           body: delegationOf({ state: 'cancelled', canChange: false }),
@@ -197,8 +197,8 @@ describe('DelegationPanel (feature 017, US4)', () => {
 
   it('changes a delegation, sending only what changed', async () => {
     const { user, api } = renderPanel([
-      looseReply('GET /api/v1/approval-delegations', listOf([delegationOf()])),
-      looseReply(
+      reply('GET /api/v1/approval-delegations', listOf([delegationOf()])),
+      reply(
         'PATCH /api/v1/approval-delegations/{delegationId}',
         { body: delegationOf() },
         { delegationId: 'DLG-1001' },

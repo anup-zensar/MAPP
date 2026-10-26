@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_FILTERS,
   financialsHref,
-  readFilters,
   toQuery,
   transactionHref,
   writeFilters,
 } from './financials-links';
+import { readFilters } from './schemas';
 
 const read = (query: string) => readFilters(new URLSearchParams(query));
 

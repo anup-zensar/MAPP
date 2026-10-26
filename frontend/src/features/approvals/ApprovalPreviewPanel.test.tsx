@@ -1,16 +1,29 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
+import { htmlElement, nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { approvalOf, previewOf, roundOf, SUBMITTED } from '@/testing/fixtures/approvals';
-import { looseReply } from '@/testing/replies';
+import {
+  approvalOf,
+  LEVEL_1,
+  LEVEL_2,
+  previewOf,
+  roundOf,
+  SUBMITTED,
+} from '@/testing/fixtures/approvals';
+import { reply } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import { ApprovalPreviewPanel } from './ApprovalPreviewPanel';
 import { ACTIVITY_GONE } from './messages';
 
 const APPROVE = 'POST /api/v1/activities/A-1042/approval/approve';
 const DECLINE = 'POST /api/v1/activities/A-1042/approval/decline';
+
+function answerPreview(answer: Answer<'GET /api/v1/approvals/activities/{activityId}'>) {
+  return reply('GET /api/v1/approvals/activities/{activityId}', answer, { activityId: 'A-1042' });
+}
 
 function renderPanel(answers: HttpHandler[]) {
   const api = mockApi(answers);
@@ -25,13 +38,7 @@ function renderPanel(answers: HttpHandler[]) {
 
 describe('ApprovalPreviewPanel (feature 008, US3)', () => {
   it('shows the facts, line items, unassigned planned cost and the chain (FR-032)', async () => {
-    renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        { body: previewOf() },
-        { activityId: 'A-1042' },
-      ),
-    ]);
+    renderPanel([answerPreview({ body: previewOf() })]);
 
     const panel = await screen.findByRole('dialog', { name: 'Launch film' });
     expect(panel).toHaveAccessibleDescription('A-1042 · Waiting at level 1 of 2');
@@ -70,20 +77,16 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
       addEventListener: () => {},
       removeEventListener: () => {},
     }));
-    renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        { body: previewOf() },
-        { activityId: 'A-1042' },
-      ),
-    ]);
+    renderPanel([answerPreview({ body: previewOf() })]);
 
     const panel = await screen.findByRole('dialog', { name: 'Launch film' });
     const lineItems = within(panel).getByRole('region', { name: 'Line items' });
     expect(within(lineItems).queryByRole('table')).not.toBeInTheDocument();
-    const card = within(lineItems)
-      .getAllByRole('listitem')
-      .find((item) => item.textContent?.includes('Agency fee')) as HTMLElement;
+    const card = htmlElement(
+      within(lineItems)
+        .getAllByRole('listitem')
+        .find((item) => item.textContent?.includes('Agency fee')),
+    );
     const facts = within(card)
       .getAllByRole('term')
       .map((term) => `${term.textContent}: ${term.nextElementSibling?.textContent}`);
@@ -99,18 +102,14 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
   it('shows a negative unassigned amount in red, an ongoing activity, and no line items', async () => {
     const preview = previewOf();
     renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        {
-          body: {
-            ...preview,
-            activity: { ...preview.activity, ongoing: true, endDate: null },
-            lineItems: [],
-            unassignedPlannedCost: { amount: '-1200.00', currency: 'USD' },
-          },
+      answerPreview({
+        body: {
+          ...preview,
+          activity: { ...preview.activity, ongoing: true, endDate: null },
+          lineItems: [],
+          unassignedPlannedCost: { amount: '-1200.00', currency: 'USD' },
         },
-        { activityId: 'A-1042' },
-      ),
+      }),
     ]);
 
     const panel = await screen.findByRole('dialog', { name: 'Launch film' });
@@ -121,12 +120,8 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
 
   it('approves, says so and lets the page move on (FR-032)', async () => {
     const { user, api, onDecided } = renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        { body: previewOf() },
-        { activityId: 'A-1042' },
-      ),
-      looseReply(
+      answerPreview({ body: previewOf() }),
+      reply(
         'POST /api/v1/activities/{activityId}/approval/approve',
         { body: approvalOf({ status: 'approved' }) },
         { activityId: 'A-1042' },
@@ -144,13 +139,7 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
   });
 
   it('needs a comment to decline (FR-016)', async () => {
-    const { user, api } = renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        { body: previewOf() },
-        { activityId: 'A-1042' },
-      ),
-    ]);
+    const { user, api } = renderPanel([answerPreview({ body: previewOf() })]);
 
     const panel = await screen.findByRole('dialog', { name: 'Launch film' });
     await user.click(within(panel).getByRole('button', { name: 'Decline' }));
@@ -166,12 +155,8 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
 
   it('explains a decision someone made first, with its time (FR-018)', async () => {
     const { user } = renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        { body: previewOf() },
-        { activityId: 'A-1042' },
-      ),
-      looseReply(
+      answerPreview({ body: previewOf() }),
+      reply(
         'POST /api/v1/activities/{activityId}/approval/approve',
         {
           status: 409,
@@ -203,20 +188,16 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
     const preview = previewOf();
     const none = { available: false, reason: '' };
     renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        {
-          body: {
-            ...preview,
-            activity: { ...preview.activity, status: 'approved', displayStatus: 'approved' },
-            approval: approvalOf({
-              status: 'approved',
-              actions: { submit: none, resubmit: none, approve: none, decline: none, recall: none },
-            }),
-          },
+      answerPreview({
+        body: {
+          ...preview,
+          activity: { ...preview.activity, status: 'approved', displayStatus: 'approved' },
+          approval: approvalOf({
+            status: 'approved',
+            actions: { submit: none, resubmit: none, approve: none, decline: none, recall: none },
+          }),
         },
-        { activityId: 'A-1042' },
-      ),
+      }),
     ]);
 
     const panel = await screen.findByRole('dialog', { name: 'Launch film' });
@@ -231,7 +212,7 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
     const restarted = roundOf({
       outcome: 'restarted',
       endedAt: '2026-03-12T10:15:00Z',
-      levels: [{ ...roundOf().levels[0], state: 'notDecided' }, roundOf().levels[1]],
+      levels: [{ ...LEVEL_1, state: 'notDecided' }, LEVEL_2],
       history: [
         {
           ...SUBMITTED,
@@ -252,28 +233,24 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
       ],
     });
     renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        {
-          body: {
-            ...preview,
-            activity: { ...preview.activity, status: 'created', displayStatus: 'created' },
-            approval: approvalOf({
-              status: 'created',
-              displayStatus: 'created',
-              rounds: [restarted],
-              actions: {
-                submit: { available: true, reason: '' },
-                resubmit: none,
-                approve: none,
-                decline: none,
-                recall: none,
-              },
-            }),
-          },
+      answerPreview({
+        body: {
+          ...preview,
+          activity: { ...preview.activity, status: 'created', displayStatus: 'created' },
+          approval: approvalOf({
+            status: 'created',
+            displayStatus: 'created',
+            rounds: [restarted],
+            actions: {
+              submit: { available: true, reason: '' },
+              resubmit: none,
+              approve: none,
+              decline: none,
+              recall: none,
+            },
+          }),
         },
-        { activityId: 'A-1042' },
-      ),
+      }),
     ]);
 
     const panel = await screen.findByRole('dialog', { name: 'Launch film' });
@@ -290,12 +267,8 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
 
   it('explains an approval restarted after the preview was opened (FR-018, FR-022)', async () => {
     const { user, onDecided } = renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        { body: previewOf() },
-        { activityId: 'A-1042' },
-      ),
-      looseReply(
+      answerPreview({ body: previewOf() }),
+      reply(
         'POST /api/v1/activities/{activityId}/approval/decline',
         {
           status: 409,
@@ -331,19 +304,15 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
 
   it('says when the activity no longer exists, with Close', async () => {
     const { user, onClose } = renderPanel([
-      looseReply(
-        'GET /api/v1/approvals/activities/{activityId}',
-        {
-          status: 404,
-          body: { error: { code: 'not_found', message: ACTIVITY_GONE, fields: [] } },
-        },
-        { activityId: 'A-1042' },
-      ),
+      answerPreview({
+        status: 404,
+        body: { error: { code: 'not_found', message: ACTIVITY_GONE, fields: [] } },
+      }),
     ]);
 
     expect(await screen.findByText(ACTIVITY_GONE)).toBeInTheDocument();
     const panel = screen.getByRole('dialog');
-    await user.click(within(panel).getAllByRole('button', { name: 'Close' })[1]);
+    await user.click(nth(within(panel).getAllByRole('button', { name: 'Close' }), 1));
 
     expect(onClose).toHaveBeenCalled();
   });

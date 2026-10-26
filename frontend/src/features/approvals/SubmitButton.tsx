@@ -7,7 +7,8 @@ import { useFormatters } from '@/format/useFormatters';
 import { fetchSubmission, useSubmitActivity } from './api';
 import type { ApprovalSubmission } from './api';
 import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
-import { asApiError, isSessionLost, submitConflictMessage } from './messages';
+import { submitConflictMessage } from './decision-messages';
+import { asApiError, isSessionLost } from './messages';
 import { SubmitDialog } from './SubmitDialog';
 
 export interface SubmitButtonProps {

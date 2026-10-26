@@ -15,6 +15,7 @@ import type {
 } from '@/features/approvals';
 
 type HistoryEntry = components['schemas']['ApprovalHistoryEntry'];
+type ChainLevel = components['schemas']['ApprovalChainLevel'];
 type DeclineNote = components['schemas']['DeclineNote'];
 
 export const ALEX: ApprovalPerson = {
@@ -61,6 +62,21 @@ export const SUBMITTED: HistoryEntry = {
   changes: [],
 };
 
+export const LEVEL_1: ChainLevel = {
+  number: 1,
+  label: 'Level 1',
+  approvers: [CARLOS],
+  state: 'waiting',
+  decision: null,
+};
+export const LEVEL_2: ChainLevel = {
+  number: 2,
+  label: 'Level 2',
+  approvers: [ALEX],
+  state: 'notReached',
+  decision: null,
+};
+
 /** Round 1 of "Launch film", waiting at level 1 of 2 (Carlos, then Alex). */
 export function roundOf(overrides: Partial<ApprovalRound> = {}): ApprovalRound {
   return {
@@ -74,10 +90,7 @@ export function roundOf(overrides: Partial<ApprovalRound> = {}): ApprovalRound {
     endedAt: null,
     currentLevel: 1,
     levelCount: 2,
-    levels: [
-      { number: 1, label: 'Level 1', approvers: [CARLOS], state: 'waiting', decision: null },
-      { number: 2, label: 'Level 2', approvers: [ALEX], state: 'notReached', decision: null },
-    ],
+    levels: [LEVEL_1, LEVEL_2],
     history: [SUBMITTED],
     ...overrides,
   };

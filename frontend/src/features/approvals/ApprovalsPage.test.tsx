@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
+import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
@@ -102,7 +103,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
   it('switches tabs through the address, keeping the search (FR-029)', async () => {
     const { user, router, api } = renderPage('/approvals', [
       reply('GET /api/v1/approvals', (request) =>
-        new URL(request.url).searchParams.get('tab') === 'open' ? page(ROWS) : page([ROWS[0]]),
+        new URL(request.url).searchParams.get('tab') === 'open' ? page(ROWS) : page([nth(ROWS, 0)]),
       ),
     ]);
 
@@ -309,7 +310,7 @@ describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
 
     const panel = await screen.findByRole('dialog', { name: 'Approval delegation' });
     const closes = within(panel).getAllByRole('button', { name: 'Close' });
-    await user.click(closes[closes.length - 1]);
+    await user.click(nth(closes, -1));
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Approval delegation' })).not.toBeInTheDocument(),
     );

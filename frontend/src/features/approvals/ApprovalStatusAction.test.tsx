@@ -5,7 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { approvalOf, submissionOf } from '@/testing/fixtures/approvals';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { ApprovalStatusAction } from './ApprovalStatusAction';
 import type { ApprovalActivity } from './approval-types';
 
@@ -49,7 +49,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
       viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] },
     });
     const { user } = renderAction({ ...CREATED, status: 'submitted' }, [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval',
         { body: approver },
         { activityId: 'A-1042' },
@@ -70,7 +70,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
 
   it('makes Approve the primary action when the page asks for it (design system §6.3)', async () => {
     mockApi([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval',
         {
           body: approvalOf({ viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] } }),
@@ -92,7 +92,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
 
   it('never offers the owner Approve as a button (functional review A-01)', async () => {
     const { api } = renderAction({ ...CREATED, status: 'submitted' }, [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval',
         { body: approvalOf() },
         { activityId: 'A-1042' },
@@ -117,7 +117,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
       },
     ] as const;
     const { user, api, onShowProblems } = renderAction(CREATED, [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval/submission',
         { body: submissionOf({ ready: false, problems: [...problems] }) },
         { activityId: 'A-1042' },
@@ -133,12 +133,12 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
 
   it('when ready, confirms, submits with the version and says so (FR-011)', async () => {
     const { user, api } = renderAction(CREATED, [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval/submission',
         { body: submissionOf() },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/submit',
         { body: approvalOf() },
         { activityId: 'A-1042' },
@@ -161,12 +161,12 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
 
   it('says re-submitted after a re-submit', async () => {
     const { user } = renderAction({ ...CREATED, status: 'declined' }, [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval/submission',
         { body: submissionOf({ kind: 'resubmit', roundNumber: 2 }) },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/submit',
         { body: approvalOf() },
         { activityId: 'A-1042' },
@@ -184,12 +184,12 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
 
   it('a refused submit with problems opens 006 list with their number (FR-010)', async () => {
     const { user, onShowProblems } = renderAction(CREATED, [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval/submission',
         { body: submissionOf() },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/submit',
         {
           status: 400,
@@ -216,12 +216,12 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
   it('says who changed the activity when the version is old (D-030)', async () => {
     const changedAt = new Date().toISOString();
     const { user } = renderAction(CREATED, [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/approval/submission',
         { body: submissionOf() },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/submit',
         {
           status: 409,

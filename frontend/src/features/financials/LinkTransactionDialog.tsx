@@ -1,18 +1,21 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
-import { problemOf } from '@/ui/FormPanel/problem-of';
+import { FormField } from '@/ui/FormField/FormField';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
 import { useLineItemPreview, useLinkTransaction } from './api';
 import type { FinancialTransaction, LineItemPreview } from './api';
+import { isLineItemId, lineItemIdOf, linkSchema } from './schemas';
+import type { LinkValues } from './schemas';
 import styles from './LinkTransactionDialog.module.css';
 
-const LINE_ITEM_ID = /^L-[0-9]+$/;
-const BAD_ID = 'Line item ID must look like L-1003.';
+const FIELDS = ['lineItemId'] as const;
 
 /** How long the preview waits after the last key. */
 export const PREVIEW_DELAY_MS = 300;
@@ -38,34 +41,36 @@ export function LinkTransactionDialog({
   const { show } = useToast();
   const { dateFormat } = useFormatters();
   const link = useLinkTransaction();
-  const [typed, setTyped] = useState('');
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
+  const form = useForm<LinkValues>({
+    resolver: zodResolver(linkSchema),
+    defaultValues: { lineItemId: '' },
+    ...CHECK_ON_SAVE,
+  });
+  const { showServerProblems } = useFormProblems(form, FIELDS);
   const [failure, setFailure] = useState<string | null>(null);
-  const lineItemId = typed.trim().toUpperCase();
-  const valid = LINE_ITEM_ID.test(lineItemId);
+  const lineItemId = lineItemIdOf(useWatch({ control: form.control, name: 'lineItemId' }));
+  const valid = isLineItemId(lineItemId);
   // The preview follows the typing a moment later, so every key does not ask the API.
   const previewId = useSettled(valid ? lineItemId : '', PREVIEW_DELAY_MS);
   const preview = useLineItemPreview(previewId);
 
-  async function submit() {
-    if (link.isPending) {
-      return;
+  function submit() {
+    if (!link.isPending) {
+      void form.handleSubmit((values) => linkTo(lineItemIdOf(values.lineItemId)))();
     }
-    if (!valid) {
-      setProblems([{ field: 'lineItemId', message: BAD_ID }]);
-      return;
-    }
-    setProblems([]);
+  }
+
+  async function linkTo(id: string) {
     setFailure(null);
     try {
       const linked = await link.mutateAsync({
         id: transaction.id,
-        lineItemId,
+        lineItemId: id,
         version: transaction.version,
       });
       const lineItem = linked.link.path.find((record) => record.type === 'lineItem');
       show({
-        message: `'${transaction.name}' linked to '${lineItem ? `${lineItem.name} (${lineItem.id})` : lineItemId}'`,
+        message: `'${transaction.name}' linked to '${lineItem ? `${lineItem.name} (${lineItem.id})` : id}'`,
       });
       onLinked?.();
       onClose();
@@ -76,7 +81,7 @@ export function LinkTransactionDialog({
         return;
       }
       if (apiError.kind === 'validation' && apiError.fields.length > 0) {
-        setProblems(apiError.fields);
+        showServerProblems(apiError.fields);
         return;
       }
       setFailure(conflictMessage(apiError, 'GSAP transaction', dateFormat));
@@ -91,7 +96,7 @@ export function LinkTransactionDialog({
       description="Enter the ID of the line item GSAP should have named. You can unlink it later."
       submitLabel="Link"
       busy={link.isPending}
-      onSubmit={() => void submit()}
+      onSubmit={submit}
     >
       <div className={styles.body}>
         {failure && (
@@ -100,18 +105,22 @@ export function LinkTransactionDialog({
             {failure}
           </p>
         )}
-        <TextField
-          label="Line item ID"
+        <FormField
+          control={form.control}
           name="lineItemId"
-          hint="For example L-1007"
-          marking="Required"
-          value={typed}
-          onChange={(text) => {
-            setTyped(text);
-            setProblems([]);
-          }}
-          error={problemOf(problems, 'lineItemId')}
-          maxLength={20}
+          render={(field) => (
+            <TextField
+              label="Line item ID"
+              hint="For example L-1007"
+              marking="Required"
+              maxLength={20}
+              {...field}
+              onChange={(text) => {
+                field.onChange(text);
+                form.clearErrors('lineItemId');
+              }}
+            />
+          )}
         />
         <Preview
           id={previewId}

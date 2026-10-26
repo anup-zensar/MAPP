@@ -10,13 +10,13 @@ import {
   chainState,
   escalatedText,
   levelRuleLines,
-  names,
   progressText,
   reminderSentText,
   sourceText,
   wasLeftOutText,
-} from './messages';
-import type { ChainState } from './messages';
+} from './chain-messages';
+import type { ChainState } from './chain-messages';
+import { names } from './messages';
 import styles from './ApprovalChain.module.css';
 
 type WorkflowLevel = components['schemas']['ApprovalWorkflowLevel'];

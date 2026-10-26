@@ -1,25 +1,22 @@
-import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { useCurrentUser } from '@/session/useSession';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { FormField } from '@/ui/FormField/FormField';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
 import { useDecide } from './api';
 import type { ActivityApproval } from './api';
-import {
-  alreadyDecidedMessage,
-  approvedToast,
-  asApiError,
-  capacitySentence,
-  isSessionLost,
-  levelOf,
-  names,
-} from './messages';
+import { alreadyDecidedMessage, approvedToast, capacitySentence } from './decision-messages';
+import { asApiError, isSessionLost, levelOf, names } from './messages';
+import { commentSchema, declineSchema } from './schemas';
+import type { CommentValues } from './schemas';
 import styles from './approval-dialogs.module.css';
 
 /** The longest comment the API takes. */
 const COMMENT_MAX = 2000;
-const COMMENT_NEEDED = 'Add a comment explaining why the activity is declined.';
 
 export interface DecisionDialogProps {
   mode: 'approve' | 'decline';
@@ -44,8 +41,12 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
   const { dateFormat } = useFormatters();
   const user = useCurrentUser();
   const decide = useDecide();
-  const [comment, setComment] = useState('');
-  const [commentError, setCommentError] = useState<string>();
+  const approve = mode === 'approve';
+  const form = useForm<CommentValues>({
+    resolver: zodResolver(approve ? commentSchema : declineSchema),
+    defaultValues: { comment: '' },
+    ...CHECK_ON_SAVE,
+  });
   const round = approval.rounds[0];
   const levelNumber = round?.currentLevel ?? 0;
   const level = round?.levels.find((each) => each.number === levelNumber);
@@ -54,7 +55,6 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
     (each) => each.number > levelNumber && each.state === 'notReached',
   );
   const name = approval.activityName;
-  const approve = mode === 'approve';
   const { viewer } = approval;
   const capacity = viewer.capacity ?? null;
   const capacityText = capacitySentence(capacity, viewer.asDelegateOf ?? [], levelNumber);
@@ -64,22 +64,20 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
   const allLevel = level ? allLevelLines(level, capacity, viewer, user.id) : null;
   const completes = !allLevel || allLevel.completes;
 
-  async function confirm() {
-    if (!round || decide.isPending) {
-      return;
+  function confirm() {
+    if (round && !decide.isPending) {
+      void form.handleSubmit(({ comment }) => decideLevel(round.id, comment.trim()))();
     }
-    const text = comment.trim();
-    if (!approve && text === '') {
-      setCommentError(COMMENT_NEEDED);
-      return;
-    }
+  }
+
+  async function decideLevel(roundId: string, comment: string) {
     try {
       const result = await decide.mutateAsync({
         mode,
         activityId: approval.activityId,
-        roundId: round.id,
+        roundId,
         level: levelNumber,
-        comment: text,
+        comment,
       });
       show({
         message: approve
@@ -92,7 +90,7 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
       const failure = asApiError(error);
       const commentProblem = failure.fields.find((field) => field.field === 'comment');
       if (failure.kind === 'validation' && commentProblem) {
-        setCommentError(commentProblem.message);
+        form.setError('comment', { message: commentProblem.message });
         return;
       }
       if (isSessionLost(failure)) {
@@ -123,7 +121,7 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
       confirmLabel={approve ? 'Approve' : 'Decline activity'}
       tone={approve ? undefined : 'danger'}
       busy={decide.isPending}
-      onConfirm={() => void confirm()}
+      onConfirm={confirm}
     >
       <div className={styles.body}>
         {round && level && (
@@ -156,31 +154,32 @@ export function DecisionDialog({ mode, approval, onClose, onDecided }: DecisionD
             {`You are not an approver of level ${levelNumber}. Your decision will be recorded as made on behalf of ${names(viewer.onBehalfOf)}.`}
           </p>
         )}
-        {approve ? (
-          <TextAreaField
-            label="Comment (optional)"
-            name="comment"
-            rows={3}
-            maxLength={COMMENT_MAX}
-            value={comment}
-            onChange={setComment}
-            error={commentError}
-          />
-        ) : (
-          <TextAreaField
-            label="Why are you declining it?"
-            marking="Required"
-            name="comment"
-            rows={3}
-            maxLength={COMMENT_MAX}
-            value={comment}
-            onChange={(value) => {
-              setComment(value);
-              setCommentError(undefined);
-            }}
-            error={commentError}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="comment"
+          render={(field) =>
+            approve ? (
+              <TextAreaField
+                label="Comment (optional)"
+                rows={3}
+                maxLength={COMMENT_MAX}
+                {...field}
+              />
+            ) : (
+              <TextAreaField
+                label="Why are you declining it?"
+                marking="Required"
+                rows={3}
+                maxLength={COMMENT_MAX}
+                {...field}
+                onChange={(value) => {
+                  field.onChange(value);
+                  form.clearErrors('comment');
+                }}
+              />
+            )
+          }
+        />
       </div>
     </ConfirmDialog>
   );

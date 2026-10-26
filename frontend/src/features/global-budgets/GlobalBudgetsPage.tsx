@@ -14,17 +14,8 @@ import { GlobalBudgetForm } from './GlobalBudgetForm';
 import { useGlobalBudgets } from './api';
 import type { GlobalBudgetSummary } from './api';
 import { emptyText, PAGE_DESCRIPTION } from './global-budgets-text';
+import { yearOf } from './schemas';
 import styles from './GlobalBudgetsPage.module.css';
-
-/** "?year=all" lists every year; no year means the current one. */
-function readYear(params: URLSearchParams, currentYear: number): number | null {
-  const value = params.get('year');
-  if (value === 'all') {
-    return null;
-  }
-  const year = Number(value);
-  return value && Number.isInteger(year) && year >= 2000 && year <= 2100 ? year : currentYear;
-}
 
 /**
  * Global budgets (014 US6, FR-036), at /budgets: the global budgets of a year (the current year
@@ -35,7 +26,7 @@ export function GlobalBudgetsPage() {
   usePageTitle('Global budgets');
   const [params, setParams] = useSearchParams();
   const currentYear = new Date().getFullYear();
-  const year = readYear(params, currentYear);
+  const year = yearOf(params, currentYear);
   const budgets = useGlobalBudgets(year);
   const [creating, setCreating] = useState(false);
   // The new global budget opens once its form has closed (its unsaved-changes guard is gone).

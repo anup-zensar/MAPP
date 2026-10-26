@@ -152,7 +152,10 @@ function visibleText(element: Element | null): string {
   if (!element) {
     return '';
   }
-  const copy = element.cloneNode(true) as Element;
+  const copy = element.cloneNode(true);
+  if (!(copy instanceof Element)) {
+    return '';
+  }
   copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
   return copy.textContent ?? '';
 }
