@@ -5,12 +5,12 @@ import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { launchFilm } from '@/testing/fixtures/activities';
 import {
   destinations,
-  launchFilm,
   OWN_INITIATIVE,
   RETAIL_EVENTS,
-} from '@/testing/fixtures/activities';
+} from '@/testing/fixtures/activity-destinations';
 import { reply } from '@/testing/replies';
 import type { Activity } from './api';
 import { CopyActivityDialog } from './CopyActivityDialog';

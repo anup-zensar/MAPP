@@ -4,28 +4,15 @@ import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { TreeTable } from '@/ui/TreeTable/TreeTable';
+import { closestTo } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { activityRecord } from '@/testing/fixtures/line-item-financials';
-import { destinations, launchFilm, launchFilmRow } from '@/testing/fixtures/activities';
-import { looseReply } from '@/testing/replies';
+import { launchFilm, launchFilmRow, DELETED, RESTORED } from '@/testing/fixtures/activities';
+import { destinations } from '@/testing/fixtures/activity-destinations';
+import { reply } from '@/testing/replies';
 import { activityActionsForInitiative, useActivityRows } from './activity-tree-rows';
-
-const DELETED = {
-  recycleBinEntry: {
-    id: 'BIN-1001',
-    recordType: 'activity',
-    recordTypeLabel: 'activity',
-    recordId: 'A-1042',
-    recordName: 'Launch film',
-    path: [],
-    parent: { type: 'initiative', id: 'I-1001', name: 'Digital & social' },
-    deletedAt: '2026-03-12T09:00:00Z',
-    deletedBy: { id: 'U-1002', name: 'Priya Raman' },
-    contents: [],
-  },
-};
 
 const INITIATIVE = { id: 'I-1001', name: 'Digital & social', planId: 'P-1001' };
 
@@ -61,7 +48,7 @@ function ActivityRows() {
 
 function openRows(answers: HttpHandler[] = []) {
   const api = mockApi([
-    looseReply(
+    reply(
       'GET /api/v1/plans/{planId}/activities',
       {
         body: {
@@ -77,7 +64,7 @@ function openRows(answers: HttpHandler[] = []) {
       },
       { planId: 'P-1001' },
     ),
-    looseReply(
+    reply(
       'GET /api/v1/financials/records/{recordId}',
       {
         status: 404,
@@ -100,9 +87,7 @@ describe('activityTreeRows (feature 006)', () => {
   it('shows each activity as a row with its cells, under its own initiative (FR-033)', async () => {
     openRows();
 
-    const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
-      'tr',
-    ) as HTMLElement;
+    const row = closestTo(await screen.findByRole('link', { name: 'Launch film' }), 'tr');
     expect(within(row).getByText('ACTIVITY')).toBeVisible();
     expect(within(row).getByText('A-1042')).toBeVisible();
     expect(within(row).getByText('Priya Raman')).toBeVisible();
@@ -119,7 +104,7 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('shows the planned cost in the plan currency with the display currency under it (016 FR-013)', async () => {
     openRows([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/activities',
         {
           body: {
@@ -141,9 +126,7 @@ describe('activityTreeRows (feature 006)', () => {
       ),
     ]);
 
-    const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
-      'tr',
-    ) as HTMLElement;
+    const row = closestTo(await screen.findByRole('link', { name: 'Launch film' }), 'tr');
     expect(within(row).getByText(/3,950\.00/)).toHaveTextContent(/GBP|£/);
     expect(within(row).getByText(/≈/)).toHaveTextContent(/5,000\.00/);
   });
@@ -151,9 +134,7 @@ describe('activityTreeRows (feature 006)', () => {
   it('shows only the display currency when the plan is planned in it', async () => {
     openRows();
 
-    const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
-      'tr',
-    ) as HTMLElement;
+    const row = closestTo(await screen.findByRole('link', { name: 'Launch film' }), 'tr');
     expect(within(row).queryByText(/≈/)).not.toBeInTheDocument();
   });
 
@@ -175,20 +156,16 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('deletes an activity from its row after asking, by keyboard, and offers Undo (FR-031)', async () => {
     const { user, router, api } = openRows([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}',
         {
           body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
         },
         { activityId: 'A-1042' },
       ),
-      looseReply(
-        'DELETE /api/v1/activities/{activityId}',
-        { body: DELETED },
-        { activityId: 'A-1042' },
-      ),
-      looseReply('POST /api/v1/recycle-bin/{entryId}/undo', { body: {} }, { entryId: 'BIN-1001' }),
-      looseReply(
+      reply('DELETE /api/v1/activities/{activityId}', { body: DELETED }, { activityId: 'A-1042' }),
+      reply('POST /api/v1/recycle-bin/{entryId}/undo', { body: RESTORED }, { entryId: 'BIN-1001' }),
+      reply(
         'GET /api/v1/financials/records/{recordId}',
         {
           body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
@@ -230,19 +207,19 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('copies an activity from its row with the activity as stored now (FR-030)', async () => {
     const { user, router, api } = openRows([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}',
         {
           body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
         },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/destinations',
         { body: destinations() },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/copy',
         {
           status: 201,
@@ -270,17 +247,17 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('moves an activity from its row with the version stored now (FR-029)', async () => {
     const { user, api } = openRows([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}',
         { body: launchFilm({ version: 7 }) },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/destinations',
         { body: destinations() },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/move',
         {
           body: launchFilm({
@@ -309,7 +286,7 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('closes the question of a row on Cancel, deleting nothing', async () => {
     const { user, api } = openRows([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}',
         { body: launchFilm() },
         { activityId: 'A-1042' },

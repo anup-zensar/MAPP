@@ -1,19 +1,11 @@
 /**
- * Activities for the tests of feature 006 (contract shapes, as the API answers them): the plan
- * "FY2026 Lubricants Europe", the initiative "Digital & social" (Priya Raman, 1 Jan – 30 Jun 2026)
- * and the activity "Launch film" (A-1042).
+ * Activities of feature 006 as the API answers them: "Launch film" (A-1042) in the initiative
+ * "Digital & social" (Priya Raman, 1 Jan – 30 Jun 2026) of the plan "FY2026 Lubricants Europe".
  */
 import type { components } from '@/api/generated/schema';
-import type {
-  Activity,
-  ActivityDestination,
-  ActivityFormData,
-  ActivitySummary,
-} from '@/features/activities';
-import { attribute, LUBRICANTS, MOBILITY, option } from './attribute-forms';
+import type { Activity, ActivitySummary } from '@/features/activities';
 
 type Person = components['schemas']['Person'];
-type AttributeForm = components['schemas']['AttributeForm'];
 
 export const PRIYA = {
   id: 'U-1002',
@@ -39,7 +31,6 @@ const META = {
 };
 const EUROPE = { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true } as const;
 
-/** GET /api/v1/people, for the Owner field. */
 export const PEOPLE: { items: Person[]; total: number } = {
   total: 2,
   items: [ALEX, PRIYA].map((person) => ({
@@ -59,60 +50,6 @@ export const MODEL = {
   averageDealSize: { amount: '10000.00', currency: 'USD' },
   active: true,
 };
-
-/** The new-activity form of "Digital & social"; pass what a test needs to differ. */
-export function newForm(overrides: Partial<ActivityFormData> = {}): ActivityFormData {
-  return {
-    context: {
-      plan: { id: 'P-1001', name: 'FY2026 Lubricants Europe', year: 2026, status: 'draft' },
-      campaign: { type: 'campaign', id: 'C-1001', name: 'Helix launch' },
-      initiative: {
-        id: 'I-1001',
-        name: 'Digital & social',
-        owner: PRIYA,
-        startDate: '2026-01-01',
-        endDate: '2026-06-30',
-      },
-      model: MODEL,
-      businessUnits: [{ id: 'SO-BU-LUB', label: 'Lubricants' }],
-      latestEndDate: '2036-12-31',
-    },
-    activityTypes: [
-      {
-        id: 'AT-1002',
-        name: 'Digital campaign',
-        defaultPlannedCost: { amount: '10000.00', currency: 'USD' },
-        active: true,
-        allowed: true,
-      },
-      {
-        id: 'AT-1001',
-        name: 'Event',
-        defaultPlannedCost: { amount: '25000.00', currency: 'USD' },
-        active: true,
-        allowed: true,
-      },
-      { id: 'AT-1003', name: 'Sponsorship', defaultPlannedCost: null, active: true, allowed: true },
-    ],
-    approvalWorkflows: [
-      { id: 'WF-1001', name: 'Lubricants EU approval', active: true, levels: [] },
-    ],
-    attributes: [],
-    existingNames: ['Launch film'],
-    defaults: {
-      owner: PRIYA,
-      startDate: '2026-01-01',
-      endDate: '2026-06-30',
-      approvalWorkflowId: 'WF-1001',
-    },
-    ...overrides,
-  };
-}
-
-/** The edit form of "Launch film": no defaults, its own name left out of the names in use. */
-export function editForm(overrides: Partial<ActivityFormData> = {}): ActivityFormData {
-  return newForm({ existingNames: ['Print ads'], defaults: null, ...overrides });
-}
 
 const NO_PROBLEMS = { ready: true, problemCount: 0, activity: [], lineItems: [], advice: [] };
 
@@ -224,7 +161,6 @@ export function incompleteLaunchFilm(overrides: Partial<Activity> = {}): Activit
   });
 }
 
-/** "Launch film" as a plan-tree row. */
 export function launchFilmRow(overrides: Partial<ActivitySummary> = {}): ActivitySummary {
   const activity = launchFilm();
   const row: Omit<ActivitySummary, 'display'> = {
@@ -255,127 +191,25 @@ export function launchFilmRow(overrides: Partial<ActivitySummary> = {}): Activit
   };
 }
 
-/** The API's answer to a refused save with field problems. */
-export function validationFailed(fields: { field: string; message: string }[]) {
-  return {
-    status: 400,
-    body: {
-      error: { code: 'validation_failed', message: 'Check the highlighted fields.', fields },
-    },
-  };
-}
+export const DELETED = {
+  recycleBinEntry: {
+    id: 'BIN-1001',
+    recordType: 'activity',
+    recordTypeLabel: 'activity',
+    recordId: 'A-1042',
+    recordName: 'Launch film',
+    path: [],
+    parent: { type: 'initiative', id: 'I-1001', name: 'Digital & social' },
+    deletedAt: '2026-03-12T09:00:00Z',
+    deletedBy: { id: 'U-1002', name: 'Priya Raman' },
+    contents: [],
+  },
+};
 
-/**
- * The activity level's Shell attributes (GET /api/v1/shell-attribute-forms/activity): Cluster →
- * Region, the Country / OU split, a Lubricants group (Brands) and a Mobility group (Fleet card).
- */
-export function activityAttributeForm(): AttributeForm {
-  return {
-    level: 'activity',
-    businessUnitAttributeId: 'SA-BU',
-    businessUnitOptions: [option(LUBRICANTS, 'Lubricants'), option(MOBILITY, 'Mobility')],
-    sections: [
-      {
-        name: 'Shell attributes',
-        conditional: false,
-        attributes: [
-          attribute({
-            id: 'SA-CLUSTER',
-            label: 'Cluster',
-            marking: 'neededToSubmit',
-            options: [option('SO-RETAIL', 'Retail'), option('SO-B2B', 'B2B')],
-          }),
-          attribute({
-            id: 'SA-REGION',
-            label: 'Region',
-            parentAttributeId: 'SA-CLUSTER',
-            options: [
-              option('SO-CHINA', 'RETAIL – CHINA', ['SO-RETAIL']),
-              option('SO-EU', 'B2B – EUROPE', ['SO-B2B']),
-              option('SO-ASIA', 'B2B – ASIA', ['SO-B2B']),
-            ],
-          }),
-          attribute({
-            id: 'SA-1013',
-            label: 'Country / OU',
-            type: 'multipleChoiceSplit',
-            marking: 'neededToSubmit',
-            options: [
-              option('SO-DE', 'Germany'),
-              option('SO-FR', 'France'),
-              option('SO-NL', 'Netherlands'),
-            ],
-          }),
-        ],
-      },
-      {
-        name: 'Lubricants',
-        conditional: true,
-        attributes: [
-          attribute({
-            id: 'SA-BRANDS',
-            label: 'Brands',
-            type: 'multipleChoice',
-            conditionOptionIds: [LUBRICANTS],
-            options: [option('SO-HELIX', 'Shell Helix'), option('SO-RIMULA', 'Shell Rimula')],
-          }),
-        ],
-      },
-      {
-        name: 'Mobility',
-        conditional: true,
-        attributes: [
-          attribute({
-            id: 'SA-FLEET',
-            label: 'Fleet card',
-            type: 'text',
-            conditionOptionIds: [MOBILITY],
-          }),
-        ],
-      },
-    ],
-  };
-}
-
-/**
- * An initiative "Launch film" can be moved or copied to (GET /api/v1/activities/{id}/destinations):
- * "Print & outdoor" (1 Jan – 31 Dec 2026) in "Helix launch", available for both.
- */
-export function destination(overrides: Partial<ActivityDestination> = {}): ActivityDestination {
-  return {
-    campaign: { type: 'campaign', id: 'C-1001', name: 'Helix launch' },
-    initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-    current: false,
-    moveProblem: null,
-    copyProblem: null,
-    ...overrides,
-  };
-}
-
-/** "Digital & social", the activity's own initiative: copies may go there, moves may not. */
-export const OWN_INITIATIVE = destination({
-  initiative: { type: 'initiative', id: 'I-1001', name: 'Digital & social' },
-  endDate: '2026-06-30',
-  current: true,
-  moveProblem: "It's already in this initiative.",
-});
-
-/** "Retail events" in "Rimula fleet" (1 Jun – 31 Dec 2026): Launch film's dates don't fit. */
-export const RETAIL_EVENTS = destination({
-  campaign: { type: 'campaign', id: 'C-1002', name: 'Rimula fleet' },
-  initiative: { type: 'initiative', id: 'I-1003', name: 'Retail events' },
-  startDate: '2026-06-01',
-  moveProblem:
-    "'Launch film' runs 01 Mar 2026 – 31 May 2026, but 'Retail events' runs 01 Jun 2026 – 31 Dec 2026. Change the activity's dates first, or pick another initiative.",
-  copyProblem:
-    "'Launch film' runs 01 Mar 2026 – 31 May 2026, but 'Retail events' runs 01 Jun 2026 – 31 Dec 2026. Change the activity's dates first, or pick another initiative.",
-});
-
-/** The three initiatives of the plan, grouped by campaign as the API answers them. */
-export function destinations(
-  items: ActivityDestination[] = [OWN_INITIATIVE, destination(), RETAIL_EVENTS],
-) {
-  return { items, total: items.length };
-}
+export const RESTORED = {
+  recordType: 'activity',
+  recordTypeLabel: 'activity',
+  recordId: 'A-1042',
+  recordName: 'Launch film',
+  details: '',
+};

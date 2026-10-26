@@ -1,43 +1,15 @@
-import { screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { approvalOf } from '@/testing/fixtures/approvals';
 import { activityRecord } from '@/testing/fixtures/line-item-financials';
 import { expectCurrentSection, renderApp } from '@/testing/app';
-import {
-  activityAttributeForm,
-  editForm,
-  launchFilm,
-  newForm,
-  PEOPLE,
-} from '@/testing/fixtures/activities';
+import { launchFilm, PEOPLE } from '@/testing/fixtures/activities';
+import { activityAttributeForm, editForm, newForm } from '@/testing/fixtures/activity-forms';
+import { launchFilmSection } from '@/testing/fixtures/line-items';
+import { currentRates } from '@/testing/fixtures/line-item-forms';
 import { reply } from '@/testing/replies';
-
-// The parts features 007 and 008 show on the activity pages are tested by those features; here
-// they stand in, so those features never break these tests.
-vi.mock('@/features/line-items/LineItemsSection', () => ({
-  LineItemsSection: ({ activityId }: { activityId: string }) => (
-    <section aria-label="Line items">{`Line items of ${activityId}`}</section>
-  ),
-}));
-vi.mock('@/features/line-items/SpreadEffectNote', () => ({
-  SpreadEffectNote: ({ activityId }: { activityId: string }) => (
-    <p>{`Spread effect for ${activityId}`}</p>
-  ),
-}));
-// The re-approval question's spread sentence (007, D-150), which reads the activity's line items.
-vi.mock('@/features/line-items/useSpreadEffectText', () => ({
-  useSpreadEffectText: () => null,
-}));
-vi.mock('@/features/approvals/ApprovalSection', () => ({
-  ApprovalSection: ({ activity }: { activity: { id: string } }) => (
-    <section aria-label="Approval">{`Approval of ${activity.id}`}</section>
-  ),
-}));
-vi.mock('@/features/approvals/SubmitButton', () => ({
-  SubmitButton: () => <button type="button">Submit for approval</button>,
-}));
 
 /** The requests of each page. */
 const ANSWERS: HttpHandler[] = [
@@ -71,6 +43,12 @@ const ANSWERS: HttpHandler[] = [
     { body: activityAttributeForm() },
     { level: 'activity' },
   ),
+  reply(
+    'GET /api/v1/activities/{activityId}/line-items',
+    { body: launchFilmSection() },
+    { activityId: 'A-1001' },
+  ),
+  reply('GET /api/v1/exchange-rates/current', { body: currentRates() }),
   reply(
     'GET /api/v1/financials/records/{recordId}',
     { body: activityRecord() },
@@ -107,11 +85,11 @@ describe('Activity routes (feature 006)', () => {
     const { user } = renderApp('/plans/P-1001/activities/A-1001', ANSWERS);
 
     const lineItems = await screen.findByRole('region', { name: 'Line items' });
-    expect(lineItems).toHaveTextContent('Line items of A-1001');
+    await waitFor(() => expect(lineItems).toHaveTextContent('Agency fee'));
     expect(lineItems.closest('#line-items')).not.toBeNull();
     await user.click(screen.getByRole('tab', { name: 'Approval' }));
     const approval = await screen.findByRole('region', { name: 'Approval' });
-    expect(approval).toHaveTextContent('Approval of A-1001');
+    await waitFor(() => expect(approval).toHaveTextContent('Not submitted yet'));
     expect(approval.closest('#approval')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
   });
@@ -119,6 +97,9 @@ describe('Activity routes (feature 006)', () => {
   it('places the spread effect note (007) on the edit form', async () => {
     renderApp('/plans/P-1001/activities/A-1001/edit', ANSWERS);
 
-    expect(await screen.findByText('Spread effect for A-1001')).toBeInTheDocument();
+    fireEvent.change(await screen.findByLabelText('End date'), { target: { value: '2026-06-30' } });
+    expect(
+      await screen.findByText('When you save, 2 line items are re-spread over the new dates.'),
+    ).toBeInTheDocument();
   });
 });

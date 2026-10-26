@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatDate } from '@/format/intl';
-import { editForm, launchFilm, newForm } from '@/testing/fixtures/activities';
+import { launchFilm } from '@/testing/fixtures/activities';
+import { editForm, newForm } from '@/testing/fixtures/activity-forms';
 import {
   fromActivity,
   fromDefaults,

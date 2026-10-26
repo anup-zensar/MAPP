@@ -4,14 +4,13 @@ import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { launchFilm, PEOPLE } from '@/testing/fixtures/activities';
 import {
   activityAttributeForm,
-  launchFilm,
   newForm,
-  PEOPLE,
   validationFailed,
-} from '@/testing/fixtures/activities';
-import { looseReply } from '@/testing/replies';
+} from '@/testing/fixtures/activity-forms';
+import { reply } from '@/testing/replies';
 import { ActivityFormPage } from './ActivityFormPage';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
@@ -22,17 +21,17 @@ const NEW_ROUTE = '/plans/P-1001/initiatives/I-1001/activities/new';
 
 function openNewForm(answers: HttpHandler[] = []) {
   const api = mockApi([
-    looseReply(
+    reply(
       'GET /api/v1/initiatives/{initiativeId}/activity-form',
       { body: newForm() },
       { initiativeId: 'I-1001' },
     ),
-    looseReply(
+    reply(
       'GET /api/v1/shell-attribute-forms/{level}',
       { body: activityAttributeForm() },
       { level: 'activity' },
     ),
-    looseReply('GET /api/v1/people', { body: PEOPLE }),
+    reply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
   ]);
   const rendered = renderWithProviders(<ActivityFormPage mode="new" />, {
@@ -108,7 +107,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('creates the activity, says so and opens its page (FR-003, FR-004)', async () => {
     const { user, api, router } = openNewForm([
-      looseReply(
+      reply(
         'POST /api/v1/initiatives/{initiativeId}/activities',
         {
           status: 201,
@@ -180,7 +179,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('shows the problems the API finds under the fields', async () => {
     const { user } = openNewForm([
-      looseReply(
+      reply(
         'POST /api/v1/initiatives/{initiativeId}/activities',
         validationFailed([{ field: 'ownerId', message: 'Choose an active person.' }]),
         { initiativeId: 'I-1001' },
@@ -214,7 +213,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('opens a fresh form after Save and add another, with View in the message', async () => {
     const { user, router } = openNewForm([
-      looseReply(
+      reply(
         'POST /api/v1/initiatives/{initiativeId}/activities',
         {
           status: 201,
@@ -256,7 +255,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('says when the model has no activity types (edge case)', async () => {
     openNewForm([
-      looseReply(
+      reply(
         'GET /api/v1/initiatives/{initiativeId}/activity-form',
         { body: newForm({ activityTypes: [] }) },
         { initiativeId: 'I-1001' },
@@ -275,7 +274,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('says when the initiative no longer exists', async () => {
     openNewForm([
-      looseReply(
+      reply(
         'GET /api/v1/initiatives/{initiativeId}/activity-form',
         {
           status: 404,
@@ -300,7 +299,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   it('offers Try again when the form cannot be loaded', async () => {
     let calls = 0;
     openNewForm([
-      looseReply(
+      reply(
         'GET /api/v1/initiatives/{initiativeId}/activity-form',
         () => {
           calls += 1;

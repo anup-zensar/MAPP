@@ -2,16 +2,12 @@ import { configure, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { launchFilmSection } from '@/testing/fixtures/line-items';
+import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import {
-  activityAttributeForm,
-  editForm,
-  launchFilm,
-  newForm,
-  PEOPLE,
-} from '@/testing/fixtures/activities';
+import { launchFilm, PEOPLE } from '@/testing/fixtures/activities';
+import { activityAttributeForm, editForm, newForm } from '@/testing/fixtures/activity-forms';
 import { reply } from '@/testing/replies';
 import type { Activity } from './api';
 import { ActivityFormPage } from './ActivityFormPage';
@@ -123,7 +119,7 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
   it('splits Country / OU evenly, shows a total over 100 % and still saves (FR-016, FR-017)', async () => {
     const { user, api } = openNewForm();
 
-    const split = (await screen.findAllByRole('group', { name: /Country \/ OU/ }))[0];
+    const split = nth(await screen.findAllByRole('group', { name: /Country \/ OU/ }), 0);
     for (const country of ['Germany', 'France', 'Netherlands']) {
       await user.click(within(split).getByRole('checkbox', { name: country }));
     }
