@@ -10,7 +10,7 @@ import (
 
 // The API listens on 127.0.0.1 only, so other computers cannot reach it (constitution: local only).
 func TestListen_OnlyOnThisComputer(t *testing.T) {
-	listener, err := listen(0) // port 0: a free port chosen by the system
+	listener, err := listen("127.0.0.1", 0) // port 0: a free port chosen by the system
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
@@ -31,7 +31,7 @@ func TestListen_BusyPortSaysWhatToDo(t *testing.T) {
 	defer other.Close()
 	port := other.Addr().(*net.TCPAddr).Port
 
-	_, err = listen(port)
+	_, err = listen("127.0.0.1", port)
 
 	want := fmt.Sprintf("Port %d is already in use — stop the other program or set APP_PORT.", port)
 	if err == nil || err.Error() != want {

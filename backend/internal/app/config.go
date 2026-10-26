@@ -26,10 +26,11 @@ const (
 	maxPort                = 65535
 )
 
-// Config is the API's configuration, read from environment variables. There is no host setting: the API
-// always listens on 127.0.0.1 only.
+// Config is the API's configuration, read from environment variables. Host is 127.0.0.1 except in the
+// container image, which listens on 0.0.0.0 inside the container and is published on 127.0.0.1 only.
 type Config struct {
 	Env             string
+	Host            string
 	Port            int
 	DatabaseURL     string
 	DemoPassword    string
@@ -49,6 +50,7 @@ func LoadConfig(getenv func(name string) string) (Config, error) {
 	env := &reader{getenv: getenv}
 	cfg := Config{
 		Env:             env.choice("APP_ENV", envLocal, envLocal, envDevelopment, envProduction),
+		Host:            env.choice("APP_HOST", "127.0.0.1", "127.0.0.1", "0.0.0.0"),
 		Port:            env.port("APP_PORT", "8080"),
 		DatabaseURL:     env.text("DATABASE_URL", defaultDatabaseURL),
 		DemoPassword:    env.notBlank("DEMO_PASSWORD", "mapp"),

@@ -1,17 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: 3.1.1 → 4.0.0 (MAJOR: store tests on PostgreSQL were required; database tests
-  other than scope isolation are now forbidden, so existing store tests no longer comply).
-- Modified principles: VI Meaningful Tests — only end-to-end tests and the scope-isolation tests of
-  scoped store reads use a real database; every other test uses fakes; queries, constraints and
-  migrations are not tested on a database
-- Modified sections: B9 Go Testing, Technology Choices (Testing row), Amendment History
+- Version change: 4.0.0 → 4.1.0 (MINOR: guidance expanded; containers may now run the whole app
+  locally for reviewers; no principle removed or redefined)
+- Modified sections: Current Phase & Scope (Running locally, Containers row), Amendment History
 - Added sections: none
 - Removed sections: none
-- Files changed with this amendment: CLAUDE.md, backend/CLAUDE.md, backend/docs/GO_STANDARDS.md
+- Files changed with this amendment: compose.yaml, backend/Dockerfile, frontend/Dockerfile,
+  ADR-0012, README.md, CLAUDE.md, backend/docs/GO_STANDARDS.md
 - Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
-  - Feature 023 keeps one scope-isolation test per scoped area and deletes its other store tests
+  - Feature 023 moves the compose `api` and `seed` services to PostgreSQL (`DATABASE_URL`)
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
 -->
 
@@ -466,8 +464,9 @@ both be non-negotiable without conflict.
 - **Running locally:** the application runs on a developer laptop: the Go API, a local PostgreSQL
   database, and the web app's development server. Servers listen on `127.0.0.1` only. **Docker is
   optional:** a developer installs PostgreSQL natively or starts it with the repository's
-  `compose.yaml`, which runs PostgreSQL and nothing else; nothing else needs Docker, and the
-  application itself is not containerised in this phase. No cloud services at run time; CI and the
+  `compose.yaml`. That file can also build and run the whole application from the checkout, for
+  reviewers who don't develop it (ADR-0012); every port it publishes is on `127.0.0.1`, nothing is
+  pushed to a registry, and developing MAPP never requires Docker or Podman. No cloud services at run time; CI and the
   scans in the quality gates run on GitHub.
 - **Demo data:** a clearly labelled, fictitious seed dataset is loaded by an explicit command; it
   never contains real Shell people or figures.
@@ -480,7 +479,7 @@ both be non-negotiable without conflict.
 | Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in MAPP (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
 | Shell integrations | Simulated GSAP feeds behind adapters (ADR-0009) | Live GSAP feeds implementing the same adapters |
 | Visual design | Shell palette (Principle X), Jost and Arial, MAPP's own mark | Shell's typeface and pecten once Shell supplies them and consents |
-| Containers | Optional: `compose.yaml` runs PostgreSQL for developers who choose Docker | The application's images, chosen by ADR before hosting |
+| Containers | Optional: `compose.yaml` runs PostgreSQL, or builds and runs the whole app locally for reviewers (ADR-0012), with Docker or Podman | Production images, registry and scanning, chosen by ADR before hosting |
 | Hosting | Local laptop | Azure Container Apps behind Azure Front Door (see `docs/reference/README.md`) |
 
 ## Backend (Go) Standards
@@ -1119,5 +1118,6 @@ amended to match.
 | 3.1.0 | 2026-10-26 | VII: release age — a package version (npm package or Go module) must have been published at least 24 hours before it is installed or added; npm's built-in `min-release-age=1` in `frontend/.npmrc`, reviewers for Go modules | Product owner instruction of 2026-10-26 |
 | 3.1.1 | 2026-10-26 | B6: the error envelope's `fields` is a list of `{field, message}` — it keeps the order and allows several messages for one field (feature 022) | Product owner decision of 2026-10-26 |
 | 4.0.0 | 2026-10-26 | VI, B9: only end-to-end tests and the scope-isolation tests of scoped store reads use a real database; every other test uses fakes, and database tests of queries, constraints or migrations are forbidden (they were required store tests before) | Product owner decision of 2026-10-26 |
+| 4.1.0 | 2026-10-26 | Current Phase & Scope: `compose.yaml` may also build and run the whole application locally for reviewers such as business analysts, published on `127.0.0.1` only and pushed nowhere; Docker and Podman stay optional for developers (ADR-0012) | Product owner instruction of 2026-10-26 |
 
-**Version**: 4.0.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 4.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

@@ -495,8 +495,8 @@ two ways, and both listen on `127.0.0.1:5432`:
 
 - **Native install:** Homebrew (`brew install postgresql@18`), the Windows installer, or the Linux
   package. Create a `mapp` role and database once.
-- **Docker, if preferred:** `docker compose up -d postgres` with the repository's `compose.yaml`,
-  which runs PostgreSQL and nothing else.
+- **Docker, if preferred:** `docker compose up -d postgres` with the repository's `compose.yaml`
+  (which can also run the whole app for reviewers, ADR-0012).
 
 The API reads `DATABASE_URL`; scope-isolation tests read `TEST_DATABASE_URL` (§12). CI starts PostgreSQL as
 a service of the pipeline. No test and no command requires Docker.
@@ -1084,9 +1084,9 @@ Each reader method adds a message to `env.problems` for an invalid value, so one
 problem. A message names the variable and, unless the variable is a secret, its value.
 
 Passing `getenv` instead of calling `os.Getenv` makes `Load` testable without mutating the process
-environment. Defaults are the safe choice: `defaultHost` is `127.0.0.1`, and development-only
-behaviour (demo sign-in, seeding) needs an explicit setting (B7). The API always listens on
-`127.0.0.1`, so there is no host setting.
+environment. Defaults are the safe choice: `APP_HOST` is `127.0.0.1`, and development-only
+behaviour (demo sign-in, seeding) needs an explicit setting (B7). `APP_HOST` accepts only `127.0.0.1` and
+`0.0.0.0`; the container image sets `0.0.0.0`, and compose publishes the app on `127.0.0.1` (ADR-0012).
 
 ---
 

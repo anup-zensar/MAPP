@@ -17,7 +17,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	}
 
 	want := app.Config{
-		Env: "local", Port: 8080, DatabaseURL: "postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable", DemoPassword: "mapp",
+		Env: "local", Host: "127.0.0.1", Port: 8080, DatabaseURL: "postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable", DemoPassword: "mapp",
 		LogLevel: slog.LevelInfo, ShutdownTimeout: 10 * time.Second,
 		Telemetry: telemetry.Config{Traces: telemetry.None, Metrics: telemetry.None},
 	}
@@ -29,6 +29,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 	cfg, err := app.LoadConfig(environment(map[string]string{
 		"APP_ENV":               "development",
+		"APP_HOST":              "0.0.0.0",
 		"APP_PORT":              "18080",
 		"DATABASE_URL":          "postgres://planner@127.0.0.1:5433/mapp_dev",
 		"DEMO_PASSWORD":         "open sesame",
@@ -42,7 +43,7 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 	}
 
 	want := app.Config{
-		Env: "development", Port: 18080, DatabaseURL: "postgres://planner@127.0.0.1:5433/mapp_dev", DemoPassword: "open sesame",
+		Env: "development", Host: "0.0.0.0", Port: 18080, DatabaseURL: "postgres://planner@127.0.0.1:5433/mapp_dev", DemoPassword: "open sesame",
 		LogLevel: slog.LevelDebug, ShutdownTimeout: 25 * time.Second,
 		Telemetry: telemetry.Config{Traces: telemetry.Console, Metrics: telemetry.Console},
 	}
@@ -61,6 +62,7 @@ func TestLoadConfig_RefusesInvalidValues_024_FR012(t *testing.T) {
 	}{
 		{"unknown environment", "APP_ENV", "staging", "APP_ENV must be local, development or production (it is 'staging')."},
 		{"environment in capitals", "APP_ENV", "Production", "APP_ENV must be local, development or production (it is 'Production')."},
+		{"host other than loopback or the container's all-addresses", "APP_HOST", "192.168.1.5", "APP_HOST must be 127.0.0.1 or 0.0.0.0 (it is '192.168.1.5')."},
 		{"port 0", "APP_PORT", "0", "APP_PORT must be a number from 1 to 65535 (it is '0')."},
 		{"port above 65535", "APP_PORT", "65536", "APP_PORT must be a number from 1 to 65535 (it is '65536')."},
 		{"port that is not a number", "APP_PORT", "eighty", "APP_PORT must be a number from 1 to 65535 (it is 'eighty')."},
