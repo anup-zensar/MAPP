@@ -58,6 +58,7 @@ func (f *fixture) check(t *testing.T, level Level, in AttributeInput) AttributeR
 // inactive — with its options in display order; a section whose attributes all have a condition is
 // conditional (FR-019, FR-024).
 func TestForm_SectionsInOrderOfFirstAttribute_FR019_FR024(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 
 	form, err := f.service.Form(t.Context(), alex, LevelActivity)
@@ -115,6 +116,7 @@ func mustForm(t *testing.T, f *fixture, level Level) FormView {
 // Every value must have the shape of its attribute's type and stay within its limits; values are stored
 // trimmed and empty ones are left out (FR-016, data model §9).
 func TestCheckAttributes_ShapesAndLimits_FR016(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	id := func(label string) string { return tf.attribute(LevelActivity, label).ID }
 	china := tf.option(LevelActivity, "Country / OU", "China")
@@ -165,6 +167,7 @@ func TestCheckAttributes_ShapesAndLimits_FR016(t *testing.T) {
 // A dependent attribute offers only options linked to a selected parent option: one that does not belong
 // is refused when chosen (US3-1, FR-025).
 func TestCheckAttributes_DependentOptionsFilteredByParent_FR025(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	cluster, region := tf.attribute(LevelCampaign, "Cluster").ID, tf.attribute(LevelCampaign, "Region").ID
 	retailChina := `["` + tf.option(LevelCampaign, "Cluster", "Retail – China") + `"]`
@@ -188,6 +191,7 @@ func TestCheckAttributes_DependentOptionsFilteredByParent_FR025(t *testing.T) {
 // When a parent value changes, the dependent values that no longer fit are cleared and listed, and the
 // rest is kept (US3-4, FR-025).
 func TestCheckAttributes_ParentChangeClearsDependent_FR025(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	cluster, region := tf.attribute(LevelCampaign, "Cluster").ID, tf.attribute(LevelCampaign, "Region").ID
 	europe, china := tf.option(LevelCampaign, "Cluster", "Lubricants – Europe"), tf.option(LevelCampaign, "Cluster", "Retail – China")
@@ -213,6 +217,7 @@ func TestCheckAttributes_ParentChangeClearsDependent_FR025(t *testing.T) {
 // An attribute whose condition is not met is hidden: it keeps its value and is never missing (US3-3,
 // FR-026); at plan level the business unit comes from the values themselves.
 func TestCheckAttributes_HiddenKeptNotMissing_FR026(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	brands, helix := tf.attribute(LevelActivity, "Brands").ID, tf.option(LevelActivity, "Brands", "Helix")
 	mobility, lubricants := tf.option(LevelPlan, "Business unit", "Mobility"), tf.option(LevelPlan, "Business unit", "Lubricants")
@@ -236,6 +241,7 @@ func TestCheckAttributes_HiddenKeptNotMissing_FR026(t *testing.T) {
 // An inactive attribute keeps its value read-only and never blocks; an inactive option the record already
 // has stays and counts as filled in (FR-027).
 func TestCheckAttributes_InactiveKeptNeverBlocks_FR027(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	old, a, b := tf.attribute(LevelActivity, "Old field").ID, tf.option(LevelActivity, "Old field", "A"), tf.option(LevelActivity, "Old field", "B")
 	costCentre, inactive := tf.attribute(LevelActivity, "Cost centre").ID, tf.option(LevelActivity, "Cost centre", "GB01000105")
@@ -256,6 +262,7 @@ func TestCheckAttributes_InactiveKeptNeverBlocks_FR027(t *testing.T) {
 
 // An inactive option cannot be chosen newly (FR-004).
 func TestCheckAttributes_NewInactiveOptionRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	costCentre := tf.attribute(LevelActivity, "Cost centre").ID
 
@@ -269,6 +276,7 @@ func TestCheckAttributes_NewInactiveOptionRefused_FR004(t *testing.T) {
 
 // A % split may be saved with any total, but counts as filled in only at exactly 100.00 % (R10, FR-027).
 func TestCheckAttributes_SplitMustTotal100ToCount_FR027(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	country := tf.attribute(LevelActivity, "Country / OU").ID
 	china, india := tf.option(LevelActivity, "Country / OU", "China"), tf.option(LevelActivity, "Country / OU", "India")
@@ -291,6 +299,7 @@ func TestCheckAttributes_SplitMustTotal100ToCount_FR027(t *testing.T) {
 // A dependent attribute whose chosen parent options have no active options linked is never missing: it
 // cannot be filled in (D-034).
 func TestCheckAttributes_NoOptionsForParentNotMissing_D034(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	cluster, region := tf.attribute(LevelCampaign, "Cluster").ID, tf.attribute(LevelCampaign, "Region").ID
 
@@ -308,6 +317,7 @@ func TestCheckAttributes_NoOptionsForParentNotMissing_D034(t *testing.T) {
 // The needed attributes are those marked Needed to publish at plan, campaign and initiative level and
 // Needed to submit at activity and line-item level; optional ones and yes/no never block (FR-017).
 func TestMissingAttributes_MarkingPerLevel_FR017(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	lubricants := tf.option(LevelPlan, "Business unit", "Lubricants")
 	labels := func(level Level, v AttributeValues, businessUnit []string) []string {
@@ -339,6 +349,7 @@ func TestMissingAttributes_MarkingPerLevel_FR017(t *testing.T) {
 
 // The plan's business unit is the options of the Business unit attribute in its values (FR-023).
 func TestBusinessUnit_FromPlanValues_FR023(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	mobility := tf.option(LevelPlan, "Business unit", "Mobility")
 
@@ -353,6 +364,7 @@ func TestBusinessUnit_FromPlanValues_FR023(t *testing.T) {
 // A planning record's changes are logged field by field, its Shell attribute values attribute by
 // attribute, sorted by field (FR-006, D-048).
 func TestDiff_AttributeByAttribute_FR006(t *testing.T) {
+	t.Parallel()
 	type planning struct {
 		Name       string          `json:"name"`
 		Attributes AttributeValues `json:"attributes"`
@@ -376,6 +388,7 @@ func TestDiff_AttributeByAttribute_FR006(t *testing.T) {
 // The activity log describes a Shell attribute value with the attribute's label and the value's words
 // (FR-006, data model §12).
 func TestDescribeAttribute_Texts_FR006(t *testing.T) {
+	t.Parallel()
 	f, tf := newFormFixture(t)
 	id := func(label string) string { return "attributes." + tf.attribute(LevelActivity, label).ID }
 	china, india := tf.option(LevelActivity, "Country / OU", "China"), tf.option(LevelActivity, "Country / OU", "India")

@@ -42,6 +42,7 @@ func usd(cents int64) *money.Money {
 // A new activity type is listed as Active, and each model ticked on the type's form allows it from then on;
 // the model's change is logged on the model (US5-1, FR-013).
 func TestCreateActivityType_AllowedInModel_FR013(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	lubricants := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -95,6 +96,7 @@ func TestCreateActivityType_AllowedInModel_FR013(t *testing.T) {
 // Every problem of an activity type is shown at once: the name (unique ignoring case and spaces, FR-005),
 // the default planned cost (0 or more USD) and the models ticked (FR-013, SC-003). Nothing is saved.
 func TestActivityType_Validation_FR013_FR005(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 
@@ -125,6 +127,7 @@ func TestActivityType_Validation_FR013_FR005(t *testing.T) {
 // The default planned cost can change and be removed (sent as null); left out, it stays. Each change is
 // logged with the old and new amount; a save from an out-of-date copy is refused (FR-013, FR-006, FR-007).
 func TestUpdateActivityType_DefaultCostChangedAndRemoved_FR013(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	webinar := f.createType(t, typeInput("Webinar", "5000"))
 	f.clock.now = start.Add(time.Hour)
@@ -173,6 +176,7 @@ func TestUpdateActivityType_DefaultCostChangedAndRemoved_FR013(t *testing.T) {
 // gain the type and models left out lose it, each with one "changed" entry on the model. The type itself
 // does not change (data model §3, §12; FR-013).
 func TestUpdateActivityType_ModelsEditedFromType_FR013(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	lubricants := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -213,6 +217,7 @@ func TestUpdateActivityType_ModelsEditedFromType_FR013(t *testing.T) {
 // A model must keep at least one activity type, so the type a model allows alone cannot be removed from it
 // — from the type's form either (FR-009, data model §3). Every such model is named.
 func TestUpdateActivityType_LastTypeOfModelRefused_FR009(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	digital := f.addType(t, "Digital media", true)
@@ -256,6 +261,7 @@ func (f *fixture) modelID(t *testing.T, name string) string {
 // type its live plans have; they keep the type (FR-012, R7). Adding models or renaming warns of nothing,
 // the body is checked as the update checks it, and nothing is saved.
 func TestActivityTypeImpact_RemovedModel_FR012(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	digital := f.addType(t, "Digital media", true)
@@ -297,6 +303,7 @@ func TestActivityTypeImpact_RemovedModel_FR012(t *testing.T) {
 // A type counts the activities of that type and the models allowing it, those in the recycle bin too; its
 // details list the stored models allowing it (US5-2, FR-003).
 func TestActivityTypeUsage_ActivitiesAndModels_FR003(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	lubricants := f.createModel(t, modelInput("Lubricants 1.0", event.ID))
@@ -327,6 +334,7 @@ func TestActivityTypeUsage_ActivitiesAndModels_FR003(t *testing.T) {
 // A type in use — by activities, also in the recycle bin, or allowed in a model — cannot be deleted: the
 // answer says where it is used and to set it inactive instead (FR-004, SC-004).
 func TestDeleteActivityType_InUseRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	webinar := f.addType(t, "Webinar", true)
@@ -348,6 +356,7 @@ func TestDeleteActivityType_InUseRefused_FR004(t *testing.T) {
 // An unused type can be set inactive and reactivated, each logged; deleted, it moves to the recycle bin and
 // Undo brings it back exactly (US5-5, FR-004, FR-006).
 func TestDeleteActivityType_Unused_Undo_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	webinar := f.createType(t, typeInput("Webinar", "5000"))
 

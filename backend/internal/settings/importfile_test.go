@@ -12,6 +12,7 @@ import (
 // first line has more of them — with quoted cells and the file's line numbers; blank rows are left out
 // (FR-031).
 func TestReadRows_CSVCommaSemicolonBOM(t *testing.T) {
+	t.Parallel()
 	comma := "\xEF\xBB\xBFOption,Parent option\r\nA,X\r\n\"B, quoted\",Y\r\n\r\n,\r\n  ,Z\r\nC\r\n"
 	semicolon := "Option;Parent option\nA;X, Y\n\"B; quoted\";Z;extra\n"
 
@@ -35,6 +36,7 @@ func TestReadRows_CSVCommaSemicolonBOM(t *testing.T) {
 // An .xlsx file is read from its first worksheet — as the workbook orders them — columns A and B, with
 // shared strings (also rich text), inline strings, numbers and the row numbers of the file (FR-031).
 func TestReadRows_XLSXSharedAndInlineStrings(t *testing.T) {
+	t.Parallel()
 	content := xlsxFile(t, map[string]string{
 		"xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
 			`xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>` +
@@ -94,6 +96,7 @@ func xlsxFile(t *testing.T, parts map[string]string) []byte {
 // An Excel 97–2003 .xls file is refused with its own reason; a damaged .xlsx file and an .xlsx file
 // without a worksheet cannot be read (FR-031).
 func TestReadRows_RefusesXLS(t *testing.T) {
+	t.Parallel()
 	_, xls := readRows(append([]byte("\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"), make([]byte, 512)...))
 	_, damaged := readRows([]byte("PK\x03\x04 this is not a zip archive"))
 	_, noSheet := readRows(xlsxFile(t, map[string]string{"docProps/app.xml": "<Properties/>"}))

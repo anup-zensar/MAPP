@@ -16,6 +16,7 @@ import (
 // The catalogue has every key once, a label, a known level and a default of at most 300 characters (data-model
 // §6, FR-045).
 func TestCatalogue_KeysUniqueAndTextsWithinLimit(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	levels := map[HelpLevel]bool{HelpPlan: true, HelpCampaign: true, HelpInitiative: true, HelpActivity: true, HelpLineItem: true,
 		HelpPhasing: true, HelpCommon: true, HelpAllWork: true}
@@ -42,6 +43,7 @@ func TestCatalogue_KeysUniqueAndTextsWithinLimit(t *testing.T) {
 // Field help lists every catalogue entry in order with its default text, version 0 and no editor, or its
 // edited text with who edited it (FR-045, US7-1).
 func TestListFieldHelp_DefaultsAndEdited_FR045(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	if _, err := f.service.UpdateFieldHelp(t.Context(), alex, "activity.plannedCost", FieldHelpUpdate{Text: text("Edited."), Version: version(0)}); err != nil {
 		t.Fatalf("UpdateFieldHelp: %v", err)
@@ -82,6 +84,7 @@ func entryOf(t *testing.T, page FieldHelpPage, key string) FieldHelpEntry {
 // An edit is saved as plain text — trimmed, line breaks made spaces — and logged with the old and new text;
 // an empty text is allowed and hides the ⓘ (FR-046, US7-2, US7-4).
 func TestUpdateFieldHelp_SavesAndLogs_FR046(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	saved, err := f.service.UpdateFieldHelp(t.Context(), alex, "plan.budget", FieldHelpUpdate{Text: text(" The budget\nof the plan. "), Version: version(0)})
@@ -109,6 +112,7 @@ func TestUpdateFieldHelp_SavesAndLogs_FR046(t *testing.T) {
 // Reset to default deletes the edited text — the default is back, version 0 — and logs the change (FR-046,
 // US7-3). Resetting a default changes nothing.
 func TestUpdateFieldHelp_ResetDeletesRow_FR046(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	if _, err := f.service.UpdateFieldHelp(t.Context(), alex, "plan.budget", FieldHelpUpdate{Text: text("Edited."), Version: version(0)}); err != nil {
 		t.Fatalf("UpdateFieldHelp: %v", err)
@@ -132,6 +136,7 @@ func TestUpdateFieldHelp_ResetDeletesRow_FR046(t *testing.T) {
 
 // A text above 300 characters is refused (FR-046, US7-4).
 func TestUpdateFieldHelp_TooLong_FR046(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	_, err := f.service.UpdateFieldHelp(t.Context(), alex, "plan.budget", FieldHelpUpdate{Text: text(strings.Repeat("a", 301)), Version: version(0)})
@@ -144,6 +149,7 @@ func TestUpdateFieldHelp_TooLong_FR046(t *testing.T) {
 // Version 0 is the default: a save from it after someone edited the text is refused naming who and when; so
 // is a save from an old version, and from an edited version after a reset (FR-046, 001 FR-029).
 func TestUpdateFieldHelp_Version0Conflict_FR046(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.clock.now = start.Add(time.Hour)
 	if _, err := f.service.UpdateFieldHelp(t.Context(), daniel, "plan.budget", FieldHelpUpdate{Text: text("Daniel's."), Version: version(0)}); err != nil {
@@ -165,6 +171,7 @@ func TestUpdateFieldHelp_Version0Conflict_FR046(t *testing.T) {
 
 // A key outside the catalogue answers not found (data-model §2.5).
 func TestUpdateFieldHelp_UnknownKey404(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 
 	_, err := f.service.UpdateFieldHelp(t.Context(), alex, "plan.colour", FieldHelpUpdate{Text: text("x"), Version: version(0)})
@@ -177,6 +184,7 @@ func TestUpdateFieldHelp_UnknownKey404(t *testing.T) {
 
 // Field help counts the active Shell attributes without help, for its note and link (FR-048, US7-5).
 func TestListFieldHelp_AttributesWithoutHelp_FR048(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addAttributes(t,
 		testAttribute{level: LevelPlan, label: "Business unit", typ: TypeMultipleChoice, options: []string{"Mobility"}, help: "The business."},

@@ -11,6 +11,7 @@ import (
 // Convert converts between two currencies given their rates per 1 USD: amount × to ÷ from, rounded half up
 // to the cent once (016 data-model §3.1, D-262). The examples are the worked examples of 016.
 func TestConvert_Table_FR015(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name           string
 		amount         string
@@ -38,6 +39,7 @@ func TestConvert_Table_FR015(t *testing.T) {
 
 // Convert to and from USD gives exactly what ToUSD and FromUSD give (their results stay unchanged).
 func TestConvert_MatchesToUSDAndFromUSD(t *testing.T) {
+	t.Parallel()
 	for _, text := range []string{"0.01", "1000", "1086.96", "-55.55", "123456789.99"} {
 		for _, r := range []string{"0.92", "0.79", "7.1", "83.5", "150", "1"} {
 			a, rt := amount(t, text), rate(t, r)
@@ -54,6 +56,7 @@ func TestConvert_MatchesToUSDAndFromUSD(t *testing.T) {
 // ConvertParts converts month amounts so that they add up to the conversion of their sum: every part but
 // the last on its own, the last gets the rest (D-024, D-262).
 func TestConvertParts_AddsUp_FR015(t *testing.T) {
+	t.Parallel()
 	parts := []money.Amount{amount(t, "7666.66"), amount(t, "7666.66"), amount(t, "7666.68")} // 23,000.00 EUR evenly
 	got := money.ConvertParts(parts, rate(t, "0.92"), rate(t, "0.79"))
 	if total := money.Sum(got...); total.String() != "19750.00" {
@@ -74,6 +77,7 @@ func TestConvertParts_AddsUp_FR015(t *testing.T) {
 // Rates.Convert converts a Money into a currency with the rates it holds; USD needs no rate, a currency
 // without a rate is ErrUnknownCurrency.
 func TestRatesConvert_UnknownCurrency(t *testing.T) {
+	t.Parallel()
 	rs := money.Rates{"EUR": rate(t, "0.92"), "GBP": rate(t, "0.79")}
 	got, err := rs.Convert(money.Money{Amount: amount(t, "23000"), Currency: "EUR"}, "GBP")
 	if err != nil || got.Amount.String() != "19750.00" || got.Currency != "GBP" {
@@ -96,6 +100,7 @@ func TestRatesConvert_UnknownCurrency(t *testing.T) {
 // A display currency with rates converts an amount of any currency it knows once, half up; an amount in
 // the display currency stays as it is (016 FR-013, D-261).
 func TestDisplayWithRates_ConvertsFromThePlanCurrency_FR013(t *testing.T) {
+	t.Parallel()
 	rs := money.Rates{"EUR": rate(t, "0.92"), "GBP": rate(t, "0.79")}
 	gbp := money.Money{Amount: amount(t, "5250"), Currency: "GBP"}
 

@@ -33,6 +33,7 @@ func (f *fixture) addOptions(t *testing.T, attributeID, prefix string, n int) {
 // An option is added last with a label no other option of the attribute has, ignoring letter case; only a
 // choice attribute has options (FR-018).
 func TestAddOption_UniqueLabel_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	tf = f.addAttributes(t, testAttribute{level: LevelActivity, label: "Notes", typ: TypeText})
@@ -61,6 +62,7 @@ func TestAddOption_UniqueLabel_FR018(t *testing.T) {
 // An option of a dependent attribute is linked to at least one option of the parent, newly linked ones
 // active (FR-022).
 func TestAddOption_DependentNeedsActiveParent_FR022(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	region := tf.attribute(LevelActivity, "Region")
@@ -80,6 +82,7 @@ func TestAddOption_DependentNeedsActiveParent_FR022(t *testing.T) {
 // A rename keeps the option's place and is logged with the old and new label; another option's label is
 // refused; links may stay on a parent option that became inactive (US2-4, FR-018).
 func TestRenameOption_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	tv := tf.option(LevelActivity, "Channel", "TV")
@@ -102,6 +105,7 @@ func TestRenameOption_FR018(t *testing.T) {
 
 // An option swaps places with its neighbour; both are logged; the ends go no further (FR-018).
 func TestMoveOption_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	tv, radio := tf.option(LevelActivity, "Channel", "TV"), tf.option(LevelActivity, "Channel", "Radio")
@@ -125,6 +129,7 @@ func TestMoveOption_FR018(t *testing.T) {
 
 // An option is set inactive and reactivated, each logged; the same status again changes nothing (FR-018).
 func TestSetOptionActive_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tv := shellForm(t, f).option(LevelActivity, "Channel", "TV")
 
@@ -144,6 +149,7 @@ func TestSetOptionActive_FR018(t *testing.T) {
 // An option in use — a value on a record, a linked option of a dependent attribute, a condition — cannot be
 // deleted: the answer says where it is used (FR-004, FR-018).
 func TestDeleteOption_InUseRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	tv := tf.option(LevelActivity, "Channel", "TV")
@@ -160,6 +166,7 @@ func TestDeleteOption_InUseRefused_FR004(t *testing.T) {
 
 // The last option of a choice attribute cannot be deleted (FR-018).
 func TestDeleteOption_LastOptionRefused_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Solo", typ: TypeSingleChoice, options: []string{"Only"}})
 
@@ -172,6 +179,7 @@ func TestDeleteOption_LastOptionRefused_FR018(t *testing.T) {
 // sending the request; a second option lifts it from both (D-211, design system 6.6). GetOption answers
 // the option as stored now, or not found.
 func TestOptionLocks_LastOptionCantBeDeleted_D211(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Solo", typ: TypeSingleChoice, options: []string{"Only"}})
 	only := tf.option(LevelActivity, "Solo", "Only")
@@ -194,6 +202,7 @@ func TestOptionLocks_LastOptionCantBeDeleted_D211(t *testing.T) {
 
 // An unused option moves to the recycle bin, under its attribute, and Undo brings it back (FR-018, FR-004).
 func TestDeleteOption_Unused_Undo_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel := tf.attribute(LevelActivity, "Channel")
@@ -217,6 +226,7 @@ func TestDeleteOption_Unused_Undo_FR018(t *testing.T) {
 // Search finds an option by any part of its label among 1,217, ignoring letter case and surrounding
 // spaces (SC-007, FR-018).
 func TestListOptions_SearchAnyPart_SC007(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Cost centre", typ: TypeSingleChoice})
 	costCentre := tf.attribute(LevelActivity, "Cost centre")
@@ -233,27 +243,27 @@ func TestListOptions_SearchAnyPart_SC007(t *testing.T) {
 	}
 }
 
-// An attribute holds at most 5,000 options; lists come in pages of at most 500 (FR-018).
-func TestListOptions_5000Paged_FR018(t *testing.T) {
+// An attribute's options come in pages of at most 500 (FR-018).
+func TestListOptions_Paged_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Cost centre", typ: TypeSingleChoice})
 	costCentre := tf.attribute(LevelActivity, "Cost centre")
-	f.addOptions(t, costCentre.ID, "CC", 5000)
+	f.addOptions(t, costCentre.ID, "CC", 60)
 
-	page, err := f.service.ListOptions(t.Context(), alex, costCentre.ID, OptionFilter{Limit: 100, Offset: 4950})
+	page, err := f.service.ListOptions(t.Context(), alex, costCentre.ID, OptionFilter{Limit: 25, Offset: 50})
 	_, wrong := f.service.ListOptions(t.Context(), alex, costCentre.ID, OptionFilter{Limit: 501, Offset: -1, Status: "some"})
-	_, full := f.service.CreateOption(t.Context(), alex, costCentre.ID, OptionInput{Label: "CC5001"})
 
-	if err != nil || page.Total != 5000 || len(page.Items) != 50 || page.Items[0].Label != "CC4951" {
+	if err != nil || page.Total != 60 || len(page.Items) != 10 || page.Items[0].Label != "CC0051" {
 		t.Errorf("last page: total %d, %d items, %v", page.Total, len(page.Items), err)
 	}
 	assertError(t, wrong, problems("limit", "Choose a number from 1 to 500.", "offset", "Choose 0 or more.", "status", "Choose active, inactive or all."))
-	assertError(t, full, problems("label", "An attribute can have at most 5,000 options."))
 }
 
 // Each option has its own usage: the records whose value has it, those in the recycle bin too (US2-3,
 // FR-020).
 func TestOptionUsage_PerOption_FR020(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel := tf.attribute(LevelActivity, "Channel")

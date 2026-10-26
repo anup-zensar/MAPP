@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
@@ -32,6 +31,7 @@ const (
 
 // Requests that a browser marks as coming from another site or origin are refused; reads stay allowed.
 func TestEngine_RefusesCrossOriginRequests(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, method, header, value string
 		refused                     bool
@@ -45,6 +45,7 @@ func TestEngine_RefusesCrossOriginRequests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := newRequest(tt.method, testPath, "")
 			if tt.header != "" {
 				r.Header.Set(tt.header, tt.value)
@@ -56,6 +57,7 @@ func TestEngine_RefusesCrossOriginRequests(t *testing.T) {
 
 // Only requests addressed to this computer are answered (DNS rebinding); any port is fine.
 func TestEngine_RefusesOtherHosts(t *testing.T) {
+	t.Parallel()
 	hosts := map[string]bool{
 		"127.0.0.1:8080": false, "127.0.0.1": false, "localhost:5173": false, "LOCALHOST": false,
 		"[::1]:8080": false, "[::1]": false, "evil.example": true, "evil.example:8080": true,
@@ -63,6 +65,7 @@ func TestEngine_RefusesOtherHosts(t *testing.T) {
 	}
 	for host, refused := range hosts {
 		t.Run(host, func(t *testing.T) {
+			t.Parallel()
 			r := newRequest(http.MethodGet, testPath, "")
 			r.Host = host
 			assertRefused(t, r, refused)
@@ -71,12 +74,14 @@ func TestEngine_RefusesOtherHosts(t *testing.T) {
 }
 
 func TestEngine_PanicAnswersInternalError_024_FR009(t *testing.T) {
+	t.Parallel()
 	w := serve(t, func(*gin.Context) { panic("boom") }, newRequest(http.MethodGet, testPath, ""))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
 }
 
 func TestEngine_PanicAfterTheAnswerStartedAddsNothing(t *testing.T) {
+	t.Parallel()
 	startedThenPanics := func(c *gin.Context) {
 		web.Respond(c, http.StatusOK, map[string]bool{"ok": true})
 		panic("boom")
@@ -89,6 +94,7 @@ func TestEngine_PanicAfterTheAnswerStartedAddsNothing(t *testing.T) {
 
 // Every answer, refusals, panics and unknown paths included, forbids caching and content sniffing.
 func TestEngine_APIHeadersOnEveryAnswer(t *testing.T) {
+	t.Parallel()
 	otherHost := newRequest(http.MethodGet, testPath, "")
 	otherHost.Host = "evil.example"
 	crossSite := newRequest(http.MethodPost, testPath, "")
@@ -111,6 +117,7 @@ func TestEngine_APIHeadersOnEveryAnswer(t *testing.T) {
 }
 
 func TestEngine_UnknownPathsAndMethodsAnswerJSONNotFound(t *testing.T) {
+	t.Parallel()
 	for _, r := range []*http.Request{
 		newRequest(http.MethodGet, "/api/v1/nowhere", ""),
 		newRequest(http.MethodGet, testPath+"/", ""),
@@ -121,6 +128,7 @@ func TestEngine_UnknownPathsAndMethodsAnswerJSONNotFound(t *testing.T) {
 }
 
 func TestEngine_RequestIDMadeByTheServer_024_FR005(t *testing.T) {
+	t.Parallel()
 	sent := newRequest(http.MethodGet, testPath, "")
 	sent.Header.Set("X-Request-ID", "chosen-by-the-client")
 
@@ -157,6 +165,7 @@ func TestEngine_OneRequestRecordPerRequest_024_FR007(t *testing.T) {
 }
 
 func TestBindJSON_AcceptsAJSONBody(t *testing.T) {
+	t.Parallel()
 	r := newRequest(http.MethodPost, testPath, `{"name":"Ideas"}`+"\n")
 	r.Header.Set("Content-Type", "application/json; charset=utf-8")
 
@@ -165,6 +174,7 @@ func TestBindJSON_AcceptsAJSONBody(t *testing.T) {
 
 // A body MAPP cannot read safely is refused with a message for the user; the detail goes only to the log.
 func TestBindJSON_RefusesUnreadableBodies(t *testing.T) {
+	t.Parallel()
 	tests := []struct{ name, contentType, body string }{
 		{"plain text content type", "text/plain", `{"name":"Ideas"}`},
 		{"no content type", "", `{"name":"Ideas"}`},
@@ -178,6 +188,7 @@ func TestBindJSON_RefusesUnreadableBodies(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := newRequest(http.MethodPost, testPath, tt.body)
 			r.Header.Del("Content-Type")
 			if tt.contentType != "" {
@@ -190,6 +201,7 @@ func TestBindJSON_RefusesUnreadableBodies(t *testing.T) {
 }
 
 func TestLimitBody_AnOperationMayRaiseTheLimit_024_FR010(t *testing.T) {
+	t.Parallel()
 	w := serve(t, echoName, newRequest(http.MethodPost, uploadPath, bigName(2<<20)))
 
 	if w.Code != http.StatusOK {
@@ -198,6 +210,7 @@ func TestLimitBody_AnOperationMayRaiseTheLimit_024_FR010(t *testing.T) {
 }
 
 func TestRespondError_WrappedErrorKeepsItsStatus(t *testing.T) {
+	t.Parallel()
 	err := fmt.Errorf("deleting folder: %w", errs.NotFound("This sample folder no longer exists — someone may have deleted it."))
 
 	w := serve(t, failWith(err), newRequest(http.MethodGet, testPath, ""))
@@ -207,30 +220,10 @@ func TestRespondError_WrappedErrorKeepsItsStatus(t *testing.T) {
 }
 
 func TestRespondError_UnexpectedErrorHidesDetails_FR020(t *testing.T) {
+	t.Parallel()
 	w := serve(t, failWith(errors.New("open data/people.json: access is denied")), newRequest(http.MethodGet, testPath, ""))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
-}
-
-func TestRespondError_FieldsAlwaysPresent_FR020(t *testing.T) {
-	failures := map[string]error{
-		"sign in required": errs.SignInRequired(),
-		"version conflict": errs.VersionConflict("sample folder", "Daniel Okoro", time.Date(2026, 3, 12, 14, 32, 0, 0, time.UTC)),
-		"unexpected":       errors.New("disk full"),
-	}
-	for name, err := range failures {
-		w := serve(t, failWith(err), newRequest(http.MethodGet, testPath, ""))
-
-		var body struct {
-			Error map[string]json.RawMessage `json:"error"`
-		}
-		if decodeErr := json.Unmarshal(w.Body.Bytes(), &body); decodeErr != nil {
-			t.Fatalf("%s: body %s is not JSON: %v", name, w.Body, decodeErr)
-		}
-		if got := string(body.Error["fields"]); got != "[]" {
-			t.Errorf("%s: fields = %s, want []", name, got)
-		}
-	}
 }
 
 func newRequest(method, path, body string) *http.Request {

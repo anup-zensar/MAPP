@@ -30,6 +30,7 @@ var start = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 
 // The Settings page counts the active records of each section (FR-001).
 func TestOverview_ActiveCounts_FR001(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	f.addType(t, "Webinar", false)
@@ -53,6 +54,7 @@ func TestOverview_ActiveCounts_FR001(t *testing.T) {
 // activity-log entry naming the record by type and name (FR-006). Finance budgets are created with their
 // first item and renamed; they are never set inactive or deleted on their own (D-047).
 func TestEveryChangeLogged_FR006(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	ctx := t.Context()
 	event := f.addType(t, "Event", true)

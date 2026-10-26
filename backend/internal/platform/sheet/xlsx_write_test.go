@@ -53,6 +53,7 @@ func unzip(t *testing.T, wb Workbook) map[string]string {
 // workbook naming its sheets in order, the styles and one worksheet per sheet holding its text as inline
 // strings (D-120).
 func TestXLSX_OpensAsZipWithWorkbookSheetsStrings(t *testing.T) {
+	t.Parallel()
 	parts := unzip(t, Workbook{Sheets: []Sheet{
 		{Name: "About this export", Rows: [][]Cell{{Text("View"), Text("Grid")}}},
 		{Name: "Grid", Rows: [][]Cell{{Bold("Name")}, {Text("Launch film")}}},
@@ -87,6 +88,7 @@ func TestXLSX_OpensAsZipWithWorkbookSheetsStrings(t *testing.T) {
 // with dd mmm yyyy, moments with dd mmm yyyy hh:mm — headings are bold, and empty cells are left out
 // (D-120, FR-033).
 func TestXLSX_NumbersDatesBoldHeadings(t *testing.T) {
+	t.Parallel()
 	amount, _ := money.ParseAmount("12500.5")
 	parts := unzip(t, Workbook{Sheets: []Sheet{{Name: "Grid", Rows: [][]Cell{
 		{Bold("Planned cost (USD)"), Bold("Start date"), Bold("INQ"), {}, Bold("Created")},
@@ -125,6 +127,7 @@ func TestXLSX_NumbersDatesBoldHeadings(t *testing.T) {
 // Text is escaped for XML, and sheet names lose the characters Excel refuses and are cut to 31 characters
 // (D-120): "Budget & cost" keeps its name.
 func TestXLSX_EscapesTextAndSheetNames(t *testing.T) {
+	t.Parallel()
 	parts := unzip(t, Workbook{Sheets: []Sheet{
 		{Name: "Budget & cost", Rows: [][]Cell{{Text(`Fish & chips <"quoted"> 'x'`)}}},
 		{Name: "A/B: [test]? * with a very long name indeed", Rows: [][]Cell{}},

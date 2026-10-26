@@ -32,6 +32,7 @@ func itoaTest(n int) string {
 // An attribute swaps places with its neighbour in its section, and the level's list answers in the new
 // order (US2-6, FR-019).
 func TestMoveAttribute_WithinSection_FR019(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	channel := shellForm(t, f).attribute(LevelActivity, "Channel")
 
@@ -47,6 +48,7 @@ func TestMoveAttribute_WithinSection_FR019(t *testing.T) {
 
 // Nothing moves past the edge of its section (FR-019, data model §4.2).
 func TestMoveAttribute_EdgeOfSectionRefused_FR019(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 
@@ -65,6 +67,7 @@ func TestMoveAttribute_EdgeOfSectionRefused_FR019(t *testing.T) {
 // A section moves as a whole before the previous section, and the level is numbered 1…n again; the first
 // and the last section go no further (FR-019).
 func TestMoveSection_RenumbersLevel_FR019(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	tf = f.addAttributes(t, testAttribute{level: LevelActivity, label: "Notes", typ: TypeText, section: "Extra"})
@@ -84,6 +87,7 @@ func TestMoveSection_RenumbersLevel_FR019(t *testing.T) {
 // A dependent always stays below its parent: a move or a section change that would put it above is
 // refused and nothing changes (edge case, FR-022, data model §4.2).
 func TestMove_DependentStaysBelowParent_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	cluster, region := tf.attribute(LevelActivity, "Cluster"), tf.attribute(LevelActivity, "Region")
@@ -102,6 +106,7 @@ func TestMove_DependentStaysBelowParent_EdgeCase(t *testing.T) {
 
 // The Business unit attribute stays first on the plan form: nothing moves above it (FR-023).
 func TestMove_BusinessUnitStaysFirst_FR023(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	shellForm(t, f)
 	tf := f.addAttributes(t,
@@ -119,6 +124,7 @@ func TestMove_BusinessUnitStaysFirst_FR023(t *testing.T) {
 
 // A new section puts the attribute last in it; nothing else moves (FR-019, data model §4.2).
 func TestChangeSection_GoesLastInNewSection_FR019(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel := tf.attribute(LevelActivity, "Channel")
@@ -148,6 +154,7 @@ func TestChangeSection_GoesLastInNewSection_FR019(t *testing.T) {
 
 // Each attribute whose place changed gets one "changed" entry with the field position (FR-006).
 func TestMove_LogsEachChangedPlace_FR006(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 

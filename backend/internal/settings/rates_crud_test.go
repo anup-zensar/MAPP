@@ -37,6 +37,7 @@ func rateFixture(t *testing.T) (*fixture, ExchangeRate, ExchangeRate) {
 // problem comes at once; USD has no rates. A new rate is entered by hand and logged with who added it
 // (FR-001, FR-003, FR-049).
 func TestAddRate_Rules_FR001(t *testing.T) {
+	t.Parallel()
 	f, _, _ := rateFixture(t)
 
 	_, taken := f.service.AddRate(t.Context(), alex, "EUR", RateInput{Date: "2026-10-19", Rate: "0"})
@@ -66,6 +67,7 @@ func TestAddRate_Rules_FR001(t *testing.T) {
 // Editing a rate changes its value only, makes an imported rate "Entered by hand" and logs both changes with
 // who made them; an out-of-date version is refused (FR-003, FR-049).
 func TestUpdateRate_SetsManual_FR003(t *testing.T) {
+	t.Parallel()
 	f, _, latest := rateFixture(t)
 
 	updated, err := f.service.UpdateRate(t.Context(), daniel, latest.ID, RateUpdate{Rate: "0.9230", Version: version(1)})
@@ -94,6 +96,7 @@ func TestUpdateRate_SetsManual_FR003(t *testing.T) {
 
 // The currency's last rate dated today or earlier can't be deleted, even with a future rate (US1-5).
 func TestDeleteRate_LastCurrentRefused_FR003(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.90", true)
 	only := f.addRate(t, "EUR", "2026-10-19", "0.92", RateManual, "")
@@ -110,6 +113,7 @@ func TestDeleteRate_LastCurrentRefused_FR003(t *testing.T) {
 
 // Other rates — a future one, or an older one — move to the recycle bin and come back with Undo (US1-5).
 func TestDeleteRate_FutureAllowed(t *testing.T) {
+	t.Parallel()
 	f, older, _ := rateFixture(t)
 	future := f.addRate(t, "EUR", "2027-01-01", "0.95", RateManual, "")
 
@@ -136,6 +140,7 @@ func TestDeleteRate_FutureAllowed(t *testing.T) {
 
 // A deleted rate is not restored over a rate added on its date meanwhile (data-model §2.1, edge cases).
 func TestRestoreRate_DateTakenRefused(t *testing.T) {
+	t.Parallel()
 	f, _, latest := rateFixture(t)
 	entry, err := f.service.DeleteRate(t.Context(), alex, latest.ID)
 	if err != nil {
@@ -155,6 +160,7 @@ func TestRestoreRate_DateTakenRefused(t *testing.T) {
 
 // A new currency gets its rate as its first dated rate, dated today and entered by hand (FR-003).
 func TestCreateCurrency_FirstRateToday_FR003(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 	f.clock.now = october20
@@ -175,6 +181,7 @@ func TestCreateCurrency_FirstRateToday_FR003(t *testing.T) {
 // A new rate in the currency form adds today's rate, or replaces it when today has one (FR-004); the change
 // is logged on the rate with what it recalculated.
 func TestUpdateCurrencyRate_UpsertsToday_FR004(t *testing.T) {
+	t.Parallel()
 	f, _, _ := rateFixture(t)
 	f.refs = []Reference{euroPlan("P-1004", false)}
 
@@ -209,6 +216,7 @@ func TestUpdateCurrencyRate_UpsertsToday_FR004(t *testing.T) {
 // Before a rate that changes the current rate is saved, the impact names the line items and the plans planned
 // in the currency with their USD values before and after (FR-005, US1-4).
 func TestRateImpact_LineItemsAndPlans_FR005(t *testing.T) {
+	t.Parallel()
 	f, _, latest := rateFixture(t)
 	f.write(t, func(ctx context.Context, repo Repository) error {
 		r := latest
@@ -240,6 +248,7 @@ func TestRateImpact_LineItemsAndPlans_FR005(t *testing.T) {
 // A future-dated rate changes no conversion before its date: no warning. Editing a rate that is not the
 // current one warns of nothing either (FR-005).
 func TestRateImpact_FutureRateNoWarning(t *testing.T) {
+	t.Parallel()
 	f, older, _ := rateFixture(t)
 	f.refs = append(euroLineItems(), euroPlan("P-1004", false))
 
@@ -257,6 +266,7 @@ func TestRateImpact_FutureRateNoWarning(t *testing.T) {
 // The rate history lists the newest date first, marks the current rate and future rates, and names the
 // import of an imported rate (FR-003).
 func TestListRates_History_FR003(t *testing.T) {
+	t.Parallel()
 	f, older, latest := rateFixture(t)
 	future := f.addRate(t, "EUR", "2027-01-01", "0.95", RateManual, "")
 	f.clock.now = october20.Add(time.Hour)

@@ -13,6 +13,7 @@ import (
 // A context without Grants is an internal call — the seed, a job, a service unit test — and is not
 // restricted (D-228).
 func TestNoGrants_Unrestricted_FR010(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	if err := authz.Require(ctx, authz.SettingsManage); err != nil {
@@ -34,6 +35,7 @@ func TestNoGrants_Unrestricted_FR010(t *testing.T) {
 
 // A refused action is 403 forbidden with the plain message (FR-010).
 func TestRequireIn_Refuses403_FR010(t *testing.T) {
+	t.Parallel()
 	ctx := authz.With(context.Background(), grants("U-1006", []string{lubricants, mobility}, viewer))
 
 	err := authz.RequireIn(ctx, authz.ActivitiesEdit, plan(lubricants))
@@ -50,6 +52,7 @@ func TestRequireIn_Refuses403_FR010(t *testing.T) {
 
 // Opening a record outside the person's access answers 404 like a missing record (022 FR-005).
 func TestRequireView_OutOfScopeIsNotFound_022_FR005(t *testing.T) {
+	t.Parallel()
 	ctx := authz.With(context.Background(), grants("U-1004", []string{mobility}, planner))
 
 	err := authz.RequireView(ctx, plan(lubricants), "plan")
@@ -69,6 +72,7 @@ func TestRequireView_OutOfScopeIsNotFound_022_FR005(t *testing.T) {
 // Availability carries the same message as the refusal, so screens explain a disabled action exactly as the
 // API would refuse it (FR-011).
 func TestAvailable_ReasonIsTheRefusal_FR011(t *testing.T) {
+	t.Parallel()
 	ctx := authz.With(context.Background(), grants("U-1002", []string{lubricants}, planner))
 
 	deletePlan := authz.Available(ctx, authz.PlansDelete, plan(lubricants))
@@ -88,6 +92,7 @@ func TestAvailable_ReasonIsTheRefusal_FR011(t *testing.T) {
 
 // Has, InScope and CanView read the Grants of the context.
 func TestContextChecks_FR006(t *testing.T) {
+	t.Parallel()
 	ctx := authz.With(context.Background(), grants("U-1004", []string{mobility}, planner))
 
 	if authz.Has(ctx, authz.PlansDelete) || !authz.Has(ctx, authz.PlansEdit) {

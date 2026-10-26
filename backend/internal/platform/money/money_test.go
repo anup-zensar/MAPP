@@ -31,6 +31,7 @@ func texts(amounts []money.Amount) []string {
 // An amount has at most fifteen integer digits and two decimals; a leading minus is allowed; nothing else
 // is an amount, and the errors tell "too many decimals" and "too large" apart (data model §1, D-010, D-190).
 func TestParseAmount_FormatsAndLimits_D010(t *testing.T) {
+	t.Parallel()
 	valid := map[string]string{
 		"0":                      "0.00",
 		"1234":                   "1234.00",
@@ -76,6 +77,7 @@ func TestParseAmount_FormatsAndLimits_D010(t *testing.T) {
 // Amounts are JSON strings with two decimals both ways; reading accepts 0 to 2 decimals and refuses
 // numbers and more decimals (D-010).
 func TestAmountJSON_StringWithTwoDecimals_D010(t *testing.T) {
+	t.Parallel()
 	type record struct {
 		Budget  money.Amount  `json:"budget"`
 		Planned *money.Amount `json:"planned"`
@@ -110,6 +112,7 @@ func TestAmountJSON_StringWithTwoDecimals_D010(t *testing.T) {
 
 // Texts for people group thousands; Money adds its currency (data model §1, the texts of the activity log).
 func TestFormat_ThousandsAndCurrency_D010(t *testing.T) {
+	t.Parallel()
 	cases := map[string]string{
 		"0":                   "0.00",
 		"0.05":                "0.05",
@@ -136,6 +139,7 @@ func TestFormat_ThousandsAndCurrency_D010(t *testing.T) {
 
 // Add, Sub, Neg, Cmp, Sign, IsZero and Sum are exact; the sum of nothing is 0.00.
 func TestArithmetic_Exact_D010(t *testing.T) {
+	t.Parallel()
 	a, b := amount(t, "0.10"), amount(t, "0.20")
 	if got := a.Add(b).String(); got != "0.30" {
 		t.Errorf("0.10 + 0.20 = %s", got)
@@ -162,6 +166,7 @@ func TestArithmetic_Exact_D010(t *testing.T) {
 
 // Deals × deal size is exact; beyond the largest amount it is ErrOutOfRange (data model §1).
 func TestMulInt_OutOfRange_D010(t *testing.T) {
+	t.Parallel()
 	got, err := amount(t, "10000").MulInt(250)
 	if err != nil || got.String() != "2500000.00" {
 		t.Errorf("10,000.00 × 250 = %s, %v; want 2500000.00", got, err)
@@ -180,6 +185,7 @@ func TestMulInt_OutOfRange_D010(t *testing.T) {
 // An even split rounds every part down to the cent and puts the remainder in the last part (domain model
 // §4.4 E, D-024).
 func TestSplitEvenly_RemainderLast_D024(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		total string
 		n     int
@@ -207,6 +213,7 @@ func TestSplitEvenly_RemainderLast_D024(t *testing.T) {
 
 // A request's amount is parsed with its currency code; the amount's problem comes first (MoneyInput).
 func TestParseInput_AmountAndCurrency_D010(t *testing.T) {
+	t.Parallel()
 	got, err := money.ParseInput(money.Input{Amount: "25000.5", Currency: "USD"})
 	if err != nil || got.Amount.String() != "25000.50" || got.Currency != "USD" {
 		t.Errorf("ParseInput = %+v, %v", got, err)

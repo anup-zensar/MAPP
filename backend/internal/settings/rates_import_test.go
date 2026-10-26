@@ -39,6 +39,7 @@ func importFixture(t *testing.T) *fixture {
 
 // The review answers every row with its outcome and row number before anything is saved (US1-2).
 func TestCheckRateImport_Review_FR006(t *testing.T) {
+	t.Parallel()
 	f := importFixture(t)
 
 	check, err := f.service.CheckRateImport(t.Context(), alex, ninetyTwoRows())
@@ -64,6 +65,7 @@ func TestCheckRateImport_Review_FR006(t *testing.T) {
 
 // The import saves exactly the rows the review counts as to add and replace (FR-006).
 func TestApplyRateImport_SameCountsAsCheck_FR006(t *testing.T) {
+	t.Parallel()
 	f := importFixture(t)
 	check, _ := f.service.CheckRateImport(t.Context(), alex, ninetyTwoRows())
 
@@ -84,6 +86,7 @@ func TestApplyRateImport_SameCountsAsCheck_FR006(t *testing.T) {
 
 // Every import is recorded — file, feed, who, when, dates, counts — and writes one log entry (FR-007, US1-3).
 func TestApplyRateImport_RecordAndLog_FR007(t *testing.T) {
+	t.Parallel()
 	f := importFixture(t)
 	before := len(f.logEntries(t))
 
@@ -112,6 +115,7 @@ func TestApplyRateImport_RecordAndLog_FR007(t *testing.T) {
 
 // Inactive currencies keep converting, so their rates are imported (data-model §2.4).
 func TestApplyRateImport_InactiveCurrencyImported(t *testing.T) {
+	t.Parallel()
 	f := feedFixture(t)
 
 	imported, err := f.service.ApplyRateImport(t.Context(), alex, upload(rateHeader, "M,USD,INR,2026-10-20,83.62"))
@@ -128,6 +132,7 @@ func TestApplyRateImport_InactiveCurrencyImported(t *testing.T) {
 // ApplyRateRows is the core every rate feed uses: a later automatic feed hands it its rows and the rules,
 // the record and the log are the same (FR-008).
 func TestApplyRateRows_SharedCore_FR008(t *testing.T) {
+	t.Parallel()
 	f := feedFixture(t)
 	rows := []FeedRow{
 		{Row: 1, RateType: "M", From: "USD", To: "EUR", ValidFrom: "2026-10-20", Rate: "0.921"},
@@ -148,6 +153,7 @@ func TestApplyRateRows_SharedCore_FR008(t *testing.T) {
 // The sample file has one M row per active currency but USD, dated today, at the current rate + 0.5 %, and
 // imports as it is (FR-006).
 func TestImportSample_TodayRates(t *testing.T) {
+	t.Parallel()
 	f := feedFixture(t)
 
 	name, content, err := f.service.ImportSample(t.Context())
@@ -165,6 +171,7 @@ func TestImportSample_TodayRates(t *testing.T) {
 
 // The upload needs a file name of at most 200 characters and base64 content (FR-006).
 func TestRateImportUpload_Checked(t *testing.T) {
+	t.Parallel()
 	f := feedFixture(t)
 
 	_, err := f.service.CheckRateImport(t.Context(), alex, RateImportUpload{FileName: " ", Content: "not base64!"})

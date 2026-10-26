@@ -37,6 +37,7 @@ func euroLineItems() []Reference {
 
 // A new currency is listed after USD, active, with its rate both ways and who set the rate (US4-1, FR-028).
 func TestCreateCurrency_JPY_FR028(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 	f.addCurrency(t, "EUR", "0.92", true)
@@ -65,6 +66,7 @@ func TestCreateCurrency_JPY_FR028(t *testing.T) {
 
 // Every problem of a new currency is shown at once (US4-5, FR-028).
 func TestCreateCurrency_AllProblemsAtOnce_FR028(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 
@@ -84,6 +86,7 @@ func TestCreateCurrency_AllProblemsAtOnce_FR028(t *testing.T) {
 
 // The code of a saved currency is locked: views say so, and an update has no code to change (FR-028).
 func TestCurrency_CodeLocked_FR028(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 
@@ -102,6 +105,7 @@ func TestCurrency_CodeLocked_FR028(t *testing.T) {
 
 // USD's rate, status and delete are locked; its name and symbol may change (US4-4, FR-028).
 func TestUSD_RateStatusDeleteLocked_FR028(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 
@@ -121,6 +125,7 @@ func TestUSD_RateStatusDeleteLocked_FR028(t *testing.T) {
 // Before a new rate is saved, the warning says how many live line items in how many activities use the
 // currency and their USD total before and after; nothing is saved (US4-3, FR-030).
 func TestCurrencyImpact_RateChange_FR030(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 	f.refs = euroLineItems()
@@ -147,6 +152,7 @@ func TestCurrencyImpact_RateChange_FR030(t *testing.T) {
 // A new rate is logged with the old and new rate and how many line items were recalculated, and marks who
 // changed the rate and when; a name change does not (FR-006, FR-030).
 func TestUpdateCurrency_RateChangeLoggedWithDetails_FR006_FR030(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 	f.refs = euroLineItems()
@@ -177,6 +183,7 @@ func TestUpdateCurrency_RateChangeLoggedWithDetails_FR006_FR030(t *testing.T) {
 
 // The rates are every currency's current rate, active or not; a change applies at once (FR-029).
 func TestRates_CurrentRateOfEveryCurrency_FR029(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "USD", "1", true)
 	f.addCurrency(t, "EUR", "0.92", true)
@@ -198,6 +205,7 @@ func TestRates_CurrentRateOfEveryCurrency_FR029(t *testing.T) {
 // A currency counts the line items in it and the people showing amounts in it, those in the recycle bin
 // too (US4-2, FR-003).
 func TestCurrencyUsage_LineItemsAndPeople_FR003(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 	f.refs = append(euroLineItems(), personRef("U-1001", "EUR"), personRef("U-1002", "EUR"))
@@ -212,6 +220,7 @@ func TestCurrencyUsage_LineItemsAndPeople_FR003(t *testing.T) {
 // A currency in use cannot be deleted: the answer says where it is used and to set it inactive instead
 // (FR-004).
 func TestDeleteCurrency_InUseRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.addCurrency(t, "EUR", "0.92", true)
 	f.addCurrency(t, "GBP", "0.79", true)
@@ -229,6 +238,7 @@ func TestDeleteCurrency_InUseRefused_FR004(t *testing.T) {
 // An unused currency moves to the recycle bin and Undo brings it back exactly; Set inactive and Reactivate
 // are logged (FR-004).
 func TestDeleteCurrency_Unused_Undo_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	created, err := f.service.CreateCurrency(t.Context(), alex, jpy())
 	if err != nil {
@@ -258,6 +268,7 @@ func TestDeleteCurrency_Unused_Undo_FR004(t *testing.T) {
 // A currency whose code another currency took meanwhile cannot come back: a code takes no suffix (FR-028,
 // D-054).
 func TestRestoreCurrency_CodeTaken_FR028(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	if _, err := f.service.CreateCurrency(t.Context(), alex, jpy()); err != nil {
 		t.Fatalf("CreateCurrency: %v", err)

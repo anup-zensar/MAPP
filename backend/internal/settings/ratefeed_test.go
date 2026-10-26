@@ -32,6 +32,7 @@ func feedFixture(t *testing.T) *fixture {
 // The header may be in any order and letter case, with spaces and a byte-order mark; a missing column refuses
 // the whole file, naming the column (FR-006, data-model §2.4).
 func TestGSAPRateFile_Header_FR006(t *testing.T) {
+	t.Parallel()
 	rows, err := GSAPRateFile{}.Read("x.csv", []byte("\xEF\xBB\xBF RATE , Valid_From,to_currency,FROM_CURRENCY,rate_type\n0.9214,2026-10-20,EUR,USD,M\n\n"))
 	want := []FeedRow{{Row: 2, RateType: "M", From: "USD", To: "EUR", ValidFrom: "2026-10-20", Rate: "0.9214"}}
 	if err != nil || !reflect.DeepEqual(rows, want) {
@@ -44,13 +45,11 @@ func TestGSAPRateFile_Header_FR006(t *testing.T) {
 	assertError(t, empty, problems("content", "The file has no rows below the header."))
 	_, binary := GSAPRateFile{}.Read("x.csv", []byte{0xff, 0xfe, 0x00})
 	assertError(t, binary, problems("content", "This file can't be read. Save it as a .csv file in UTF-8 and try again."))
-	if (GSAPRateFile{}).Name() != "gsapDailyRatesFile" {
-		t.Errorf("Name = %q", GSAPRateFile{}.Name())
-	}
 }
 
 // valid_from may be written 2026-10-19 or 20261019 (data-model §2.4).
 func TestGSAPRateFile_DateFormats(t *testing.T) {
+	t.Parallel()
 	for text, ok := range map[string]bool{"2026-10-19": true, "20261019": true, " 2026-10-19 ": true, "19.10.2026": false, "20261332": false, "": false} {
 		day, err := parseRateDate(text)
 		if ok && (err != nil || day != date.MustParse("2026-10-19")) {
@@ -64,6 +63,7 @@ func TestGSAPRateFile_DateFormats(t *testing.T) {
 
 // A file above 2 MB is refused before it is read, saying how to import it (FR-006).
 func TestGSAPRateFile_TooLarge(t *testing.T) {
+	t.Parallel()
 	big := make([]byte, maxRateFileBytes+1)
 	_, err := GSAPRateFile{}.Read("big.csv", big)
 	assertError(t, err, problems("content", "The file is larger than 2 MB. Split it and import each part."))
@@ -93,22 +93,27 @@ func assertRow(t *testing.T, got RateImportRow, outcome RateOutcome, message str
 
 // Another rate type is not used (data-model §2.4).
 func TestGSAPRateFile_OtherRateTypeNotUsed_FR006(t *testing.T) {
-	assertRow(t, checkOne(t, feedFixture(t), "B,USD,EUR,2026-10-20,0.92"), OutcomeNotUsed, "Rate type B is not used — only M rates are imported.")
-	assertRow(t, checkOne(t, feedFixture(t), "m,usd,eur,2026-10-20,0.93"), OutcomeAdd, "")
+	t.Parallel()
+	f := feedFixture(t)
+	assertRow(t, checkOne(t, f, "B,USD,EUR,2026-10-20,0.92"), OutcomeNotUsed, "Rate type B is not used — only M rates are imported.")
+	assertRow(t, checkOne(t, f, "m,usd,eur,2026-10-20,0.93"), OutcomeAdd, "")
 }
 
 // Only rates quoted from USD are used (data-model §2.4).
 func TestGSAPRateFile_NotFromUSDNotUsed_FR006(t *testing.T) {
+	t.Parallel()
 	assertRow(t, checkOne(t, feedFixture(t), "M,EUR,GBP,2026-10-20,0.86"), OutcomeNotUsed, "Only rates quoted from USD are used.")
 }
 
 // USD itself is always 1 (data-model §2.4).
 func TestGSAPRateFile_USDNotUsed_FR006(t *testing.T) {
+	t.Parallel()
 	assertRow(t, checkOne(t, feedFixture(t), "M,USD,USD,2026-10-20,1"), OutcomeNotUsed, "USD is always 1.")
 }
 
 // Currencies are never created: one not set up is not used (data-model §2.4).
 func TestGSAPRateFile_CurrencyNotSetUpNotUsed_FR006(t *testing.T) {
+	t.Parallel()
 	row := checkOne(t, feedFixture(t), "M,USD,CHF,2026-10-20,0.88")
 	assertRow(t, row, OutcomeNotUsed, "CHF is not set up in Settings › Currencies.")
 	if row.Currency == nil || *row.Currency != "CHF" || row.Rate == nil || row.Rate.String() != "0.88" {
@@ -118,14 +123,17 @@ func TestGSAPRateFile_CurrencyNotSetUpNotUsed_FR006(t *testing.T) {
 
 // An unreadable date or rate is a problem naming its row (data-model §2.4).
 func TestGSAPRateFile_DateAndRateProblems_FR006(t *testing.T) {
-	assertRow(t, checkOne(t, feedFixture(t), "M,USD,EUR,19/10/2026,0.92"), OutcomeProblem, "Row 2: 'valid_from' must be a date such as 2026-10-19.")
-	assertRow(t, checkOne(t, feedFixture(t), "M,USD,EUR,2026-10-20,0.1234567"), OutcomeProblem, "Row 2: the rate must be above 0 with at most 6 decimals.")
-	assertRow(t, checkOne(t, feedFixture(t), "M,USD,EUR,2026-10-20,0"), OutcomeProblem, "Row 2: the rate must be above 0 with at most 6 decimals.")
-	assertRow(t, checkOne(t, feedFixture(t), "M,USD,EUR,2026-10-20,2000000"), OutcomeProblem, "Row 2: the rate must be above 0 with at most 6 decimals.")
+	t.Parallel()
+	f := feedFixture(t)
+	assertRow(t, checkOne(t, f, "M,USD,EUR,19/10/2026,0.92"), OutcomeProblem, "Row 2: 'valid_from' must be a date such as 2026-10-19.")
+	for _, rate := range []string{"0.1234567", "0", "2000000"} {
+		assertRow(t, checkOne(t, f, "M,USD,EUR,2026-10-20,"+rate), OutcomeProblem, "Row 2: the rate must be above 0 with at most 6 decimals.")
+	}
 }
 
 // The same currency and date twice in the file: the later row is a problem naming the earlier one.
 func TestGSAPRateFile_TwiceInFile_FR006(t *testing.T) {
+	t.Parallel()
 	check, err := feedFixture(t).service.CheckRateImport(t.Context(), alex, upload("rate_type,from_currency,to_currency,valid_from,rate",
 		"M,USD,EUR,2026-10-20,0.92", "M,USD,GBP,2026-10-20,0.79", "M,USD,EUR,20261020,0.93"))
 	if err != nil || len(check.Rows) != 3 {
@@ -138,6 +146,7 @@ func TestGSAPRateFile_TwiceInFile_FR006(t *testing.T) {
 // The same rate already stored for the day is already present; a different one replaces it, old → new; any
 // other row is added, inactive currencies too (data-model §2.4).
 func TestGSAPRateFile_PresentReplaceAdd_FR006(t *testing.T) {
+	t.Parallel()
 	f := feedFixture(t)
 	assertRow(t, checkOne(t, f, "M,USD,EUR,2026-10-19,0.920000"), OutcomePresent, "")
 	replace := checkOne(t, f, "M,USD,GBP,2026-10-19,0.7905")

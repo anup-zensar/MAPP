@@ -22,6 +22,7 @@ func rate(t *testing.T, s string) money.Rate {
 // A rate has at most six decimals, is above 0 and at most 1,000,000; it is written without trailing zeros
 // (data model §6, FR-028).
 func TestParseRate_Limits_FR028(t *testing.T) {
+	t.Parallel()
 	valid := map[string]string{
 		"0.92":           "0.92",
 		"0.920000":       "0.92",
@@ -70,6 +71,7 @@ func TestParseRate_Limits_FR028(t *testing.T) {
 
 // The inverse rate is 1 ÷ rate, rounded half-up to six decimals (spec US4).
 func TestRateInverse_SixDecimals_FR028(t *testing.T) {
+	t.Parallel()
 	cases := map[string]string{
 		"0.92":    "1.086957",
 		"150":     "0.006667",
@@ -90,6 +92,7 @@ func TestRateInverse_SixDecimals_FR028(t *testing.T) {
 // Converting to USD divides by the rate and rounds half-up to the cent, negative amounts half away from
 // zero (domain model §4.3).
 func TestToUSD_RoundsHalfUp_FR029(t *testing.T) {
+	t.Parallel()
 	cases := []struct{ local, rate, want string }{
 		{"1000", "0.92", "1086.96"}, // 1,086.9565…
 		{"46000", "0.92", "50000.00"},
@@ -112,6 +115,7 @@ func TestToUSD_RoundsHalfUp_FR029(t *testing.T) {
 
 // Converting from USD multiplies by the rate and rounds half-up to the cent (display currencies).
 func TestFromUSD_RoundsHalfUp_D010(t *testing.T) {
+	t.Parallel()
 	cases := []struct{ usd, rate, want string }{
 		{"1086.96", "0.92", "1000.00"}, // 1,000.0032
 		{"100", "0.92", "92.00"},
@@ -131,6 +135,7 @@ func TestFromUSD_RoundsHalfUp_D010(t *testing.T) {
 // Month amounts converted to USD add up to the USD value of their sum: the last month takes the
 // difference (D-024).
 func TestConvertSpread_LastMonthTakesDifference_D024(t *testing.T) {
+	t.Parallel()
 	parts := amount(t, "10000").SplitEvenly(3)
 	converted := money.ConvertSpread(parts, rate(t, "0.92"))
 	if got, want := texts(converted), []string{"3623.18", "3623.18", "3623.21"}; !slices.Equal(got, want) {
@@ -151,6 +156,7 @@ func TestConvertSpread_LastMonthTakesDifference_D024(t *testing.T) {
 // Rates convert with each currency's current rate; USD needs no rate; a currency without a rate is
 // ErrUnknownCurrency (FR-029).
 func TestRates_UnknownCurrency_FR029(t *testing.T) {
+	t.Parallel()
 	rates := money.Rates{"EUR": rate(t, "0.92"), "GBP": rate(t, "0.79")}
 
 	usd, err := rates.ToUSD(money.Money{Amount: amount(t, "46000"), Currency: "EUR"})
@@ -183,6 +189,7 @@ func TestRates_UnknownCurrency_FR029(t *testing.T) {
 
 // Rates are JSON strings without trailing zeros both ways.
 func TestRateJSON_String_FR028(t *testing.T) {
+	t.Parallel()
 	encoded, err := json.Marshal(map[string]money.Rate{"rate": rate(t, "7.100")})
 	if err != nil || string(encoded) != `{"rate":"7.1"}` {
 		t.Errorf("Marshal = %s, %v", encoded, err)
