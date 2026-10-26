@@ -182,10 +182,10 @@ Then change the area's line in `app.go` to `RegisterRoutes(signedIn)`. Its tests
 - [x] T025 [P] [US1] ⏳022 Slice C1: `backend/internal/samples/handler.go`
 - [x] T026 [P] [US1] ⏳022 Slice C1: `backend/internal/home/handler.go`
 - [x] T027 [US1] ⏳022 Slice C1: wire samples and home in `backend/internal/app/app.go` — **checkpoint C1**
-- [ ] T028 [P] [US1] ⏳022 Slice C2: `backend/internal/history/handler.go`
-- [ ] T029 [P] [US1] ⏳022 Slice C2: `backend/internal/lineitems/handler.go`
-- [ ] T030 [P] [US1] ⏳022 Slice C2: `backend/internal/budgets/handler.go`
-- [ ] T031 [US1] ⏳022 Slice C2: wiring in `app.go` — **checkpoint C2**
+- [x] T028 [P] [US1] ⏳022 Slice C2: `backend/internal/history/handler.go`
+- [x] T029 [P] [US1] ⏳022 Slice C2: `backend/internal/lineitems/handler.go`
+- [x] T030 [P] [US1] ⏳022 Slice C2: `backend/internal/budgets/handler.go`
+- [x] T031 [US1] ⏳022 Slice C2: wiring in `app.go` — **checkpoint C2**
 - [ ] T032 [P] [US1] ⏳022 Slice C3: `backend/internal/plans/handler.go`
 - [ ] T033 [P] [US1] ⏳022 Slice C3: `backend/internal/campaigns/handler.go`
 - [ ] T034 [US1] ⏳022 Slice C3: wiring in `app.go` — **checkpoint C3**

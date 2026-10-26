@@ -91,7 +91,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	probeRoutes(engine, cfg, db)
 	auth.NewHandler(authService, peopleService).RegisterRoutes(engine.Group(apiV1))
 	people.NewHandler(peopleService).Routes(router, unwrapped)
-	history.NewHandler(historyService).Routes(router, unwrapped)
+	history.NewHandler(historyService).RegisterRoutes(signedIn)
 	access.NewHandler(accessService).Routes(router, unwrapped)
 
 	// Settings (feature 002) exist in every environment. Their kinds are registered with history, parents
@@ -169,7 +169,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	}
 	campaigns.NewHandler(campaignsService).Routes(router, unwrapped)
 	activities.NewHandler(activitiesService).Routes(router, unwrapped)
-	lineitems.NewHandler(lineItemsService).Routes(router, unwrapped)
+	lineitems.NewHandler(lineItemsService).RegisterRoutes(signedIn)
 
 	// Global budgets (014, BUS.BUD.040): global budgets and their allocations to plans, which set the plans'
 	// budgets through the plans service (budgets_adapter.go). Their kinds come after the planning kinds: an
@@ -185,7 +185,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	planService.UseAllocations(planAllocations{budgets: budgetsService}) // Plan.allocation and the budget lock
-	budgets.NewHandler(budgetsService).Routes(router, unwrapped)
+	budgets.NewHandler(budgetsService).RegisterRoutes(signedIn)
 
 	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
 	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API
