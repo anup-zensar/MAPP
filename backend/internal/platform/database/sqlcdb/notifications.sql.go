@@ -111,6 +111,22 @@ func (q *Queries) ListDelegations(ctx context.Context) ([]ApprovalDelegation, er
 	return items, nil
 }
 
+const markNotificationsRead = `-- name: MarkNotificationsRead :exec
+UPDATE notifications
+SET read = true, read_at = $1
+WHERE id = ANY ($2::text[])
+`
+
+type MarkNotificationsReadParams struct {
+	ReadAt *time.Time
+	Ids    []string
+}
+
+func (q *Queries) MarkNotificationsRead(ctx context.Context, arg MarkNotificationsReadParams) error {
+	_, err := q.db.Exec(ctx, markNotificationsRead, arg.ReadAt, arg.Ids)
+	return err
+}
+
 const notificationsOf = `-- name: NotificationsOf :many
 SELECT id, recipient_id, kind, title, text, activity_id, activity_name, actor_id, actor_name, at, read, read_at
 FROM notifications

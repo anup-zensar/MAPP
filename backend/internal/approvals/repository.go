@@ -1,6 +1,9 @@
 package approvals
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Repository stores approval workflows, rounds, history entries and notifications. The JSON store
 // implements it now (store_json.go) and PostgreSQL can later. Every method runs inside the caller's
@@ -36,6 +39,8 @@ type Repository interface {
 	// NotificationsOf returns the notifications of the person personID, newest first (time, then id
 	// number).
 	NotificationsOf(ctx context.Context, personID string) ([]Notification, error)
+	// MarkNotificationsRead marks the notifications with ids read at at, all at once.
+	MarkNotificationsRead(ctx context.Context, ids []string, at time.Time) error
 	// PutNotification saves n, replacing the notification with the same id.
 	PutNotification(ctx context.Context, n Notification) error
 

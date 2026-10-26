@@ -30,16 +30,13 @@ func (s *Service) ListNotifications(ctx context.Context, a actor.Actor) (Notific
 				page.Unread++
 			}
 		}
-		stored := map[string]bool{} // activity id → still stored, asked once per activity
-		for _, n := range mine[:min(len(mine), maxNotifications)] {
-			exists, asked := stored[n.ActivityID]
-			if !asked {
-				if _, exists, err = s.activities.Activity(ctx, n.ActivityID); err != nil {
-					return err
-				}
-				stored[n.ActivityID] = exists
-			}
-			page.Items = append(page.Items, notificationView(n, exists))
+		shown := mine[:min(len(mine), maxNotifications)]
+		stored, err := s.storedActivities(ctx, shown)
+		if err != nil {
+			return err
+		}
+		for _, n := range shown {
+			page.Items = append(page.Items, notificationView(n, stored[n.ActivityID]))
 		}
 		return nil
 	})
@@ -47,6 +44,20 @@ func (s *Service) ListNotifications(ctx context.Context, a actor.Actor) (Notific
 		return NotificationPage{}, err
 	}
 	return page, nil
+}
+
+// storedActivities reports which activities of the notifications are still stored, read all at once.
+func (s *Service) storedActivities(ctx context.Context, notifications []Notification) (map[string]bool, error) {
+	ids := make([]string, 0, len(notifications))
+	for _, n := range notifications {
+		ids = append(ids, n.ActivityID)
+	}
+	listed, err := s.activities.ListOf(ctx, ids)
+	stored := make(map[string]bool, len(listed))
+	for _, facts := range listed {
+		stored[facts.ID] = true
+	}
+	return stored, err
 }
 
 // MarkRead marks a's notification id as read, when a opens it (FR-034), and returns it. Someone else's
@@ -91,18 +102,14 @@ func (s *Service) MarkAllRead(ctx context.Context, a actor.Actor) (ReadAll, erro
 		if err != nil {
 			return err
 		}
-		now := s.now()
+		var unread []string
 		for _, n := range mine {
-			if n.Read {
-				continue
+			if !n.Read {
+				unread = append(unread, n.ID)
 			}
-			n.Read, n.ReadAt = true, &now
-			if err := s.repo.PutNotification(ctx, n); err != nil {
-				return err
-			}
-			marked++
 		}
-		return nil
+		marked = len(unread)
+		return s.repo.MarkNotificationsRead(ctx, unread, s.now())
 	})
 	if err != nil {
 		return ReadAll{}, err
