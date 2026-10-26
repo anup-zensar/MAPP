@@ -3,6 +3,8 @@ package access
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"mapp/internal/history"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/web"
@@ -19,181 +21,181 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// Routes registers the access routes on r, each wrapped in signedIn (sign-in, then the access middleware).
-func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/v1/access/permissions", signedIn(h.permissions))
-	r.Handle("GET /api/v1/access/people", signedIn(h.people))
-	r.Handle("GET /api/v1/access/changes", signedIn(h.changes))
-	r.Handle("GET /api/v1/roles", signedIn(h.listRoles))
-	r.Handle("POST /api/v1/roles", signedIn(h.createRole))
-	r.Handle("GET /api/v1/roles/{roleId}", signedIn(h.getRole))
-	r.Handle("PATCH /api/v1/roles/{roleId}", signedIn(h.updateRole))
-	r.Handle("DELETE /api/v1/roles/{roleId}", signedIn(h.deleteRole))
-	r.Handle("GET /api/v1/people/{personId}/roles", signedIn(h.personRoles))
-	r.Handle("PUT /api/v1/people/{personId}/roles", signedIn(h.setPersonRoles))
-	r.Handle("POST /api/v1/people/{personId}/roles/impact", signedIn(h.rolesImpact))
-	r.Handle("GET /api/v1/access-rules", signedIn(h.rules))
-	r.Handle("PATCH /api/v1/access-rules", signedIn(h.updateRules))
+// RegisterRoutes registers the access routes on r.
+func (h *Handler) RegisterRoutes(r gin.IRoutes) {
+	r.GET("/access/permissions", h.permissions)
+	r.GET("/access/people", h.people)
+	r.GET("/access/changes", h.changes)
+	r.GET("/roles", h.listRoles)
+	r.POST("/roles", h.createRole)
+	r.GET("/roles/:roleId", h.getRole)
+	r.PATCH("/roles/:roleId", h.updateRole)
+	r.DELETE("/roles/:roleId", h.deleteRole)
+	r.GET("/people/:personId/roles", h.personRoles)
+	r.PUT("/people/:personId/roles", h.setPersonRoles)
+	r.POST("/people/:personId/roles/impact", h.rolesImpact)
+	r.GET("/access-rules", h.rules)
+	r.PATCH("/access-rules", h.updateRules)
 }
 
 // permissions answers GET /api/v1/access/permissions: Table A, grouped.
-func (h *Handler) permissions(w http.ResponseWriter, r *http.Request) {
-	web.WriteJSON(w, http.StatusOK, h.service.Permissions())
+func (h *Handler) permissions(c *gin.Context) {
+	web.Respond(c, http.StatusOK, h.service.Permissions())
 }
 
 // people answers GET /api/v1/access/people: everyone with their roles (People tab).
-func (h *Handler) people(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	list, err := h.service.ListPeopleAccess(r.Context(), a)
+func (h *Handler) people(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	list, err := h.service.ListPeopleAccess(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, PeopleAccessPage{Items: list, Total: len(list)})
+	web.Respond(c, http.StatusOK, PeopleAccessPage{Items: list, Total: len(list)})
 }
 
 // changes answers GET /api/v1/access/changes: the latest 20 access changes, newest first.
-func (h *Handler) changes(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	entries, total, err := h.service.RecentChanges(r.Context(), a)
+func (h *Handler) changes(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	entries, total, err := h.service.RecentChanges(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, history.LogPage{Items: entries, Total: total})
+	web.Respond(c, http.StatusOK, history.LogPage{Items: entries, Total: total})
 }
 
 // listRoles answers GET /api/v1/roles: every role, Administrator first.
-func (h *Handler) listRoles(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	roles, err := h.service.ListRoles(r.Context(), a)
+func (h *Handler) listRoles(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	roles, err := h.service.ListRoles(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, RolePage{Items: roles, Total: len(roles)})
+	web.Respond(c, http.StatusOK, RolePage{Items: roles, Total: len(roles)})
 }
 
 // createRole answers POST /api/v1/roles with 201 and the new role.
-func (h *Handler) createRole(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createRole(c *gin.Context) {
 	var input RoleInput
-	if err := web.ReadJSON(w, r, &input); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &input); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	role, err := h.service.CreateRole(r.Context(), a, input)
+	a, _ := actor.From(c.Request.Context())
+	role, err := h.service.CreateRole(c.Request.Context(), a, input)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusCreated, role)
+	web.Respond(c, http.StatusCreated, role)
 }
 
 // getRole answers GET /api/v1/roles/{roleId}.
-func (h *Handler) getRole(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	role, err := h.service.GetRole(r.Context(), a, r.PathValue("roleId"))
+func (h *Handler) getRole(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	role, err := h.service.GetRole(c.Request.Context(), a, c.Param("roleId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, role)
+	web.Respond(c, http.StatusOK, role)
 }
 
 // updateRole answers PATCH /api/v1/roles/{roleId} with the role after the change.
-func (h *Handler) updateRole(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateRole(c *gin.Context) {
 	var update RoleUpdate
-	if err := web.ReadJSON(w, r, &update); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &update); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	role, err := h.service.UpdateRole(r.Context(), a, r.PathValue("roleId"), update)
+	a, _ := actor.From(c.Request.Context())
+	role, err := h.service.UpdateRole(c.Request.Context(), a, c.Param("roleId"), update)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, role)
+	web.Respond(c, http.StatusOK, role)
 }
 
 // deleteRole answers DELETE /api/v1/roles/{roleId} with the recycle-bin entry, so the web app can offer Undo.
-func (h *Handler) deleteRole(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	entry, err := h.service.DeleteRole(r.Context(), a, r.PathValue("roleId"))
+func (h *Handler) deleteRole(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	entry, err := h.service.DeleteRole(c.Request.Context(), a, c.Param("roleId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
+	web.Respond(c, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
 }
 
 // personRoles answers GET /api/v1/people/{personId}/roles.
-func (h *Handler) personRoles(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	roles, err := h.service.PersonRoles(r.Context(), a, r.PathValue("personId"))
+func (h *Handler) personRoles(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	roles, err := h.service.PersonRoles(c.Request.Context(), a, c.Param("personId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, roles)
+	web.Respond(c, http.StatusOK, roles)
 }
 
 // setPersonRoles answers PUT /api/v1/people/{personId}/roles with the person's roles after the change.
-func (h *Handler) setPersonRoles(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) setPersonRoles(c *gin.Context) {
 	var update PersonRolesUpdate
-	if err := web.ReadJSON(w, r, &update); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &update); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	roles, err := h.service.SetPersonRoles(r.Context(), a, r.PathValue("personId"), update)
+	a, _ := actor.From(c.Request.Context())
+	roles, err := h.service.SetPersonRoles(c.Request.Context(), a, c.Param("personId"), update)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, roles)
+	web.Respond(c, http.StatusOK, roles)
 }
 
 // rolesImpact answers POST /api/v1/people/{personId}/roles/impact with the warnings before saving.
-func (h *Handler) rolesImpact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) rolesImpact(c *gin.Context) {
 	var update PersonRolesUpdate
-	if err := web.ReadJSON(w, r, &update); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &update); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	impact, err := h.service.CheckRolesImpact(r.Context(), a, r.PathValue("personId"), update)
+	a, _ := actor.From(c.Request.Context())
+	impact, err := h.service.CheckRolesImpact(c.Request.Context(), a, c.Param("personId"), update)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, impact)
+	web.Respond(c, http.StatusOK, impact)
 }
 
 // rules answers GET /api/v1/access-rules.
-func (h *Handler) rules(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context())
-	rules, err := h.service.GetRules(r.Context(), a)
+func (h *Handler) rules(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context())
+	rules, err := h.service.GetRules(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, rules)
+	web.Respond(c, http.StatusOK, rules)
 }
 
 // updateRules answers PATCH /api/v1/access-rules with the rules after the change.
-func (h *Handler) updateRules(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) updateRules(c *gin.Context) {
 	var update RulesUpdate
-	if err := web.ReadJSON(w, r, &update); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &update); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context())
-	rules, err := h.service.UpdateRules(r.Context(), a, update)
+	a, _ := actor.From(c.Request.Context())
+	rules, err := h.service.UpdateRules(c.Request.Context(), a, update)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, rules)
+	web.Respond(c, http.StatusOK, rules)
 }

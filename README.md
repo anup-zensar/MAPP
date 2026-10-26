@@ -90,7 +90,7 @@ Use two terminals: one for the API, one for the web app.
 ```powershell
 cd backend
 go run ./cmd/seed          # once: loads the demo data (people, roles, plans, approvals, GSAP data) into backend/data
-go run ./cmd/api           # prints "MAPP API listening on http://127.0.0.1:8080 …"
+go run ./cmd/api           # logs {"msg":"MAPP API listening","url":"http://127.0.0.1:8080",…}
 ```
 
 The API reads its data only when it starts, so **stop the API (Ctrl+C) before you run the seed again**.

@@ -2,30 +2,41 @@ package access
 
 import (
 	"bytes"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/logging"
 	"mapp/internal/platform/web"
 )
 
-// serve sends one request for the operation pattern as the person a through Authorize to next, and returns
-// the answer.
-func serve(t *testing.T, f *fixture, pattern string, a actor.Actor, next http.HandlerFunc) *httptest.ResponseRecorder {
+// serve sends one request for the operation pattern as the person a, signed in as auth.RequireSignIn does,
+// through Authorize to next, and returns the answer.
+func (f *fixture) serve(t *testing.T, pattern string, a actor.Actor, next gin.HandlerFunc) *httptest.ResponseRecorder {
 	t.Helper()
 	method, path, _ := strings.Cut(pattern, " ")
-	r := httptest.NewRequest(method, "http://127.0.0.1"+path, nil)
-	r.Pattern = pattern
-	r = r.WithContext(actor.With(r.Context(), a))
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.New()
+	signIn := func(c *gin.Context) {
+		ctx := logging.WithAttrs(actor.With(c.Request.Context(), a), slog.String("actor_id", a.ID))
+		c.Request = c.Request.WithContext(ctx)
+	}
+	engine.Handle(method, ginPath.Replace(path), signIn, f.service.Authorize, next)
 	w := httptest.NewRecorder()
-	f.service.Authorize(next)(w, r)
+	engine.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), method, "http://127.0.0.1"+path, nil))
 	return w
 }
+
+// ginPath turns the contract's {name} parameters into Gin's :name.
+var ginPath = strings.NewReplacer("{", ":", "}", "")
 
 // reached is a handler that records that it ran and answers 204.
 type reached struct {
@@ -34,10 +45,10 @@ type reached struct {
 	found  bool
 }
 
-func (h *reached) serve(w http.ResponseWriter, r *http.Request) {
+func (h *reached) serve(c *gin.Context) {
 	h.ran = true
-	h.grants, h.found = authz.From(r.Context())
-	w.WriteHeader(http.StatusNoContent)
+	h.grants, h.found = authz.From(c.Request.Context())
+	c.Status(http.StatusNoContent)
 }
 
 // The middleware puts the person's Grants in the request's context for the services (FR-009).
@@ -45,7 +56,7 @@ func TestAuthorize_GrantsInContext_FR009(t *testing.T) {
 	f := newFixture(t)
 	var h reached
 
-	w := serve(t, f, "GET /api/v1/plans", priya, h.serve)
+	w := f.serve(t, "GET /api/v1/plans", priya, h.serve)
 
 	if w.Code != http.StatusNoContent || !h.ran || !h.found || h.grants.PersonID != priya.ID ||
 		!h.grants.InScope(authz.PlansEdit, planOf(lubricants.ID)) {
@@ -59,7 +70,7 @@ func TestAuthorize_NeedRefused403_FR010(t *testing.T) {
 	f := newFixture(t)
 	var h reached
 
-	w := serve(t, f, "POST /api/v1/models", daniel, h.serve)
+	w := f.serve(t, "POST /api/v1/models", daniel, h.serve)
 
 	if h.ran || w.Code != http.StatusForbidden {
 		t.Fatalf("answer %d, handler ran %v; want 403 before the handler", w.Code, h.ran)
@@ -71,7 +82,7 @@ func TestAuthorize_NeedRefused403_FR010(t *testing.T) {
 	}
 
 	var admin reached
-	if serve(t, f, "POST /api/v1/models", alex, admin.serve); !admin.ran {
+	if f.serve(t, "POST /api/v1/models", alex, admin.serve); !admin.ran {
 		t.Error("the administrator was refused")
 	}
 }
@@ -82,8 +93,8 @@ func TestAuthorize_InPlanPreCheck_FR009(t *testing.T) {
 	f := newFixture(t)
 	var viewer, planner reached
 
-	refused := serve(t, f, "PATCH /api/v1/activities/{activityId}", sara, viewer.serve)
-	serve(t, f, "PATCH /api/v1/activities/{activityId}", mei, planner.serve)
+	refused := f.serve(t, "PATCH /api/v1/activities/{activityId}", sara, viewer.serve)
+	f.serve(t, "PATCH /api/v1/activities/{activityId}", mei, planner.serve)
 
 	if viewer.ran || refused.Code != http.StatusForbidden ||
 		!strings.Contains(refused.Body.String(), "Changing activities and line items isn't part of your role (Viewer).") {
@@ -103,7 +114,7 @@ func TestAuthorize_ViewAndSignedInPass_FR009(t *testing.T) {
 	}
 	for _, pattern := range []string{"GET /api/v1/me", "GET /api/v1/plans/{planId}", "POST /api/v1/activities/{activityId}/approval/approve"} {
 		var h reached
-		if w := serve(t, f, pattern, sara, h.serve); !h.ran || w.Code != http.StatusNoContent {
+		if w := f.serve(t, pattern, sara, h.serve); !h.ran || w.Code != http.StatusNoContent {
 			t.Errorf("%s without a role = %d, handler ran %v", pattern, w.Code, h.ran)
 		}
 	}
@@ -114,7 +125,7 @@ func TestAuthorize_NoRuleRefused_FR010(t *testing.T) {
 	f := newFixture(t)
 	var h reached
 
-	w := serve(t, f, "GET /api/v1/not-declared", alex, h.serve)
+	w := f.serve(t, "GET /api/v1/not-declared", alex, h.serve)
 
 	if h.ran || w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), `"code":"forbidden"`) {
 		t.Errorf("an operation without a rule = %d %s (handler ran %v), want 403", w.Code, w.Body, h.ran)
@@ -128,22 +139,30 @@ func TestAuthorize_RefusalsInTheTechnicalLogOnly_FR039(t *testing.T) {
 	f := newFixture(t)
 	var out bytes.Buffer
 	previous := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(&out, nil)))
+	slog.SetDefault(logging.New(&out, slog.LevelInfo))
 	t.Cleanup(func() { slog.SetDefault(previous) })
 
-	serve(t, f, "DELETE /api/v1/models/{modelId}", sara, (&reached{}).serve)
-	serve(t, f, "DELETE /api/v1/plans/{planId}", priya, func(w http.ResponseWriter, r *http.Request) {
-		web.WriteError(w, r, errs.Forbidden("Deleting plans isn't part of your role.")) // refused by the service
+	f.serve(t, "DELETE /api/v1/models/{modelId}", sara, (&reached{}).serve)
+	f.serve(t, "DELETE /api/v1/plans/{planId}", priya, func(c *gin.Context) {
+		web.RespondError(c, errs.Forbidden("Deleting plans isn't part of your role.")) // refused by the service
 	})
 
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
 	if len(lines) != 2 {
 		t.Fatalf("technical log =\n%s\nwant two lines", out.String())
 	}
-	for i, want := range []string{`operation="DELETE /api/v1/models/{modelId}" person=U-1006 code=forbidden`,
-		`operation="DELETE /api/v1/plans/{planId}" person=U-1002 code=forbidden`} {
-		if !strings.Contains(lines[i], want) {
-			t.Errorf("log line %d = %s, want it to contain %s", i+1, lines[i], want)
+	for i, want := range []map[string]string{
+		{"operation": "DELETE /api/v1/models/{modelId}", "actor_id": "U-1006", "code": "forbidden"},
+		{"operation": "DELETE /api/v1/plans/{planId}", "actor_id": "U-1002", "code": "forbidden"},
+	} {
+		var record map[string]any
+		if err := json.Unmarshal([]byte(lines[i]), &record); err != nil {
+			t.Fatalf("log line %d is not JSON: %s", i+1, lines[i])
+		}
+		for key, value := range want {
+			if record[key] != value {
+				t.Errorf("log line %d: %s = %v, want %s", i+1, key, record[key], value)
+			}
 		}
 	}
 	for _, personal := range []string{"Sara", "Novak", "Priya", "Raman", "@"} {

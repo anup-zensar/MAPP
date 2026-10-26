@@ -3,7 +3,7 @@
 // Every API failure is answered as JSON {"error": {"code", "message", "fields"}}, plus "conflict", "parent",
 // "resolution" or "missing" inside "error" for the errors that need them. The message is written for users
 // (the texts come from the plan's "User-visible messages" table); the code is for the web app's logic.
-// Services return these errors, and web.WriteError turns them into HTTP answers.
+// Services return these errors, and web.RespondError turns them into HTTP answers.
 package errs
 
 import (

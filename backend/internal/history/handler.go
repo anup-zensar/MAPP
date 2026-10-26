@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/web"
@@ -27,25 +29,24 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
-// Routes registers the history routes on r. All of them need a signed-in person, so all are wrapped in
-// signedIn.
-func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/v1/activity-log", signedIn(h.listLog))
-	r.Handle("GET /api/v1/activity-log/summary", signedIn(h.logSummary))
-	r.Handle("GET /api/v1/recycle-bin", signedIn(h.listBin))
-	r.Handle("GET /api/v1/recycle-bin/{entryId}/restore-preview", signedIn(h.previewRestore))
-	r.Handle("DELETE /api/v1/recycle-bin/{entryId}", signedIn(h.purge))
-	r.Handle("POST /api/v1/recycle-bin/empty", signedIn(h.emptyBin))
-	r.Handle("POST /api/v1/recycle-bin/{entryId}/undo", signedIn(h.undo))
-	r.Handle("POST /api/v1/recycle-bin/{entryId}/restore", signedIn(h.restore))
+// RegisterRoutes registers the history routes on r.
+func (h *Handler) RegisterRoutes(r gin.IRoutes) {
+	r.GET("/activity-log", h.listLog)
+	r.GET("/activity-log/summary", h.logSummary)
+	r.GET("/recycle-bin", h.listBin)
+	r.GET("/recycle-bin/:entryId/restore-preview", h.previewRestore)
+	r.DELETE("/recycle-bin/:entryId", h.purge)
+	r.POST("/recycle-bin/empty", h.emptyBin)
+	r.POST("/recycle-bin/:entryId/undo", h.undo)
+	r.POST("/recycle-bin/:entryId/restore", h.restore)
 }
 
 // listLog answers GET /api/v1/activity-log: the newest entries that match the filters (FR-003, FR-009) —
 // actorId, recordType, action (repeated), planId, recordId with includeInside, from, to, q — older than
 // beforeSeq, at most limit of them (1 to 200, 50 when not sent). Every problem with the parameters is
 // answered at once.
-func (h *Handler) listLog(w http.ResponseWriter, r *http.Request) {
-	params := r.URL.Query()
+func (h *Handler) listLog(c *gin.Context) {
+	params := c.Request.URL.Query()
 	var problems errs.Problems
 	q := LogQuery{
 		ActorIDs:    values(params, "actorId"),
@@ -75,17 +76,17 @@ func (h *Handler) listLog(w http.ResponseWriter, r *http.Request) {
 		q.Limit = limit
 	}
 	if len(problems) > 0 {
-		web.WriteError(w, r, withQueryProblems(problems, q))
+		web.RespondError(c, withQueryProblems(problems, q))
 		return
 	}
 
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	page, err := h.service.QueryLog(r.Context(), a, q)
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	page, err := h.service.QueryLog(c.Request.Context(), a, q)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, page)
+	web.Respond(c, http.StatusOK, page)
 }
 
 // logParameters are the query parameters of GET /api/v1/activity-log in the contract's order, the order in
@@ -110,22 +111,22 @@ func withQueryProblems(problems errs.Problems, q LogQuery) error {
 
 // logSummary answers GET /api/v1/activity-log/summary: the summary cards and the filter choices of the
 // activity log (FR-002, FR-003), for the todayStart and weekStart the browser sends.
-func (h *Handler) logSummary(w http.ResponseWriter, r *http.Request) {
-	params := r.URL.Query()
+func (h *Handler) logSummary(c *gin.Context) {
+	params := c.Request.URL.Query()
 	var problems errs.Problems
 	todayStart := timeParam(params, "todayStart", true, &problems)
 	weekStart := timeParam(params, "weekStart", true, &problems)
 	if err := problems.Err(); err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	summary, err := h.service.LogSummary(r.Context(), a, *todayStart, *weekStart)
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	summary, err := h.service.LogSummary(c.Request.Context(), a, *todayStart, *weekStart)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, summary)
+	web.Respond(c, http.StatusOK, summary)
 }
 
 // values returns the values of the query parameter name that are not blank.
@@ -175,85 +176,85 @@ func timeParam(params url.Values, name string, required bool, problems *errs.Pro
 
 // listBin answers GET /api/v1/recycle-bin: everything in the recycle bin, newest first, with restore states
 // and the records each entry holds, without their data (011 FR-014 – FR-017).
-func (h *Handler) listBin(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	items, err := h.service.ListBinItems(r.Context(), a)
+func (h *Handler) listBin(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	items, err := h.service.ListBinItems(c.Request.Context(), a)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, BinPage{Items: items, Total: len(items)})
+	web.Respond(c, http.StatusOK, BinPage{Items: items, Total: len(items)})
 }
 
 // previewRestore answers GET /api/v1/recycle-bin/{entryId}/restore-preview: what a restore would do, without
 // doing it (011 FR-018 – FR-024).
-func (h *Handler) previewRestore(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	preview, err := h.service.PreviewRestore(r.Context(), a, r.PathValue("entryId"))
+func (h *Handler) previewRestore(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	preview, err := h.service.PreviewRestore(c.Request.Context(), a, c.Param("entryId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, preview)
+	web.Respond(c, http.StatusOK, preview)
 }
 
 // undo answers POST /api/v1/recycle-bin/{entryId}/undo: the Undo offered right after a delete (FR-026).
-func (h *Handler) undo(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	result, err := h.service.Undo(r.Context(), a, r.PathValue("entryId"))
+func (h *Handler) undo(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	result, err := h.service.Undo(c.Request.Context(), a, c.Param("entryId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, result)
+	web.Respond(c, http.StatusOK, result)
 }
 
 // restore answers POST /api/v1/recycle-bin/{entryId}/restore: a restore from the recycle bin (FR-025), with
 // withParents=true also of the entries holding its missing parents, parents first (011 FR-023).
-func (h *Handler) restore(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) restore(c *gin.Context) {
 	var problems errs.Problems
-	withParents := boolParam(r.URL.Query(), "withParents", &problems)
+	withParents := boolParam(c.Request.URL.Query(), "withParents", &problems)
 	if err := problems.Err(); err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
 	restore := h.service.Restore
 	if withParents {
 		restore = h.service.RestoreWithParents
 	}
-	result, err := restore(r.Context(), a, r.PathValue("entryId"))
+	result, err := restore(c.Request.Context(), a, c.Param("entryId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, result)
+	web.Respond(c, http.StatusOK, result)
 }
 
 // purge answers DELETE /api/v1/recycle-bin/{entryId}: Delete permanently (011 FR-028, FR-030).
-func (h *Handler) purge(w http.ResponseWriter, r *http.Request) {
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	result, err := h.service.Purge(r.Context(), a, r.PathValue("entryId"))
+func (h *Handler) purge(c *gin.Context) {
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	result, err := h.service.Purge(c.Request.Context(), a, c.Param("entryId"))
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, result)
+	web.Respond(c, http.StatusOK, result)
 }
 
 // emptyBin answers POST /api/v1/recycle-bin/empty: Empty recycle bin, for the entries the person saw in the
 // confirmation (011 FR-029, FR-030, D-180).
-func (h *Handler) emptyBin(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) emptyBin(c *gin.Context) {
 	var request EmptyRequest
-	if err := web.ReadJSON(w, r, &request); err != nil {
-		web.WriteError(w, r, err)
+	if err := web.BindJSON(c, &request); err != nil {
+		web.RespondError(c, err)
 		return
 	}
-	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
-	result, err := h.service.EmptyBin(r.Context(), a, request.EntryIDs)
+	a, _ := actor.From(c.Request.Context()) // put there by the sign-in middleware
+	result, err := h.service.EmptyBin(c.Request.Context(), a, request.EntryIDs)
 	if err != nil {
-		web.WriteError(w, r, err)
+		web.RespondError(c, err)
 		return
 	}
-	web.WriteJSON(w, http.StatusOK, result)
+	web.Respond(c, http.StatusOK, result)
 }

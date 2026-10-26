@@ -363,7 +363,7 @@ var pathParameter = regexp.MustCompile(`\{[^/]+\}`)
 
 // operation is one operation of the contract.
 type operation struct {
-	route        string // "METHOD /path", the form in which web.Router records its patterns
+	route        string // "METHOD /path", the form of App.Routes and of the route table
 	needsSession bool
 }
 
