@@ -2,12 +2,14 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
+	"mapp/internal/activities"
 	"mapp/internal/financials"
 	"mapp/internal/platform/actor"
 )
@@ -21,38 +23,12 @@ func TestFinancialPlanning_NodesKeepThePlanPagesOrder_028_FR001(t *testing.T) {
 	want, got := map[string]int{}, map[string]int{}
 	err := db.Read(t.Context(), func(ctx context.Context) error {
 		nodes, err := adapter.Nodes(ctx)
-		if err != nil {
-			return err
-		}
 		for _, n := range nodes {
 			if n.Level != financials.LevelLineItem && n.Level != financials.LevelPlan {
 				got[n.ID] = n.Order
 			}
 		}
-		all, err := adapter.plans.List(ctx)
-		if err != nil {
-			return err
-		}
-		for _, plan := range all {
-			tree, err := adapter.campaigns.ListPlanCampaigns(ctx, actor.System, plan.ID)
-			if err != nil {
-				return err
-			}
-			for ci, c := range tree.Items {
-				want[c.ID] = ci
-				for ii, i := range c.Initiatives {
-					want[i.ID] = ii
-				}
-			}
-			listed, err := activityService.ListForPlan(ctx, actor.System, plan.ID)
-			if err != nil {
-				return err
-			}
-			for order, a := range listed {
-				want[a.ID] = order
-			}
-		}
-		return nil
+		return errors.Join(err, pageOrders(ctx, adapter, activityService, want))
 	})
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -97,6 +73,35 @@ func TestFinancialPlanning_PlanOfAndPlanNodes_028_FR002(t *testing.T) {
 	if diff := cmp.Diff(described(inP1002), described(ofPlan)); diff != "" || len(ofPlan) == 0 {
 		t.Errorf("PlanNodes(P-1002) (-part of Nodes +got):\n%s", diff)
 	}
+}
+
+// pageOrders puts each campaign's, initiative's and activity's place among its siblings on the plan pages into
+// orders.
+func pageOrders(ctx context.Context, adapter financialPlanning, activityService *activities.Service, orders map[string]int) error {
+	all, err := adapter.plans.List(ctx)
+	if err != nil {
+		return err
+	}
+	for _, plan := range all {
+		tree, err := adapter.campaigns.ListPlanCampaigns(ctx, actor.System, plan.ID)
+		if err != nil {
+			return err
+		}
+		for ci, c := range tree.Items {
+			orders[c.ID] = ci
+			for ii, i := range c.Initiatives {
+				orders[i.ID] = ii
+			}
+		}
+		listed, err := activityService.ListForPlan(ctx, actor.System, plan.ID)
+		if err != nil {
+			return err
+		}
+		for order, a := range listed {
+			orders[a.ID] = order
+		}
+	}
+	return nil
 }
 
 // described lists the nodes as text, with each node's place among its siblings: Order only orders siblings.

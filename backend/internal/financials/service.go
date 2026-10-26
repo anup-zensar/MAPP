@@ -273,12 +273,12 @@ func (s *Service) transactionView(ctx context.Context, a actor.Actor, b *book, t
 // of their activities committed above planned cost and the number of not-linked transactions (for people
 // who may import). The year is the API clock's (D-091).
 func (s *Service) Overview(ctx context.Context, a actor.Actor, scopeText string) (Overview, error) {
-	homeScope, err := ParseScope(scopeText)
-	if err != nil {
-		return Overview{}, err
+	homeScope, parseErr := ParseScope(scopeText)
+	if parseErr != nil {
+		return Overview{}, parseErr
 	}
 	var overview Overview
-	err = s.tx.Read(ctx, func(ctx context.Context) error {
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		if err := s.access.SeeFinance(ctx, a); err != nil {
 			return err
 		}
@@ -286,8 +286,7 @@ func (s *Service) Overview(ctx context.Context, a actor.Actor, scopeText string)
 		if err != nil {
 			return err
 		}
-		year := s.today().Year()
-		planIDs, err := s.overviewPlans(ctx, a, homeScope, sc, year)
+		planIDs, year, err := s.overviewPlans(ctx, a, homeScope, sc)
 		if err != nil {
 			return err
 		}
@@ -305,18 +304,20 @@ func (s *Service) Overview(ctx context.Context, a actor.Actor, scopeText string)
 	return overview, nil
 }
 
-// overviewPlans returns the plans of year the overview adds up: those sc sees, with My teams a's teams' only.
-func (s *Service) overviewPlans(ctx context.Context, a actor.Actor, homeScope Scope, sc scope, year int) ([]string, error) {
+// overviewPlans returns the plans of the current year the overview adds up, those sc sees, with My teams
+// a's teams' only, and the year.
+func (s *Service) overviewPlans(ctx context.Context, a actor.Actor, homeScope Scope, sc scope) ([]string, int, error) {
+	year := s.today().Year()
 	var mine []string
 	if homeScope == ScopeMyTeams {
 		var err error
 		if mine, err = s.planning.MyTeamPlanIDs(ctx, a.ID); err != nil {
-			return nil, err
+			return nil, year, err
 		}
 	}
 	ofYear, err := s.planning.PlanIDsOfYear(ctx, year)
 	if err != nil {
-		return nil, err
+		return nil, year, err
 	}
 	planIDs := []string{}
 	for _, id := range ofYear {
@@ -324,7 +325,7 @@ func (s *Service) overviewPlans(ctx context.Context, a actor.Actor, homeScope Sc
 			planIDs = append(planIDs, id)
 		}
 	}
-	return planIDs, nil
+	return planIDs, year, nil
 }
 
 // overview adds up the plans as one record.

@@ -51,35 +51,41 @@ func (p financialPlanning) nodesOf(ctx context.Context, all []plans.Plan) ([]fin
 	if err != nil {
 		return nil, err
 	}
-	var nodes []financials.Node
-	planOf := map[string]plans.Plan{} // initiative id → its plan
-	var initiativeIDs []string
+	o := outline{plans: all, planOf: map[string]plans.Plan{}}
 	for _, plan := range all {
-		nodes = append(nodes, financials.Node{
+		o.nodes = append(o.nodes, financials.Node{
 			Level: financials.LevelPlan, ID: plan.ID, PlanID: plan.ID, Name: plan.Name, PlanYear: plan.Year,
 		})
 		for ci, c := range outlines[plan.ID] {
-			nodes = append(nodes, financials.Node{
+			o.nodes = append(o.nodes, financials.Node{
 				Level: financials.LevelCampaign, ID: c.Campaign.ID, ParentID: plan.ID, PlanID: plan.ID,
 				Name: c.Campaign.Name, PlanYear: plan.Year, Order: ci,
 			})
 			for ii, i := range c.Initiatives {
-				nodes = append(nodes, financials.Node{
+				o.nodes = append(o.nodes, financials.Node{
 					Level: financials.LevelInitiative, ID: i.ID, ParentID: c.Campaign.ID, PlanID: plan.ID, Name: i.Name,
 					PlanYear: plan.Year, Order: ii,
 				})
-				planOf[i.ID] = plan
-				initiativeIDs = append(initiativeIDs, i.ID)
+				o.planOf[i.ID] = plan
+				o.initiativeIDs = append(o.initiativeIDs, i.ID)
 			}
 		}
 	}
-	return p.addActivities(ctx, nodes, all, planOf, initiativeIDs)
+	return p.addActivities(ctx, o)
+}
+
+// outline is the plans with their campaign and initiative nodes, and the plan of each initiative.
+type outline struct {
+	nodes         []financials.Node
+	plans         []plans.Plan
+	planOf        map[string]plans.Plan // initiative id → its plan
+	initiativeIDs []string
 }
 
 // addActivities adds the activities of the initiatives, each plan's in the order of its list of activities.
-func (p financialPlanning) addActivities(ctx context.Context, nodes []financials.Node, all []plans.Plan,
-	planOf map[string]plans.Plan, initiativeIDs []string) ([]financials.Node, error) {
-	list, err := p.activities.ListByInitiatives(ctx, initiativeIDs)
+func (p financialPlanning) addActivities(ctx context.Context, o outline) ([]financials.Node, error) {
+	nodes := o.nodes
+	list, err := p.activities.ListByInitiatives(ctx, o.initiativeIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -89,12 +95,12 @@ func (p financialPlanning) addActivities(ctx context.Context, nodes []financials
 	}
 	ofPlan := map[string][]activities.Activity{}
 	for _, a := range list {
-		planID := planOf[a.InitiativeID].ID
+		planID := o.planOf[a.InitiativeID].ID
 		ofPlan[planID] = append(ofPlan[planID], a)
 	}
 	activityPlans := map[string]plans.Plan{}
 	var activityIDs []string
-	for _, plan := range all {
+	for _, plan := range o.plans {
 		inPlan := ofPlan[plan.ID]
 		activities.SortInPlanOrder(inPlan)
 		for order, a := range inPlan {
