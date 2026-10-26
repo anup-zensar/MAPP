@@ -229,31 +229,18 @@ func planUses(svc *plans.Service) people.PlanSource {
 	}
 }
 
+const ownerRole = "owner"
+
 // personUsages are the counts of what a person owns or approves below the plans (005, 006, 007, 008), over
 // the stored records: records in the recycle bin are not stored, so they are not counted (FR-004).
 func personUsages(campaignsRepo campaigns.Repository, activitiesRepo activities.Repository,
 	lineItemsRepo lineitems.Repository, approvalsRepo approvals.Repository) []people.PersonUsage {
 	return []people.PersonUsage{
-		{Role: "owner", RecordType: "campaign", Singular: "campaign", Plural: "campaigns",
-			Count: func(ctx context.Context, personID string) (int, error) {
-				list, err := campaignsRepo.ListCampaigns(ctx)
-				return countWhere(list, err, func(c campaigns.Campaign) bool { return ownedBy(c.OwnerID, personID) })
-			}},
-		{Role: "owner", RecordType: "initiative", Singular: "initiative", Plural: "initiatives",
-			Count: func(ctx context.Context, personID string) (int, error) {
-				list, err := campaignsRepo.ListInitiatives(ctx)
-				return countWhere(list, err, func(i campaigns.Initiative) bool { return ownedBy(i.OwnerID, personID) })
-			}},
-		{Role: "owner", RecordType: "activity", Singular: "activity", Plural: "activities",
-			Count: func(ctx context.Context, personID string) (int, error) {
-				list, err := activitiesRepo.List(ctx)
-				return countWhere(list, err, func(a activities.Activity) bool { return a.OwnerID == personID })
-			}},
-		{Role: "owner", RecordType: "lineItem", Singular: "line item", Plural: "line items",
-			Count: func(ctx context.Context, personID string) (int, error) {
-				list, err := lineItemsRepo.List(ctx)
-				return countWhere(list, err, func(li lineitems.LineItem) bool { return li.OwnerID == personID })
-			}},
+		{Role: ownerRole, RecordType: "campaign", Singular: "campaign", Plural: "campaigns", Count: campaignsRepo.CountCampaignsOwnedBy},
+		{Role: ownerRole, RecordType: "initiative", Singular: "initiative", Plural: "initiatives",
+			Count: campaignsRepo.CountInitiativesOwnedBy},
+		{Role: ownerRole, RecordType: "activity", Singular: "activity", Plural: "activities", Count: activitiesRepo.CountOwnedBy},
+		{Role: ownerRole, RecordType: "lineItem", Singular: "line item", Plural: "line items", Count: lineItemsRepo.CountOwnedBy},
 		{Role: "approver", RecordType: "approvalWorkflow", Singular: "approval workflow", Plural: "approval workflows",
 			Count: func(ctx context.Context, personID string) (int, error) {
 				list, err := approvalsRepo.ListWorkflows(ctx)
@@ -262,11 +249,6 @@ func personUsages(campaignsRepo campaigns.Repository, activitiesRepo activities.
 				})
 			}},
 	}
-}
-
-// ownedBy reports whether the optional owner is the person.
-func ownedBy(ownerID *string, personID string) bool {
-	return ownerID != nil && *ownerID == personID
 }
 
 // countWhere counts the records of list that keep says yes to; err is the error of reading the list.
