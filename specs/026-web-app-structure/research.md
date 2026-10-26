@@ -130,8 +130,7 @@ notifications, recycle-bin, dev, placeholders, sign-in). 20 feature folders beco
   component tests are the reference and stay unchanged.
 - **Decision**: Zod's classic API (`z.string().min(1, …)`) for readability. Measured: React Hook
   Form 11.7 KiB, Zod classic 23.5 KiB (`zod/mini` 5.5 KiB), resolver 1.8 KiB gzip. They load with the
-  first form screen; Zod also reaches the first page through the session's URL parsing (counted in
-  the budget, R10).
+  first form screen; Zod also reaches the first page through the session's URL parsing.
 
 ## R8 — URL state and stored preferences
 
@@ -154,7 +153,7 @@ notifications, recycle-bin, dev, placeholders, sign-in). 20 feature folders beco
 - **Alternatives**: typing `mockApi`'s string keys by hand from `paths` (complex template-literal
   types a beginner cannot read); untyped MSW handlers (F5 forbids).
 
-## R10 — Per-route splitting and the JavaScript budget
+## R10 — Per-route splitting
 
 - **Decision**: `React.lazy` per page, importing the feature's `index.ts`
   (`lazy(() => import('@/features/plans').then((m) => ({ default: m.PlansPage })))` through one
@@ -166,13 +165,16 @@ notifications, recycle-bin, dev, placeholders, sign-in). 20 feature folders beco
 - **Measured** (experiment: pages imported lazily, everything else unchanged): first-page JS
   185 KiB gzip (from 374 KiB); the largest page chunk 21 KiB. The shell keeps approvals and
   notifications (badge and bell) in the first page.
-- **Budget** (F8, gate 12): first page ≤ 220 KiB gzip, each feature chunk ≤ 80 KiB gzip — the
-  measured value plus room for Zod and the per-feature grouping. After the split the task lowers each
-  budget to the measured value plus 10%, rounded up to 10 KiB, and records it in plan.md. A small
-  Vite plugin (`frontend/bundle-budget.ts`) sums the entry chunk and its static imports, names chunks
-  after their feature, prints the sizes and fails the build over budget. Until the split (Phase 7)
-  it guards the single chunk at 420 KiB: today's 374 KiB plus the 37 KiB of the form libraries that
-  Phase 5 adds, rounded up.
+- **No JavaScript budget** (product owner, 2026-10-26): gate 12's budget stays deferred (ADR-0010)
+  and nothing in the build checks sizes. Chunks are named after their feature
+  (`build.rolldownOptions.output.chunkFileNames` in `vite.config.ts`), so the first-page end-to-end
+  check can tell them apart. After the split, T054 measures the first page (entry chunk and its
+  static imports) and each feature chunk once, gzip, and records them here:
+
+  | Measure | Today | After the split (T054) |
+  |---|---|---|
+  | First page | 374 KiB (one chunk) | to be recorded (experiment: 185 KiB) |
+  | Largest feature chunk | — | to be recorded (experiment: largest page 21 KiB) |
 - **Alternatives**: React Router's `lazy` route property (on the first load the router draws
   nothing until the page's code arrives — a blank screen where the shell appears today); splitting
   per page (finer than F1's per feature, which Principle V forbids without a measurement).
@@ -204,7 +206,7 @@ Not added: `eslint-import-resolver-typescript` (not needed, R5), `eslint-plugin-
   200 — `api/` (client, errors, generated types), every feature's API module and many tests, 7 in
   `lib/`, 6 in `test/`, 13 in `app/`, `e2e/` and `playwright.config.ts`. Neither touches
   `package.json`, `tsconfig*.json`, `eslint.config.js` or `vite.config.ts`.
-- **Decision**: only Phase 1 (dependencies, compiler options with 0 errors, the budget plugin) starts
+- **Decision**: only Phase 1 (dependencies, compiler options with 0 errors) starts
   before both merge. Every later task starts once both are in `plan-module`; its *after 020* /
   *after 022* marker names whose files it touches, for the reviewer of a conflict. Each phase merges
   into `plan-module` when it is done, to keep the window for conflicts short.

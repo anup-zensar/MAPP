@@ -30,7 +30,7 @@ with `git mv`; no hand-written file the task touches over 300 non-blank lines.
 
 - [ ] T001 Add `react-hook-form` 7.91.0, `zod` 4.6.7, `@hookform/resolvers` 5.9.2 (dependencies) and `msw` 3.0.3, `openapi-msw` 2.1.0, `fast-check` 4.10.2, `eslint-plugin-import-x` 4.17.1, `eslint-plugin-jsx-a11y` 6.10.2, `axe-core` 4.14.0 (dev) to `frontend/package.json` and `package-lock.json`, with `"overrides": { "eslint-plugin-jsx-a11y": { "eslint": "$eslint" } }`; `npm ci` and `npm audit --omit=dev --audit-level=high` clean (FR-015, R11)
 - [ ] T002 [P] `frontend/tsconfig.base.json` with every F5 option except `noUncheckedIndexedAccess`; `tsconfig.app.json`, `tsconfig.test.json` and `tsconfig.node.json` extend it (FR-008, R6)
-- [ ] T003 [P] `frontend/bundle-budget.ts`: a Vite plugin that sums the gzip size of the entry chunk and its static imports, prints a table and fails the build over budget (420 KiB for the single chunk until Phase 7: today's 374 KiB plus the form libraries); wired in `vite.config.ts`, included in `tsconfig.node.json` (FR-013, R10)
+- [X] T003 *Withdrawn on 2026-10-26:* the bundle-budget plugin (`frontend/bundle-budget.ts`) — the product owner decided no JavaScript budget is checked; ADR-0010 keeps gate 12's budget deferred
 
 ---
 
@@ -124,7 +124,7 @@ lines (SC-007).
 
 - [ ] T052 [US3] [after 022] Every route in `app/routes.tsx`, including today's `settingsRoutes` and `accessRoutes` (those features export pages instead); `app/router.tsx` keeps only `createBrowserRouter`; each file ≤ 300 lines (FR-012)
 - [ ] T053 [US3] [after 020] [after 022] `app/pages.ts`: a `lazyPage(load, name)` helper and one lazy declaration per page, importing the feature's `index.ts`; `<Suspense>` with the page skeleton in `RootLayout` and `AppLayout`; render helpers and page tests wait for the page with `findBy…` (FR-012, R10)
-- [ ] T054 [US3] `bundle-budget.ts`: chunks named after their feature; budgets 220 KiB (first page) and 80 KiB (each feature); then lower both to the measured size plus 10%, rounded up to 10 KiB, in `bundle-budget.ts` and the plan's budget table (FR-013, SC-004)
+- [ ] T054 [US3] Chunks named after their feature (`build.rolldownOptions.output.chunkFileNames` in `vite.config.ts`); measure the first page (entry chunk and its static imports) and each feature chunk once, gzip, and record them in research R10 — no budget, nothing enforced by the build (FR-013, SC-004)
 - [ ] T055 [US3] `frontend/e2e/first-page.spec.ts`: opening `/sign-in` downloads no other feature's chunk; `/plans` draws the shell before the page; a blocked plans chunk shows the page error with a reload (US3 scenarios 2–3)
 
 ---
@@ -132,7 +132,7 @@ lines (SC-007).
 ## Phase 8: Documentation and close
 
 - [ ] T056 [P] `frontend/README.md` (folders, form and test patterns), `docs/architecture/repository-layout.md` (frontend tree, merged features), `CLAUDE.md` (the web app is aligned) (FR-016)
-- [ ] T057 [P] ADR-0010: gate 12 enforced with the recorded budget; `docs/sdd/feature-map.md` 026 row (FR-016)
+- [ ] T057 [P] `docs/sdd/feature-map.md` 026 row (FR-016)
 - [ ] T058 Final check: `npm run check`, `npm run build`, `npm run test:coverage`, `npm run test:e2e`; SC-001–SC-008 measured as in research R1
 
 ---
@@ -164,7 +164,7 @@ lines (SC-007).
 | FR-010 | T021 |
 | FR-011 | T020, T044–T051 |
 | FR-012 | T052, T053 |
-| FR-013 | T003, T054 |
+| FR-013 | T053, T054, T055 |
 | FR-014 | T018, T028–T043, T052 |
 | FR-015 | T001 |
 | FR-016 | T056, T057 |

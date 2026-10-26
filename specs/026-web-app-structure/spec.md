@@ -9,12 +9,12 @@
 **Input**: Feature map 026: "Web-app structure: constitution F2 folders, React Hook Form + Zod, MSW,
 per-route splitting." Align `frontend/` with constitution 3.1.0 — F1 (stack), F2 (folders and
 import boundaries), F5 (compiler options, no `any`, `!` or `as T`), F8 (route splitting and the
-JavaScript budget), F9 (file names), F10 (MSW, `fast-check`) and Principle V (files of at most 300
+first page's code), F9 (file names), F10 (MSW, `fast-check`) and Principle V (files of at most 300
 lines) — without changing what anyone sees or can do.
 
 **References**: Constitution 3.1.0 — F1–F10, Principles V, VI, VIII, Governance → Alignment ·
-[research.md](research.md) (measurements and decisions R1–R12) · ADR-0010 (gate 12 deferred until
-the web app is split per route)
+[research.md](research.md) (measurements and decisions R1–R12) · ADR-0010 (gate 12's JavaScript
+budget deferred; on 2026-10-26 the product owner decided no budget is checked)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -92,21 +92,22 @@ URL and storage parser.
 ### User Story 3 - The first page loads only its own code (Priority: P3)
 
 As a person opening MAPP, I download the application shell and the code of the page I opened, not
-the code of every screen. As a developer, I see the build fail when the first page's JavaScript
-grows past the budget recorded in the repository.
+the code of every screen. As a developer, I find each feature's screens in a chunk named after the
+feature.
 
-**Why this priority**: the constitution requires it (F8, quality gate 12, deferred by ADR-0010
-until the split exists), but nothing is broken today; it comes last because it moves every page
-import.
+**Why this priority**: the constitution requires routes split per feature (F1, F8), but nothing is
+broken today; it comes last because it moves every page import. No JavaScript budget is checked:
+the product owner decided on 2026-10-26 that it is not needed (gate 12's budget stays deferred,
+ADR-0010); the first-page size is measured once and recorded in research.
 
-**Independent Test**: build the app and compare the first-page JavaScript with the budget; open
-the sign-in page in the browser and check that no other feature's code is downloaded.
+**Independent Test**: build the app and check that each feature has its own chunk; open the
+sign-in page in the browser and check that no other feature's code is downloaded.
 
 **Acceptance Scenarios**:
 
-1. **Given** the production build, **When** it finishes, **Then** it reports the size of the
-   first-page JavaScript and of each feature's code, and fails if either exceeds the budget in
-   [plan.md](plan.md).
+1. **Given** the production build, **When** it finishes, **Then** each feature's screens are in
+   their own chunk, named after the feature, and the first page's chunks hold only the shell; the
+   sizes after the split are recorded once in [research.md](research.md) R10.
 2. **Given** a visitor who opens `/sign-in`, **When** the page has loaded, **Then** the browser
    has downloaded the shell and the sign-in code, and no code of another feature.
 3. **Given** a signed-in person who opens MAPP at `/plans`, **When** the plans code is still
@@ -148,7 +149,7 @@ types, and check that `npm run typecheck` names the handlers and screens that us
 - Two features that genuinely need each other (people and roles; plans and campaigns) become one
   feature with sub-folders, rather than a hidden cycle (R3).
 - A shell element needs a feature (the Approvals badge, the notification bell): that feature's
-  code is part of the first page and counted in its budget.
+  code is part of the first page.
 - A chunk fails to download (a new release replaced it): the route's error page offers a reload;
   it never shows a blank page.
 - A test that drew a page synchronously now waits for its code: tests wait for what the user would
@@ -190,16 +191,18 @@ types, and check that `npm run typecheck` names the handlers and screens that us
   module. Test-only code (`testing/`, `msw`) MUST NOT be imported by application code.
 - **FR-012**: All routes MUST be declared in one module of `app/`, and each feature's screens MUST
   load as their own chunk when first needed.
-- **FR-013**: The production build MUST fail when the first-page JavaScript, or any feature chunk,
-  exceeds the budget recorded in the repository.
+- **FR-013**: The first page MUST load only the shell and the code of the route it opens. Its size
+  is measured once after the split and recorded in [research.md](research.md); the build does not
+  enforce a size. *The JavaScript budget (the build failing over a recorded size) was withdrawn on
+  2026-10-26: the product owner decided no budget is checked, and ADR-0010 keeps gate 12's budget
+  deferred.*
 - **FR-014**: Every hand-written source file MUST have at most 300 non-blank lines (Principle V),
   and file names MUST follow F9 (components in PascalCase, hooks `useX.ts`, other modules in
   kebab-case).
 - **FR-015**: Each added dependency MUST be justified in [research.md](research.md) (purpose,
   maintenance, licence, size, install scripts) and published at least 24 hours before it is added.
 - **FR-016**: The developer documentation (`frontend/README.md`,
-  `docs/architecture/repository-layout.md`, `CLAUDE.md`, ADR-0010) MUST describe the new layout,
-  rules and budget.
+  `docs/architecture/repository-layout.md`, `CLAUDE.md`) MUST describe the new layout and rules.
 - **FR-017**: The work MUST land in increments that each leave `npm run check`, `npm run build` and
   `npm run test:e2e` green.
 
@@ -208,8 +211,8 @@ types, and check that `npm run typecheck` names the handlers and screens that us
 - **Feature**: a folder under `features/` for one business area, with its public `index.ts`,
   `api.ts` (query hooks) and `schemas.ts` (Zod schemas).
 - **Layer**: a top-level folder of `src/` and the folders it may import.
-- **JavaScript budget**: the largest allowed gzip size of the first-page JavaScript and of each
-  feature chunk.
+- **Feature chunk**: the JavaScript of one feature's screens, loaded when one of them is first
+  opened.
 
 ## Success Criteria *(mandatory)*
 
@@ -223,8 +226,10 @@ types, and check that `npm run typecheck` names the handlers and screens that us
   assertions, 13 non-null assertions).
 - **SC-003**: `npm run typecheck` passes with all F5 options (today 247 errors with
   `noUncheckedIndexedAccess`).
-- **SC-004**: The first-page JavaScript is at most 220 KiB gzip (today 374 KiB, all in one chunk),
-  and the build enforces it.
+- **SC-004**: The first page loads only the shell and its own route's code (today it loads every
+  screen: one chunk, 374 KiB gzip); the size after the split is measured once and recorded in
+  research R10 (an experiment gave 185 KiB). *The enforced limit of 220 KiB was withdrawn on
+  2026-10-26 with the JavaScript budget (FR-013).*
 - **SC-005**: 38 of 38 forms with input fields use React Hook Form with Zod (39 files draw a form;
   `PublishBlockedDialog` only shows a message); 0 form values held in `useState`.
 - **SC-006**: 0 `vi.mock` calls on project modules (today 18 in 10 files) and 0 untyped network
