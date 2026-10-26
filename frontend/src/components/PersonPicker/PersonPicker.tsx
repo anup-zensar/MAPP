@@ -6,7 +6,7 @@ import { PersonLabel } from '../PersonLabel/PersonLabel';
 
 type Person = components['schemas']['Person'];
 
-/** What the picker needs of a person (GET /api/people answers these and more). */
+/** What the picker needs of a person (GET /api/v1/people answers these and more). */
 export type PickerPerson = Pick<
   Person,
   'id' | 'name' | 'email' | 'jobTitle' | 'initials' | 'active' | 'teams'

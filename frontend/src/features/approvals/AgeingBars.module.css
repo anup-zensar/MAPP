@@ -37,7 +37,7 @@
   height: 12px;
   min-width: 4px;
   border-radius: 0 4px 4px 0;
-  background: var(--blue);
+  background: var(--info);
 }
 
 .count {

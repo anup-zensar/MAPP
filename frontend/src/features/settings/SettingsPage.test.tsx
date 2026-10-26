@@ -45,7 +45,7 @@ function card(title: string): HTMLElement {
 
 describe('SettingsPage (FR-001)', () => {
   it('shows the page title, its promise and one card per section with its active count', async () => {
-    mockApi({ 'GET /api/settings/overview': { body: OVERVIEW } });
+    mockApi({ 'GET /api/v1/settings/overview': { body: OVERVIEW } });
     renderSettings();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('SettingsPage (FR-001)', () => {
   });
 
   it('opens each section from its card: the link is named by the section', async () => {
-    mockApi({ 'GET /api/settings/overview': { body: OVERVIEW } });
+    mockApi({ 'GET /api/v1/settings/overview': { body: OVERVIEW } });
     const { user, router } = renderSettings();
 
     expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute(
@@ -82,7 +82,7 @@ describe('SettingsPage (FR-001)', () => {
   });
 
   it('shows a section without a page as Coming soon, not as a link', async () => {
-    mockApi({ 'GET /api/settings/overview': { body: OVERVIEW } });
+    mockApi({ 'GET /api/v1/settings/overview': { body: OVERVIEW } });
     renderSettings();
 
     const later = card('Later section');
@@ -94,10 +94,13 @@ describe('SettingsPage (FR-001)', () => {
   it('keeps the cards usable when the counts cannot be loaded, and tries again', async () => {
     let calls = 0;
     mockApi({
-      'GET /api/settings/overview': () => {
+      'GET /api/v1/settings/overview': () => {
         calls += 1;
         return calls === 1
-          ? { status: 500, body: { code: 'internal_error', message: 'Boom', fields: [] } }
+          ? {
+              status: 500,
+              body: { error: { code: 'internal_error', message: 'Boom', fields: [] } },
+            }
           : { body: OVERVIEW };
       },
     });

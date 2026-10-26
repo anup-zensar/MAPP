@@ -21,19 +21,30 @@ const (
 	sarasEmail   = "sara.novak@shell.com"
 )
 
-// errorAnswer is an error answer of the API.
+// errorAnswer is an error answer of the API, inside its envelope.
 type errorAnswer struct {
-	Code, Message string
-	Fields        []struct{ Field, Message string }
+	Error struct {
+		Code, Message string
+		Fields        []struct{ Field, Message string }
+	}
 }
 
 // refused checks that the answer is 403 forbidden with message.
 func refused(t *testing.T, what string, r *apitest.Response, message string) {
 	t.Helper()
-	var e errorAnswer
-	r.Decode(t, &e)
-	if r.Status != http.StatusForbidden || e.Code != "forbidden" || e.Message != message {
+	var answer errorAnswer
+	r.Decode(t, &answer)
+	if e := answer.Error; r.Status != http.StatusForbidden || e.Code != "forbidden" || e.Message != message {
 		t.Errorf("%s = %d %s\nwant 403 forbidden %q", what, r.Status, r.Body, message)
+	}
+}
+
+// hidden checks that the answer is 404 not_found with the not-found message of record, as for a missing one.
+func hidden(t *testing.T, what string, r *apitest.Response, record string) {
+	t.Helper()
+	want := `{"error":{"code":"not_found","message":"This ` + record + ` no longer exists — someone may have deleted it.","fields":[]}}`
+	if r.Status != http.StatusNotFound || string(r.Body) != want {
+		t.Errorf("%s = %d %s\nwant 404 %s", what, r.Status, r.Body, want)
 	}
 }
 
@@ -64,7 +75,7 @@ func TestPlansList_FilteredByScope_FR006_FR007(t *testing.T) {
 		{carlosEmail, []string{"P-1003", "P-1004", "P-1001", "P-1002"}},
 		{alexsEmail, []string{"P-1003", "P-1004", "P-1001", "P-1002"}},
 	} {
-		response := server.SignIn(t, c.email).Do(t, http.MethodGet, "/api/plans", nil)
+		response := server.SignIn(t, c.email).Do(t, http.MethodGet, "/api/v1/plans", nil)
 		var list struct {
 			Items []struct{ ID string }
 			Total int
@@ -85,20 +96,19 @@ func TestPlansList_FilteredByScope_FR006_FR007(t *testing.T) {
 func TestPlan_OwnerSeesIt_FR006(t *testing.T) {
 	server := apitest.New(t)
 	alex, mei, priya := server.SignIn(t, alexsEmail), server.SignIn(t, meisEmail), server.SignIn(t, priyasEmail)
-	saved := alex.Do(t, http.MethodPut, "/api/people/U-1004/roles", map[string]any{"version": 1, "roles": []map[string]any{
+	saved := alex.Do(t, http.MethodPut, "/api/v1/people/U-1004/roles", map[string]any{"version": 1, "roles": []map[string]any{
 		{"roleId": "RL-1003", "scope": map[string]any{"type": "teams", "teamIds": []string{"T-1003"}}}}})
 	if saved.Status != http.StatusOK {
 		t.Fatalf("changing Mei's roles = %d %s", saved.Status, saved.Body)
 	}
 
-	if opened := mei.Do(t, http.MethodGet, "/api/plans/P-1002", nil); opened.Status != http.StatusOK {
+	if opened := mei.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil); opened.Status != http.StatusOK {
 		t.Errorf("Mei, the owner, opening her plan = %d %s, want 200", opened.Status, opened.Body)
 	}
-	if got := itemIDs(t, mei.Do(t, http.MethodGet, "/api/plans", nil)); !slices.Equal(got, []string{"P-1003", "P-1002"}) {
+	if got := itemIDs(t, mei.Do(t, http.MethodGet, "/api/v1/plans", nil)); !slices.Equal(got, []string{"P-1003", "P-1002"}) {
 		t.Errorf("Mei's plans = %q, want Global Marketing Ops's and her own", got)
 	}
-	refused(t, "Priya opening it", priya.Do(t, http.MethodGet, "/api/plans/P-1002", nil),
-		"You don't have access to this plan. Ask an administrator if you need it.")
+	hidden(t, "Priya opening it", priya.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil), "plan")
 }
 
 // planForm is the whole form of a new 2026 plan called name for the teams teamIDs, as the web app sends it.
@@ -110,29 +120,31 @@ func planForm(name string, teamIDs ...string) map[string]any {
 	}
 }
 
-// A record outside a person's access answers 403 with a message that names nothing of it, whatever its
-// level; a record that does not exist still answers 404 (FR-008, D-227).
-func TestRecordOutsideAccess_403NamesNothing_FR008(t *testing.T) {
+// A record outside a person's access answers exactly as a record that does not exist — the same 404
+// not_found and message, naming nothing of it — whatever its level and the operation (022 FR-005, SC-003).
+func TestRecordOutsideAccess_AnswersLikeAMissingOne_022_FR005(t *testing.T) {
 	server := apitest.New(t)
 	mei := server.SignIn(t, meisEmail)
-	for _, c := range []struct{ path, record string }{
-		{"/api/plans/P-1001", "plan"},
-		{"/api/plans/P-1001/campaigns", "plan"},
-		{"/api/campaigns/C-1001", "campaign"},
-		{"/api/initiatives/I-1001", "initiative"},
-		{"/api/activities/A-1001", "activity"},
-		{"/api/activities/A-1001/approval", "activity"},
-		{"/api/activities/A-1001/line-items", "activity"},
-		{"/api/line-items/L-1001", "line item"},
-		{"/api/all-work/records/A-1001", "activity"},
+	for _, c := range []struct{ method, outside, missing string }{
+		{http.MethodGet, "/api/v1/plans/P-1001", "/api/v1/plans/P-9999"},
+		{http.MethodGet, "/api/v1/plans/P-1001/campaigns", "/api/v1/plans/P-9999/campaigns"},
+		{http.MethodGet, "/api/v1/campaigns/C-1001", "/api/v1/campaigns/C-9999"},
+		{http.MethodGet, "/api/v1/initiatives/I-1001", "/api/v1/initiatives/I-9999"},
+		{http.MethodGet, "/api/v1/activities/A-1001", "/api/v1/activities/A-9999"},
+		{http.MethodGet, "/api/v1/activities/A-1001/approval", "/api/v1/activities/A-9999/approval"},
+		{http.MethodGet, "/api/v1/line-items/L-1001", "/api/v1/line-items/L-9999"},
+		{http.MethodGet, "/api/v1/all-work/records/A-1001", "/api/v1/all-work/records/A-9999"},
+		{http.MethodDelete, "/api/v1/activities/A-1001", "/api/v1/activities/A-9999"},
+		{http.MethodDelete, "/api/v1/line-items/L-1001", "/api/v1/line-items/L-9999"},
 	} {
-		refused(t, "Mei: GET "+c.path, mei.Do(t, http.MethodGet, c.path, nil),
-			"You don't have access to this "+c.record+". Ask an administrator if you need it.")
+		outside, missing := mei.Do(t, c.method, c.outside, nil), mei.Do(t, c.method, c.missing, nil)
+		if outside.Status != http.StatusNotFound || missing.Status != outside.Status || string(missing.Body) != string(outside.Body) {
+			t.Errorf("Mei: %s %s = %d %s\nwant as %s: %d %s", c.method, c.outside, outside.Status, outside.Body,
+				c.missing, missing.Status, missing.Body)
+		}
 	}
-	if missing := mei.Do(t, http.MethodGet, "/api/plans/P-9999", nil); missing.Status != http.StatusNotFound {
-		t.Errorf("an unknown plan = %d %s, want 404", missing.Status, missing.Body)
-	}
-	if own := mei.Do(t, http.MethodGet, "/api/activities/A-1008", nil); own.Status != http.StatusOK {
+	hidden(t, "Mei: GET the line items of A-1001", mei.Do(t, http.MethodGet, "/api/v1/activities/A-1001/line-items", nil), "activity")
+	if own := mei.Do(t, http.MethodGet, "/api/v1/activities/A-1008", nil); own.Status != http.StatusOK {
 		t.Errorf("Mei opening her own market's activity = %d %s, want 200", own.Status, own.Body)
 	}
 }
@@ -144,27 +156,27 @@ func TestChanges_NeedThePermissionInThePlan_FR009_FR010(t *testing.T) {
 	sara, priya := server.SignIn(t, sarasEmail), server.SignIn(t, priyasEmail)
 	rename := map[string]any{"name": "Renamed", "version": 1}
 
-	refused(t, "Sara renaming a campaign", sara.Do(t, http.MethodPatch, "/api/campaigns/C-1001", rename, apitest.SkipRequestValidation()),
+	refused(t, "Sara renaming a campaign", sara.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", rename, apitest.SkipRequestValidation()),
 		"Changing campaigns and initiatives isn't part of your role (Viewer). Ask an administrator if you need it.")
-	refused(t, "Sara deleting an activity", sara.Do(t, http.MethodDelete, "/api/activities/A-1001", nil),
+	refused(t, "Sara deleting an activity", sara.Do(t, http.MethodDelete, "/api/v1/activities/A-1001", nil),
 		"Deleting activities and line items isn't part of your role (Viewer). Ask an administrator if you need it.")
-	refused(t, "Priya deleting a plan", priya.Do(t, http.MethodDelete, "/api/plans/P-1001", nil),
+	refused(t, "Priya deleting a plan", priya.Do(t, http.MethodDelete, "/api/v1/plans/P-1001", nil),
 		"Deleting plans isn't part of your role (Planner). Ask an administrator if you need it.")
-	refused(t, "Priya adding a campaign to the Mobility plan",
-		priya.Do(t, http.MethodPost, "/api/plans/P-1002/campaigns", map[string]any{"name": "Spring"}, apitest.SkipRequestValidation()),
-		"You don't have access to this plan. Ask an administrator if you need it.")
+	hidden(t, "Priya adding a campaign to the Mobility plan",
+		priya.Do(t, http.MethodPost, "/api/v1/plans/P-1002/campaigns", map[string]any{"name": "Spring"}, apitest.SkipRequestValidation()),
+		"plan")
 
 	// Given the Planner role for Mobility China too, Priya sees the Mobility plan, and still may not delete there.
 	server.GrantRole(t, priyasEmail, "viewer", "teams", "Mobility China")
 	refused(t, "Priya, a Viewer of Mobility China, changing its campaign",
-		priya.Do(t, http.MethodPatch, "/api/campaigns/C-1003", rename, apitest.SkipRequestValidation()),
+		priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1003", rename, apitest.SkipRequestValidation()),
 		"Changing campaigns and initiatives is allowed for you only in plans of Lubricants Europe. Ask an administrator if you need it here.")
 
 	var campaign struct {
 		Name    string
 		Version int
 	}
-	sara.Do(t, http.MethodGet, "/api/campaigns/C-1001", nil).Decode(t, &campaign)
+	sara.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001", nil).Decode(t, &campaign)
 	if campaign.Name != "Helix launch" || campaign.Version != 1 {
 		t.Errorf("after the refusals the campaign is %q version %d, want unchanged", campaign.Name, campaign.Version)
 	}
@@ -176,21 +188,21 @@ func TestPlanTeams_OwnTeamsOnly_FR013(t *testing.T) {
 	server := apitest.New(t)
 	priya, carlos := server.SignIn(t, priyasEmail), server.SignIn(t, carlosEmail)
 
-	other := priya.Do(t, http.MethodPost, "/api/plans", planForm("FY2026 Mobility extra", "T-1002"))
-	mine := priya.Do(t, http.MethodPost, "/api/plans", planForm("FY2026 Lubricants extra", "T-1001"))
-	carlosPlan := carlos.Do(t, http.MethodPost, "/api/plans", planForm("FY2026 Global extra", "T-1001", "T-1002"))
+	other := priya.Do(t, http.MethodPost, "/api/v1/plans", planForm("FY2026 Mobility extra", "T-1002"))
+	mine := priya.Do(t, http.MethodPost, "/api/v1/plans", planForm("FY2026 Lubricants extra", "T-1001"))
+	carlosPlan := carlos.Do(t, http.MethodPost, "/api/v1/plans", planForm("FY2026 Global extra", "T-1001", "T-1002"))
 	var shared struct{ ID string }
 	carlosPlan.Decode(t, &shared)
 	edit := planForm("FY2026 Global extra", "T-1002") // Priya takes Lubricants Europe off Carlos's plan
 	delete(edit, "year")
 	edit["version"] = 1
-	dropped := priya.Do(t, http.MethodPatch, "/api/plans/"+shared.ID, edit)
+	dropped := priya.Do(t, http.MethodPatch, "/api/v1/plans/"+shared.ID, edit)
 
 	assertProblem := func(what string, r *apitest.Response, message string) {
 		t.Helper()
 		var e errorAnswer
 		r.Decode(t, &e)
-		if r.Status != http.StatusBadRequest || !slices.ContainsFunc(e.Fields, func(f struct{ Field, Message string }) bool {
+		if r.Status != http.StatusBadRequest || !slices.ContainsFunc(e.Error.Fields, func(f struct{ Field, Message string }) bool {
 			return f.Field == "teamIds" && f.Message == message
 		}) {
 			t.Errorf("%s = %d %s\nwant teamIds: %s", what, r.Status, r.Body, message)
@@ -212,9 +224,9 @@ func TestCampaignMoves_DestinationInScope_FR014(t *testing.T) {
 	server.GrantRole(t, priyasEmail, "viewer", "teams", "Mobility China") // she sees the Mobility plan, may not change it
 
 	var destinations struct{ Items []struct{ ID string } }
-	priya.Do(t, http.MethodGet, "/api/campaigns/C-1001/destinations?purpose=copy", nil).Decode(t, &destinations)
-	moved := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
-	copied := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/copy", map[string]any{"planId": "P-1002", "name": "Helix copy"})
+	priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001/destinations?purpose=copy", nil).Decode(t, &destinations)
+	moved := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
+	copied := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/copy", map[string]any{"planId": "P-1002", "name": "Helix copy"})
 
 	if len(destinations.Items) != 1 || destinations.Items[0].ID != "P-1001" {
 		t.Errorf("copy destinations = %+v, want her own plan only", destinations.Items)
@@ -230,7 +242,7 @@ func TestListsAndTotals_OnlyWhatThePersonSees_SC004(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	if got := itemIDs(t, priya.Do(t, http.MethodGet, "/api/home/plans?scope=everything", nil)); !slices.Equal(got, []string{"P-1004", "P-1001"}) {
+	if got := itemIDs(t, priya.Do(t, http.MethodGet, "/api/v1/home/plans?scope=everything", nil)); !slices.Equal(got, []string{"P-1004", "P-1001"}) {
 		t.Errorf("Home plans (everything) = %q, want the Lubricants Europe team's plans only", got)
 	}
 	var grid struct {
@@ -239,7 +251,7 @@ func TestListsAndTotals_OnlyWhatThePersonSees_SC004(t *testing.T) {
 		}
 		Summary struct{ Activities int }
 	}
-	priya.Do(t, http.MethodGet, "/api/all-work?year=2026", nil).Decode(t, &grid)
+	priya.Do(t, http.MethodGet, "/api/v1/all-work?year=2026", nil).Decode(t, &grid)
 	for _, row := range grid.Rows {
 		if row.PlanID != "P-1001" {
 			t.Errorf("All work shows a row of %s", row.PlanID)
@@ -248,7 +260,7 @@ func TestListsAndTotals_OnlyWhatThePersonSees_SC004(t *testing.T) {
 	if grid.Summary.Activities != 7 {
 		t.Errorf("All work counts %d activities, want the 7 of the Lubricants plan", grid.Summary.Activities)
 	}
-	export := priya.Do(t, http.MethodGet, "/api/all-work/export?year=2026&format=csv", nil, apitest.SkipValidation())
+	export := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?year=2026&format=csv", nil, apitest.SkipValidation())
 	if export.Status != http.StatusOK || strings.Contains(string(export.Body), "Mobility") {
 		t.Errorf("the export = %d, mentions Mobility: %v", export.Status, strings.Contains(string(export.Body), "Mobility"))
 	}
@@ -256,7 +268,7 @@ func TestListsAndTotals_OnlyWhatThePersonSees_SC004(t *testing.T) {
 	var open struct {
 		Items []struct{ Activity struct{ ID string } }
 	}
-	priya.Do(t, http.MethodGet, "/api/approvals?tab=open", nil).Decode(t, &open)
+	priya.Do(t, http.MethodGet, "/api/v1/approvals?tab=open", nil).Decode(t, &open)
 	var openIDs []string
 	for _, row := range open.Items {
 		openIDs = append(openIDs, row.Activity.ID)
@@ -265,7 +277,7 @@ func TestListsAndTotals_OnlyWhatThePersonSees_SC004(t *testing.T) {
 		t.Errorf("All open = %q, want the Lubricants activity A-1004 only (not Mobility's A-1009)", openIDs)
 	}
 	var counts struct{ AllOpen int }
-	priya.Do(t, http.MethodGet, "/api/approvals/summary", nil).Decode(t, &counts)
+	priya.Do(t, http.MethodGet, "/api/v1/approvals/summary", nil).Decode(t, &counts)
 	if counts.AllOpen != 1 {
 		t.Errorf("All open count = %d, want 1", counts.AllOpen)
 	}
@@ -278,36 +290,38 @@ func TestLogAndRecycleBin_Filtered_FR007_FR038(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory()) // only the entries of this test
 	alex, priya, mei := server.SignIn(t, alexsEmail), server.SignIn(t, priyasEmail), server.SignIn(t, meisEmail)
 	var deleted struct{ RecycleBinEntry struct{ ID string } }
-	mei.Do(t, http.MethodDelete, "/api/initiatives/I-1006", nil).Decode(t, &deleted)
-	alex.Do(t, http.MethodPatch, "/api/models/MOD-1002", map[string]any{"name": "Mobility 1.1", "version": 1}, apitest.SkipRequestValidation())
+	mei.Do(t, http.MethodDelete, "/api/v1/initiatives/I-1006", nil).Decode(t, &deleted)
+	alex.Do(t, http.MethodPatch, "/api/v1/models/MOD-1002", map[string]any{"name": "Mobility 1.1", "version": 1}, apitest.SkipRequestValidation())
 
 	var log struct {
 		Items []struct{ RecordType, RecordID string }
 	}
-	priya.Do(t, http.MethodGet, "/api/activity-log", nil).Decode(t, &log)
+	priya.Do(t, http.MethodGet, "/api/v1/activity-log", nil).Decode(t, &log)
 	for _, e := range log.Items {
 		if e.RecordID == "I-1006" || e.RecordType == "model" {
 			t.Errorf("Priya's log shows %s %s", e.RecordType, e.RecordID)
 		}
 	}
 	var alexs struct{ Total int }
-	alex.Do(t, http.MethodGet, "/api/activity-log", nil).Decode(t, &alexs)
+	alex.Do(t, http.MethodGet, "/api/v1/activity-log", nil).Decode(t, &alexs)
 	if alexs.Total < 2 {
 		t.Errorf("Alex's log has %d entries, want the delete and the model change", alexs.Total)
 	}
 
-	if got := itemIDs(t, priya.Do(t, http.MethodGet, "/api/recycle-bin", nil)); len(got) != 0 {
+	if got := itemIDs(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil)); len(got) != 0 {
 		t.Errorf("Priya's recycle bin = %q, want empty", got)
 	}
-	if got := itemIDs(t, mei.Do(t, http.MethodGet, "/api/recycle-bin", nil)); !slices.Equal(got, []string{deleted.RecycleBinEntry.ID}) {
+	if got := itemIDs(t, mei.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil)); !slices.Equal(got, []string{deleted.RecycleBinEntry.ID}) {
 		t.Errorf("Mei's recycle bin = %q, want her delete", got)
 	}
-	refused(t, "Priya restoring Mei's initiative", priya.Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/restore", nil),
-		"You don't have access to this initiative. Ask an administrator if you need it.")
+	if restored := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+deleted.RecycleBinEntry.ID+"/restore", nil); restored.Status != http.StatusNotFound ||
+		!strings.Contains(string(restored.Body), "This item is not in the recycle bin.") {
+		t.Errorf("Priya restoring Mei's initiative = %d %s, want 404 as for a missing entry", restored.Status, restored.Body)
+	}
 	server.GrantRole(t, sarasEmail, "viewer", "all")
-	refused(t, "Sara restoring it", server.SignIn(t, sarasEmail).Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/restore", nil),
+	refused(t, "Sara restoring it", server.SignIn(t, sarasEmail).Do(t, http.MethodPost, "/api/v1/recycle-bin/"+deleted.RecycleBinEntry.ID+"/restore", nil),
 		"Deleting campaigns and initiatives isn't part of your role (Viewer). Ask an administrator if you need it.")
-	if restored := mei.Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/restore", nil); restored.Status != http.StatusOK {
+	if restored := mei.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+deleted.RecycleBinEntry.ID+"/restore", nil); restored.Status != http.StatusOK {
 		t.Errorf("Mei restoring = %d %s, want 200", restored.Status, restored.Body)
 	}
 }
@@ -329,10 +343,10 @@ func TestApprovals_WhoMayDecide_FR025_FR026(t *testing.T) {
 	}
 
 	// Priya submitted A-1004 and owns it; Daniel is the approver of its level 1.
-	refused(t, "Priya approving her own activity", priya.Do(t, http.MethodPost, "/api/activities/A-1004/approval/approve", decision(1)),
+	refused(t, "Priya approving her own activity", priya.Do(t, http.MethodPost, "/api/v1/activities/A-1004/approval/approve", decision(1)),
 		"Only the approvers of level 1 (Daniel Okoro) can approve or decline this activity.")
 	var priyas actions
-	priya.Do(t, http.MethodGet, "/api/activities/A-1004/approval", nil).Decode(t, &priyas)
+	priya.Do(t, http.MethodGet, "/api/v1/activities/A-1004/approval", nil).Decode(t, &priyas)
 	if priyas.Actions.Approve.Available || priyas.Actions.Approve.Reason != "" || !priyas.Actions.Recall.Available {
 		t.Errorf("Priya's actions = %+v, want Approve hidden and Recall offered", priyas.Actions)
 	}
@@ -341,23 +355,23 @@ func TestApprovals_WhoMayDecide_FR025_FR026(t *testing.T) {
 	// activity: the segregation of duties stops her, with the reason on screen (message 6a).
 	server.GrantRole(t, priyasEmail, "administrator", "all")
 	ownMessage := "You own this activity, so someone else must approve it."
-	priya.Do(t, http.MethodGet, "/api/activities/A-1004/approval", nil).Decode(t, &priyas)
+	priya.Do(t, http.MethodGet, "/api/v1/activities/A-1004/approval", nil).Decode(t, &priyas)
 	if priyas.Actions.Approve.Available || priyas.Actions.Approve.Reason != ownMessage {
 		t.Errorf("Priya's approve = %+v, want unavailable: %s", priyas.Actions.Approve, ownMessage)
 	}
-	refused(t, "Priya approving on behalf", priya.Do(t, http.MethodPost, "/api/activities/A-1004/approval/approve", decision(1)), ownMessage)
+	refused(t, "Priya approving on behalf", priya.Do(t, http.MethodPost, "/api/v1/activities/A-1004/approval/approve", decision(1)), ownMessage)
 
 	// With the rule off, she may, on behalf of the approvers; Daniel, its approver, always may.
-	rules := alex.Do(t, http.MethodPatch, "/api/access-rules", map[string]any{"noSelfApproval": false, "version": 1})
+	rules := alex.Do(t, http.MethodPatch, "/api/v1/access-rules", map[string]any{"noSelfApproval": false, "version": 1})
 	if rules.Status != http.StatusOK {
 		t.Fatalf("turning the rule off = %d %s", rules.Status, rules.Body)
 	}
 	var danielsView actions
-	daniel.Do(t, http.MethodGet, "/api/activities/A-1004/approval", nil).Decode(t, &danielsView)
+	daniel.Do(t, http.MethodGet, "/api/v1/activities/A-1004/approval", nil).Decode(t, &danielsView)
 	if !danielsView.Actions.Approve.Available {
 		t.Errorf("Daniel's approve = %+v, want available", danielsView.Actions.Approve)
 	}
-	if approved := priya.Do(t, http.MethodPost, "/api/activities/A-1004/approval/approve", decision(1)); approved.Status != http.StatusOK {
+	if approved := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1004/approval/approve", decision(1)); approved.Status != http.StatusOK {
 		t.Errorf("Priya approving on behalf with the rule off = %d %s, want 200", approved.Status, approved.Body)
 	}
 }
@@ -368,12 +382,12 @@ func TestApprovals_SubmitAndRecall_FR027(t *testing.T) {
 	server := apitest.New(t)
 	sara, daniel, alex := server.SignIn(t, sarasEmail), server.SignIn(t, danielsEmail), server.SignIn(t, alexsEmail)
 
-	refused(t, "Sara submitting", sara.Do(t, http.MethodGet, "/api/activities/A-1001/approval/submission", nil),
+	refused(t, "Sara submitting", sara.Do(t, http.MethodGet, "/api/v1/activities/A-1001/approval/submission", nil),
 		"Submitting activities isn't part of your role (Viewer). Ask an administrator if you need it.")
 	refused(t, "Daniel recalling Priya's submission",
-		daniel.Do(t, http.MethodPost, "/api/activities/A-1004/approval/recall", map[string]any{"roundId": "AR-1004"}),
+		daniel.Do(t, http.MethodPost, "/api/v1/activities/A-1004/approval/recall", map[string]any{"roundId": "AR-1004"}),
 		"Only the activity's owner or the person who submitted it can recall this activity.")
-	if recalled := alex.Do(t, http.MethodPost, "/api/activities/A-1004/approval/recall", map[string]any{"roundId": "AR-1004"}); recalled.Status != http.StatusOK {
+	if recalled := alex.Do(t, http.MethodPost, "/api/v1/activities/A-1004/approval/recall", map[string]any{"roundId": "AR-1004"}); recalled.Status != http.StatusOK {
 		t.Errorf("Alex recalling on behalf = %d %s, want 200", recalled.Status, recalled.Body)
 	}
 }
@@ -384,16 +398,16 @@ func TestWorkflowApprovers_MustApprove_FR028(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	created := alex.Do(t, http.MethodPost, "/api/approval-workflows", map[string]any{"name": "Priya's check",
+	created := alex.Do(t, http.MethodPost, "/api/v1/approval-workflows", map[string]any{"name": "Priya's check",
 		"levels": []map[string]any{{"name": "", "approverIds": []string{"U-1002"}}}})
-	var e errorAnswer
-	created.Decode(t, &e)
-	if created.Status != http.StatusBadRequest || len(e.Fields) != 1 || e.Fields[0].Field != "levels.1.approverIds" ||
+	var answer errorAnswer
+	created.Decode(t, &answer)
+	if e := answer.Error; created.Status != http.StatusBadRequest || len(e.Fields) != 1 || e.Fields[0].Field != "levels.1.approverIds" ||
 		e.Fields[0].Message != "Priya Raman can't approve activities. Give them a role that approves first." {
 		t.Errorf("a workflow with Priya as approver = %d %s", created.Status, created.Body)
 	}
 
-	if saved := alex.Do(t, http.MethodPut, "/api/people/U-1003/roles", map[string]any{"version": 1, "roles": []map[string]any{
+	if saved := alex.Do(t, http.MethodPut, "/api/v1/people/U-1003/roles", map[string]any{"version": 1, "roles": []map[string]any{
 		{"roleId": "RL-1003", "scope": map[string]any{"type": "myTeams"}}}}); saved.Status != http.StatusOK {
 		t.Fatalf("taking Daniel's Approver role = %d %s", saved.Status, saved.Body)
 	}
@@ -407,7 +421,7 @@ func TestWorkflowApprovers_MustApprove_FR028(t *testing.T) {
 			}
 		}
 	}
-	alex.Do(t, http.MethodGet, "/api/approval-workflows/WF-1001", nil).Decode(t, &details)
+	alex.Do(t, http.MethodGet, "/api/v1/approval-workflows/WF-1001", nil).Decode(t, &details)
 	levels := details.Workflow.Levels
 	if len(levels) == 0 || len(levels[0].Approvers) == 0 || levels[0].Approvers[0].Name != "Daniel Okoro" ||
 		levels[0].Approvers[0].CanApprove == nil || *levels[0].Approvers[0].CanApprove {

@@ -1,10 +1,10 @@
-/* A red-tinted box with a red bar on the left (design system §6.4). */
+/* A white box with a red bar on the left (design system §6.4); red is never tinted. */
 .summary {
   padding: var(--space-3) var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border: 1px solid var(--card-border);
   border-left: 4px solid var(--danger);
   border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  background: var(--surface);
 }
 
 .title {

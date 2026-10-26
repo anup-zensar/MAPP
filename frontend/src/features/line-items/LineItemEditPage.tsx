@@ -94,7 +94,7 @@ function EditForm({ details, options, attributeForm, focusField }: EditFormProps
           queryKey: ['line-items', 'item', lineItem.id],
           queryFn: () =>
             call(
-              api.GET('/api/line-items/{lineItemId}', {
+              api.GET('/api/v1/line-items/{lineItemId}', {
                 params: { path: { lineItemId: lineItem.id } },
               }),
             ),

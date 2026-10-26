@@ -55,7 +55,7 @@ type MyPermission struct {
 	Teams []TeamRef  `json:"teams"`
 }
 
-// MyAccess is the signed-in person's access (MyAccess), answered with GET /api/me for navigation, page-level
+// MyAccess is the signed-in person's access (MyAccess), answered with GET /api/v1/me for navigation, page-level
 // gates, the View only note and My profile. Per-record decisions come from the records' own access objects.
 type MyAccess struct {
 	Roles          []RoleAssignment `json:"roles"`

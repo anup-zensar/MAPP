@@ -150,7 +150,7 @@ func TestGrantsFor_NoRole_FR001(t *testing.T) {
 	}
 }
 
-// GET /api/me's access (FR-024): the roles with scopes, the merged permissions in Table A order (for All
+// GET /api/v1/me's access (FR-024): the roles with scopes, the merged permissions in Table A order (for All
 // markets, or the teams sorted by name), the administrators and the segregation-of-duties rule.
 func TestSummary_RolesPermissionsAdministrators_FR024(t *testing.T) {
 	f := newFixture(t)

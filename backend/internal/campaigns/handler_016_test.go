@@ -44,8 +44,8 @@ func TestCampaignBudget_PlanCurrency_Contract_FR011_FR013(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	helix := getPhased(t, priya, "/api/campaigns/C-1005")
-	refused := priya.Do(t, http.MethodPost, "/api/plans/P-1004/campaigns", map[string]any{
+	helix := getPhased(t, priya, "/api/v1/campaigns/C-1005")
+	refused := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1004/campaigns", map[string]any{
 		"name": "Castrol UK", "budget": usd("1000.00"),
 	})
 
@@ -63,17 +63,17 @@ func TestCampaignBudget_PlanCurrency_Contract_FR011_FR013(t *testing.T) {
 func TestSetBudgetPhasing_CampaignAndInitiative_Contract_FR020(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	helix := getPhased(t, priya, "/api/campaigns/C-1005")
-	uk := getPhased(t, priya, "/api/initiatives/I-1009")
+	helix := getPhased(t, priya, "/api/v1/campaigns/C-1005")
+	uk := getPhased(t, priya, "/api/v1/initiatives/I-1009")
 
-	evenly := priya.Do(t, http.MethodPut, "/api/campaigns/C-1005/budget-phasing",
+	evenly := priya.Do(t, http.MethodPut, "/api/v1/campaigns/C-1005/budget-phasing",
 		map[string]any{"method": "evenly", "months": []any{}, "version": helix.Version})
 	custom := map[string]any{"method": "custom", "version": uk.Version, "months": []map[string]any{
 		{"month": "2027-03", "amount": "150000.00"}, {"month": "2027-04", "amount": "100000"},
 	}}
-	ukSaved := priya.Do(t, http.MethodPut, "/api/initiatives/I-1009/budget-phasing", custom)
-	stale := priya.Do(t, http.MethodPut, "/api/initiatives/I-1009/budget-phasing", custom)
-	gone := priya.Do(t, http.MethodPut, "/api/initiatives/I-9999/budget-phasing", custom)
+	ukSaved := priya.Do(t, http.MethodPut, "/api/v1/initiatives/I-1009/budget-phasing", custom)
+	stale := priya.Do(t, http.MethodPut, "/api/v1/initiatives/I-1009/budget-phasing", custom)
+	gone := priya.Do(t, http.MethodPut, "/api/v1/initiatives/I-9999/budget-phasing", custom)
 
 	assertStatus(t, evenly, http.StatusOK)
 	var c phased

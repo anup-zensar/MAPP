@@ -50,7 +50,7 @@ test('US2: the cards, filters, chips, details and record links of the activity l
     records.year,
     '1000.00',
   );
-  await callApi(page, 'DELETE', `/api/initiatives/${binned.id}`);
+  await callApi(page, 'DELETE', `/api/v1/initiatives/${binned.id}`);
 
   // The whole log, with more than one page of entries: Alex sees every entry (014).
   await signInAs(page, ALEX);

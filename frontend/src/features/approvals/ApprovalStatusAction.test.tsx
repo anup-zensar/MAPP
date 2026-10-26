@@ -8,8 +8,8 @@ import { ApprovalStatusAction } from './ApprovalStatusAction';
 import type { ApprovalActivity } from './approvalTypes';
 import { approvalOf, submissionOf } from './testData';
 
-const SUBMISSION = 'GET /api/activities/A-1042/approval/submission';
-const SUBMIT = 'POST /api/activities/A-1042/approval/submit';
+const SUBMISSION = 'GET /api/v1/activities/A-1042/approval/submission';
+const SUBMIT = 'POST /api/v1/activities/A-1042/approval/submit';
 
 const CREATED: ApprovalActivity = {
   id: 'A-1042',
@@ -50,7 +50,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
     });
     const { user } = renderAction(
       { ...CREATED, status: 'submitted' },
-      { 'GET /api/activities/A-1042/approval': { body: approver } },
+      { 'GET /api/v1/activities/A-1042/approval': { body: approver } },
     );
 
     const approve = await screen.findByRole('button', { name: 'Approve' });
@@ -67,7 +67,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
 
   it('makes Approve the primary action when the page asks for it (design system §6.3)', async () => {
     mockApi({
-      'GET /api/activities/A-1042/approval': {
+      'GET /api/v1/activities/A-1042/approval': {
         body: approvalOf({ viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] } }),
       },
     });
@@ -86,7 +86,7 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
   it('never offers the owner Approve as a button (functional review A-01)', async () => {
     const { api } = renderAction(
       { ...CREATED, status: 'submitted' },
-      { 'GET /api/activities/A-1042/approval': { body: approvalOf() } },
+      { 'GET /api/v1/activities/A-1042/approval': { body: approvalOf() } },
     );
 
     await waitFor(() =>
@@ -161,9 +161,11 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
       [SUBMIT]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Fix the problems.',
-          fields: [{ field: 'ownerId', message: 'Owner — needed to submit' }],
+          error: {
+            code: 'validation_failed',
+            message: 'Fix the problems.',
+            fields: [{ field: 'ownerId', message: 'Owner — needed to submit' }],
+          },
         },
       },
     });
@@ -183,10 +185,12 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
       [SUBMIT]: {
         status: 409,
         body: {
-          code: 'version_conflict',
-          message: 'Someone changed it.',
-          fields: [],
-          conflict: { changedBy: 'Daniel Okoro', changedAt },
+          error: {
+            code: 'version_conflict',
+            message: 'Someone changed it.',
+            fields: [],
+            conflict: { changedBy: 'Daniel Okoro', changedAt },
+          },
         },
       },
     });

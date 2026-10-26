@@ -59,11 +59,11 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
     // The counts never answer here: only the cards matter.
     const never = () => new Promise<never>(() => {});
     mockApi({
-      'GET /api/settings/overview': never,
-      'GET /api/field-help': never,
-      'GET /api/people': never,
-      'GET /api/teams': never,
-      'GET /api/approval-workflows': never,
+      'GET /api/v1/settings/overview': never,
+      'GET /api/v1/field-help': never,
+      'GET /api/v1/people': never,
+      'GET /api/v1/teams': never,
+      'GET /api/v1/approval-workflows': never,
     });
     renderWithProviders(<SettingsPage />, { user: SARA });
 
@@ -73,8 +73,8 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
 
   it('shows a Settings list read-only, with one View only note and no change actions', async () => {
     mockApi({
-      'GET /api/models': { body: MODELS },
-      'GET /api/activity-types': { body: ACTIVITY_TYPES },
+      'GET /api/v1/models': { body: MODELS },
+      'GET /api/v1/activity-types': { body: ACTIVITY_TYPES },
     });
     const { user } = renderWithProviders(<ModelsPage />, {
       route: '/settings/models',
@@ -94,8 +94,8 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
 
   it('keeps every change action for people who may change Settings', async () => {
     mockApi({
-      'GET /api/models': { body: MODELS },
-      'GET /api/activity-types': { body: ACTIVITY_TYPES },
+      'GET /api/v1/models': { body: MODELS },
+      'GET /api/v1/activity-types': { body: ACTIVITY_TYPES },
     });
     renderWithProviders(<ModelsPage />, {
       route: '/settings/models',

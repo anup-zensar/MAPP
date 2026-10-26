@@ -17,9 +17,9 @@ const NO_EFFECTS = {
 function renderPage(answers: Record<string, MockHandler> = {}, route = '/plans/P-1001/edit') {
   const api = mockApi({
     ...FORM_ANSWERS,
-    'GET /api/plans/P-1001': { body: plan() },
-    'PATCH /api/plans/P-1001': { body: plan() },
-    'POST /api/plans/P-1001/change-effects': { body: NO_EFFECTS },
+    'GET /api/v1/plans/P-1001': { body: plan() },
+    'PATCH /api/v1/plans/P-1001': { body: plan() },
+    'POST /api/v1/plans/P-1001/change-effects': { body: NO_EFFECTS },
     ...answers,
   });
   const result = renderWithProviders(<PlanEditPage />, {
@@ -60,7 +60,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
     expect(await screen.findByText("Plan 'FY2026 Lubricants Europe' saved")).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/plans/P-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/plans/P-1001')).toEqual([
       expect.objectContaining({
         version: 1,
         budget: { amount: '1500000.00', currency: 'USD' },
@@ -68,12 +68,12 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
         teamIds: ['T-1001'],
       }),
     ]);
-    expect(api.bodiesOf('POST /api/plans/P-1001/change-effects')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/plans/P-1001/change-effects')).toEqual([]);
   });
 
   it('lists the activities a new model does not allow before saving (US4#2, FR-019)', async () => {
     const { api, user, router } = renderPage({
-      'POST /api/plans/P-1001/change-effects': {
+      'POST /api/v1/plans/P-1001/change-effects': {
         body: {
           ...NO_EFFECTS,
           modelChanged: true,
@@ -97,22 +97,22 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
     expect(dialog).toHaveTextContent(
       'They keep their type but need an allowed type before they can be submitted. Goals will be recalculated with the new model.',
     );
-    expect(api.bodiesOf('POST /api/plans/P-1001/change-effects')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/plans/P-1001/change-effects')).toEqual([
       { modelId: 'MOD-1002', attributes: plan().attributes },
     ]);
 
     await user.click(screen.getByRole('button', { name: 'Keep editing' }));
-    expect(api.bodiesOf('PATCH /api/plans/P-1001')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/plans/P-1001')).toEqual([]);
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await user.click(await screen.findByRole('button', { name: 'Change model' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
-    expect(api.bodiesOf('PATCH /api/plans/P-1001')).toHaveLength(1);
+    expect(api.bodiesOf('PATCH /api/v1/plans/P-1001')).toHaveLength(1);
   });
 
   it('says which attribute groups a business-unit change hides (US4#3, FR-020)', async () => {
     const { user } = renderPage({
-      'POST /api/plans/P-1001/change-effects': {
+      'POST /api/v1/plans/P-1001/change-effects': {
         body: {
           ...NO_EFFECTS,
           hiddenGroups: [
@@ -148,7 +148,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
   it('says a published plan stays published and when changed defaults apply (US4#5, FR-022)', async () => {
     const { user } = renderPage({
-      'GET /api/plans/P-1001': { body: plan({ status: 'published' }) },
+      'GET /api/v1/plans/P-1001': { body: plan({ status: 'published' }) },
     });
 
     expect(
@@ -167,20 +167,22 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
     let reads = 0;
     let saves = 0;
     const { api, user } = renderPage({
-      'GET /api/plans/P-1001': () => {
+      'GET /api/v1/plans/P-1001': () => {
         reads += 1;
         return { body: plan({ version: reads === 1 ? 1 : 2 }) };
       },
-      'PATCH /api/plans/P-1001': () => {
+      'PATCH /api/v1/plans/P-1001': () => {
         saves += 1;
         return saves === 1
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Not saved — Daniel Okoro changed this plan',
-                fields: [],
-                conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:05:00Z' },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Not saved — Daniel Okoro changed this plan',
+                  fields: [],
+                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:05:00Z' },
+                },
               },
             }
           : { body: plan({ name: 'FY2026 Lubricants Europe (new)', version: 3 }) };
@@ -202,7 +204,9 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
     await waitFor(() => expect(saves).toBe(2));
     expect(
-      api.bodiesOf('PATCH /api/plans/P-1001').map((body) => (body as { version: number }).version),
+      api
+        .bodiesOf('PATCH /api/v1/plans/P-1001')
+        .map((body) => (body as { version: number }).version),
     ).toEqual([1, 2]);
   });
 
@@ -226,12 +230,14 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
   it('says when the plan does not exist', async () => {
     renderPage({
-      'GET /api/plans/P-1001': {
+      'GET /api/v1/plans/P-1001': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This plan no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This plan no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });

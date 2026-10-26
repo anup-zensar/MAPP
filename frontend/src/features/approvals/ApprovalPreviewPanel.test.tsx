@@ -8,9 +8,9 @@ import { ApprovalPreviewPanel } from './ApprovalPreviewPanel';
 import { ACTIVITY_GONE } from './messages';
 import { approvalOf, previewOf, roundOf, SUBMITTED } from './testData';
 
-const PREVIEW = 'GET /api/approvals/activities/A-1042';
-const APPROVE = 'POST /api/activities/A-1042/approval/approve';
-const DECLINE = 'POST /api/activities/A-1042/approval/decline';
+const PREVIEW = 'GET /api/v1/approvals/activities/A-1042';
+const APPROVE = 'POST /api/v1/activities/A-1042/approval/approve';
+const DECLINE = 'POST /api/v1/activities/A-1042/approval/decline';
 
 function renderPanel(answers: Record<string, MockHandler>) {
   const api = mockApi(answers);
@@ -140,10 +140,12 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
       [APPROVE]: {
         status: 409,
         body: {
-          code: 'version_conflict',
-          message: 'Level 1 was already declined by Carlos Mendes',
-          fields: [],
-          conflict: { changedBy: 'Carlos Mendes', changedAt: new Date().toISOString() },
+          error: {
+            code: 'version_conflict',
+            message: 'Level 1 was already declined by Carlos Mendes',
+            fields: [],
+            conflict: { changedBy: 'Carlos Mendes', changedAt: new Date().toISOString() },
+          },
         },
       },
     });
@@ -246,10 +248,12 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
       [DECLINE]: {
         status: 409,
         body: {
-          code: 'version_conflict',
-          message: 'Approval was restarted by Priya Raman',
-          fields: [],
-          conflict: { changedBy: 'Priya Raman', changedAt: '2026-03-11T10:15:00Z' },
+          error: {
+            code: 'version_conflict',
+            message: 'Approval was restarted by Priya Raman',
+            fields: [],
+            conflict: { changedBy: 'Priya Raman', changedAt: '2026-03-11T10:15:00Z' },
+          },
         },
       },
     });
@@ -275,7 +279,7 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
     const { user, onClose } = renderPanel({
       [PREVIEW]: {
         status: 404,
-        body: { code: 'not_found', message: ACTIVITY_GONE, fields: [] },
+        body: { error: { code: 'not_found', message: ACTIVITY_GONE, fields: [] } },
       },
     });
 

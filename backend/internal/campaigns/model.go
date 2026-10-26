@@ -208,7 +208,7 @@ type PlanCampaignTotals struct {
 	PlannedCost          *money.Money `json:"plannedCost"`
 }
 
-// PlanCampaigns is the answer of GET /api/plans/{planId}/campaigns (PlanCampaigns).
+// PlanCampaigns is the answer of GET /api/v1/plans/{planId}/campaigns (PlanCampaigns).
 type PlanCampaigns struct {
 	Plan          PlanRef            `json:"plan"`
 	PlanOwner     *people.PersonRef  `json:"planOwner"` // the default owner of a new campaign (R2)
@@ -220,7 +220,7 @@ type PlanCampaigns struct {
 	Access *authz.PlanContentAccess `json:"access,omitempty"`
 }
 
-// CampaignInput is the body of POST /api/plans/{planId}/campaigns (CampaignCreate).
+// CampaignInput is the body of POST /api/v1/plans/{planId}/campaigns (CampaignCreate).
 type CampaignInput struct {
 	Name        string                   `json:"name"`
 	Description string                   `json:"description"`
@@ -231,7 +231,7 @@ type CampaignInput struct {
 	Attributes  settings.AttributeValues `json:"attributes"`
 }
 
-// CampaignUpdate is the body of PATCH /api/campaigns/{campaignId} (CampaignUpdate): the whole form, null or
+// CampaignUpdate is the body of PATCH /api/v1/campaigns/{campaignId} (CampaignUpdate): the whole form, null or
 // "" clearing a field, and the version (D-203).
 type CampaignUpdate struct {
 	Name        string                   `json:"name"`
@@ -244,7 +244,7 @@ type CampaignUpdate struct {
 	Version     *int                     `json:"version"`
 }
 
-// InitiativeInput is the body of POST /api/campaigns/{campaignId}/initiatives (InitiativeCreate).
+// InitiativeInput is the body of POST /api/v1/campaigns/{campaignId}/initiatives (InitiativeCreate).
 type InitiativeInput struct {
 	Name        string                   `json:"name"`
 	Description string                   `json:"description"`
@@ -255,7 +255,7 @@ type InitiativeInput struct {
 	Attributes  settings.AttributeValues `json:"attributes"`
 }
 
-// InitiativeUpdate is the body of PATCH /api/initiatives/{initiativeId} (InitiativeUpdate): the whole
+// InitiativeUpdate is the body of PATCH /api/v1/initiatives/{initiativeId} (InitiativeUpdate): the whole
 // form; the campaign changes only with Move.
 type InitiativeUpdate struct {
 	Name        string                   `json:"name"`
@@ -268,25 +268,25 @@ type InitiativeUpdate struct {
 	Version     *int                     `json:"version"`
 }
 
-// CampaignMove is the body of POST /api/campaigns/{campaignId}/move (CampaignMove).
+// CampaignMove is the body of POST /api/v1/campaigns/{campaignId}/move (CampaignMove).
 type CampaignMove struct {
 	PlanID  string `json:"planId"` // another plan of the same year
 	Version *int   `json:"version"`
 }
 
-// InitiativeMove is the body of POST /api/initiatives/{initiativeId}/move (InitiativeMove).
+// InitiativeMove is the body of POST /api/v1/initiatives/{initiativeId}/move (InitiativeMove).
 type InitiativeMove struct {
 	CampaignID string `json:"campaignId"` // another campaign of the same plan
 	Version    *int   `json:"version"`
 }
 
-// CampaignCopy is the body of POST /api/campaigns/{campaignId}/copy (CampaignCopy).
+// CampaignCopy is the body of POST /api/v1/campaigns/{campaignId}/copy (CampaignCopy).
 type CampaignCopy struct {
 	PlanID string `json:"planId"`
 	Name   string `json:"name"`
 }
 
-// InitiativeCopy is the body of POST /api/initiatives/{initiativeId}/copy (InitiativeCopy).
+// InitiativeCopy is the body of POST /api/v1/initiatives/{initiativeId}/copy (InitiativeCopy).
 type InitiativeCopy struct {
 	CampaignID string `json:"campaignId"`
 	Name       string `json:"name"`

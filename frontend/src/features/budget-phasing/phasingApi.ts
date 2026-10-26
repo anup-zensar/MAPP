@@ -24,7 +24,7 @@ export function useBudgetByMonth(planId: string, enabled = true) {
   return useQuery({
     queryKey: budgetByMonthKey(planId),
     queryFn: () =>
-      call(api.GET('/api/plans/{planId}/budget-by-month', { params: { path: { planId } } })),
+      call(api.GET('/api/v1/plans/{planId}/budget-by-month', { params: { path: { planId } } })),
     enabled,
   });
 }
@@ -37,7 +37,7 @@ export function useSetPhasing(level: PhasingLevel, recordId: string) {
       switch (level) {
         case 'plan':
           await call(
-            api.PUT('/api/plans/{planId}/budget-phasing', {
+            api.PUT('/api/v1/plans/{planId}/budget-phasing', {
               params: { path: { planId: recordId } },
               body,
             }),
@@ -45,7 +45,7 @@ export function useSetPhasing(level: PhasingLevel, recordId: string) {
           return;
         case 'campaign':
           await call(
-            api.PUT('/api/campaigns/{campaignId}/budget-phasing', {
+            api.PUT('/api/v1/campaigns/{campaignId}/budget-phasing', {
               params: { path: { campaignId: recordId } },
               body,
             }),
@@ -53,7 +53,7 @@ export function useSetPhasing(level: PhasingLevel, recordId: string) {
           return;
         default:
           await call(
-            api.PUT('/api/initiatives/{initiativeId}/budget-phasing', {
+            api.PUT('/api/v1/initiatives/{initiativeId}/budget-phasing', {
               params: { path: { initiativeId: recordId } },
               body,
             }),

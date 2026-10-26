@@ -55,13 +55,14 @@ type Displays interface {
 
 // Access decides who may see financial data, import GSAP extracts and link transactions (FR-028, D-252,
 // D-301): feature 014's permissions finance.view (scoped), finance.import and finance.link (scoped to the
-// line item's plan). Each check returns nil when allowed, or the 403 forbidden error with 014's message.
+// line item's plan). Each check returns nil when allowed, or the refusal: not_found for a plan outside the
+// person's access, otherwise 403 forbidden with 014's message.
 // internal/app implements it; AllowAll is the rule of the unit tests that do not test access.
 type Access interface {
 	// SeeFinance allows a to see financial data in at least one plan (Need finance.view).
 	SeeFinance(ctx context.Context, a actor.Actor) error
 	// SeeFinanceIn allows a to see the plan planID and its financial data (View + InPlan finance.view);
-	// a plan outside a's access is refused with 014's message 4.
+	// a plan outside a's access answers not_found.
 	SeeFinanceIn(ctx context.Context, a actor.Actor, planID string) error
 	// Import allows a to import GSAP extracts (Need finance.import). Not-linked transactions are visible
 	// only to people allowed to import.

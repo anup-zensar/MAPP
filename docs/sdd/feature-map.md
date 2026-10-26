@@ -31,7 +31,7 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 019 | [019-alignment-guardrails](../../specs/019-alignment-guardrails/spec.md) | Alignment guardrails: CI with three checks, branch rules, npm release age, ADR-0010 (constitution 3.1.0) | P1 | — | In progress |
 | 020 | — | Shell palette: design tokens with Shell's exact colours (constitution X) | P1 | 019 | Planned |
 | 021 | — | Comment budget: comments cut to at most 5% of each file (constitution VIII) | P2 | 019 | Planned |
-| 022 | — | API v1: `/api/v1` paths, one error envelope, 404 for out-of-scope records, `/healthz` and `/readyz` | P1 | 019 | Planned |
+| 022 | [022-api-v1](../../specs/022-api-v1/spec.md) | API v1: `/api/v1` paths, one error envelope, 404 for out-of-scope records, `/healthz` and `/readyz` | P1 | 019 | In progress |
 | 023 | — | PostgreSQL storage: pgx, sqlc and goose replace the JSON file store | P1 | 022 | Planned |
 | 024 | — | Gin transport, middleware and OpenTelemetry | P2 | 022 | Planned |
 | 025 | — | Backend layout: singular packages, `internal/platform/database`, files within 300 lines | P2 | 023, 024 | Planned |

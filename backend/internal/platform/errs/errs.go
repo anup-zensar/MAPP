@@ -1,9 +1,9 @@
 // Package errs defines MAPP's one error format (research R9).
 //
-// Every API failure is answered as JSON {"code", "message", "fields"}, plus "conflict", "parent" or
-// "resolution" for the errors that need them. The message is written for users (the texts come from the
-// plan's "User-visible messages" table); the code is for the web app's logic. Services return these
-// errors, and web.WriteError turns them into HTTP answers.
+// Every API failure is answered as JSON {"error": {"code", "message", "fields"}}, plus "conflict", "parent",
+// "resolution" or "missing" inside "error" for the errors that need them. The message is written for users
+// (the texts come from the plan's "User-visible messages" table); the code is for the web app's logic.
+// Services return these errors, and web.WriteError turns them into HTTP answers.
 package errs
 
 import (
@@ -42,6 +42,9 @@ const (
 	// permanently; Parent names that record (011, D-182).
 	CodeParentDeletedPermanently = "parent_deleted_permanently"
 )
+
+// internalMessage is the message of an unexpected failure; the details go only to the server log.
+const internalMessage = "Something went wrong on our side. Please try again."
 
 // Error is an API failure. Status is the HTTP status and is not part of the JSON.
 type Error struct {
@@ -223,8 +226,13 @@ func ParentDeletedPermanently(level string, parent RecordRef, parentLevel string
 
 // Internal reports an unexpected failure without technical details (FR-020).
 func Internal() *Error {
-	return newError(http.StatusInternalServerError, CodeInternalError,
-		"Something went wrong on our side. Please try again.")
+	return newError(http.StatusInternalServerError, CodeInternalError, internalMessage)
+}
+
+// Unavailable reports, with 503 and the code of Internal, that the API cannot serve requests now because
+// its data cannot be used.
+func Unavailable() *Error {
+	return newError(http.StatusServiceUnavailable, CodeInternalError, internalMessage)
 }
 
 // Problems collects the field problems of one request, so they are all reported at once (FR-020):

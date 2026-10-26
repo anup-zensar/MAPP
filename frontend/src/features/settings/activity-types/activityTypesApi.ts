@@ -27,7 +27,9 @@ export const ACTIVITY_TYPE_LISTS: QueryKey[] = [
 /** One activity type as it is stored now; after a conflict the form takes its version from it. */
 export function fetchActivityType(id: string): Promise<ActivityType> {
   return call(
-    api.GET('/api/activity-types/{activityTypeId}', { params: { path: { activityTypeId: id } } }),
+    api.GET('/api/v1/activity-types/{activityTypeId}', {
+      params: { path: { activityTypeId: id } },
+    }),
   );
 }
 
@@ -37,7 +39,7 @@ export function checkActivityTypeImpact(
   body: ActivityTypeUpdate,
 ): Promise<ChangeImpact> {
   return call(
-    api.POST('/api/activity-types/{activityTypeId}/impact', {
+    api.POST('/api/v1/activity-types/{activityTypeId}/impact', {
       params: { path: { activityTypeId: id } },
       body,
     }),
@@ -47,7 +49,7 @@ export function checkActivityTypeImpact(
 /** POST …/status: sets an activity type inactive or reactivates it (FR-004). */
 export function setActivityTypeStatus(id: string, body: { active: boolean; version: number }) {
   return call(
-    api.POST('/api/activity-types/{activityTypeId}/status', {
+    api.POST('/api/v1/activity-types/{activityTypeId}/status', {
       params: { path: { activityTypeId: id } },
       body,
     }),
@@ -57,7 +59,7 @@ export function setActivityTypeStatus(id: string, body: { active: boolean; versi
 export function useCreateActivityType() {
   const refresh = useRefreshActivityTypeLists();
   return useMutation({
-    mutationFn: (body: ActivityTypeCreate) => call(api.POST('/api/activity-types', { body })),
+    mutationFn: (body: ActivityTypeCreate) => call(api.POST('/api/v1/activity-types', { body })),
     onSettled: refresh,
   });
 }
@@ -68,7 +70,7 @@ export function useUpdateActivityType() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: ActivityTypeUpdate }) =>
       call(
-        api.PATCH('/api/activity-types/{activityTypeId}', {
+        api.PATCH('/api/v1/activity-types/{activityTypeId}', {
           params: { path: { activityTypeId: id } },
           body,
         }),
@@ -83,7 +85,7 @@ export function useDeleteActivityType() {
   return useMutation({
     mutationFn: (id: string) =>
       call(
-        api.DELETE('/api/activity-types/{activityTypeId}', {
+        api.DELETE('/api/v1/activity-types/{activityTypeId}', {
           params: { path: { activityTypeId: id } },
         }),
       ),

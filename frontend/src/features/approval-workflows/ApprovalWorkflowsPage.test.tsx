@@ -7,7 +7,7 @@ import { testUser } from '@/test/users';
 import { ApprovalWorkflowsPage } from './ApprovalWorkflowsPage';
 import { CHINA_WORKFLOW, detailsOf, PEOPLE, workflowOf } from './testData';
 
-const LIST = 'GET /api/approval-workflows';
+const LIST = 'GET /api/v1/approval-workflows';
 const ITEMS = [CHINA_WORKFLOW, workflowOf()];
 const list = (items = ITEMS) => ({ body: { items, total: items.length } });
 
@@ -28,7 +28,7 @@ function renderPage(
   route = '/settings/approval-workflows',
   answers: Record<string, MockHandler> = {},
 ) {
-  const api = mockApi({ [LIST]: list(), 'GET /api/people': PEOPLE, ...answers });
+  const api = mockApi({ [LIST]: list(), 'GET /api/v1/people': PEOPLE, ...answers });
   const rendered = renderWithProviders(<ApprovalWorkflowsPage />, {
     route,
     path: '/settings/approval-workflows/:workflowId?',
@@ -108,7 +108,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
 
   it('sets a workflow inactive after saying what changes (FR-007)', async () => {
     const { user, api } = renderPage('/settings/approval-workflows', {
-      'POST /api/approval-workflows/WF-1001/deactivate': { body: workflowOf({ active: false }) },
+      'POST /api/v1/approval-workflows/WF-1001/deactivate': { body: workflowOf({ active: false }) },
     });
     await screen.findByRole('row', { name: /Lubricants EU approval/ });
 
@@ -129,7 +129,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     expect(
       await screen.findByText("Approval workflow 'Lubricants EU approval' set inactive"),
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/approval-workflows/WF-1001/deactivate')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/approval-workflows/WF-1001/deactivate')).toEqual([
       { version: 4 },
     ]);
   });
@@ -138,10 +138,10 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     const unused = workflowOf({ usedByCount: 0, waitingCount: 0 });
     const { user, api } = renderPage('/settings/approval-workflows', {
       [LIST]: list([unused]),
-      'POST /api/approval-workflows/WF-1001/deactivate': {
+      'POST /api/v1/approval-workflows/WF-1001/deactivate': {
         body: { ...unused, active: false, version: 5 },
       },
-      'POST /api/approval-workflows/WF-1001/activate': {
+      'POST /api/v1/approval-workflows/WF-1001/activate': {
         body: { ...unused, active: true, version: 6 },
       },
     });
@@ -159,15 +159,17 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     expect(
       await screen.findByText("Approval workflow 'Lubricants EU approval' reactivated"),
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/approval-workflows/WF-1001/deactivate')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/approval-workflows/WF-1001/deactivate')).toEqual([
       { version: 4 },
     ]);
-    expect(api.bodiesOf('POST /api/approval-workflows/WF-1001/activate')).toEqual([{ version: 5 }]);
+    expect(api.bodiesOf('POST /api/v1/approval-workflows/WF-1001/activate')).toEqual([
+      { version: 5 },
+    ]);
   });
 
   it('reactivates an inactive workflow at once (FR-007)', async () => {
     const { user, api } = renderPage('/settings/approval-workflows?status=inactive', {
-      'POST /api/approval-workflows/WF-1002/activate': { body: CHINA_WORKFLOW },
+      'POST /api/v1/approval-workflows/WF-1002/activate': { body: CHINA_WORKFLOW },
     });
     await user.click(await screen.findByRole('button', { name: /^All/ }));
     await screen.findByRole('row', { name: /China BC/ });
@@ -180,7 +182,9 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     expect(
       await screen.findByText("Approval workflow 'China BC approval workflow' reactivated"),
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/approval-workflows/WF-1002/activate')).toEqual([{ version: 2 }]);
+    expect(api.bodiesOf('POST /api/v1/approval-workflows/WF-1002/activate')).toEqual([
+      { version: 2 },
+    ]);
   });
 
   it('explains that a workflow in use is set inactive instead of deleted (FR-008)', async () => {
@@ -200,8 +204,8 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
 
   it('deletes an unused workflow with Undo (FR-008)', async () => {
     const { user } = renderPage('/settings/approval-workflows?status=all', {
-      'DELETE /api/approval-workflows/WF-1002': { body: { recycleBinEntry: BIN_ENTRY } },
-      'POST /api/recycle-bin/RB-1001/undo': {
+      'DELETE /api/v1/approval-workflows/WF-1002': { body: { recycleBinEntry: BIN_ENTRY } },
+      'POST /api/v1/recycle-bin/RB-1001/undo': {
         body: {
           recordType: 'approvalWorkflow',
           recordTypeLabel: 'approval workflow',
@@ -238,12 +242,14 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
 
   it('shows the used dialog when the API answers in_use (FR-008)', async () => {
     const { user } = renderPage('/settings/approval-workflows?status=all', {
-      'DELETE /api/approval-workflows/WF-1002': {
+      'DELETE /api/v1/approval-workflows/WF-1002': {
         status: 409,
         body: {
-          code: 'in_use',
-          message: 'Used by 1 activity — set it inactive instead.',
-          fields: [],
+          error: {
+            code: 'in_use',
+            message: 'Used by 1 activity — set it inactive instead.',
+            fields: [],
+          },
         },
       },
     });
@@ -267,7 +273,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
 
   it('opens the details at their address and goes back to the list on close (FR-005)', async () => {
     const { user, router } = renderPage('/settings/approval-workflows/WF-1001', {
-      'GET /api/approval-workflows/WF-1001': { body: detailsOf() },
+      'GET /api/v1/approval-workflows/WF-1001': { body: detailsOf() },
     });
 
     const panel = await screen.findByRole('dialog', { name: 'Lubricants EU approval' });
@@ -295,10 +301,10 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     const unused = workflowOf({ usedByCount: 0, waitingCount: 0 });
     const { user, api } = renderPage('/settings/approval-workflows', {
       [LIST]: list([unused]),
-      'POST /api/approval-workflows/WF-1001/deactivate': {
+      'POST /api/v1/approval-workflows/WF-1001/deactivate': {
         body: workflowOf({ active: false, usedByCount: 0, waitingCount: 0, version: 5 }),
       },
-      'POST /api/approval-workflows/WF-1001/activate': { body: unused },
+      'POST /api/v1/approval-workflows/WF-1001/activate': { body: unused },
     });
     await screen.findByRole('row', { name: /Lubricants EU approval/ });
 
@@ -312,7 +318,7 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
     const messages = await findMessages();
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
     await waitFor(() =>
-      expect(api.bodiesOf('POST /api/approval-workflows/WF-1001/activate')).toEqual([
+      expect(api.bodiesOf('POST /api/v1/approval-workflows/WF-1001/activate')).toEqual([
         { version: 5 },
       ]),
     );

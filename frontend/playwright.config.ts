@@ -32,7 +32,7 @@ export default defineConfig({
       command: 'go run ./cmd/seed -reset && go run ./cmd/api',
       cwd: '../backend',
       env: { ...process.env, DATA_DIR: dataDir, APP_PORT: apiPort, APP_ENV: 'local' },
-      url: `http://127.0.0.1:${apiPort}/api/health`,
+      url: `http://127.0.0.1:${apiPort}/healthz`,
       timeout: 180_000,
       reuseExistingServer: false,
     },

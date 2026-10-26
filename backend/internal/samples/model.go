@@ -33,19 +33,19 @@ type FolderView struct {
 	Notes []Note `json:"notes"`
 }
 
-// FolderPage is the answer of GET /api/sample-folders (SampleFolderPage): every sample folder, sorted by
+// FolderPage is the answer of GET /api/v1/sample-folders (SampleFolderPage): every sample folder, sorted by
 // name.
 type FolderPage struct {
 	Items []FolderView `json:"items"`
 	Total int          `json:"total"`
 }
 
-// FolderInput is the body of POST /api/sample-folders.
+// FolderInput is the body of POST /api/v1/sample-folders.
 type FolderInput struct {
 	Name string `json:"name"`
 }
 
-// FolderUpdate is the body of PATCH /api/sample-folders/{folderId}: the new name and the version the
+// FolderUpdate is the body of PATCH /api/v1/sample-folders/{folderId}: the new name and the version the
 // person started editing from (FR-029). Version is a pointer, so that a missing version can be told apart
 // from a wrong one.
 type FolderUpdate struct {
@@ -53,7 +53,7 @@ type FolderUpdate struct {
 	Version *int   `json:"version"`
 }
 
-// NoteInput is the body of POST /api/sample-folders/{folderId}/notes.
+// NoteInput is the body of POST /api/v1/sample-folders/{folderId}/notes.
 type NoteInput struct {
 	Title string `json:"title"`
 }

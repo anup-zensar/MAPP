@@ -26,27 +26,27 @@ export const SETTINGS_KEYS = {
   overview: ['settings-overview'] as const,
 };
 
-/** Every model, active and inactive, by name (GET /api/models). */
+/** Every model, active and inactive, by name (GET /api/v1/models). */
 export function useModels() {
   return useQuery({
     queryKey: SETTINGS_KEYS.models,
-    queryFn: () => call(api.GET('/api/models')),
+    queryFn: () => call(api.GET('/api/v1/models')),
   });
 }
 
-/** Every activity type, active and inactive, by name (GET /api/activity-types). */
+/** Every activity type, active and inactive, by name (GET /api/v1/activity-types). */
 export function useActivityTypes() {
   return useQuery({
     queryKey: SETTINGS_KEYS.activityTypes,
-    queryFn: () => call(api.GET('/api/activity-types')),
+    queryFn: () => call(api.GET('/api/v1/activity-types')),
   });
 }
 
-/** Every currency with its rate per 1 USD, USD first (GET /api/currencies). */
+/** Every currency with its rate per 1 USD, USD first (GET /api/v1/currencies). */
 export function useCurrencies() {
   return useQuery({
     queryKey: SETTINGS_KEYS.currencies,
-    queryFn: () => call(api.GET('/api/currencies')),
+    queryFn: () => call(api.GET('/api/v1/currencies')),
   });
 }
 
@@ -55,12 +55,12 @@ export function useFinanceBudgets(year?: number) {
   return useQuery({
     queryKey: SETTINGS_KEYS.financeBudgets(year),
     queryFn: () =>
-      call(api.GET('/api/finance-budgets', { params: { query: year ? { year } : {} } })),
+      call(api.GET('/api/v1/finance-budgets', { params: { query: year ? { year } : {} } })),
   });
 }
 
 /**
- * Everything a level's form needs to show its Shell attributes (GET /api/shell-attribute-forms/
+ * Everything a level's form needs to show its Shell attributes (GET /api/v1/shell-attribute-forms/
  * {level}), for ShellAttributeFields and ShellAttributeValues. Always asked again when a form
  * opens (SC-008).
  */
@@ -68,16 +68,16 @@ export function useAttributeForm(level: AttributeLevel) {
   return useQuery({
     queryKey: SETTINGS_KEYS.shellAttributeForm(level),
     queryFn: () =>
-      call(api.GET('/api/shell-attribute-forms/{level}', { params: { path: { level } } })),
+      call(api.GET('/api/v1/shell-attribute-forms/{level}', { params: { path: { level } } })),
     staleTime: 0,
     refetchOnMount: 'always',
   });
 }
 
-/** The number of active records per Settings section (GET /api/settings/overview). */
+/** The number of active records per Settings section (GET /api/v1/settings/overview). */
 export function useSettingsOverview() {
   return useQuery({
     queryKey: SETTINGS_KEYS.overview,
-    queryFn: () => call(api.GET('/api/settings/overview')),
+    queryFn: () => call(api.GET('/api/v1/settings/overview')),
   });
 }

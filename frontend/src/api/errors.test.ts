@@ -5,32 +5,37 @@ import { ApiError, conflictMessage, resolvedMessage } from './errors';
 import type { components } from './schema';
 
 type ErrorBody = components['schemas']['Error'];
+type ErrorDetail = components['schemas']['ErrorDetail'];
 
 const UNREACHABLE =
   "MAPP can't reach its server right now. Check that it is running and try again.";
 
-function errorBody(code: ErrorBody['code'], message: string, extra: Partial<ErrorBody> = {}) {
-  return { code, message, fields: [], ...extra };
+function errorBody(
+  code: ErrorDetail['code'],
+  message: string,
+  extra: Partial<ErrorDetail> = {},
+): ErrorBody {
+  return { error: { code, message, fields: [], ...extra } };
 }
 
 describe('call()', () => {
   it('returns the data of a successful answer', async () => {
-    const health = { status: 'ok', environment: 'local', demoSignIn: true };
-    mockApi({ 'GET /api/health': { body: health } });
+    const environment = { environment: 'local', demoSignIn: true };
+    mockApi({ 'GET /api/v1/environment': { body: environment } });
 
-    await expect(call(api.GET('/api/health'))).resolves.toEqual(health);
+    await expect(call(api.GET('/api/v1/environment'))).resolves.toEqual(environment);
   });
 
   it('returns undefined for a 204 answer', async () => {
-    mockApi({ 'POST /api/auth/sign-out': { status: 204 } });
+    mockApi({ 'POST /api/v1/auth/sign-out': { status: 204 } });
 
-    await expect(call(api.POST('/api/auth/sign-out'))).resolves.toBeUndefined();
+    await expect(call(api.POST('/api/v1/auth/sign-out'))).resolves.toBeUndefined();
   });
 
   it('treats an empty 500 answer as a server that cannot be reached (FR-020)', async () => {
-    mockApi({ 'GET /api/health': { status: 500 } });
+    mockApi({ 'GET /api/v1/environment': { status: 500 } });
 
-    await expect(call(api.GET('/api/health'))).rejects.toMatchObject({
+    await expect(call(api.GET('/api/v1/environment'))).rejects.toMatchObject({
       kind: 'unreachable',
       message: UNREACHABLE,
       status: 500,
@@ -39,11 +44,11 @@ describe('call()', () => {
 
   it('treats a text/plain 502 from the development proxy as unreachable (FR-020)', async () => {
     mockApi({
-      'GET /api/health': () =>
+      'GET /api/v1/environment': () =>
         new Response('Bad gateway', { status: 502, headers: { 'Content-Type': 'text/plain' } }),
     });
 
-    await expect(call(api.GET('/api/health'))).rejects.toMatchObject({
+    await expect(call(api.GET('/api/v1/environment'))).rejects.toMatchObject({
       kind: 'unreachable',
       message: UNREACHABLE,
     });
@@ -51,9 +56,11 @@ describe('call()', () => {
 
   it('keeps the plain-language message of a JSON 500 error (FR-020)', async () => {
     const message = 'Something went wrong on our side. Please try again.';
-    mockApi({ 'GET /api/health': { status: 500, body: errorBody('internal_error', message) } });
+    mockApi({
+      'GET /api/v1/environment': { status: 500, body: errorBody('internal_error', message) },
+    });
 
-    await expect(call(api.GET('/api/health'))).rejects.toMatchObject({
+    await expect(call(api.GET('/api/v1/environment'))).rejects.toMatchObject({
       kind: 'other',
       message,
       status: 500,
@@ -62,10 +69,10 @@ describe('call()', () => {
 
   it('recognises a JSON 401 session_expired (FR-006)', async () => {
     mockApi({
-      'GET /api/me': { status: 401, body: errorBody('session_expired', 'Please sign in again') },
+      'GET /api/v1/me': { status: 401, body: errorBody('session_expired', 'Please sign in again') },
     });
 
-    const failure = call(api.GET('/api/me'));
+    const failure = call(api.GET('/api/v1/me'));
 
     await expect(failure).rejects.toBeInstanceOf(ApiError);
     await expect(failure).rejects.toMatchObject({
@@ -76,9 +83,9 @@ describe('call()', () => {
   });
 
   it('treats a network failure (TypeError) as unreachable (FR-020)', async () => {
-    mockApi({ 'GET /api/health': () => Promise.reject(new TypeError('Failed to fetch')) });
+    mockApi({ 'GET /api/v1/environment': () => Promise.reject(new TypeError('Failed to fetch')) });
 
-    await expect(call(api.GET('/api/health'))).rejects.toMatchObject({
+    await expect(call(api.GET('/api/v1/environment'))).rejects.toMatchObject({
       kind: 'unreachable',
       message: UNREACHABLE,
       status: 0,
@@ -87,15 +94,15 @@ describe('call()', () => {
 
   it('passes a cancelled request (AbortError) on unchanged', async () => {
     const abort = new DOMException('The operation was aborted.', 'AbortError');
-    mockApi({ 'GET /api/health': () => Promise.reject(abort) });
+    mockApi({ 'GET /api/v1/environment': () => Promise.reject(abort) });
 
-    await expect(call(api.GET('/api/health'))).rejects.toBe(abort);
+    await expect(call(api.GET('/api/v1/environment'))).rejects.toBe(abort);
   });
 
   it('shows a general message for a failed answer that is not MAPP JSON (FR-020)', async () => {
-    mockApi({ 'GET /api/health': () => new Response('Not here', { status: 404 }) });
+    mockApi({ 'GET /api/v1/environment': () => new Response('Not here', { status: 404 }) });
 
-    await expect(call(api.GET('/api/health'))).rejects.toMatchObject({
+    await expect(call(api.GET('/api/v1/environment'))).rejects.toMatchObject({
       kind: 'other',
       message: 'Something went wrong. Please try again.',
       status: 404,
@@ -108,14 +115,14 @@ describe('call()', () => {
       { field: 'password', message: 'Enter the password' },
     ];
     mockApi({
-      'POST /api/auth/sign-in': {
+      'POST /api/v1/auth/sign-in': {
         status: 400,
         body: errorBody('validation_failed', 'Some fields need your attention.', { fields }),
       },
     });
 
     await expect(
-      call(api.POST('/api/auth/sign-in', { body: { email: '', password: '' } })),
+      call(api.POST('/api/v1/auth/sign-in', { body: { email: '', password: '' } })),
     ).rejects.toMatchObject({ kind: 'validation', fields });
   });
 
@@ -139,12 +146,14 @@ describe('call()', () => {
     ['internal_error', 500, 'other'],
   ] as const)('turns the code %s (%i) into the kind %s', async (code, status, kind) => {
     mockApi({
-      'POST /api/recycle-bin/BIN-1001/undo': { status, body: errorBody(code, 'A message.') },
+      'POST /api/v1/recycle-bin/BIN-1001/undo': { status, body: errorBody(code, 'A message.') },
     });
 
     await expect(
       call(
-        api.POST('/api/recycle-bin/{entryId}/undo', { params: { path: { entryId: 'BIN-1001' } } }),
+        api.POST('/api/v1/recycle-bin/{entryId}/undo', {
+          params: { path: { entryId: 'BIN-1001' } },
+        }),
       ),
     ).rejects.toMatchObject({ kind, message: 'A message.', status });
   });
@@ -182,13 +191,13 @@ describe('the session-lost hook', () => {
 
   it('ends the session when a signed-in call answers sign_in_required (FR-006)', async () => {
     mockApi({
-      'GET /api/recycle-bin': {
+      'GET /api/v1/recycle-bin': {
         status: 401,
         body: errorBody('sign_in_required', 'Please sign in to continue.'),
       },
     });
 
-    await expect(call(api.GET('/api/recycle-bin'))).rejects.toMatchObject({
+    await expect(call(api.GET('/api/v1/recycle-bin'))).rejects.toMatchObject({
       kind: 'signInRequired',
     });
     expect(onSessionLost).toHaveBeenCalledTimes(1);
@@ -196,40 +205,40 @@ describe('the session-lost hook', () => {
 
   it('ends the session when a signed-in call answers session_expired (FR-006)', async () => {
     mockApi({
-      'PATCH /api/me/preferences': {
+      'PATCH /api/v1/me/preferences': {
         status: 401,
         body: errorBody('session_expired', 'Please sign in again'),
       },
     });
 
     await expect(
-      call(api.PATCH('/api/me/preferences', { body: { theme: 'dark' } })),
+      call(api.PATCH('/api/v1/me/preferences', { body: { theme: 'dark' } })),
     ).rejects.toMatchObject({ kind: 'sessionExpired' });
     expect(onSessionLost).toHaveBeenCalledTimes(1);
   });
 
   it('leaves the session check and the sign-in calls to the session and the sign-in page', async () => {
     mockApi({
-      'GET /api/me': { status: 401, body: errorBody('session_expired', 'Please sign in again') },
-      'POST /api/auth/sign-in': {
+      'GET /api/v1/me': { status: 401, body: errorBody('session_expired', 'Please sign in again') },
+      'POST /api/v1/auth/sign-in': {
         status: 401,
         body: errorBody('incorrect_credentials', 'Incorrect e-mail or password.'),
       },
     });
 
-    await expect(call(api.GET('/api/me'))).rejects.toBeInstanceOf(ApiError);
+    await expect(call(api.GET('/api/v1/me'))).rejects.toBeInstanceOf(ApiError);
     await expect(
-      call(api.POST('/api/auth/sign-in', { body: { email: 'a@b.c', password: 'x' } })),
+      call(api.POST('/api/v1/auth/sign-in', { body: { email: 'a@b.c', password: 'x' } })),
     ).rejects.toBeInstanceOf(ApiError);
     expect(onSessionLost).not.toHaveBeenCalled();
   });
 
   it('ignores failures that are not about the session', async () => {
     mockApi({
-      'GET /api/recycle-bin': { status: 404, body: errorBody('not_found', 'Not here.') },
+      'GET /api/v1/recycle-bin': { status: 404, body: errorBody('not_found', 'Not here.') },
     });
 
-    await expect(call(api.GET('/api/recycle-bin'))).rejects.toMatchObject({ kind: 'notFound' });
+    await expect(call(api.GET('/api/v1/recycle-bin'))).rejects.toMatchObject({ kind: 'notFound' });
     expect(onSessionLost).not.toHaveBeenCalled();
   });
 });

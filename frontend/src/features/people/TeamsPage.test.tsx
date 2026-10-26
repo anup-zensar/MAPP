@@ -90,9 +90,9 @@ const PEOPLE = {
 /** The page at /settings/teams (or one team's address) with the answers every test needs. */
 function renderTeams(answers: Record<string, MockHandler> = {}, route = '/settings/teams') {
   const api = mockApi({
-    'GET /api/me': { body: testUser() },
-    'GET /api/teams': { body: TEAMS },
-    'GET /api/people': { body: PEOPLE },
+    'GET /api/v1/me': { body: testUser() },
+    'GET /api/v1/teams': { body: TEAMS },
+    'GET /api/v1/people': { body: PEOPLE },
     ...answers,
   });
   return {
@@ -177,7 +177,7 @@ describe('TeamsPage (feature 003, US2)', () => {
   });
 
   it('shows how to create the first team when there is none', async () => {
-    const { user } = renderTeams({ 'GET /api/teams': { body: { items: [], total: 0 } } });
+    const { user } = renderTeams({ 'GET /api/v1/teams': { body: { items: [], total: 0 } } });
 
     expect(await screen.findByText('No teams yet — create your first team')).toBeInTheDocument();
     const buttons = screen.getAllByRole('button', { name: 'New team' });
@@ -189,7 +189,7 @@ describe('TeamsPage (feature 003, US2)', () => {
   it('says when the teams could not be loaded, with Try again', async () => {
     let calls = 0;
     const { user } = renderTeams({
-      'GET /api/teams': () => {
+      'GET /api/v1/teams': () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: TEAMS };
       },
@@ -203,8 +203,8 @@ describe('TeamsPage (feature 003, US2)', () => {
   it('creates a team with two members picked with the person picker (US2-1)', async () => {
     const created = { ...CHINA, id: 'T-1004', name: 'Lubricants Asia', members: [ALEX, SARA] };
     const { api, user, router } = renderTeams({
-      'POST /api/teams': { status: 201, body: created },
-      'GET /api/teams/T-1004': { body: created },
+      'POST /api/v1/teams': { status: 201, body: created },
+      'GET /api/v1/teams/T-1004': { body: created },
     });
 
     await user.click(await screen.findByRole('button', { name: 'New team' }));
@@ -222,7 +222,7 @@ describe('TeamsPage (feature 003, US2)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText("Team 'Lubricants Asia' created")).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/teams')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/teams')).toEqual([
       {
         name: 'Lubricants Asia',
         description: 'Lubricants in Asia',
@@ -238,7 +238,7 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('shows a team with its members and the plans using it (US2-3)', async () => {
     const { user, router } = renderTeams(
-      { 'GET /api/teams/T-1001': { body: EUROPE } },
+      { 'GET /api/v1/teams/T-1001': { body: EUROPE } },
       '/settings/teams/T-1001',
     );
 
@@ -266,12 +266,14 @@ describe('TeamsPage (feature 003, US2)', () => {
   it('says in the panel when the team no longer exists', async () => {
     renderTeams(
       {
-        'GET /api/teams/T-1009': {
+        'GET /api/v1/teams/T-1009': {
           status: 404,
           body: {
-            code: 'not_found',
-            message: 'This team no longer exists — someone may have deleted it.',
-            fields: [],
+            error: {
+              code: 'not_found',
+              message: 'This team no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
       },
@@ -286,12 +288,16 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('shows a taken name at the field and in the summary (US2-4)', async () => {
     const { api, user } = renderTeams({
-      'PATCH /api/teams/T-1002': {
+      'PATCH /api/v1/teams/T-1002': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the highlighted fields.',
-          fields: [{ field: 'name', message: "A team called 'Lubricants Europe' already exists." }],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the highlighted fields.',
+            fields: [
+              { field: 'name', message: "A team called 'Lubricants Europe' already exists." },
+            ],
+          },
         },
       },
     });
@@ -307,30 +313,32 @@ describe('TeamsPage (feature 003, US2)', () => {
       await within(panel).findAllByText("A team called 'Lubricants Europe' already exists."),
     ).toHaveLength(2);
     // Only the changed field and the version (D-210).
-    expect(api.bodiesOf('PATCH /api/teams/T-1002')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/teams/T-1002')).toEqual([
       { name: 'lubricants europe', version: 1 },
     ]);
-    expect(api.bodiesOf('POST /api/teams/T-1002/impact')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/teams/T-1002/impact')).toEqual([]);
   });
 
   it('says who saved first after a conflict and saves with their version next time', async () => {
     let patches = 0;
     const { api, user } = renderTeams({
-      'PATCH /api/teams/T-1002': () => {
+      'PATCH /api/v1/teams/T-1002': () => {
         patches += 1;
         return patches === 1
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Not saved — Daniel Okoro changed this team.',
-                fields: [],
-                conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-10T14:32:00Z' },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Not saved — Daniel Okoro changed this team.',
+                  fields: [],
+                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-10T14:32:00Z' },
+                },
               },
             }
           : { body: { ...CHINA, version: 3 } };
       },
-      'GET /api/teams/T-1002': { body: { ...CHINA, version: 2 } },
+      'GET /api/v1/teams/T-1002': { body: { ...CHINA, version: 2 } },
     });
 
     await chooseAction(user, 'Mobility China', 'Edit');
@@ -349,12 +357,12 @@ describe('TeamsPage (feature 003, US2)', () => {
       ),
     ).toBeInTheDocument();
     await waitFor(() =>
-      expect(api.requests.some((r) => r.path === '/api/teams/T-1002')).toBe(true),
+      expect(api.requests.some((r) => r.path === '/api/v1/teams/T-1002')).toBe(true),
     );
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText("Team 'Mobility China' saved")).toBeInTheDocument();
-    const bodies = api.bodiesOf('PATCH /api/teams/T-1002') as {
+    const bodies = api.bodiesOf('PATCH /api/v1/teams/T-1002') as {
       version: number;
       description: string;
     }[];
@@ -366,10 +374,10 @@ describe('TeamsPage (feature 003, US2)', () => {
     const warning =
       'Priya Raman owns 1 plan that uses this team: FY2026 Lubricants Europe. Priya will no longer belong to its teams, so its owner will need attention.';
     const { api, user } = renderTeams({
-      'POST /api/teams/T-1001/impact': {
+      'POST /api/v1/teams/T-1001/impact': {
         body: { warnings: [{ kind: 'ownerNeedsAttention', message: warning, count: 1 }] },
       },
-      'PATCH /api/teams/T-1001': { body: { ...EUROPE, members: [ALEX, OLD], version: 2 } },
+      'PATCH /api/v1/teams/T-1001': { body: { ...EUROPE, members: [ALEX, OLD], version: 2 } },
     });
 
     await chooseAction(user, 'Lubricants Europe', 'Edit');
@@ -383,7 +391,7 @@ describe('TeamsPage (feature 003, US2)', () => {
     expect(dialog).toHaveTextContent(warning);
     await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }));
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/teams/T-1001')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/teams/T-1001')).toEqual([]);
 
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
     const again = await screen.findByRole('alertdialog', {
@@ -393,13 +401,13 @@ describe('TeamsPage (feature 003, US2)', () => {
 
     expect(await screen.findByText("Team 'Lubricants Europe' saved")).toBeInTheDocument();
     const body = { memberIds: ['U-1001', 'U-1005'], version: 1 }; // only what changed (D-210)
-    expect(api.bodiesOf('POST /api/teams/T-1001/impact')).toEqual([body, body]);
-    expect(api.bodiesOf('PATCH /api/teams/T-1001')).toEqual([body]);
+    expect(api.bodiesOf('POST /api/v1/teams/T-1001/impact')).toEqual([body, body]);
+    expect(api.bodiesOf('PATCH /api/v1/teams/T-1001')).toEqual([body]);
   });
 
   it('refuses to delete a used team and offers Set team inactive (US2-6)', async () => {
     const { api, user } = renderTeams({
-      'POST /api/teams/T-1001/status': { body: { ...EUROPE, active: false, version: 2 } },
+      'POST /api/v1/teams/T-1001/status': { body: { ...EUROPE, active: false, version: 2 } },
     });
 
     await chooseAction(user, 'Lubricants Europe', 'Delete');
@@ -413,18 +421,20 @@ describe('TeamsPage (feature 003, US2)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Set team inactive' }));
 
     expect(await screen.findByText("Team 'Lubricants Europe' set inactive")).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/teams/T-1001/status')).toEqual([{ active: false, version: 1 }]);
+    expect(api.bodiesOf('POST /api/v1/teams/T-1001/status')).toEqual([
+      { active: false, version: 1 },
+    ]);
     expect(api.requests.some((request) => request.method === 'DELETE')).toBe(false);
   });
 
   it('deletes an unused team, and Undo brings it back (US2-7)', async () => {
     const { api, user } = renderTeams({
-      'DELETE /api/teams/T-1002': {
+      'DELETE /api/v1/teams/T-1002': {
         body: {
           recycleBinEntry: { id: 'RB-1001', recordTypeLabel: 'team', recordName: 'Mobility China' },
         },
       },
-      'POST /api/recycle-bin/RB-1001/undo': { body: {} },
+      'POST /api/v1/recycle-bin/RB-1001/undo': { body: {} },
     });
 
     await chooseAction(user, 'Mobility China', 'Delete');
@@ -443,7 +453,9 @@ describe('TeamsPage (feature 003, US2)', () => {
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
 
     expect(await screen.findByText("Team 'Mobility China' restored")).toBeInTheDocument();
-    expect(api.requests.filter((r) => r.path === '/api/recycle-bin/RB-1001/undo')).toHaveLength(1);
+    expect(api.requests.filter((r) => r.path === '/api/v1/recycle-bin/RB-1001/undo')).toHaveLength(
+      1,
+    );
   });
 
   it('shows the plans when one started using the team meanwhile (in_use)', async () => {
@@ -452,16 +464,18 @@ describe('TeamsPage (feature 003, US2)', () => {
       plans: [{ id: 'P-1002', name: 'FY2026 Mobility China', inRecycleBin: false }],
     };
     const { user } = renderTeams({
-      'DELETE /api/teams/T-1002': {
+      'DELETE /api/v1/teams/T-1002': {
         status: 409,
         body: {
-          code: 'in_use',
-          message:
-            "Mobility China is used by 1 plan, so it can't be deleted. Set it inactive instead.",
-          fields: [],
+          error: {
+            code: 'in_use',
+            message:
+              "Mobility China is used by 1 plan, so it can't be deleted. Set it inactive instead.",
+            fields: [],
+          },
         },
       },
-      'GET /api/teams/T-1002': { body: used },
+      'GET /api/v1/teams/T-1002': { body: used },
     });
 
     await chooseAction(user, 'Mobility China', 'Delete');
@@ -476,7 +490,7 @@ describe('TeamsPage (feature 003, US2)', () => {
   it('sets an unused team inactive at once, with Undo (design system §6.7)', async () => {
     let posts = 0;
     const { api, user } = renderTeams({
-      'POST /api/teams/T-1002/status': () => {
+      'POST /api/v1/teams/T-1002/status': () => {
         posts += 1;
         return { body: { ...CHINA, active: posts !== 1, version: posts + 1 } };
       },
@@ -492,7 +506,7 @@ describe('TeamsPage (feature 003, US2)', () => {
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
 
     expect(await screen.findByText("Team 'Mobility China' reactivated")).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/teams/T-1002/status')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/teams/T-1002/status')).toEqual([
       { active: false, version: 1 },
       { active: true, version: 2 },
     ]);
@@ -500,7 +514,7 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('asks before setting a team that plans use inactive, naming the plans', async () => {
     const { api, user } = renderTeams({
-      'POST /api/teams/T-1001/status': { body: { ...EUROPE, active: false, version: 2 } },
+      'POST /api/v1/teams/T-1001/status': { body: { ...EUROPE, active: false, version: 2 } },
     });
 
     await chooseAction(user, 'Lubricants Europe', 'Set team inactive');
@@ -514,18 +528,24 @@ describe('TeamsPage (feature 003, US2)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Set inactive' }));
 
     expect(await screen.findByText("Team 'Lubricants Europe' set inactive")).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/teams/T-1001/status')).toEqual([{ active: false, version: 1 }]);
+    expect(api.bodiesOf('POST /api/v1/teams/T-1001/status')).toEqual([
+      { active: false, version: 1 },
+    ]);
   });
 
   it('reactivates an inactive team', async () => {
     const { api, user } = renderTeams(
-      { 'POST /api/teams/T-1003/status': { body: { ...OLD_MARKETS, active: true, version: 2 } } },
+      {
+        'POST /api/v1/teams/T-1003/status': { body: { ...OLD_MARKETS, active: true, version: 2 } },
+      },
       '/settings/teams?status=inactive',
     );
 
     await chooseAction(user, 'Old Markets', 'Reactivate');
 
     expect(await screen.findByText("Team 'Old Markets' reactivated")).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/teams/T-1003/status')).toEqual([{ active: true, version: 1 }]);
+    expect(api.bodiesOf('POST /api/v1/teams/T-1003/status')).toEqual([
+      { active: true, version: 1 },
+    ]);
   });
 });

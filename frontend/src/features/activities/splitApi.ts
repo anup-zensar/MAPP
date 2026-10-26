@@ -21,7 +21,7 @@ export function useSplitOptions(activityId: string) {
     queryKey: ['activity', activityId, 'split-options'],
     queryFn: () =>
       call(
-        api.GET('/api/activities/{activityId}/split-options', {
+        api.GET('/api/v1/activities/{activityId}/split-options', {
           params: { path: { activityId } },
         }),
       ),
@@ -36,7 +36,7 @@ export function useSplitPreview(activityId: string, request: ActivitySplitReques
     queryKey: ['activity', activityId, 'split-preview', request],
     queryFn: () =>
       call(
-        api.POST('/api/activities/{activityId}/split-preview', {
+        api.POST('/api/v1/activities/{activityId}/split-preview', {
           params: { path: { activityId } },
           body: request!,
         }),
@@ -53,7 +53,7 @@ export function useSplitActivity() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: ActivitySplitRequest }) =>
       call(
-        api.POST('/api/activities/{activityId}/split', {
+        api.POST('/api/v1/activities/{activityId}/split', {
           params: { path: { activityId: id } },
           body,
         }),

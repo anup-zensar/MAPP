@@ -136,7 +136,10 @@ var refusal = errs.Forbidden("Seeing financial data isn't part of your role (Vie
 
 func (f *fakeAccess) SeeFinance(context.Context, actor.Actor) error { return refuse(f.noView) }
 func (f *fakeAccess) SeeFinanceIn(_ context.Context, _ actor.Actor, planID string) error {
-	return refuse(f.noView || (f.plans != nil && !slices.Contains(f.plans, planID)))
+	if !f.noView && f.plans != nil && !slices.Contains(f.plans, planID) {
+		return errs.NotFound("This plan no longer exists — someone may have deleted it.")
+	}
+	return refuse(f.noView)
 }
 func (f *fakeAccess) Import(context.Context, actor.Actor) error { return refuse(f.noImport) }
 func (f *fakeAccess) Link(_ context.Context, _ actor.Actor, planID string) error {

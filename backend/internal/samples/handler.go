@@ -21,15 +21,15 @@ func NewHandler(s *Service) *Handler {
 // Routes registers the sample routes on r. All of them need a signed-in person, so all are wrapped in
 // signedIn. internal/app registers them only in demo mode (D-036).
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/sample-folders", signedIn(h.listFolders))
-	r.Handle("POST /api/sample-folders", signedIn(h.createFolder))
-	r.Handle("PATCH /api/sample-folders/{folderId}", signedIn(h.updateFolder))
-	r.Handle("DELETE /api/sample-folders/{folderId}", signedIn(h.deleteFolder))
-	r.Handle("POST /api/sample-folders/{folderId}/notes", signedIn(h.createNote))
-	r.Handle("DELETE /api/sample-notes/{noteId}", signedIn(h.deleteNote))
+	r.Handle("GET /api/v1/sample-folders", signedIn(h.listFolders))
+	r.Handle("POST /api/v1/sample-folders", signedIn(h.createFolder))
+	r.Handle("PATCH /api/v1/sample-folders/{folderId}", signedIn(h.updateFolder))
+	r.Handle("DELETE /api/v1/sample-folders/{folderId}", signedIn(h.deleteFolder))
+	r.Handle("POST /api/v1/sample-folders/{folderId}/notes", signedIn(h.createNote))
+	r.Handle("DELETE /api/v1/sample-notes/{noteId}", signedIn(h.deleteNote))
 }
 
-// listFolders answers GET /api/sample-folders: every folder with its notes, sorted by name.
+// listFolders answers GET /api/v1/sample-folders: every folder with its notes, sorted by name.
 func (h *Handler) listFolders(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	folders, err := h.service.ListFolders(r.Context(), a)
@@ -40,7 +40,7 @@ func (h *Handler) listFolders(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, FolderPage{Items: folders, Total: len(folders)})
 }
 
-// createFolder answers POST /api/sample-folders with 201 and the new folder.
+// createFolder answers POST /api/v1/sample-folders with 201 and the new folder.
 func (h *Handler) createFolder(w http.ResponseWriter, r *http.Request) {
 	var input FolderInput
 	if err := web.ReadJSON(w, r, &input); err != nil {
@@ -56,7 +56,7 @@ func (h *Handler) createFolder(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusCreated, folder)
 }
 
-// updateFolder answers PATCH /api/sample-folders/{folderId} with the folder after the rename.
+// updateFolder answers PATCH /api/v1/sample-folders/{folderId} with the folder after the rename.
 func (h *Handler) updateFolder(w http.ResponseWriter, r *http.Request) {
 	var update FolderUpdate
 	if err := web.ReadJSON(w, r, &update); err != nil {
@@ -72,7 +72,7 @@ func (h *Handler) updateFolder(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, folder)
 }
 
-// deleteFolder answers DELETE /api/sample-folders/{folderId} with the recycle-bin entry of the folder and
+// deleteFolder answers DELETE /api/v1/sample-folders/{folderId} with the recycle-bin entry of the folder and
 // its notes, so the web app can offer Undo.
 func (h *Handler) deleteFolder(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
@@ -84,7 +84,7 @@ func (h *Handler) deleteFolder(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
 }
 
-// createNote answers POST /api/sample-folders/{folderId}/notes with 201 and the new note.
+// createNote answers POST /api/v1/sample-folders/{folderId}/notes with 201 and the new note.
 func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) {
 	var input NoteInput
 	if err := web.ReadJSON(w, r, &input); err != nil {
@@ -100,7 +100,7 @@ func (h *Handler) createNote(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusCreated, note)
 }
 
-// deleteNote answers DELETE /api/sample-notes/{noteId} with the recycle-bin entry of the note, so the web
+// deleteNote answers DELETE /api/v1/sample-notes/{noteId} with the recycle-bin entry of the note, so the web
 // app can offer Undo.
 func (h *Handler) deleteNote(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware

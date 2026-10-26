@@ -6,8 +6,8 @@ import { vi } from 'vitest';
  * mockApi() replaces the browser's fetch with canned answers, one per "METHOD /path":
  *
  *   const api = mockApi({
- *     'GET /api/me': { body: priya },
- *     'PATCH /api/me/preferences': { status: 400, body: validationError },
+ *     'GET /api/v1/me': { body: priya },
+ *     'PATCH /api/v1/me/preferences': { status: 400, body: validationError },
  *   });
  *
  * A request without a canned answer is remembered, and the test setup fails the test afterwards,
@@ -53,10 +53,10 @@ export interface MockedApi {
  * unless the test gives its own answer, so page tests of any feature need not mock them.
  */
 export const FRAME_ANSWERS: Record<string, MockAnswer> = {
-  'GET /api/approvals/summary': {
+  'GET /api/v1/approvals/summary': {
     body: { waitingForMe: 0, allOpen: 0, approvedThisMonth: 0, declinedThisMonth: 0 },
   },
-  'GET /api/notifications': { body: { items: [], total: 0, unread: 0 } },
+  'GET /api/v1/notifications': { body: { items: [], total: 0, unread: 0 } },
 };
 
 /** Requests that had no canned answer, as "METHOD /path"; read by the test setup. */

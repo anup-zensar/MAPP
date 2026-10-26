@@ -81,7 +81,10 @@
   padding-right: var(--card-padding);
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .table thead th {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   height: var(--control-md);
   padding-block: 0;
   border-top: 1px solid var(--hairline);
@@ -98,7 +101,12 @@
   border-bottom: 0;
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .table tbody tr:hover {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 
@@ -161,6 +169,8 @@
 /* "Other markets (2 plans)": a summed row, set apart like a totals row. */
 .other th,
 .other td {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   background: var(--gray-bg);
 }
 

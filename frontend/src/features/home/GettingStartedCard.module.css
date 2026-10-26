@@ -1,9 +1,9 @@
-/* The no-team sentence above the steps, on a soft blue band. */
+/* The no-team sentence above the steps, on a soft band of the information colour. */
 .notice {
   margin-bottom: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--blue) 8%, transparent);
+  background: color-mix(in srgb, var(--info) 8%, transparent);
   color: var(--ink);
   font-size: var(--text-sm);
 }

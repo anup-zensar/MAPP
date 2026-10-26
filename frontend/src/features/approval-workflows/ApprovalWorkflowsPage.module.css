@@ -81,7 +81,12 @@
   border-bottom: 0;
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .table tbody tr:hover {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 
@@ -141,7 +146,7 @@
 
 .warning:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 /* The row's ⋯: the last column, 48 px wide, vertically centred on the first line. */

@@ -9,7 +9,7 @@ import { CHINA_WORKFLOW, detailsOf, workflowOf } from './testData';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
 import { WORKFLOW_GONE } from './workflowTexts';
 
-const DETAILS = 'GET /api/approval-workflows/WF-1001';
+const DETAILS = 'GET /api/v1/approval-workflows/WF-1001';
 
 function renderPanel(answer: MockHandler) {
   mockApi({ [DETAILS]: answer });
@@ -107,7 +107,7 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
   it('says when the workflow no longer exists', async () => {
     renderPanel({
       status: 404,
-      body: { code: 'not_found', message: WORKFLOW_GONE, fields: [] },
+      body: { error: { code: 'not_found', message: WORKFLOW_GONE, fields: [] } },
     });
 
     expect(await screen.findByText(WORKFLOW_GONE)).toBeInTheDocument();

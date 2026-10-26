@@ -27,13 +27,15 @@ vi.mock('@/features/activities/InitiativeActivities', () => ({
 const ANSWERS: Record<string, MockHandler> = {
   ...HISTORY_ANSWERS,
   ...financialsNotServed('P-1001', 'C-1001', 'I-1001'),
-  'GET /api/plans/P-1001/campaigns': { body: planCampaigns() },
-  'GET /api/plans/P-1001': { body: planAnswer() },
-  'GET /api/campaigns/C-1001': { body: campaign() },
-  'GET /api/initiatives/I-1001': { body: initiative() },
-  'GET /api/shell-attribute-forms/campaign': { body: campaignForm() },
-  'GET /api/shell-attribute-forms/initiative': { body: { ...campaignForm(), level: 'initiative' } },
-  'GET /api/people': { body: PEOPLE },
+  'GET /api/v1/plans/P-1001/campaigns': { body: planCampaigns() },
+  'GET /api/v1/plans/P-1001': { body: planAnswer() },
+  'GET /api/v1/campaigns/C-1001': { body: campaign() },
+  'GET /api/v1/initiatives/I-1001': { body: initiative() },
+  'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
+  'GET /api/v1/shell-attribute-forms/initiative': {
+    body: { ...campaignForm(), level: 'initiative' },
+  },
+  'GET /api/v1/people': { body: PEOPLE },
 };
 
 // Feature 005's addresses: side panels over the plan page (build guide §5).

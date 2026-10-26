@@ -22,17 +22,17 @@ import {
   usd,
 } from './testData';
 
-const GET = 'GET /api/line-items/L-1001';
-const DUPLICATE = 'POST /api/line-items/L-1001/duplicate';
-const DELETE = 'DELETE /api/line-items/L-1001';
+const GET = 'GET /api/v1/line-items/L-1001';
+const DUPLICATE = 'POST /api/v1/line-items/L-1001/duplicate';
+const DELETE = 'DELETE /api/v1/line-items/L-1001';
 
 function renderPage(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
     ...formAnswers(),
-    'GET /api/exchange-rates/current': { body: currentRates() },
-    'GET /api/financials/records/L-1001': { body: lineItemRecord() },
-    'GET /api/financials/transactions': {
+    'GET /api/v1/exchange-rates/current': { body: currentRates() },
+    'GET /api/v1/financials/records/L-1001': { body: lineItemRecord() },
+    'GET /api/v1/financials/transactions': {
       body: transactionPage([
         transaction({
           id: 'FT-1003',
@@ -145,14 +145,14 @@ describe('LineItemPage (US4, FR-026)', () => {
     expect(within(history).getByText('Every change to this line item, newest first')).toBeVisible();
     expect(within(history).queryByRole('checkbox')).not.toBeInTheDocument();
     expect(await within(history).findByText('No changes recorded yet.')).toBeVisible();
-    const asked = api.requests.find((request) => request.path === '/api/activity-log');
+    const asked = api.requests.find((request) => request.path === '/api/v1/activity-log');
     expect(new URLSearchParams(asked?.search).get('recordId')).toBe('L-1001');
   });
 
   it('duplicates and opens the copy (scenario 4, FR-029)', async () => {
     const { user, api, router } = renderPage({
       [DUPLICATE]: { status: 201, body: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) },
-      'GET /api/line-items/L-2002': {
+      'GET /api/v1/line-items/L-2002': {
         body: details({ lineItem: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) }),
       },
     });
@@ -169,7 +169,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     const { user, api } = renderPage({
       [GET]: { body: details({ activity: approvedActivity() }) },
       [DUPLICATE]: { status: 201, body: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) },
-      'GET /api/line-items/L-2002': {
+      'GET /api/v1/line-items/L-2002': {
         body: details({ lineItem: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) }),
       },
       ...financialsNotServed('L-2002'),
@@ -190,7 +190,7 @@ describe('LineItemPage (US4, FR-026)', () => {
   it('deletes after the dialog and offers Undo (scenario 5, FR-030)', async () => {
     const { user, api, router } = renderPage({
       [DELETE]: { body: deleteResult() },
-      'POST /api/recycle-bin/BIN-1001/undo': {
+      'POST /api/v1/recycle-bin/BIN-1001/undo': {
         body: {
           recordType: 'lineItem',
           recordTypeLabel: 'line item',

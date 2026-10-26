@@ -65,8 +65,11 @@
 }
 
 /* Totals row: bold on grey, with a 2 px ink line above (design system §5.4). */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .table tfoot th,
 .table tfoot td {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   border-top: 2px solid var(--ink);
   border-bottom: 0;
   background: var(--gray-bg);

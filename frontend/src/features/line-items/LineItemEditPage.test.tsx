@@ -19,9 +19,9 @@ import {
   usd,
 } from './testData';
 
-const GET = 'GET /api/line-items/L-1001';
-const PATCH = 'PATCH /api/line-items/L-1001';
-const OPTIONS = 'GET /api/activities/A-1001/line-items/form-options';
+const GET = 'GET /api/v1/line-items/L-1001';
+const PATCH = 'PATCH /api/v1/line-items/L-1001';
+const OPTIONS = 'GET /api/v1/activities/A-1001/line-items/form-options';
 
 function renderPage(answers: Record<string, MockHandler> = {}, route = '/line-items/L-1001/edit') {
   const api = mockApi({
@@ -144,10 +144,12 @@ describe('LineItemEditPage (US4, FR-027)', () => {
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Someone else changed this line item.',
-                fields: [],
-                conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:30:00Z' },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Someone else changed this line item.',
+                  fields: [],
+                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:30:00Z' },
+                },
               },
             }
           : { body: lineItem({ name: 'Agency fees' }) },

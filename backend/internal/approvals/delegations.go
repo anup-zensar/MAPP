@@ -33,7 +33,7 @@ const (
 	maxNoteLength     = 500
 )
 
-// The scopes of the delegation list (GET /api/approval-delegations?scope=).
+// The scopes of the delegation list (GET /api/v1/approval-delegations?scope=).
 const (
 	ScopeMine = "mine"
 	ScopeAll  = "all"

@@ -32,8 +32,8 @@ function renderPage(id: string, answers: Record<string, MockHandler>) {
 describe('ShellAttributePage (FR-020)', () => {
   it('shows the settings with where the attribute is used, and its options', async () => {
     renderPage('SA-1010', {
-      'GET /api/shell-attributes/SA-1010': { body: MEDIA_CHANNEL },
-      'GET /api/shell-attributes/SA-1010/options': { body: page([TV]) },
+      'GET /api/v1/shell-attributes/SA-1010': { body: MEDIA_CHANNEL },
+      'GET /api/v1/shell-attributes/SA-1010/options': { body: page([TV]) },
     });
 
     expect(
@@ -85,14 +85,14 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('shows what the attribute depends on and when it is shown (US3)', async () => {
     renderPage('SA-1011', {
-      'GET /api/shell-attributes/SA-1011': {
+      'GET /api/v1/shell-attributes/SA-1011': {
         body: {
           ...PIR,
           parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true },
           condition: [{ id: 'SO-BU-LUB', name: 'Lubricants', active: true }],
         },
       },
-      'GET /api/shell-attributes/SA-1011/options': { body: page([]) },
+      'GET /api/v1/shell-attributes/SA-1011/options': { body: page([]) },
     });
 
     const settings = await screen.findByRole('region', { name: 'Settings' });
@@ -104,7 +104,7 @@ describe('ShellAttributePage (FR-020)', () => {
   });
 
   it('says that types without options have none', async () => {
-    renderPage('SA-1013', { 'GET /api/shell-attributes/SA-1013': { body: OLD_NOTES } });
+    renderPage('SA-1013', { 'GET /api/v1/shell-attributes/SA-1013': { body: OLD_NOTES } });
 
     const options = await screen.findByRole('region', { name: 'Options' });
     expect(options).toHaveTextContent('Long text attributes have no options.');
@@ -113,8 +113,8 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('shows each lock once, with its reason (FR-021, FR-023)', async () => {
     renderPage('SA-1001', {
-      'GET /api/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
-      'GET /api/shell-attributes/SA-1001/options': { body: page([]) },
+      'GET /api/v1/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
+      'GET /api/v1/shell-attributes/SA-1001/options': { body: page([]) },
     });
 
     expect(await screen.findAllByText(BUSINESS_UNIT_LOCK)).toHaveLength(1);
@@ -122,9 +122,9 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('says when the attribute no longer exists, with the way back', async () => {
     renderPage('SA-9999', {
-      'GET /api/shell-attributes/SA-9999': {
+      'GET /api/v1/shell-attributes/SA-9999': {
         status: 404,
-        body: { code: 'not_found', message: 'This Shell attribute no longer exists.' },
+        body: { error: { code: 'not_found', message: 'This Shell attribute no longer exists.' } },
       },
     });
 
@@ -141,9 +141,11 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('shows a failure with Try again', async () => {
     renderPage('SA-1010', {
-      'GET /api/shell-attributes/SA-1010': {
+      'GET /api/v1/shell-attributes/SA-1010': {
         status: 500,
-        body: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        body: {
+          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        },
       },
     });
 
@@ -152,9 +154,9 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('deletes an unused attribute and goes back to its level, with Undo (FR-004)', async () => {
     const { user, router } = renderPage('SA-1011', {
-      'GET /api/shell-attributes/SA-1011': { body: { ...PIR, optionCount: 0 } },
-      'GET /api/shell-attributes/SA-1011/options': { body: page([]) },
-      'DELETE /api/shell-attributes/SA-1011': {
+      'GET /api/v1/shell-attributes/SA-1011': { body: { ...PIR, optionCount: 0 } },
+      'GET /api/v1/shell-attributes/SA-1011/options': { body: page([]) },
+      'DELETE /api/v1/shell-attributes/SA-1011': {
         body: {
           recycleBinEntry: {
             id: 'BIN-1002',

@@ -4,7 +4,7 @@
  * (FR-030), which rows are open and on screen (FR-011, FR-012, D-115), the filter chips (FR-008)
  * and the parts of a saved view that no longer exist (FR-031).
  *
- * The web app never adds money: every amount comes from GET /api/all-work (D-114). These
+ * The web app never adds money: every amount comes from GET /api/v1/all-work (D-114). These
  * functions only choose which of the answered rows are on screen.
  */
 import {
@@ -117,7 +117,7 @@ export function standardState(preferences: AllWorkPreferences, year: number): Vi
 }
 
 /**
- * The query of GET /api/all-work for a state: only what is in use. Columns go with the Grid (the
+ * The query of GET /api/v1/all-work for a state: only what is in use. Columns go with the Grid (the
  * other views have fixed columns), the period with Budget & cost.
  */
 export function toQueryParams(state: ViewState): AllWorkQuery {

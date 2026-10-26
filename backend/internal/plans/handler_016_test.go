@@ -18,7 +18,7 @@ import (
 // getPlan reads the plan id as client and stops the test unless it answers 200.
 func getPlan(t *testing.T, client *apitest.Client, id string) plans.PlanView {
 	t.Helper()
-	response := client.Do(t, http.MethodGet, "/api/plans/"+id, nil)
+	response := client.Do(t, http.MethodGet, "/api/v1/plans/"+id, nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET plan %s = %d %s", id, response.Status, response.Body)
 	}
@@ -66,8 +66,8 @@ func TestCreatePlan_CurrencyAndType_Contract_FR011_FR032(t *testing.T) {
 	wrong["name"], wrong["currency"] = "FY2026 Lubricants Wrong", "GBP"
 	wrong["budget"] = map[string]any{"amount": "100000.00", "currency": "USD"}
 
-	created := priya.Do(t, http.MethodPost, "/api/plans", body)
-	refused := priya.Do(t, http.MethodPost, "/api/plans", wrong)
+	created := priya.Do(t, http.MethodPost, "/api/v1/plans", body)
+	refused := priya.Do(t, http.MethodPost, "/api/v1/plans", wrong)
 
 	if created.Status != http.StatusCreated {
 		t.Fatalf("create = %d %s", created.Status, created.Body)
@@ -87,9 +87,9 @@ func TestListPlans_YearRangeAndType_Contract_FR033(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	crossMarket := listOf(t, priya.Do(t, http.MethodGet, "/api/plans?yearFrom=2027&yearTo=2027&type=crossMarket", nil))
-	both := listOf(t, priya.Do(t, http.MethodGet, "/api/plans?yearFrom=2026&yearTo=2027&type=crossMarket&type=strategic", nil))
-	reversed := priya.Do(t, http.MethodGet, "/api/plans?yearFrom=2027&yearTo=2026", nil)
+	crossMarket := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans?yearFrom=2027&yearTo=2027&type=crossMarket", nil))
+	both := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans?yearFrom=2026&yearTo=2027&type=crossMarket&type=strategic", nil))
+	reversed := priya.Do(t, http.MethodGet, "/api/v1/plans?yearFrom=2027&yearTo=2026", nil)
 
 	if ids := listIDs(crossMarket); !reflect.DeepEqual(ids, []string{"P-1004"}) {
 		t.Fatalf("Cross-market 2027 = %q, want P-1004", ids)
@@ -127,10 +127,10 @@ func TestSetPlanPhasing_Contract_FR020(t *testing.T) {
 	outside := map[string]any{"method": "custom", "months": []map[string]any{{"month": "2026-03", "amount": "10.00"}},
 		"version": before.Version}
 
-	refused := priya.Do(t, http.MethodPut, "/api/plans/P-1004/budget-phasing", outside)
-	saved := priya.Do(t, http.MethodPut, "/api/plans/P-1004/budget-phasing", body)
-	stale := priya.Do(t, http.MethodPut, "/api/plans/P-1004/budget-phasing", body)
-	gone := priya.Do(t, http.MethodPut, "/api/plans/P-9999/budget-phasing", body)
+	refused := priya.Do(t, http.MethodPut, "/api/v1/plans/P-1004/budget-phasing", outside)
+	saved := priya.Do(t, http.MethodPut, "/api/v1/plans/P-1004/budget-phasing", body)
+	stale := priya.Do(t, http.MethodPut, "/api/v1/plans/P-1004/budget-phasing", body)
+	gone := priya.Do(t, http.MethodPut, "/api/v1/plans/P-9999/budget-phasing", body)
 
 	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"months","message":"Months must be in 2027."}`))
 	if saved.Status != http.StatusOK {

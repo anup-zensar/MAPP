@@ -12,7 +12,10 @@ const BY_MONTH = savedView({ id: 'SV-1002', name: 'Lubricants by month', isDefau
 const VIEWS = [DECLINED, BY_MONTH];
 
 function renderPanel(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'GET /api/saved-views': { body: { items: VIEWS, total: 2 } }, ...answers });
+  const api = mockApi({
+    'GET /api/v1/saved-views': { body: { items: VIEWS, total: 2 } },
+    ...answers,
+  });
   const rendered = renderWithProviders(
     <ManageViewsPanel open onOpenChange={() => {}} views={VIEWS} />,
     { user: testUser() },
@@ -49,8 +52,8 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
 
   it('sets and removes the default view (FR-031)', async () => {
     const { api, user } = renderPanel({
-      'PATCH /api/saved-views/SV-1001': { body: { ...DECLINED, isDefault: true } },
-      'PATCH /api/saved-views/SV-1002': { body: { ...BY_MONTH, isDefault: false } },
+      'PATCH /api/v1/saved-views/SV-1001': { body: { ...DECLINED, isDefault: true } },
+      'PATCH /api/v1/saved-views/SV-1002': { body: { ...BY_MONTH, isDefault: false } },
     });
 
     await user.click(
@@ -66,13 +69,13 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
       await screen.findByText("'Lubricants by month' is no longer your default view"),
     ).toBeInTheDocument();
 
-    expect(api.bodiesOf('PATCH /api/saved-views/SV-1001')).toEqual([{ isDefault: true }]);
-    expect(api.bodiesOf('PATCH /api/saved-views/SV-1002')).toEqual([{ isDefault: false }]);
+    expect(api.bodiesOf('PATCH /api/v1/saved-views/SV-1001')).toEqual([{ isDefault: true }]);
+    expect(api.bodiesOf('PATCH /api/v1/saved-views/SV-1002')).toEqual([{ isDefault: false }]);
   });
 
   it('renames a view, refusing a name the person already uses (FR-029, FR-031)', async () => {
     const { api, user } = renderPanel({
-      'PATCH /api/saved-views/SV-1001': { body: { ...DECLINED, name: 'Declined in Europe' } },
+      'PATCH /api/v1/saved-views/SV-1001': { body: { ...DECLINED, name: 'Declined in Europe' } },
     });
 
     await user.click(within(panel()).getByRole('button', { name: 'Rename Declined activities' }));
@@ -91,7 +94,7 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Rename view' }));
 
     expect(await screen.findByText("View 'Declined in Europe' renamed")).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/saved-views/SV-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/saved-views/SV-1001')).toEqual([
       { name: 'Declined in Europe' },
     ]);
   });
@@ -99,8 +102,8 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
   it('deletes a view after asking, and Undo saves it again (FR-031)', async () => {
     const restored = { ...DECLINED, id: 'SV-1003' };
     const { api, user } = renderPanel({
-      'DELETE /api/saved-views/SV-1001': { body: DECLINED },
-      'POST /api/saved-views': { status: 201, body: restored },
+      'DELETE /api/v1/saved-views/SV-1001': { body: DECLINED },
+      'POST /api/v1/saved-views': { status: 201, body: restored },
     });
 
     await user.click(within(panel()).getByRole('button', { name: 'Delete Declined activities' }));
@@ -117,16 +120,16 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
     await user.click(screen.getByRole('button', { name: 'Undo', hidden: true }));
 
     expect(await screen.findByText("View 'Declined activities' restored")).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/saved-views')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/saved-views')).toEqual([
       { name: DECLINED.name, state: DECLINED.state, isDefault: false },
     ]);
   });
 
   it('says when a view was deleted in another tab (plan "States")', async () => {
     const { user } = renderPanel({
-      'PATCH /api/saved-views/SV-1001': {
+      'PATCH /api/v1/saved-views/SV-1001': {
         status: 404,
-        body: { code: 'not_found', message: 'Not found' },
+        body: { error: { code: 'not_found', message: 'Not found' } },
       },
     });
 

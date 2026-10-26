@@ -74,7 +74,7 @@ type StatusUpdate struct {
 	Version *int  `json:"version"`
 }
 
-// SettingsOverview is the number of active records of each Settings section (GET /api/settings/overview).
+// SettingsOverview is the number of active records of each Settings section (GET /api/v1/settings/overview).
 type SettingsOverview struct {
 	Models             int `json:"models"`
 	ActivityTypes      int `json:"activityTypes"`
@@ -120,13 +120,13 @@ type ModelView struct {
 	record.Meta
 }
 
-// ModelPage is the answer of GET /api/models (contract ModelPage).
+// ModelPage is the answer of GET /api/v1/models (contract ModelPage).
 type ModelPage struct {
 	Items []ModelView `json:"items"`
 	Total int         `json:"total"`
 }
 
-// ModelInput is the body of POST /api/models (contract ModelCreate). Rates are percent texts ("" when not
+// ModelInput is the body of POST /api/v1/models (contract ModelCreate). Rates are percent texts ("" when not
 // filled in) and the deal size a money input (nil when not filled in), so problems become field messages.
 type ModelInput struct {
 	Name            string       `json:"name"`
@@ -136,7 +136,7 @@ type ModelInput struct {
 	ActivityTypeIDs []string     `json:"activityTypeIds"`
 }
 
-// ModelUpdate is the body of PATCH /api/models/{modelId} and of its impact check (contract ModelUpdate).
+// ModelUpdate is the body of PATCH /api/v1/models/{modelId} and of its impact check (contract ModelUpdate).
 type ModelUpdate struct {
 	Name            *string       `json:"name"`
 	InqToMqlRate    *string       `json:"inqToMqlRate"`
@@ -159,20 +159,20 @@ type ActivityTypeView struct {
 	record.Meta
 }
 
-// ActivityTypePage is the answer of GET /api/activity-types (contract ActivityTypePage).
+// ActivityTypePage is the answer of GET /api/v1/activity-types (contract ActivityTypePage).
 type ActivityTypePage struct {
 	Items []ActivityTypeView `json:"items"`
 	Total int                `json:"total"`
 }
 
-// ActivityTypeInput is the body of POST /api/activity-types (contract ActivityTypeCreate).
+// ActivityTypeInput is the body of POST /api/v1/activity-types (contract ActivityTypeCreate).
 type ActivityTypeInput struct {
 	Name               string       `json:"name"`
 	DefaultPlannedCost *money.Input `json:"defaultPlannedCost"`
 	ModelIDs           []string     `json:"modelIds"` // the models that allow the new type
 }
 
-// ActivityTypeUpdate is the body of PATCH /api/activity-types/{activityTypeId} and of its impact check
+// ActivityTypeUpdate is the body of PATCH /api/v1/activity-types/{activityTypeId} and of its impact check
 // (contract ActivityTypeUpdate). DefaultPlannedCost sent as null removes the default; ModelIDs, when sent,
 // is the complete new list of models allowing the type.
 type ActivityTypeUpdate struct {
@@ -205,7 +205,7 @@ type ShellAttributeView struct {
 	record.Meta
 }
 
-// ShellAttributePage is the answer of GET /api/shell-attributes?level= (contract ShellAttributePage), in
+// ShellAttributePage is the answer of GET /api/v1/shell-attributes?level= (contract ShellAttributePage), in
 // display order.
 type ShellAttributePage struct {
 	Items []ShellAttributeView `json:"items"`
@@ -218,7 +218,7 @@ type NewOption struct {
 	ParentOptionIDs []string `json:"parentOptionIds"` // dependent attributes: the parent options (at least one)
 }
 
-// ShellAttributeInput is the body of POST /api/shell-attributes (contract ShellAttributeCreate). Level,
+// ShellAttributeInput is the body of POST /api/v1/shell-attributes (contract ShellAttributeCreate). Level,
 // type and marking are texts ("" when not chosen) so the service reports them as field problems.
 type ShellAttributeInput struct {
 	Label              string      `json:"label"`
@@ -239,7 +239,7 @@ type OptionLinks struct {
 	ParentOptionIDs []string `json:"parentOptionIds"`
 }
 
-// ShellAttributeUpdate is the body of PATCH /api/shell-attributes/{attributeId} and of its impact check
+// ShellAttributeUpdate is the body of PATCH /api/v1/shell-attributes/{attributeId} and of its impact check
 // (contract ShellAttributeUpdate).
 type ShellAttributeUpdate struct {
 	Label              *string        `json:"label"`
@@ -262,7 +262,7 @@ const (
 	MoveDown      = "down"
 )
 
-// MoveInput is the body of POST /api/shell-attributes/{attributeId}/move (contract AttributeMove).
+// MoveInput is the body of POST /api/v1/shell-attributes/{attributeId}/move (contract AttributeMove).
 type MoveInput struct {
 	What      string `json:"what"`      // MoveAttribute or MoveSection
 	Direction string `json:"direction"` // MoveUp or MoveDown
@@ -282,14 +282,14 @@ type OptionView struct {
 	record.Meta
 }
 
-// OptionPage is the answer of GET /api/shell-attributes/{attributeId}/options (contract
+// OptionPage is the answer of GET /api/v1/shell-attributes/{attributeId}/options (contract
 // ShellAttributeOptionPage); Total counts every match, also beyond the limit.
 type OptionPage struct {
 	Items []OptionView `json:"items"`
 	Total int          `json:"total"`
 }
 
-// OptionFilter is the query of GET /api/shell-attributes/{attributeId}/options.
+// OptionFilter is the query of GET /api/v1/shell-attributes/{attributeId}/options.
 type OptionFilter struct {
 	Q      string // any part of the label, ignoring case
 	Status string // "", "active" or "inactive"
@@ -297,20 +297,20 @@ type OptionFilter struct {
 	Offset int    // 0 or more
 }
 
-// OptionInput is the body of POST /api/shell-attributes/{attributeId}/options (contract OptionCreate).
+// OptionInput is the body of POST /api/v1/shell-attributes/{attributeId}/options (contract OptionCreate).
 type OptionInput struct {
 	Label           string   `json:"label"`
 	ParentOptionIDs []string `json:"parentOptionIds"`
 }
 
-// OptionUpdate is the body of PATCH /api/shell-attribute-options/{optionId} (contract OptionUpdate).
+// OptionUpdate is the body of PATCH /api/v1/shell-attribute-options/{optionId} (contract OptionUpdate).
 type OptionUpdate struct {
 	Label           *string   `json:"label"`
 	ParentOptionIDs *[]string `json:"parentOptionIds"`
 	Version         *int      `json:"version"`
 }
 
-// OptionMoveInput is the body of POST /api/shell-attribute-options/{optionId}/move (contract OptionMove).
+// OptionMoveInput is the body of POST /api/v1/shell-attribute-options/{optionId}/move (contract OptionMove).
 type OptionMoveInput struct {
 	Direction string `json:"direction"`
 	Version   *int   `json:"version"`
@@ -376,7 +376,7 @@ type FormSection struct {
 	Attributes  []FormAttribute `json:"attributes"`
 }
 
-// FormView is the answer of GET /api/shell-attribute-forms/{level} (contract AttributeForm).
+// FormView is the answer of GET /api/v1/shell-attribute-forms/{level} (contract AttributeForm).
 type FormView struct {
 	Level                   Level         `json:"level"`
 	Sections                []FormSection `json:"sections"`
@@ -384,7 +384,7 @@ type FormView struct {
 	BusinessUnitOptions     []FormOption  `json:"businessUnitOptions"`
 }
 
-// CheckRequest is the body of POST /api/shell-attribute-forms/{level}/check (contract
+// CheckRequest is the body of POST /api/v1/shell-attribute-forms/{level}/check (contract
 // AttributeCheckRequest).
 type CheckRequest struct {
 	Values                AttributeValues `json:"values"`
@@ -421,13 +421,13 @@ type CurrencyView struct {
 	record.Meta
 }
 
-// CurrencyPage is the answer of GET /api/currencies (contract CurrencyPage): USD first, then by code.
+// CurrencyPage is the answer of GET /api/v1/currencies (contract CurrencyPage): USD first, then by code.
 type CurrencyPage struct {
 	Items []CurrencyView `json:"items"`
 	Total int            `json:"total"`
 }
 
-// CurrencyInput is the body of POST /api/currencies (contract CurrencyCreate); the rate is text ("" when
+// CurrencyInput is the body of POST /api/v1/currencies (contract CurrencyCreate); the rate is text ("" when
 // not filled in).
 type CurrencyInput struct {
 	Code   string `json:"code"`
@@ -436,7 +436,7 @@ type CurrencyInput struct {
 	Rate   string `json:"rate"`
 }
 
-// CurrencyUpdate is the body of PATCH /api/currencies/{code} and of its impact check (contract
+// CurrencyUpdate is the body of PATCH /api/v1/currencies/{code} and of its impact check (contract
 // CurrencyUpdate). The code never changes.
 type CurrencyUpdate struct {
 	Name    *string `json:"name"`
@@ -472,7 +472,7 @@ type FinanceBudgetView struct {
 	record.Meta
 }
 
-// FinanceBudgetPage is the answer of GET /api/finance-budgets?year= (contract FinanceBudgetPage).
+// FinanceBudgetPage is the answer of GET /api/v1/finance-budgets?year= (contract FinanceBudgetPage).
 type FinanceBudgetPage struct {
 	Items []FinanceBudgetView `json:"items"` // the year's budgets with at least one item, by name
 	Total int                 `json:"total"`
@@ -480,13 +480,13 @@ type FinanceBudgetPage struct {
 	Years []int               `json:"years"` // current − 1 … + 5 and any other year with items, ascending
 }
 
-// RenameInput is the body of PATCH /api/finance-budgets/{budgetId} (contract FinanceBudgetRename).
+// RenameInput is the body of PATCH /api/v1/finance-budgets/{budgetId} (contract FinanceBudgetRename).
 type RenameInput struct {
 	Name    string `json:"name"`
 	Version *int   `json:"version"`
 }
 
-// ItemInput is the body of POST /api/finance-budget-items (contract FinanceBudgetItemCreate): the budget
+// ItemInput is the body of POST /api/v1/finance-budget-items (contract FinanceBudgetItemCreate): the budget
 // is found by year and name, or created.
 type ItemInput struct {
 	Year       *int   `json:"year"`
@@ -495,7 +495,7 @@ type ItemInput struct {
 	Code       string `json:"code"`
 }
 
-// ItemUpdate is the body of PATCH /api/finance-budget-items/{itemId} (contract FinanceBudgetItemUpdate). A
+// ItemUpdate is the body of PATCH /api/v1/finance-budget-items/{itemId} (contract FinanceBudgetItemUpdate). A
 // new budget name moves the item to that budget of the same year.
 type ItemUpdate struct {
 	BudgetName *string `json:"budgetName"`

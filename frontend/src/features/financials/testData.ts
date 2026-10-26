@@ -381,7 +381,7 @@ export function checkResult(overrides: Partial<FinancialImportCheck> = {}): Fina
   };
 }
 
-/** GET /api/line-items/L-1007 for the link dialog's preview. */
+/** GET /api/v1/line-items/L-1007 for the link dialog's preview. */
 export const STATION_SIGNAGE = {
   lineItem: { id: 'L-1007', activityId: 'A-1008', name: 'Station signage' },
   activity: {

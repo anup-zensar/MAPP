@@ -392,7 +392,7 @@ type WorkflowView struct {
 	record.Meta
 }
 
-// WorkflowPage is the answer of GET /api/approval-workflows (ApprovalWorkflowPage).
+// WorkflowPage is the answer of GET /api/v1/approval-workflows (ApprovalWorkflowPage).
 type WorkflowPage struct {
 	Items []WorkflowView `json:"items"`
 	Total int            `json:"total"`
@@ -406,7 +406,7 @@ type WorkflowUsage struct {
 	Waiting       bool             `json:"waiting"`
 }
 
-// WorkflowDetails is the answer of GET /api/approval-workflows/{workflowId} (ApprovalWorkflowDetails).
+// WorkflowDetails is the answer of GET /api/v1/approval-workflows/{workflowId} (ApprovalWorkflowDetails).
 type WorkflowDetails struct {
 	Workflow   WorkflowView    `json:"workflow"`
 	Activities []WorkflowUsage `json:"activities"`
@@ -434,7 +434,7 @@ type ConditionInput struct {
 	ActivityTypeIDs    []string `json:"activityTypeIds"`
 }
 
-// WorkflowInput is the body of POST /api/approval-workflows (ApprovalWorkflowCreate).
+// WorkflowInput is the body of POST /api/v1/approval-workflows (ApprovalWorkflowCreate).
 type WorkflowInput struct {
 	Name           string       `json:"name"`
 	Description    string       `json:"description"`
@@ -443,7 +443,7 @@ type WorkflowInput struct {
 	EscalationDays *int         `json:"escalationDays"` // nil = no escalation
 }
 
-// WorkflowUpdate is the body of PATCH /api/approval-workflows/{workflowId} (ApprovalWorkflowUpdate): only
+// WorkflowUpdate is the body of PATCH /api/v1/approval-workflows/{workflowId} (ApprovalWorkflowUpdate): only
 // the fields to change (D-203), Levels being the complete new list. The days are sent only to change them,
 // null turning them off.
 type WorkflowUpdate struct {
@@ -663,7 +663,7 @@ type SubmitProblem struct {
 	Message    string `json:"message"`
 }
 
-// Submission is the answer of GET /api/activities/{activityId}/approval/submission (ApprovalSubmission).
+// Submission is the answer of GET /api/v1/activities/{activityId}/approval/submission (ApprovalSubmission).
 type Submission struct {
 	ActivityID            string          `json:"activityId"`
 	ActivityName          string          `json:"activityName"`
@@ -771,7 +771,7 @@ type Row struct {
 	NoApprover   bool         `json:"noApprover"`
 }
 
-// RowPage is the answer of GET /api/approvals?tab= (ApprovalRowPage).
+// RowPage is the answer of GET /api/v1/approvals?tab= (ApprovalRowPage).
 type RowPage struct {
 	Items []Row `json:"items"`
 	Total int   `json:"total"`
@@ -828,7 +828,7 @@ type PreviewActivity struct {
 	Description   string            `json:"description"`
 }
 
-// Preview is the answer of GET /api/approvals/activities/{activityId} (ApprovalPreview).
+// Preview is the answer of GET /api/v1/approvals/activities/{activityId} (ApprovalPreview).
 type Preview struct {
 	Activity              PreviewActivity   `json:"activity"`
 	LineItems             []PreviewLineItem `json:"lineItems"`
@@ -855,14 +855,14 @@ type NotificationView struct {
 	Read     bool                 `json:"read"`
 }
 
-// NotificationPage is the answer of GET /api/notifications (NotificationPage).
+// NotificationPage is the answer of GET /api/v1/notifications (NotificationPage).
 type NotificationPage struct {
 	Items  []NotificationView `json:"items"`  // at most 50, newest first
 	Total  int                `json:"total"`  // all of the person's notifications
 	Unread int                `json:"unread"` // all unread ones
 }
 
-// ReadAll is the answer of POST /api/notifications/read-all (NotificationReadAll).
+// ReadAll is the answer of POST /api/v1/notifications/read-all (NotificationReadAll).
 type ReadAll struct {
 	Marked int `json:"marked"`
 	Unread int `json:"unread"` // always 0 after the call
@@ -891,14 +891,14 @@ type DelegationView struct {
 	record.Meta
 }
 
-// DelegationPage is the answer of GET /api/approval-delegations (ApprovalDelegationPage).
+// DelegationPage is the answer of GET /api/v1/approval-delegations (ApprovalDelegationPage).
 type DelegationPage struct {
 	Items           []DelegationView `json:"items"`
 	Total           int              `json:"total"`
 	CanManageOthers bool             `json:"canManageOthers"` // the signed-in person holds workflows.manage
 }
 
-// DelegationInput is the body of POST /api/approval-delegations (ApprovalDelegationCreate): dates as texts,
+// DelegationInput is the body of POST /api/v1/approval-delegations (ApprovalDelegationCreate): dates as texts,
 // so that a wrong date is a field problem.
 type DelegationInput struct {
 	PersonID   string `json:"personId"` // "" = the signed-in person
@@ -908,7 +908,7 @@ type DelegationInput struct {
 	Note       string `json:"note"`
 }
 
-// DelegationUpdate is the body of PATCH /api/approval-delegations/{delegationId} (ApprovalDelegationUpdate):
+// DelegationUpdate is the body of PATCH /api/v1/approval-delegations/{delegationId} (ApprovalDelegationUpdate):
 // only the fields to change, plus the version (D-203).
 type DelegationUpdate struct {
 	DelegateID *string `json:"delegateId"`
@@ -918,7 +918,7 @@ type DelegationUpdate struct {
 	Version    *int    `json:"version"`
 }
 
-// DelegationCancel is the body of POST /api/approval-delegations/{delegationId}/cancel.
+// DelegationCancel is the body of POST /api/v1/approval-delegations/{delegationId}/cancel.
 type DelegationCancel struct {
 	Version *int `json:"version"`
 }
@@ -958,7 +958,7 @@ type MonitoringCards struct {
 	AutoApprovedThisMonth int     `json:"autoApprovedThisMonth"`
 }
 
-// Monitoring is the answer of GET /api/approvals/monitoring (ApprovalMonitoring).
+// Monitoring is the answer of GET /api/v1/approvals/monitoring (ApprovalMonitoring).
 type Monitoring struct {
 	Cards             MonitoringCards  `json:"cards"`
 	Ageing            []AgeingBucket   `json:"ageing"` // always the five buckets, in order
@@ -984,7 +984,7 @@ type EscalationEvent struct {
 	WaitedDays  int            `json:"waitedDays"`
 }
 
-// EscalationRun is the answer of POST /api/approvals/escalations/run (EscalationRunResult).
+// EscalationRun is the answer of POST /api/v1/approvals/escalations/run (EscalationRunResult).
 type EscalationRun struct {
 	Reminded     int               `json:"reminded"`
 	Escalated    int               `json:"escalated"`

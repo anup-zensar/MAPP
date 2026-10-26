@@ -7,12 +7,12 @@ import { testUser } from '@/test/users';
 import { LinkTransactionDialog } from './LinkTransactionDialog';
 import { FT_1004, manuallyLinked, STATION_SIGNAGE, transactionOf } from './testData';
 
-const LINK = 'POST /api/financials/transactions/FT-1004/link';
+const LINK = 'POST /api/v1/financials/transactions/FT-1004/link';
 
 function renderDialog(answers: Record<string, MockHandler> = {}) {
   const onClose = vi.fn();
   const api = mockApi({
-    'GET /api/line-items/L-1007': { body: STATION_SIGNAGE },
+    'GET /api/v1/line-items/L-1007': { body: STATION_SIGNAGE },
     [LINK]: { body: manuallyLinked() },
     ...answers,
   });
@@ -50,9 +50,9 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
 
   it('says when no line item has the ID, and checks the ID before asking', async () => {
     const { api, user } = renderDialog({
-      'GET /api/line-items/L-9999': {
+      'GET /api/v1/line-items/L-9999': {
         status: 404,
-        body: { code: 'not_found', message: 'This line item no longer exists.' },
+        body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
       },
     });
 
@@ -70,21 +70,23 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
 
   it("shows the API's refusal at the field (US7 scenario 4)", async () => {
     const { user, onClose } = renderDialog({
-      'GET /api/line-items/L-1005': {
+      'GET /api/v1/line-items/L-1005': {
         status: 404,
-        body: { code: 'not_found', message: 'This line item no longer exists.' },
+        body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
       },
       [LINK]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the line item.',
-          fields: [
-            {
-              field: 'lineItemId',
-              message: 'Line item L-1005 is in the recycle bin — restore it first.',
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the line item.',
+            fields: [
+              {
+                field: 'lineItemId',
+                message: 'Line item L-1005 is in the recycle bin — restore it first.',
+              },
+            ],
+          },
         },
       },
     });
@@ -104,9 +106,11 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
       [LINK]: {
         status: 409,
         body: {
-          code: 'version_conflict',
-          message: 'Someone else changed this GSAP transaction.',
-          conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-10-20T09:30:00Z' },
+          error: {
+            code: 'version_conflict',
+            message: 'Someone else changed this GSAP transaction.',
+            conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-10-20T09:30:00Z' },
+          },
         },
       },
     });

@@ -18,10 +18,10 @@ const (
 
 // The answers that do not depend on the data.
 const (
-	activityGoneBody = `{"code":"not_found",` +
-		`"message":"This activity was deleted — restore it from the recycle bin to keep working on its line items.","fields":[]}`
-	restartBody = `{"code":"validation_failed","message":"Some fields need your attention.","fields":[` +
-		`{"field":"restartApproval","message":"This activity will need approval again. Confirm the change to send it back for approval."}]}`
+	activityGoneBody = `{"error":{"code":"not_found",` +
+		`"message":"This activity was deleted — restore it from the recycle bin to keep working on its line items.","fields":[]}}`
+	restartBody = `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` +
+		`{"field":"restartApproval","message":"This activity will need approval again. Confirm the change to send it back for approval."}]}}`
 )
 
 // newLineItem is the body of a create with the fields the form always sends.
@@ -34,7 +34,7 @@ func newLineItem(name, currency, cost string) map[string]any {
 }
 
 // lineItemGoneBody is the answer about a line item that no longer exists.
-const lineItemGoneBody = `{"code":"not_found","message":"This line item no longer exists — someone may have deleted it.","fields":[]}`
+const lineItemGoneBody = `{"error":{"code":"not_found","message":"This line item no longer exists — someone may have deleted it.","fields":[]}}`
 
 // formOf returns the whole form of a line item as the edit page sends it, with its version.
 func formOf(v lineitems.View) map[string]any {
@@ -62,10 +62,10 @@ func formOf(v lineitems.View) map[string]any {
 	return form
 }
 
-// lineItem reads the line item id through GET /api/line-items/{id}.
+// lineItem reads the line item id through GET /api/v1/line-items/{id}.
 func lineItem(t *testing.T, client *apitest.Client, id string) lineitems.View {
 	t.Helper()
-	response := client.Do(t, http.MethodGet, "/api/line-items/"+id, nil)
+	response := client.Do(t, http.MethodGet, "/api/v1/line-items/"+id, nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET %s = %d %s", id, response.Status, response.Body)
 	}
@@ -90,9 +90,9 @@ func TestListActivityLineItems_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/activities/"+launchFilm+"/line-items", nil)
-	empty := priya.Do(t, http.MethodGet, "/api/activities/"+fleetShow+"/line-items", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/activities/A-9999/line-items", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activities/"+launchFilm+"/line-items", nil)
+	empty := priya.Do(t, http.MethodGet, "/api/v1/activities/"+fleetShow+"/line-items", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/activities/A-9999/line-items", nil)
 
 	assertAnswer(t, response, http.StatusOK, "")
 	var section lineitems.Section
@@ -128,8 +128,8 @@ func TestGetLineItemFormOptions_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/activities/"+launchFilm+"/line-items/form-options", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/activities/A-9999/line-items/form-options", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activities/"+launchFilm+"/line-items/form-options", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/activities/A-9999/line-items/form-options", nil)
 
 	assertAnswer(t, response, http.StatusOK, "")
 	var options lineitems.FormOptions
@@ -154,13 +154,13 @@ func TestCreateLineItem_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	created := priya.Do(t, http.MethodPost, "/api/activities/"+launchFilm+"/line-items", newLineItem("Music rights", "EUR", "10000"))
-	invalid := priya.Do(t, http.MethodPost, "/api/activities/"+launchFilm+"/line-items", newLineItem(" ", "USD", "-50"))
-	gone := priya.Do(t, http.MethodPost, "/api/activities/A-9999/line-items", newLineItem("Music rights", "USD", "1"))
-	unconfirmed := priya.Do(t, http.MethodPost, "/api/activities/"+socialOnAir+"/line-items", newLineItem("Catering", "USD", "1"))
+	created := priya.Do(t, http.MethodPost, "/api/v1/activities/"+launchFilm+"/line-items", newLineItem("Music rights", "EUR", "10000"))
+	invalid := priya.Do(t, http.MethodPost, "/api/v1/activities/"+launchFilm+"/line-items", newLineItem(" ", "USD", "-50"))
+	gone := priya.Do(t, http.MethodPost, "/api/v1/activities/A-9999/line-items", newLineItem("Music rights", "USD", "1"))
+	unconfirmed := priya.Do(t, http.MethodPost, "/api/v1/activities/"+socialOnAir+"/line-items", newLineItem("Catering", "USD", "1"))
 	confirm := newLineItem("Catering", "USD", "1")
 	confirm["restartApproval"] = true
-	confirmed := priya.Do(t, http.MethodPost, "/api/activities/"+socialOnAir+"/line-items", confirm)
+	confirmed := priya.Do(t, http.MethodPost, "/api/v1/activities/"+socialOnAir+"/line-items", confirm)
 
 	assertAnswer(t, created, http.StatusCreated, "")
 	var v lineitems.View
@@ -172,22 +172,22 @@ func TestCreateLineItem_Contract(t *testing.T) {
 		v.Owner == nil || v.Version != 1 || v.CreatedBy.Name != "Priya Raman" {
 		t.Errorf("created = %+v", v)
 	}
-	assertAnswer(t, invalid, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+
+	assertAnswer(t, invalid, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+
 		`{"field":"name","message":"Enter a name for the line item."},`+
-		`{"field":"plannedCost","message":"Planned cost can't be negative."}]}`)
+		`{"field":"plannedCost","message":"Planned cost can't be negative."}]}}`)
 	assertAnswer(t, gone, http.StatusNotFound, activityGoneBody)
 	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
 	assertAnswer(t, confirmed, http.StatusCreated, "")
 }
 
-// GET /api/line-items/{id} answers the line item with its activity and the balance (FR-026); 404 for one that
+// GET /api/v1/line-items/{id} answers the line item with its activity and the balance (FR-026); 404 for one that
 // does not exist.
 func TestGetLineItem_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/line-items/L-1001", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/line-items/L-9999", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/line-items/L-1001", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/line-items/L-9999", nil)
 
 	assertAnswer(t, response, http.StatusOK, "")
 	var details lineitems.Details
@@ -200,7 +200,7 @@ func TestGetLineItem_Contract(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, lineItemGoneBody)
 }
 
-// PATCH /api/line-items/{id} saves the whole form with its version (FR-027): the next version; a missing
+// PATCH /api/v1/line-items/{id} saves the whole form with its version (FR-027): the next version; a missing
 // version with the other problems; an out-of-date one 409 version_conflict; a cost change on an Approved
 // activity only with restartApproval (FR-031); 404 for one that does not exist.
 func TestUpdateLineItem_Contract(t *testing.T) {
@@ -209,15 +209,15 @@ func TestUpdateLineItem_Contract(t *testing.T) {
 	film := formOf(lineItem(t, priya, "L-1002"))
 	film["plannedCost"] = "46500.00"
 
-	saved := priya.Do(t, http.MethodPatch, "/api/line-items/L-1002", film)
-	stale := priya.Do(t, http.MethodPatch, "/api/line-items/L-1002", film) // still version 1
+	saved := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1002", film)
+	stale := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1002", film) // still version 1
 	delete(film, "version")
 	film["name"] = ""
-	noVersion := priya.Do(t, http.MethodPatch, "/api/line-items/L-1002", film, apitest.SkipRequestValidation())
+	noVersion := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1002", film, apitest.SkipRequestValidation())
 	venue := formOf(lineItem(t, priya, "L-1003"))
 	venue["plannedCost"] = "17000.00"
-	unconfirmed := priya.Do(t, http.MethodPatch, "/api/line-items/L-1003", venue)
-	gone := priya.Do(t, http.MethodPatch, "/api/line-items/L-9999", venue)
+	unconfirmed := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1003", venue)
+	gone := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-9999", venue)
 
 	assertAnswer(t, saved, http.StatusOK, "")
 	var v lineitems.View
@@ -226,28 +226,28 @@ func TestUpdateLineItem_Contract(t *testing.T) {
 		t.Errorf("saved = version %d, %s = %s", v.Version, v.PlannedCost.Format(), v.PlannedCostUSD.Format())
 	}
 	assertAnswer(t, stale, http.StatusConflict, "")
-	var conflict struct{ Code string }
+	var conflict struct{ Error struct{ Code string } }
 	stale.Decode(t, &conflict)
-	if conflict.Code != "version_conflict" {
+	if conflict.Error.Code != "version_conflict" {
 		t.Errorf("stale save: %s", stale.Body)
 	}
-	assertAnswer(t, noVersion, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+
+	assertAnswer(t, noVersion, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+
 		`{"field":"name","message":"Enter a name for the line item."},`+
-		`{"field":"version","message":"Reload the page and try again."}]}`)
+		`{"field":"version","message":"Reload the page and try again."}]}}`)
 	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
 	assertAnswer(t, gone, http.StatusNotFound, lineItemGoneBody)
 }
 
-// POST /api/line-items/{id}/duplicate answers 201 with the copy, "Agency fee (copy)" (FR-029); on an Approved
+// POST /api/v1/line-items/{id}/duplicate answers 201 with the copy, "Agency fee (copy)" (FR-029); on an Approved
 // activity only with restartApproval (FR-031); 404 for one that does not exist.
 func TestDuplicateLineItem_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	copied := priya.Do(t, http.MethodPost, "/api/line-items/L-1001/duplicate", map[string]any{})
-	unconfirmed := priya.Do(t, http.MethodPost, "/api/line-items/L-1003/duplicate", map[string]any{})
-	confirmed := priya.Do(t, http.MethodPost, "/api/line-items/L-1003/duplicate", map[string]any{"restartApproval": true})
-	gone := priya.Do(t, http.MethodPost, "/api/line-items/L-9999/duplicate", map[string]any{})
+	copied := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1001/duplicate", map[string]any{})
+	unconfirmed := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1003/duplicate", map[string]any{})
+	confirmed := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-1003/duplicate", map[string]any{"restartApproval": true})
+	gone := priya.Do(t, http.MethodPost, "/api/v1/line-items/L-9999/duplicate", map[string]any{})
 
 	assertAnswer(t, copied, http.StatusCreated, "")
 	var v lineitems.View
@@ -260,26 +260,26 @@ func TestDuplicateLineItem_Contract(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, lineItemGoneBody)
 }
 
-// DELETE /api/line-items/{id} moves the line item to the recycle bin and answers the entry, and Undo brings
+// DELETE /api/v1/line-items/{id} moves the line item to the recycle bin and answers the entry, and Undo brings
 // it back with the same ID (FR-030); on an Approved activity only with ?restartApproval=true (FR-031); a
 // query value other than true or false is refused; 404 for one that does not exist.
 func TestDeleteLineItem_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	deleted := priya.Do(t, http.MethodDelete, "/api/line-items/L-1001", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/line-items/L-1001", nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1001", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/line-items/L-1001", nil)
 	var result struct {
 		RecycleBinEntry struct {
 			ID, RecordType, RecordID string
 		} `json:"recycleBinEntry"`
 	}
 	deleted.Decode(t, &result)
-	undone := priya.Do(t, http.MethodPost, "/api/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
-	unconfirmed := priya.Do(t, http.MethodDelete, "/api/line-items/L-1003", nil)
-	unreadable := priya.Do(t, http.MethodDelete, "/api/line-items/L-1003?restartApproval=maybe", nil, apitest.SkipRequestValidation())
-	confirmed := priya.Do(t, http.MethodDelete, "/api/line-items/L-1003?restartApproval=true", nil)
-	unknown := priya.Do(t, http.MethodDelete, "/api/line-items/L-9999", nil)
+	undone := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
+	unconfirmed := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1003", nil)
+	unreadable := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1003?restartApproval=maybe", nil, apitest.SkipRequestValidation())
+	confirmed := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-1003?restartApproval=true", nil)
+	unknown := priya.Do(t, http.MethodDelete, "/api/v1/line-items/L-9999", nil)
 
 	assertAnswer(t, deleted, http.StatusOK, "")
 	if result.RecycleBinEntry.RecordType != "lineItem" || result.RecycleBinEntry.RecordID != "L-1001" {
@@ -291,8 +291,8 @@ func TestDeleteLineItem_Contract(t *testing.T) {
 		t.Errorf("after Undo: %+v", back)
 	}
 	assertAnswer(t, unconfirmed, http.StatusBadRequest, restartBody)
-	assertAnswer(t, unreadable, http.StatusBadRequest, `{"code":"bad_request",`+
-		`"message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}`)
+	assertAnswer(t, unreadable, http.StatusBadRequest, `{"error":{"code":"bad_request",`+
+		`"message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`)
 	assertAnswer(t, confirmed, http.StatusOK, "")
 	assertAnswer(t, unknown, http.StatusNotFound, lineItemGoneBody)
 }
@@ -306,7 +306,7 @@ func TestListActivityLineItems_PlanCurrency_Contract_FR015(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/activities/A-1011/line-items", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activities/A-1011/line-items", nil)
 
 	assertAnswer(t, response, http.StatusOK, "")
 	var section lineitems.Section

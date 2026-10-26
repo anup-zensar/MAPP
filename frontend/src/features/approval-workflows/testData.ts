@@ -84,7 +84,7 @@ const person = (id: string, name: string, initials: string, active = true) => ({
   ...PERSON_META,
 });
 
-/** GET /api/people for the approver fields. */
+/** GET /api/v1/people for the approver fields. */
 export const PEOPLE = {
   body: {
     total: 4,
@@ -97,7 +97,7 @@ export const PEOPLE = {
   },
 };
 
-/** GET /api/approval-rule-options (017): the seeded activity types, business units and the roles that approve. */
+/** GET /api/v1/approval-rule-options (017): the seeded activity types, business units and the roles that approve. */
 export const RULE_OPTIONS = {
   body: {
     activityTypes: [

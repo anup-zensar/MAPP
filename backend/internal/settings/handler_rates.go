@@ -12,32 +12,32 @@ import (
 
 // rateRoutes registers the rate history, current rates and GSAP rate import routes.
 func (h *Handler) rateRoutes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/currencies/{code}/rates", signedIn(h.listRates))
-	r.Handle("POST /api/currencies/{code}/rates", signedIn(h.addRate))
-	r.Handle("POST /api/currencies/{code}/rates/impact", signedIn(h.addRateImpact))
-	r.Handle("PATCH /api/exchange-rates/{rateId}", signedIn(h.updateRate))
-	r.Handle("DELETE /api/exchange-rates/{rateId}", signedIn(h.deleteRate))
-	r.Handle("POST /api/exchange-rates/{rateId}/impact", signedIn(h.updateRateImpact))
-	r.Handle("GET /api/exchange-rates/current", signedIn(h.currentRates))
-	r.Handle("POST /api/exchange-rates/import-check", signedIn(h.checkRateImport))
-	r.Handle("POST /api/exchange-rates/import", signedIn(h.importRates))
-	r.Handle("GET /api/exchange-rates/imports", signedIn(h.listRateImports))
-	r.Handle("GET /api/exchange-rates/import-sample", signedIn(h.rateImportSample))
+	r.Handle("GET /api/v1/currencies/{code}/rates", signedIn(h.listRates))
+	r.Handle("POST /api/v1/currencies/{code}/rates", signedIn(h.addRate))
+	r.Handle("POST /api/v1/currencies/{code}/rates/impact", signedIn(h.addRateImpact))
+	r.Handle("PATCH /api/v1/exchange-rates/{rateId}", signedIn(h.updateRate))
+	r.Handle("DELETE /api/v1/exchange-rates/{rateId}", signedIn(h.deleteRate))
+	r.Handle("POST /api/v1/exchange-rates/{rateId}/impact", signedIn(h.updateRateImpact))
+	r.Handle("GET /api/v1/exchange-rates/current", signedIn(h.currentRates))
+	r.Handle("POST /api/v1/exchange-rates/import-check", signedIn(h.checkRateImport))
+	r.Handle("POST /api/v1/exchange-rates/import", signedIn(h.importRates))
+	r.Handle("GET /api/v1/exchange-rates/imports", signedIn(h.listRateImports))
+	r.Handle("GET /api/v1/exchange-rates/import-sample", signedIn(h.rateImportSample))
 }
 
 // fieldHelpRoutes registers the Field help routes.
 func (h *Handler) fieldHelpRoutes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/field-help", signedIn(h.listFieldHelp))
-	r.Handle("PATCH /api/field-help/{helpKey}", signedIn(h.updateFieldHelp))
+	r.Handle("GET /api/v1/field-help", signedIn(h.listFieldHelp))
+	r.Handle("PATCH /api/v1/field-help/{helpKey}", signedIn(h.updateFieldHelp))
 }
 
-// listRates answers GET /api/currencies/{code}/rates: the rate history, newest first, and the current rate.
+// listRates answers GET /api/v1/currencies/{code}/rates: the rate history, newest first, and the current rate.
 func (h *Handler) listRates(w http.ResponseWriter, r *http.Request) {
 	page, err := h.service.ListRates(r.Context(), actorOf(r), r.PathValue("code"))
 	respond(w, r, http.StatusOK, page, err)
 }
 
-// addRate answers POST /api/currencies/{code}/rates with 201 and the new rate.
+// addRate answers POST /api/v1/currencies/{code}/rates with 201 and the new rate.
 func (h *Handler) addRate(w http.ResponseWriter, r *http.Request) {
 	var input RateInput
 	if !readBody(w, r, &input) {
@@ -47,7 +47,7 @@ func (h *Handler) addRate(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusCreated, rate, err)
 }
 
-// addRateImpact answers POST /api/currencies/{code}/rates/impact with what the new rate would change.
+// addRateImpact answers POST /api/v1/currencies/{code}/rates/impact with what the new rate would change.
 func (h *Handler) addRateImpact(w http.ResponseWriter, r *http.Request) {
 	var input RateInput
 	if !readBody(w, r, &input) {
@@ -57,7 +57,7 @@ func (h *Handler) addRateImpact(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusOK, impact, err)
 }
 
-// updateRate answers PATCH /api/exchange-rates/{rateId} with the rate after the change.
+// updateRate answers PATCH /api/v1/exchange-rates/{rateId} with the rate after the change.
 func (h *Handler) updateRate(w http.ResponseWriter, r *http.Request) {
 	var update RateUpdate
 	if !readBody(w, r, &update) {
@@ -67,13 +67,13 @@ func (h *Handler) updateRate(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusOK, rate, err)
 }
 
-// deleteRate answers DELETE /api/exchange-rates/{rateId} with the recycle-bin entry.
+// deleteRate answers DELETE /api/v1/exchange-rates/{rateId} with the recycle-bin entry.
 func (h *Handler) deleteRate(w http.ResponseWriter, r *http.Request) {
 	entry, err := h.service.DeleteRate(r.Context(), actorOf(r), r.PathValue("rateId"))
 	respondDeleted(w, r, entry, err)
 }
 
-// updateRateImpact answers POST /api/exchange-rates/{rateId}/impact with what the change would change.
+// updateRateImpact answers POST /api/v1/exchange-rates/{rateId}/impact with what the change would change.
 func (h *Handler) updateRateImpact(w http.ResponseWriter, r *http.Request) {
 	var update RateUpdate
 	if !readBody(w, r, &update) {
@@ -83,14 +83,14 @@ func (h *Handler) updateRateImpact(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusOK, impact, err)
 }
 
-// currentRates answers GET /api/exchange-rates/current: every currency's current rate with its date and
+// currentRates answers GET /api/v1/exchange-rates/current: every currency's current rate with its date and
 // source (FR-009).
 func (h *Handler) currentRates(w http.ResponseWriter, r *http.Request) {
 	page, err := h.service.ListCurrentRates(r.Context(), actorOf(r))
 	respond(w, r, http.StatusOK, page, err)
 }
 
-// checkRateImport answers POST /api/exchange-rates/import-check with every row's outcome. The body holds a
+// checkRateImport answers POST /api/v1/exchange-rates/import-check with every row's outcome. The body holds a
 // file of up to 2 MB, which is never logged.
 func (h *Handler) checkRateImport(w http.ResponseWriter, r *http.Request) {
 	var upload RateImportUpload
@@ -101,7 +101,7 @@ func (h *Handler) checkRateImport(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusOK, check, err)
 }
 
-// importRates answers POST /api/exchange-rates/import with 201 and the import record.
+// importRates answers POST /api/v1/exchange-rates/import with 201 and the import record.
 func (h *Handler) importRates(w http.ResponseWriter, r *http.Request) {
 	var upload RateImportUpload
 	if !readRateUpload(w, r, &upload) {
@@ -111,7 +111,7 @@ func (h *Handler) importRates(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusCreated, result, err)
 }
 
-// listRateImports answers GET /api/exchange-rates/imports?limit=: the latest imports, newest first.
+// listRateImports answers GET /api/v1/exchange-rates/imports?limit=: the latest imports, newest first.
 func (h *Handler) listRateImports(w http.ResponseWriter, r *http.Request) {
 	limit := defaultRecentImports
 	if text := r.URL.Query().Get("limit"); text != "" {
@@ -126,7 +126,7 @@ func (h *Handler) listRateImports(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, http.StatusOK, page, err)
 }
 
-// rateImportSample answers GET /api/exchange-rates/import-sample with a CSV file of today's rates.
+// rateImportSample answers GET /api/v1/exchange-rates/import-sample with a CSV file of today's rates.
 func (h *Handler) rateImportSample(w http.ResponseWriter, r *http.Request) {
 	name, content, err := h.service.ImportSample(r.Context())
 	if err != nil {
@@ -139,13 +139,13 @@ func (h *Handler) rateImportSample(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(content) // a failed write means the client has gone
 }
 
-// listFieldHelp answers GET /api/field-help: every catalogue entry with its text.
+// listFieldHelp answers GET /api/v1/field-help: every catalogue entry with its text.
 func (h *Handler) listFieldHelp(w http.ResponseWriter, r *http.Request) {
 	page, err := h.service.ListFieldHelp(r.Context(), actorOf(r))
 	respond(w, r, http.StatusOK, page, err)
 }
 
-// updateFieldHelp answers PATCH /api/field-help/{helpKey} with the entry after the change.
+// updateFieldHelp answers PATCH /api/v1/field-help/{helpKey} with the entry after the change.
 func (h *Handler) updateFieldHelp(w http.ResponseWriter, r *http.Request) {
 	var update FieldHelpUpdate
 	if !readBody(w, r, &update) {

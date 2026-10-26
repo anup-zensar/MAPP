@@ -68,14 +68,14 @@ describe('Sidebar', () => {
 
   it('collapses and saves that for the person (FR-011, US2 scenario 3)', async () => {
     const api = mockApi({
-      'PATCH /api/me/preferences': { body: { theme: 'system', sidebarCollapsed: true } },
+      'PATCH /api/v1/me/preferences': { body: { theme: 'system', sidebarCollapsed: true } },
     });
     const { user } = renderWithProviders(<Sidebar />, { user: PRIYA });
 
     await user.click(screen.getByRole('button', { name: 'Collapse' }));
 
     expect(await screen.findByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ sidebarCollapsed: true }]);
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ sidebarCollapsed: true }]);
   });
 
   it('collapses to an icon rail whose links keep their names (FR-011)', () => {
@@ -107,7 +107,7 @@ describe('Sidebar', () => {
 
   it('expands again and saves that for the person (FR-011)', async () => {
     const api = mockApi({
-      'PATCH /api/me/preferences': { body: { theme: 'system', sidebarCollapsed: false } },
+      'PATCH /api/v1/me/preferences': { body: { theme: 'system', sidebarCollapsed: false } },
     });
     const { user } = renderWithProviders(<Sidebar />, { user: COLLAPSED });
 
@@ -116,6 +116,6 @@ describe('Sidebar', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Collapse' })).toBeInTheDocument(),
     );
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ sidebarCollapsed: false }]);
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ sidebarCollapsed: false }]);
   });
 });

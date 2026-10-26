@@ -22,16 +22,16 @@ func NewHandler(s *Service) *Handler {
 // Routes registers the line-item routes on r. All of them need a signed-in person, so all are wrapped in
 // signedIn.
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/activities/{activityId}/line-items", signedIn(h.section))
-	r.Handle("GET /api/activities/{activityId}/line-items/form-options", signedIn(h.formOptions))
-	r.Handle("POST /api/activities/{activityId}/line-items", signedIn(h.create))
-	r.Handle("GET /api/line-items/{lineItemId}", signedIn(h.get))
-	r.Handle("PATCH /api/line-items/{lineItemId}", signedIn(h.update))
-	r.Handle("DELETE /api/line-items/{lineItemId}", signedIn(h.delete))
-	r.Handle("POST /api/line-items/{lineItemId}/duplicate", signedIn(h.duplicate))
+	r.Handle("GET /api/v1/activities/{activityId}/line-items", signedIn(h.section))
+	r.Handle("GET /api/v1/activities/{activityId}/line-items/form-options", signedIn(h.formOptions))
+	r.Handle("POST /api/v1/activities/{activityId}/line-items", signedIn(h.create))
+	r.Handle("GET /api/v1/line-items/{lineItemId}", signedIn(h.get))
+	r.Handle("PATCH /api/v1/line-items/{lineItemId}", signedIn(h.update))
+	r.Handle("DELETE /api/v1/line-items/{lineItemId}", signedIn(h.delete))
+	r.Handle("POST /api/v1/line-items/{lineItemId}/duplicate", signedIn(h.duplicate))
 }
 
-// get answers GET /api/line-items/{lineItemId} with the line item, its activity and the balance.
+// get answers GET /api/v1/line-items/{lineItemId} with the line item, its activity and the balance.
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	details, err := h.service.Get(r.Context(), a, r.PathValue("lineItemId"))
@@ -42,7 +42,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, details)
 }
 
-// update answers PATCH /api/line-items/{lineItemId} with the line item after the save.
+// update answers PATCH /api/v1/line-items/{lineItemId} with the line item after the save.
 func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	var update Update
 	if err := web.ReadJSON(w, r, &update); err != nil {
@@ -58,7 +58,7 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, view)
 }
 
-// delete answers DELETE /api/line-items/{lineItemId}?restartApproval=true with the recycle-bin entry, so the
+// delete answers DELETE /api/v1/line-items/{lineItemId}?restartApproval=true with the recycle-bin entry, so the
 // web app can offer Undo. The query value is true or false (missing: false); anything else is refused.
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	var restart bool
@@ -82,7 +82,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 // unreadableMessage is the answer to a query value the API cannot read (001's bad_request text).
 const unreadableMessage = "MAPP couldn't read this request. Reload the page and try again."
 
-// duplicate answers POST /api/line-items/{lineItemId}/duplicate with 201 and the copy.
+// duplicate answers POST /api/v1/line-items/{lineItemId}/duplicate with 201 and the copy.
 func (h *Handler) duplicate(w http.ResponseWriter, r *http.Request) {
 	var input DuplicateInput
 	if err := web.ReadJSON(w, r, &input); err != nil {
@@ -98,7 +98,7 @@ func (h *Handler) duplicate(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusCreated, view)
 }
 
-// section answers GET /api/activities/{activityId}/line-items with the activity's Line items section.
+// section answers GET /api/v1/activities/{activityId}/line-items with the activity's Line items section.
 func (h *Handler) section(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	section, err := h.service.Section(r.Context(), a, r.PathValue("activityId"))
@@ -109,7 +109,7 @@ func (h *Handler) section(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, section)
 }
 
-// formOptions answers GET /api/activities/{activityId}/line-items/form-options with the defaults and choices
+// formOptions answers GET /api/v1/activities/{activityId}/line-items/form-options with the defaults and choices
 // of a new line item.
 func (h *Handler) formOptions(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
@@ -121,7 +121,7 @@ func (h *Handler) formOptions(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, options)
 }
 
-// create answers POST /api/activities/{activityId}/line-items with 201 and the new line item.
+// create answers POST /api/v1/activities/{activityId}/line-items with 201 and the new line item.
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	var input Input
 	if err := web.ReadJSON(w, r, &input); err != nil {

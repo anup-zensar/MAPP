@@ -7,7 +7,10 @@
 }
 
 /* A day's heading on the grey of table headers, with its count in grey (§5.4 header row). */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .heading {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-chip);
   background: var(--gray-bg);

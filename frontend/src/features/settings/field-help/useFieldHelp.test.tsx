@@ -21,7 +21,7 @@ function Texts({ keys, fallback }: { keys: string[]; fallback?: string }) {
 }
 
 function renderWith(answer: MockHandler, ui: ReactElement) {
-  const api = mockApi({ 'GET /api/field-help': answer });
+  const api = mockApi({ 'GET /api/v1/field-help': answer });
   renderWithProviders(ui, { user: testUser() });
   return api;
 }
@@ -54,7 +54,7 @@ describe('useFieldHelp (016 FR-047)', () => {
 
   it('answers the fallback when the texts cannot be loaded', async () => {
     const api = renderWith(
-      { status: 500, body: { code: 'internal_error', message: 'Boom', fields: [] } },
+      { status: 500, body: { error: { code: 'internal_error', message: 'Boom', fields: [] } } },
       <Texts keys={['plan.budget']} fallback="The former fixed tip." />,
     );
 
@@ -75,7 +75,7 @@ describe('useFieldHelp (016 FR-047)', () => {
 
 describe('FieldHelpTip (016 FR-047)', () => {
   it('shows an ⓘ named after its label, with the Field help text', async () => {
-    mockApi({ 'GET /api/field-help': { body: FIELD_HELP_PAGE } });
+    mockApi({ 'GET /api/v1/field-help': { body: FIELD_HELP_PAGE } });
     const { user } = renderWithProviders(
       <p>
         Planned cost <FieldHelpTip helpKey="plan.plannedCost" label="Planned cost" />

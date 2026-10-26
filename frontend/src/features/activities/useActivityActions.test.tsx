@@ -39,12 +39,14 @@ function More({ activity }: { activity: Activity }) {
 
 function openMenu(answers: Parameters<typeof mockApi>[0] = {}) {
   const api = mockApi({
-    'DELETE /api/activities/A-1042': { body: DELETED },
-    'POST /api/recycle-bin/BIN-1001/undo': { body: {} },
+    'DELETE /api/v1/activities/A-1042': { body: DELETED },
+    'POST /api/v1/recycle-bin/BIN-1001/undo': { body: {} },
     // No GSAP data for it yet: the delete question says nothing of transactions (015 FR-029).
-    'GET /api/financials/records/A-1042': {
+    'GET /api/v1/financials/records/A-1042': {
       status: 404,
-      body: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+      body: {
+        error: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+      },
     },
     ...answers,
   });
@@ -71,8 +73,8 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
 
   it('copies from More and opens the copy (US5#2, FR-030)', async () => {
     const { user, router } = openMenu({
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/copy': {
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/copy': {
         status: 201,
         body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
       },
@@ -93,8 +95,8 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
 
   it('moves from More (US5#1, FR-029)', async () => {
     const { user, api } = openMenu({
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/move': {
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/move': {
         body: launchFilm({
           initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
         }),
@@ -110,7 +112,7 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     expect(await findMessages()).toHaveTextContent(
       "Activity 'Launch film' moved to 'Print & outdoor'",
     );
-    expect(api.bodiesOf('POST /api/activities/A-1042/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/activities/A-1042/move')).toEqual([
       { initiativeId: 'I-1002', version: 3 },
     ]);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -124,7 +126,7 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     const question = await screen.findByRole('alertdialog', {
       name: "Delete activity 'Launch film'?",
     });
-    expect(api.bodiesOf('DELETE /api/activities/A-1042')).toEqual([]);
+    expect(api.bodiesOf('DELETE /api/v1/activities/A-1042')).toEqual([]);
     await user.click(within(question).getByRole('button', { name: 'Delete activity' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
@@ -137,18 +139,20 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
     expect(await screen.findByText("Activity 'Launch film' restored")).toBeVisible();
     expect(api.requests.map((request) => `${request.method} ${request.path}`)).toContain(
-      'POST /api/recycle-bin/BIN-1001/undo',
+      'POST /api/v1/recycle-bin/BIN-1001/undo',
     );
   });
 
   it('says why a delete did not work', async () => {
     const { user, router } = openMenu({
-      'DELETE /api/activities/A-1042': {
+      'DELETE /api/v1/activities/A-1042': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This activity no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This activity no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });

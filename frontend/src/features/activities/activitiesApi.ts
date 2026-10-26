@@ -51,12 +51,12 @@ export const ACTIVITY_PLANNING_KEYS: QueryKey[] = [
 /** What a delete refreshes: everything but the deleted activity, its forms, line items and approval. */
 const LISTS_AFTER_DELETE = ACTIVITY_PLANNING_KEYS.slice(4);
 
-/** An activity with its status, completeness and ready-to-submit check (GET /api/activities/{id}). */
+/** An activity with its status, completeness and ready-to-submit check (GET /api/v1/activities/{id}). */
 export function useActivity(id: string) {
   return useQuery({
     queryKey: activityKey(id),
     queryFn: () =>
-      call(api.GET('/api/activities/{activityId}', { params: { path: { activityId: id } } })),
+      call(api.GET('/api/v1/activities/{activityId}', { params: { path: { activityId: id } } })),
   });
 }
 
@@ -69,7 +69,7 @@ export function useNewActivityForm(initiativeId: string) {
     queryKey: newActivityFormKey(initiativeId),
     queryFn: () =>
       call(
-        api.GET('/api/initiatives/{initiativeId}/activity-form', {
+        api.GET('/api/v1/initiatives/{initiativeId}/activity-form', {
           params: { path: { initiativeId } },
         }),
       ),
@@ -83,18 +83,20 @@ export function useEditActivityForm(id: string) {
   return useQuery({
     queryKey: editActivityFormKey(id),
     queryFn: () =>
-      call(api.GET('/api/activities/{activityId}/form', { params: { path: { activityId: id } } })),
+      call(
+        api.GET('/api/v1/activities/{activityId}/form', { params: { path: { activityId: id } } }),
+      ),
     staleTime: 0,
     refetchOnMount: 'always',
   });
 }
 
-/** Every activity of a plan, as plan-tree rows (GET /api/plans/{planId}/activities). */
+/** Every activity of a plan, as plan-tree rows (GET /api/v1/plans/{planId}/activities). */
 export function usePlanActivities(planId: string) {
   return useQuery({
     queryKey: planActivitiesKey(planId),
     queryFn: () =>
-      call(api.GET('/api/plans/{planId}/activities', { params: { path: { planId } } })),
+      call(api.GET('/api/v1/plans/{planId}/activities', { params: { path: { planId } } })),
   });
 }
 
@@ -107,7 +109,7 @@ export function fetchLatestActivity(queryClient: QueryClient, id: string): Promi
   return queryClient.fetchQuery({
     queryKey: activityKey(id),
     queryFn: () =>
-      call(api.GET('/api/activities/{activityId}', { params: { path: { activityId: id } } })),
+      call(api.GET('/api/v1/activities/{activityId}', { params: { path: { activityId: id } } })),
     staleTime: 0,
   });
 }
@@ -124,7 +126,7 @@ export function useCreateActivity() {
   return useMutation({
     mutationFn: ({ initiativeId, body }: NewActivity) =>
       call(
-        api.POST('/api/initiatives/{initiativeId}/activities', {
+        api.POST('/api/v1/initiatives/{initiativeId}/activities', {
           params: { path: { initiativeId } },
           body,
         }),
@@ -148,7 +150,10 @@ export function useUpdateActivity() {
   return useMutation({
     mutationFn: ({ id, body }: EditedActivity) =>
       call(
-        api.PATCH('/api/activities/{activityId}', { params: { path: { activityId: id } }, body }),
+        api.PATCH('/api/v1/activities/{activityId}', {
+          params: { path: { activityId: id } },
+          body,
+        }),
       ),
     onSettled: refresh,
   });
@@ -162,7 +167,7 @@ export function useDeleteActivity() {
   const refresh = useRefreshPlanning(LISTS_AFTER_DELETE);
   return useMutation({
     mutationFn: (id: string) =>
-      call(api.DELETE('/api/activities/{activityId}', { params: { path: { activityId: id } } })),
+      call(api.DELETE('/api/v1/activities/{activityId}', { params: { path: { activityId: id } } })),
     onSettled: refresh,
   });
 }
@@ -176,7 +181,7 @@ export function useActivityDestinations(id: string) {
     queryKey: activityDestinationsKey(id),
     queryFn: () =>
       call(
-        api.GET('/api/activities/{activityId}/destinations', {
+        api.GET('/api/v1/activities/{activityId}/destinations', {
           params: { path: { activityId: id } },
         }),
       ),
@@ -198,7 +203,7 @@ export function useMoveActivity() {
   return useMutation({
     mutationFn: ({ id, initiativeId, version }: ActivityMove) =>
       call(
-        api.POST('/api/activities/{activityId}/move', {
+        api.POST('/api/v1/activities/{activityId}/move', {
           params: { path: { activityId: id } },
           body: { initiativeId, version },
         }),
@@ -213,7 +218,7 @@ export function useCopyActivity() {
   return useMutation({
     mutationFn: ({ id, initiativeId }: { id: string; initiativeId: string }) =>
       call(
-        api.POST('/api/activities/{activityId}/copy', {
+        api.POST('/api/v1/activities/{activityId}/copy', {
           params: { path: { activityId: id } },
           body: { initiativeId },
         }),

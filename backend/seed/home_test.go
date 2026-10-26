@@ -20,8 +20,8 @@ func TestSeed_HomeStory_009(t *testing.T) {
 		var summary home.SummaryView
 		var attention home.HomeAttentionPage
 		var waiting home.WaitingPage
-		for path, v := range map[string]any{"/api/home/summary?scope=myTeams": &summary, "/api/home/attention": &attention,
-			"/api/home/waiting": &waiting} {
+		for path, v := range map[string]any{"/api/v1/home/summary?scope=myTeams": &summary, "/api/v1/home/attention": &attention,
+			"/api/v1/home/waiting": &waiting} {
 			response := client.Do(t, http.MethodGet, path, nil)
 			if response.Status != http.StatusOK {
 				t.Fatalf("%s: GET %s = %d %s", email, path, response.Status, response.Body)

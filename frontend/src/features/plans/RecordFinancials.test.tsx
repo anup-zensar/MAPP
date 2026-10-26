@@ -55,7 +55,7 @@ function view(overrides: Partial<FinancialRecordView> = {}): FinancialRecordView
 }
 
 function renderSection(answer: MockHandler, variant: 'page' | 'panel' = 'page') {
-  mockApi({ 'GET /api/financials/records/P-1001': answer });
+  mockApi({ 'GET /api/v1/financials/records/P-1001': answer });
   return renderWithProviders(
     <RecordFinancials recordId="P-1001" planId="P-1001" variant={variant} />,
     { user: testUser(), route: '/plans/P-1001', path: '/plans/:planId' },
@@ -125,7 +125,10 @@ describe('RecordFinancials (015 FR-018, FR-019)', () => {
   });
 
   it('shows nothing while the API does not serve 015 yet', async () => {
-    renderSection({ status: 404, body: { code: 'not_found', message: 'Not found', fields: [] } });
+    renderSection({
+      status: 404,
+      body: { error: { code: 'not_found', message: 'Not found', fields: [] } },
+    });
 
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.queryByRole('region', { name: 'Financials' })).not.toBeInTheDocument();

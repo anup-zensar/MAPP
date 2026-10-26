@@ -81,7 +81,7 @@ type PermissionGroup struct {
 	Permissions []PermissionInfo `json:"permissions"`
 }
 
-// PermissionCatalogue is the answer of GET /api/access/permissions (PermissionCatalogue).
+// PermissionCatalogue is the answer of GET /api/v1/access/permissions (PermissionCatalogue).
 type PermissionCatalogue struct {
 	Groups []PermissionGroup `json:"groups"`
 }
@@ -105,13 +105,13 @@ type RoleView struct {
 	record.Meta
 }
 
-// RolePage is the answer of GET /api/roles (RolePage).
+// RolePage is the answer of GET /api/v1/roles (RolePage).
 type RolePage struct {
 	Items []RoleView `json:"items"`
 	Total int        `json:"total"`
 }
 
-// RoleInput is the body of POST /api/roles (RoleCreate).
+// RoleInput is the body of POST /api/v1/roles (RoleCreate).
 type RoleInput struct {
 	Name         string             `json:"name"`
 	Description  string             `json:"description"`
@@ -119,7 +119,7 @@ type RoleInput struct {
 	DefaultScope authz.ScopeType    `json:"defaultScope"`
 }
 
-// RoleUpdate is the body of PATCH /api/roles/{roleId} (RoleUpdate): only the fields to change, plus the
+// RoleUpdate is the body of PATCH /api/v1/roles/{roleId} (RoleUpdate): only the fields to change, plus the
 // version. A field that is not sent (nil) keeps its value.
 type RoleUpdate struct {
 	Name         *string             `json:"name"`
@@ -141,7 +141,7 @@ type AssignmentInput struct {
 	Scope  ScopeInput `json:"scope"`
 }
 
-// PersonRolesUpdate is the body of PUT /api/people/{personId}/roles and of its impact check
+// PersonRolesUpdate is the body of PUT /api/v1/people/{personId}/roles and of its impact check
 // (PersonRolesUpdate): the complete list after the change and the person's version.
 type PersonRolesUpdate struct {
 	Roles   []AssignmentInput `json:"roles"`
@@ -157,7 +157,7 @@ type PersonRoles struct {
 	Version     int                    `json:"version"`
 }
 
-// PeopleAccessPage is the answer of GET /api/access/people (PeopleAccessPage).
+// PeopleAccessPage is the answer of GET /api/v1/access/people (PeopleAccessPage).
 type PeopleAccessPage struct {
 	Items []PersonRoles `json:"items"`
 	Total int           `json:"total"`
@@ -173,7 +173,7 @@ type RulesView struct {
 	UpdatedBy      any            `json:"updatedBy"`
 }
 
-// RulesUpdate is the body of PATCH /api/access-rules (AccessRulesUpdate).
+// RulesUpdate is the body of PATCH /api/v1/access-rules (AccessRulesUpdate).
 type RulesUpdate struct {
 	NoSelfApproval  *bool   `json:"noSelfApproval"`
 	NewPersonRoleID *string `json:"newPersonRoleId"`
@@ -193,7 +193,7 @@ type ImpactWarning struct {
 	Count   int    `json:"count"`
 }
 
-// ChangeImpact is the answer of POST /api/people/{personId}/roles/impact (ChangeImpact).
+// ChangeImpact is the answer of POST /api/v1/people/{personId}/roles/impact (ChangeImpact).
 type ChangeImpact struct {
 	Warnings []ImpactWarning `json:"warnings"`
 }

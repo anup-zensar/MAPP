@@ -15,8 +15,8 @@ func TestActivityDestinations_Contract_FR029(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/activities/A-1001/destinations", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/activities/A-9999/destinations", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activities/A-1001/destinations", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/activities/A-9999/destinations", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var page activities.DestinationPage
@@ -37,21 +37,21 @@ func TestMoveActivity_Contract_FR029(t *testing.T) {
 	daniel := server.SignIn(t, "daniel.okoro@shell.com")
 	server.Advance(time.Hour)
 
-	refused := priya.Do(t, http.MethodPost, "/api/activities/A-1001/move", map[string]any{"initiativeId": "I-1004", "version": 1})
-	moved := priya.Do(t, http.MethodPost, "/api/activities/A-1001/move", map[string]any{"initiativeId": "I-1002", "version": 1})
-	outOfDate := daniel.Do(t, http.MethodPost, "/api/activities/A-1001/move", map[string]any{"initiativeId": "I-1003", "version": 1})
+	refused := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1001/move", map[string]any{"initiativeId": "I-1004", "version": 1})
+	moved := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1001/move", map[string]any{"initiativeId": "I-1002", "version": 1})
+	outOfDate := daniel.Do(t, http.MethodPost, "/api/v1/activities/A-1001/move", map[string]any{"initiativeId": "I-1003", "version": 1})
 
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
 		`"fields":[{"field":"initiativeId","message":"'Launch film' runs 01 Mar – 31 May 2026, but 'Retail events' runs `+
-		`01 Jun – 31 Dec 2026. Change the activity's dates first, or pick another initiative."}]}`)
+		`01 Jun – 31 Dec 2026. Change the activity's dates first, or pick another initiative."}]}}`)
 	assertStatus(t, moved, http.StatusOK)
 	var view activities.View
 	moved.Decode(t, &view)
 	if view.Initiative.ID != "I-1002" || view.Version != 2 || view.Status != activities.StatusCreated {
 		t.Errorf("moved = %s", moved.Body)
 	}
-	assertAnswer(t, outOfDate, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Priya Raman changed this activity",`+
-		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}`)
+	assertAnswer(t, outOfDate, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Priya Raman changed this activity",`+
+		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}}`)
 }
 
 // Copying the Approved Social always-on answers 201 with "Social always-on (copy)", Created, with copies of
@@ -60,8 +60,8 @@ func TestCopyActivity_Contract_FR030(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPost, "/api/activities/A-1002/copy", map[string]any{"initiativeId": "I-1001"})
-	refused := priya.Do(t, http.MethodPost, "/api/activities/A-1002/copy", map[string]any{"initiativeId": "I-1005"})
+	response := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1002/copy", map[string]any{"initiativeId": "I-1001"})
+	refused := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1002/copy", map[string]any{"initiativeId": "I-1005"})
 
 	assertStatus(t, response, http.StatusCreated)
 	var copied activities.View
@@ -70,10 +70,10 @@ func TestCopyActivity_Contract_FR030(t *testing.T) {
 		copied.LineItems.Count != 2 || copied.Initiative.ID != "I-1001" {
 		t.Errorf("copy = %s", response.Body)
 	}
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"initiativeId","message":"Choose another initiative of this plan."}]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"initiativeId","message":"Choose another initiative of this plan."}]}}`)
 	var original activities.View
-	priya.Do(t, http.MethodGet, "/api/activities/A-1002", nil).Decode(t, &original)
+	priya.Do(t, http.MethodGet, "/api/v1/activities/A-1002", nil).Decode(t, &original)
 	if original.Status != activities.StatusApproved {
 		t.Errorf("original is %s, want it still Approved", original.Status)
 	}

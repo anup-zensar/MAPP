@@ -1,5 +1,8 @@
 /* The system row, set apart from the line items on the subtle grey of table headers. */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .row {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);

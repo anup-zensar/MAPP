@@ -30,7 +30,7 @@ function Teams({ start = [] }: { start?: string[] }) {
 
 describe('TeamField (feature 003, US3)', () => {
   it('loads the teams and offers only the active ones', async () => {
-    mockApi({ 'GET /api/teams': { body: TEAMS } });
+    mockApi({ 'GET /api/v1/teams': { body: TEAMS } });
     const { user } = renderWithProviders(<Teams />, { user: testUser() });
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
@@ -42,7 +42,7 @@ describe('TeamField (feature 003, US3)', () => {
   });
 
   it('keeps an inactive team already chosen, labelled', async () => {
-    mockApi({ 'GET /api/teams': { body: TEAMS } });
+    mockApi({ 'GET /api/v1/teams': { body: TEAMS } });
     renderWithProviders(<Teams start={['T-1003']} />, { user: testUser() });
 
     expect(await screen.findByText('Old Markets (inactive)')).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('TeamField (feature 003, US3)', () => {
   it('says when the teams could not be loaded, with Try again', async () => {
     let calls = 0;
     mockApi({
-      'GET /api/teams': () => {
+      'GET /api/v1/teams': () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: TEAMS };
       },

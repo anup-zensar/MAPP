@@ -46,7 +46,7 @@ describe('NotificationBell with notifications (feature 008, US6)', () => {
     const twelve = Array.from({ length: 12 }, (_, index) =>
       notificationOf({ id: `NT-${1001 + index}` }),
     );
-    mockApi({ 'GET /api/notifications': { body: pageOf(twelve) } });
+    mockApi({ 'GET /api/v1/notifications': { body: pageOf(twelve) } });
     renderWithProviders(<NotificationBell />, { user: testUser() });
 
     expect(
@@ -58,8 +58,8 @@ describe('NotificationBell with notifications (feature 008, US6)', () => {
   it('lists the notifications, closes after a choice and counts one less (FR-033, FR-034)', async () => {
     let read = false;
     mockApi({
-      'GET /api/notifications': () => ({ body: pageOf([notificationOf({ read })]) }),
-      'POST /api/notifications/NT-1003/read': () => {
+      'GET /api/v1/notifications': () => ({ body: pageOf([notificationOf({ read })]) }),
+      'POST /api/v1/notifications/NT-1003/read': () => {
         read = true;
         return { body: notificationOf({ read: true }) };
       },
@@ -81,7 +81,7 @@ describe('NotificationBell with notifications (feature 008, US6)', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     let calls = 0;
     mockApi({
-      'GET /api/notifications': () => {
+      'GET /api/v1/notifications': () => {
         calls += 1;
         return { body: pageOf(calls === 1 ? [] : [notificationOf()]) };
       },

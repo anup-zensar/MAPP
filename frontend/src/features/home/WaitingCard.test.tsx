@@ -13,7 +13,7 @@ const daysAgo = (days: number) => new Date(Date.now() - (days * 24 + 1) * 3_600_
 const page = (items: WaitingItem[], total = items.length) => ({ body: { items, total } });
 
 function renderCard(answer: MockHandler = page([waitingItemOf({ waitingSince: daysAgo(3) })])) {
-  mockApi({ 'GET /api/home/waiting': answer });
+  mockApi({ 'GET /api/v1/home/waiting': answer });
   return renderWithProviders(<WaitingCard />, { user: testUser(), path: '/' });
 }
 

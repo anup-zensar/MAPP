@@ -56,35 +56,35 @@ const CHANGED_BY_EVERY_CHANGE: QueryKey[] = [
   ['recycle-bin'],
 ];
 
-/** The fixed permissions of Table A, in five groups (GET /api/access/permissions). */
+/** The fixed permissions of Table A, in five groups (GET /api/v1/access/permissions). */
 export function usePermissionCatalogue() {
   return useQuery({
     queryKey: PERMISSIONS_KEY,
-    queryFn: () => call(api.GET('/api/access/permissions')),
+    queryFn: () => call(api.GET('/api/v1/access/permissions')),
     // The catalogue is part of the code: it never changes while the app runs.
     staleTime: Infinity,
   });
 }
 
-/** Every role, Administrator first (GET /api/roles). */
+/** Every role, Administrator first (GET /api/v1/roles). */
 export function useRoles() {
-  return useQuery({ queryKey: ROLES_KEY, queryFn: () => call(api.GET('/api/roles')) });
+  return useQuery({ queryKey: ROLES_KEY, queryFn: () => call(api.GET('/api/v1/roles')) });
 }
 
 /** One role with its permissions, the people who hold it and its locks; nothing for "". */
 export function useRole(roleId: string) {
   return useQuery({
     queryKey: [...ROLES_KEY, roleId],
-    queryFn: () => call(api.GET('/api/roles/{roleId}', { params: { path: { roleId } } })),
+    queryFn: () => call(api.GET('/api/v1/roles/{roleId}', { params: { path: { roleId } } })),
     enabled: roleId !== '',
   });
 }
 
-/** Everyone with their roles and scopes, active people first (GET /api/access/people). */
+/** Everyone with their roles and scopes, active people first (GET /api/v1/access/people). */
 export function usePeopleAccess() {
   return useQuery({
     queryKey: PEOPLE_ACCESS_KEY,
-    queryFn: () => call(api.GET('/api/access/people')),
+    queryFn: () => call(api.GET('/api/v1/access/people')),
   });
 }
 
@@ -93,7 +93,7 @@ export function usePersonRoles(personId: string) {
   return useQuery({
     queryKey: personRolesKey(personId),
     queryFn: () =>
-      call(api.GET('/api/people/{personId}/roles', { params: { path: { personId } } })),
+      call(api.GET('/api/v1/people/{personId}/roles', { params: { path: { personId } } })),
   });
 }
 
@@ -101,7 +101,7 @@ export function usePersonRoles(personId: string) {
 export function useAccessRules() {
   return useQuery({
     queryKey: ACCESS_RULES_KEY,
-    queryFn: () => call(api.GET('/api/access-rules')),
+    queryFn: () => call(api.GET('/api/v1/access-rules')),
   });
 }
 
@@ -109,14 +109,14 @@ export function useAccessRules() {
 export function useAccessChanges() {
   return useQuery({
     queryKey: ACCESS_CHANGES_KEY,
-    queryFn: () => call(api.GET('/api/access/changes')),
+    queryFn: () => call(api.GET('/api/v1/access/changes')),
   });
 }
 
 export function useCreateRole() {
   const refresh = useRefreshAfterChange();
   return useMutation({
-    mutationFn: (body: RoleCreate) => call(api.POST('/api/roles', { body })),
+    mutationFn: (body: RoleCreate) => call(api.POST('/api/v1/roles', { body })),
     onSettled: refresh,
   });
 }
@@ -125,7 +125,7 @@ export function useUpdateRole() {
   const refresh = useRefreshAfterChange();
   return useMutation({
     mutationFn: ({ roleId, body }: { roleId: string; body: RoleUpdate }) =>
-      call(api.PATCH('/api/roles/{roleId}', { params: { path: { roleId } }, body })),
+      call(api.PATCH('/api/v1/roles/{roleId}', { params: { path: { roleId } }, body })),
     onSettled: refresh,
   });
 }
@@ -135,7 +135,7 @@ export function useDeleteRole() {
   const refresh = useRefreshAfterChange();
   return useMutation({
     mutationFn: (roleId: string) =>
-      call(api.DELETE('/api/roles/{roleId}', { params: { path: { roleId } } })),
+      call(api.DELETE('/api/v1/roles/{roleId}', { params: { path: { roleId } } })),
     onSettled: refresh,
   });
 }
@@ -150,7 +150,7 @@ export function useSetPersonRoles() {
   const refresh = useRefreshAfterChange();
   return useMutation({
     mutationFn: ({ personId, body }: PersonRolesChange) =>
-      call(api.PUT('/api/people/{personId}/roles', { params: { path: { personId } }, body })),
+      call(api.PUT('/api/v1/people/{personId}/roles', { params: { path: { personId } }, body })),
     onSettled: refresh,
   });
 }
@@ -160,7 +160,10 @@ export function useCheckPersonRolesImpact() {
   return useMutation({
     mutationFn: ({ personId, body }: PersonRolesChange) =>
       call(
-        api.POST('/api/people/{personId}/roles/impact', { params: { path: { personId } }, body }),
+        api.POST('/api/v1/people/{personId}/roles/impact', {
+          params: { path: { personId } },
+          body,
+        }),
       ),
   });
 }
@@ -168,7 +171,7 @@ export function useCheckPersonRolesImpact() {
 export function useUpdateAccessRules() {
   const refresh = useRefreshAfterChange();
   return useMutation({
-    mutationFn: (body: AccessRulesUpdate) => call(api.PATCH('/api/access-rules', { body })),
+    mutationFn: (body: AccessRulesUpdate) => call(api.PATCH('/api/v1/access-rules', { body })),
     onSettled: refresh,
   });
 }

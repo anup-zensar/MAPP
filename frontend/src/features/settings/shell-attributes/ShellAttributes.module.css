@@ -77,7 +77,6 @@
 
 /* A move button that can't move now: still focusable, its tip says why (SC-009). */
 .unavailable {
-  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -209,8 +208,11 @@
   font-size: var(--text-sm);
 }
 
-/* The full-page editor: one column, at most 720 px wide (design system §7). */
+/* The full-page editor: one column, at most 720 px wide (design system §7). It sits on the grey
+   page, so its hints, markings and links are Text Strong (constitution X). */
 .editor {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
