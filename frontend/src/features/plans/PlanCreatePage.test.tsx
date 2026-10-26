@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
+import { closestTo } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { FORM_ANSWERS, plan, planDefaults } from '@/testing/fixtures/plans';
@@ -92,9 +93,7 @@ describe('PlanCreatePage (US1)', () => {
     await user.click(await screen.findByRole('button', { name: 'Save' }));
 
     const summary = await screen.findByText('2 problems need your attention');
-    expect(
-      within(summary.closest('div') as HTMLElement).getByText('Enter a plan name.'),
-    ).toBeInTheDocument();
+    expect(within(closestTo(summary, 'div')).getByText('Enter a plan name.')).toBeInTheDocument();
     expect(screen.getAllByText('Choose a model.')).toHaveLength(2);
     expect(router.state.location.pathname).toBe('/plans/new');
   });

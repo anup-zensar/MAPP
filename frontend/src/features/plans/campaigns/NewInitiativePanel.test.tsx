@@ -5,8 +5,8 @@ import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { campaign, initiative, PEOPLE, planAnswer } from './fixtures';
+import { reply } from '@/testing/replies';
+import { campaign, initiative, PEOPLE, planAnswer } from '@/testing/fixtures/campaigns';
 import { NewInitiativePanel } from './NewInitiativePanel';
 
 const NEW_PATH = '/plans/P-1001/campaigns/C-1001/initiatives/new';
@@ -14,16 +14,16 @@ const HELIX = campaign({ startDate: '2026-03-01', endDate: '2026-12-31' });
 
 function renderPanel(answers: HttpHandler[] = []) {
   const api = mockApi([
-    looseReply('GET /api/v1/campaigns/{campaignId}', { body: HELIX }, { campaignId: 'C-1001' }),
-    looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-    looseReply(
+    reply('GET /api/v1/campaigns/{campaignId}', { body: HELIX }, { campaignId: 'C-1001' }),
+    reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+    reply(
       'GET /api/v1/shell-attribute-forms/{level}',
       {
         body: { ...campaignForm(), level: 'initiative' },
       },
       { level: 'initiative' },
     ),
-    looseReply('GET /api/v1/people', { body: PEOPLE }),
+    reply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
   ]);
   const rendered = renderWithProviders(<NewInitiativePanel />, {
@@ -61,7 +61,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
   it('keeps the dates inside the campaign’s and shows the API’s R3 message under them (US2#2, FR-006)', async () => {
     const r3 = "Dates must be inside the campaign's dates (01 Mar 2026 – 31 Dec 2026).";
     const { user } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/campaigns/{campaignId}/initiatives',
         {
           status: 400,
@@ -93,7 +93,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('starts without dates when the campaign has none, and does not limit them (edge case)', async () => {
     renderPanel([
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         { body: campaign({ startDate: null, endDate: null }) },
         { campaignId: 'C-1001' },
@@ -120,7 +120,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('saves with a name only and highlights the new initiative (US2#1, FR-004)', async () => {
     const { user, api, router } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/campaigns/{campaignId}/initiatives',
         {
           status: 201,
@@ -159,7 +159,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('saves and opens a fresh panel for the same campaign (Save and add another)', async () => {
     const { user, router } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/campaigns/{campaignId}/initiatives',
         {
           status: 201,
@@ -180,7 +180,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('says when the campaign is gone', async () => {
     renderPanel([
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           status: 404,
@@ -188,6 +188,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
             error: {
               code: 'not_found',
               message: 'This campaign no longer exists — someone may have deleted it.',
+              fields: [],
             },
           },
         },

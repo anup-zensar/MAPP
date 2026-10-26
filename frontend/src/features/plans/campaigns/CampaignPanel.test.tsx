@@ -10,8 +10,7 @@ import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { CampaignPanel } from './CampaignPanel';
+import { reply } from '@/testing/replies';
 import {
   budgetAndCost,
   campaign,
@@ -20,7 +19,8 @@ import {
   planAnswer,
   planDestination,
   usd,
-} from './fixtures';
+} from '@/testing/fixtures/campaigns';
+import { CampaignPanel } from './CampaignPanel';
 
 const DETAILS = '/plans/P-1001/campaigns/C-1001';
 
@@ -28,18 +28,14 @@ function renderPanel(route: string, answers: HttpHandler[] = []) {
   const api = mockApi([
     ...HISTORY_ANSWERS,
     ...financialsNotServed('C-1001'),
-    looseReply(
-      'GET /api/v1/campaigns/{campaignId}',
-      { body: campaign() },
-      { campaignId: 'C-1001' },
-    ),
-    looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-    looseReply(
+    reply('GET /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
+    reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+    reply(
       'GET /api/v1/shell-attribute-forms/{level}',
       { body: campaignForm() },
       { level: 'campaign' },
     ),
-    looseReply('GET /api/v1/people', { body: PEOPLE }),
+    reply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
   ]);
   const rendered = renderRoutes(
@@ -136,7 +132,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('shows planned cost, budget used in red and over-allocation (FR-010, FR-011)', async () => {
     const { user } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -185,7 +181,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('links a needed field to the edit form with that field focused (FR-014)', async () => {
     const { user, router } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -211,7 +207,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('says when the campaign has no initiatives and offers Add initiative (FR-016)', async () => {
     renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -278,7 +274,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('deletes from More, closes the panel and offers Undo (US5, FR-028, FR-029)', async () => {
     const { user, router, api } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'DELETE /api/v1/campaigns/{campaignId}',
         {
           body: {
@@ -318,7 +314,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('moves from More and opens the plan it moved to, with the campaign highlighted (US6, FR-025)', async () => {
     const { user, router, api } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}/destinations',
         {
           body: destinationList(
@@ -328,7 +324,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
         },
         { campaignId: 'C-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/campaigns/{campaignId}/move',
         { body: campaign({ planId: 'P-1002', version: 4 }) },
         { campaignId: 'C-1001' },
@@ -354,7 +350,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('copies from More (US6, FR-026)', async () => {
     const { user } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}/destinations',
         {
           body: destinationList(
@@ -386,12 +382,12 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('opens under the right plan when the campaign has moved (FR-017)', async () => {
     const { router } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         { body: campaign({ planId: 'P-1002' }) },
         { campaignId: 'C-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}',
         { body: { ...planAnswer(), id: 'P-1002' } },
         { planId: 'P-1002' },
@@ -405,7 +401,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('says when the campaign no longer exists, with Back to the plan', async () => {
     const { user, router } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           status: 404,
@@ -413,6 +409,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
             error: {
               code: 'not_found',
               message: 'This campaign no longer exists — someone may have deleted it.',
+              fields: [],
             },
           },
         },
@@ -430,11 +427,14 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   it('shows a loading state, then a failure with Try again', async () => {
     let calls = 0;
     const { user } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         () =>
           ++calls === 1
-            ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
+            ? {
+                status: 500,
+                body: { error: { code: 'internal_error', message: 'Oops', fields: [] } },
+              }
             : { body: campaign() },
         { campaignId: 'C-1001' },
       ),
@@ -450,7 +450,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 describe('CampaignPanel — edit (feature 005, US3)', () => {
   it('saves the form with the version it started from and goes back to the details (US3#2, FR-018)', async () => {
     const { user, api, router } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'PATCH /api/v1/campaigns/{campaignId}',
         {
           body: campaign({ budget: usd('450000.00'), version: 4 }),
@@ -495,12 +495,12 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
   it('types the budget in the plan currency and says clearing it removes Budget by month (016 FR-011, FR-022)', async () => {
     const gbp = (amount: string) => ({ amount, currency: 'GBP' });
     const { user, api } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}',
         { body: { ...planAnswer(), currency: 'GBP' } },
         { planId: 'P-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -517,12 +517,8 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
         },
         { campaignId: 'C-1001' },
       ),
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        { body: campaign() },
-        { campaignId: 'C-1001' },
-      ),
-      looseReply(
+      reply('PATCH /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
+      reply(
         'GET /api/v1/plans/{planId}/budget-by-month',
         { body: budgetByMonth() },
         { planId: 'P-1001' },
@@ -550,7 +546,7 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     const problem =
       'Digital & social (01 Feb – 30 Nov 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
     const { user, router } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'PATCH /api/v1/campaigns/{campaignId}',
         {
           status: 400,
@@ -581,12 +577,12 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     let saves = 0;
     let reads = 0;
     const { user, api } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         () => ({ body: campaign({ version: ++reads > 1 ? 4 : 3 }) }),
         { campaignId: 'C-1001' },
       ),
-      looseReply(
+      reply(
         'PATCH /api/v1/campaigns/{campaignId}',
         () =>
           ++saves === 1
@@ -597,6 +593,7 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
                     code: 'version_conflict',
                     message: 'Not saved — Daniel Okoro changed this campaign',
                     conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+                    fields: [],
                   },
                 },
               }
@@ -627,7 +624,7 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
 
   it('lists the values a removed cluster clears, before saving, and guards unsaved changes (US3#4, FR-009, FR-018)', async () => {
     const { user, api } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -639,11 +636,7 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
         },
         { campaignId: 'C-1001' },
       ),
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        { body: campaign() },
-        { campaignId: 'C-1001' },
-      ),
+      reply('PATCH /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
     ]);
     const form = await findForm();
 
@@ -677,12 +670,16 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
 
   it('shows a failed save that is not about a field as a message and keeps the values', async () => {
     const { user, router } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'PATCH /api/v1/campaigns/{campaignId}',
         {
           status: 500,
           body: {
-            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+            error: {
+              code: 'internal_error',
+              message: 'Something went wrong. Please try again.',
+              fields: [],
+            },
           },
         },
         { campaignId: 'C-1001' },

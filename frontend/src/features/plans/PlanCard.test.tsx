@@ -1,11 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { nextOf, nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { seedList } from '@/testing/fixtures/plans';
 import { PlanCard } from './PlanCard';
 
-const [europe, china, lastYear] = seedList().items;
+const europe = nth(seedList().items, 0);
+const china = nth(seedList().items, 1);
+const lastYear = nth(seedList().items, 2);
 
 function renderCard(plan = europe, pinned = false, onPinToggle = () => {}) {
   return renderWithProviders(
@@ -20,7 +23,7 @@ function renderCard(plan = europe, pinned = false, onPinToggle = () => {}) {
 
 /** The value beside a label of the card's money list ("Planned cost", "Plan budget"). */
 function moneyLine(label: string) {
-  return screen.getByText(label).nextElementSibling as HTMLElement;
+  return nextOf(screen.getByText(label));
 }
 
 describe('PlanCard (FR-002)', () => {

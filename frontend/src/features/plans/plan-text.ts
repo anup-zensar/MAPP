@@ -19,6 +19,13 @@ export const STATUS: Record<PlanStatus, { word: string; tone: StatusTone }> = {
   published: { word: 'Published', tone: 'positive' },
 };
 
+export const SPREAD_METHODS: readonly SpreadMethod[] = [
+  'evenly',
+  'firstMonth',
+  'lastMonth',
+  'custom',
+];
+
 /** The default line-item spread choices, in the form's order. */
 export const SPREAD_LABELS: Record<SpreadMethod, string> = {
   evenly: 'Evenly',
@@ -26,6 +33,8 @@ export const SPREAD_LABELS: Record<SpreadMethod, string> = {
   lastMonth: 'All in last month',
   custom: 'Custom',
 };
+
+export const GOAL_STAGES: readonly GoalStage[] = ['inq', 'mql', 'revenue'];
 
 /** The goal stage choices of the form. */
 export const STAGE_OPTIONS: Record<GoalStage, string> = {

@@ -10,28 +10,20 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FilterChip } from '@/ui/FilterChips/FilterChips';
 import { useAccess } from '@/session/access';
-import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
-import {
-  DEFAULT_FILTERS,
-  readFilters,
-  remember,
-  toSearchParams,
-  yearRangeLabel,
-} from './list-preferences';
+import { DEFAULT_FILTERS, readFilters, remember, toSearchParams } from './list-preferences';
 import type { PlanListFilters } from './list-preferences';
 import { PlanCard } from './PlanCard';
 import { PlansFilters } from './PlansFilters';
 import styles from './PlansPage.module.css';
 import { usePlans } from './api';
 import type { PlanSummary } from './api';
-import { PLAN_TYPE_LABELS } from './plan-currency';
+import { chipReset, filterChips } from './plan-list-chips';
+import { PlanListSummary } from './PlanListSummary';
 import { PlanTable } from './PlanTable';
-import { MY_TEAMS_HINT, STATUS } from './plan-text';
+import { MY_TEAMS_HINT } from './plan-text';
 import { usePlanActions } from './usePlanActions';
 
 /** How long the search waits after the last key before it asks the API (plan "Plans list"). */
@@ -63,7 +55,6 @@ export function PlansPage() {
   const { updatePreferences } = useSession();
   const { show } = useToast();
   const canCreate = useAccess().has('plans.create');
-  const { money, moneyCompact } = useFormatters();
   const [search, setSearch] = useSearchParams();
   // 016's API sends every plan's type; until then the list takes one year and no plan types, so
   // a plan type in the address is neither sent nor shown as a chip.
@@ -138,38 +129,13 @@ export function PlansPage() {
     change({ ...DEFAULT_FILTERS, layout: filters.layout });
   }
 
-  const years = yearRangeLabel(filters);
-  const chips: FilterChip[] = [
-    ...(filters.status !== 'all' ? [{ key: 'status', label: STATUS[filters.status].word }] : []),
-    ...(years !== null
-      ? [
-          {
-            key: 'years',
-            label: `${filters.yearFrom === filters.yearTo ? 'Year' : 'Years'}: ${years}`,
-          },
-        ]
-      : []),
-    ...(filters.types.length > 0
-      ? [
-          {
-            key: 'types',
-            label: `Plan type: ${filters.types.map((type) => PLAN_TYPE_LABELS[type]).join(', ')}`,
-          },
-        ]
-      : []),
-    ...(filters.scope === 'myTeams' ? [{ key: 'scope', label: 'My teams’ plans' }] : []),
-    ...(filters.q.trim() ? [{ key: 'q', label: `Search: ${filters.q.trim()}` }] : []),
-  ];
+  const chips = filterChips(filters);
 
   function removeChip(key: string) {
     if (key === 'q') {
       clearSearch();
     }
-    if (key === 'years') {
-      change({ yearFrom: null, yearTo: null });
-      return;
-    }
-    change({ [key]: DEFAULT_FILTERS[key as keyof PlanListFilters] });
+    change(chipReset(key));
   }
 
   const data = plans.data;
@@ -233,41 +199,7 @@ export function PlansPage() {
         }
       />
       <div className={styles.page}>
-        <section className={styles.summary} aria-label="Summary">
-          {summary ? (
-            <>
-              <SummaryCard
-                label="Plans"
-                value={summary.plans}
-                tip="Plans in the chosen years, plan types and teams."
-                detail={
-                  <span>
-                    {summary.draft} draft · {summary.published} published
-                  </span>
-                }
-              />
-              <SummaryCard
-                label="Total plan budget"
-                value={moneyCompact(summary.budget)}
-                fullValue={money(summary.budget)}
-                tip="The plan budgets of these plans added up. Plans without a budget add nothing."
-              />
-              <SummaryCard
-                label="Total planned cost"
-                value={moneyCompact(summary.plannedCost)}
-                fullValue={money(summary.plannedCost)}
-                tip="The planned cost of these plans added up: the sum of their activities' planned cost."
-              />
-            </>
-          ) : (
-            [0, 1, 2].map((card) => (
-              <div key={card} className={styles.skeletonCard}>
-                <Skeleton width="60%" />
-                <Skeleton height="24px" width="40%" />
-              </div>
-            ))
-          )}
-        </section>
+        <PlanListSummary summary={summary} />
 
         {/* The list toolbar inside the list's card, across its full width (design system §2.4 A). */}
         <section className={styles.listCard} aria-label="Plan list">

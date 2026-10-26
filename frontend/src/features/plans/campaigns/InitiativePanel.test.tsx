@@ -9,8 +9,8 @@ import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { initiative, PEOPLE, planAnswer, usd } from './fixtures';
+import { reply } from '@/testing/replies';
+import { initiative, PEOPLE, planAnswer, usd } from '@/testing/fixtures/campaigns';
 import { InitiativePanel } from './InitiativePanel';
 
 // Feature 006 fills the initiative's extension points; here they stand in.
@@ -35,20 +35,20 @@ function renderPanel(route: string, answers: HttpHandler[] = []) {
   const api = mockApi([
     ...HISTORY_ANSWERS,
     ...financialsNotServed('I-1001'),
-    looseReply(
+    reply(
       'GET /api/v1/initiatives/{initiativeId}',
       { body: initiative() },
       { initiativeId: 'I-1001' },
     ),
-    looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-    looseReply(
+    reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+    reply(
       'GET /api/v1/shell-attribute-forms/{level}',
       {
         body: { ...campaignForm(), level: 'initiative' },
       },
       { level: 'initiative' },
     ),
-    looseReply('GET /api/v1/people', { body: PEOPLE }),
+    reply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
   ]);
   const rendered = renderRoutes(
@@ -88,7 +88,7 @@ async function findForm() {
 describe('InitiativePanel (feature 005, US3)', () => {
   it('shows its campaign, the remaining campaign budget and what is below it (FR-016)', async () => {
     renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/initiatives/{initiativeId}',
         {
           body: initiative({
@@ -168,7 +168,7 @@ describe('InitiativePanel (feature 005, US3)', () => {
 
   it('edits with the campaign read-only and its dates as the allowed range (FR-006, FR-018)', async () => {
     const { user, api, router } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'PATCH /api/v1/initiatives/{initiativeId}',
         { body: initiative({ version: 4 }) },
         { initiativeId: 'I-1001' },
@@ -196,7 +196,7 @@ describe('InitiativePanel (feature 005, US3)', () => {
     const fr007 =
       'Launch webinar (01 Mar – 31 Mar 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
     const { user } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
+      reply(
         'PATCH /api/v1/initiatives/{initiativeId}',
         {
           status: 400,
@@ -228,7 +228,7 @@ describe('InitiativePanel (feature 005, US3)', () => {
 
   it('says when the initiative no longer exists', async () => {
     renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/initiatives/{initiativeId}',
         {
           status: 404,
@@ -236,6 +236,7 @@ describe('InitiativePanel (feature 005, US3)', () => {
             error: {
               code: 'not_found',
               message: 'This initiative no longer exists — someone may have deleted it.',
+              fields: [],
             },
           },
         },

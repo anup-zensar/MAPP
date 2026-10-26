@@ -6,8 +6,14 @@ import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { financialsNotServed } from '@/testing/fixtures/plans';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { renderApp } from '@/testing/app';
-import { looseReply } from '@/testing/replies';
-import { campaign, initiative, PEOPLE, planAnswer, planCampaigns } from './fixtures';
+import { reply } from '@/testing/replies';
+import {
+  campaign,
+  initiative,
+  PEOPLE,
+  planAnswer,
+  planCampaigns,
+} from '@/testing/fixtures/campaigns';
 
 // The plan page (004) and an initiative's activities (006) are tested by their features; here
 // they stand in, so those features never break these tests.
@@ -28,31 +34,27 @@ vi.mock('@/features/activities/InitiativeActivities', () => ({
 const ANSWERS: HttpHandler[] = [
   ...HISTORY_ANSWERS,
   ...financialsNotServed('P-1001', 'C-1001', 'I-1001'),
-  looseReply(
-    'GET /api/v1/plans/{planId}/campaigns',
-    { body: planCampaigns() },
-    { planId: 'P-1001' },
-  ),
-  looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-  looseReply('GET /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
-  looseReply(
+  reply('GET /api/v1/plans/{planId}/campaigns', { body: planCampaigns() }, { planId: 'P-1001' }),
+  reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+  reply('GET /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
+  reply(
     'GET /api/v1/initiatives/{initiativeId}',
     { body: initiative() },
     { initiativeId: 'I-1001' },
   ),
-  looseReply(
+  reply(
     'GET /api/v1/shell-attribute-forms/{level}',
     { body: campaignForm() },
     { level: 'campaign' },
   ),
-  looseReply(
+  reply(
     'GET /api/v1/shell-attribute-forms/{level}',
     {
       body: { ...campaignForm(), level: 'initiative' },
     },
     { level: 'initiative' },
   ),
-  looseReply('GET /api/v1/people', { body: PEOPLE }),
+  reply('GET /api/v1/people', { body: PEOPLE }),
 ];
 
 // Feature 005's addresses: side panels over the plan page (build guide §5).

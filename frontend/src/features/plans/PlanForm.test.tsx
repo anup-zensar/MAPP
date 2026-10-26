@@ -18,7 +18,6 @@ function renderForm(props: Partial<PlanFormProps> = {}, answers: HttpHandler[] =
       mode="create"
       initial={valuesFromDefaults(defaults)}
       defaults={defaults}
-      problems={[]}
       failure={null}
       onSave={async () => null}
       cancelTo="/plans"
@@ -157,17 +156,20 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
   });
 
   it('shows every problem at once, in the summary and under the fields (US1#3, FR-010)', async () => {
-    renderForm({
-      problems: [
-        {
-          field: 'name',
-          message:
-            "There is already a plan called 'FY2026 Lubricants Europe'. Choose another name.",
-        },
-        { field: 'modelId', message: 'Choose a model.' },
-        { field: 'attributes.SA-BU', message: 'Choose a business unit.' },
-      ],
+    const { user } = renderForm({
+      onSave: async () => ({
+        problems: [
+          {
+            field: 'name',
+            message:
+              "There is already a plan called 'FY2026 Lubricants Europe'. Choose another name.",
+          },
+          { field: 'modelId', message: 'Choose a model.' },
+          { field: 'attributes.SA-BU', message: 'Choose a business unit.' },
+        ],
+      }),
     });
+    await user.click(await screen.findByRole('button', { name: 'Save' }));
 
     const summary = await screen.findByRole('alert');
     expect(within(summary).getByText('3 problems need your attention')).toBeInTheDocument();

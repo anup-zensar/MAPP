@@ -9,8 +9,7 @@ import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { CELL_KEYS } from './campaign-rows';
+import { reply } from '@/testing/replies';
 import {
   campaign,
   destination,
@@ -21,7 +20,8 @@ import {
   planCampaigns,
   planDestination,
   usd,
-} from './fixtures';
+} from '@/testing/fixtures/campaigns';
+import { CELL_KEYS } from './campaign-rows';
 import { NewCampaignPanel } from './NewCampaignPanel';
 import { useCampaignTreeContent } from './useCampaignTreeContent';
 
@@ -61,7 +61,7 @@ function PlanStandIn() {
 function renderTree(answers: HttpHandler[], route: unknown = '/plans/P-1001') {
   // Feature 006 adds the plan's activities under the initiatives: none here.
   const api = mockApi([
-    looseReply(
+    reply(
       'GET /api/v1/plans/{planId}/activities',
       { body: { items: [], total: 0 } },
       { planId: 'P-1001' },
@@ -96,7 +96,7 @@ function renderTree(answers: HttpHandler[], route: unknown = '/plans/P-1001') {
 describe('useCampaignTreeContent (feature 005)', () => {
   it('gives the plan tree its campaign rows with their initiatives and the totals row (FR-019, FR-022)', async () => {
     renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         { body: planCampaigns() },
         { planId: 'P-1001' },
@@ -112,18 +112,18 @@ describe('useCampaignTreeContent (feature 005)', () => {
 
   it('offers Add campaign in the toolbar and on the plan row (FR-001)', async () => {
     const { user, router } = renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         { body: planCampaigns() },
         { planId: 'P-1001' },
       ),
-      looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-      looseReply(
+      reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+      reply(
         'GET /api/v1/shell-attribute-forms/{level}',
         { body: campaignForm() },
         { level: 'campaign' },
       ),
-      looseReply('GET /api/v1/people', { body: PEOPLE }),
+      reply('GET /api/v1/people', { body: PEOPLE }),
     ]);
 
     await user.click(await screen.findByRole('link', { name: 'Add campaign' }));
@@ -139,7 +139,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
 
   it('offers Add campaign under an empty tree (FR-001)', async () => {
     renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         { body: planCampaigns([]) },
         { planId: 'P-1001' },
@@ -156,7 +156,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
   it('highlights the record named in the location state (FR-004)', async () => {
     renderTree(
       [
-        looseReply(
+        reply(
           'GET /api/v1/plans/{planId}/campaigns',
           { body: planCampaigns() },
           { planId: 'P-1001' },
@@ -183,7 +183,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
     });
     let saved = false;
     const { user } = renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         () => ({
           body: saved
@@ -192,14 +192,14 @@ describe('useCampaignTreeContent (feature 005)', () => {
         }),
         { planId: 'P-1001' },
       ),
-      looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-      looseReply(
+      reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+      reply(
         'GET /api/v1/shell-attribute-forms/{level}',
         { body: campaignForm() },
         { level: 'campaign' },
       ),
-      looseReply('GET /api/v1/people', { body: PEOPLE }),
-      looseReply(
+      reply('GET /api/v1/people', { body: PEOPLE }),
+      reply(
         'POST /api/v1/plans/{planId}/campaigns',
         () => {
           saved = true;
@@ -224,14 +224,14 @@ describe('useCampaignTreeContent (feature 005)', () => {
   it('deletes from a row’s ⋯ menu and the row leaves the tree at once (FR-021, FR-028, FR-012)', async () => {
     let deleted = false;
     const { user } = renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         () => ({
           body: deleted ? planCampaigns([]) : planCampaigns(),
         }),
         { planId: 'P-1001' },
       ),
-      looseReply(
+      reply(
         'DELETE /api/v1/initiatives/{initiativeId}',
         () => {
           deleted = true;
@@ -277,14 +277,14 @@ describe('useCampaignTreeContent (feature 005)', () => {
     });
     let copied = false;
     const { user, api } = renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         () => ({
           body: copied ? planCampaigns([campaign(), copy]) : planCampaigns(),
         }),
         { planId: 'P-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}/destinations',
         {
           body: destinationList(
@@ -301,7 +301,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
         },
         { campaignId: 'C-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/campaigns/{campaignId}/copy',
         () => {
           copied = true;
@@ -336,7 +336,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
     const moved = initiative({ campaignId: 'C-1002', version: 4 });
     let done = false;
     const { user, api } = renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         () => ({
           body: done
@@ -345,7 +345,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
         }),
         { planId: 'P-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/initiatives/{initiativeId}/destinations',
         {
           body: destinationList(
@@ -355,7 +355,7 @@ describe('useCampaignTreeContent (feature 005)', () => {
         },
         { initiativeId: 'I-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/initiatives/{initiativeId}/move',
         () => {
           done = true;
@@ -396,11 +396,14 @@ describe('useCampaignTreeContent (feature 005)', () => {
   it('reports a failure to read the rows with Try again', async () => {
     let calls = 0;
     const { user } = renderTree([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         () =>
           ++calls === 1
-            ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
+            ? {
+                status: 500,
+                body: { error: { code: 'internal_error', message: 'Oops', fields: [] } },
+              }
             : { body: planCampaigns([campaign({ initiatives: [initiative()] })]) },
         { planId: 'P-1001' },
       ),

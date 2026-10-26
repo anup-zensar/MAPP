@@ -1,6 +1,12 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
+import { unpublishSchema } from '../schemas';
+import type { UnpublishValues } from '../schemas';
 
 export interface UnpublishDialogProps {
   open: boolean;
@@ -19,18 +25,24 @@ export interface UnpublishDialogProps {
  * it starts empty.
  */
 export function UnpublishDialog({ open, planName, onUnpublish, onClose }: UnpublishDialogProps) {
-  const [reason, setReason] = useState('');
-  const [error, setError] = useState<string | undefined>();
+  const form = useForm<UnpublishValues>({
+    resolver: zodResolver(unpublishSchema),
+    defaultValues: { reason: '' },
+    ...CHECK_ON_SAVE,
+  });
   const [busy, setBusy] = useState(false);
 
-  async function submit() {
+  const submit = form.handleSubmit(async ({ reason }) => {
     setBusy(true);
     try {
-      setError((await onUnpublish(reason)) ?? undefined);
+      const problem = await onUnpublish(reason);
+      if (problem) {
+        form.setError('reason', { message: problem });
+      }
     } finally {
       setBusy(false);
     }
-  }
+  });
 
   return (
     <FormDialog
@@ -41,16 +53,19 @@ export function UnpublishDialog({ open, planName, onUnpublish, onClose }: Unpubl
       onSubmit={() => void submit()}
       busy={busy}
     >
-      <TextAreaField
-        label="Why are you unpublishing this plan?"
+      <FormField
+        control={form.control}
         name="reason"
-        marking="Required"
-        hint="The plan returns to Draft. Your reason is recorded in the activity log."
-        maxLength={500}
-        rows={3}
-        value={reason}
-        onChange={setReason}
-        error={error}
+        render={(field) => (
+          <TextAreaField
+            label="Why are you unpublishing this plan?"
+            marking="Required"
+            hint="The plan returns to Draft. Your reason is recorded in the activity log."
+            maxLength={500}
+            rows={3}
+            {...field}
+          />
+        )}
       />
     </FormDialog>
   );

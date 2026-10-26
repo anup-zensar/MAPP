@@ -5,7 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { FORM_ANSWERS, plan } from '@/testing/fixtures/plans';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { PlanEditPage } from './PlanEditPage';
 
 const NO_EFFECTS = {
@@ -18,13 +18,9 @@ const NO_EFFECTS = {
 function renderPage(answers: HttpHandler[] = [], route = '/plans/P-1001/edit') {
   const api = mockApi([
     ...FORM_ANSWERS,
-    looseReply('GET /api/v1/plans/{planId}', { body: plan() }, { planId: 'P-1001' }),
-    looseReply('PATCH /api/v1/plans/{planId}', { body: plan() }, { planId: 'P-1001' }),
-    looseReply(
-      'POST /api/v1/plans/{planId}/change-effects',
-      { body: NO_EFFECTS },
-      { planId: 'P-1001' },
-    ),
+    reply('GET /api/v1/plans/{planId}', { body: plan() }, { planId: 'P-1001' }),
+    reply('PATCH /api/v1/plans/{planId}', { body: plan() }, { planId: 'P-1001' }),
+    reply('POST /api/v1/plans/{planId}/change-effects', { body: NO_EFFECTS }, { planId: 'P-1001' }),
     ...answers,
   ]);
   const result = renderWithProviders(<PlanEditPage />, {
@@ -78,7 +74,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
   it('lists the activities a new model does not allow before saving (US4#2, FR-019)', async () => {
     const { api, user, router } = renderPage([
-      looseReply(
+      reply(
         'POST /api/v1/plans/{planId}/change-effects',
         {
           body: {
@@ -121,7 +117,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
   it('says which attribute groups a business-unit change hides (US4#3, FR-020)', async () => {
     const { user } = renderPage([
-      looseReply(
+      reply(
         'POST /api/v1/plans/{planId}/change-effects',
         {
           body: {
@@ -161,7 +157,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
   it('says a published plan stays published and when changed defaults apply (US4#5, FR-022)', async () => {
     const { user } = renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}',
         { body: plan({ status: 'published' }) },
         { planId: 'P-1001' },
@@ -184,7 +180,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
     let reads = 0;
     let saves = 0;
     const { api, user } = renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}',
         () => {
           reads += 1;
@@ -192,7 +188,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
         },
         { planId: 'P-1001' },
       ),
-      looseReply(
+      reply(
         'PATCH /api/v1/plans/{planId}',
         () => {
           saves += 1;
@@ -228,11 +224,10 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(saves).toBe(2));
-    expect(
-      api
-        .bodiesOf('PATCH /api/v1/plans/P-1001')
-        .map((body) => (body as { version: number }).version),
-    ).toEqual([1, 2]);
+    expect(api.bodiesOf('PATCH /api/v1/plans/P-1001')).toEqual([
+      expect.objectContaining({ version: 1 }),
+      expect.objectContaining({ version: 2 }),
+    ]);
   });
 
   it('focuses the field named in the address once the form is drawn', async () => {
@@ -255,7 +250,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
 
   it('says when the plan does not exist', async () => {
     renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}',
         {
           status: 404,

@@ -1,5 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { htmlElement, nth } from '@/testing/dom';
 import { renderWithProviders } from '@/testing/render';
 import { model } from '@/testing/fixtures/plans';
 import { GoalFields } from './GoalFields';
@@ -8,7 +9,7 @@ import { goalRows } from './goal-waterfall';
 const LUBRICANTS_1 = model();
 
 function rowsText() {
-  const list = document.querySelector('dl') as HTMLElement;
+  const list = htmlElement(document.querySelector('dl'), 'the calculated goals');
   return within(list)
     .getAllByRole('term')
     .map((term) => `${term.textContent}: ${term.nextElementSibling?.textContent}`);
@@ -77,7 +78,7 @@ describe('GoalFields (FR-009)', () => {
       '1000',
       model({ averageDealSize: { amount: '0.00', currency: 'USD' } }),
     );
-    expect(fromRevenue[2].reason).toBe(
+    expect(nth(fromRevenue, 2).reason).toBe(
       "The model's average deal size is 0, so this can't be worked out.",
     );
   });

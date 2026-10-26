@@ -5,10 +5,16 @@ import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 import { formatDateRange, formatMoney } from '@/format/intl';
 import type { Formatters } from '@/format/useFormatters';
 import { renderWithProviders } from '@/testing/render';
+import {
+  budgetAndCost,
+  campaign,
+  initiative,
+  planCampaigns,
+  usd,
+} from '@/testing/fixtures/campaigns';
 import { campaignRows, CELL_KEYS, totalsFooter } from './campaign-rows';
 import type { RowOptions } from './campaign-rows';
 import type { PlanCampaigns } from './api';
-import { budgetAndCost, campaign, initiative, planCampaigns, usd } from './fixtures';
 
 // Feature 006 adds Add activity to initiative rows; here it stands in.
 vi.mock('@/features/activities/activity-tree-rows', () => ({

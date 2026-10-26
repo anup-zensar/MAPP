@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import type { PlanCopyOptions } from '../api';
 import { CopyPlanDialog } from './CopyPlanDialog';
 import type { CopyRefusal } from './CopyPlanDialog';
@@ -19,11 +19,11 @@ function copyOptions(overrides: Partial<PlanCopyOptions> = {}): PlanCopyOptions 
 }
 
 function renderDialog(
-  answer: LooseAnswer = { body: copyOptions() },
+  answer: Answer<'GET /api/v1/plans/{planId}/copy-options'> = { body: copyOptions() },
   onCopy: (request: unknown) => Promise<CopyRefusal | null> = async () => null,
 ) {
   const api = mockApi([
-    looseReply('GET /api/v1/plans/{planId}/copy-options', answer, { planId: 'P-1001' }),
+    reply('GET /api/v1/plans/{planId}/copy-options', answer, { planId: 'P-1001' }),
   ]);
   const copy = vi.fn(onCopy);
   const onClose = vi.fn();
