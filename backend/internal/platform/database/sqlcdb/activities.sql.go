@@ -10,6 +10,47 @@ import (
 	"time"
 )
 
+type AddActivitiesParams struct {
+	ID                   string
+	InitiativeID         string
+	Name                 string
+	ExternalName         string
+	ActivityTypeID       string
+	OwnerID              *string
+	StartDate            *time.Time
+	EndDate              *time.Time
+	Ongoing              bool
+	PlannedCostMinor     *int64
+	PlannedCostCurrency  *string
+	ApprovalWorkflowID   *string
+	Description          string
+	Attributes           []byte
+	Inq                  *int64
+	SetLaterStagesMyself bool
+	Mql                  *int64
+	RevenueMinor         *int64
+	RevenueCurrency      *string
+	Status               string
+	SplitFromID          *string
+	Version              int
+	CreatedAt            time.Time
+	CreatedByID          string
+	CreatedByName        string
+	UpdatedAt            time.Time
+	UpdatedByID          string
+	UpdatedByName        string
+}
+
+const deleteActivities = `-- name: DeleteActivities :exec
+DELETE FROM activities
+WHERE id = ANY ($1::text[])
+`
+
+func (q *Queries) DeleteActivities(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, deleteActivities, ids)
+	return err
+}
+
 const deleteActivity = `-- name: DeleteActivity :exec
 DELETE FROM activities
 WHERE id = $1
@@ -26,18 +67,18 @@ SELECT id, initiative_id, name, external_name, activity_type_id, owner_id, start
     set_later_stages_myself, mql, revenue_minor, revenue_currency, status, split_from_id, version, created_at,
     created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
 FROM activities
-WHERE ($1::text IS NULL OR id = $1)
+WHERE ($1::text[] IS NULL OR id = ANY ($1::text[]))
     AND ($2::text[] IS NULL OR initiative_id = ANY ($2::text[]))
 ORDER BY length(id), id COLLATE "C"
 `
 
 type ListActivitiesParams struct {
-	ID            *string
+	Ids           []string
 	InitiativeIds []string
 }
 
 func (q *Queries) ListActivities(ctx context.Context, arg ListActivitiesParams) ([]Activity, error) {
-	rows, err := q.db.Query(ctx, listActivities, arg.ID, arg.InitiativeIds)
+	rows, err := q.db.Query(ctx, listActivities, arg.Ids, arg.InitiativeIds)
 	if err != nil {
 		return nil, err
 	}

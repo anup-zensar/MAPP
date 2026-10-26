@@ -26,4 +26,8 @@ type Repository interface {
 	Put(ctx context.Context, a Activity) error
 	// Delete removes the activity with id; removing one that does not exist changes nothing.
 	Delete(ctx context.Context, id string) error
+	// AddMany saves new activities, whose ids are not stored yet, all at once.
+	AddMany(ctx context.Context, list []Activity) error
+	// DeleteMany removes the activities with ids all at once.
+	DeleteMany(ctx context.Context, ids []string) error
 }

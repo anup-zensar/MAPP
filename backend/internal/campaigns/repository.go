@@ -32,4 +32,10 @@ type Repository interface {
 	PutInitiative(ctx context.Context, i Initiative) error
 	// DeleteInitiative removes the initiative with id.
 	DeleteInitiative(ctx context.Context, id string) error
+	// AddCampaigns and AddInitiatives save new records, whose ids are not stored yet, all at once.
+	AddCampaigns(ctx context.Context, list []Campaign) error
+	AddInitiatives(ctx context.Context, list []Initiative) error
+	// DeleteCampaigns and DeleteInitiatives remove the records with ids all at once.
+	DeleteCampaigns(ctx context.Context, ids []string) error
+	DeleteInitiatives(ctx context.Context, ids []string) error
 }

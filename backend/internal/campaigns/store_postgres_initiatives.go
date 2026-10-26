@@ -14,7 +14,8 @@ import (
 )
 
 func (s *PostgresStore) GetInitiative(ctx context.Context, id string) (Initiative, bool, error) {
-	return first(s.initiatives(ctx, sqlcdb.ListInitiativesParams{ID: &id}))
+	rows, err := s.initiativeRecords().ByID(ctx, []string{id})
+	return first(initiativesFromRows(rows, err))
 }
 
 func (s *PostgresStore) ListInitiatives(ctx context.Context) ([]Initiative, error) {
@@ -22,11 +23,11 @@ func (s *PostgresStore) ListInitiatives(ctx context.Context) ([]Initiative, erro
 }
 
 func (s *PostgresStore) InitiativesOfCampaign(ctx context.Context, campaignID string) ([]Initiative, error) {
-	return s.initiatives(ctx, sqlcdb.ListInitiativesParams{CampaignIds: []string{campaignID}})
+	return initiativesFromRows(s.initiativeRecords().ByParent(ctx, []string{campaignID}))
 }
 
 func (s *PostgresStore) InitiativesOfCampaigns(ctx context.Context, campaignIDs []string) ([]Initiative, error) {
-	return s.initiatives(ctx, sqlcdb.ListInitiativesParams{CampaignIds: append([]string{}, campaignIDs...)})
+	return initiativesFromRows(s.initiativeRecords().ByParent(ctx, campaignIDs))
 }
 
 func (s *PostgresStore) InitiativesInScope(ctx context.Context, scope authz.Scope) ([]Initiative, error) {
@@ -38,21 +39,13 @@ func (s *PostgresStore) GetInitiativeInScope(ctx context.Context, scope authz.Sc
 }
 
 func (s *PostgresStore) PutInitiative(ctx context.Context, i Initiative) error {
-	attributes, err := i.Attributes.Column()
+	params, err := initiativeParams(i)
 	if err != nil {
-		return fmt.Errorf("encode initiative %s: %w", i.ID, err)
+		return err
 	}
-	minor, currency := database.MoneyColumns(i.Budget)
-	phasing := i.BudgetPhasing.Normalised()
-	months, amounts := phasing.MonthColumns()
-	q := s.db.Queries(ctx)
-	err = q.PutInitiative(ctx, sqlcdb.PutInitiativeParams{
-		ID: i.ID, CampaignID: i.CampaignID, Name: i.Name, Description: i.Description, OwnerID: ownerColumn(i.OwnerID),
-		StartDate: database.DateColumn(i.StartDate), EndDate: database.DateColumn(i.EndDate), BudgetMinor: minor,
-		BudgetCurrency: currency, Attributes: attributes, PhasingMethod: string(phasing.Method), Version: i.Version,
-		CreatedAt: i.CreatedAt, CreatedByID: i.CreatedBy.ID, CreatedByName: i.CreatedBy.Name, UpdatedAt: i.UpdatedAt,
-		UpdatedByID: i.UpdatedBy.ID, UpdatedByName: i.UpdatedBy.Name,
-	})
+	months, amounts := i.BudgetPhasing.Normalised().MonthColumns()
+	q := s.change(ctx)
+	err = q.PutInitiative(ctx, params)
 	if err == nil {
 		err = q.DeleteInitiativePhasingMonths(ctx, i.ID)
 	}
@@ -66,7 +59,7 @@ func (s *PostgresStore) PutInitiative(ctx context.Context, i Initiative) error {
 }
 
 func (s *PostgresStore) DeleteInitiative(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteInitiative(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteInitiative(ctx, id); err != nil {
 		return fmt.Errorf("delete initiative %s: %w", id, err)
 	}
 	return nil
@@ -74,10 +67,8 @@ func (s *PostgresStore) DeleteInitiative(ctx context.Context, id string) error {
 
 func (s *PostgresStore) initiatives(ctx context.Context, filter sqlcdb.ListInitiativesParams) ([]Initiative, error) {
 	rows, err := s.db.Queries(ctx).ListInitiatives(ctx, filter)
-	if err != nil {
-		return nil, fmt.Errorf("select initiatives: %w", err)
-	}
-	return initiativesFromRows(rows)
+	s.initiativeRecords().Keep(ctx, rows)
+	return initiativesFromRows(rows, err)
 }
 
 func (s *PostgresStore) initiativesInScope(ctx context.Context, scope authz.Scope, id *string) ([]Initiative, error) {
@@ -92,10 +83,14 @@ func (s *PostgresStore) initiativesInScope(ctx context.Context, scope authz.Scop
 	for _, row := range rows {
 		listRows = append(listRows, sqlcdb.ListInitiativesRow(row))
 	}
-	return initiativesFromRows(listRows)
+	s.initiativeRecords().Keep(ctx, listRows)
+	return initiativesFromRows(listRows, nil)
 }
 
-func initiativesFromRows(rows []sqlcdb.ListInitiativesRow) ([]Initiative, error) {
+func initiativesFromRows(rows []sqlcdb.ListInitiativesRow, err error) ([]Initiative, error) {
+	if err != nil {
+		return nil, fmt.Errorf("select initiatives: %w", err)
+	}
 	list := make([]Initiative, 0, len(rows))
 	for _, row := range rows {
 		r := row.Initiative

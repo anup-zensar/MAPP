@@ -68,7 +68,7 @@ func TestMany_ReadsOnlyWhatIsMissing_028_FR005(t *testing.T) {
 func TestMany_WithoutWithReadsEveryTime_028_FR005(t *testing.T) {
 	t.Parallel()
 	reads := 0
-	read := func(_ context.Context, missing []string) (map[string]int, error) {
+	read := func(context.Context, []string) (map[string]int, error) {
 		reads++
 		return map[string]int{}, nil
 	}

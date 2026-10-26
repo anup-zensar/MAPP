@@ -7,7 +7,7 @@ SELECT sqlc.embed(plans),
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM plan_phasing_months m
         WHERE m.plan_id = plans.id), '{}')::bigint[] AS phasing_amounts
 FROM plans
-WHERE (sqlc.narg(id)::text IS NULL OR id = sqlc.narg(id))
+WHERE (sqlc.narg(ids)::text[] IS NULL OR id = ANY (sqlc.narg(ids)::text[]))
     AND (sqlc.narg(year)::integer IS NULL OR year = sqlc.narg(year))
 ORDER BY length(id), id COLLATE "C";
 
