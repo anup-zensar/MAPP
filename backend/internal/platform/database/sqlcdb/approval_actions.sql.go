@@ -10,6 +10,67 @@ import (
 	"time"
 )
 
+const insertAction = `-- name: InsertAction :exec
+INSERT INTO approval_actions (
+    id, round_id, round_number, activity_id, action, level, level_name, approvers, actor_id, actor_name,
+    on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
+    escalated_to_name, waited_days
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+)
+`
+
+type InsertActionParams struct {
+	ID               string
+	RoundID          string
+	RoundNumber      int
+	ActivityID       string
+	Action           string
+	Level            int
+	LevelName        string
+	Approvers        []byte
+	ActorID          string
+	ActorName        string
+	OnBehalfOf       []byte
+	At               time.Time
+	Comment          string
+	Changes          []byte
+	Capacity         string
+	AsDelegateOfID   *string
+	AsDelegateOfName *string
+	Rule             string
+	EscalatedToID    *string
+	EscalatedToName  *string
+	WaitedDays       int
+}
+
+func (q *Queries) InsertAction(ctx context.Context, arg InsertActionParams) error {
+	_, err := q.db.Exec(ctx, insertAction,
+		arg.ID,
+		arg.RoundID,
+		arg.RoundNumber,
+		arg.ActivityID,
+		arg.Action,
+		arg.Level,
+		arg.LevelName,
+		arg.Approvers,
+		arg.ActorID,
+		arg.ActorName,
+		arg.OnBehalfOf,
+		arg.At,
+		arg.Comment,
+		arg.Changes,
+		arg.Capacity,
+		arg.AsDelegateOfID,
+		arg.AsDelegateOfName,
+		arg.Rule,
+		arg.EscalatedToID,
+		arg.EscalatedToName,
+		arg.WaitedDays,
+	)
+	return err
+}
+
 const listActions = `-- name: ListActions :many
 SELECT id, round_id, round_number, activity_id, action, level, level_name, approvers, actor_id, actor_name,
     on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
@@ -123,86 +184,4 @@ func (q *Queries) ListActionsInScope(ctx context.Context, arg ListActionsInScope
 		return nil, err
 	}
 	return items, nil
-}
-
-const putAction = `-- name: PutAction :exec
-INSERT INTO approval_actions (
-    id, round_id, round_number, activity_id, action, level, level_name, approvers, actor_id, actor_name,
-    on_behalf_of, at, comment, changes, capacity, as_delegate_of_id, as_delegate_of_name, rule, escalated_to_id,
-    escalated_to_name, waited_days
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
-)
-ON CONFLICT (id) DO UPDATE SET
-    round_id = excluded.round_id,
-    round_number = excluded.round_number,
-    activity_id = excluded.activity_id,
-    action = excluded.action,
-    level = excluded.level,
-    level_name = excluded.level_name,
-    approvers = excluded.approvers,
-    actor_id = excluded.actor_id,
-    actor_name = excluded.actor_name,
-    on_behalf_of = excluded.on_behalf_of,
-    at = excluded.at,
-    comment = excluded.comment,
-    changes = excluded.changes,
-    capacity = excluded.capacity,
-    as_delegate_of_id = excluded.as_delegate_of_id,
-    as_delegate_of_name = excluded.as_delegate_of_name,
-    rule = excluded.rule,
-    escalated_to_id = excluded.escalated_to_id,
-    escalated_to_name = excluded.escalated_to_name,
-    waited_days = excluded.waited_days
-`
-
-type PutActionParams struct {
-	ID               string
-	RoundID          string
-	RoundNumber      int
-	ActivityID       string
-	Action           string
-	Level            int
-	LevelName        string
-	Approvers        []byte
-	ActorID          string
-	ActorName        string
-	OnBehalfOf       []byte
-	At               time.Time
-	Comment          string
-	Changes          []byte
-	Capacity         string
-	AsDelegateOfID   *string
-	AsDelegateOfName *string
-	Rule             string
-	EscalatedToID    *string
-	EscalatedToName  *string
-	WaitedDays       int
-}
-
-func (q *Queries) PutAction(ctx context.Context, arg PutActionParams) error {
-	_, err := q.db.Exec(ctx, putAction,
-		arg.ID,
-		arg.RoundID,
-		arg.RoundNumber,
-		arg.ActivityID,
-		arg.Action,
-		arg.Level,
-		arg.LevelName,
-		arg.Approvers,
-		arg.ActorID,
-		arg.ActorName,
-		arg.OnBehalfOf,
-		arg.At,
-		arg.Comment,
-		arg.Changes,
-		arg.Capacity,
-		arg.AsDelegateOfID,
-		arg.AsDelegateOfName,
-		arg.Rule,
-		arg.EscalatedToID,
-		arg.EscalatedToName,
-		arg.WaitedDays,
-	)
-	return err
 }

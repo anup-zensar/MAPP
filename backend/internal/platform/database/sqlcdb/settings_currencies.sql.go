@@ -120,6 +120,58 @@ func (q *Queries) GetRateImport(ctx context.Context, id string) (RateImport, err
 	return i, err
 }
 
+const insertRateImport = `-- name: InsertRateImport :exec
+INSERT INTO rate_imports (
+    id, file_name, feed, first_date, last_date, added, replaced, unchanged, not_used, problems, version,
+    created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+)
+`
+
+type InsertRateImportParams struct {
+	ID            string
+	FileName      string
+	Feed          string
+	FirstDate     *time.Time
+	LastDate      *time.Time
+	Added         int
+	Replaced      int
+	Unchanged     int
+	NotUsed       int
+	Problems      int
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+func (q *Queries) InsertRateImport(ctx context.Context, arg InsertRateImportParams) error {
+	_, err := q.db.Exec(ctx, insertRateImport,
+		arg.ID,
+		arg.FileName,
+		arg.Feed,
+		arg.FirstDate,
+		arg.LastDate,
+		arg.Added,
+		arg.Replaced,
+		arg.Unchanged,
+		arg.NotUsed,
+		arg.Problems,
+		arg.Version,
+		arg.CreatedAt,
+		arg.CreatedByID,
+		arg.CreatedByName,
+		arg.UpdatedAt,
+		arg.UpdatedByID,
+		arg.UpdatedByName,
+	)
+	return err
+}
+
 const listCurrencies = `-- name: ListCurrencies :many
 SELECT code, name, symbol, rate_micros, rate_changed_at, rate_changed_by_id, rate_changed_by_name, active, version,
     created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
@@ -358,75 +410,6 @@ func (q *Queries) PutRate(ctx context.Context, arg PutRateParams) error {
 		arg.RateMicros,
 		arg.Source,
 		arg.ImportID,
-		arg.Version,
-		arg.CreatedAt,
-		arg.CreatedByID,
-		arg.CreatedByName,
-		arg.UpdatedAt,
-		arg.UpdatedByID,
-		arg.UpdatedByName,
-	)
-	return err
-}
-
-const putRateImport = `-- name: PutRateImport :exec
-INSERT INTO rate_imports (
-    id, file_name, feed, first_date, last_date, added, replaced, unchanged, not_used, problems, version,
-    created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
-)
-ON CONFLICT (id) DO UPDATE SET
-    file_name = excluded.file_name,
-    feed = excluded.feed,
-    first_date = excluded.first_date,
-    last_date = excluded.last_date,
-    added = excluded.added,
-    replaced = excluded.replaced,
-    unchanged = excluded.unchanged,
-    not_used = excluded.not_used,
-    problems = excluded.problems,
-    version = excluded.version,
-    created_at = excluded.created_at,
-    created_by_id = excluded.created_by_id,
-    created_by_name = excluded.created_by_name,
-    updated_at = excluded.updated_at,
-    updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name
-`
-
-type PutRateImportParams struct {
-	ID            string
-	FileName      string
-	Feed          string
-	FirstDate     *time.Time
-	LastDate      *time.Time
-	Added         int
-	Replaced      int
-	Unchanged     int
-	NotUsed       int
-	Problems      int
-	Version       int
-	CreatedAt     time.Time
-	CreatedByID   string
-	CreatedByName string
-	UpdatedAt     time.Time
-	UpdatedByID   string
-	UpdatedByName string
-}
-
-func (q *Queries) PutRateImport(ctx context.Context, arg PutRateImportParams) error {
-	_, err := q.db.Exec(ctx, putRateImport,
-		arg.ID,
-		arg.FileName,
-		arg.Feed,
-		arg.FirstDate,
-		arg.LastDate,
-		arg.Added,
-		arg.Replaced,
-		arg.Unchanged,
-		arg.NotUsed,
-		arg.Problems,
 		arg.Version,
 		arg.CreatedAt,
 		arg.CreatedByID,

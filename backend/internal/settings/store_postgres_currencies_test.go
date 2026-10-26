@@ -3,12 +3,14 @@ package settings_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/database/dbtest"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
@@ -140,5 +142,19 @@ func TestPostgresStoreRefusesBrokenRatesFR004(t *testing.T) {
 				t.Errorf("Write() error = nil, want the database to refuse the change")
 			}
 		})
+	}
+}
+
+func TestPostgresStoreRateImportsAreWriteOnceFR008(t *testing.T) {
+	t.Parallel()
+	db, s := pgStore(t)
+	pgWrite(t, db, func(ctx context.Context) error {
+		return s.PutRateImport(ctx, settings.RateImport{ID: "RI-1001", FileName: "rates.csv", Feed: "gsapDailyRatesFile", Meta: pgMeta})
+	})
+
+	for _, sql := range []string{"UPDATE rate_imports SET added = 5", "DELETE FROM rate_imports"} {
+		if err := dbtest.Exec(t, db, sql); err == nil || !strings.Contains(err.Error(), "written once") {
+			t.Errorf("%s: error = %v, want the write-once trigger to refuse it", sql, err)
+		}
 	}
 }

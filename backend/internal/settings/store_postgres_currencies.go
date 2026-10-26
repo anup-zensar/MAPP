@@ -108,7 +108,7 @@ func (s *PostgresStore) DeleteRate(ctx context.Context, id string) error {
 }
 
 func (s *PostgresStore) PutRateImport(ctx context.Context, i RateImport) error {
-	err := s.db.Queries(ctx).PutRateImport(ctx, sqlcdb.PutRateImportParams{
+	err := s.db.Queries(ctx).InsertRateImport(ctx, sqlcdb.InsertRateImportParams{
 		ID: i.ID, FileName: i.FileName, Feed: i.Feed, FirstDate: database.DateColumn(i.FirstDate), LastDate: database.DateColumn(i.LastDate),
 		Added: i.Added, Replaced: i.Replaced, Unchanged: i.Unchanged, NotUsed: i.NotUsed, Problems: i.Problems,
 		Version: i.Version, CreatedAt: i.CreatedAt, CreatedByID: i.CreatedBy.ID, CreatedByName: i.CreatedBy.Name,

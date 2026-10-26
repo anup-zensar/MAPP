@@ -1,7 +1,7 @@
 # Data Model: PostgreSQL Storage (023)
 
 The relational schema for every record type the JSON store holds today: its 39 tables (named in
-`internal/*/store_json*.go`) become 50 tables in 15 migrations, because the lists a record owns become
+`internal/*/store_json*.go`) become 50 tables in 16 migrations, because the lists a record owns become
 child tables. The migrations in `backend/internal/platform/database/migrations` are the source of truth;
 this page is their map. [Research](research.md) R2–R4, R9 and R10 explain the conventions.
 
@@ -47,6 +47,7 @@ service may break for a moment inside one Write is a deferrable constraint. List
 | 00013 approvals | `approval_rounds` (levels and facts json; one number per activity and at most one open round, both at commit), `approval_actions` (→ round), `notifications` (→ recipient; read exactly when `read_at` is set), `approval_delegations` (≤ 90 days; no overlap with another active delegation of the person: a `btree_gist` exclusion at commit); `activity_in_scope()` gains the named approvers |
 | 00014 global budgets | `global_budgets` (name unique; owner → people), `budget_allocations` (one per plan at commit; → plan, currency) |
 | 00015 financials | `financial_imports`, `financial_transactions` (one per GSAP identity at commit; an accrual has its month; a manual match has who and when; → import); function `plan_in_permission_scope()` |
+| 00016 write-once | triggers that refuse `UPDATE` and `DELETE` on `activity_log`, `approval_actions` and `rate_imports`, the audit trails written once (011 FR-023, 016 data-model §2.3); their stores only insert. A reset of the demo data uses `TRUNCATE`, which row triggers do not see |
 
 ## 3. Ownership and scope
 

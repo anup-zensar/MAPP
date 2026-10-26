@@ -24,6 +24,17 @@ func (q *Queries) CountWaitingWrites(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const currentDatabase = `-- name: CurrentDatabase :one
+SELECT current_database()::text
+`
+
+func (q *Queries) CurrentDatabase(ctx context.Context) (string, error) {
+	row := q.db.QueryRow(ctx, currentDatabase)
+	var column_1 string
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const lockWrites = `-- name: LockWrites :exec
 SELECT pg_advisory_xact_lock(hashtext('mapp.write'))
 `

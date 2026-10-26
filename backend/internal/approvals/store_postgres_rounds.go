@@ -71,7 +71,7 @@ func (s *PostgresStore) PutAction(ctx context.Context, a Action) error {
 	if err := errors.Join(approversErr, onBehalfErr, changesErr); err != nil {
 		return fmt.Errorf("encode approval history entry %s: %w", a.ID, err)
 	}
-	params := sqlcdb.PutActionParams{
+	params := sqlcdb.InsertActionParams{
 		ID: a.ID, RoundID: a.RoundID, RoundNumber: a.RoundNumber, ActivityID: a.ActivityID, Action: string(a.Action),
 		Level: a.Level, LevelName: a.LevelName, Approvers: approvers, ActorID: a.Actor.ID, ActorName: a.Actor.Name,
 		OnBehalfOf: onBehalfOf, At: a.At, Comment: a.Comment, Changes: changes, Capacity: string(a.Capacity),
@@ -79,7 +79,7 @@ func (s *PostgresStore) PutAction(ctx context.Context, a Action) error {
 	}
 	params.AsDelegateOfID, params.AsDelegateOfName = actorColumns(a.AsDelegateOf)
 	params.EscalatedToID, params.EscalatedToName = actorColumns(a.EscalatedTo)
-	if err := s.db.Queries(ctx).PutAction(ctx, params); err != nil {
+	if err := s.db.Queries(ctx).InsertAction(ctx, params); err != nil {
 		return fmt.Errorf("save approval history entry %s: %w", a.ID, err)
 	}
 	return nil

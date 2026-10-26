@@ -93,27 +93,10 @@ SELECT id, file_name, feed, first_date, last_date, added, replaced, unchanged, n
 FROM rate_imports
 ORDER BY length(id), id COLLATE "C";
 
--- name: PutRateImport :exec
+-- name: InsertRateImport :exec
 INSERT INTO rate_imports (
     id, file_name, feed, first_date, last_date, added, replaced, unchanged, not_used, problems, version,
     created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
-)
-ON CONFLICT (id) DO UPDATE SET
-    file_name = excluded.file_name,
-    feed = excluded.feed,
-    first_date = excluded.first_date,
-    last_date = excluded.last_date,
-    added = excluded.added,
-    replaced = excluded.replaced,
-    unchanged = excluded.unchanged,
-    not_used = excluded.not_used,
-    problems = excluded.problems,
-    version = excluded.version,
-    created_at = excluded.created_at,
-    created_by_id = excluded.created_by_id,
-    created_by_name = excluded.created_by_name,
-    updated_at = excluded.updated_at,
-    updated_by_id = excluded.updated_by_id,
-    updated_by_name = excluded.updated_by_name;
+);

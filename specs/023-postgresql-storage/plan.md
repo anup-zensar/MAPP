@@ -40,7 +40,7 @@ store tests per interface promise, constraint and race (FR-004–FR-008)
 **Constraints**: no change to services, handlers, the contract or the web app (FR-008); no Docker in any
 test (FR-010); new files ≤ 300 non-blank lines and ≤ 5% comment lines; release age for every module (R1)
 
-**Scale/Scope**: 50 tables in 15 migrations and 3 scope functions; 15 stores (14 areas and the id counters)
+**Scale/Scope**: 50 tables in 16 migrations and 3 scope functions; 15 stores (14 areas and the id counters)
 with 158 repository methods plus the scoped reads
 
 ## Constitution Check
@@ -74,7 +74,7 @@ with 158 repository methods plus the scoped reads
 | Information disclosure: credentials in logs | `Open`, `dbtest` | errors never include the URL; `TEST_DATABASE_URL` is named, never printed |
 | Information disclosure: another market's plans | plan-owned reads | scope filter in SQL plus an isolation test per read (FR-009) |
 | Tampering: lost update between concurrent saves | every `Write` | one Write at a time (R2); lock test and racing-save test |
-| Repudiation: a change without its log entry | every service | change and log entry in one `Write`; append-only trigger on `activity_log` |
+| Repudiation: a change without its log entry, or a log entry changed afterwards | every service | change and log entry in one `Write`; write-once triggers on `activity_log`, `approval_actions` and `rate_imports` |
 | Denial of service: connection exhaustion | pool | one pool per process; `pool_max_conns` in `DATABASE_URL` per environment |
 
 ### Risk model

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -105,5 +106,17 @@ func TestPostgresStoreBinEntriesReadBackAsSavedFR024(t *testing.T) {
 	}
 	if _, found, err = s.GetBinEntry(t.Context(), "BIN-404"); err != nil || found {
 		t.Errorf("GetBinEntry() of a missing entry = found %v, error %v; want not found and no error", found, err)
+	}
+}
+
+func TestPostgresStoreActivityLogIsWriteOnceFR023(t *testing.T) {
+	t.Parallel()
+	db, s := newStore(t)
+	mustWrite(t, db, func(ctx context.Context) error { return s.AppendEntry(ctx, logEntry(1001, nil)) })
+
+	for _, sql := range []string{"UPDATE activity_log SET record_name = 'Changed'", "DELETE FROM activity_log"} {
+		if err := dbtest.Exec(t, db, sql); err == nil || !strings.Contains(err.Error(), "written once") {
+			t.Errorf("%s: error = %v, want the write-once trigger to refuse it", sql, err)
+		}
 	}
 }

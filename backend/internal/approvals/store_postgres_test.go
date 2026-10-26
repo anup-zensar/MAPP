@@ -3,6 +3,7 @@ package approvals_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -137,5 +138,21 @@ func TestPostgresStoreRefusesBrokenWorkflowsFR004(t *testing.T) {
 				t.Errorf("Write() error = nil, want the database to refuse the change")
 			}
 		})
+	}
+}
+
+func TestPostgresStoreApprovalHistoryIsWriteOnceFR008(t *testing.T) {
+	t.Parallel()
+	db, s := pgStore(t)
+	round := approvals.Round{ID: "AR-1001", ActivityID: "A-1001", Number: 1, WorkflowID: "WF-1001",
+		Outcome: approvals.OutcomeOpen, SubmittedAt: pgMeta.CreatedAt, Meta: pgMeta}
+	action := approvals.Action{ID: "AH-1001", RoundID: "AR-1001", RoundNumber: 1, ActivityID: "A-1001",
+		Action: approvals.ActionSubmitted, Level: 1, At: pgMeta.CreatedAt}
+	pgWrite(t, db, func(ctx context.Context) error { return errors.Join(s.PutRound(ctx, round), s.PutAction(ctx, action)) })
+
+	for _, sql := range []string{"UPDATE approval_actions SET comment = 'Changed'", "DELETE FROM approval_actions"} {
+		if err := dbtest.Exec(t, db, sql); err == nil || !strings.Contains(err.Error(), "written once") {
+			t.Errorf("%s: error = %v, want the write-once trigger to refuse it", sql, err)
+		}
 	}
 }
