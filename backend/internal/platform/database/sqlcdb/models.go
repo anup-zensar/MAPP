@@ -27,9 +27,121 @@ type ActivityLog struct {
 	Items           []byte
 }
 
+type ActivityType struct {
+	ID                         string
+	Name                       string
+	DefaultPlannedCostMinor    *int64
+	DefaultPlannedCostCurrency *string
+	Active                     bool
+	Version                    int
+	CreatedAt                  time.Time
+	CreatedByID                string
+	CreatedByName              string
+	UpdatedAt                  time.Time
+	UpdatedByID                string
+	UpdatedByName              string
+}
+
 type Counter struct {
 	Prefix string
 	Last   int
+}
+
+type Currency struct {
+	Code              string
+	Name              string
+	Symbol            string
+	RateMicros        *int64
+	RateChangedAt     *time.Time
+	RateChangedByID   *string
+	RateChangedByName *string
+	Active            bool
+	Version           int
+	CreatedAt         time.Time
+	CreatedByID       string
+	CreatedByName     string
+	UpdatedAt         time.Time
+	UpdatedByID       string
+	UpdatedByName     string
+}
+
+type ExchangeRate struct {
+	ID            string
+	Currency      string
+	Date          time.Time
+	RateMicros    int64
+	Source        string
+	ImportID      *string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type FieldHelp struct {
+	Key           string
+	Text          string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type FinanceBudget struct {
+	ID            string
+	Year          int
+	Name          string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type FinanceBudgetItem struct {
+	ID            string
+	BudgetID      string
+	Name          string
+	Code          string
+	Active        bool
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type Model struct {
+	ID                      string
+	Name                    string
+	InqToMqlRateHundredths  int64
+	MqlToDealRateHundredths int64
+	AverageDealSizeMinor    int64
+	AverageDealSizeCurrency string
+	Active                  bool
+	Version                 int
+	CreatedAt               time.Time
+	CreatedByID             string
+	CreatedByName           string
+	UpdatedAt               time.Time
+	UpdatedByID             string
+	UpdatedByName           string
+}
+
+type ModelActivityType struct {
+	ModelID        string
+	Position       int
+	ActivityTypeID string
 }
 
 type Person struct {
@@ -57,6 +169,26 @@ type Preference struct {
 	HomeScope            string
 	HistoryIncludeInside bool
 	PinnedPlanIds        []string
+}
+
+type RateImport struct {
+	ID            string
+	FileName      string
+	Feed          string
+	FirstDate     *time.Time
+	LastDate      *time.Time
+	Added         int
+	Replaced      int
+	Unchanged     int
+	NotUsed       int
+	Problems      int
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
 }
 
 type RecycleBin struct {
@@ -108,6 +240,54 @@ type Session struct {
 	PersonID   string
 	CreatedAt  time.Time
 	LastUsedAt time.Time
+}
+
+type ShellAttribute struct {
+	ID                string
+	Label             string
+	HelpText          string
+	Level             string
+	Type              string
+	Marking           string
+	Section           string
+	Position          int
+	ParentAttributeID *string
+	Role              string
+	Active            bool
+	Version           int
+	CreatedAt         time.Time
+	CreatedByID       string
+	CreatedByName     string
+	UpdatedAt         time.Time
+	UpdatedByID       string
+	UpdatedByName     string
+}
+
+type ShellAttributeCondition struct {
+	AttributeID string
+	Position    int
+	OptionID    string
+}
+
+type ShellAttributeOption struct {
+	ID            string
+	AttributeID   string
+	Label         string
+	Position      int
+	Active        bool
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type ShellOptionParent struct {
+	OptionID       string
+	Position       int
+	ParentOptionID string
 }
 
 type Team struct {
