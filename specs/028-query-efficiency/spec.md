@@ -15,7 +15,7 @@ N+1: list pages, single-record pages, Settings, people and teams, and the operat
 records at once (copy, move, delete, restore, bulk actions, imports, approval decisions). Count the queries
 of every request in the request log."
 
-**References**: Constitution 4.1.0 — Principle IV (PostgreSQL in every environment), V (simplicity; no
+**References**: Constitution 4.2.0 — Principle IV (PostgreSQL in every environment), V (simplicity; no
 premature optimisation: every optimisation backed by a measurement), VI (only end-to-end and scope-isolation
 tests use a database), VII (scope isolation), B5 (no query per row on list endpoints), B7 (observability),
 B9 (a benchmark for every optimisation) · `backend/docs/GO_STANDARDS.md` §6, §11 Performance, §12 · feature
