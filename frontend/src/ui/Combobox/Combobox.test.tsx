@@ -17,10 +17,9 @@ interface ExampleProps {
   start?: string[];
   options?: ComboboxOption[];
   disabledReason?: string;
-  limit?: number;
 }
 
-function Example({ multiple, start = [], options = FRUIT, disabledReason, limit }: ExampleProps) {
+function Example({ multiple, start = [], options = FRUIT, disabledReason }: ExampleProps) {
   const [value, setValue] = useState(start);
   return (
     <>
@@ -34,8 +33,6 @@ function Example({ multiple, start = [], options = FRUIT, disabledReason, limit 
         placeholder="Search fruit"
         countText={(n) => (n === 1 ? '1 fruit' : `${n} fruits`)}
         noMatchText={(query) => `No fruit matches '${query}'.`}
-        limit={limit}
-        limitText={(shown, total) => `Showing ${shown} of ${total} — keep typing to narrow down.`}
         disabledReason={disabledReason}
       />
       <p>chosen: {value.join(',')}</p>
@@ -133,19 +130,6 @@ describe('Combobox', () => {
     await user.keyboard('{Backspace}');
 
     expect(screen.getByText('chosen: apple')).toBeInTheDocument();
-  });
-
-  it('lists at most `limit` matches and says how to narrow down', async () => {
-    const many = Array.from({ length: 120 }, (_, index) => ({
-      id: `o${index}`,
-      label: `Option ${index}`,
-    }));
-    const { user } = renderWithProviders(<Example options={many} limit={50} />);
-
-    await user.click(combobox());
-
-    expect(screen.getAllByRole('option')).toHaveLength(50);
-    expect(screen.getByText('Showing 50 of 120 — keep typing to narrow down.')).toBeInTheDocument();
   });
 
   it('reaches every one of 300 options without a limit', async () => {

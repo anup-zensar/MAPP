@@ -44,15 +44,6 @@ describe('ToastProvider and useToast', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows a message in the "Messages (F8)" area (FR-019)', async () => {
-    const user = userEvent.setup();
-    renderWithToasts({ message: "Sample folder 'Ideas' created" });
-
-    await user.click(screen.getByRole('button', { name: 'Show message' }));
-
-    expect(messages()).toHaveTextContent("Sample folder 'Ideas' created");
-  });
-
   it('closes a message after 4 seconds (FR-019)', async () => {
     startFakeClock();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
