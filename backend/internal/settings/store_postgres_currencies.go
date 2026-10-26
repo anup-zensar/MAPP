@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -110,7 +109,7 @@ func (s *PostgresStore) DeleteRate(ctx context.Context, id string) error {
 
 func (s *PostgresStore) PutRateImport(ctx context.Context, i RateImport) error {
 	err := s.db.Queries(ctx).PutRateImport(ctx, sqlcdb.PutRateImportParams{
-		ID: i.ID, FileName: i.FileName, Feed: i.Feed, FirstDate: timeOf(i.FirstDate), LastDate: timeOf(i.LastDate),
+		ID: i.ID, FileName: i.FileName, Feed: i.Feed, FirstDate: database.DateColumn(i.FirstDate), LastDate: database.DateColumn(i.LastDate),
 		Added: i.Added, Replaced: i.Replaced, Unchanged: i.Unchanged, NotUsed: i.NotUsed, Problems: i.Problems,
 		Version: i.Version, CreatedAt: i.CreatedAt, CreatedByID: i.CreatedBy.ID, CreatedByName: i.CreatedBy.Name,
 		UpdatedAt: i.UpdatedAt, UpdatedByID: i.UpdatedBy.ID, UpdatedByName: i.UpdatedBy.Name,
@@ -194,8 +193,8 @@ func rateFromRow(row sqlcdb.ExchangeRate) ExchangeRate {
 
 func rateImportFromRow(row sqlcdb.RateImport) RateImport {
 	return RateImport{
-		ID: row.ID, FileName: row.FileName, Feed: row.Feed, FirstDate: dateOf(row.FirstDate),
-		LastDate: dateOf(row.LastDate), Added: row.Added, Replaced: row.Replaced, Unchanged: row.Unchanged,
+		ID: row.ID, FileName: row.FileName, Feed: row.Feed, FirstDate: database.DateOf(row.FirstDate),
+		LastDate: database.DateOf(row.LastDate), Added: row.Added, Replaced: row.Replaced, Unchanged: row.Unchanged,
 		NotUsed: row.NotUsed, Problems: row.Problems,
 		Meta: record.Meta{
 			Version:   row.Version,
@@ -205,20 +204,4 @@ func rateImportFromRow(row sqlcdb.RateImport) RateImport {
 			UpdatedBy: actor.Actor{ID: row.UpdatedByID, Name: row.UpdatedByName},
 		},
 	}
-}
-
-func timeOf(d *date.Date) *time.Time {
-	if d == nil {
-		return nil
-	}
-	t := d.Time()
-	return &t
-}
-
-func dateOf(t *time.Time) *date.Date {
-	if t == nil {
-		return nil
-	}
-	d := date.Today(*t)
-	return &d
 }

@@ -98,6 +98,33 @@ type ApprovalWorkflowLevelApprover struct {
 	PersonID    string
 }
 
+type Campaign struct {
+	ID             string
+	PlanID         string
+	Name           string
+	Description    string
+	OwnerID        *string
+	StartDate      *time.Time
+	EndDate        *time.Time
+	BudgetMinor    *int64
+	BudgetCurrency *string
+	Attributes     []byte
+	PhasingMethod  string
+	Version        int
+	CreatedAt      time.Time
+	CreatedByID    string
+	CreatedByName  string
+	UpdatedAt      time.Time
+	UpdatedByID    string
+	UpdatedByName  string
+}
+
+type CampaignPhasingMonth struct {
+	CampaignID  string
+	Month       string
+	AmountMinor int64
+}
+
 type Counter struct {
 	Prefix string
 	Last   int
@@ -175,6 +202,33 @@ type FinanceBudgetItem struct {
 	UpdatedAt     time.Time
 	UpdatedByID   string
 	UpdatedByName string
+}
+
+type Initiative struct {
+	ID             string
+	CampaignID     string
+	Name           string
+	Description    string
+	OwnerID        *string
+	StartDate      *time.Time
+	EndDate        *time.Time
+	BudgetMinor    *int64
+	BudgetCurrency *string
+	Attributes     []byte
+	PhasingMethod  string
+	Version        int
+	CreatedAt      time.Time
+	CreatedByID    string
+	CreatedByName  string
+	UpdatedAt      time.Time
+	UpdatedByID    string
+	UpdatedByName  string
+}
+
+type InitiativePhasingMonth struct {
+	InitiativeID string
+	Month        string
+	AmountMinor  int64
 }
 
 type Model struct {

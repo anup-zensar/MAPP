@@ -2,7 +2,6 @@ package plans
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"mapp/internal/platform/actor"
@@ -112,11 +111,7 @@ func onePlan(plans []Plan, err error) (Plan, bool, error) {
 }
 
 func planParams(p Plan) (sqlcdb.PutPlanParams, error) {
-	attributes := p.Attributes
-	if attributes == nil {
-		attributes = settings.AttributeValues{}
-	}
-	encoded, err := json.Marshal(attributes)
+	encoded, err := p.Attributes.Column()
 	params := sqlcdb.PutPlanParams{
 		ID: p.ID, Name: p.Name, Year: p.Year, ModelID: p.ModelID, OwnerID: database.NullIfEmpty(p.OwnerID), Aop: p.AOP,
 		Description: p.Description, DefaultFinanceBudgetID: database.NullIfEmpty(p.DefaultFinanceBudgetID),
@@ -156,9 +151,11 @@ func plansFromRows(rows []sqlcdb.ListPlansRow) ([]Plan, error) {
 			budget := money.FromCents(*r.BudgetMinor)
 			p.Budget = &budget
 		}
-		if err := json.Unmarshal(r.Attributes, &p.Attributes); err != nil {
+		attributes, err := settings.AttributeValuesOf(r.Attributes)
+		if err != nil {
 			return nil, fmt.Errorf("decode plan %s: %w", r.ID, err)
 		}
+		p.Attributes = attributes
 		plans = append(plans, p.Normalised())
 	}
 	return plans, nil
