@@ -5,7 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ALEX, monitoringOf } from '@/testing/fixtures/approvals';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { MonitoringView } from './MonitoringView';
 
 const RUN = 'POST /api/v1/approvals/escalations/run';
@@ -20,7 +20,7 @@ function renderView(answers: HttpHandler[]) {
 describe('MonitoringView (feature 017, US6)', () => {
   it('shows the cards, the ageing with counts in words, waiting by level and the overdue rows (FR-030)', async () => {
     const { user, onOpen } = renderView([
-      looseReply('GET /api/v1/approvals/monitoring', { body: monitoringOf() }),
+      reply('GET /api/v1/approvals/monitoring', { body: monitoringOf() }),
     ]);
 
     expect(await screen.findByText('Average time to decision')).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe('MonitoringView (feature 017, US6)', () => {
 
   it('says when nothing waits, and when nothing is overdue', async () => {
     renderView([
-      looseReply('GET /api/v1/approvals/monitoring', {
+      reply('GET /api/v1/approvals/monitoring', {
         body: monitoringOf({
           cards: {
             overdue: 0,
@@ -89,7 +89,7 @@ describe('MonitoringView (feature 017, US6)', () => {
 
   it('says Nothing is overdue while approvals wait in time', async () => {
     renderView([
-      looseReply('GET /api/v1/approvals/monitoring', { body: monitoringOf({ overdue: [] }) }),
+      reply('GET /api/v1/approvals/monitoring', { body: monitoringOf({ overdue: [] }) }),
     ]);
 
     expect(await screen.findByText('Nothing is overdue.')).toBeInTheDocument();
@@ -97,9 +97,9 @@ describe('MonitoringView (feature 017, US6)', () => {
 
   it('says when the figures could not be loaded, with Try again', async () => {
     renderView([
-      looseReply('GET /api/v1/approvals/monitoring', {
+      reply('GET /api/v1/approvals/monitoring', {
         status: 500,
-        body: { error: { code: 'internal', message: 'Boom' } },
+        body: { error: { code: 'internal_error', message: 'Boom', fields: [] } },
       }),
     ]);
 
@@ -110,10 +110,10 @@ describe('MonitoringView (feature 017, US6)', () => {
 describe('RunEscalationsButton (feature 017, US5)', () => {
   it('asks first, then says what was sent and what could not be escalated (FR-028)', async () => {
     const { user, api } = renderView([
-      looseReply('GET /api/v1/approvals/monitoring', {
+      reply('GET /api/v1/approvals/monitoring', {
         body: monitoringOf({ canRunEscalations: true }),
       }),
-      looseReply('POST /api/v1/approvals/escalations/run', {
+      reply('POST /api/v1/approvals/escalations/run', {
         body: {
           reminded: 2,
           escalated: 1,
@@ -162,10 +162,10 @@ describe('RunEscalationsButton (feature 017, US5)', () => {
 
   it('says when nothing was due', async () => {
     const { user } = renderView([
-      looseReply('GET /api/v1/approvals/monitoring', {
+      reply('GET /api/v1/approvals/monitoring', {
         body: monitoringOf({ canRunEscalations: true }),
       }),
-      looseReply('POST /api/v1/approvals/escalations/run', {
+      reply('POST /api/v1/approvals/escalations/run', {
         body: { reminded: 0, escalated: 0, events: [], notEscalated: [] },
       }),
     ]);

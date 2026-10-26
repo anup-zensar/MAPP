@@ -11,7 +11,7 @@ import type { ActivityApproval } from './api';
 import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 import { DecisionButtons, OwnerDecisionMenu } from './DecisionActions';
 import { decisionRole } from './decision-role';
-import { declineBoxText } from './messages';
+import { declineBoxText } from './decision-messages';
 import { RecallButton } from './RecallButton';
 import { SubmitButton } from './SubmitButton';
 import styles from './ApprovalSection.module.css';

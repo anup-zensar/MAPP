@@ -22,8 +22,9 @@ import {
   filterChips,
   filterOptions,
   filtersInUse,
+  isFilterKey,
 } from './approval-filters';
-import type { ApprovalFilterKey, ApprovalFilterValues } from './approval-filters';
+import type { ApprovalFilterValues } from './approval-filters';
 import { ApprovalPreviewPanel } from './ApprovalPreviewPanel';
 import { useApprovalRows } from './api';
 import type { ApprovalRow, ApprovalTab } from './api';
@@ -33,16 +34,13 @@ import { DelegationBanner } from './DelegationBanner';
 import { DelegationPanel } from './DelegationPanel';
 import { activitiesCount } from './messages';
 import { MonitoringView } from './MonitoringView';
+import { approvalsAddressOf } from './schemas';
+import type { PageTab } from './schemas';
 import { useApprovalSummary } from './useApprovalSummary';
 import { useChosenTabInView } from './useChosenTabInView';
 import styles from './ApprovalsPage.module.css';
 
 type ApprovalCounts = components['schemas']['ApprovalCounts'];
-
-/** The page's views: the three lists, and Monitoring (017 US6). */
-type PageTab = ApprovalTab | 'monitoring';
-
-const TAB_VALUES: PageTab[] = ['waiting', 'open', 'decided', 'monitoring'];
 
 /** What an empty tab says (plan, "User-visible messages"). */
 const EMPTY_TAB: Record<ApprovalTab, string> = {
@@ -65,10 +63,7 @@ const EMPTY_TAB: Record<ApprovalTab, string> = {
 export function ApprovalsPage() {
   usePageTitle('Approvals');
   const [params, setParams] = useSearchParams();
-  const tabParam = params.get('tab') as PageTab | null;
-  const chosenTab = tabParam && TAB_VALUES.includes(tabParam) ? tabParam : null;
-  const previewId = params.get('activity');
-  const delegationsOpen = params.get('panel') === 'delegations';
+  const { tab: chosenTab, previewId, delegationsOpen } = approvalsAddressOf(params);
   // Search and filters stay when the tab changes (plan, "Approvals page").
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<ApprovalFilterValues>(NO_FILTERS);
@@ -289,7 +284,11 @@ function Chips({ filters, rows, onChange, onClearAll }: ChipsProps) {
     <div className={styles.chips}>
       <FilterChips
         chips={chips}
-        onRemove={(key) => onChange({ ...filters, [key as ApprovalFilterKey]: '' })}
+        onRemove={(key) => {
+          if (isFilterKey(key)) {
+            onChange({ ...filters, [key]: '' });
+          }
+        }}
         onClearAll={onClearAll}
       />
     </div>

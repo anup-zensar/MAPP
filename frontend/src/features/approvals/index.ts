@@ -18,10 +18,10 @@ export type {
   ApprovalRow,
   ApprovalSubmission,
 } from './api';
+export { declineBoxText } from './decision-messages';
 export {
   activitiesCount,
   asApiError,
-  declineBoxText,
   isSessionLost,
   levelOf,
   names,

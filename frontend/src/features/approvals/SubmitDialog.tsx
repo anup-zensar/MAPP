@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import type { components } from '@/api/generated/schema';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import { FormField } from '@/ui/FormField/FormField';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
 import type { ApprovalSubmission } from './api';
-import { leftOutText, names } from './messages';
+import { leftOutText } from './chain-messages';
+import { names } from './messages';
+import { commentSchema } from './schemas';
 import styles from './approval-dialogs.module.css';
 
 type SubmissionLevel = components['schemas']['ApprovalSubmissionLevel'];
@@ -39,7 +44,11 @@ export function SubmitDialog({
   onCancel,
 }: SubmitDialogProps) {
   const { money } = useFormatters();
-  const [comment, setComment] = useState('');
+  const form = useForm({
+    resolver: zodResolver(commentSchema),
+    defaultValues: { comment: '' },
+    ...CHECK_ON_SAVE,
+  });
   const resubmit = submission.kind === 'resubmit';
   const verb = resubmit ? 'Re-submit' : 'Submit';
   // Before 017 the API answers only the levels; then each level reads as "its approvers decide".
@@ -56,7 +65,7 @@ export function SubmitDialog({
       title={`${verb} '${submission.activityName}' for approval?`}
       confirmLabel={`${verb} for approval`}
       busy={busy}
-      onConfirm={() => onConfirm(comment.trim())}
+      onConfirm={() => void form.handleSubmit(({ comment }) => onConfirm(comment.trim()))()}
     >
       <div className={styles.body}>
         {submission.workflow && <p>{`Approval workflow: ${submission.workflow.name}`}</p>}
@@ -86,14 +95,18 @@ export function SubmitDialog({
             {`${money(submission.unassignedPlannedCost)} of the planned cost is not yet assigned to a line item.`}
           </p>
         )}
-        <TextAreaField
-          label="Comment for the approvers (optional)"
+        <FormField
+          control={form.control}
           name="comment"
-          rows={3}
-          maxLength={COMMENT_MAX}
-          value={comment}
-          onChange={setComment}
-          error={commentError}
+          render={(field) => (
+            <TextAreaField
+              label="Comment for the approvers (optional)"
+              rows={3}
+              maxLength={COMMENT_MAX}
+              {...field}
+              error={commentError}
+            />
+          )}
         />
       </div>
     </ConfirmDialog>
@@ -102,11 +115,10 @@ export function SubmitDialog({
 
 /** One level of the submission: what it will do, then its notes in secondary ink. */
 function OutcomeItem({ level }: { level: SubmissionLevel }) {
+  const backup = level.backupUsed ? level.approvers[0] : undefined;
   const notes = [
     ...level.excluded.map(leftOutText),
-    level.backupUsed && level.approvers.length > 0
-      ? `The backup approver ${level.approvers[0].name} approves this level.`
-      : '',
+    backup ? `The backup approver ${backup.name} approves this level.` : '',
     level.noApprover ? level.advice : '',
   ].filter(Boolean);
 

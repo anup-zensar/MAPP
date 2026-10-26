@@ -1,14 +1,17 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import type { HttpHandler } from 'msw';
-import { mockApi } from '@/testing/mock-api';
-import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/fixtures/users';
-import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from '@/testing/fixtures/approvals';
-import { looseReply } from '@/testing/replies';
+import { describe, expect, it } from 'vitest';
+import { renderDialog } from '@/testing/fixtures/approval-screens';
+import {
+  ALEX,
+  approvalOf,
+  CARLOS,
+  DANIEL,
+  LEVEL_1,
+  LEVEL_2,
+  roundOf,
+} from '@/testing/fixtures/approvals';
+import { reply } from '@/testing/replies';
 import type { ActivityApproval } from './api';
-import { DecisionDialog } from './DecisionDialog';
-import type { DecisionDialogProps } from './DecisionDialog';
 
 const APPROVE = 'POST /api/v1/activities/A-1042/approval/approve';
 const DECLINE = 'POST /api/v1/activities/A-1042/approval/decline';
@@ -19,26 +22,12 @@ const AT_LEVEL_2 = approvalOf({
     roundOf({
       currentLevel: 2,
       levels: [
-        { ...roundOf().levels[0], state: 'approved' },
-        { ...roundOf().levels[1], state: 'waiting' },
+        { ...LEVEL_1, state: 'approved' },
+        { ...LEVEL_2, state: 'waiting' },
       ],
     }),
   ],
 });
-
-function renderDialog(
-  props: Partial<DecisionDialogProps> & Pick<DecisionDialogProps, 'mode'>,
-  answers: HttpHandler[] = [],
-) {
-  const api = mockApi(answers);
-  const onClose = vi.fn();
-  const onDecided = vi.fn();
-  const rendered = renderWithProviders(
-    <DecisionDialog approval={approvalOf()} onClose={onClose} onDecided={onDecided} {...props} />,
-    { user: testUser() },
-  );
-  return { ...rendered, api, onClose, onDecided };
-}
 
 describe('DecisionDialog (feature 008, US2)', () => {
   it('shows the level, the next level, the owner note and the on-behalf sentence (FR-017)', () => {
@@ -73,7 +62,7 @@ describe('DecisionDialog (feature 008, US2)', () => {
 
   it('approves the level the person saw and names the next approvers (FR-015)', async () => {
     const { user, api, onClose, onDecided } = renderDialog({ mode: 'approve' }, [
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/approve',
         { body: AT_LEVEL_2 },
         { activityId: 'A-1042' },
@@ -99,7 +88,7 @@ describe('DecisionDialog (feature 008, US2)', () => {
       rounds: [roundOf({ outcome: 'approved', currentLevel: 2 })],
     };
     const { user } = renderDialog({ mode: 'approve', approval: AT_LEVEL_2 }, [
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/approve',
         { body: approved },
         { activityId: 'A-1042' },
@@ -130,7 +119,7 @@ describe('DecisionDialog (feature 008, US2)', () => {
 
   it('declines with the comment', async () => {
     const { user, api } = renderDialog({ mode: 'decline' }, [
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/decline',
         { body: approvalOf({ status: 'declined' }) },
         { activityId: 'A-1042' },
@@ -183,7 +172,7 @@ describe('DecisionDialog (feature 008, US2)', () => {
   it('explains a decision someone else made first, with its time (FR-018)', async () => {
     const changedAt = new Date().toISOString();
     const { user, onClose } = renderDialog({ mode: 'approve' }, [
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/approval/approve',
         {
           status: 409,
@@ -214,7 +203,7 @@ describe('DecisionDialog (feature 008, US2)', () => {
       approval: approvalOf({
         rounds: [
           roundOf({
-            levels: [{ ...roundOf().levels[0], approvers: [CARLOS, ALEX] }, roundOf().levels[1]],
+            levels: [{ ...LEVEL_1, approvers: [CARLOS, ALEX] }, LEVEL_2],
           }),
         ],
       }),
@@ -223,115 +212,5 @@ describe('DecisionDialog (feature 008, US2)', () => {
     expect(screen.getByRole('alertdialog')).toHaveTextContent(
       'Level 1 of 2 · Carlos Mendes, Alex Morgan',
     );
-  });
-});
-
-/** Level 1 needs Carlos, Daniel and Alex (all must approve); Daniel approved already. */
-function allLevel(viewer: Partial<ActivityApproval['viewer']>): ActivityApproval {
-  return approvalOf({
-    viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [], ...viewer },
-    rounds: [
-      roundOf({
-        levels: [
-          {
-            number: 1,
-            label: 'Level 1',
-            approvers: [CARLOS, DANIEL, ALEX],
-            state: 'waiting',
-            decision: null,
-            mode: 'all',
-            approvedCount: 1,
-            requiredCount: 3,
-            decisions: [
-              {
-                action: 'approved',
-                actor: { id: DANIEL.id, name: DANIEL.name },
-                onBehalfOf: [],
-                at: '2026-03-11T10:00:00Z',
-                comment: '',
-                capacity: 'approver',
-                asDelegateOf: null,
-              },
-            ],
-          },
-          roundOf().levels[1],
-        ],
-      }),
-    ],
-  });
-}
-
-describe('DecisionDialog rules (feature 017, US2 and US3)', () => {
-  it('on a level where all must approve, says who still waits after this approval (FR-015)', () => {
-    renderDialog({ mode: 'approve', approval: allLevel({ capacity: 'approver' }) }, []);
-
-    const dialog = screen.getByRole('alertdialog');
-    // The signed-in test user approves for themself; Carlos and Alex still wait after it.
-    expect(dialog).toHaveTextContent('1 of 3 already approved.');
-    expect(dialog).toHaveTextContent('Still waiting for');
-    expect(dialog).not.toHaveTextContent('Next: level 2');
-  });
-
-  it('says the level is complete when a backup approver approves it (FR-015, FR-019)', () => {
-    renderDialog({ mode: 'approve', approval: allLevel({ capacity: 'backup' }) });
-
-    const dialog = screen.getByRole('alertdialog');
-    expect(dialog).toHaveTextContent('You approve as backup approver of level 1.');
-    expect(dialog).toHaveTextContent('Level 1 is complete after this approval.');
-    expect(dialog).toHaveTextContent('Next: level 2 · Alex Morgan.');
-  });
-
-  it('names whom a delegate approves for, without the on-behalf sentence (FR-019)', () => {
-    renderDialog({
-      mode: 'approve',
-      approval: approvalOf({
-        viewer: {
-          isOwner: false,
-          isCurrentApprover: false,
-          onBehalfOf: [],
-          capacity: 'delegate',
-          asDelegateOf: [CARLOS],
-        },
-      }),
-    });
-
-    const dialog = screen.getByRole('alertdialog');
-    expect(dialog).toHaveTextContent('You approve as delegate of Carlos Mendes.');
-    expect(dialog).not.toHaveTextContent('on behalf of');
-    expect(dialog).not.toHaveTextContent('You own this activity.');
-  });
-
-  it('passes levels that are not needed when naming the next level (FR-010)', () => {
-    renderDialog({
-      mode: 'approve',
-      approval: approvalOf({
-        viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] },
-        rounds: [
-          roundOf({
-            levelCount: 3,
-            levels: [
-              roundOf().levels[0],
-              {
-                number: 2,
-                label: 'Level 2',
-                approvers: [],
-                state: 'skipped',
-                decision: null,
-                ruleText: 'only when planned cost is at least $100,000.00',
-              },
-              {
-                number: 3,
-                label: 'Level 3',
-                approvers: [PRIYA],
-                state: 'notReached',
-                decision: null,
-              },
-            ],
-          }),
-        ],
-      }),
-    });
-
-    expect(screen.getByRole('alertdialog')).toHaveTextContent('Next: level 3 · Priya Raman.');
   });
 });

@@ -19,7 +19,8 @@ import type { ApprovalPreview } from './api';
 import { DecisionButton } from './DecisionButton';
 import { OwnerDecisionMenu } from './DecisionActions';
 import { decisionRole } from './decision-role';
-import { ACTIVITY_GONE, roundOutcomeText } from './messages';
+import { roundOutcomeText } from './history-messages';
+import { ACTIVITY_GONE } from './messages';
 import { useIsPhone } from './useIsPhone';
 import styles from './ApprovalPreviewPanel.module.css';
 

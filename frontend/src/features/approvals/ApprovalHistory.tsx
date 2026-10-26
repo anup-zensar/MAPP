@@ -3,13 +3,13 @@ import type { components } from '@/api/generated/schema';
 import { useFormatters } from '@/format/useFormatters';
 import type { ApprovalRound } from './api';
 import {
-  approversText,
   historyActorText,
   historyEntryNote,
   historyEntryTitle,
   roundOutcomeText,
   rulesAppliedText,
-} from './messages';
+} from './history-messages';
+import { approversText } from './messages';
 import styles from './ApprovalHistory.module.css';
 
 type HistoryEntry = components['schemas']['ApprovalHistoryEntry'];
