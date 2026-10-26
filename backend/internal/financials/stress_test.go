@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/platform/race"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/record"
@@ -42,7 +44,7 @@ func TestImport_FiveThousandRows_SC004(t *testing.T) {
 			t.Fatalf("counts = %+v", result.Import.Counts)
 		}
 	}
-	if elapsed > 5*time.Second {
+	if elapsed > 5*time.Second && !race.Enabled {
 		t.Errorf("a 5,000-row import took %s, want under 5 seconds", elapsed)
 	}
 	t.Logf("5,000-row import in %s", elapsed)
@@ -147,7 +149,7 @@ func TestTransactions_TwentyThousand_SC004(t *testing.T) {
 	if page.Counts.All == 0 || len(page.Items) != 200 {
 		t.Errorf("counts %+v, %d items", page.Counts, len(page.Items))
 	}
-	if elapsed > time.Second {
+	if elapsed > time.Second && !race.Enabled {
 		t.Errorf("a page of 20,000 transactions took %s, want under 1 second", elapsed)
 	}
 	t.Logf("20,000 transactions: %d matches in %s", page.Total, elapsed)

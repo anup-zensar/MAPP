@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/platform/race"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/store"
@@ -511,7 +513,7 @@ func TestQueryLog_50000Entries_SC006(t *testing.T) {
 			took = min(took, time.Since(began))
 		}
 		// The race detector slows the code several times over, so the 2 seconds are measured without it.
-		tooSlow := took > 2*time.Second && !raceDetectorOn
+		tooSlow := took > 2*time.Second && !race.Enabled
 		if tooSlow || len(page.Items) == 0 {
 			t.Errorf("query %+v took %v for %d entries, want under 2 seconds", q, took, len(page.Items))
 		}

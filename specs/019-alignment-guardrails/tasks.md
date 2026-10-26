@@ -53,7 +53,7 @@ product owner on 2026-10-26: the two limits stay review checks (quality gate 14)
 
 - [X] T013 [US3] *Withdrawn on 2026-10-26:* the `repo-checks` job (branch name, dependency review) was removed at the product owner's request; `npm audit` and `govulncheck` cover dependencies, and branch names are a convention
 - [X] T014 [P] [US3] `.github/rulesets/protected-branches.json`: `main`, `release`, `develop`; no bypass; `deletion`, `non_fast_forward`, `pull_request` (1 approval, stale approvals dismissed, last push approved by someone else), `required_status_checks` `backend`, `frontend`, `e2e` (FR-014, R8)
-- [ ] T015 [US3] Create `release` from `main`: `git push origin origin/main:refs/heads/release` (FR-013)
+- [X] T015 [US3] Create `release` from `main`: `git push origin origin/main:refs/heads/release` (FR-013)
 
 ---
 

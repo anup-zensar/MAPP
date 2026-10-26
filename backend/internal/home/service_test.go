@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"mapp/internal/platform/race"
+
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
@@ -434,7 +436,7 @@ func TestHome_LargeScope_SC004(t *testing.T) {
 	for name, operation := range operations {
 		started := time.Now()
 		err := operation()
-		if took := time.Since(started); err != nil || took > 300*time.Millisecond {
+		if took := time.Since(started); err != nil || (took > 300*time.Millisecond && !race.Enabled) {
 			t.Errorf("%s took %v, %v; want under 300 ms", name, took, err)
 		}
 	}
