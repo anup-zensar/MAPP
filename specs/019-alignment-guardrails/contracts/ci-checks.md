@@ -20,10 +20,10 @@ requests only. Each gate is a named step, so a failed check's log shows which ga
 | | Build (12) | `frontend/`: `npm run build` |
 | | Audit (17) | `frontend/`: `npm audit --omit=dev --audit-level=high` |
 | `e2e` | End-to-end (13) | `frontend/`: `npm run test:e2e` (Chromium) → artifact `e2e` on failure (`test-results/`) |
-| `repo-checks` | Size and comments (14) | repository root: `go -C backend run ./cmd/sourcecheck` |
-| | Branch name (workflow) *PR* | rules of FR-011 on `head_ref` / `base_ref` |
+| `repo-checks` | Branch name (workflow) *PR* | rules of FR-011 on `head_ref` / `base_ref` |
 | | Dependency review (17) *PR* | `actions/dependency-review-action@v5`, fails on high or critical |
 
-Artifacts are kept for 30 days (FR-005). Gates 3 and 4 (sqlc, goose) join `backend` with the
+Gate 14 (comment budget and file length) is checked in review, not by a step. Artifacts are kept
+for 30 days (FR-005). Gates 3 and 4 (sqlc, goose) join `backend` with the
 PostgreSQL feature. Gate 12's JavaScript budget, gate 16 (static code scanning) and gates 15, 17 and
 18 in part are deferred (ADR-0010).

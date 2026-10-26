@@ -973,7 +973,8 @@ MUST run in the approved CI/CD system (TOE default: GitHub Actions) and be requi
 
 *Whole repository*
 
-14. No hand-written source file exceeds the comment budget (Principle VIII).
+14. No hand-written source file exceeds the comment budget (Principle VIII) or the file-length
+    limit (Principle V); the reviewer checks both.
 15. Secret scanning (GitHub Advanced Security and Apiiro) reports no results.
 16. Static application security testing (GitHub Advanced Security code scanning, or the SonarQube
     scanning policy) reveals no high or critical vulnerability.
@@ -998,8 +999,8 @@ apply from the first deployment.
    before it is deployed, and the change reference is recorded in the release pull request.
 
 **Code review:** every pull request needs at least one approving reviewer other than the author.
-The reviewer checks what tools cannot: fan-out and expression-term metrics, naming, comment value
-and budget, design-document consistency, threat-model coverage, the tests' worth (Principle VI),
+The reviewer checks what tools cannot: fan-out and expression-term metrics, file length, naming,
+comment value and budget, design-document consistency, threat-model coverage, the tests' worth (Principle VI),
 the keyboard and screen-reader behaviour of new interactions, the experience against Principles IX
 and X, and that every metric exception is justified. The pull request description lists the
 requirement IDs addressed and each metric exception with its justification; for interface changes

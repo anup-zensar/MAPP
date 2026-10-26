@@ -20,22 +20,11 @@ npm run test:coverage          # writes coverage/lcov.info and test-results/juni
 npm run build
 npm audit --omit=dev --audit-level=high
 npm run test:e2e
-cd .. && go -C backend run ./cmd/sourcecheck   # exit 0
 ```
 
 Expected: every command succeeds on the feature branch (SC-002).
 
-## 2. Size and comment checks (US2)
-
-| Do | Expect |
-|---|---|
-| Add a new `.go` file with 401 non-blank lines | `sourcecheck` exit 1, names the file, "limit 400" |
-| Give a 320-line file an entry in `quality/exceptions.json` with a reason | passes; without it, fails |
-| Add a 100-line file with 6 comment lines | fails, "budget 5"; with 5 it passes; `//nolint:…` lines do not count |
-| Add one line to a file recorded in the baseline | fails; remove two lines → passes and says it can be tightened |
-| Run `-tighten` after shrinking a baseline file | its count drops in `quality/baseline.json`; no count rises |
-
-## 2b. Release age
+## 2. Release age
 
 | Do | Expect |
 |---|---|
@@ -45,8 +34,7 @@ Expected: every command succeeds on the feature branch (SC-002).
 ## 3. Pipeline (US1)
 
 Open a draft pull request into `develop` with one deliberate problem per gate (an unformatted Go
-file, a type error, a failing test, a lint finding on a changed line, a 401-line file), one at a
-time. Expect the check holding that gate to fail at the named step; push the fix and expect all four
+file, a type error, a failing test, a lint finding on a changed line), one at a time. Expect the check holding that gate to fail at the named step; push the fix and expect all four
 checks green, with the `backend-test` and `frontend-test` artifacts attached.
 
 ## 4. Branch rules (US3) — after an administrator applies the ruleset

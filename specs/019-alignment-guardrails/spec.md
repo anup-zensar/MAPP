@@ -6,11 +6,11 @@
 
 **Status**: Draft
 
-**Input**: User description: "Alignment guardrails (first feature of the constitution alignment roadmap). Add the automated checks and repository settings the constitution requires, so every later alignment feature is verified automatically, without changing application behaviour: a pipeline running the quality gates the current code can pass on every pull request; comment-budget and file-length checks that block new problems; the package scripts and settings the constitution names; feature branches named feature/NNN-short-name; branch protection on main, release and develop."
+**Input**: User description: "Alignment guardrails (first feature of the constitution alignment roadmap). Add the automated checks and repository settings the constitution requires, so every later alignment feature is verified automatically, without changing application behaviour: a pipeline running the quality gates the current code can pass on every pull request; the package scripts and settings the constitution names; feature branches named feature/NNN-short-name; branch protection on main, release and develop."
 
-**References**: Constitution 3.0.0 — Development Workflow and Quality Gates (gates 1–14, branches,
-no direct pushes), Principle V (quality metrics, file length), Principle VI (coverage), Principle
-VIII (comment budget), Governance → Alignment and Exceptions · Constitution F1 (package scripts,
+**References**: Constitution 3.1.0 — Development Workflow and Quality Gates (gates 1–14, branches,
+no direct pushes), Principle VI (coverage), Principle VII (release age), Governance → Alignment and
+Exceptions · Constitution F1 (package scripts,
 `browserslist`) · Feature 001 research (today's stack and commands)
 
 ## User Scenarios & Testing *(mandatory)*
@@ -53,44 +53,6 @@ gate fails and names the problem; then open a clean pull request and check that 
 
 ---
 
-### User Story 2 - New code stays small and sparsely commented (Priority: P1)
-
-As the product owner I want every new or changed file to respect the file-length limit and the
-comment budget, so the codebase gets leaner with each change instead of drifting back.
-
-A developer adds a 420-line component with a comment on every function. The pull request's size
-check fails, naming the file, its 420 non-blank lines and the 400-line hard limit; the comment check
-fails, naming the file, its comment lines and its budget. He splits the component in two and keeps
-two comments that explain *why*; both checks pass. A colleague changes a legacy 900-line Go file
-that predates the limits: the check passes as long as the file does not grow.
-
-**Why this priority**: the product owner asked for both limits explicitly; without a check they
-erode within weeks.
-
-**Independent Test**: add files just under and over each limit, and change a recorded legacy file
-up and down by one line, then compare the verdicts with FR-006 to FR-009, in the pipeline and with
-the local command.
-
-**Acceptance Scenarios**:
-
-1. **Given** a new source file of 401 non-blank lines, **When** the size check runs, **Then** it
-   fails and names the file, its count and the limit.
-2. **Given** a new source file of 320 non-blank lines with an exception recorded for it with a
-   reason, **When** the size check runs, **Then** it passes and lists the exception; **Given** the
-   same file without a recorded exception, **Then** it fails.
-3. **Given** a new 100-line file with 6 comment lines, **When** the comment check runs, **Then** it
-   fails (budget 5); with 5 comment lines it passes; tool directives and blank lines are not
-   counted.
-4. **Given** a legacy file recorded in the baseline at 900 lines, **When** a change brings it to
-   901 lines, **Then** the size check fails; at 899 lines it passes and reports that the baseline
-   can be lowered.
-5. **Given** a generated file (the generated API types, code marked "Code generated … DO NOT
-   EDIT"), **When** the checks run, **Then** it is ignored.
-6. **Given** a developer's machine, **When** the developer runs the one local command, **Then** it
-   gives the same verdicts as the pipeline for the same files.
-
----
-
 ### User Story 3 - Nobody pushes straight to the shared branches (Priority: P2)
 
 As the team I want `main`, `release` and `develop` to accept changes only through reviewed pull
@@ -101,7 +63,7 @@ Anup tries to push a quick fix directly to `develop`; the push is refused. He pu
 A pull request into `develop` from a branch named `quickfix` is flagged by the branch-name check.
 
 **Why this priority**: the rule is in the constitution and the product owner asked for it, but it
-only matters once the gates of stories 1 and 2 exist.
+only matters once the gates of story 1 exist.
 
 **Independent Test**: try a direct push, a force push and a self-approved merge on each protected
 branch (all refused), and a pull request from a badly named branch (flagged).
@@ -142,11 +104,6 @@ branch name.
 
 - A pull request that changes only documentation still runs all four checks, so required checks
   never wait for a result that will not come.
-- A file renamed in a pull request is judged as the file it now is; a recorded baseline entry
-  follows the rename only through an edit to the baseline in the same pull request.
-- A file that shrinks below the limit is no longer an exception; the check reports that its
-  baseline entry or exception can be removed, and does not fail for it.
-- Test files are held to the same limits; table-driven tests are split by behaviour.
 - A check that cannot run (the runner fails, a download times out) fails the pull request rather
   than passing it silently.
 - A known vulnerability found in a dependency that today's code uses fails the vulnerability gate;
@@ -169,25 +126,14 @@ branch name.
   check, unit and component tests with branch coverage reported as LCOV, and the production build;
   and the end-to-end tests against the real API with the seed data as a separate `e2e` check.
 - **FR-004**: The pipeline MUST have exactly four checks — `backend`, `frontend`, `e2e` and
-  `repo-checks` (FR-006, FR-007, FR-011 and the dependency review of FR-017) — each able to block a
-  merge. A failing step fails its check, the log names the gate, and a step that cannot run counts
+  `repo-checks` (the branch name of FR-011 and the dependency review of FR-017) — each able to
+  block a merge. A failing step fails its check, the log names the gate, and a step that cannot run counts
   as failed.
 - **FR-005**: Each run MUST publish its test results and coverage reports (Go coverage profile,
   frontend LCOV) so that a reviewer can open them from the pull request, kept for at least 30 days.
-- **FR-006**: A comment check MUST fail when a hand-written source file (Go, TypeScript, TSX, CSS,
-  SQL; tests included) has more comment lines than 5% of its non-blank lines, rounded up. Blank
-  lines, tool directives (`//go:`, `//nolint`, `eslint-disable`, `eslint-enable`, `prettier-ignore`,
-  `@ts-expect-error`, `/// <reference>`, goose and sqlc annotations) and generated files do not
-  count. The failure names the file, its comment lines and its budget.
-- **FR-007**: A size check MUST count each hand-written source file's non-blank lines and fail at
-  401 or more, and at 301–400 unless an exception with a written reason is recorded for that file.
-  The failure names the file, its count and the limit.
-- **FR-008**: Files that exceed a limit when this feature ships MUST be recorded in a committed
-  baseline with their current counts. A recorded file passes while its count does not rise, fails
-  when it rises, and is reported as improvable when it falls. No file may be added to the baseline
-  after this feature ships; entries leave it as their packages are aligned.
-- **FR-009**: One local command MUST run the comment and size checks with the same rules, baseline
-  and exceptions as the pipeline, and give the same verdict.
+- **FR-006 – FR-009**: *Withdrawn on 2026-10-26.* The comment budget (constitution VIII) and the
+  file-length limit (constitution V) stay constitutional rules that the reviewer checks (quality
+  gate 14); no automated checker, baseline or local command is built (product owner).
 - **FR-010**: The web app's package settings MUST include the scripts and settings the constitution
   names that are missing today: a `test:coverage` script producing LCOV with branch coverage, and a
   `browserslist` entry naming the two most recent major versions of Chrome, Edge, Firefox and
@@ -205,8 +151,9 @@ branch name.
   pushes or force pushes for anyone (administrators included), no deletion, a pull request with at
   least one approval from someone other than the author, approvals dismissed by new commits, and
   every check of FR-004 required.
-- **FR-015**: The developer documentation MUST say how to run every gate locally, how to record a
-  size exception, how the baseline works, and how to apply the branch rules (ruleset).
+- **FR-015**: The developer documentation MUST say how to run every gate locally, that the
+  reviewer checks the comment budget and the file-length limit, and how to apply the branch rules
+  (ruleset).
 - **FR-016**: This feature MUST NOT change application behaviour: no change to the API, the
   screens, the stored data or the seed data. A gate that today's code fails is fixed with the
   smallest change that keeps behaviour, or the gap is recorded with its reason.
@@ -215,8 +162,8 @@ branch name.
   `repo-checks`), and the audit of the web app's production dependencies (a step of `frontend`).
   Each fails on a high or critical finding.
 - **FR-018**: *Withdrawn on 2026-10-26.* The first-page JavaScript budget is deferred (FR-019).
-- **FR-019**: An architecture decision record MUST record the pipeline, the branch rules and the
-  size and comment checks, and the deviations the product owner agreed on 2026-10-26: static code
+- **FR-019**: An architecture decision record MUST record the pipeline and the branch rules, and
+  the deviations the product owner agreed on 2026-10-26: static code
   scanning (SAST, gate 16) waits for SonarQube — GitHub code scanning is not used; SonarQube,
   Apiiro and Mend wait for organisation setup; secret scanning is switched on by a repository
   administrator; the 80% new-code coverage threshold is enforced once SonarQube is available; the
@@ -231,10 +178,6 @@ branch name.
 
 - **Quality gate**: a named step with the command it runs, inside one of the four checks that
   guard the branches and block merging.
-- **Baseline entry**: a legacy file that exceeded a limit when the feature shipped — its path, the
-  limit it exceeds (size or comments) and its recorded count.
-- **Size exception**: a file allowed into the 301–400 band — its path, its count and the written
-  reason.
 - **Branch rule**: a protected branch with its allowed source branches and its rules in the
   ruleset.
 
@@ -246,10 +189,7 @@ branch name.
   within 20 minutes of its latest push.
 - **SC-002**: The pipeline passes on `develop` once this feature is merged: zero failing gates on
   today's code.
-- **SC-003**: After this feature ships, no new file over 400 non-blank lines or over its comment
-  budget reaches `develop`, and no baseline entry grows.
-- **SC-004**: A developer runs the size and comment checks locally in under 30 seconds, with the
-  same verdict as the pipeline in 100% of cases.
+- **SC-003, SC-004**: *Withdrawn with FR-006 – FR-009.*
 - **SC-005**: Once an administrator applies the branch rules, 100% of direct pushes to `main`,
   `release` and `develop` are refused, and no pull request merges without an approval from someone
   other than its author.

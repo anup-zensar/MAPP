@@ -72,6 +72,9 @@ Software Design & Construction Policy and SEMS, which are mandatory.
     files follow the constitution in full.
 16. **File length** (constitution V): at most 300 non-blank lines per source file, tests included; 301–400
     needs a written justification; 401+ is never merged. Split by responsibility.
+17. **Release age** (constitution VII): npm installs only versions published at least a day ago
+    (`frontend/.npmrc`, npm 11.10+). Before adding or upgrading a Go module, check its version was
+    published more than 24 hours ago (`https://proxy.golang.org/<module>/@v/<version>.info`).
 
 ## Key documents
 

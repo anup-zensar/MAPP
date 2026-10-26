@@ -135,3 +135,34 @@ jobs:
           name: e2e
           path: frontend/test-results/
           retention-days: 30
+
+  repo-checks:
+    name: repo-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Branch name
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD: ${{ github.head_ref }}
+          BASE: ${{ github.base_ref }}
+          MODULE_BRANCHES: plan-module
+        run: |
+          case "$BASE:$HEAD" in
+            develop:feature/[0-9][0-9][0-9]-*|develop:docs/*|develop:fix/*) exit 0 ;;
+            release:develop|release:fix/*) exit 0 ;;
+            main:release) exit 0 ;;
+          esac
+          for module in $MODULE_BRANCHES; do
+            if [ "$BASE:$HEAD" = "develop:$module" ]; then exit 0; fi
+          done
+          echo "'$HEAD' may not open a pull request into '$BASE'."
+          echo "Into develop: feature/NNN-short-name, docs/..., fix/... or a module branch ($MODULE_BRANCHES)."
+          echo "Into release: develop or fix/... Into main: release."
+          exit 1
+      - name: Dependency review
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: high
