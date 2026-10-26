@@ -38,6 +38,7 @@ func Open(ctx context.Context, dsn string) (*DB, error) {
 		return nil, errMalformedURL
 	}
 	cfg.AfterConnect = scanTimestampsInUTC
+	cfg.ConnConfig.Tracer = counter{}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("create pool: %w", err)

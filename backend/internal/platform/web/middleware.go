@@ -13,6 +13,7 @@ import (
 
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/logging"
+	"mapp/internal/platform/querycount"
 )
 
 const requestIDHeader = "X-Request-ID"
@@ -30,9 +31,12 @@ func RequestID() gin.HandlerFunc {
 func LogRequest() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
+		counted := querycount.With(c.Request.Context())
+		c.Request = c.Request.WithContext(counted)
 		c.Next()
 		slog.InfoContext(c.Request.Context(), "request", "method", c.Request.Method, "path", c.Request.URL.Path,
-			"route", c.FullPath(), "status", c.Writer.Status(), "duration_ms", time.Since(start).Milliseconds())
+			"route", c.FullPath(), "status", c.Writer.Status(), "duration_ms", time.Since(start).Milliseconds(),
+			"queries", querycount.Of(counted))
 	}
 }
 
