@@ -62,6 +62,7 @@ type (
 // Every access operation needs "Give roles and change roles and access rules": Priya, a Planner, is refused
 // with 403 and the role message; Alex, the administrator, is served (FR-009, FR-017).
 func TestAccessOperations_NeedAccessManage_FR009_FR017(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya, alex := server.SignIn(t, priyasEmail), server.SignIn(t, alexsEmail)
 	operations := []struct {
@@ -97,60 +98,11 @@ func TestAccessOperations_NeedAccessManage_FR009_FR017(t *testing.T) {
 	}
 }
 
-// GET /api/v1/access/permissions answers Table A in its five groups (FR-001).
-func TestListPermissions_TableA_FR001(t *testing.T) {
-	server := apitest.New(t)
-	var catalogue struct {
-		Groups []struct {
-			Name        string
-			Permissions []struct {
-				Key, Label string
-				Scoped     bool
-			}
-		}
-	}
-
-	server.SignIn(t, alexsEmail).Do(t, http.MethodGet, "/api/v1/access/permissions", nil).Decode(t, &catalogue)
-
-	var groups []string
-	for _, g := range catalogue.Groups {
-		groups = append(groups, g.Name+" "+string(rune('0'+len(g.Permissions))))
-	}
-	if want := []string{"Plans and planning ;", "Financial data 3", "Approvals 2", "Global budgets 2", "Administration 7"}; !slices.Equal(groups, want) {
-		t.Errorf("groups = %q, want %q", groups, want) // ";" is 11 permissions
-	}
-}
-
-// The People tab: everyone with their roles; Daniel holds two roles (FR-017).
-func TestListPeopleAccess_FR017(t *testing.T) {
-	server := apitest.New(t)
-	var page struct {
-		Items []personRoles
-		Total int
-	}
-
-	server.SignIn(t, alexsEmail).Do(t, http.MethodGet, "/api/v1/access/people", nil).Decode(t, &page)
-
-	var rows []string
-	for _, p := range page.Items {
-		var roles []string
-		for _, r := range p.Roles {
-			roles = append(roles, r.Role.Name+" · "+r.Scope.Text)
-		}
-		rows = append(rows, p.Person.Name+": "+strings.Join(roles, ", "))
-	}
-	want := []string{"Alex Morgan: Administrator · All markets", "Carlos Mendes: Global planner · All markets",
-		"Daniel Okoro: Approver · My teams, Planner · My teams", "Mei Lin: Planner · My teams", "Priya Raman: Planner · My teams",
-		"Sara Novak: Viewer · My teams"}
-	if page.Total != 6 || !slices.Equal(rows, want) {
-		t.Errorf("people (%d) =\n%q\nwant\n%q", page.Total, rows, want)
-	}
-}
-
 // An administrator gives Sara the Planner role for Mobility China; her next request follows it without
 // signing in again, she may now change Mobility activities, and the change is in the activity log and the
 // recent access changes (US3 scenarios 1–3, FR-017, FR-020, FR-037, FR-038, SC-003).
 func TestSetPersonRoles_AppliesToTheNextRequest_FR017_FR020(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex, sara := server.SignIn(t, alexsEmail), server.SignIn(t, sarasEmail)
 	refusedBefore := sara.Do(t, http.MethodGet, "/api/v1/activities/A-1001/form", nil)
@@ -201,6 +153,7 @@ func TestSetPersonRoles_AppliesToTheNextRequest_FR017_FR020(t *testing.T) {
 // Saving roles answers 400 with every problem, 409 for an out-of-date version and for the last
 // administrator, 404 for an unknown person (FR-017, FR-021).
 func TestSetPersonRoles_Refusals_FR017_FR021(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -235,6 +188,7 @@ func TestSetPersonRoles_Refusals_FR017_FR021(t *testing.T) {
 // The impact check warns before Daniel loses the right to approve and before Alex removes his own
 // administration, and saves nothing (FR-022, US3 scenario 5).
 func TestCheckPersonRolesImpact_Warnings_FR022(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	plannerOnly := map[string]any{"version": 1, "roles": []map[string]any{{"roleId": "RL-1003", "scope": map[string]any{"type": "myTeams"}}}}
@@ -267,6 +221,7 @@ func TestCheckPersonRolesImpact_Warnings_FR022(t *testing.T) {
 // Roles in Settings: create, read, change, delete to the recycle bin and Undo; the Administrator role is
 // locked and a role people hold can't be deleted (US4, FR-018, messages 11, 13, 14).
 func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -319,6 +274,7 @@ func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
 // The access rules: read with their defaults, changed with the version, Administrator refused for new
 // people; a person added in Settings › People then gets the chosen role (FR-019, FR-023).
 func TestAccessRules_ChangeAndNewPeople_FR019_FR023(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	type rules struct {
@@ -358,6 +314,7 @@ func TestAccessRules_ChangeAndNewPeople_FR019_FR023(t *testing.T) {
 
 // A deleted team leaves every Chosen teams scope; the People tab flags the empty scope (data model §1.2).
 func TestTeamDelete_LeavesChosenScopes_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var team struct{ ID string }

@@ -22,6 +22,7 @@ var (
 // an activity's rounds come by number, its entries oldest first, a person's notifications newest first
 // (data model §1–§4).
 func TestJSONRepository_RoundTrip(t *testing.T) {
+	t.Parallel()
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
@@ -127,6 +128,7 @@ func TestJSONRepository_RoundTrip(t *testing.T) {
 // people where any one approves, always needed and never automatic, without backup; a round level decided
 // by its approvers with nobody left out; a round without facts or timings; an entry without capacity.
 func TestLegacyRecords_ReadWithDefaults_017P19(t *testing.T) {
+	t.Parallel()
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)

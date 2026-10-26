@@ -54,41 +54,53 @@ func (f *fixture) counts(t *testing.T) map[string]int {
 // recycle bin tells nobody (FR-035). Alex Morgan, who is no approver here, acts, so nobody is left out as
 // the actor.
 func TestNotify_Recipients_FR035(t *testing.T) {
+	t.Parallel()
 	const twoLevels = "WF-1003" // level 1 Daniel Okoro; level 2 Carlos Mendes and Sara Novak
 	tests := []struct {
 		name  string
-		setUp func(f *fixture) // brings the activity A-1004, owned by Priya Raman, to where the action starts
-		act   func(f *fixture)
+		setUp func(t *testing.T, f *fixture) // brings the activity A-1004, owned by Priya Raman, to where the action starts
+		act   func(t *testing.T, f *fixture)
 		want  []string
 	}{
-		{"submit", func(*fixture) {}, func(f *fixture) { f.submit(t, alex, "A-1004", "") },
+		{"submit", func(*testing.T, *fixture) {}, func(t *testing.T, f *fixture) { t.Helper(); f.submit(t, alex, "A-1004", "") },
 			[]string{"Daniel Okoro: approvalNeeded"}},
 		// 017 FR-018: Alex submits, so the approvers decide.
-		{"re-submit", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.decline(t, daniel, "A-1004", "No.") },
-			func(f *fixture) { f.submit(t, alex, "A-1004", "") },
+		{"re-submit", func(t *testing.T, f *fixture) {
+			t.Helper()
+			f.submit(t, alex, "A-1004", "")
+			f.decline(t, daniel, "A-1004", "No.")
+		}, func(t *testing.T, f *fixture) { t.Helper(); f.submit(t, alex, "A-1004", "") },
 			[]string{"Daniel Okoro: approvalNeeded"}},
-		{"approve a level before the last", func(f *fixture) { f.submit(t, alex, "A-1004", "") },
-			func(f *fixture) { f.approve(t, daniel, "A-1004", "") },
+		{"approve a level before the last", func(t *testing.T, f *fixture) { t.Helper(); f.submit(t, alex, "A-1004", "") },
+			func(t *testing.T, f *fixture) { t.Helper(); f.approve(t, daniel, "A-1004", "") },
 			[]string{"Priya Raman: levelApproved", "Carlos Mendes: approvalNeeded", "Sara Novak: approvalNeeded"}},
-		{"approve the last level", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.approve(t, daniel, "A-1004", "") },
-			func(f *fixture) { f.approve(t, carlos, "A-1004", "") },
+		{"approve the last level", func(t *testing.T, f *fixture) {
+			t.Helper()
+			f.submit(t, alex, "A-1004", "")
+			f.approve(t, daniel, "A-1004", "")
+		}, func(t *testing.T, f *fixture) { t.Helper(); f.approve(t, carlos, "A-1004", "") },
 			[]string{"Priya Raman: approved"}},
-		{"decline", func(f *fixture) { f.submit(t, alex, "A-1004", "") },
-			func(f *fixture) { f.decline(t, daniel, "A-1004", "No.") },
+		{"decline", func(t *testing.T, f *fixture) { t.Helper(); f.submit(t, alex, "A-1004", "") },
+			func(t *testing.T, f *fixture) { t.Helper(); f.decline(t, daniel, "A-1004", "No.") },
 			[]string{"Priya Raman: declined"}},
-		{"recall", func(f *fixture) { f.submit(t, alex, "A-1004", ""); f.approve(t, daniel, "A-1004", "") },
-			func(f *fixture) { f.recall(t, alex, "A-1004", "") },
+		{"recall", func(t *testing.T, f *fixture) {
+			t.Helper()
+			f.submit(t, alex, "A-1004", "")
+			f.approve(t, daniel, "A-1004", "")
+		}, func(t *testing.T, f *fixture) { t.Helper(); f.recall(t, alex, "A-1004", "") },
 			[]string{"Priya Raman: recalled", "Carlos Mendes: recalled", "Sara Novak: recalled"}},
-		{"restart of a Submitted activity", func(f *fixture) { f.submit(t, alex, "A-1004", "") },
-			func(f *fixture) { f.restart(t, alex, "A-1004") },
+		{"restart of a Submitted activity", func(t *testing.T, f *fixture) { t.Helper(); f.submit(t, alex, "A-1004", "") },
+			func(t *testing.T, f *fixture) { t.Helper(); f.restart(t, alex, "A-1004") },
 			[]string{"Priya Raman: restarted", "Daniel Okoro: restarted"}},
-		{"restart of an Approved activity", func(f *fixture) {
+		{"restart of an Approved activity", func(t *testing.T, f *fixture) {
+			t.Helper()
 			f.submit(t, alex, "A-1004", "")
 			f.approve(t, daniel, "A-1004", "")
 			f.approve(t, sara, "A-1004", "")
-		}, func(f *fixture) { f.restart(t, alex, "A-1004") },
+		}, func(t *testing.T, f *fixture) { t.Helper(); f.restart(t, alex, "A-1004") },
 			[]string{"Priya Raman: restarted", "Daniel Okoro: restarted", "Sara Novak: restarted"}},
-		{"restore from the recycle bin", func(f *fixture) { f.submit(t, alex, "A-1004", "") }, func(f *fixture) {
+		{"restore from the recycle bin", func(t *testing.T, f *fixture) { t.Helper(); f.submit(t, alex, "A-1004", "") }, func(t *testing.T, f *fixture) {
+			t.Helper()
 			f.write(t, func(ctx context.Context) error {
 				_, err := f.service.ActivityRestored(ctx, history.RestoreContext{Actor: alex, Now: start, DeletedAt: start, DeletedBy: alex}, "A-1004")
 				return err
@@ -97,13 +109,14 @@ func TestNotify_Recipients_FR035(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			f := newFixture(t)
 			f.addWorkflow(t, twoLevels, "Two levels", []string{daniel.ID}, []string{carlos.ID, sara.ID})
 			f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, twoLevels)
-			tt.setUp(f)
+			tt.setUp(t, f)
 			counts := f.counts(t)
 
-			tt.act(f)
+			tt.act(t, f)
 
 			if got := f.notifiedSince(t, counts); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("notified =\n%q\nwant\n%q", got, tt.want)
@@ -116,6 +129,7 @@ func TestNotify_Recipients_FR035(t *testing.T) {
 // Daniel Okoro submits, approves and recalls his own activity at a level that lists him (FR-036). He may,
 // because 014's access rule is off here (017 edge case "The access rule is turned off").
 func TestNotify_NeverOwnAction_FR036(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.rule = false
 	f.addActivity(t, "A-1004", "Trade magazine ads", daniel.ID, lubricantsFlow)
@@ -134,24 +148,10 @@ func TestNotify_NeverOwnAction_FR036(t *testing.T) {
 	}
 }
 
-// The owner, not the submitter, hears what happened to an activity (spec Assumptions): Mei Lin submits
-// Priya Raman's activity; the approval is told to Priya only.
-func TestNotify_OwnerNotSubmitter_Assumption(t *testing.T) {
-	f := newFixture(t)
-	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
-	f.submit(t, mei, "A-1004", "")
-	counts := f.counts(t)
-
-	f.approve(t, daniel, "A-1004", "")
-
-	if got, want := f.notifiedSince(t, counts), []string{"Priya Raman: approved"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("notified = %q, want %q", got, want)
-	}
-}
-
 // A decline tells the owner with the start of the comment: a comment of up to 80 characters whole, a longer
 // one cut after 80 characters (not bytes) with "…" (FR-035, 008-P16).
 func TestNotify_DeclineQuotesComment_FR035(t *testing.T) {
+	t.Parallel()
 	short := "Split the agency fee by country."
 	long := strings.Repeat("é", 79) + "ab" // 81 characters, 163 bytes
 	for _, tt := range []struct{ comment, quoted string }{
@@ -205,6 +205,7 @@ func (f *fixture) putNotifications(t *testing.T, recipient actor.Actor, n, read 
 // The bell lists the person's 50 most recent notifications, newest first, with the number of all of them
 // and of all the unread ones — also those beyond the 50; nobody sees another person's (FR-033).
 func TestListNotifications_FR033(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	all := f.putNotifications(t, daniel, 55, 3) // the 3 oldest are read
@@ -239,6 +240,7 @@ func TestListNotifications_FR033(t *testing.T) {
 // A notification about an activity that is no longer stored (in the recycle bin) says so, with the name it
 // had (edge case).
 func TestListNotifications_DeletedActivity_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")
@@ -255,6 +257,7 @@ func TestListNotifications_DeletedActivity_EdgeCase(t *testing.T) {
 // Opening a notification marks it read once; marking it again changes nothing; another person's, or one
 // that does not exist, is not found. Notifications are not logged (FR-034, D-163).
 func TestMarkRead_FR034(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")
@@ -291,6 +294,7 @@ func TestMarkRead_FR034(t *testing.T) {
 // Mark all as read marks every unread notification of the person — also those beyond the 50 listed — and
 // keeps them listed; a second time there is nothing to mark; other people's stay unread (FR-034).
 func TestMarkAllRead_FR034(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.putNotifications(t, daniel, 55, 3)

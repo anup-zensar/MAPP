@@ -28,6 +28,7 @@ func eventLine(e EscalationEvent) string {
 // activity, or already approves the level cannot take it and the level is reported; a second run sends
 // nothing; legacy rounds wait from 008's time; it needs workflows.manage.
 func TestRunEscalations_FR026_FR027_FR028_SC005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.putWorkflow(t, "WF-1003", "Remind 3, escalate 5", days(3), days(5), Level{ApproverIDs: []string{daniel.ID}, BackupApproverID: alex.ID})
 	f.putWorkflow(t, "WF-1004", "Remind only", days(3), nil, Level{ApproverIDs: []string{daniel.ID}})
@@ -157,6 +158,7 @@ func assertNotifiedFirst(t *testing.T, f *fixture, p actor.Actor, want string) {
 // the five ageing buckets add up to All open; waiting by level per workflow and level; the overdue rows
 // oldest first; the month's average time to decision without approvals at submission, and their count.
 func TestMonitoring_FR029_FR030_SC006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.managers = []string{alex.ID}
 	f.putWorkflow(t, "WF-1003", "Escalate after 2", days(1), days(2), Level{ApproverIDs: []string{daniel.ID}, BackupApproverID: alex.ID})
@@ -216,6 +218,7 @@ func TestMonitoring_FR029_FR030_SC006(t *testing.T) {
 // escalation — never on behalf, and never what they own or submitted (017 FR-031); the summary counts it
 // (SC-007).
 func TestInbox_DelegateAndBackup_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.putWorkflow(t, "WF-1003", "Backed up", days(1), days(2), Level{ApproverIDs: []string{daniel.ID}, BackupApproverID: carlos.ID})
 	f.addActivity(t, "A-1001", "Escalated", priya.ID, "WF-1003")
@@ -245,6 +248,7 @@ func TestInbox_DelegateAndBackup_FR031(t *testing.T) {
 // days waited, overdue, the backup approver of an escalated level, and "no approver" when nobody waiting can
 // act.
 func TestInbox_RowFlags_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.putWorkflow(t, "WF-1003", "All", days(1), days(3), Level{ApproverIDs: []string{daniel.ID, carlos.ID}, Mode: ModeAll, BackupApproverID: alex.ID})
 	f.putWorkflow(t, "WF-1004", "Own", nil, nil, Level{ApproverIDs: []string{daniel.ID}})
@@ -276,6 +280,7 @@ func TestInbox_RowFlags_FR031(t *testing.T) {
 // not needed at submission, a partial approval, decisions as delegate, backup and on behalf, reminders and
 // escalations, and delegations created, changed and cancelled.
 func TestApprovalRuleEvents_Logged_FR034_FR035_SC004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.onBehalf = []string{alex.ID}
 	f.addStandardFlow(t)

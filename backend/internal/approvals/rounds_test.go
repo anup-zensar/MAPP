@@ -19,6 +19,7 @@ import (
 // The confirmation shows the workflow, each level with its approvers, a positive unassigned planned cost as
 // a note and the number of the round it starts; asking changes nothing (FR-011, FR-010).
 func TestSubmission_ListsLevelsAndNote_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	note := money.USD(mustAmount(t, "1200.00"))
@@ -57,6 +58,7 @@ func TestSubmission_ListsLevelsAndNote_FR011(t *testing.T) {
 // it: empty needed fields, an unfinished % split, a line item's missing field, a negative unassigned planned
 // cost (from the check of 006 and 007) and the missing approval workflow (FR-010).
 func TestSubmit_ProblemsChangeNothing_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1008", "Grand opening Shanghai", mei.ID, "")
 	f.activities.problems["A-1008"] = []SubmitProblem{
@@ -95,6 +97,7 @@ func TestSubmit_ProblemsChangeNothing_FR010(t *testing.T) {
 // An inactive approval workflow, or one that no longer exists, is a problem of the check; a problem the
 // check of 006 already lists for the field is not listed twice (FR-010 e, FR-007).
 func TestSubmit_InactiveWorkflowIsAProblem_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Social always-on", priya.ID, "WF-9999")
@@ -131,6 +134,7 @@ func TestSubmit_InactiveWorkflowIsAProblem_FR010(t *testing.T) {
 // A positive unassigned planned cost, or no line items at all, does not block submitting; the
 // confirmation shows the amount as a note (spec edge case, domain model §4.3).
 func TestSubmit_PositiveUnassignedDoesNotBlock_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
 	note := money.USD(mustAmount(t, "50000.00")) // the whole planned cost: no line items
@@ -147,6 +151,7 @@ func TestSubmit_PositiveUnassignedDoesNotBlock_EdgeCase(t *testing.T) {
 // level 1 with a copy of the workflow's levels, the submitter, the time and the comment; the round's history,
 // the activity log and the level-1 approvers' notifications record it (FR-011, FR-026, FR-035).
 func TestSubmit_StartsRound1_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 
@@ -200,6 +205,7 @@ func TestSubmit_StartsRound1_FR011(t *testing.T) {
 // Only a Created activity can be submitted and only a Declined one re-submitted; the others are refused and
 // the confirmation says why (FR-009).
 func TestSubmit_OnlyCreatedOrDeclined_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for i, status := range []string{StatusSubmitted, StatusApproved} {
 		id := []string{"A-1004", "A-1002"}[i]
@@ -227,6 +233,7 @@ func TestSubmit_OnlyCreatedOrDeclined_FR009(t *testing.T) {
 // one is refused with version_conflict naming who changed the activity and when (D-030); a comment holds
 // at most 2,000 characters.
 func TestSubmit_StaleVersionRefused_D030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
 	changedAt := start.Add(-time.Hour)
@@ -250,6 +257,7 @@ func TestSubmit_StaleVersionRefused_D030(t *testing.T) {
 // The plan's status is never checked: an activity of a Draft plan is submitted like any other (FR-012,
 // D-206).
 func TestSubmit_DraftPlanAllowed_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	facts := f.addActivity(t, "A-1010", "Lunar new year promo", mei.ID, chinaFlow)
 	facts.Path[0] = errs.RecordRef{Type: "plan", ID: "P-1002", Name: "FY2026 Mobility China"} // a Draft plan
@@ -265,6 +273,7 @@ func TestSubmit_DraftPlanAllowed_FR012(t *testing.T) {
 // Re-submitting a Declined activity starts the next round at level 1 with the workflow's levels as they
 // are now, not those of the earlier round (FR-020, FR-006).
 func TestResubmit_NewRoundWithCurrentLevels_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")
@@ -391,6 +400,7 @@ func (f *fixture) addWorkflow(t *testing.T, id, name string, levels ...[]string)
 // Approving a level other than the last moves the round to the next level and keeps the activity
 // Submitted; the next level's approvers are asked and the owner is told (FR-015, FR-035).
 func TestApprove_MovesToNextLevel_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
@@ -427,6 +437,7 @@ func TestApprove_MovesToNextLevel_FR015(t *testing.T) {
 // Approving the last level ends the round as approved and makes the activity Approved; the owner is told
 // (FR-015, FR-035).
 func TestApprove_LastLevelApproves_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
@@ -461,6 +472,7 @@ func TestApprove_LastLevelApproves_FR015(t *testing.T) {
 // Every level applies to every submission, in order, and any one designated approver of a level approves
 // it (FR-004, D-205).
 func TestApprove_EveryLevelAppliesAnyApprover_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addWorkflow(t, "WF-1003", "Two team leaders, then the champion", []string{daniel.ID, sara.ID}, []string{carlos.ID})
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, "WF-1003")
@@ -481,6 +493,7 @@ func TestApprove_EveryLevelAppliesAnyApprover_FR004(t *testing.T) {
 // Declining needs a comment that is not blank; comments hold at most 2,000 characters. A refused
 // decision changes nothing (FR-016).
 func TestDecline_CommentRequired_FR016(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")
@@ -502,6 +515,7 @@ func TestDecline_CommentRequired_FR016(t *testing.T) {
 // A decline ends the round at any level and makes the activity Declined; the comment heads its Approval
 // section and the owner is told with the comment's first 80 characters (FR-016, FR-035).
 func TestDecline_EndsRoundAtAnyLevel_FR016(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.addActivity(t, "A-1008", "Grand opening Shanghai", mei.ID, chinaFlow)
@@ -542,6 +556,7 @@ func TestDecline_EndsRoundAtAnyLevel_FR016(t *testing.T) {
 // Anyone may decide (D-020); a person who is not an approver of the level decides on behalf of its
 // approvers, and the confirmation, the history and the log say so (FR-017).
 func TestDecide_OnBehalfOf_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")
@@ -572,6 +587,7 @@ func TestDecide_OnBehalfOf_FR017(t *testing.T) {
 // on the chain, shown inactive, and someone allowed to decide on behalf decides for them (spec edge cases,
 // 017 FR-017).
 func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", daniel.ID, lubricantsFlow)
 	f.addWorkflow(t, "WF-1003", "Carlos twice", []string{carlos.ID}, []string{carlos.ID})
@@ -632,6 +648,7 @@ func TestDecide_OwnerAndTwoLevelsAndInactiveApprover_017FR018_EdgeCases(t *testi
 // changes nothing and says who decided it and when; a level the round has not reached is a stale request
 // (FR-018, D-155).
 func TestDecide_FirstDecisionCounts_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
@@ -657,32 +674,37 @@ func TestDecide_FirstDecisionCounts_FR018(t *testing.T) {
 // A decision on a round that has ended explains what ended it: a decline, a recall, a restart or the
 // activity's deletion; a round of another activity, or none, is refused (FR-018).
 func TestDecide_EndedRoundExplains_FR018(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
-		end     func(f *fixture, id string)
+		end     func(t *testing.T, f *fixture, id string)
 		message string
 	}{
-		{"declined", func(f *fixture, id string) { f.decline(t, daniel, id, "Too expensive.") },
+		{"declined", func(t *testing.T, f *fixture, id string) { t.Helper(); f.decline(t, daniel, id, "Too expensive.") },
 			"Level 1 was already declined by Daniel Okoro"},
-		{"recalled", func(f *fixture, id string) {
+		{"recalled", func(t *testing.T, f *fixture, id string) {
+			t.Helper()
 			f.endDirectly(t, id, ActionRecalled, OutcomeRecalled, StatusCreated, priya, "Wrong workflow.")
 		}, "The submission was recalled by Priya Raman"},
-		{"restarted", func(f *fixture, id string) {
+		{"restarted", func(t *testing.T, f *fixture, id string) {
+			t.Helper()
 			f.endDirectly(t, id, ActionRestarted, OutcomeRestarted, StatusCreated, mei, "")
 		}, "Approval was restarted by Mei Lin"},
-		{"cancelled", func(f *fixture, id string) {
+		{"cancelled", func(t *testing.T, f *fixture, id string) {
+			t.Helper()
 			f.endDirectly(t, id, ActionCancelled, OutcomeCancelled, StatusCreated, alex, "")
 		}, "The approval round was cancelled because the activity was deleted"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			f := newFixture(t)
 			f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 			f.submit(t, priya, "A-1004", "")
 			round := f.openRound(t, "A-1004")
 			f.clock.Advance(time.Hour)
 			endedAt := f.clock.Now()
-			tt.end(f, "A-1004")
+			tt.end(t, f, "A-1004")
 			f.clock.Advance(time.Minute)
 
 			_, err := f.service.Approve(t.Context(), alex, "A-1004", DecisionInput{RoundID: round.ID, Level: version(1)})
@@ -712,6 +734,7 @@ func TestDecide_EndedRoundExplains_FR018(t *testing.T) {
 // In progress and Complete are displayed statuses of an approved activity: time passing changes them
 // without any action, so nobody is ever notified of them (FR-019).
 func TestDisplayStatusesNeverNotify_FR019(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")
@@ -735,6 +758,7 @@ func TestDisplayStatusesNeverNotify_FR019(t *testing.T) {
 // Every approval action is in the round's history and the activity log with its round, level, designated
 // approvers, actor and "on behalf of" (FR-026, SC-004).
 func TestApprovalActions_Logged_FR026_SC004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "First try.")
@@ -789,6 +813,7 @@ func (f *fixture) recall(t *testing.T, a actor.Actor, id, reason string) Activit
 // history, the log and the owner and waiting approvers record it. Anyone may recall (D-020). Recalling the
 // same round again explains what ended it; the reason holds at most 2,000 characters (FR-021, FR-018).
 func TestRecall_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
@@ -844,6 +869,7 @@ func TestRecall_FR021(t *testing.T) {
 // An Approved activity can't be recalled: the refusal says that a change of planned cost, dates or
 // line-item amounts sends it back for approval, and nothing changes (FR-021).
 func TestRecall_ApprovedRefused_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1004", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.submit(t, priya, "A-1004", "")

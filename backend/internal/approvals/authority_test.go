@@ -16,6 +16,7 @@ import (
 // refused with 014's message 5 (and no reason shown). While 014's rule is on, the owner and the round's
 // submitter are refused in every capacity, delegates included; with it off they may decide.
 func TestAuthority_Table_FR017_FR018_FR020_SC002(t *testing.T) {
+	t.Parallel()
 	escalated := start.Add(time.Hour)
 	level := RoundLevel{Number: 1, Approvers: []actor.Actor{daniel, carlos}, ApproverType: SourcePeople, Mode: ModeAll,
 		Resolution: ResolutionDecide, Excluded: []Excluded{}, Backup: &mei}
@@ -62,6 +63,7 @@ func TestAuthority_Table_FR017_FR018_FR020_SC002(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			f := newFixture(t)
 			f.access.cannotApprove[carlos.ID] = true
 			f.access.onBehalf = []string{alex.ID, priya.ID}
@@ -96,6 +98,7 @@ func TestAuthority_Table_FR017_FR018_FR020_SC002(t *testing.T) {
 // approver in any round, a current delegate of a waiting approver, or the backup approver of its escalated
 // level — not a planned delegate, nor a backup before escalation.
 func TestNamedIn_DelegatesAndBackup_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.putWorkflow(t, "WF-1003", "Backed up", days(1), days(2), Level{ApproverIDs: []string{daniel.ID}, BackupApproverID: alex.ID})
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, "WF-1003")

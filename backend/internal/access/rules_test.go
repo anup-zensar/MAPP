@@ -17,6 +17,7 @@ import (
 // logged with their labels and texts; the Administrator role is never the role for new people (FR-019,
 // FR-023, FR-037, message 17).
 func TestUpdateRules_ChangedAndLogged_FR019_FR037(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.now = start.Add(time.Hour)
 	off, planner, admin := false, plannerID, administratorID
@@ -60,8 +61,13 @@ func TestUpdateRules_ChangedAndLogged_FR019_FR037(t *testing.T) {
 // While the rules were never saved, the defaults apply with version 0, and the first change saves them
 // (data model §1.3).
 func TestUpdateRules_FirstSaveFromDefaults_FR019(t *testing.T) {
+	t.Parallel()
 	service := newEmptyStoreService(t)
 	on := true
+	defaults, err := service.GetRules(t.Context(), alex)
+	if err != nil || defaults.Version != 0 || !defaults.NoSelfApproval || defaults.NewPersonRole != nil || defaults.UpdatedAt != nil {
+		t.Errorf("rules of an empty store = %+v, %v; want the defaults with version 0", defaults, err)
+	}
 
 	got, err := service.UpdateRules(t.Context(), alex, RulesUpdate{Version: version(0), NoSelfApproval: &on})
 	if err != nil || got.Version != 0 {
@@ -77,6 +83,7 @@ func TestUpdateRules_FirstSaveFromDefaults_FR019(t *testing.T) {
 // Recent access changes are the latest entries about roles, the access rules and people's roles, newest
 // first, at most 20; other changes of people are left out (FR-038, US7).
 func TestRecentChanges_AccessEntriesNewestFirst_FR038(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	analyst, _ := f.service.CreateRole(t.Context(), alex, RoleInput{Name: "Analyst", Permissions: []authz.Permission{authz.PlansView},
 		DefaultScope: authz.ScopeAll})

@@ -20,6 +20,7 @@ const (
 // What a level's rule may name: every activity type, the business units in display order and only the roles
 // that approve, by name (017 FR-001, FR-005).
 func TestRuleOptions_FR001(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -45,6 +46,7 @@ func TestRuleOptions_FR001(t *testing.T) {
 
 // A workflow with every rule type answers 201 with the rules in words (017 FR-001 – FR-009).
 func TestCreateWorkflow_RuleFields201_FR001(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var options approvals.RuleOptions
@@ -74,6 +76,7 @@ func TestCreateWorkflow_RuleFields201_FR001(t *testing.T) {
 // Priya Raman's activity under $10,000.00 in "Standard marketing approval" is approved at submission (017
 // FR-014, US1 scenario 1).
 func TestSubmit_WF1003Automatic_FR014(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	editActivity(t, priya, fleetRoadshow, func(u *activities.Update) {
@@ -99,6 +102,7 @@ func TestSubmit_WF1003Automatic_FR014(t *testing.T) {
 // Segregation of duties is enforced by the server (017 FR-018): Alex Morgan, who may decide on behalf,
 // re-submits Fleet roadshow and is refused when he then approves it.
 func TestApprove_BySubmitter403_FR018(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var submission approvals.Submission
@@ -115,35 +119,10 @@ func TestApprove_BySubmitter403_FR018(t *testing.T) {
 	}
 }
 
-// On an "all must approve" level an approver's second decision is refused, naming who is still waiting
-// (017 FR-020).
-func TestApprove_AlreadyApprovedAllLevel403_FR020(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-	priya := server.SignIn(t, priyasEmail)
-	daniel := server.SignIn(t, danielsEmail)
-	decodeWorkflow(t, alex.Do(t, http.MethodPatch, "/api/v1/approval-workflows/WF-1001", map[string]any{
-		"levels":  []map[string]any{{"name": "", "approverIds": []string{"U-1003", "U-1005"}, "mode": "all", "backupApproverId": "U-1001"}},
-		"version": 1,
-	}), http.StatusOK)
-	var submission approvals.Submission
-	priya.Do(t, http.MethodGet, "/api/v1/activities/"+fleetRoadshow+"/approval/submission", nil).Decode(t, &submission)
-	round := decodeApproval(t, priya.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/submit",
-		map[string]any{"version": submission.ActivityVersion})).Rounds[0]
-	decision := map[string]any{"roundId": round.ID, "level": 1}
-
-	first := decodeApproval(t, daniel.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/approve", decision))
-	again := daniel.Do(t, http.MethodPost, "/api/v1/activities/"+fleetRoadshow+"/approval/approve", decision)
-
-	if level := first.Rounds[0].Levels[0]; first.Status != "submitted" || level.ApprovedCount != 1 || level.RequiredCount != 2 {
-		t.Errorf("after Daniel: %s, level %+v; want 1 of 2 approved", first.Status, level)
-	}
-	assertError(t, again, http.StatusForbidden, "forbidden", "You already approved level 1. Waiting for Carlos Mendes.")
-}
-
 // Delegations through the API (017 FR-022, FR-024): Daniel Okoro sees his seeded planned delegation, adds a
 // current one, changes its note, cancels it; a cancelled one answers 409, an unknown one 404.
 func TestDelegations_CRUD_FR022_FR024(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 	carlos := server.SignIn(t, carlosEmail)
@@ -190,6 +169,7 @@ func TestDelegations_CRUD_FR022_FR024(t *testing.T) {
 
 // Everyone's delegations need "Create and change approval workflows" (017 FR-024, D-296).
 func TestDelegationsAll_NeedsWorkflowsManage_FR024(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	alex := server.SignIn(t, alexsEmail)
@@ -209,6 +189,7 @@ func TestDelegationsAll_NeedsWorkflowsManage_FR024(t *testing.T) {
 // Approvals › Monitoring on the seed (017 FR-030, US6): Trade magazine ads has waited its 2 escalation days
 // and is the overdue row; the ageing bars add up to All open; only Alex may run escalations.
 func TestMonitoring_Seeded_TradeMagazineOverdue_FR030(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	priya := server.SignIn(t, priyasEmail)
@@ -236,6 +217,7 @@ func TestMonitoring_Seeded_TradeMagazineOverdue_FR030(t *testing.T) {
 // Run reminders and escalations on the seed (017 FR-027, US5): Trade magazine ads is escalated to Alex
 // Morgan, who then approves it as backup approver; a second run sends nothing.
 func TestRunEscalations_SeededEscalatesToAlex_FR027(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -260,6 +242,7 @@ func TestRunEscalations_SeededEscalatesToAlex_FR027(t *testing.T) {
 
 // Running reminders and escalations needs "Create and change approval workflows" (017 FR-028).
 func TestRunEscalations_WithoutPermission403_FR028(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 

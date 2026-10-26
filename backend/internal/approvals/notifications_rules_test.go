@@ -14,6 +14,7 @@ import (
 // approve" level telling nobody is TestDecide_AllMustApprove_FR015; reminders and escalations are
 // TestRunEscalations_FR026_FR027_FR028_SC005.)
 func TestNotifications_RuleEvents_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addStandardFlow(t)
 	f.setManager(t, priya, daniel)
