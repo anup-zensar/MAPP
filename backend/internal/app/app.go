@@ -86,6 +86,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	signedIn := engine.Group(apiV1, authService.RequireSignIn, accessService.Authorize)
 	router := web.NewRouter(engine.Group("", authService.RequireSignIn, accessService.Authorize))
 	probeRoutes(engine, cfg, db)
 	auth.NewHandler(authService, peopleService).RegisterRoutes(engine.Group(apiV1))
@@ -196,7 +197,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 				return nil, err
 			}
 		}
-		samples.NewHandler(samplesService).Routes(router, unwrapped)
+		samples.NewHandler(samplesService).RegisterRoutes(signedIn)
 	}
 
 	// Activity approvals (008), built after activities and line items: approval actions are logged on the
@@ -246,7 +247,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	// Home (009): a read-only dashboard over the services of 003–008 and 011's activity log (home_sources.go).
 	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
 		approvalsService, historyService, settingsService.Rates))
-	home.NewHandler(homeService).Routes(router, unwrapped)
+	home.NewHandler(homeService).RegisterRoutes(signedIn)
 
 	// All work (010): a read-only view of a year over plans (004) and the records below them (005–007),
 	// read through the adapter allWorkSource (allwork_source.go), with its own personal settings — saved

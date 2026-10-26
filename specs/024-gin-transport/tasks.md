@@ -179,9 +179,9 @@ end-to-end suite green with no test expectation changed.
 
 Then change the area's line in `app.go` to `RegisterRoutes(signedIn)`. Its tests do not change.
 
-- [ ] T025 [P] [US1] ⏳022 Slice C1: `backend/internal/samples/handler.go`
-- [ ] T026 [P] [US1] ⏳022 Slice C1: `backend/internal/home/handler.go`
-- [ ] T027 [US1] ⏳022 Slice C1: wire samples and home in `backend/internal/app/app.go` — **checkpoint C1**
+- [x] T025 [P] [US1] ⏳022 Slice C1: `backend/internal/samples/handler.go`
+- [x] T026 [P] [US1] ⏳022 Slice C1: `backend/internal/home/handler.go`
+- [x] T027 [US1] ⏳022 Slice C1: wire samples and home in `backend/internal/app/app.go` — **checkpoint C1**
 - [ ] T028 [P] [US1] ⏳022 Slice C2: `backend/internal/history/handler.go`
 - [ ] T029 [P] [US1] ⏳022 Slice C2: `backend/internal/lineitems/handler.go`
 - [ ] T030 [P] [US1] ⏳022 Slice C2: `backend/internal/budgets/handler.go`
