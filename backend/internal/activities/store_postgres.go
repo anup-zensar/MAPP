@@ -42,6 +42,10 @@ func (s *PostgresStore) ListByInitiatives(ctx context.Context, initiativeIDs []s
 	return activitiesFromRows(s.records().ByParent(ctx, initiativeIDs))
 }
 
+func (s *PostgresStore) ListSplitFrom(ctx context.Context, activityID string) ([]Activity, error) {
+	return s.list(ctx, sqlcdb.ListActivitiesParams{SplitFromID: &activityID})
+}
+
 func (s *PostgresStore) ListInScope(ctx context.Context, scope authz.Scope) ([]Activity, error) {
 	return s.listInScope(ctx, scope, nil)
 }

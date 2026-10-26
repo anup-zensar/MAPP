@@ -20,6 +20,9 @@ type Source interface {
 	// columns are the column keys the view shows or sorts by: a value only other columns show (a plan's
 	// completeness, goals) may be left out, because the owning features work them out record by record.
 	Year(ctx context.Context, year int, today date.Date, columns []string) (YearData, error)
+	// PlanYear returns the nodes of the plan planID of year that Year would return, read without the other
+	// plans and without the GSAP figures: a plan's Budget by month needs neither.
+	PlanYear(ctx context.Context, planID string, year int, today date.Date) (YearData, error)
 	// Choices returns the values of the filters that do not come from the year's records: every team (the
 	// person's own marked Mine), the options of the plan-level Business unit attribute, every activity type
 	// and every person, active and inactive.
