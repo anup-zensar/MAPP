@@ -1,12 +1,5 @@
-// Command seed loads MAPP's demo data into an empty data folder (FR-028, research R22). From the
-// backend folder, with the API stopped:
-//
-//	go run ./cmd/seed                   # into DATA_DIR, or the folder "data"
-//	go run ./cmd/seed -data <folder>    # into another folder
-//	go run ./cmd/seed -reset            # delete the current data first
-//
-// The API reads its data folder only when it starts and would later overwrite the new files from its
-// memory, so the seed refuses to run while an API answers on APP_PORT. It never runs in production.
+// Command seed creates and migrates the database at DATABASE_URL and loads MAPP's demo data into it (FR-028):
+// go run ./cmd/seed, -reset to empty every table first, or -if-empty to leave a database with data alone.
 package main
 
 import (
@@ -15,17 +8,28 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"mapp/internal/app"
 	"mapp/internal/platform/clock"
-	"mapp/internal/platform/store"
+	"mapp/internal/platform/database"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
+
+// message is an error the person at the terminal reads as it is: a sentence, unlike Go's error strings.
+type message string
+
+func (m message) Error() string {
+	return string(m)
+}
+
+type options struct {
+	reset   bool
+	ifEmpty bool
+}
 
 func main() {
 	if err := run(os.Args[1:], os.Getenv, os.Stdout); err != nil {
@@ -34,54 +38,89 @@ func main() {
 	}
 }
 
-// run loads the demo data as the command-line arguments args and the environment (read with getenv) ask,
-// and prints what it did to out. It refuses, before changing anything, in production, while the API is
-// running, and when the folder already has data and -reset was not given.
 func run(args []string, getenv func(string) string, out io.Writer) error {
-	cfg, err := app.LoadConfig(getenv) // the API's own settings: APP_ENV, APP_PORT and DATA_DIR
+	cfg, err := app.LoadConfig(getenv)
 	if err != nil {
 		return err
 	}
-
-	// A wrong option stops the program with a description of the options, as Go's own tools do.
-	flags := flag.NewFlagSet("seed", flag.ExitOnError)
-	dataDir := flags.String("data", cfg.DataDir, "the data folder to load the demo data into")
-	reset := flags.Bool("reset", false, "delete the current data first (the folder's *.json, *.jsonl and *.tmp files)")
-	flags.Parse(args) // returns only when the options are right
-	if flags.NArg() > 0 {
-		return fmt.Errorf("Unexpected argument '%s' — the options are -data <folder> and -reset.", flags.Arg(0))
+	opts, err := parseArgs(args)
+	if err != nil {
+		return err
 	}
+	if err = refuse(cfg); err != nil {
+		return err
+	}
+	loaded, err := load(context.Background(), cfg.DatabaseURL, opts)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(out, loaded)
+	return err
+}
 
+func parseArgs(args []string) (options, error) {
+	flags := flag.NewFlagSet("seed", flag.ExitOnError)
+	reset := flags.Bool("reset", false, "empty every table first (this deletes the current data)")
+	ifEmpty := flags.Bool("if-empty", false, "leave a database that already has data as it is, and succeed")
+	_ = flags.Parse(args) // ExitOnError: a wrong option stops the program with a description of the options
+	if flags.NArg() > 0 {
+		return options{}, message(fmt.Sprintf("Unexpected argument '%s' — the options are -reset and -if-empty.", flags.Arg(0)))
+	}
+	if *reset && *ifEmpty {
+		return options{}, message("Choose -reset or -if-empty, not both.")
+	}
+	return options{reset: *reset, ifEmpty: *ifEmpty}, nil
+}
+
+func refuse(cfg app.Config) error {
 	if cfg.Env == "production" {
-		return errors.New("The demo data is never loaded when APP_ENV is production.")
+		return message("The demo data is never loaded when APP_ENV is production.")
 	}
 	if apiIsRunning(cfg.Port) {
-		return errors.New("The MAPP API is running — stop it, then run the seed again.")
+		return message("The MAPP API is running — stop it, then run the seed again.")
 	}
-	if *reset {
-		if err := deleteData(*dataDir); err != nil {
-			return err
-		}
-	}
-
-	db, err := store.Open(*dataDir) // creates the folder when it is missing
-	if err != nil {
-		return err
-	}
-	err = seed.Load(context.Background(), db, clock.System)
-	if errors.Is(err, seed.ErrNotEmpty) {
-		return fmt.Errorf("The data folder %s already has data. Run go run ./cmd/seed -reset to replace it (this deletes the current data).", *dataDir)
-	}
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(out, "Loaded the demo data into %s: %s.\n", *dataDir, seed.Loaded)
 	return nil
 }
 
-// apiIsRunning reports whether a MAPP API answers its liveness probe, GET /healthz, on port within one
-// second: 204 No Content. Another program that happens to use the port does not count, whatever it
-// answers — an error, or a web page with 200 OK.
+func load(ctx context.Context, url string, opts options) (string, error) {
+	db, err := prepare(ctx, url, opts.reset)
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+	err = seed.Load(ctx, stores.Postgres(db), clock.System)
+	switch {
+	case errors.Is(err, seed.ErrNotEmpty) && opts.ifEmpty:
+		return "The database already has data; it was left as it is.", nil
+	case errors.Is(err, seed.ErrNotEmpty):
+		return "", message("The database already has data. Run go run ./cmd/seed -reset to replace it (this deletes the current data).")
+	case err != nil:
+		return "", err
+	}
+	return fmt.Sprintf("Loaded the demo data: %s.", seed.Loaded), nil
+}
+
+func prepare(ctx context.Context, url string, reset bool) (*database.DB, error) {
+	if err := database.CreateIfMissing(ctx, url); err != nil {
+		return nil, message(fmt.Sprintf("The database at DATABASE_URL cannot be created (%v) — start PostgreSQL, "+
+			"with a role that may create databases.", err))
+	}
+	db, err := database.Open(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	err = database.Migrate(ctx, db)
+	if err == nil && reset {
+		err = database.Empty(ctx, db)
+	}
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	return db, nil
+}
+
+// apiIsRunning reports whether a MAPP API answers /healthz on port with 204; another program does not count.
 func apiIsRunning(port int) bool {
 	client := http.Client{Timeout: time.Second}
 	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/healthz", port), nil)
@@ -90,38 +129,8 @@ func apiIsRunning(port int) bool {
 	}
 	response, err := client.Do(request)
 	if err != nil {
-		return false // nothing answered
+		return false
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	return response.StatusCode == http.StatusNoContent
-}
-
-// deleteData deletes the data files in the folder dir: its *.json, *.jsonl and *.tmp files. Other files
-// and folders stay. A folder that does not exist has nothing to delete.
-func deleteData(dir string) error {
-	entries, err := os.ReadDir(dir)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		if entry.Type().IsRegular() && isDataFile(entry.Name()) {
-			if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// isDataFile reports whether name is a file of the JSON store: a table (.json), an append-only table
-// (.jsonl) or the temporary file of an interrupted save (.tmp).
-func isDataFile(name string) bool {
-	switch filepath.Ext(name) {
-	case ".json", ".jsonl", ".tmp":
-		return true
-	}
-	return false
 }

@@ -112,15 +112,12 @@ func ownedContainers(ctx context.Context, plansRepo plans.Repository, campaignsS
 	if ownerID == "" {
 		return list, nil
 	}
-	all, err := plansRepo.List(ctx)
+	all, err := plansRepo.ListInScope(ctx, authz.ScopeOf(ctx)) // only plans the person may see (014 FR-007)
 	if err != nil {
 		return nil, err
 	}
 	owns := func(id *string) bool { return id != nil && *id == ownerID }
 	for _, p := range all {
-		if !authz.CanView(ctx, plans.AccessFacts(p)) { // only plans the person may see (014 FR-007)
-			continue
-		}
 		tree, err := campaignsService.ListPlanCampaigns(ctx, a, p.ID)
 		if err != nil {
 			return nil, err

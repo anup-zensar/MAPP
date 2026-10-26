@@ -2,10 +2,12 @@
 
 The MAPP API: one Go program (module `mapp`, Go 1.27, standard library only at run time) with
 one package per business area. Every area follows the same pattern, **handler → service → repository**
-(ADR-0003), and keeps its data in a local JSON file store for now (ADR-0004); PostgreSQL comes later.
+(ADR-0003), and keeps its data in PostgreSQL 18 (ADR-0013): pgx, queries compiled by sqlc, goose migrations.
 
 A request goes through `web.Middleware` → the route's handler (behind `auth.RequireSignIn` when it needs a
-signed-in person) → the service, which holds every rule → a repository interface → the JSON store.
+signed-in person) → the service, which holds every rule → a repository interface → the area's
+`store_postgres.go`. The JSON file store remains only as the stand-in of the service, handler and contract
+tests, until feature 025 replaces it with fakes.
 The API contract is [api/openapi.yaml](api/openapi.yaml); the web app's types are generated from it.
 
 ## Commands
@@ -14,18 +16,39 @@ Run them in this folder (`backend/`).
 
 | Command | What it does |
 |---|---|
-| `go run ./cmd/seed` | Loads the demo data (people, teams, roles and access rules, Settings with dated exchange rates, plans with their campaigns, initiatives, activities and line items, approval workflows with rules and a delegation, a global budget with its allocations, simulated GSAP transactions, activity-log history and a recycle-bin entry, two saved All work views) into an empty data folder — stop the API first |
-| `go run ./cmd/seed -reset` | Deletes the data files (`*.json`, `*.jsonl`, `*.tmp`) and loads the demo data again |
-| `go run ./cmd/seed -data <folder>` | Uses another data folder |
+| `go run ./cmd/seed` | Creates the database of `DATABASE_URL` when it is missing, applies the migrations, and loads the demo data (people, teams, roles and access rules, Settings with dated exchange rates, plans with their campaigns, initiatives, activities and line items, approval workflows with rules and a delegation, a global budget with its allocations, simulated GSAP transactions, activity-log history and a recycle-bin entry, two saved All work views) into an empty database — stop the API first |
+| `go run ./cmd/seed -reset` | Applies the migrations, empties every table (`TRUNCATE`) and loads the demo data again |
+| `go run ./cmd/seed -if-empty` | Applies the migrations and loads the demo data only into an empty database; a database with data is left as it is, and the seed still succeeds |
 | `go run ./cmd/api` | Starts the API on <http://127.0.0.1:8080>, logging JSON lines on standard output; Ctrl+C or SIGTERM stops it once the requests in progress finish |
 | `gofmt -l .` | Lists files that are not formatted (prints nothing when all is well; `gofmt -w .` fixes them) |
 | `go vet ./...` | Finds suspicious code |
-| `go test ./...` | Runs every unit and contract test (one package: `go test ./internal/samples/`) |
+| `go test -short ./...` | Runs every unit and contract test; no database needed (one package: `go test -short ./internal/samples/`) |
+| `go test ./...` | Also runs the scope-isolation tests on the PostgreSQL server of `TEST_DATABASE_URL` |
+| `go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate` | Regenerates `internal/platform/database/sqlcdb` after a change to `queries/` or `migrations/` (`… vet` checks the queries) |
 
-The API reads the data folder only when it starts and would later overwrite new files from its memory, so
-the seed refuses to run while an API answers on its `APP_PORT` (if the API runs on another port, give the
-seed the same `APP_PORT`). `go test -race` needs a C compiler on Windows, which is
-not installed.
+The seed refuses to run while an API answers on its `APP_PORT` (if the API runs on another port, give the
+seed the same `APP_PORT`). The API never migrates: it stops with a message when the database is behind
+the latest migration, and `go run ./cmd/seed` applies it. `go test -race` needs a C compiler on Windows,
+which is not installed.
+
+### PostgreSQL
+
+PostgreSQL 18 on `127.0.0.1:5432`: `docker compose up -d postgres` from the repository root, or a native
+install with a role that may create databases (`createuser --createdb mapp`). The scope-isolation tests
+need the same: each copies its own database from a migrated template (`mapp_template_<hash>`) and drops it
+when it ends; migration `00013` creates the `btree_gist` extension, which a database's owner may create.
+
+```sh
+export DATABASE_URL='postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable'          # the API and the seed
+export TEST_DATABASE_URL='postgres://mapp@127.0.0.1:5432/postgres?sslmode=disable' # the scope-isolation tests
+```
+
+A test run that was killed can leave `mapp_test_*` databases behind, and templates of older migration sets
+stay too. To drop them all, with no test running:
+
+```sh
+psql "$TEST_DATABASE_URL" -Atc "SELECT format('DROP DATABASE %I WITH (FORCE);', datname) FROM pg_database WHERE datname LIKE 'mapp\_template\_%' OR datname LIKE 'mapp\_test\_%'" | psql "$TEST_DATABASE_URL"
+```
 
 ## Settings
 
@@ -35,7 +58,7 @@ Environment variables; an empty one counts as not set. Invalid values stop the A
 |---|---|---|
 | `APP_ENV` | `local`, `development` or `production`. Demo sign-in and the developer sample records exist only in `local` and `development` | `local` |
 | `APP_PORT` | Port number, 1–65535. There is no host setting: the API listens on `127.0.0.1` only | `8080` |
-| `DATA_DIR` | Folder of the JSON store (`data` is git-ignored) | `data` |
+| `DATABASE_URL` | The PostgreSQL database of the API and the seed; never written to logs or errors | `postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable` |
 | `DEMO_PASSWORD` | The password every demo person shares; may not be blank | `mapp` |
 | `LOG_LEVEL` | `debug`, `info`, `warn` or `error` | `info` |
 | `SHUTDOWN_TIMEOUT` | How long the requests in progress may take to finish when the API stops, 1s–60s | `10s` |
@@ -52,6 +75,7 @@ cmd/seed/             the demo-data loader (logic in run(), tested in main_test.
 seed/                 the demo dataset; every feature adds its own records here
 internal/
   app/                config.go (the settings above) and app.go (wiring) — the only package that knows all others
+  stores/             the store of every area and their Transactor: Postgres for the API and the seed, JSON for tests
   platform/           small shared helpers
     actor/            who is acting: Actor{ID, Name}; actor.With and actor.From on the context
     clock/            "now" as a function, so tests can fix the time
@@ -59,7 +83,9 @@ internal/
     web/              the Gin engine and its middleware; BindJSON, Respond and RespondError for handlers
     logging/          JSON log lines that carry the request ID, trace ID and actor ID
     telemetry/        OpenTelemetry tracing and metrics, exported to the console at most
-    store/            the JSON file store: transactions (Read, Write) and table helpers (Get, List, Put, …)
+    database/         PostgreSQL: Open, Migrate, Write (one at a time), Read (snapshot); migrations/, queries/, sqlcdb/, dbtest/
+    memo/             values worked out once per read-only transaction, such as Settings' forms
+    store/            the JSON file store, the tests' stand-in until feature 025: transactions and table helpers
     ids/              readable IDs such as SF-1001, from counters that only ever go up
     record/           record.Meta — version, created and updated by and at — with Touch and CheckVersion
     apitest/          test helper: the real API on a temporary data folder, every call checked against the contract

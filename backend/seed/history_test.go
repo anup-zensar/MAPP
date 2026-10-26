@@ -18,6 +18,7 @@ import (
 	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/store"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -398,7 +399,7 @@ func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
 func TestSeed_History_SeedTimeWithSeconds_011(t *testing.T) {
 	at := time.Date(2026, 10, 20, 7, 41, 38, 512_000_000, time.UTC)
 	db := openStore(t)
-	if err := seed.Load(t.Context(), db, func() time.Time { return at }); err != nil {
+	if err := seed.Load(t.Context(), stores.JSON(db), func() time.Time { return at }); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
 	entries, _ := demoLog(t, db)
@@ -416,7 +417,7 @@ func TestSeed_History_SeedTimeWithSeconds_011(t *testing.T) {
 // start empty and the deleted initiative takes no IDs (seed.WithoutHistory).
 func TestLoad_WithoutHistory_011(t *testing.T) {
 	db := openStore(t)
-	if err := seed.Load(t.Context(), db, fixedClock, seed.WithoutHistory()); err != nil {
+	if err := seed.Load(t.Context(), stores.JSON(db), fixedClock, seed.WithoutHistory()); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
 	entries, bin := demoLog(t, db)

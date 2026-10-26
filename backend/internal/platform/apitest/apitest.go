@@ -38,6 +38,7 @@ import (
 	"mapp/internal/app"
 	"mapp/internal/auth"
 	"mapp/internal/platform/store"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -103,7 +104,7 @@ func New(t testing.TB, opts ...Option) *Server {
 	}
 
 	// The API's own configuration code, with these environment variables.
-	variables := map[string]string{"APP_ENV": s.env, "DATA_DIR": s.dataDir}
+	variables := map[string]string{"APP_ENV": s.env}
 	cfg, err := app.LoadConfig(func(name string) string { return variables[name] })
 	if err != nil {
 		t.Fatalf("apitest: configuration: %v", err)
@@ -119,12 +120,12 @@ func New(t testing.TB, opts ...Option) *Server {
 		if s.withoutHistory {
 			seedOptions = append(seedOptions, seed.WithoutHistory())
 		}
-		err := seed.Load(t.Context(), db, server.clock, seedOptions...)
+		err = seed.Load(t.Context(), stores.JSON(db), server.clock, seedOptions...)
 		if err != nil && !errors.Is(err, seed.ErrNotEmpty) { // a folder with data is used as it is
 			t.Fatalf("apitest: loading the demo data: %v", err)
 		}
 	}
-	built, err := app.New(cfg, db, server.clock)
+	built, err := app.New(cfg, stores.JSON(db), server.clock)
 	if err != nil {
 		t.Fatalf("apitest: starting the API: %v", err)
 	}

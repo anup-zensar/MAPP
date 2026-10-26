@@ -54,7 +54,7 @@ var demoRoleAssignments = []struct {
 // addAccess creates the five roles, the demo people's roles and the access rules (segregation of duties on,
 // the Viewer role for new people) through the access repository, after the teams (FR-040, D-306).
 func (d *demo) addAccess(ctx context.Context) error {
-	repo := access.NewJSONRepository()
+	repo := d.stores.Access
 	roles := map[string]string{} // role name → ID
 	for _, r := range demoRoles {
 		id, err := d.next(ctx, ids.PrefixRole)

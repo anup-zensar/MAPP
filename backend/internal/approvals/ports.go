@@ -20,6 +20,8 @@ type Activities interface {
 	Activity(ctx context.Context, id string) (ActivityFacts, bool, error)
 	// List returns every stored activity.
 	List(ctx context.Context) ([]ActivityFacts, error)
+	// ListInScope returns the stored activities the scope sees (authz.Scope.SeesActivity).
+	ListInScope(ctx context.Context, scope authz.Scope) ([]ActivityFacts, error)
 	// SetStatus stores the activity's new status with record.Meta.Touch — a new version, last changed by a —
 	// and returns the activity as stored now. It writes no log entry: approvals writes it (FR-026).
 	SetStatus(ctx context.Context, a actor.Actor, id, status string) (ActivityFacts, error)

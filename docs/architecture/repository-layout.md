@@ -28,7 +28,7 @@ MAPP/
 ├── backend/                     Go API (module "mapp")
 │   ├── api/openapi.yaml         the API contract (source of truth) + embed.go             (001)
 │   ├── cmd/api/                 the API program                                           (001)
-│   ├── cmd/seed/                loads the demo data into an empty data folder             (001)
+│   ├── cmd/seed/                creates and migrates the database, loads the demo data    (001, 023)
 │   ├── seed/                    the demo dataset; every feature adds its records          (001+)
 │   ├── internal/
 │   │   ├── app/                 configuration and wiring: the only package that knows every other   (001)
@@ -37,7 +37,9 @@ MAPP/
 │   │   │   ├── clock/           "now", replaceable in tests
 │   │   │   ├── errs/            the one error format and its codes
 │   │   │   ├── web/             JSON in/out, errors to HTTP, middleware
-│   │   │   ├── store/           the JSON file store and the Transactor interface
+│   │   │   ├── database/        PostgreSQL: pool, migrations, queries, sqlcdb, dbtest     (023)
+│   │   │   ├── memo/            values kept for the rest of a read-only transaction       (023)
+│   │   │   ├── store/           the Transactor interface; the JSON file store, tests only until 025
 │   │   │   ├── ids/             readable IDs (P-1001 …)
 │   │   │   ├── record/          version and created/updated bookkeeping
 │   │   │   └── apitest/         contract-test helper (tests only)
@@ -51,10 +53,10 @@ MAPP/
 │   │   ├── activities/          activities                                                   (006)
 │   │   ├── lineitems/           line items and spreads                                       (007)
 │   │   ├── approvals/           approval workflows, approvals, notifications                 (008)
+│   │   ├── stores/              every area's store and the Transactor: Postgres, or JSON for tests (023)
 │   │   └── views/               cross-plan queries for All work                              (010)
-│   │       each business package:  model.go · repository.go · store_json.go · service.go ·
-│   │                               service_test.go · handler.go · handler_test.go
-│   └── data/                    local JSON store — git-ignored
+│   │       each business package:  model.go · repository.go · store_postgres.go · store_json.go ·
+│   │                               service.go · service_test.go · handler.go · handler_test.go
 └── frontend/                    React + TypeScript web app
     ├── src/
     │   ├── app/                 routes, layout (sidebar, account menu, bell, theme), session          (001)

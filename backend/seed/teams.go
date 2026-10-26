@@ -21,7 +21,7 @@ var demoTeams = []struct {
 // addTeams creates the three demo teams and their eight memberships through the people repository. No
 // preferences are seeded: everyone starts with USD and DD MMM YYYY.
 func (d *demo) addTeams(ctx context.Context) error {
-	repo := people.NewJSONRepository()
+	repo := d.stores.People
 	d.teams = map[string]string{}
 	for _, t := range demoTeams {
 		teamID, err := d.next(ctx, ids.PrefixTeam)

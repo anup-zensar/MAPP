@@ -30,20 +30,6 @@ func AccessFacts(p Plan) authz.PlanFacts {
 	return authz.PlanFacts{ID: p.ID, TeamIDs: slices.Clone(p.TeamIDs), OwnerID: p.OwnerID, CreatedByID: p.CreatedBy.ID}
 }
 
-// visible keeps the plans the person acting can see (014 FR-007): every plan for an internal call.
-func visible(ctx context.Context, list []Plan) []Plan {
-	if _, restricted := authz.From(ctx); !restricted {
-		return list
-	}
-	shown := make([]Plan, 0, len(list))
-	for _, p := range list {
-		if authz.CanView(ctx, AccessFacts(p)) {
-			shown = append(shown, p)
-		}
-	}
-	return shown
-}
-
 // checkTeams adds the problems of the Teams field when a person whose permission p (plans.create or
 // plans.edit) is not for All markets saves the plan with the teams after (014 FR-013, Edge cases): a team
 // added that is not one of theirs; or no team of theirs left on the plan, which they could then no longer

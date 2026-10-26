@@ -3,6 +3,7 @@ package plans
 import (
 	"context"
 
+	"mapp/internal/platform/authz"
 	"mapp/internal/platform/store"
 )
 
@@ -33,6 +34,21 @@ func (jsonRepository) List(ctx context.Context) ([]Plan, error) {
 		plans[i] = p.Normalised()
 	}
 	return plans, err
+}
+
+// ListInScope reads every plan and keeps those the scope sees, as plan_in_scope() does in SQL.
+func (r jsonRepository) ListInScope(ctx context.Context, scope authz.Scope) ([]Plan, error) {
+	all, err := r.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	seen := []Plan{}
+	for _, p := range all {
+		if scope.Sees(AccessFacts(p)) {
+			seen = append(seen, p)
+		}
+	}
+	return seen, nil
 }
 
 // PlansOfYear reads every plan to find those of one year: quick for the plans of a demo. PostgreSQL would

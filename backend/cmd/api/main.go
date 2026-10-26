@@ -19,8 +19,9 @@ import (
 
 	"mapp/internal/app"
 	"mapp/internal/platform/clock"
+	"mapp/internal/platform/database"
 	"mapp/internal/platform/logging"
-	"mapp/internal/platform/store"
+	"mapp/internal/stores"
 )
 
 func main() {
@@ -40,11 +41,12 @@ func run(ctx context.Context) error {
 		return err
 	}
 	slog.SetDefault(logging.New(os.Stdout, cfg.LogLevel))
-	db, err := store.Open(cfg.DataDir)
+	db, err := openDatabase(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
-	api, err := app.New(cfg, db, clock.System)
+	defer db.Close()
+	api, err := app.New(cfg, stores.Postgres(db), clock.System)
 	if err != nil {
 		return err
 	}
@@ -58,6 +60,29 @@ func run(ctx context.Context) error {
 	closing, cancel := context.WithTimeout(context.WithoutCancel(ctx), cfg.ShutdownTimeout)
 	defer cancel()
 	return errors.Join(served, api.Close(closing))
+}
+
+type message string
+
+func (m message) Error() string {
+	return string(m)
+}
+
+func openDatabase(ctx context.Context, url string) (*database.DB, error) {
+	db, err := database.Open(ctx, url)
+	if err != nil {
+		return nil, message(fmt.Sprintf("The database at DATABASE_URL cannot be reached (%v) — start PostgreSQL, "+
+			"then run go run ./cmd/seed.", err))
+	}
+	pending, err := database.HasPending(ctx, db)
+	if err == nil && pending {
+		err = message("The database is behind the latest migration — run go run ./cmd/seed first.")
+	}
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	return db, nil
 }
 
 // listen opens port on 127.0.0.1 only, so that other computers cannot reach the API.

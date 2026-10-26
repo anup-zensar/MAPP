@@ -682,8 +682,14 @@ func TestMemo_OncePerTransaction_ForgottenOnChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Read: %v", err)
 	}
-	if _, err := Memo(t.Context(), "store.test:outside", count); !errors.Is(err, ErrNoTransaction) {
-		t.Errorf("Memo outside a transaction = %v, want ErrNoTransaction", err)
+	outside := 0
+	for range 2 {
+		if _, err := Memo(t.Context(), "store.test:outside", func(context.Context) (int, error) { outside++; return outside, nil }); err != nil {
+			t.Errorf("Memo outside a transaction: %v", err)
+		}
+	}
+	if outside != 2 {
+		t.Errorf("loads outside a transaction = %d, want 2 (nothing is kept)", outside)
 	}
 }
 

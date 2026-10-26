@@ -1,5 +1,5 @@
-// Package store is MAPP's JSON file store: the storage behind every repository until PostgreSQL
-// replaces it (ADR-0004, research R3).
+// Package store is MAPP's JSON file store, since feature 023 only the stand-in of service, handler and
+// contract tests; feature 025 replaces it with fakes and deletes it (ADR-0013). Transactor stays until then.
 //
 // Every record type is a table. A normal table is kept in memory and saved as <data folder>/<table>.json:
 // an object of records keyed by id, indented so that people can read it. An append-only table (the
@@ -45,6 +45,7 @@ import (
 	"time"
 
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/memo"
 )
 
 // Transactor runs work in transactions. Services depend on this interface, never on the JSON store.
@@ -324,7 +325,7 @@ func List[T any](ctx context.Context, table string) ([]T, error) {
 	if t.writable {
 		return decodeTable[T](t, table)
 	}
-	list, err := memo(ctx, t, listKey{table: table, record: reflect.TypeFor[T]()},
+	list, err := memoIn(ctx, t, listKey{table: table, record: reflect.TypeFor[T]()},
 		func(context.Context) ([]T, error) { return decodeTable[T](t, table) })
 	if err != nil {
 		return nil, err
@@ -397,17 +398,17 @@ func Append(ctx context.Context, table string, record any) error {
 // Every change in a Write (Put, Delete, Append) forgets all memos, so a memo never outlives the data it
 // was worked out from; an error is not kept. Every caller in the transaction gets the same value, so
 // callers must treat it as read-only. Keys are named after their package, such as "settings.form:plan".
+// Outside a transaction of this store, such as one on PostgreSQL, memo.Get keeps it.
 func Memo[T any](ctx context.Context, key string, load func(ctx context.Context) (T, error)) (T, error) {
 	t, ok := ctx.Value(txKey{}).(*tx)
 	if !ok {
-		var zero T
-		return zero, ErrNoTransaction
+		return memo.Get(ctx, key, load)
 	}
-	return memo(ctx, t, key, load)
+	return memoIn(ctx, t, key, load)
 }
 
-// memo is Memo in the transaction t, for any comparable key.
-func memo[T any](ctx context.Context, t *tx, key any, load func(ctx context.Context) (T, error)) (T, error) {
+// memoIn is Memo in the transaction t, for any comparable key.
+func memoIn[T any](ctx context.Context, t *tx, key any, load func(ctx context.Context) (T, error)) (T, error) {
 	var zero T
 	t.memoMu.Lock()
 	cached, found := t.memo[key]
