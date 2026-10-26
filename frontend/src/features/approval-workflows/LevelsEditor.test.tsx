@@ -29,8 +29,8 @@ const TWO: LevelDraft[] = [
 
 function renderEditor(start: LevelDraft[], problems?: FieldProblem[]) {
   const api = mockApi({
-    'GET /api/people': PEOPLE,
-    'GET /api/approval-rule-options': RULE_OPTIONS,
+    'GET /api/v1/people': PEOPLE,
+    'GET /api/v1/approval-rule-options': RULE_OPTIONS,
   });
   return {
     ...renderWithProviders(<Harness start={start} problems={problems} />, { user: testUser() }),
@@ -90,7 +90,7 @@ describe('LevelsEditor (feature 008, US4)', () => {
       },
     ]);
     // Nothing in a level of named people needs the rules' choices.
-    expect(api.requests.some((r) => r.path === '/api/approval-rule-options')).toBe(false);
+    expect(api.requests.some((r) => r.path === '/api/v1/approval-rule-options')).toBe(false);
   });
 
   it('shows each level problem at its field (FR-003)', async () => {

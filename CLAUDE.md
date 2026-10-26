@@ -59,8 +59,8 @@ Software Design & Construction Policy and SEMS, which are mandatory.
     Shell's exact values — Primary Yellow `#FFC600` (hover `#FFCB14`, press `#EBB600`), Secondary Red
     `#DD1D21`, and the light and dark theme tokens listed there. Yellow means "act here" or "you are
     here"; red only for danger and errors; respect the contrast limits listed with the palette.
-    `docs/product/design-system.md` and `tokens.css` still hold older values (for example `#FFC800`)
-    until they are aligned; the constitution's values win.
+    `tokens.css` and `docs/product/design-system.md` §3.1 carry these values (feature 020); on a grey
+    background secondary text, links and red text switch to Text Strong (`--ink-2: var(--ink)`).
 13. **Out of scope:** the Finance budgets module, purchase requests, accrual calculation, Measure, live
     GSAP integration, e-mail, real sign-in (SSO), AI. Do not build them. GSAP rates and transactions come
     only from simulated feeds behind adapters (ADR-0009).

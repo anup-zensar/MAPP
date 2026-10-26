@@ -42,23 +42,23 @@ describe('settingsQueries (feature 002)', () => {
 
   it('reads the lists from the API', async () => {
     const api = mockApi({
-      'GET /api/models': { body: { items: [], total: 2 } },
-      'GET /api/currencies': { body: { items: [], total: 5 } },
-      'GET /api/finance-budgets': { body: { year: 2026, years: [2026], items: [] } },
+      'GET /api/v1/models': { body: { items: [], total: 2 } },
+      'GET /api/v1/currencies': { body: { items: [], total: 5 } },
+      'GET /api/v1/finance-budgets': { body: { year: 2026, years: [2026], items: [] } },
     });
     renderWithProviders(<Lists />);
 
     expect(await screen.findByText('models 2, currencies 5')).toBeInTheDocument();
-    expect(api.requests.find((request) => request.path === '/api/finance-budgets')?.search).toBe(
+    expect(api.requests.find((request) => request.path === '/api/v1/finance-budgets')?.search).toBe(
       '?year=2026',
     );
   });
 
   it('asks for the attribute form again every time a form opens (SC-008)', async () => {
-    const api = mockApi({ 'GET /api/shell-attribute-forms/campaign': { body: campaignForm() } });
+    const api = mockApi({ 'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() } });
     const { user } = renderWithProviders(<OpenAndClose />);
     const asked = () =>
-      api.requests.filter((request) => request.path === '/api/shell-attribute-forms/campaign');
+      api.requests.filter((request) => request.path === '/api/v1/shell-attribute-forms/campaign');
 
     expect(await screen.findByText('sections: 2')).toBeInTheDocument();
     expect(asked()).toHaveLength(1);

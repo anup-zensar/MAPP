@@ -20,13 +20,13 @@ const (
 
 // The bodies of the API's refusals about people.
 const (
-	personGoneBody         = `{"code":"not_found","message":"This person doesn't exist.","fields":[]}`
-	noSuchPathBody         = `{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}`
-	incorrectSignInBody    = `{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}`
-	deactivateYourselfBody = `{"code":"not_allowed","message":"You can't deactivate yourself — ask someone else to do it.","fields":[]}`
+	personGoneBody         = `{"error":{"code":"not_found","message":"This person doesn't exist.","fields":[]}}`
+	noSuchPathBody         = `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`
+	incorrectSignInBody    = `{"error":{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}}`
+	deactivateYourselfBody = `{"error":{"code":"not_allowed","message":"You can't deactivate yourself — ask someone else to do it.","fields":[]}}`
 )
 
-// Every person picker filters GET /api/people in the browser (D-069), so the list gives everyone with what
+// Every person picker filters GET /api/v1/people in the browser (D-069), so the list gives everyone with what
 // the picker matches and shows — name, e-mail, job title, initials — whether they are active (inactive
 // people are never offered but are labelled where a field holds them) and their teams, for the
 // team-restricted mode (FR-017, FR-018, FR-019).
@@ -34,10 +34,10 @@ func TestListPeople_GivesPickerData_FR017_FR018(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/people", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/people", nil)
 
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/people = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/people = %d %s", response.Status, response.Body)
 	}
 	var page people.PersonPage
 	response.Decode(t, &page)
@@ -66,8 +66,8 @@ func TestGetPerson_DetailsOrNotFound_FR004(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	found := alex.Do(t, http.MethodGet, "/api/people/U-1005", nil)
-	missing := alex.Do(t, http.MethodGet, "/api/people/U-9999", nil)
+	found := alex.Do(t, http.MethodGet, "/api/v1/people/U-1005", nil)
+	missing := alex.Do(t, http.MethodGet, "/api/v1/people/U-9999", nil)
 
 	var carlos people.PersonDetails
 	found.Decode(t, &carlos)
@@ -77,7 +77,7 @@ func TestGetPerson_DetailsOrNotFound_FR004(t *testing.T) {
 	}
 	if found.Status != http.StatusOK || carlos.Name != "Carlos Mendes" || !slices.Equal(carlos.Teams, wantTeams) ||
 		carlos.Usage == nil || carlos.Version != 1 {
-		t.Errorf("GET /api/people/U-1005 = %d %s", found.Status, found.Body)
+		t.Errorf("GET /api/v1/people/U-1005 = %d %s", found.Status, found.Body)
 	}
 	assertAnswer(t, missing, http.StatusNotFound, personGoneBody)
 }
@@ -88,11 +88,11 @@ func TestDeleteNotOffered_FR008(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodDelete, "/api/people/U-1002", nil, apitest.SkipValidation())
+	response := alex.Do(t, http.MethodDelete, "/api/v1/people/U-1002", nil, apitest.SkipValidation())
 
 	assertAnswer(t, response, http.StatusNotFound, noSuchPathBody)
-	if still := alex.Do(t, http.MethodGet, "/api/people/U-1002", nil); still.Status != http.StatusOK {
-		t.Errorf("GET /api/people/U-1002 after DELETE = %d %s", still.Status, still.Body)
+	if still := alex.Do(t, http.MethodGet, "/api/v1/people/U-1002", nil); still.Status != http.StatusOK {
+		t.Errorf("GET /api/v1/people/U-1002 after DELETE = %d %s", still.Status, still.Body)
 	}
 }
 
@@ -102,11 +102,11 @@ func TestCreatePerson_CreatedOrRefused_FR001_FR002(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	created := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": " Jane Doe ",
+	created := alex.Do(t, http.MethodPost, "/api/v1/people", map[string]any{"name": " Jane Doe ",
 		"email": " Jane.Doe@Shell.Com", "jobTitle": "Marketer", "teamIds": []string{"T-1001"}})
-	refused := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": " ",
+	refused := alex.Do(t, http.MethodPost, "/api/v1/people", map[string]any{"name": " ",
 		"email": "PRIYA.raman@shell.com", "jobTitle": strings.Repeat("j", 121), "teamIds": []string{"T-9999"}})
-	invalidEmail := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Jane", "email": "jane@shell"})
+	invalidEmail := alex.Do(t, http.MethodPost, "/api/v1/people", map[string]any{"name": "Jane", "email": "jane@shell"})
 
 	assertAnswer(t, created, http.StatusCreated, `{"id":"U-1007","name":"Jane Doe","email":"jane.doe@shell.com",`+
 		`"jobTitle":"Marketer","initials":"JD","active":true,`+
@@ -134,11 +134,11 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 	update := map[string]any{"name": "Jane Smith", "email": "jane.smith@shell.com", "jobTitle": "Marketer",
 		"teamIds": []string{"T-1001"}, "version": 1}
 
-	changed := priya.Do(t, http.MethodPatch, "/api/people/"+jane.ID, update)
-	outOfDate := alex.Do(t, http.MethodPatch, "/api/people/"+jane.ID, update)
-	invalid := alex.Do(t, http.MethodPatch, "/api/people/"+jane.ID, map[string]any{"name": "",
+	changed := priya.Do(t, http.MethodPatch, "/api/v1/people/"+jane.ID, update)
+	outOfDate := alex.Do(t, http.MethodPatch, "/api/v1/people/"+jane.ID, update)
+	invalid := alex.Do(t, http.MethodPatch, "/api/v1/people/"+jane.ID, map[string]any{"name": "",
 		"email": "jane.smith@", "jobTitle": "", "teamIds": []string{}}, apitest.SkipRequestValidation())
-	missing := alex.Do(t, http.MethodPatch, "/api/people/U-9999", update)
+	missing := alex.Do(t, http.MethodPatch, "/api/v1/people/U-9999", update)
 
 	var person people.PersonDetails
 	changed.Decode(t, &person)
@@ -146,9 +146,9 @@ func TestUpdatePerson_ChangedConflictInvalidOrNotFound_FR002(t *testing.T) {
 		person.Version != 2 || len(person.Teams) != 1 || person.UpdatedBy.Name != "Priya Raman" {
 		t.Errorf("PATCH = %d %s", changed.Status, changed.Body)
 	}
-	assertAnswer(t, outOfDate, http.StatusConflict, `{"code":"version_conflict",`+
+	assertAnswer(t, outOfDate, http.StatusConflict, `{"error":{"code":"version_conflict",`+
 		`"message":"Not saved — Priya Raman changed this person","fields":[],`+
-		`"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}`)
+		`"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a name."},`+
 		`{"field":"email","message":"Enter a valid e-mail address."},`+
 		`{"field":"version","message":"Reload the page and try again."}`))
@@ -163,16 +163,16 @@ func TestPersonImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail, "teamIds": []string{"T-1001"}})
 	form := map[string]any{"name": "Jane Doe", "email": janesEmail, "jobTitle": "", "teamIds": []string{}, "version": 1}
 
-	impact := alex.Do(t, http.MethodPost, "/api/people/"+jane.ID+"/impact", form)
+	impact := alex.Do(t, http.MethodPost, "/api/v1/people/"+jane.ID+"/impact", form)
 	form["email"] = "jane"
-	invalid := alex.Do(t, http.MethodPost, "/api/people/"+jane.ID+"/impact", form)
-	missing := alex.Do(t, http.MethodPost, "/api/people/U-9999/impact", form)
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/people/"+jane.ID+"/impact", form)
+	missing := alex.Do(t, http.MethodPost, "/api/v1/people/U-9999/impact", form)
 
 	assertAnswer(t, impact, http.StatusOK, `{"warnings":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"email","message":"Enter a valid e-mail address."}`))
 	assertAnswer(t, missing, http.StatusNotFound, personGoneBody)
 	var person people.PersonDetails
-	alex.Do(t, http.MethodGet, "/api/people/"+jane.ID, nil).Decode(t, &person)
+	alex.Do(t, http.MethodGet, "/api/v1/people/"+jane.ID, nil).Decode(t, &person)
 	if person.Version != 1 || len(person.Teams) != 1 {
 		t.Errorf("after the impact check the person = %+v, want them unchanged", person)
 	}
@@ -184,14 +184,14 @@ func TestSetPersonStatus_InactiveAndBack_FR005_FR007(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail, "teamIds": []string{"T-1001"}})
-	path := "/api/people/" + jane.ID + "/status"
+	path := "/api/v1/people/" + jane.ID + "/status"
 
 	var inactive, active people.PersonDetails
 	alex.Do(t, http.MethodPost, path, map[string]any{"active": false, "version": 1}).Decode(t, &inactive)
 	alex.Do(t, http.MethodPost, path, map[string]any{"active": true, "version": 2}).Decode(t, &active)
 	incomplete := alex.Do(t, http.MethodPost, path, map[string]any{}, apitest.SkipRequestValidation())
 	outOfDate := alex.Do(t, http.MethodPost, path, map[string]any{"active": false, "version": 1})
-	missing := alex.Do(t, http.MethodPost, "/api/people/U-9999/status", map[string]any{"active": false, "version": 1})
+	missing := alex.Do(t, http.MethodPost, "/api/v1/people/U-9999/status", map[string]any{"active": false, "version": 1})
 
 	if inactive.Active || inactive.Version != 2 || len(inactive.Teams) != 1 ||
 		!active.Active || active.Version != 3 || len(active.Teams) != 1 {
@@ -212,11 +212,11 @@ func TestDeactivateYourself_409NotAllowed_FR006(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodPost, "/api/people/U-1001/status", map[string]any{"active": false, "version": 1})
+	response := alex.Do(t, http.MethodPost, "/api/v1/people/U-1001/status", map[string]any{"active": false, "version": 1})
 
 	assertAnswer(t, response, http.StatusConflict, deactivateYourselfBody)
 	var me people.PersonDetails
-	still := alex.Do(t, http.MethodGet, "/api/people/U-1001", nil)
+	still := alex.Do(t, http.MethodGet, "/api/v1/people/U-1001", nil)
 	still.Decode(t, &me)
 	if !me.Active || me.Version != 1 {
 		t.Errorf("Alex after the refusal = %d %s, want active at version 1", still.Status, still.Body)
@@ -230,13 +230,13 @@ func TestNewPersonCanSignIn_FR003(t *testing.T) {
 
 	offered := slices.Contains(demoEmails(t, server), janesEmail)
 	jane := server.SignIn(t, janesEmail)
-	me := jane.Do(t, http.MethodGet, "/api/me", nil)
+	me := jane.Do(t, http.MethodGet, "/api/v1/me", nil)
 
 	if !offered {
 		t.Errorf("the sign-in page does not offer %s", janesEmail)
 	}
 	if me.Status != http.StatusOK || !strings.Contains(string(me.Body), `"name":"Jane Doe"`) {
-		t.Errorf("GET /api/me as the new person = %d %s", me.Status, me.Body)
+		t.Errorf("GET /api/v1/me as the new person = %d %s", me.Status, me.Body)
 	}
 }
 
@@ -249,8 +249,8 @@ func TestDeactivatedPersonCannotSignInAndSessionEnds_FR005(t *testing.T) {
 	janesSession := server.SignIn(t, janesEmail)
 
 	setStatus(t, alex, jane.ID, false, 1)
-	next := janesSession.Do(t, http.MethodGet, "/api/people", nil)
-	signIn := server.Do(t, http.MethodPost, "/api/auth/sign-in", map[string]string{"email": janesEmail, "password": demoPassword(t, server)})
+	next := janesSession.Do(t, http.MethodGet, "/api/v1/people", nil)
+	signIn := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", map[string]string{"email": janesEmail, "password": demoPassword(t, server)})
 
 	assertAnswer(t, next, http.StatusUnauthorized, signInRequiredBody)
 	assertAnswer(t, signIn, http.StatusUnauthorized, incorrectSignInBody)
@@ -267,13 +267,13 @@ func TestReactivatedPersonCanSignIn_FR007_SC004(t *testing.T) {
 	setStatus(t, alex, jane.ID, false, 1)
 
 	back := setStatus(t, alex, jane.ID, true, 2)
-	me := server.SignIn(t, janesEmail).Do(t, http.MethodGet, "/api/me", nil)
+	me := server.SignIn(t, janesEmail).Do(t, http.MethodGet, "/api/v1/me", nil)
 
 	if !back.Active || len(back.Teams) != 1 || back.Teams[0].ID != "T-1001" {
 		t.Errorf("reactivated person = %+v, want active in Lubricants Europe", back)
 	}
 	if me.Status != http.StatusOK {
-		t.Errorf("GET /api/me after reactivation = %d %s", me.Status, me.Body)
+		t.Errorf("GET /api/v1/me after reactivation = %d %s", me.Status, me.Body)
 	}
 }
 
@@ -286,10 +286,10 @@ func TestPeopleManagedWithPeopleManage_FR027(t *testing.T) {
 	daniel := server.SignIn(t, danielsEmail)
 	change := map[string]any{"name": "Jane Doe", "email": janesEmail, "jobTitle": "Brand manager", "teamIds": []string{"T-1002"}, "version": 1}
 
-	refused := daniel.Do(t, http.MethodPatch, "/api/people/"+jane.ID, change)
-	read := daniel.Do(t, http.MethodGet, "/api/people/"+jane.ID, nil)
-	assertAnswer(t, refused, http.StatusForbidden, `{"code":"forbidden","message":"Changing people and teams isn't part of `+
-		`your roles (Approver, Planner). Ask an administrator if you need it.","fields":[]}`)
+	refused := daniel.Do(t, http.MethodPatch, "/api/v1/people/"+jane.ID, change)
+	read := daniel.Do(t, http.MethodGet, "/api/v1/people/"+jane.ID, nil)
+	assertAnswer(t, refused, http.StatusForbidden, `{"error":{"code":"forbidden","message":"Changing people and teams isn't part of `+
+		`your roles (Approver, Planner). Ask an administrator if you need it.","fields":[]}}`)
 	var unchanged people.PersonDetails
 	read.Decode(t, &unchanged)
 	if read.Status != http.StatusOK || unchanged.Version != 1 || unchanged.JobTitle != "" {
@@ -297,7 +297,7 @@ func TestPeopleManagedWithPeopleManage_FR027(t *testing.T) {
 	}
 
 	server.GrantRole(t, danielsEmail, "administrator", "all")
-	edited := daniel.Do(t, http.MethodPatch, "/api/people/"+jane.ID, change)
+	edited := daniel.Do(t, http.MethodPatch, "/api/v1/people/"+jane.ID, change)
 	inactive := setStatus(t, daniel, jane.ID, false, 2)
 	active := setStatus(t, daniel, jane.ID, true, 3)
 
@@ -311,25 +311,25 @@ func TestPeopleManagedWithPeopleManage_FR027(t *testing.T) {
 	}
 }
 
-// createPerson creates a person through POST /api/people and stops the test when that fails.
+// createPerson creates a person through POST /api/v1/people and stops the test when that fails.
 func createPerson(t *testing.T, client *apitest.Client, body map[string]any) people.PersonDetails {
 	t.Helper()
-	response := client.Do(t, http.MethodPost, "/api/people", body)
+	response := client.Do(t, http.MethodPost, "/api/v1/people", body)
 	if response.Status != http.StatusCreated {
-		t.Fatalf("POST /api/people %v = %d %s", body, response.Status, response.Body)
+		t.Fatalf("POST /api/v1/people %v = %d %s", body, response.Status, response.Body)
 	}
 	var person people.PersonDetails
 	response.Decode(t, &person)
 	return person
 }
 
-// setStatus deactivates (active false) or reactivates the person id through POST /api/people/{id}/status
+// setStatus deactivates (active false) or reactivates the person id through POST /api/v1/people/{id}/status
 // from version, and stops the test when that fails.
 func setStatus(t *testing.T, client *apitest.Client, id string, active bool, version int) people.PersonDetails {
 	t.Helper()
-	response := client.Do(t, http.MethodPost, "/api/people/"+id+"/status", map[string]any{"active": active, "version": version})
+	response := client.Do(t, http.MethodPost, "/api/v1/people/"+id+"/status", map[string]any{"active": active, "version": version})
 	if response.Status != http.StatusOK {
-		t.Fatalf("POST /api/people/%s/status active=%t = %d %s", id, active, response.Status, response.Body)
+		t.Fatalf("POST /api/v1/people/%s/status active=%t = %d %s", id, active, response.Status, response.Body)
 	}
 	var person people.PersonDetails
 	response.Decode(t, &person)
@@ -340,7 +340,7 @@ func setStatus(t *testing.T, client *apitest.Client, id string, active bool, ver
 func demoSignIn(t *testing.T, server *apitest.Server) auth.DemoPeople {
 	t.Helper()
 	var demo auth.DemoPeople
-	server.Do(t, http.MethodGet, "/api/auth/demo-people", nil).Decode(t, &demo)
+	server.Do(t, http.MethodGet, "/api/v1/auth/demo-people", nil).Decode(t, &demo)
 	return demo
 }
 

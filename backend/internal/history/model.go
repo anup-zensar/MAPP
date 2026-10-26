@@ -191,7 +191,7 @@ type RestoreResult struct {
 	Details         string `json:"details"`    // the restore's notes, such as "Renamed to … because the name was taken."; "" when none
 }
 
-// LogPage is the answer of GET /api/activity-log (ActivityLogPage): the newest matching entries, how many
+// LogPage is the answer of GET /api/v1/activity-log (ActivityLogPage): the newest matching entries, how many
 // entries match in all, how many the whole log holds, and the record the query names.
 type LogPage struct {
 	Items           []EntryView `json:"items"`
@@ -228,7 +228,7 @@ type RecordNow struct {
 	BinEntryID string      `json:"binEntryId"` // the recycle-bin entry holding it; "" otherwise
 }
 
-// LogSummary is the answer of GET /api/activity-log/summary (ActivityLogSummary): the summary cards of the
+// LogSummary is the answer of GET /api/v1/activity-log/summary (ActivityLogSummary): the summary cards of the
 // activity log, counted over the whole log (011 FR-002), and the choices of its filters (FR-003).
 type LogSummary struct {
 	ChangesToday         int               `json:"changesToday"`
@@ -248,7 +248,7 @@ type RecordTypeCount struct {
 	Count int    `json:"count"`
 }
 
-// BinPage is the answer of GET /api/recycle-bin (RecycleBinPage): everything in the recycle bin, newest
+// BinPage is the answer of GET /api/v1/recycle-bin (RecycleBinPage): everything in the recycle bin, newest
 // first.
 type BinPage struct {
 	Items []BinListItem `json:"items"`
@@ -293,7 +293,7 @@ type BinRecord struct {
 	ParentID        string `json:"parentId"` // "" for top-level records
 }
 
-// RestorePreview is the answer of GET /api/recycle-bin/{entryId}/restore-preview: what a restore would do,
+// RestorePreview is the answer of GET /api/v1/recycle-bin/{entryId}/restore-preview: what a restore would do,
 // worked out by doing it and throwing the result away (011 FR-018, D-177).
 type RestorePreview struct {
 	Entry         BinListItem    `json:"entry"`
@@ -316,7 +316,7 @@ type RecordChange struct {
 	NewText         string `json:"newText"`
 }
 
-// PurgeResult is the answer of DELETE /api/recycle-bin/{entryId}: the record deleted permanently.
+// PurgeResult is the answer of DELETE /api/v1/recycle-bin/{entryId}: the record deleted permanently.
 type PurgeResult struct {
 	RecordType      string `json:"recordType"`
 	RecordTypeLabel string `json:"recordTypeLabel"`
@@ -324,13 +324,13 @@ type PurgeResult struct {
 	RecordName      string `json:"recordName"`
 }
 
-// EmptyRequest is the body of POST /api/recycle-bin/empty (EmptyRecycleBinRequest): the entries the person
+// EmptyRequest is the body of POST /api/v1/recycle-bin/empty (EmptyRecycleBinRequest): the entries the person
 // saw in the confirmation (D-180).
 type EmptyRequest struct {
 	EntryIDs []string `json:"entryIds"`
 }
 
-// EmptyResult is the answer of POST /api/recycle-bin/empty (EmptyRecycleBinResult): how many entries were
+// EmptyResult is the answer of POST /api/v1/recycle-bin/empty (EmptyRecycleBinResult): how many entries were
 // deleted permanently.
 type EmptyResult struct {
 	Count int `json:"count"`

@@ -55,7 +55,10 @@
   vertical-align: top;
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .outside {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   background: var(--gray-bg);
 }
 
@@ -108,9 +111,18 @@
   background: color-mix(in srgb, var(--item-colour) 24%, var(--surface));
 }
 
+/* Red is never tinted (constitution X): a problem keeps its red bar on white. */
+.item.problem {
+  background: var(--surface);
+}
+
+.item.problem:hover {
+  background: var(--hover);
+}
+
 .item:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .itemName,
@@ -124,8 +136,9 @@
   font-weight: var(--weight-bold);
 }
 
+/* Text Strong: Text Subtle is below 4.5:1 on the status tints (constitution X). */
 .itemStatus {
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-xs);
 }
 
@@ -167,7 +180,7 @@
 
 .more:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .dayList {
@@ -179,7 +192,7 @@
   padding: var(--space-2);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
 }
 

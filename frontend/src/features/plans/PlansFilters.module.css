@@ -95,8 +95,13 @@
   padding: var(--space-4);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .menu {
+  --ink-2: var(--ink);
 }
 
 .field {

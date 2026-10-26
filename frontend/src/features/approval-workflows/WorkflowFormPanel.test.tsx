@@ -8,7 +8,7 @@ import { detailsOf, PEOPLE, workflowOf } from './testData';
 import { WorkflowFormPanel } from './WorkflowFormPanel';
 import type { ApprovalWorkflow } from './workflowsApi';
 
-const CREATE = 'POST /api/approval-workflows';
+const CREATE = 'POST /api/v1/approval-workflows';
 
 /** A level as the form sends it (017): named people, any one approves, no rules. */
 const sentLevel = (name: string, approverIds: string[]) => ({
@@ -20,10 +20,10 @@ const sentLevel = (name: string, approverIds: string[]) => ({
   autoApproveWhen: null,
   backupApproverId: '',
 });
-const UPDATE = 'PATCH /api/approval-workflows/WF-1001';
+const UPDATE = 'PATCH /api/v1/approval-workflows/WF-1001';
 
 function renderPanel(workflow?: ApprovalWorkflow, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'GET /api/people': PEOPLE, ...answers });
+  const api = mockApi({ 'GET /api/v1/people': PEOPLE, ...answers });
   const onClose = vi.fn();
   const rendered = renderWithProviders(
     <WorkflowFormPanel workflow={workflow} onClose={onClose} />,
@@ -68,12 +68,14 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
       [CREATE]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Fix the problems.',
-          fields: [
-            { field: 'name', message: 'Enter a name.' },
-            { field: 'levels.1.approverIds', message: 'Level 1: choose at least one approver.' },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Fix the problems.',
+            fields: [
+              { field: 'name', message: 'Enter a name.' },
+              { field: 'levels.1.approverIds', message: 'Level 1: choose at least one approver.' },
+            ],
+          },
         },
       },
     });
@@ -149,15 +151,17 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Someone else saved first.',
-                fields: [],
-                conflict: { changedBy: 'Alex Morgan', changedAt: new Date().toISOString() },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Someone else saved first.',
+                  fields: [],
+                  conflict: { changedBy: 'Alex Morgan', changedAt: new Date().toISOString() },
+                },
               },
             }
           : { body: workflowOf() };
       },
-      'GET /api/approval-workflows/WF-1001': { body: detailsOf(workflowOf({ version: 5 })) },
+      'GET /api/v1/approval-workflows/WF-1001': { body: detailsOf(workflowOf({ version: 5 })) },
     });
 
     await user.type(screen.getByRole('textbox', { name: /^Description/ }), ' More.');
@@ -241,19 +245,21 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
       [CREATE]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Fix the problems.',
-          fields: [
-            { field: 'levels.1.approverType', message: 'Level 1: choose who approves.' },
-            {
-              field: 'levels.1.backupApproverId',
-              message: 'Level 1: choose a backup approver, or turn escalation off.',
-            },
-            {
-              field: 'escalationDays',
-              message: 'Escalate after must be more days than Remind after.',
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Fix the problems.',
+            fields: [
+              { field: 'levels.1.approverType', message: 'Level 1: choose who approves.' },
+              {
+                field: 'levels.1.backupApproverId',
+                message: 'Level 1: choose a backup approver, or turn escalation off.',
+              },
+              {
+                field: 'escalationDays',
+                message: 'Escalate after must be more days than Remind after.',
+              },
+            ],
+          },
         },
       },
     });

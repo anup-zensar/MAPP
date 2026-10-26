@@ -34,7 +34,7 @@ export function useSampleFolders() {
 export function useRecycleBin() {
   return useQuery({
     queryKey: RECYCLE_BIN_KEY,
-    queryFn: () => call(api.GET('/api/recycle-bin')),
+    queryFn: () => call(api.GET('/api/v1/recycle-bin')),
   });
 }
 
@@ -43,7 +43,7 @@ export function useRecentActivity() {
   return useQuery({
     queryKey: ACTIVITY_LOG_KEY,
     queryFn: () =>
-      call(api.GET('/api/activity-log', { params: { query: { limit: LOG_ENTRIES_SHOWN } } })),
+      call(api.GET('/api/v1/activity-log', { params: { query: { limit: LOG_ENTRIES_SHOWN } } })),
   });
 }
 
@@ -68,7 +68,7 @@ export async function fetchLatestFolder(
 export function useCreateFolder() {
   const refreshLists = useRefreshLists();
   return useMutation({
-    mutationFn: (name: string) => call(api.POST('/api/sample-folders', { body: { name } })),
+    mutationFn: (name: string) => call(api.POST('/api/v1/sample-folders', { body: { name } })),
     onSettled: refreshLists,
   });
 }
@@ -90,7 +90,7 @@ export function useRenameFolder() {
   return useMutation({
     mutationFn: ({ id, name, version }: FolderRename) =>
       call(
-        api.PATCH('/api/sample-folders/{folderId}', {
+        api.PATCH('/api/v1/sample-folders/{folderId}', {
           params: { path: { folderId: id } },
           body: { name, version },
         }),
@@ -104,7 +104,7 @@ export function useDeleteFolder() {
   const refreshLists = useRefreshLists();
   return useMutation({
     mutationFn: (id: string) =>
-      call(api.DELETE('/api/sample-folders/{folderId}', { params: { path: { folderId: id } } })),
+      call(api.DELETE('/api/v1/sample-folders/{folderId}', { params: { path: { folderId: id } } })),
     onSettled: refreshLists,
   });
 }
@@ -121,7 +121,7 @@ export function useAddNote() {
   return useMutation({
     mutationFn: ({ folderId, title }: NewNote) =>
       call(
-        api.POST('/api/sample-folders/{folderId}/notes', {
+        api.POST('/api/v1/sample-folders/{folderId}/notes', {
           params: { path: { folderId } },
           body: { title },
         }),
@@ -135,7 +135,7 @@ export function useDeleteNote() {
   const refreshLists = useRefreshLists();
   return useMutation({
     mutationFn: (id: string) =>
-      call(api.DELETE('/api/sample-notes/{noteId}', { params: { path: { noteId: id } } })),
+      call(api.DELETE('/api/v1/sample-notes/{noteId}', { params: { path: { noteId: id } } })),
     onSettled: refreshLists,
   });
 }
@@ -145,13 +145,13 @@ export function useRestoreFromBin() {
   const refreshLists = useRefreshLists();
   return useMutation({
     mutationFn: (entryId: string) =>
-      call(api.POST('/api/recycle-bin/{entryId}/restore', { params: { path: { entryId } } })),
+      call(api.POST('/api/v1/recycle-bin/{entryId}/restore', { params: { path: { entryId } } })),
     onSettled: refreshLists,
   });
 }
 
 function fetchFolders() {
-  return call(api.GET('/api/sample-folders'));
+  return call(api.GET('/api/v1/sample-folders'));
 }
 
 /**

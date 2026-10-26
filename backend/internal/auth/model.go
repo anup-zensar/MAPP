@@ -38,7 +38,7 @@ func (s Session) expiredAt(now time.Time) bool {
 	return now.Sub(s.LastUsedAt) > idleLimit
 }
 
-// DemoPeople is the answer of GET /api/auth/demo-people: what the sign-in page shows (FR-001, FR-002).
+// DemoPeople is the answer of GET /api/v1/auth/demo-people: what the sign-in page shows (FR-001, FR-002).
 type DemoPeople struct {
 	Password string              `json:"password"` // the shared demo password, shown openly (D-004)
 	People   []people.DemoPerson `json:"people"`   // the active demo people, sorted by name; empty without demo data

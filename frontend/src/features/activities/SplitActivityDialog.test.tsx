@@ -8,9 +8,9 @@ import type { ActivitySplitOptions, ActivitySplitPreview, ActivitySplitSide } fr
 import { SplitActivityDialog } from './SplitActivityDialog';
 import { destination, launchFilm, OWN_INITIATIVE } from './testData';
 
-const OPTIONS = 'GET /api/activities/A-1042/split-options';
-const PREVIEW = 'POST /api/activities/A-1042/split-preview';
-const SPLIT = 'POST /api/activities/A-1042/split';
+const OPTIONS = 'GET /api/v1/activities/A-1042/split-options';
+const PREVIEW = 'POST /api/v1/activities/A-1042/split-preview';
+const SPLIT = 'POST /api/v1/activities/A-1042/split';
 
 const gbp = (amount: string) => ({ amount, currency: 'GBP' });
 const eur = (amount: string) => ({ amount, currency: 'EUR' });

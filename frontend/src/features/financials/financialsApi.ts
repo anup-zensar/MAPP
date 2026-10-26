@@ -54,7 +54,7 @@ export function useFinancialTransactions(filters: FinancialFilters) {
   const query = toQuery(filters);
   return useQuery({
     queryKey: [...TRANSACTIONS_KEY, query],
-    queryFn: () => call(api.GET('/api/financials/transactions', { params: { query } })),
+    queryFn: () => call(api.GET('/api/v1/financials/transactions', { params: { query } })),
     placeholderData: keepPreviousData,
   });
 }
@@ -65,7 +65,7 @@ export function useFinancialTransaction(transactionId: string) {
     queryKey: [...TRANSACTION_KEY, transactionId],
     queryFn: () =>
       call(
-        api.GET('/api/financials/transactions/{transactionId}', {
+        api.GET('/api/v1/financials/transactions/{transactionId}', {
           params: { path: { transactionId } },
         }),
       ),
@@ -76,7 +76,7 @@ export function useFinancialTransaction(transactionId: string) {
 export function useFinancialImports(enabled = true) {
   return useQuery({
     queryKey: IMPORTS_KEY,
-    queryFn: () => call(api.GET('/api/financials/imports')),
+    queryFn: () => call(api.GET('/api/v1/financials/imports')),
     enabled,
   });
 }
@@ -85,7 +85,7 @@ export function useFinancialImports(enabled = true) {
 export function useCheckImport() {
   return useMutation({
     mutationFn: (body: FinancialImportRequest) =>
-      call(api.POST('/api/financials/imports/check', { body })),
+      call(api.POST('/api/v1/financials/imports/check', { body })),
   });
 }
 
@@ -94,7 +94,7 @@ export function useImportExtract() {
   const refresh = useRefreshFigures();
   return useMutation({
     mutationFn: (body: FinancialImportRequest) =>
-      call(api.POST('/api/financials/imports', { body })),
+      call(api.POST('/api/v1/financials/imports', { body })),
     onSettled: refresh,
   });
 }
@@ -113,7 +113,7 @@ export function useLinkTransaction() {
       version: number;
     }) =>
       call(
-        api.POST('/api/financials/transactions/{transactionId}/link', {
+        api.POST('/api/v1/financials/transactions/{transactionId}/link', {
           params: { path: { transactionId: id } },
           body: { lineItemId, version },
         }),
@@ -128,7 +128,7 @@ export function useUnlinkTransaction() {
   return useMutation({
     mutationFn: ({ id, version }: { id: string; version: number }) =>
       call(
-        api.POST('/api/financials/transactions/{transactionId}/unlink', {
+        api.POST('/api/v1/financials/transactions/{transactionId}/unlink', {
           params: { path: { transactionId: id } },
           body: { version },
         }),
@@ -139,13 +139,13 @@ export function useUnlinkTransaction() {
 
 /** The line item a person typed, for the link dialog's preview. */
 export function fetchLineItemPreview(lineItemId: string): Promise<LineItemPreview> {
-  return call(api.GET('/api/line-items/{lineItemId}', { params: { path: { lineItemId } } }));
+  return call(api.GET('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } }));
 }
 
 /** Saves the sample file "mapp-gsap-extract-sample.csv" (FR-009). */
 export function downloadSampleFile(): Promise<string> {
   return downloadFromApi(
-    api.GET('/api/financials/imports/template', { parseAs: 'blob' }),
+    api.GET('/api/v1/financials/imports/template', { parseAs: 'blob' }),
     'mapp-gsap-extract-sample.csv',
   );
 }

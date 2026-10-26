@@ -74,8 +74,8 @@ func (s *Service) today() date.Date {
 
 // Record returns everything a Financials card shows for the plan, campaign, initiative, activity or line
 // item recordID (FR-011 – FR-019): its figures, a row per live child, its 5 latest transactions, the SWBS
-// codes of a line item's transactions and where the data comes from. A record that is not live is
-// not_found; a record outside a's access is forbidden (FR-028).
+// codes of a line item's transactions and where the data comes from. A record that is not live, or is
+// outside a's access, is not_found (FR-028).
 func (s *Service) Record(ctx context.Context, a actor.Actor, recordID string) (RecordView, error) {
 	var view RecordView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -84,11 +84,12 @@ func (s *Service) Record(ctx context.Context, a actor.Actor, recordID string) (R
 			return err
 		}
 		n := b.tree.byID[recordID]
+		gone := errs.NotFound(fmt.Sprintf(msgRecordGone, levelWordOf(recordID)))
 		if n == nil {
-			return errs.NotFound(fmt.Sprintf(msgRecordGone, levelWordOf(recordID)))
+			return gone
 		}
 		if err := s.access.SeeFinanceIn(ctx, a, n.PlanID); err != nil {
-			return err
+			return orGone(err, gone)
 		}
 		view = b.recordView(n)
 		return nil
@@ -162,7 +163,7 @@ func (sc scope) sees(planID string) bool {
 
 // Transaction returns one transaction with every field of the details panel (FR-022). A linked
 // transaction needs access to its plan's financial data; a not-linked one needs the right to import
-// (D-301): otherwise it is forbidden with 014's message 4.
+// (D-301): otherwise it is forbidden, or not_found when its plan is outside a's access.
 func (s *Service) Transaction(ctx context.Context, a actor.Actor, id string) (TransactionView, error) {
 	var view TransactionView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
@@ -197,10 +198,30 @@ func (s *Service) mayOpen(ctx context.Context, a actor.Actor, b *book, t *Transa
 	} else {
 		err = s.access.Import(ctx, a)
 	}
-	if err != nil {
+	switch {
+	case err == nil:
+		return nil
+	case isHidden(err):
+		return errs.NotFound(msgTransactionGone)
+	default:
 		return errs.Forbidden(fmt.Sprintf(msgNoAccessRecord, transactionNoun))
 	}
-	return nil
+}
+
+// isHidden reports whether an access check answered not_found: the record is outside the person's access,
+// which must look exactly like a missing record (constitution VII).
+func isHidden(err error) bool {
+	var apiErr *errs.Error
+	return errors.As(err, &apiErr) && apiErr.Code == errs.CodeNotFound
+}
+
+// orGone answers gone, the answer for a missing record, when an access check found the record outside the
+// person's access, and err otherwise.
+func orGone(err, gone error) error {
+	if isHidden(err) {
+		return gone
+	}
+	return err
 }
 
 // find returns the transaction id, nil when there is none.

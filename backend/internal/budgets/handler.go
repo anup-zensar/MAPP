@@ -23,18 +23,18 @@ func NewHandler(s *Service) *Handler {
 // Routes registers the nine global budget routes on r. All of them need a signed-in person, so all are
 // wrapped in signedIn, which also applies their access rules (014 plan Table C).
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/global-budgets", signedIn(h.list))
-	r.Handle("POST /api/global-budgets", signedIn(h.create))
-	r.Handle("GET /api/global-budgets/{globalBudgetId}", signedIn(h.get))
-	r.Handle("PATCH /api/global-budgets/{globalBudgetId}", signedIn(h.update))
-	r.Handle("DELETE /api/global-budgets/{globalBudgetId}", signedIn(h.delete))
-	r.Handle("GET /api/global-budgets/{globalBudgetId}/allocation-options", signedIn(h.allocationOptions))
-	r.Handle("POST /api/global-budgets/{globalBudgetId}/allocations", signedIn(h.allocate))
-	r.Handle("PATCH /api/budget-allocations/{allocationId}", signedIn(h.updateAllocation))
-	r.Handle("DELETE /api/budget-allocations/{allocationId}", signedIn(h.removeAllocation))
+	r.Handle("GET /api/v1/global-budgets", signedIn(h.list))
+	r.Handle("POST /api/v1/global-budgets", signedIn(h.create))
+	r.Handle("GET /api/v1/global-budgets/{globalBudgetId}", signedIn(h.get))
+	r.Handle("PATCH /api/v1/global-budgets/{globalBudgetId}", signedIn(h.update))
+	r.Handle("DELETE /api/v1/global-budgets/{globalBudgetId}", signedIn(h.delete))
+	r.Handle("GET /api/v1/global-budgets/{globalBudgetId}/allocation-options", signedIn(h.allocationOptions))
+	r.Handle("POST /api/v1/global-budgets/{globalBudgetId}/allocations", signedIn(h.allocate))
+	r.Handle("PATCH /api/v1/budget-allocations/{allocationId}", signedIn(h.updateAllocation))
+	r.Handle("DELETE /api/v1/budget-allocations/{allocationId}", signedIn(h.removeAllocation))
 }
 
-// list answers GET /api/global-budgets: the global budgets of the query's year, or of every year (FR-036).
+// list answers GET /api/v1/global-budgets: the global budgets of the query's year, or of every year (FR-036).
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	var year *int
 	if text := r.URL.Query().Get("year"); text != "" {
@@ -54,7 +54,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, page)
 }
 
-// create answers POST /api/global-budgets with 201 and the new global budget.
+// create answers POST /api/v1/global-budgets with 201 and the new global budget.
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	var input GlobalBudgetInput
 	if err := web.ReadJSON(w, r, &input); err != nil {
@@ -70,7 +70,7 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusCreated, view)
 }
 
-// get answers GET /api/global-budgets/{globalBudgetId} with the global budget and its figures.
+// get answers GET /api/v1/global-budgets/{globalBudgetId} with the global budget and its figures.
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
 	view, err := h.service.Get(r.Context(), a, r.PathValue("globalBudgetId"))
@@ -81,7 +81,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, view)
 }
 
-// update answers PATCH /api/global-budgets/{globalBudgetId} with the global budget after the save.
+// update answers PATCH /api/v1/global-budgets/{globalBudgetId} with the global budget after the save.
 func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	var update GlobalBudgetUpdate
 	if err := web.ReadJSON(w, r, &update); err != nil {
@@ -97,7 +97,7 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, view)
 }
 
-// delete answers DELETE /api/global-budgets/{globalBudgetId} with the recycle-bin entry, so the web app can
+// delete answers DELETE /api/v1/global-budgets/{globalBudgetId} with the recycle-bin entry, so the web app can
 // offer Undo.
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
@@ -109,7 +109,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
 }
 
-// allocationOptions answers GET /api/global-budgets/{globalBudgetId}/allocation-options: the plans the
+// allocationOptions answers GET /api/v1/global-budgets/{globalBudgetId}/allocation-options: the plans the
 // Allocate dialog offers.
 func (h *Handler) allocationOptions(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
@@ -121,7 +121,7 @@ func (h *Handler) allocationOptions(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, page)
 }
 
-// allocate answers POST /api/global-budgets/{globalBudgetId}/allocations with 201 and the global budget
+// allocate answers POST /api/v1/global-budgets/{globalBudgetId}/allocations with 201 and the global budget
 // after the allocation.
 func (h *Handler) allocate(w http.ResponseWriter, r *http.Request) {
 	var input AllocationInput
@@ -138,7 +138,7 @@ func (h *Handler) allocate(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusCreated, view)
 }
 
-// updateAllocation answers PATCH /api/budget-allocations/{allocationId} with the global budget after the
+// updateAllocation answers PATCH /api/v1/budget-allocations/{allocationId} with the global budget after the
 // change.
 func (h *Handler) updateAllocation(w http.ResponseWriter, r *http.Request) {
 	var update AllocationUpdate
@@ -155,7 +155,7 @@ func (h *Handler) updateAllocation(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, view)
 }
 
-// removeAllocation answers DELETE /api/budget-allocations/{allocationId} with the global budget after the
+// removeAllocation answers DELETE /api/v1/budget-allocations/{allocationId} with the global budget after the
 // removal.
 func (h *Handler) removeAllocation(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())

@@ -40,5 +40,5 @@ export type FilterValue = Schemas['AllWorkFilterValue'];
 export type Sort = Schemas['AllWorkSort'];
 export type ViewType = ViewState['view'];
 
-/** The query of GET /api/all-work. */
+/** The query of GET /api/v1/all-work. */
 export type AllWorkQuery = NonNullable<operations['getAllWork']['parameters']['query']>;

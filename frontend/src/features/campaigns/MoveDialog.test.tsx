@@ -74,8 +74,8 @@ const INITIATIVE_DESTINATIONS = {
 describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   it('moves an initiative to another campaign and opens the plan with it highlighted (US6#1, FR-025)', async () => {
     const { user, api, router } = renderDialog(DIGITAL, {
-      'GET /api/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
-      'POST /api/initiatives/I-1001/move': {
+      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
+      'POST /api/v1/initiatives/I-1001/move': {
         body: initiative({ campaignId: 'C-1002', version: 4 }),
       },
     });
@@ -93,7 +93,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
     expect(router.state.location.state).toEqual({ highlight: 'I-1001' });
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/move')).toEqual([
       { campaignId: 'C-1002', version: 3 },
     ]);
     const messages = await findMessages();
@@ -108,7 +108,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
   it('lists a destination that can’t take it, with the reason and the fix (US6#2, FR-023)', async () => {
     const { user, api } = renderDialog(DIGITAL, {
-      'GET /api/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
+      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
     });
 
     const helix2 = await screen.findByRole('radio', { name: 'Helix 2' });
@@ -117,7 +117,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Move initiative' }));
     expect(await screen.findByText('Choose where to move it.')).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/move')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/move')).toEqual([]);
 
     await user.click(screen.getByRole('radio', { name: 'Rimula fleet' }));
     expect(screen.queryByText('Choose where to move it.')).not.toBeInTheDocument();
@@ -125,7 +125,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
   it('offers a campaign only plans of its year, with the consequences and the budget warning (US6#3, FR-024)', async () => {
     const { user, api, router } = renderDialog(HELIX, {
-      'GET /api/campaigns/C-1001/destinations': {
+      'GET /api/v1/campaigns/C-1001/destinations': {
         body: destinationList(
           [
             planDestination({
@@ -144,7 +144,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
           CAMPAIGN_RULE,
         ),
       },
-      'POST /api/campaigns/C-1001/move': { body: campaign({ planId: 'P-1002', version: 4 }) },
+      'POST /api/v1/campaigns/C-1001/move': { body: campaign({ planId: 'P-1002', version: 4 }) },
     });
 
     const dialog = await screen.findByRole('dialog', { name: "Move campaign 'Helix launch'" });
@@ -177,7 +177,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1002'));
     expect(router.state.location.state).toEqual({ highlight: 'C-1001' });
-    expect(api.bodiesOf('POST /api/campaigns/C-1001/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/campaigns/C-1001/move')).toEqual([
       { planId: 'P-1002', version: 3 },
     ]);
     expect(await findMessages()).toHaveTextContent(
@@ -187,7 +187,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
   it('says when there is nowhere to move it (edge case)', async () => {
     renderDialog(HELIX, {
-      'GET /api/campaigns/C-1001/destinations': { body: destinationList([], CAMPAIGN_RULE) },
+      'GET /api/v1/campaigns/C-1001/destinations': { body: destinationList([], CAMPAIGN_RULE) },
     });
 
     expect(
@@ -199,18 +199,20 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
   it('shows a refusal in the dialog and asks for the destinations again', async () => {
     const { user, api } = renderDialog(DIGITAL, {
-      'GET /api/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
-      'POST /api/initiatives/I-1001/move': {
+      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
+      'POST /api/v1/initiatives/I-1001/move': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Some fields need your attention.',
-          fields: [
-            {
-              field: 'campaignId',
-              message: "Already has an initiative called 'Digital & social' — rename it first",
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [
+              {
+                field: 'campaignId',
+                message: "Already has an initiative called 'Digital & social' — rename it first",
+              },
+            ],
+          },
         },
       },
     });
@@ -223,7 +225,9 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
     );
     await waitFor(() =>
       expect(
-        api.requests.filter((request) => request.path === '/api/initiatives/I-1001/destinations'),
+        api.requests.filter(
+          (request) => request.path === '/api/v1/initiatives/I-1001/destinations',
+        ),
       ).toHaveLength(2),
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -231,14 +235,16 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
   it('says who changed the record meanwhile (409)', async () => {
     const { user } = renderDialog(DIGITAL, {
-      'GET /api/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
-      'POST /api/initiatives/I-1001/move': {
+      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
+      'POST /api/v1/initiatives/I-1001/move': {
         status: 409,
         body: {
-          code: 'version_conflict',
-          message: 'Not saved — Daniel Okoro changed this initiative',
-          fields: [],
-          conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+          error: {
+            code: 'version_conflict',
+            message: 'Not saved — Daniel Okoro changed this initiative',
+            fields: [],
+            conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+          },
         },
       },
     });
@@ -254,7 +260,7 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   it('shows grey lines while loading, then the error with Try again', async () => {
     let calls = 0;
     const { user } = renderDialog(DIGITAL, {
-      'GET /api/initiatives/I-1001/destinations': () =>
+      'GET /api/v1/initiatives/I-1001/destinations': () =>
         ++calls === 1 ? { status: 500 } : INITIATIVE_DESTINATIONS,
     });
 
@@ -266,12 +272,14 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
   it('says when the record is gone, and Cancel closes', async () => {
     const { user } = renderDialog(DIGITAL, {
-      'GET /api/initiatives/I-1001/destinations': {
+      'GET /api/v1/initiatives/I-1001/destinations': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This initiative no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This initiative no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });

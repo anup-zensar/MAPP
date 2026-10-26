@@ -39,7 +39,7 @@ const META = {
 };
 const EUROPE = { id: 'T-1001', name: 'Lubricants Europe', colour: 'blue', active: true } as const;
 
-/** GET /api/people, for the Owner field. */
+/** GET /api/v1/people, for the Owner field. */
 export const PEOPLE: { items: Person[]; total: number } = {
   total: 2,
   items: [ALEX, PRIYA].map((person) => ({
@@ -259,12 +259,14 @@ export function launchFilmRow(overrides: Partial<ActivitySummary> = {}): Activit
 export function validationFailed(fields: { field: string; message: string }[]) {
   return {
     status: 400,
-    body: { code: 'validation_failed', message: 'Check the highlighted fields.', fields },
+    body: {
+      error: { code: 'validation_failed', message: 'Check the highlighted fields.', fields },
+    },
   };
 }
 
 /**
- * The activity level's Shell attributes (GET /api/shell-attribute-forms/activity): Cluster →
+ * The activity level's Shell attributes (GET /api/v1/shell-attribute-forms/activity): Cluster →
  * Region, the Country / OU split, a Lubricants group (Brands) and a Mobility group (Fleet card).
  */
 export function activityAttributeForm(): AttributeForm {
@@ -336,7 +338,7 @@ export function activityAttributeForm(): AttributeForm {
 }
 
 /**
- * An initiative "Launch film" can be moved or copied to (GET /api/activities/{id}/destinations):
+ * An initiative "Launch film" can be moved or copied to (GET /api/v1/activities/{id}/destinations):
  * "Print & outdoor" (1 Jan – 31 Dec 2026) in "Helix launch", available for both.
  */
 export function destination(overrides: Partial<ActivityDestination> = {}): ActivityDestination {

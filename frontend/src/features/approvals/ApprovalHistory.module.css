@@ -78,7 +78,10 @@
   font-size: var(--text-xs);
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .comment {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   margin-top: 2px;
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-control);

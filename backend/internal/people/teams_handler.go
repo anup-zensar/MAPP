@@ -8,7 +8,7 @@ import (
 	"mapp/internal/platform/web"
 )
 
-// listTeams answers GET /api/teams: every team with its members and the plans using it, sorted by name.
+// listTeams answers GET /api/v1/teams: every team with its members and the plans using it, sorted by name.
 func (h *Handler) listTeams(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	teams, err := h.service.ListTeams(r.Context(), a)
@@ -19,7 +19,7 @@ func (h *Handler) listTeams(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, TeamPage{Items: teams, Total: len(teams)})
 }
 
-// createTeam answers POST /api/teams with 201 and the new team.
+// createTeam answers POST /api/v1/teams with 201 and the new team.
 func (h *Handler) createTeam(w http.ResponseWriter, r *http.Request) {
 	var input TeamInput
 	if err := web.ReadJSON(w, r, &input); err != nil {
@@ -35,7 +35,7 @@ func (h *Handler) createTeam(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusCreated, team)
 }
 
-// getTeam answers GET /api/teams/{teamId}: the team with its members and the plans using it.
+// getTeam answers GET /api/v1/teams/{teamId}: the team with its members and the plans using it.
 func (h *Handler) getTeam(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	team, err := h.service.GetTeam(r.Context(), a, r.PathValue("teamId"))
@@ -46,7 +46,7 @@ func (h *Handler) getTeam(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, team)
 }
 
-// updateTeam answers PATCH /api/teams/{teamId} with the team after the change.
+// updateTeam answers PATCH /api/v1/teams/{teamId} with the team after the change.
 func (h *Handler) updateTeam(w http.ResponseWriter, r *http.Request) {
 	var update TeamUpdate
 	if err := web.ReadJSON(w, r, &update); err != nil {
@@ -62,7 +62,7 @@ func (h *Handler) updateTeam(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, team)
 }
 
-// deleteTeam answers DELETE /api/teams/{teamId} with the recycle-bin entry of the team and its
+// deleteTeam answers DELETE /api/v1/teams/{teamId} with the recycle-bin entry of the team and its
 // memberships, so the web app can offer Undo.
 func (h *Handler) deleteTeam(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
@@ -74,7 +74,7 @@ func (h *Handler) deleteTeam(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, history.DeleteResult{RecycleBinEntry: entry.View()})
 }
 
-// checkTeamImpact answers POST /api/teams/{teamId}/impact with the warnings to confirm before saving the
+// checkTeamImpact answers POST /api/v1/teams/{teamId}/impact with the warnings to confirm before saving the
 // body; it saves nothing.
 func (h *Handler) checkTeamImpact(w http.ResponseWriter, r *http.Request) {
 	var update TeamUpdate
@@ -91,7 +91,7 @@ func (h *Handler) checkTeamImpact(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, impact)
 }
 
-// setTeamStatus answers POST /api/teams/{teamId}/status with the team in its new status.
+// setTeamStatus answers POST /api/v1/teams/{teamId}/status with the team in its new status.
 func (h *Handler) setTeamStatus(w http.ResponseWriter, r *http.Request) {
 	var update StatusUpdate
 	if err := web.ReadJSON(w, r, &update); err != nil {

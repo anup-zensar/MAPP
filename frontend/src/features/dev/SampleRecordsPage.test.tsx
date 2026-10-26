@@ -179,9 +179,9 @@ function mockPage(
   otherAnswers: Record<string, MockHandler> = {},
 ) {
   return mockApi({
-    'GET /api/sample-folders': folders,
-    'GET /api/recycle-bin': bin,
-    'GET /api/activity-log': log,
+    'GET /api/v1/sample-folders': folders,
+    'GET /api/v1/recycle-bin': bin,
+    'GET /api/v1/activity-log': log,
     ...otherAnswers,
   });
 }
@@ -337,7 +337,7 @@ describe('SampleRecordsPage: create and edit', () => {
   it('creates a folder in a side panel and says so (US5, plan "User-visible messages")', async () => {
     const api = mockPage(
       {},
-      { 'POST /api/sample-folders': { status: 201, body: { ...PLANS, name: 'Ideas 3' } } },
+      { 'POST /api/v1/sample-folders': { status: 201, body: { ...PLANS, name: 'Ideas 3' } } },
     );
     const { user } = await renderPage();
 
@@ -349,24 +349,26 @@ describe('SampleRecordsPage: create and edit', () => {
 
     expect(await findMessages()).toHaveTextContent("Sample folder 'Ideas 3' created");
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/sample-folders')).toEqual([{ name: 'Ideas 3' }]);
+    expect(api.bodiesOf('POST /api/v1/sample-folders')).toEqual([{ name: 'Ideas 3' }]);
   });
 
   it('shows the API’s problem with a new name at the field and in the summary (FR-020)', async () => {
     mockPage(
       {},
       {
-        'POST /api/sample-folders': {
+        'POST /api/v1/sample-folders': {
           status: 400,
           body: {
-            code: 'validation_failed',
-            message: 'Some fields need your attention.',
-            fields: [
-              {
-                field: 'name',
-                message: "There is already a sample folder called 'Ideas'. Choose another name.",
-              },
-            ],
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [
+                {
+                  field: 'name',
+                  message: "There is already a sample folder called 'Ideas'. Choose another name.",
+                },
+              ],
+            },
           },
         },
       },
@@ -389,7 +391,9 @@ describe('SampleRecordsPage: create and edit', () => {
   it('opens Edit from the actions menu with the folder’s name, and saves the new name (US5)', async () => {
     const api = mockPage(
       {},
-      { 'PATCH /api/sample-folders/SF-1001': { body: { ...IDEAS, name: 'Ideas 2', version: 2 } } },
+      {
+        'PATCH /api/v1/sample-folders/SF-1001': { body: { ...IDEAS, name: 'Ideas 2', version: 2 } },
+      },
     );
     const { user } = await renderPage();
 
@@ -402,7 +406,7 @@ describe('SampleRecordsPage: create and edit', () => {
 
     expect(await findMessages()).toHaveTextContent("Sample folder 'Ideas 2' saved");
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/sample-folders/SF-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/sample-folders/SF-1001')).toEqual([
       { name: 'Ideas 2', version: 1 },
     ]);
   });
@@ -411,15 +415,17 @@ describe('SampleRecordsPage: create and edit', () => {
     mockPage(
       {},
       {
-        'PATCH /api/sample-folders/SF-1001': {
+        'PATCH /api/v1/sample-folders/SF-1001': {
           status: 400,
           body: {
-            code: 'validation_failed',
-            message: 'Some fields need your attention.',
-            fields: [
-              { field: 'name', message: 'Enter a name.' },
-              { field: 'version', message: 'Reload the page and try again.' },
-            ],
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [
+                { field: 'name', message: 'Enter a name.' },
+                { field: 'version', message: 'Reload the page and try again.' },
+              ],
+            },
           },
         },
       },
@@ -450,7 +456,9 @@ describe('SampleRecordsPage: create and edit', () => {
           ]),
         }),
       },
-      { 'PATCH /api/sample-folders/SF-1001': { body: { ...IDEAS, name: 'Ideas 2', version: 3 } } },
+      {
+        'PATCH /api/v1/sample-folders/SF-1001': { body: { ...IDEAS, name: 'Ideas 2', version: 3 } },
+      },
     );
     const { user, queryClient } = await renderPage();
     await chooseAction(user, 'Ideas', 'Edit');
@@ -465,7 +473,7 @@ describe('SampleRecordsPage: create and edit', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
-      expect(api.bodiesOf('PATCH /api/sample-folders/SF-1001')).toEqual([
+      expect(api.bodiesOf('PATCH /api/v1/sample-folders/SF-1001')).toEqual([
         { name: 'Ideas 2', version: 1 },
       ]),
     );
@@ -480,15 +488,17 @@ describe('SampleRecordsPage: create and edit', () => {
         folders: () => ({ body: listOf([++folderReads === 1 ? IDEAS : IDEAS_RENAMED_BY_DANIEL]) }),
       },
       {
-        'PATCH /api/sample-folders/SF-1001': () =>
+        'PATCH /api/v1/sample-folders/SF-1001': () =>
           ++saves === 1
             ? {
                 status: 409,
                 body: {
-                  code: 'version_conflict',
-                  message: 'Not saved — Daniel Okoro changed this sample folder',
-                  fields: [],
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T14:32:00Z' },
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Not saved — Daniel Okoro changed this sample folder',
+                    fields: [],
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T14:32:00Z' },
+                  },
                 },
               }
             : { body: { ...IDEAS_RENAMED_BY_DANIEL, name: 'My ideas', version: 3 } },
@@ -511,7 +521,7 @@ describe('SampleRecordsPage: create and edit', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Sample folder 'My ideas' saved");
-    expect(api.bodiesOf('PATCH /api/sample-folders/SF-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/sample-folders/SF-1001')).toEqual([
       { name: 'My ideas', version: 1 },
       { name: 'My ideas', version: 2 },
     ]);
@@ -521,12 +531,14 @@ describe('SampleRecordsPage: create and edit', () => {
     mockPage(
       {},
       {
-        'PATCH /api/sample-folders/SF-1001': {
+        'PATCH /api/v1/sample-folders/SF-1001': {
           status: 404,
           body: {
-            code: 'not_found',
-            message: 'This sample folder no longer exists — someone may have deleted it.',
-            fields: [],
+            error: {
+              code: 'not_found',
+              message: 'This sample folder no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
       },
@@ -580,7 +592,7 @@ describe('SampleRecordsPage: notes', () => {
     const api = mockPage(
       {},
       {
-        'POST /api/sample-folders/SF-1001/notes': {
+        'POST /api/v1/sample-folders/SF-1001/notes': {
           status: 201,
           body: { ...AGENDA, id: 'SN-1005', title: 'Budget' },
         },
@@ -595,19 +607,23 @@ describe('SampleRecordsPage: notes', () => {
 
     expect(await findMessages()).toHaveTextContent("Sample note 'Budget' added");
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/sample-folders/SF-1001/notes')).toEqual([{ title: 'Budget' }]);
+    expect(api.bodiesOf('POST /api/v1/sample-folders/SF-1001/notes')).toEqual([
+      { title: 'Budget' },
+    ]);
   });
 
   it('shows the API’s problem with a note title at the field (FR-020)', async () => {
     mockPage(
       {},
       {
-        'POST /api/sample-folders/SF-1001/notes': {
+        'POST /api/v1/sample-folders/SF-1001/notes': {
           status: 400,
           body: {
-            code: 'validation_failed',
-            message: 'Some fields need your attention.',
-            fields: [{ field: 'title', message: 'Enter a title.' }],
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [{ field: 'title', message: 'Enter a title.' }],
+            },
           },
         },
       },
@@ -627,7 +643,7 @@ describe('SampleRecordsPage: notes', () => {
   it('deletes a note after asking, and offers Undo (FR-024, FR-026)', async () => {
     const api = mockPage(
       {},
-      { 'DELETE /api/sample-notes/SN-1003': { body: { recycleBinEntry: AGENDA_IN_BIN } } },
+      { 'DELETE /api/v1/sample-notes/SN-1003': { body: { recycleBinEntry: AGENDA_IN_BIN } } },
     );
     const { user } = await renderPage();
 
@@ -644,7 +660,7 @@ describe('SampleRecordsPage: notes', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(api.requests).toContainEqual({
       method: 'DELETE',
-      path: '/api/sample-notes/SN-1003',
+      path: '/api/v1/sample-notes/SN-1003',
       search: '',
       body: undefined,
     });
@@ -655,7 +671,7 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
   it('deletes a folder with its notes after asking, and offers Undo (FR-024, FR-026, US5)', async () => {
     const api = mockPage(
       {},
-      { 'DELETE /api/sample-folders/SF-1001': { body: { recycleBinEntry: IDEAS_IN_BIN } } },
+      { 'DELETE /api/v1/sample-folders/SF-1001': { body: { recycleBinEntry: IDEAS_IN_BIN } } },
     );
     const { user } = await renderPage();
 
@@ -679,7 +695,7 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     );
     expect(api.requests).toContainEqual({
       method: 'DELETE',
-      path: '/api/sample-folders/SF-1001',
+      path: '/api/v1/sample-folders/SF-1001',
       search: '',
       body: undefined,
     });
@@ -722,7 +738,7 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     mockPage(
       {},
       {
-        'DELETE /api/sample-folders/SF-1001': () =>
+        'DELETE /api/v1/sample-folders/SF-1001': () =>
           ++attempts === 1
             ? Promise.reject(new TypeError('Failed to fetch'))
             : { body: { recycleBinEntry: IDEAS_IN_BIN } },
@@ -765,7 +781,7 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     const api = mockPage(
       { bin: { body: listOf([IDEAS_IN_BIN]) } },
       {
-        'POST /api/recycle-bin/BIN-1001/restore': {
+        'POST /api/v1/recycle-bin/BIN-1001/restore': {
           body: {
             recordType: 'sampleFolder',
             recordTypeLabel: 'sample folder',
@@ -783,20 +799,22 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
     expect(await findMessages()).toHaveTextContent(
       "Sample folder 'Ideas' restored. Renamed to 'Ideas (restored)' because the name was taken.",
     );
-    expect(api.bodiesOf('POST /api/recycle-bin/BIN-1001/restore')).toHaveLength(1);
+    expect(api.bodiesOf('POST /api/v1/recycle-bin/BIN-1001/restore')).toHaveLength(1);
   });
 
   it('says why a restore was refused (FR-025, US5 scenario 4)', async () => {
     mockPage(
       { bin: { body: listOf([AGENDA_IN_BIN]) } },
       {
-        'POST /api/recycle-bin/BIN-1002/restore': {
+        'POST /api/v1/recycle-bin/BIN-1002/restore': {
           status: 409,
           body: {
-            code: 'restore_parent_first',
-            message: "Restore 'Ideas' first",
-            fields: [],
-            parent: { type: 'sampleFolder', id: 'SF-1001', name: 'Ideas' },
+            error: {
+              code: 'restore_parent_first',
+              message: "Restore 'Ideas' first",
+              fields: [],
+              parent: { type: 'sampleFolder', id: 'SF-1001', name: 'Ideas' },
+            },
           },
         },
       },
@@ -830,7 +848,7 @@ describe('SampleRecordsPage: activity log', () => {
 
     expect(api.requests).toContainEqual({
       method: 'GET',
-      path: '/api/activity-log',
+      path: '/api/v1/activity-log',
       search: '?limit=20',
       body: undefined,
     });

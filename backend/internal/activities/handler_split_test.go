@@ -42,7 +42,7 @@ func TestSplitOptions_Contract_FR026(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/activities/"+ukLaunchEvent+"/split-options", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activities/"+ukLaunchEvent+"/split-options", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var options activities.SplitOptions
@@ -66,7 +66,7 @@ func TestSplitPreview_MatchesSplit_FR027(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	body := splitBody("Ireland roadshow", irelandInit, []string{agencyItem}, "19750.00", false, 1)
 
-	previewed := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split-preview", body)
+	previewed := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split-preview", body)
 
 	assertStatus(t, previewed, http.StatusOK)
 	var preview activities.SplitPreview
@@ -84,7 +84,7 @@ func TestSplitPreview_MatchesSplit_FR027(t *testing.T) {
 		t.Errorf("created side = %+v", c)
 	}
 
-	split := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split", body)
+	split := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split", body)
 
 	assertStatus(t, split, http.StatusCreated)
 	var result activities.SplitResult
@@ -103,7 +103,7 @@ func TestSplitPreview_MatchesSplit_FR027(t *testing.T) {
 	var moved struct {
 		LineItem struct{ ID, ActivityID string } `json:"lineItem"`
 	}
-	priya.Do(t, http.MethodGet, "/api/line-items/"+agencyItem, nil).Decode(t, &moved)
+	priya.Do(t, http.MethodGet, "/api/v1/line-items/"+agencyItem, nil).Decode(t, &moved)
 	if moved.LineItem.ID != agencyItem || moved.LineItem.ActivityID != created.ID {
 		t.Errorf("L-1010 after the split = %+v, want it under %s", moved.LineItem, created.ID)
 	}
@@ -121,13 +121,13 @@ func TestSplit_SumsUnchanged_SC005(t *testing.T) {
 		Contents struct{ Activities, LineItems int } `json:"contents"`
 	}
 	var before, after plan
-	priya.Do(t, http.MethodGet, "/api/plans/P-1004", nil).Decode(t, &before)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1004", nil).Decode(t, &before)
 
-	split := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split",
+	split := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",
 		splitBody("Ireland roadshow", irelandInit, []string{agencyItem}, "12000.00", false, 1))
 
 	assertStatus(t, split, http.StatusCreated)
-	priya.Do(t, http.MethodGet, "/api/plans/P-1004", nil).Decode(t, &after)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1004", nil).Decode(t, &after)
 	if before.PlanFigures.PlannedCost != after.PlanFigures.PlannedCost || after.PlanFigures.PlannedCost.Amount != "65000.00" ||
 		before.Contents.LineItems != after.Contents.LineItems || after.Contents.Activities != before.Contents.Activities+1 {
 		t.Errorf("before %+v, after %+v", before, after)
@@ -141,8 +141,8 @@ func TestSplit_NothingChosen_FR027(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	body := splitBody("Ireland roadshow", irelandInit, nil, "0", false, 1)
 
-	previewed := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split-preview", body)
-	refused := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split", body)
+	previewed := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split-preview", body)
+	refused := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split", body)
 
 	var preview activities.SplitPreview
 	previewed.Decode(t, &preview)
@@ -150,8 +150,8 @@ func TestSplit_NothingChosen_FR027(t *testing.T) {
 	if !reflect.DeepEqual(preview.Problems, want) {
 		t.Errorf("preview problems = %+v, want %+v", preview.Problems, want)
 	}
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"lineItemIds","message":"Choose line items or an amount to move."}]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"lineItemIds","message":"Choose line items or an amount to move."}]}}`)
 }
 
 // At most the activity's planned cost moves (FR-026); a line item of another activity is refused too.
@@ -159,12 +159,12 @@ func TestSplit_AmountTooHigh_FR026(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	refused := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split",
+	refused := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",
 		splitBody("Ireland roadshow", irelandInit, []string{"L-1001"}, "50000", false, 1))
 
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
 		`"fields":[{"field":"lineItemIds","message":"L-1001 is not a line item of this activity."},`+
-		`{"field":"plannedCost","message":"Move at most 40,000.00 GBP, the activity's planned cost."}]}`)
+		`{"field":"plannedCost","message":"Move at most 40,000.00 GBP, the activity's planned cost."}]}}`)
 }
 
 // The new activity's name is unique in the chosen initiative, ignoring letter case (FR-026).
@@ -172,11 +172,11 @@ func TestSplit_NameUnique_FR026(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	refused := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split",
+	refused := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",
 		splitBody("dealer CONFERENCE", irelandInit, []string{agencyItem}, nil, false, 1))
 
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"name","message":"'Ireland' already has an activity called 'Dealer conference'."}]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"name","message":"'Ireland' already has an activity called 'Dealer conference'."}]}}`)
 }
 
 // The new activity's initiative follows Move's rules: another plan's initiative is refused, and so is one
@@ -185,17 +185,17 @@ func TestSplit_DestinationRules_FR026(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	otherPlan := priya.Do(t, http.MethodPost, "/api/activities/A-1001/split",
+	otherPlan := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1001/split",
 		splitBody("Launch film part 2", ukInitiative, nil, "1000", false, 1))
-	outside := priya.Do(t, http.MethodPost, "/api/activities/A-1001/split",
+	outside := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1001/split",
 		splitBody("Launch film part 2", "I-1004", nil, "1000", false, 1))
-	options := priya.Do(t, http.MethodGet, "/api/activities/A-1001/split-options", nil)
+	options := priya.Do(t, http.MethodGet, "/api/v1/activities/A-1001/split-options", nil)
 
-	assertAnswer(t, otherPlan, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"initiativeId","message":"Choose another initiative of this plan."}]}`)
-	assertAnswer(t, outside, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
+	assertAnswer(t, otherPlan, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"initiativeId","message":"Choose another initiative of this plan."}]}}`)
+	assertAnswer(t, outside, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
 		`"fields":[{"field":"initiativeId","message":"'Launch film' runs 01 Mar – 31 May 2026, but 'Retail events' runs `+
-		`01 Jun – 31 Dec 2026. Change the activity's dates first, or pick another initiative."}]}`)
+		`01 Jun – 31 Dec 2026. Change the activity's dates first, or pick another initiative."}]}}`)
 	var page activities.SplitOptions
 	options.Decode(t, &page)
 	for _, d := range page.Destinations {
@@ -211,9 +211,9 @@ func TestSplit_CreatesCopyOfFieldsWithoutGoals_FR028(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	var original activities.View
-	priya.Do(t, http.MethodGet, "/api/activities/A-1001", nil).Decode(t, &original)
+	priya.Do(t, http.MethodGet, "/api/v1/activities/A-1001", nil).Decode(t, &original)
 
-	split := priya.Do(t, http.MethodPost, "/api/activities/A-1001/split",
+	split := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1001/split",
 		splitBody("Launch film (split)", "I-1001", nil, "20000.00", false, original.Version))
 
 	assertStatus(t, split, http.StatusCreated)
@@ -241,18 +241,18 @@ func TestSplit_ApprovedNeedsRestart_FR029(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	var options activities.SplitOptions
-	priya.Do(t, http.MethodGet, "/api/activities/A-1002/split-options", nil).Decode(t, &options)
+	priya.Do(t, http.MethodGet, "/api/v1/activities/A-1002/split-options", nil).Decode(t, &options)
 	if !options.NeedsRestart {
 		t.Fatalf("options = %+v, want needsRestart", options)
 	}
 
-	unconfirmed := priya.Do(t, http.MethodPost, "/api/activities/A-1002/split",
+	unconfirmed := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1002/split",
 		splitBody("Speakers", "I-1001", []string{"L-1004"}, "5000.00", false, options.Version))
-	confirmed := priya.Do(t, http.MethodPost, "/api/activities/A-1002/split",
+	confirmed := priya.Do(t, http.MethodPost, "/api/v1/activities/A-1002/split",
 		splitBody("Speakers", "I-1001", []string{"L-1004"}, "5000.00", true, options.Version))
 
-	assertAnswer(t, unconfirmed, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"restartApproval","message":"This activity will need approval again — confirm the change to save it."}]}`)
+	assertAnswer(t, unconfirmed, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"restartApproval","message":"This activity will need approval again — confirm the change to save it."}]}}`)
 	assertStatus(t, confirmed, http.StatusCreated)
 	var result activities.SplitResult
 	confirmed.Decode(t, &result)
@@ -263,7 +263,7 @@ func TestSplit_ApprovedNeedsRestart_FR029(t *testing.T) {
 	var moved struct {
 		LineItem struct{ SwbsStatus string } `json:"lineItem"`
 	}
-	priya.Do(t, http.MethodGet, "/api/line-items/L-1004", nil).Decode(t, &moved)
+	priya.Do(t, http.MethodGet, "/api/v1/line-items/L-1004", nil).Decode(t, &moved)
 	if moved.LineItem.SwbsStatus == "readyToSend" {
 		t.Errorf("L-1004 SWBS = %s, want it to follow its new Created activity", moved.LineItem.SwbsStatus)
 	}
@@ -275,12 +275,12 @@ func TestSplit_Logs_FR030(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	split := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split",
+	split := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",
 		splitBody("Ireland roadshow", irelandInit, []string{agencyItem}, "19750.00", false, 1))
 	assertStatus(t, split, http.StatusCreated)
 
 	var page history.LogPage
-	priya.Do(t, http.MethodGet, "/api/activity-log?limit=10", nil).Decode(t, &page)
+	priya.Do(t, http.MethodGet, "/api/v1/activity-log?limit=10", nil).Decode(t, &page)
 	var lines []string
 	for _, e := range page.Items {
 		line := strings.TrimSpace(string(e.Action) + " " + e.Verb + " " + e.RecordID + " " + e.Details)
@@ -304,15 +304,15 @@ func TestSplit_Logs_FR030(t *testing.T) {
 func TestSplitLinks_DeletedOriginal_FR031(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	split := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split",
+	split := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",
 		splitBody("Ireland roadshow", irelandInit, []string{agencyItem}, "19750.00", false, 1))
 	var result activities.SplitResult
 	split.Decode(t, &result)
 
-	deleted := priya.Do(t, http.MethodDelete, "/api/activities/"+ukLaunchEvent, nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/v1/activities/"+ukLaunchEvent, nil)
 	assertStatus(t, deleted, http.StatusOK)
 	var created activities.View
-	priya.Do(t, http.MethodGet, "/api/activities/"+result.NewActivity.ID, nil).Decode(t, &created)
+	priya.Do(t, http.MethodGet, "/api/v1/activities/"+result.NewActivity.ID, nil).Decode(t, &created)
 
 	if created.SplitFrom == nil || *created.SplitFrom != (activities.SplitLink{ID: ukLaunchEvent, Name: "UK launch event", PlanID: "P-1004", Deleted: true}) {
 		t.Errorf("split from = %+v, want UK launch event, deleted", created.SplitFrom)
@@ -323,12 +323,12 @@ func TestSplitLinks_DeletedOriginal_FR031(t *testing.T) {
 func TestCopy_DoesNotCarrySplitFrom_FR031(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
-	split := priya.Do(t, http.MethodPost, "/api/activities/"+ukLaunchEvent+"/split",
+	split := priya.Do(t, http.MethodPost, "/api/v1/activities/"+ukLaunchEvent+"/split",
 		splitBody("Ireland roadshow", irelandInit, []string{agencyItem}, "19750.00", false, 1))
 	var result activities.SplitResult
 	split.Decode(t, &result)
 
-	copied := priya.Do(t, http.MethodPost, "/api/activities/"+result.NewActivity.ID+"/copy", map[string]any{"initiativeId": irelandInit})
+	copied := priya.Do(t, http.MethodPost, "/api/v1/activities/"+result.NewActivity.ID+"/copy", map[string]any{"initiativeId": irelandInit})
 
 	assertStatus(t, copied, http.StatusCreated)
 	var copy activities.View

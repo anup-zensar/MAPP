@@ -11,7 +11,7 @@ import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from './testData';
 const page = (items: HomeAttentionItem[]) => ({ body: { items, total: items.length } });
 
 function renderCard(answer: MockHandler = page([attentionItemOf()])) {
-  mockApi({ 'GET /api/home/attention': answer });
+  mockApi({ 'GET /api/v1/home/attention': answer });
   return renderWithProviders(<AttentionCard />, { user: testUser(), path: '/' });
 }
 

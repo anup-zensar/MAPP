@@ -13,7 +13,7 @@ import (
 	"mapp/internal/platform/web"
 )
 
-// defaultLimit is how many log entries GET /api/activity-log answers when the request does not say.
+// defaultLimit is how many log entries GET /api/v1/activity-log answers when the request does not say.
 const defaultLimit = 50
 
 // Handler answers the HTTP requests about the activity log and the recycle bin. Feature 011 builds the
@@ -30,17 +30,17 @@ func NewHandler(s *Service) *Handler {
 // Routes registers the history routes on r. All of them need a signed-in person, so all are wrapped in
 // signedIn.
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/activity-log", signedIn(h.listLog))
-	r.Handle("GET /api/activity-log/summary", signedIn(h.logSummary))
-	r.Handle("GET /api/recycle-bin", signedIn(h.listBin))
-	r.Handle("GET /api/recycle-bin/{entryId}/restore-preview", signedIn(h.previewRestore))
-	r.Handle("DELETE /api/recycle-bin/{entryId}", signedIn(h.purge))
-	r.Handle("POST /api/recycle-bin/empty", signedIn(h.emptyBin))
-	r.Handle("POST /api/recycle-bin/{entryId}/undo", signedIn(h.undo))
-	r.Handle("POST /api/recycle-bin/{entryId}/restore", signedIn(h.restore))
+	r.Handle("GET /api/v1/activity-log", signedIn(h.listLog))
+	r.Handle("GET /api/v1/activity-log/summary", signedIn(h.logSummary))
+	r.Handle("GET /api/v1/recycle-bin", signedIn(h.listBin))
+	r.Handle("GET /api/v1/recycle-bin/{entryId}/restore-preview", signedIn(h.previewRestore))
+	r.Handle("DELETE /api/v1/recycle-bin/{entryId}", signedIn(h.purge))
+	r.Handle("POST /api/v1/recycle-bin/empty", signedIn(h.emptyBin))
+	r.Handle("POST /api/v1/recycle-bin/{entryId}/undo", signedIn(h.undo))
+	r.Handle("POST /api/v1/recycle-bin/{entryId}/restore", signedIn(h.restore))
 }
 
-// listLog answers GET /api/activity-log: the newest entries that match the filters (FR-003, FR-009) —
+// listLog answers GET /api/v1/activity-log: the newest entries that match the filters (FR-003, FR-009) —
 // actorId, recordType, action (repeated), planId, recordId with includeInside, from, to, q — older than
 // beforeSeq, at most limit of them (1 to 200, 50 when not sent). Every problem with the parameters is
 // answered at once.
@@ -88,7 +88,7 @@ func (h *Handler) listLog(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, page)
 }
 
-// logParameters are the query parameters of GET /api/activity-log in the contract's order, the order in
+// logParameters are the query parameters of GET /api/v1/activity-log in the contract's order, the order in
 // which their problems are listed.
 var logParameters = []string{
 	"actorId", "recordType", "action", "planId", "recordId", "includeInside", "from", "to", "q", "beforeSeq", "limit",
@@ -108,7 +108,7 @@ func withQueryProblems(problems errs.Problems, q LogQuery) error {
 	return problems.Err()
 }
 
-// logSummary answers GET /api/activity-log/summary: the summary cards and the filter choices of the
+// logSummary answers GET /api/v1/activity-log/summary: the summary cards and the filter choices of the
 // activity log (FR-002, FR-003), for the todayStart and weekStart the browser sends.
 func (h *Handler) logSummary(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
@@ -173,7 +173,7 @@ func timeParam(params url.Values, name string, required bool, problems *errs.Pro
 	return &moment
 }
 
-// listBin answers GET /api/recycle-bin: everything in the recycle bin, newest first, with restore states
+// listBin answers GET /api/v1/recycle-bin: everything in the recycle bin, newest first, with restore states
 // and the records each entry holds, without their data (011 FR-014 – FR-017).
 func (h *Handler) listBin(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
@@ -185,7 +185,7 @@ func (h *Handler) listBin(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, BinPage{Items: items, Total: len(items)})
 }
 
-// previewRestore answers GET /api/recycle-bin/{entryId}/restore-preview: what a restore would do, without
+// previewRestore answers GET /api/v1/recycle-bin/{entryId}/restore-preview: what a restore would do, without
 // doing it (011 FR-018 – FR-024).
 func (h *Handler) previewRestore(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
@@ -197,7 +197,7 @@ func (h *Handler) previewRestore(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, preview)
 }
 
-// undo answers POST /api/recycle-bin/{entryId}/undo: the Undo offered right after a delete (FR-026).
+// undo answers POST /api/v1/recycle-bin/{entryId}/undo: the Undo offered right after a delete (FR-026).
 func (h *Handler) undo(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	result, err := h.service.Undo(r.Context(), a, r.PathValue("entryId"))
@@ -208,7 +208,7 @@ func (h *Handler) undo(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, result)
 }
 
-// restore answers POST /api/recycle-bin/{entryId}/restore: a restore from the recycle bin (FR-025), with
+// restore answers POST /api/v1/recycle-bin/{entryId}/restore: a restore from the recycle bin (FR-025), with
 // withParents=true also of the entries holding its missing parents, parents first (011 FR-023).
 func (h *Handler) restore(w http.ResponseWriter, r *http.Request) {
 	var problems errs.Problems
@@ -230,7 +230,7 @@ func (h *Handler) restore(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, result)
 }
 
-// purge answers DELETE /api/recycle-bin/{entryId}: Delete permanently (011 FR-028, FR-030).
+// purge answers DELETE /api/v1/recycle-bin/{entryId}: Delete permanently (011 FR-028, FR-030).
 func (h *Handler) purge(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	result, err := h.service.Purge(r.Context(), a, r.PathValue("entryId"))
@@ -241,7 +241,7 @@ func (h *Handler) purge(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, result)
 }
 
-// emptyBin answers POST /api/recycle-bin/empty: Empty recycle bin, for the entries the person saw in the
+// emptyBin answers POST /api/v1/recycle-bin/empty: Empty recycle bin, for the entries the person saw in the
 // confirmation (011 FR-029, FR-030, D-180).
 func (h *Handler) emptyBin(w http.ResponseWriter, r *http.Request) {
 	var request EmptyRequest

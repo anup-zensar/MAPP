@@ -12,10 +12,10 @@ const NEW_PATH = '/plans/P-1001/campaigns/new';
 
 function renderPanel(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
-    'GET /api/plans/P-1001/campaigns': { body: planCampaigns() },
-    'GET /api/plans/P-1001': { body: planAnswer([{ id: LUBRICANTS, label: 'Lubricants' }]) },
-    'GET /api/shell-attribute-forms/campaign': { body: campaignForm() },
-    'GET /api/people': { body: PEOPLE },
+    'GET /api/v1/plans/P-1001/campaigns': { body: planCampaigns() },
+    'GET /api/v1/plans/P-1001': { body: planAnswer([{ id: LUBRICANTS, label: 'Lubricants' }]) },
+    'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
+    'GET /api/v1/people': { body: PEOPLE },
     ...answers,
   });
   const rendered = renderWithProviders(<NewCampaignPanel />, {
@@ -76,7 +76,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('follows the typed budget in the remaining plan budget, red when over-allocated (US1#3, FR-010)', async () => {
     const { user, api } = renderPanel({
-      'POST /api/plans/P-1001/campaigns': { status: 201, body: campaign({ id: 'C-1005' }) },
+      'POST /api/v1/plans/P-1001/campaigns': { status: 201, body: campaign({ id: 'C-1005' }) },
     });
     const panel = await findPanel();
     expect(within(panel).getByText('$200,000.00')).toBeInTheDocument();
@@ -88,12 +88,14 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
     await user.type(within(panel).getByLabelText('Campaign name'), 'Fleet growth');
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(api.bodiesOf('POST /api/plans/P-1001/campaigns')).toHaveLength(1));
+    await waitFor(() =>
+      expect(api.bodiesOf('POST /api/v1/plans/P-1001/campaigns')).toHaveLength(1),
+    );
   });
 
   it('says when the plan has no budget to allocate from (FR-010)', async () => {
     renderPanel({
-      'GET /api/plans/P-1001/campaigns': {
+      'GET /api/v1/plans/P-1001/campaigns': {
         body: planCampaigns([], { planBudget: null, remainingPlanBudget: null }),
       },
     });
@@ -104,7 +106,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('saves, announces the campaign with View and highlights its row (US1#4, FR-004)', async () => {
     const { user, api, router } = renderPanel({
-      'POST /api/plans/P-1001/campaigns': {
+      'POST /api/v1/plans/P-1001/campaigns': {
         status: 201,
         body: campaign({ id: 'C-1005', name: 'Fleet growth' }),
       },
@@ -117,7 +119,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
     expect(router.state.location.state).toEqual({ highlight: 'C-1005' });
-    expect(api.bodiesOf('POST /api/plans/P-1001/campaigns')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/plans/P-1001/campaigns')).toEqual([
       {
         name: 'Fleet growth',
         description: '',
@@ -140,7 +142,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('saves and opens a fresh panel for the same plan (FR-001 Save and add another)', async () => {
     const { user, router } = renderPanel({
-      'POST /api/plans/P-1001/campaigns': {
+      'POST /api/v1/plans/P-1001/campaigns': {
         status: 201,
         body: campaign({ id: 'C-1005', name: 'Fleet growth' }),
       },
@@ -157,21 +159,23 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('shows every problem of a refused save at once, the summary focused (US1#5, FR-005)', async () => {
     const { user } = renderPanel({
-      'POST /api/plans/P-1001/campaigns': {
+      'POST /api/v1/plans/P-1001/campaigns': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Some fields need your attention.',
-          fields: [
-            {
-              field: 'name',
-              message: "'FY2026 Lubricants Europe' already has a campaign called 'Helix launch'.",
-            },
-            {
-              field: 'endDate',
-              message: 'End date must be on or after the start date (01 Jan 2026).',
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [
+              {
+                field: 'name',
+                message: "'FY2026 Lubricants Europe' already has a campaign called 'Helix launch'.",
+              },
+              {
+                field: 'endDate',
+                message: 'End date must be on or after the start date (01 Jan 2026).',
+              },
+            ],
+          },
         },
       },
     });
@@ -197,7 +201,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('warns when the dates leave the plan’s year, and saves anyway (US1#5, FR-008)', async () => {
     const { user, api } = renderPanel({
-      'POST /api/plans/P-1001/campaigns': { status: 201, body: campaign({ id: 'C-1005' }) },
+      'POST /api/v1/plans/P-1001/campaigns': { status: 201, body: campaign({ id: 'C-1005' }) },
     });
     const panel = await findPanel();
 
@@ -209,7 +213,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
     await user.type(within(panel).getByLabelText('Campaign name'), 'Long run');
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
     await waitFor(() =>
-      expect(api.bodiesOf('POST /api/plans/P-1001/campaigns')).toEqual([
+      expect(api.bodiesOf('POST /api/v1/plans/P-1001/campaigns')).toEqual([
         expect.objectContaining({ endDate: '2027-03-31' }),
       ]),
     );
@@ -239,11 +243,13 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('shows a loading state, then says when the plan is gone (parent gone)', async () => {
     const { user, router } = renderPanel({
-      'GET /api/plans/P-1001/campaigns': {
+      'GET /api/v1/plans/P-1001/campaigns': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This plan no longer exists — someone may have deleted it.',
+          error: {
+            code: 'not_found',
+            message: 'This plan no longer exists — someone may have deleted it.',
+          },
         },
       },
     });
@@ -259,9 +265,9 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
   it('shows a failure with Try again when the plan cannot be read', async () => {
     let calls = 0;
     const { user } = renderPanel({
-      'GET /api/plans/P-1001/campaigns': () =>
+      'GET /api/v1/plans/P-1001/campaigns': () =>
         ++calls === 1
-          ? { status: 500, body: { code: 'internal_error', message: 'Oops' } }
+          ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
           : {
               body: planCampaigns(),
             },

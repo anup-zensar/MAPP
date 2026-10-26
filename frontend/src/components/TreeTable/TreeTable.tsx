@@ -26,7 +26,7 @@ export interface TreeNode {
   children: TreeNode[];
   /** The row's ⋯ menu; its button is named "Actions for <name>". */
   actions?: ActionsMenuItem[];
-  /** A yellow tint, for the record just created, moved or copied; it is scrolled into view. */
+  /** The hover grey, for the record just created, moved or copied; it is scrolled into view. */
   highlighted?: boolean;
 }
 

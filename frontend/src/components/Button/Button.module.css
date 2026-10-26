@@ -23,11 +23,6 @@
   text-decoration: none;
 }
 
-.button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
 .button svg {
   flex: none;
   width: 18px;
@@ -78,7 +73,7 @@
   padding: 0;
 }
 
-/* The one main action: Shell yellow with dark text (6.7:1). */
+/* The one main action: Shell yellow with dark text (7.8:1 or more). */
 .primary {
   border-color: var(--button-primary-bg);
   background: var(--button-primary-bg);
@@ -104,7 +99,7 @@
 
 .secondary:hover {
   border-color: var(--control-border-hover);
-  background: var(--gray-bg);
+  background: var(--hover);
 }
 
 .secondary:active {
@@ -132,7 +127,27 @@
   color: var(--on-accent);
 }
 
+/* Red has no hover shade (constitution X): the label is underlined instead. */
 .danger:hover {
-  border-color: var(--danger-bg-hover);
-  background: var(--danger-bg-hover);
+  text-decoration: underline;
+}
+
+/* Not possible now, and the reason is said next to it: Shell's Disabled colours, no fading. */
+.button:disabled,
+.button[aria-disabled='true'] {
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+
+.primary:disabled,
+.secondary:disabled,
+.danger:disabled {
+  border-color: var(--disabled-border);
+  background: var(--disabled-bg);
+  text-decoration: none;
+}
+
+.tertiary:disabled,
+.tertiary[aria-disabled='true'] {
+  background: transparent;
 }

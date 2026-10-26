@@ -10,11 +10,11 @@ export const DEMO_PASSWORD = 'mapp';
  * History sections' Include items inside (011) — so every test starts from the same screen (research R19).
  */
 export async function signInAs(page: Page, email: string): Promise<void> {
-  const signIn = await page.request.post('/api/auth/sign-in', {
+  const signIn = await page.request.post('/api/v1/auth/sign-in', {
     data: { email, password: DEMO_PASSWORD },
   });
   expect(signIn.ok()).toBe(true);
-  const reset = await page.request.patch('/api/me/preferences', {
+  const reset = await page.request.patch('/api/v1/me/preferences', {
     data: {
       theme: 'system',
       sidebarCollapsed: false,

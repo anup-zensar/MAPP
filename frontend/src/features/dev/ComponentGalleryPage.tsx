@@ -164,7 +164,7 @@ export function ComponentGalleryPage() {
           <div className={styles.summaries}>
             <LinkSummaryCard
               icon={<ClipboardList />}
-              tint="var(--blue)"
+              tint="var(--info)"
               label="My teams' plans"
               tip="Plans that have at least one of your teams."
               value="3"

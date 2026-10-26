@@ -21,7 +21,7 @@ function renderCard(
   level: 'plan' | 'campaign' = 'plan',
 ) {
   const api = mockApi({
-    'GET /api/plans/P-1004/budget-by-month': { body: budgetByMonth() },
+    'GET /api/v1/plans/P-1004/budget-by-month': { body: budgetByMonth() },
     ...answers,
   });
   const result = renderWithProviders(
@@ -105,7 +105,7 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
     const plannedCost = twelve('40000.00') as { amount: string; currency: string }[];
     plannedCost[2] = gbp('65000.00');
     renderCard(undefined, {
-      'GET /api/plans/P-1004/budget-by-month': {
+      'GET /api/v1/plans/P-1004/budget-by-month': {
         body: budgetByMonth({
           rows: [
             {
@@ -150,7 +150,7 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
     const { user, api } = renderCard(
       { ...PLAN, budgetPhasing: phasing({ method: 'none', monthly: [], total: null }) },
       {
-        'PUT /api/plans/P-1004/budget-phasing': { body: {} },
+        'PUT /api/v1/plans/P-1004/budget-phasing': { body: {} },
       },
     );
 
@@ -175,9 +175,9 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save budget by month' }));
 
     await waitFor(() =>
-      expect(api.bodiesOf('PUT /api/plans/P-1004/budget-phasing')).toHaveLength(1),
+      expect(api.bodiesOf('PUT /api/v1/plans/P-1004/budget-phasing')).toHaveLength(1),
     );
-    const [body] = api.bodiesOf('PUT /api/plans/P-1004/budget-phasing') as {
+    const [body] = api.bodiesOf('PUT /api/v1/plans/P-1004/budget-phasing') as {
       method: string;
       months: { month: string; amount: string }[];
       version: number;
@@ -211,7 +211,7 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
   });
 
   it('comes into view with the focus when a completeness link leads to it (T053)', async () => {
-    mockApi({ 'GET /api/plans/P-1004/budget-by-month': { body: budgetByMonth() } });
+    mockApi({ 'GET /api/v1/plans/P-1004/budget-by-month': { body: budgetByMonth() } });
     renderWithProviders(
       <BudgetByMonthCard
         level="plan"

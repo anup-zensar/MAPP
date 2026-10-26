@@ -30,10 +30,9 @@
   color: var(--ink-2);
 }
 
-/* A filter in use: a tint of the selection blue, and its count or value as words. */
+/* A filter in use: the Border Strong of an emphasised control, and its count or value as words. */
 .inUse {
-  border-color: color-mix(in srgb, var(--blue) 40%, transparent);
-  background: color-mix(in srgb, var(--blue) 8%, var(--surface));
+  border-color: var(--control-border-hover);
 }
 
 .summary {
@@ -49,10 +48,15 @@
   padding: var(--space-2);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
   color: var(--ink);
   font-size: var(--text-sm);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .menu {
+  --ink-2: var(--ink);
 }
 
 .search {
@@ -72,7 +76,7 @@
 
 .search input:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .choices {
@@ -93,7 +97,12 @@
   cursor: pointer;
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .choice:hover {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 

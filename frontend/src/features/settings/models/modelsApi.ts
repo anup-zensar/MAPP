@@ -25,32 +25,32 @@ export const MODEL_LISTS: QueryKey[] = [
 
 /** One model as it is stored now; after a conflict the form takes its version from it. */
 export function fetchModel(id: string): Promise<Model> {
-  return call(api.GET('/api/models/{modelId}', { params: { path: { modelId: id } } }));
+  return call(api.GET('/api/v1/models/{modelId}', { params: { path: { modelId: id } } }));
 }
 
 /** What a change would affect, before it is saved (FR-011, FR-012). Saves nothing. */
 export function checkModelImpact(id: string, body: ModelUpdate): Promise<ChangeImpact> {
   return call(
-    api.POST('/api/models/{modelId}/impact', { params: { path: { modelId: id } }, body }),
+    api.POST('/api/v1/models/{modelId}/impact', { params: { path: { modelId: id } }, body }),
   );
 }
 
 /** POST …/status: sets a model inactive or reactivates it (FR-004). */
 export function setModelStatus(id: string, body: { active: boolean; version: number }) {
   return call(
-    api.POST('/api/models/{modelId}/status', { params: { path: { modelId: id } }, body }),
+    api.POST('/api/v1/models/{modelId}/status', { params: { path: { modelId: id } }, body }),
   );
 }
 
 /** Deletes an unused model (to the recycle bin). */
 export function deleteModel(id: string) {
-  return call(api.DELETE('/api/models/{modelId}', { params: { path: { modelId: id } } }));
+  return call(api.DELETE('/api/v1/models/{modelId}', { params: { path: { modelId: id } } }));
 }
 
 export function useCreateModel() {
   const refresh = useRefreshModelLists();
   return useMutation({
-    mutationFn: (body: ModelCreate) => call(api.POST('/api/models', { body })),
+    mutationFn: (body: ModelCreate) => call(api.POST('/api/v1/models', { body })),
     onSettled: refresh,
   });
 }
@@ -60,7 +60,7 @@ export function useUpdateModel() {
   const refresh = useRefreshModelLists();
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: ModelUpdate }) =>
-      call(api.PATCH('/api/models/{modelId}', { params: { path: { modelId: id } }, body })),
+      call(api.PATCH('/api/v1/models/{modelId}', { params: { path: { modelId: id } }, body })),
     onSettled: refresh,
   });
 }

@@ -1,5 +1,8 @@
 /* The open-rounds note: neutral information above the fields (FR-006). */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .note {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
@@ -14,7 +17,7 @@
   width: 16px;
   height: 16px;
   margin-top: 1px;
-  color: var(--blue);
+  color: var(--info);
 }
 
 /* A problem with the levels as a whole ("Add at least one level."). */

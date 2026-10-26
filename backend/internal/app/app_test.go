@@ -18,41 +18,40 @@ import (
 )
 
 const (
-	notFoundBody       = `{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}`
-	otherSiteBody      = `{"code":"bad_request","message":"This request came from another site and was refused.","fields":[]}`
-	signInRequiredBody = `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`
+	notFoundBody       = `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`
+	otherSiteBody      = `{"error":{"code":"bad_request","message":"This request came from another site and was refused.","fields":[]}}`
+	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
 )
 
 // priyaSignsIn is the body of a sign-in as Priya Raman with the demo password.
 var priyaSignsIn = map[string]string{"email": "priya.raman@shell.com", "password": "mapp"}
 
-// GET /api/health answers without a session and says in which environment the API runs and whether demo
-// sign-in is on (FR-009).
-func TestHealth_EnvironmentAndDemoSignIn_FR009(t *testing.T) {
+// GET /api/v1/environment answers without a session and says in which environment the API runs and whether
+// demo sign-in is on (FR-009, 022 FR-009).
+func TestEnvironment_EnvironmentAndDemoSignIn_FR009(t *testing.T) {
 	for env, demoSignIn := range map[string]bool{"local": true, "development": true, "production": false} {
 		t.Run(env, func(t *testing.T) {
 			server := apitest.New(t, apitest.WithEnv(env))
 
-			response := server.Do(t, http.MethodGet, "/api/health", nil)
+			response := server.Do(t, http.MethodGet, "/api/v1/environment", nil)
 
 			if response.Status != http.StatusOK {
 				t.Fatalf("status = %d, want 200", response.Status)
 			}
-			var health struct {
-				Status      string `json:"status"`
+			var environment struct {
 				Environment string `json:"environment"`
 				DemoSignIn  bool   `json:"demoSignIn"`
 			}
-			response.Decode(t, &health)
-			if health.Status != "ok" || health.Environment != env || health.DemoSignIn != demoSignIn {
-				t.Errorf("health = %+v, want status ok, environment %s, demoSignIn %v", health, env, demoSignIn)
+			response.Decode(t, &environment)
+			if environment.Environment != env || environment.DemoSignIn != demoSignIn {
+				t.Errorf("environment = %+v, want environment %s, demoSignIn %v", environment, env, demoSignIn)
 			}
 		})
 	}
 }
 
 // Demo sign-in exists only in the local and development environments. In production both of its routes
-// answer 404, as for any path the API does not serve, and the health check says it is off (FR-009).
+// answer 404, as for any path the API does not serve, and the environment answer says it is off (FR-009).
 func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
 	environments := []struct {
 		env        string
@@ -66,12 +65,12 @@ func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
 		t.Run(tt.env, func(t *testing.T) {
 			server := apitest.New(t, apitest.WithEnv(tt.env))
 
-			demoPeople := server.Do(t, http.MethodGet, "/api/auth/demo-people", nil)
-			signIn := server.Do(t, http.MethodPost, "/api/auth/sign-in", priyaSignsIn)
-			var health struct {
+			demoPeople := server.Do(t, http.MethodGet, "/api/v1/auth/demo-people", nil)
+			signIn := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", priyaSignsIn)
+			var environment struct {
 				DemoSignIn bool `json:"demoSignIn"`
 			}
-			server.Do(t, http.MethodGet, "/api/health", nil).Decode(t, &health)
+			server.Do(t, http.MethodGet, "/api/v1/environment", nil).Decode(t, &environment)
 
 			if tt.demoSignIn {
 				if demoPeople.Status != http.StatusOK || signIn.Status != http.StatusOK {
@@ -84,8 +83,8 @@ func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
 					}
 				}
 			}
-			if health.DemoSignIn != tt.demoSignIn {
-				t.Errorf("health demoSignIn = %v, want %v", health.DemoSignIn, tt.demoSignIn)
+			if environment.DemoSignIn != tt.demoSignIn {
+				t.Errorf("environment demoSignIn = %v, want %v", environment.DemoSignIn, tt.demoSignIn)
 			}
 		})
 	}
@@ -96,32 +95,35 @@ func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
 func TestDemoModeOff_ExistingSessionRefused_FR009(t *testing.T) {
 	dir := t.TempDir()
 	local := apitest.New(t, apitest.WithDataDir(dir))
-	signIn := local.Do(t, http.MethodPost, "/api/auth/sign-in", priyaSignsIn)
+	signIn := local.Do(t, http.MethodPost, "/api/v1/auth/sign-in", priyaSignsIn)
 	cookie := signIn.Cookie(auth.CookieName)
 	if signIn.Status != http.StatusOK || cookie == nil {
 		t.Fatalf("sign-in = %d %s, want 200 with a session cookie", signIn.Status, signIn.Body)
 	}
 	production := apitest.New(t, apitest.WithEnv("production"), apitest.WithDataDir(dir))
 
-	response := production.Do(t, http.MethodGet, "/api/me", nil, apitest.WithCookie(cookie))
+	response := production.Do(t, http.MethodGet, "/api/v1/me", nil, apitest.WithCookie(cookie))
 
 	if response.Status != http.StatusUnauthorized || string(response.Body) != signInRequiredBody {
-		t.Errorf("production: GET /api/me = %d %s\nwant 401 %s", response.Status, response.Body, signInRequiredBody)
+		t.Errorf("production: GET /api/v1/me = %d %s\nwant 401 %s", response.Status, response.Body, signInRequiredBody)
 	}
 	// The session itself is fine: where demo sign-in is on, it still works.
-	if me := local.Do(t, http.MethodGet, "/api/me", nil, apitest.WithCookie(cookie)); me.Status != http.StatusOK {
-		t.Errorf("local: GET /api/me = %d %s, want 200", me.Status, me.Body)
+	if me := local.Do(t, http.MethodGet, "/api/v1/me", nil, apitest.WithCookie(cookie)); me.Status != http.StatusOK {
+		t.Errorf("local: GET /api/v1/me = %d %s, want 200", me.Status, me.Body)
 	}
 }
 
-// Every other path or method under /api/ answers the API's JSON error format, never plain text.
-func TestUnknownPathOrMethod_AnswersJSONNotFound(t *testing.T) {
+// Every other path or method under /api/ answers the API's JSON error format, never plain text; so do the
+// unversioned paths of before /api/v1 (022 FR-001).
+func TestUnknownPathOrMethod_AnswersJSONNotFound_022_FR001(t *testing.T) {
 	server := apitest.New(t)
 	calls := []struct{ method, path string }{
-		{http.MethodGet, "/api/nowhere"},
+		{http.MethodGet, "/api/v1/nowhere"},
+		{http.MethodGet, "/api/v1/"},
+		{http.MethodPost, "/api/v1/environment"},
+		{http.MethodGet, "/api/health"},
+		{http.MethodGet, "/api/plans"},
 		{http.MethodGet, "/api/"},
-		{http.MethodPost, "/api/health"},
-		{http.MethodDelete, "/api/health"},
 	}
 	for _, call := range calls {
 		response := server.Do(t, call.method, call.path, nil, apitest.SkipValidation())
@@ -136,7 +138,7 @@ func TestUnknownPathOrMethod_AnswersJSONNotFound(t *testing.T) {
 func TestOtherHost_IsRefused(t *testing.T) {
 	server := apitest.New(t)
 
-	response := server.Do(t, http.MethodGet, "/api/health", nil, apitest.WithHost("evil.example"))
+	response := server.Do(t, http.MethodGet, "/api/v1/environment", nil, apitest.WithHost("evil.example"))
 
 	if response.Status != http.StatusBadRequest || string(response.Body) != otherSiteBody {
 		t.Errorf("answer = %d %s\nwant 400 %s", response.Status, response.Body, otherSiteBody)
@@ -148,9 +150,9 @@ func TestOtherHost_IsRefused(t *testing.T) {
 func TestAnswers_CarryTheAPIHeaders(t *testing.T) {
 	server := apitest.New(t)
 	answers := map[string]*apitest.Response{
-		"health":       server.Do(t, http.MethodGet, "/api/health", nil),
-		"unknown path": server.Do(t, http.MethodGet, "/api/nowhere", nil, apitest.SkipValidation()),
-		"refused host": server.Do(t, http.MethodGet, "/api/health", nil, apitest.WithHost("evil.example")),
+		"environment":  server.Do(t, http.MethodGet, "/api/v1/environment", nil),
+		"unknown path": server.Do(t, http.MethodGet, "/api/v1/nowhere", nil, apitest.SkipValidation()),
+		"refused host": server.Do(t, http.MethodGet, "/api/v1/environment", nil, apitest.WithHost("evil.example")),
 	}
 	headers := map[string]string{
 		"Content-Type":           "application/json",
@@ -171,8 +173,8 @@ func TestAnswers_CarryTheAPIHeaders(t *testing.T) {
 func TestNew_RoutesListTheOperations(t *testing.T) {
 	routes := newApp(t, "local").Routes
 
-	if !slices.Contains(routes, "GET /api/health") {
-		t.Errorf("Routes = %q, want it to contain GET /api/health", routes)
+	if !slices.Contains(routes, "GET /healthz") {
+		t.Errorf("Routes = %q, want it to contain GET /healthz", routes)
 	}
 	if slices.Contains(routes, "/api/") {
 		t.Errorf("Routes = %q, want no catch-all", routes)
@@ -203,7 +205,7 @@ func TestRoutesMatchContract(t *testing.T) {
 	}
 }
 
-// Every operation except health and demo sign-in needs a signed-in person, and refuses a request without a
+// Every operation except the probes, the environment and demo sign-in needs a signed-in person, and refuses a request without a
 // session with sign_in_required before it reads anything else of the request (FR-005). Operations listed in
 // notYetServed are skipped until they are built.
 func TestEveryProtectedOperationRequiresSignIn_FR005(t *testing.T) {
@@ -227,7 +229,8 @@ func TestEveryProtectedOperationRequiresSignIn_FR005(t *testing.T) {
 			t.Errorf("%s without a session = %d %s\nwant 401 %s", op.route, response.Status, response.Body, signInRequiredBody)
 		}
 	}
-	wantPublic := []string{"GET /api/health", "GET /api/auth/demo-people", "POST /api/auth/sign-in", "POST /api/auth/sign-out"}
+	wantPublic := []string{"GET /healthz", "GET /readyz", "GET /api/v1/environment", "GET /api/v1/auth/demo-people",
+		"POST /api/v1/auth/sign-in", "POST /api/v1/auth/sign-out"}
 	if !slices.Equal(public, wantPublic) {
 		t.Errorf("operations without a session = %q, want only %q", public, wantPublic)
 	}
@@ -240,14 +243,14 @@ func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
 		t.Run(env, func(t *testing.T) {
 			var sampleRoutes []string
 			for _, route := range newApp(t, env).Routes {
-				if strings.Contains(route, " /api/sample-") {
+				if strings.Contains(route, " /api/v1/sample-") {
 					sampleRoutes = append(sampleRoutes, route)
 				}
 			}
 
 			want := 0
 			if served {
-				want = 6 // the six /api/sample-* operations of the contract
+				want = 6 // the six /api/v1/sample-* operations of the contract
 			}
 			if len(sampleRoutes) != want {
 				t.Errorf("sample routes = %q, want %d", sampleRoutes, want)
@@ -256,9 +259,9 @@ func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
 	}
 
 	production := apitest.New(t, apitest.WithEnv("production"))
-	response := production.Do(t, http.MethodGet, "/api/sample-folders", nil)
+	response := production.Do(t, http.MethodGet, "/api/v1/sample-folders", nil)
 	if response.Status != http.StatusNotFound || string(response.Body) != notFoundBody {
-		t.Errorf("production: GET /api/sample-folders = %d %s\nwant 404 %s", response.Status, response.Body, notFoundBody)
+		t.Errorf("production: GET /api/v1/sample-folders = %d %s\nwant 404 %s", response.Status, response.Body, notFoundBody)
 	}
 }
 
@@ -267,19 +270,19 @@ func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
 // (FR-006, FR-004).
 func TestSettingsKindsRegistered_FR006(t *testing.T) {
 	for _, env := range []string{"local", "development", "production"} {
-		if !slices.Contains(newApp(t, env).Routes, "DELETE /api/currencies/{code}") {
+		if !slices.Contains(newApp(t, env).Routes, "DELETE /api/v1/currencies/{code}") {
 			t.Errorf("%s: the Settings routes are not served", env)
 		}
 	}
 
 	server := apitest.New(t)
 	alex := server.SignIn(t, "alex.morgan@shell.com")
-	alex.Do(t, http.MethodPost, "/api/currencies", map[string]string{"code": "JPY", "name": "Japanese yen", "symbol": "¥", "rate": "150"})
+	alex.Do(t, http.MethodPost, "/api/v1/currencies", map[string]string{"code": "JPY", "name": "Japanese yen", "symbol": "¥", "rate": "150"})
 	var deleted struct {
 		RecycleBinEntry struct{ ID, RecordType, RecordTypeLabel string }
 	}
-	alex.Do(t, http.MethodDelete, "/api/currencies/JPY", nil).Decode(t, &deleted)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
+	alex.Do(t, http.MethodDelete, "/api/v1/currencies/JPY", nil).Decode(t, &deleted)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
 
 	if deleted.RecycleBinEntry.RecordType != "currency" || deleted.RecycleBinEntry.RecordTypeLabel != "currency" {
 		t.Errorf("recycle-bin entry = %+v, want a currency", deleted.RecycleBinEntry)
@@ -298,17 +301,17 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 // cannot go stale. The list must be empty when the Plan module is done; then remove it and its uses.
 var notYetServed = []string{
 	// 012 Bulk actions and import
-	"GET /api/bulk-actions/fields",
-	"POST /api/bulk-actions/targets",
-	"POST /api/bulk-actions/preview",
-	"POST /api/bulk-actions",
-	"POST /api/bulk-actions/{bulkActionId}/undo",
-	"GET /api/plans/{planId}/imports",
-	"POST /api/plans/{planId}/imports",
-	"POST /api/plans/{planId}/imports/check",
-	"GET /api/plans/{planId}/import-template",
-	"GET /api/imports/{importId}",
-	"POST /api/imports/{importId}/undo",
+	"GET /api/v1/bulk-actions/fields",
+	"POST /api/v1/bulk-actions/targets",
+	"POST /api/v1/bulk-actions/preview",
+	"POST /api/v1/bulk-actions",
+	"POST /api/v1/bulk-actions/{bulkActionId}/undo",
+	"GET /api/v1/plans/{planId}/imports",
+	"POST /api/v1/plans/{planId}/imports",
+	"POST /api/v1/plans/{planId}/imports/check",
+	"GET /api/v1/plans/{planId}/import-template",
+	"GET /api/v1/imports/{importId}",
+	"POST /api/v1/imports/{importId}/undo",
 }
 
 // The list of operations not yet served stays accurate: every entry is an operation of the contract, none

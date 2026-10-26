@@ -81,7 +81,7 @@ async function activityAttributeValues(
   page: Page,
   leaveEmpty: readonly ActivityAttribute[],
 ): Promise<Record<string, unknown>> {
-  const form = await callApi<AttributeForm>(page, 'GET', '/api/shell-attribute-forms/activity');
+  const form = await callApi<AttributeForm>(page, 'GET', '/api/v1/shell-attribute-forms/activity');
   const attributes = form.sections.flatMap((section) => section.attributes);
   const attribute = (label: string) => {
     const found = attributes.find((a) => a.label === label);
@@ -130,16 +130,16 @@ export async function createPlan(
   year = new Date().getUTCFullYear() + 1,
 ): Promise<Named & { year: number }> {
   const [modelId, teamId, ownerId, planForm] = await Promise.all([
-    idOf(page, '/api/models', 'Mobility 1.0'),
-    idOf(page, '/api/teams', 'Mobility China'),
-    idOf(page, '/api/people', 'Mei Lin'),
-    callApi<AttributeForm>(page, 'GET', '/api/shell-attribute-forms/plan'),
+    idOf(page, '/api/v1/models', 'Mobility 1.0'),
+    idOf(page, '/api/v1/teams', 'Mobility China'),
+    idOf(page, '/api/v1/people', 'Mei Lin'),
+    callApi<AttributeForm>(page, 'GET', '/api/v1/shell-attribute-forms/plan'),
   ]);
   const mobility = planForm.businessUnitOptions.find((o) => o.label === 'Mobility');
   if (!planForm.businessUnitAttributeId || !mobility) {
     throw new Error('The plan form has no business unit Mobility');
   }
-  const plan = await callApi<Named>(page, 'POST', '/api/plans', {
+  const plan = await callApi<Named>(page, 'POST', '/api/v1/plans', {
     name: uniqueName(`${label} plan`),
     year,
     modelId,
@@ -169,8 +169,8 @@ export async function createInitiative(
   year: number,
   budget: string,
 ): Promise<Named> {
-  const ownerId = await idOf(page, '/api/people', 'Mei Lin');
-  return callApi<Named>(page, 'POST', `/api/campaigns/${campaignId}/initiatives`, {
+  const ownerId = await idOf(page, '/api/v1/people', 'Mei Lin');
+  return callApi<Named>(page, 'POST', `/api/v1/campaigns/${campaignId}/initiatives`, {
     name: uniqueName(`${label} initiative`),
     description: '',
     ownerId,
@@ -193,11 +193,11 @@ export async function createPlanningRecords(
 ): Promise<PlanningRecords> {
   const plan = await createPlan(page, label);
   const { year } = plan;
-  const ownerId = await idOf(page, '/api/people', 'Mei Lin');
+  const ownerId = await idOf(page, '/api/v1/people', 'Mei Lin');
 
   const wholeYear = { ownerId, startDate: `${year}-01-01`, endDate: `${year}-12-31` };
   const campaignName = uniqueName(`${label} campaign`);
-  const campaign = await callApi<Named>(page, 'POST', `/api/plans/${plan.id}/campaigns`, {
+  const campaign = await callApi<Named>(page, 'POST', `/api/v1/plans/${plan.id}/campaigns`, {
     name: campaignName,
     description: '',
     ...wholeYear,
@@ -209,7 +209,7 @@ export async function createPlanningRecords(
   const form = await callApi<ActivityForm>(
     page,
     'GET',
-    `/api/initiatives/${initiative.id}/activity-form`,
+    `/api/v1/initiatives/${initiative.id}/activity-form`,
   );
   const type = form.activityTypes.find((t) => t.name === 'Content production');
   const workflow = form.approvalWorkflows.find((w) => w.name === CHINA_WORKFLOW);
@@ -220,7 +220,7 @@ export async function createPlanningRecords(
   const created = await callApi<Named & { version: number }>(
     page,
     'POST',
-    `/api/initiatives/${initiative.id}/activities`,
+    `/api/v1/initiatives/${initiative.id}/activities`,
     {
       name: activityName,
       externalName: '',
@@ -272,10 +272,10 @@ export async function decideAs(
   const approval = await callApi<{ rounds: ApprovalRound[] }>(
     page,
     'GET',
-    `/api/activities/${activityId}/approval`,
+    `/api/v1/activities/${activityId}/approval`,
   );
   const [round] = approval.rounds;
-  await callApi(page, 'POST', `/api/activities/${activityId}/approval/${decision}`, {
+  await callApi(page, 'POST', `/api/v1/activities/${activityId}/approval/${decision}`, {
     roundId: round.id,
     level: round.currentLevel,
     comment,
@@ -287,7 +287,7 @@ export async function decideAs(
  * Alex Morgan approve both levels. Ends signed in as Alex Morgan.
  */
 export async function approveThroughApi(page: Page, records: PlanningRecords): Promise<void> {
-  await callApi(page, 'POST', `/api/activities/${records.activityId}/approval/submit`, {
+  await callApi(page, 'POST', `/api/v1/activities/${records.activityId}/approval/submit`, {
     version: records.activityVersion,
     comment: '',
   });
@@ -344,9 +344,9 @@ export async function changeActivityPlannedCost(
   activityId: string,
   amount: string,
 ): Promise<void> {
-  const activity = await callApi<ActivityAnswer>(page, 'GET', `/api/activities/${activityId}`);
+  const activity = await callApi<ActivityAnswer>(page, 'GET', `/api/v1/activities/${activityId}`);
   const ownStages = activity.goals.setLaterStagesMyself;
-  await callApi(page, 'PATCH', `/api/activities/${activityId}`, {
+  await callApi(page, 'PATCH', `/api/v1/activities/${activityId}`, {
     name: activity.name,
     externalName: activity.externalName,
     activityTypeId: activity.activityType.id,
@@ -396,7 +396,7 @@ export async function createLineItem(
   return callApi<Named & { version: number }>(
     page,
     'POST',
-    `/api/activities/${activityId}/line-items`,
+    `/api/v1/activities/${activityId}/line-items`,
     lineItemFields(uniqueName(`${label} line item`), plannedCost),
   );
 }
@@ -407,7 +407,7 @@ export async function changeLineItemPlannedCost(
   lineItem: Named & { version: number },
   plannedCost: string,
 ): Promise<void> {
-  await callApi(page, 'PATCH', `/api/line-items/${lineItem.id}`, {
+  await callApi(page, 'PATCH', `/api/v1/line-items/${lineItem.id}`, {
     ...lineItemFields(lineItem.name, plannedCost),
     version: lineItem.version,
   });

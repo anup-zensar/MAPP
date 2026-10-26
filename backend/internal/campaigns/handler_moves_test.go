@@ -63,12 +63,12 @@ func TestCampaignDestinations_Contract(t *testing.T) {
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	var move, copies destinationList
-	moveAnswer := priya.Do(t, http.MethodGet, "/api/campaigns/C-1001/destinations?purpose=move", nil)
+	moveAnswer := priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001/destinations?purpose=move", nil)
 	moveAnswer.Decode(t, &move)
-	copyAnswer := priya.Do(t, http.MethodGet, "/api/campaigns/C-1001/destinations?purpose=copy", nil)
+	copyAnswer := priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001/destinations?purpose=copy", nil)
 	copyAnswer.Decode(t, &copies)
-	other := priya.Do(t, http.MethodGet, "/api/campaigns/C-1001/destinations?purpose=other", nil, apitest.SkipRequestValidation())
-	gone := priya.Do(t, http.MethodGet, "/api/campaigns/C-9999/destinations?purpose=move", nil)
+	other := priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001/destinations?purpose=other", nil, apitest.SkipRequestValidation())
+	gone := priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-9999/destinations?purpose=move", nil)
 
 	assertStatus(t, moveAnswer, http.StatusOK)
 	if move.Total != 1 || move.Items[0].ID != "P-1002" || !move.Items[0].Available || move.Items[0].Consequences == nil ||
@@ -90,7 +90,7 @@ func TestMoveCampaign_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	response := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
+	response := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
 
 	assertStatus(t, response, http.StatusOK)
 	var moved counted
@@ -99,7 +99,7 @@ func TestMoveCampaign_Contract(t *testing.T) {
 		t.Errorf("moved = %s", response.Body)
 	}
 	var tree planCampaigns
-	priya.Do(t, http.MethodGet, "/api/plans/P-1001/campaigns", nil).Decode(t, &tree)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/campaigns", nil).Decode(t, &tree)
 	if tree.Totals.Campaigns != 1 || tree.Totals.Initiatives != 2 {
 		t.Errorf("FY2026 Lubricants Europe now holds %d campaigns and %d initiatives, want 1 and 2", tree.Totals.Campaigns, tree.Totals.Initiatives)
 	}
@@ -114,17 +114,17 @@ func TestMoveCampaign_Refused400(t *testing.T) {
 	server.Advance(time.Hour)
 	edit := helixForm(1)
 	edit["description"] = "Premium launch"
-	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/campaigns/C-1001", edit), http.StatusOK)
+	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", edit), http.StatusOK)
 
-	otherYear := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/move", map[string]any{"planId": "P-1003", "version": 2})
-	gone := priya.Do(t, http.MethodPost, "/api/campaigns/C-9999/move", map[string]any{"planId": "P-1002", "version": 1})
-	stale := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
+	otherYear := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/move", map[string]any{"planId": "P-1003", "version": 2})
+	gone := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-9999/move", map[string]any{"planId": "P-1002", "version": 1})
+	stale := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
 
 	assertBody(t, otherYear, http.StatusBadRequest,
 		validationBody(`{"field":"planId","message":"Campaigns move only between plans of the same year (2026)."}`))
 	assertBody(t, gone, http.StatusNotFound, campaignGoneBody)
-	assertBody(t, stale, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Priya Raman changed this campaign",`+
-		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}`)
+	assertBody(t, stale, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Priya Raman changed this campaign",`+
+		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}}`)
 }
 
 // Copying Helix launch into its own plan answers 201 with a new campaign holding copies of its 2
@@ -133,8 +133,8 @@ func TestCopyCampaign_Contract201(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/copy", map[string]any{"planId": "P-1001", "name": "Helix launch (copy)"})
-	taken := priya.Do(t, http.MethodPost, "/api/campaigns/C-1001/copy", map[string]any{"planId": "P-1001", "name": "rimula fleet"})
+	response := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/copy", map[string]any{"planId": "P-1001", "name": "Helix launch (copy)"})
+	taken := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/copy", map[string]any{"planId": "P-1001", "name": "rimula fleet"})
 
 	assertStatus(t, response, http.StatusCreated)
 	var copied counted
@@ -152,7 +152,7 @@ func TestCopyCampaign_Contract201(t *testing.T) {
 			Details string `json:"details"`
 		} `json:"items"`
 	}
-	priya.Do(t, http.MethodGet, "/api/activity-log?recordType=campaign&recordId="+copied.ID, nil).Decode(t, &log)
+	priya.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=campaign&recordId="+copied.ID, nil).Decode(t, &log)
 	if len(log.Items) != 1 || log.Items[0].Action != "copied" ||
 		log.Items[0].Details != "Copied from 'Helix launch' (C-1001), with 2 initiatives, 4 activities and 6 line items" {
 		t.Errorf("log of the copy = %+v", log.Items)
@@ -166,11 +166,11 @@ func TestInitiativeDestinations_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 
 	var move, copies destinationList
-	moveAnswer := priya.Do(t, http.MethodGet, "/api/initiatives/I-1001/destinations?purpose=move", nil)
+	moveAnswer := priya.Do(t, http.MethodGet, "/api/v1/initiatives/I-1001/destinations?purpose=move", nil)
 	moveAnswer.Decode(t, &move)
-	copyAnswer := priya.Do(t, http.MethodGet, "/api/initiatives/I-1001/destinations?purpose=copy", nil)
+	copyAnswer := priya.Do(t, http.MethodGet, "/api/v1/initiatives/I-1001/destinations?purpose=copy", nil)
 	copyAnswer.Decode(t, &copies)
-	gone := priya.Do(t, http.MethodGet, "/api/initiatives/I-9999/destinations?purpose=copy", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/initiatives/I-9999/destinations?purpose=copy", nil)
 
 	assertStatus(t, moveAnswer, http.StatusOK)
 	if move.Total != 1 || move.Items[0].ID != "C-1002" || move.Items[0].Available ||
@@ -190,8 +190,8 @@ func TestMoveInitiative_Contract(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	moved := priya.Do(t, http.MethodPost, "/api/initiatives/I-1003/move", map[string]any{"campaignId": "C-1001", "version": 1})
-	refused := priya.Do(t, http.MethodPost, "/api/initiatives/I-1001/move", map[string]any{"campaignId": "C-1002", "version": 1})
+	moved := priya.Do(t, http.MethodPost, "/api/v1/initiatives/I-1003/move", map[string]any{"campaignId": "C-1001", "version": 1})
+	refused := priya.Do(t, http.MethodPost, "/api/v1/initiatives/I-1001/move", map[string]any{"campaignId": "C-1002", "version": 1})
 
 	assertStatus(t, moved, http.StatusOK)
 	var events counted
@@ -209,8 +209,8 @@ func TestCopyInitiative_Contract201(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPost, "/api/initiatives/I-1001/copy", map[string]any{"campaignId": "C-1001", "name": "Digital & social (copy)"})
-	gone := priya.Do(t, http.MethodPost, "/api/initiatives/I-1001/copy", map[string]any{"campaignId": "C-9999", "name": "Copy"})
+	response := priya.Do(t, http.MethodPost, "/api/v1/initiatives/I-1001/copy", map[string]any{"campaignId": "C-1001", "name": "Digital & social (copy)"})
+	gone := priya.Do(t, http.MethodPost, "/api/v1/initiatives/I-1001/copy", map[string]any{"campaignId": "C-9999", "name": "Copy"})
 
 	assertStatus(t, response, http.StatusCreated)
 	var copied counted

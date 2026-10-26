@@ -128,9 +128,9 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 	// Through the API, as the Recycle bin page reads it.
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@shell.com")
-	response := priya.Do(t, http.MethodGet, "/api/recycle-bin", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/recycle-bin = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/recycle-bin = %d %s", response.Status, response.Body)
 	}
 	var page history.BinPage
 	response.Decode(t, &page)
@@ -316,9 +316,9 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 	server.GrantRole(t, "priya.raman@shell.com", "viewer", "all")
 	priya := server.SignIn(t, "priya.raman@shell.com")
 
-	response := priya.Do(t, http.MethodGet, "/api/activity-log?recordId=I-1011&limit=10", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activity-log?recordId=I-1011&limit=10", nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/activity-log = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/activity-log = %d %s", response.Status, response.Body)
 	}
 	var log history.LogPage
 	response.Decode(t, &log)
@@ -329,9 +329,9 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 
 	week := loadedAt.Add(-7 * day).Format(time.RFC3339)
 	today := time.Date(loadedAt.Year(), loadedAt.Month(), loadedAt.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339)
-	response = priya.Do(t, http.MethodGet, "/api/activity-log/summary?todayStart="+today+"&weekStart="+week, nil)
+	response = priya.Do(t, http.MethodGet, "/api/v1/activity-log/summary?todayStart="+today+"&weekStart="+week, nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/activity-log/summary = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/activity-log/summary = %d %s", response.Status, response.Body)
 	}
 	var summary history.LogSummary
 	response.Decode(t, &summary)
@@ -339,9 +339,9 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 		t.Errorf("summary = %+v, want 1 change today, 1 deletion and 4 people active this week", summary)
 	}
 
-	response = priya.Do(t, http.MethodGet, "/api/home/recent-changes?scope=myTeams", nil)
+	response = priya.Do(t, http.MethodGet, "/api/v1/home/recent-changes?scope=myTeams", nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/home/recent-changes = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/home/recent-changes = %d %s", response.Status, response.Body)
 	}
 	var recent struct {
 		Items []history.EntryView `json:"items"`
@@ -360,7 +360,7 @@ func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@shell.com")
 
-	response := priya.Do(t, http.MethodGet, "/api/recycle-bin/BIN-1001/restore-preview", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin/BIN-1001/restore-preview", nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("restore preview = %d %s", response.Status, response.Body)
 	}
@@ -370,19 +370,19 @@ func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
 		t.Errorf("preview = %+v, want back into FY2026 Lubricants Europe › Rimula fleet", preview)
 	}
 
-	response = priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/restore", nil)
+	response = priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore", nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("restore = %d %s", response.Status, response.Body)
 	}
 	for path, want := range map[string]string{
-		"/api/initiatives/I-1011": "Trade shows", "/api/activities/A-1013": "Fleet expo stand", "/api/line-items/L-1011": "Stand build",
+		"/api/v1/initiatives/I-1011": "Trade shows", "/api/v1/activities/A-1013": "Fleet expo stand", "/api/v1/line-items/L-1011": "Stand build",
 	} {
 		response := priya.Do(t, http.MethodGet, path, nil)
 		var got struct {
 			Name     string `json:"name"`
 			LineItem struct {
 				Name string `json:"name"`
-			} `json:"lineItem"` // GET /api/line-items/{id} answers the line item with its activity
+			} `json:"lineItem"` // GET /api/v1/line-items/{id} answers the line item with its activity
 		}
 		if response.Status == http.StatusOK {
 			response.Decode(t, &got)

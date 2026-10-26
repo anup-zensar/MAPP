@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// The choices of the filter bar (FR-004) and the column chooser (FR-018), as GET /api/all-work/options
+// The choices of the filter bar (FR-004) and the column chooser (FR-018), as GET /api/v1/all-work/options
 // answers them.
 
 // groupLabels are the column groups of the chooser, in order, with their names (FR-018).

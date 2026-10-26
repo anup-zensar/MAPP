@@ -59,8 +59,8 @@ const (
 	AmountsInPlan    = "plan"
 )
 
-// ViewBreakdown is the Breakdown view (016 FR-040): GET /api/all-work answers it as the Grid, the groups come
-// from GET /api/all-work/breakdown, and the export holds the group table.
+// ViewBreakdown is the Breakdown view (016 FR-040): GET /api/v1/all-work answers it as the Grid, the groups come
+// from GET /api/v1/all-work/breakdown, and the export holds the group table.
 const ViewBreakdown = "breakdown"
 
 // The choices of the filters with fixed values (FR-004).
@@ -83,7 +83,7 @@ type AttrFilter struct {
 	Values      []string `json:"values"`
 }
 
-// Query is one view's filter set and display choices, as GET /api/all-work receives them (FR-004). Only the
+// Query is one view's filter set and display choices, as GET /api/v1/all-work receives them (FR-004). Only the
 // filters of FR-004 exist (FR-010, D-207): any other parameter is ignored.
 type Query struct {
 	Year              int    // the first year of the range (yearFrom); 0: the current year
@@ -137,7 +137,7 @@ const (
 	FormatCSV  = "csv"
 )
 
-// ParseExport reads the query of GET /api/all-work/export: the query of the view, the format (xlsx or csv,
+// ParseExport reads the query of GET /api/v1/all-work/export: the query of the view, the format (xlsx or csv,
 // required) and whether the unassigned planned cost rows are included (the screen's switch, default true).
 // Every wrong parameter is reported at once.
 func ParseExport(values url.Values) (q Query, format string, unassigned bool, err error) {

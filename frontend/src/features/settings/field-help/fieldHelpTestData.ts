@@ -1,6 +1,6 @@
 /**
  * Field help entries for the tests of this folder and of the pages that show ⓘ tips, shaped as
- * GET /api/field-help answers them (backend/api/openapi.yaml, feature 016 data-model §6).
+ * GET /api/v1/field-help answers them (backend/api/openapi.yaml, feature 016 data-model §6).
  */
 import type { components } from '@/api/schema';
 import type { FieldHelpEntry, FieldHelpPage } from './fieldHelpApi';
@@ -80,7 +80,7 @@ export const HELP_ENTRIES: FieldHelpEntry[] = [
   CAMPAIGN_LEFT_TO_PLAN,
 ];
 
-/** The answer of GET /api/field-help, with 3 Shell attributes lacking help. */
+/** The answer of GET /api/v1/field-help, with 3 Shell attributes lacking help. */
 export const FIELD_HELP_PAGE: FieldHelpPage = {
   items: HELP_ENTRIES,
   total: HELP_ENTRIES.length,

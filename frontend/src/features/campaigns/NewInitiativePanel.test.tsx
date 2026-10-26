@@ -13,12 +13,12 @@ const HELIX = campaign({ startDate: '2026-03-01', endDate: '2026-12-31' });
 
 function renderPanel(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
-    'GET /api/campaigns/C-1001': { body: HELIX },
-    'GET /api/plans/P-1001': { body: planAnswer() },
-    'GET /api/shell-attribute-forms/initiative': {
+    'GET /api/v1/campaigns/C-1001': { body: HELIX },
+    'GET /api/v1/plans/P-1001': { body: planAnswer() },
+    'GET /api/v1/shell-attribute-forms/initiative': {
       body: { ...campaignForm(), level: 'initiative' },
     },
-    'GET /api/people': { body: PEOPLE },
+    'GET /api/v1/people': { body: PEOPLE },
     ...answers,
   });
   const rendered = renderWithProviders(<NewInitiativePanel />, {
@@ -56,12 +56,14 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
   it('keeps the dates inside the campaign’s and shows the API’s R3 message under them (US2#2, FR-006)', async () => {
     const r3 = "Dates must be inside the campaign's dates (01 Mar 2026 – 31 Dec 2026).";
     const { user } = renderPanel({
-      'POST /api/campaigns/C-1001/initiatives': {
+      'POST /api/v1/campaigns/C-1001/initiatives': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Some fields need your attention.',
-          fields: [{ field: 'startDate', message: r3 }],
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [{ field: 'startDate', message: r3 }],
+          },
         },
       },
     });
@@ -82,7 +84,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('starts without dates when the campaign has none, and does not limit them (edge case)', async () => {
     renderPanel({
-      'GET /api/campaigns/C-1001': { body: campaign({ startDate: null, endDate: null }) },
+      'GET /api/v1/campaigns/C-1001': { body: campaign({ startDate: null, endDate: null }) },
     });
     const panel = await findPanel();
 
@@ -105,7 +107,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('saves with a name only and highlights the new initiative (US2#1, FR-004)', async () => {
     const { user, api, router } = renderPanel({
-      'POST /api/campaigns/C-1001/initiatives': {
+      'POST /api/v1/campaigns/C-1001/initiatives': {
         status: 201,
         body: initiative({ id: 'I-1009', name: 'Digital & social' }),
       },
@@ -117,7 +119,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
     expect(router.state.location.state).toEqual({ highlight: 'I-1009' });
-    expect(api.bodiesOf('POST /api/campaigns/C-1001/initiatives')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/campaigns/C-1001/initiatives')).toEqual([
       {
         name: 'Digital & social',
         description: '',
@@ -140,7 +142,7 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('saves and opens a fresh panel for the same campaign (Save and add another)', async () => {
     const { user, router } = renderPanel({
-      'POST /api/campaigns/C-1001/initiatives': {
+      'POST /api/v1/campaigns/C-1001/initiatives': {
         status: 201,
         body: initiative({ id: 'I-1009' }),
       },
@@ -157,11 +159,13 @@ describe('NewInitiativePanel (feature 005, US2)', () => {
 
   it('says when the campaign is gone', async () => {
     renderPanel({
-      'GET /api/campaigns/C-1001': {
+      'GET /api/v1/campaigns/C-1001': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This campaign no longer exists — someone may have deleted it.',
+          error: {
+            code: 'not_found',
+            message: 'This campaign no longer exists — someone may have deleted it.',
+          },
         },
       },
     });

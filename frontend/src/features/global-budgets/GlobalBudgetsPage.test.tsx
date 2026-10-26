@@ -8,7 +8,7 @@ import { testUser } from '@/test/users';
 import { GlobalBudgetsPage } from './GlobalBudgetsPage';
 import { budgetSummary, globalBudget } from './testData';
 
-const LIST = 'GET /api/global-budgets';
+const LIST = 'GET /api/v1/global-budgets';
 const CURRENT_YEAR = new Date().getFullYear();
 const AVAILABLE = { available: true, reason: '' };
 
@@ -84,8 +84,8 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
 
   it('creates a global budget from New global budget and opens it', async () => {
     const { api, router, user } = renderPage('/budgets', {
-      'GET /api/people': PEOPLE,
-      'POST /api/global-budgets': {
+      'GET /api/v1/people': PEOPLE,
+      'POST /api/v1/global-budgets': {
         status: 201,
         body: globalBudget({ id: 'GB-1002', name: 'FY2027 Global brand' }),
       },
@@ -102,7 +102,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/budgets/GB-1002'));
-    expect(api.bodiesOf('POST /api/global-budgets')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/global-budgets')).toEqual([
       {
         name: 'FY2027 Global brand',
         year: 2027,
@@ -115,22 +115,24 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
 
   it('shows the field problems of the API all at once', async () => {
     const { user } = renderPage('/budgets', {
-      'GET /api/people': PEOPLE,
-      'POST /api/global-budgets': {
+      'GET /api/v1/people': PEOPLE,
+      'POST /api/v1/global-budgets': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the highlighted fields.',
-          fields: [
-            {
-              field: 'name',
-              message: "A global budget called 'FY2026 Global marketing budget' already exists.",
-            },
-            {
-              field: 'ownerId',
-              message: 'Choose a person who can manage global budgets for all markets.',
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the highlighted fields.',
+            fields: [
+              {
+                field: 'name',
+                message: "A global budget called 'FY2026 Global marketing budget' already exists.",
+              },
+              {
+                field: 'ownerId',
+                message: 'Choose a person who can manage global budgets for all markets.',
+              },
+            ],
+          },
         },
       },
     });
@@ -159,7 +161,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
   });
 
   it('checks the amount before saving', async () => {
-    const { api, user } = renderPage('/budgets', { 'GET /api/people': PEOPLE });
+    const { api, user } = renderPage('/budgets', { 'GET /api/v1/people': PEOPLE });
     await screen.findByRole('link', { name: 'FY2026 Global marketing budget' });
 
     await user.click(screen.getByRole('button', { name: 'New global budget' }));
@@ -170,6 +172,6 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
     expect(
       (await within(panel).findAllByText('Enter an amount of 0 or more.')).length,
     ).toBeGreaterThan(0);
-    expect(api.bodiesOf('POST /api/global-budgets')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/global-budgets')).toEqual([]);
   });
 });

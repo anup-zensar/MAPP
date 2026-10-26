@@ -45,13 +45,14 @@ export async function fetchLatestDelegation(
 }
 
 function fetchDelegations(scope: DelegationScope) {
-  return call(api.GET('/api/approval-delegations', { params: { query: { scope } } }));
+  return call(api.GET('/api/v1/approval-delegations', { params: { query: { scope } } }));
 }
 
 export function useCreateDelegation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: DelegationCreate) => call(api.POST('/api/approval-delegations', { body })),
+    mutationFn: (body: DelegationCreate) =>
+      call(api.POST('/api/v1/approval-delegations', { body })),
     onSettled: () => invalidateAllButSession(queryClient),
   });
 }
@@ -62,7 +63,7 @@ export function useUpdateDelegation() {
   return useMutation({
     mutationFn: ({ id, changes }: { id: string; changes: DelegationUpdate }) =>
       call(
-        api.PATCH('/api/approval-delegations/{delegationId}', {
+        api.PATCH('/api/v1/approval-delegations/{delegationId}', {
           params: { path: { delegationId: id } },
           body: changes,
         }),
@@ -76,7 +77,7 @@ export function useCancelDelegation() {
   return useMutation({
     mutationFn: ({ id, version }: { id: string; version: number }) =>
       call(
-        api.POST('/api/approval-delegations/{delegationId}/cancel', {
+        api.POST('/api/v1/approval-delegations/{delegationId}/cancel', {
           params: { path: { delegationId: id } },
           body: { version },
         }),

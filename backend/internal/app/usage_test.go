@@ -66,14 +66,14 @@ func summaries(t *testing.T, c *apitest.Client, paths []string) map[string]strin
 func personUsage(t *testing.T, c *apitest.Client, personID string) []usageCount {
 	t.Helper()
 	var person struct{ Usage []usageCount }
-	c.Do(t, http.MethodGet, "/api/people/"+personID, nil).Decode(t, &person)
+	c.Do(t, http.MethodGet, "/api/v1/people/"+personID, nil).Decode(t, &person)
 	return person.Usage
 }
 
 // deletePlan deletes the plan id and returns its recycle-bin entry's id.
 func deletePlan(t *testing.T, c *apitest.Client, id string) string {
 	t.Helper()
-	response := c.Do(t, http.MethodDelete, "/api/plans/"+id, nil)
+	response := c.Do(t, http.MethodDelete, "/api/v1/plans/"+id, nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("DELETE plan %s = %d %s, want 200", id, response.Status, response.Body)
 	}
@@ -85,16 +85,16 @@ func deletePlan(t *testing.T, c *apitest.Client, id string) string {
 // settingsPaths are the Settings records whose "Used by" the tests below read: one of every kind that
 // features 003–007 use.
 var settingsPaths = []string{
-	"/api/models/MOD-1002",               // plans (004)
-	"/api/activity-types/AT-1006",        // activities (006)
-	"/api/shell-attributes/SA-1001",      // plan values (004)
-	"/api/shell-attributes/SA-1003",      // campaign values (005)
-	"/api/shell-attributes/SA-1011",      // initiative values (005)
-	"/api/shell-attributes/SA-1012",      // activity values (006)
-	"/api/shell-attributes/SA-1033",      // line-item values (007)
-	"/api/currencies/USD",                // line items (007) and display currencies (003)
-	"/api/currencies/CNY",                // line items (007)
-	"/api/finance-budget-items/FBI-1001", // line items (007)
+	"/api/v1/models/MOD-1002",               // plans (004)
+	"/api/v1/activity-types/AT-1006",        // activities (006)
+	"/api/v1/shell-attributes/SA-1001",      // plan values (004)
+	"/api/v1/shell-attributes/SA-1003",      // campaign values (005)
+	"/api/v1/shell-attributes/SA-1011",      // initiative values (005)
+	"/api/v1/shell-attributes/SA-1012",      // activity values (006)
+	"/api/v1/shell-attributes/SA-1033",      // line-item values (007)
+	"/api/v1/currencies/USD",                // line items (007) and display currencies (003)
+	"/api/v1/currencies/CNY",                // line items (007)
+	"/api/v1/finance-budget-items/FBI-1001", // line items (007)
 }
 
 // Settings' "Used by" counts the records of every later feature that use a Settings record (002 FR-003,
@@ -106,21 +106,21 @@ func TestUsedBy_SeesEveryFeature_FR003(t *testing.T) {
 	got := summaries(t, priya, settingsPaths)
 
 	want := map[string]string{
-		"/api/models/MOD-1002":               "Used by 1 plan",
-		"/api/activity-types/AT-1006":        "Used by 1 activity · Allowed in 1 model",
-		"/api/shell-attributes/SA-1001":      "Used by 3 plans · Condition of 11 attributes",
-		"/api/shell-attributes/SA-1003":      "Used by 4 campaigns · Region depends on it",
-		"/api/shell-attributes/SA-1011":      "Used by 11 initiatives (1 in the recycle bin)",
-		"/api/shell-attributes/SA-1012":      "Used by 12 activities (1 in the recycle bin)",
-		"/api/shell-attributes/SA-1033":      "Used by 9 line items (1 in the recycle bin)",
-		"/api/currencies/USD":                "Used by 5 line items (1 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans",
-		"/api/currencies/CNY":                "Used by 1 line item",
-		"/api/finance-budget-items/FBI-1001": "Linked to 2 line items",
+		"/api/v1/models/MOD-1002":               "Used by 1 plan",
+		"/api/v1/activity-types/AT-1006":        "Used by 1 activity · Allowed in 1 model",
+		"/api/v1/shell-attributes/SA-1001":      "Used by 3 plans · Condition of 11 attributes",
+		"/api/v1/shell-attributes/SA-1003":      "Used by 4 campaigns · Region depends on it",
+		"/api/v1/shell-attributes/SA-1011":      "Used by 11 initiatives (1 in the recycle bin)",
+		"/api/v1/shell-attributes/SA-1012":      "Used by 12 activities (1 in the recycle bin)",
+		"/api/v1/shell-attributes/SA-1033":      "Used by 9 line items (1 in the recycle bin)",
+		"/api/v1/currencies/USD":                "Used by 5 line items (1 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans",
+		"/api/v1/currencies/CNY":                "Used by 1 line item",
+		"/api/v1/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Used by =\n%v\nwant\n%v", got, want)
 	}
-	model := usageAt(t, priya, "/api/models/MOD-1002")
+	model := usageAt(t, priya, "/api/v1/models/MOD-1002")
 	if want := []recordRef{{Type: "plan", ID: "P-1002", Name: "FY2026 Mobility China"}}; !reflect.DeepEqual(model.Records, want) {
 		t.Errorf("records of MOD-1002 = %+v, want %+v", model.Records, want)
 	}
@@ -137,7 +137,7 @@ func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 	before := summaries(t, priya, settingsPaths)
 
 	planEntry := deletePlan(t, priya, "P-1002") // with its campaign, initiatives, activities and line items
-	deleted := priya.Do(t, http.MethodDelete, "/api/campaigns/C-1002", nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/v1/campaigns/C-1002", nil)
 	if deleted.Status != http.StatusOK {
 		t.Fatalf("DELETE campaign C-1002 = %d %s, want 200", deleted.Status, deleted.Body)
 	}
@@ -146,30 +146,30 @@ func TestUsedBy_CountsTheRecycleBin_FR003(t *testing.T) {
 
 	got := summaries(t, priya, settingsPaths)
 	want := map[string]string{
-		"/api/models/MOD-1002":               "Used by 1 plan (1 in the recycle bin)",
-		"/api/activity-types/AT-1006":        "Used by 1 activity (1 in the recycle bin) · Allowed in 1 model",
-		"/api/shell-attributes/SA-1001":      "Used by 3 plans · Condition of 11 attributes", // P-1002 has no business unit
-		"/api/shell-attributes/SA-1003":      "Used by 4 campaigns (1 in the recycle bin) · Region depends on it",
-		"/api/shell-attributes/SA-1011":      "Used by 11 initiatives (5 in the recycle bin)",
-		"/api/shell-attributes/SA-1012":      "Used by 12 activities (6 in the recycle bin)",
-		"/api/shell-attributes/SA-1033":      "Used by 9 line items (2 in the recycle bin)",
-		"/api/currencies/USD":                "Used by 5 line items (2 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans (1 in the recycle bin)",
-		"/api/currencies/CNY":                "Used by 1 line item (1 in the recycle bin)",
-		"/api/finance-budget-items/FBI-1001": "Linked to 2 line items",
+		"/api/v1/models/MOD-1002":               "Used by 1 plan (1 in the recycle bin)",
+		"/api/v1/activity-types/AT-1006":        "Used by 1 activity (1 in the recycle bin) · Allowed in 1 model",
+		"/api/v1/shell-attributes/SA-1001":      "Used by 3 plans · Condition of 11 attributes", // P-1002 has no business unit
+		"/api/v1/shell-attributes/SA-1003":      "Used by 4 campaigns (1 in the recycle bin) · Region depends on it",
+		"/api/v1/shell-attributes/SA-1011":      "Used by 11 initiatives (5 in the recycle bin)",
+		"/api/v1/shell-attributes/SA-1012":      "Used by 12 activities (6 in the recycle bin)",
+		"/api/v1/shell-attributes/SA-1033":      "Used by 9 line items (2 in the recycle bin)",
+		"/api/v1/currencies/USD":                "Used by 5 line items (2 in the recycle bin) · Display currency of 6 people · Plan currency of 3 plans (1 in the recycle bin)",
+		"/api/v1/currencies/CNY":                "Used by 1 line item (1 in the recycle bin)",
+		"/api/v1/finance-budget-items/FBI-1001": "Linked to 2 line items",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Used by with P-1002 and C-1002 in the recycle bin =\n%v\nwant\n%v", got, want)
 	}
-	if model := usageAt(t, priya, "/api/models/MOD-1002"); len(model.Records) != 0 || !model.InUse {
+	if model := usageAt(t, priya, "/api/v1/models/MOD-1002"); len(model.Records) != 0 || !model.InUse {
 		t.Errorf("MOD-1002 = %+v, want in use with no live plan listed", model)
 	}
-	refused := priya.Do(t, http.MethodDelete, "/api/models/MOD-1002", nil)
+	refused := priya.Do(t, http.MethodDelete, "/api/v1/models/MOD-1002", nil)
 	if refused.Status != http.StatusConflict {
 		t.Errorf("DELETE MOD-1002 while its plan is in the recycle bin = %d %s, want 409 in_use", refused.Status, refused.Body)
 	}
 
 	for _, entryID := range []string{campaignEntry.RecycleBinEntry.ID, planEntry} {
-		if undone := priya.Do(t, http.MethodPost, "/api/recycle-bin/"+entryID+"/undo", nil); undone.Status != http.StatusOK {
+		if undone := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+entryID+"/undo", nil); undone.Status != http.StatusOK {
 			t.Fatalf("undo %s = %d %s, want 200", entryID, undone.Status, undone.Body)
 		}
 	}
@@ -185,8 +185,8 @@ func TestInUseDelete_RefusedForEveryFeature_FR004(t *testing.T) {
 	priya := server.SignIn(t, "priya.raman@shell.com")
 	server.GrantRole(t, "priya.raman@shell.com", "administrator", "all") // 014: Settings, people and every plan
 	want := map[string]string{
-		"/api/currencies/GBP":  `{"code":"in_use","message":"'GBP' is in use (used by 2 line items · Plan currency of 1 plan) — set it inactive instead.","fields":[]}`,
-		"/api/models/MOD-1002": `{"code":"in_use","message":"'Mobility 1.0' is in use (used by 1 plan) — set it inactive instead.","fields":[]}`,
+		"/api/v1/currencies/GBP":  `{"error":{"code":"in_use","message":"'GBP' is in use (used by 2 line items · Plan currency of 1 plan) — set it inactive instead.","fields":[]}}`,
+		"/api/v1/models/MOD-1002": `{"error":{"code":"in_use","message":"'Mobility 1.0' is in use (used by 1 plan) — set it inactive instead.","fields":[]}}`,
 	}
 
 	for path, body := range want {
@@ -220,8 +220,8 @@ func TestImpact_CountsTheLiveRecords_FR011_FR030(t *testing.T) {
 		return answer.Warnings
 	}
 
-	model := impact("/api/models/MOD-1001/impact", map[string]any{"inqToMqlRate": "3.00", "version": 1})
-	currency := impact("/api/currencies/EUR/impact", map[string]any{"rate": "0.80", "version": 1})
+	model := impact("/api/v1/models/MOD-1001/impact", map[string]any{"inqToMqlRate": "3.00", "version": 1})
+	currency := impact("/api/v1/currencies/EUR/impact", map[string]any{"rate": "0.80", "version": 1})
 
 	wantModel := []warning{{Kind: "goalsRecalculated", Count: 3, // with P-1004 of 016
 		Message: "Used by 3 plans (9 activities). Their calculated MQL and revenue goals will be recalculated; typed goals ('Set later stages myself') are kept."}}
@@ -247,15 +247,15 @@ func TestTeamUsedByPlans_InUseDelete_FR014(t *testing.T) {
 			InRecycleBin bool
 		}
 	}
-	inUse := `{"code":"in_use","message":"Mobility China is used by 1 plan, so it can't be deleted. Set it inactive instead.","fields":[]}`
+	inUse := `{"error":{"code":"in_use","message":"Mobility China is used by 1 plan, so it can't be deleted. Set it inactive instead.","fields":[]}}`
 
 	var before team
-	priya.Do(t, http.MethodGet, "/api/teams/T-1002", nil).Decode(t, &before)
-	refused := priya.Do(t, http.MethodDelete, "/api/teams/T-1002", nil)
+	priya.Do(t, http.MethodGet, "/api/v1/teams/T-1002", nil).Decode(t, &before)
+	refused := priya.Do(t, http.MethodDelete, "/api/v1/teams/T-1002", nil)
 	deletePlan(t, priya, "P-1002")
 	var after team
-	priya.Do(t, http.MethodGet, "/api/teams/T-1002", nil).Decode(t, &after)
-	stillRefused := priya.Do(t, http.MethodDelete, "/api/teams/T-1002", nil)
+	priya.Do(t, http.MethodGet, "/api/v1/teams/T-1002", nil).Decode(t, &after)
+	stillRefused := priya.Do(t, http.MethodDelete, "/api/v1/teams/T-1002", nil)
 
 	if len(before.Plans) != 1 || before.Plans[0].ID != "P-1002" || before.Plans[0].Name != "FY2026 Mobility China" || before.Plans[0].InRecycleBin {
 		t.Errorf("plans of T-1002 = %+v, want FY2026 Mobility China", before.Plans)
@@ -270,8 +270,8 @@ func TestTeamUsedByPlans_InUseDelete_FR014(t *testing.T) {
 	}
 
 	var created struct{ ID string }
-	priya.Do(t, http.MethodPost, "/api/teams", map[string]any{"name": "Pop-up events", "description": "", "colour": "", "memberIds": []string{}}).Decode(t, &created)
-	if deleted := priya.Do(t, http.MethodDelete, "/api/teams/"+created.ID, nil); deleted.Status != http.StatusOK {
+	priya.Do(t, http.MethodPost, "/api/v1/teams", map[string]any{"name": "Pop-up events", "description": "", "colour": "", "memberIds": []string{}}).Decode(t, &created)
+	if deleted := priya.Do(t, http.MethodDelete, "/api/v1/teams/"+created.ID, nil); deleted.Status != http.StatusOK {
 		t.Errorf("DELETE an unused team = %d %s, want 200", deleted.Status, deleted.Body)
 	}
 }
@@ -326,10 +326,10 @@ func TestImpact_OwnerNeedsAttention_FR013(t *testing.T) {
 	}
 
 	var person, team struct{ Warnings []warning }
-	priya.Do(t, http.MethodPost, "/api/people/U-1004/impact", map[string]any{
+	priya.Do(t, http.MethodPost, "/api/v1/people/U-1004/impact", map[string]any{
 		"name": "Mei Lin", "email": "mei.lin@shell.com", "jobTitle": "Marketer", "teamIds": []string{}, "version": 1,
 	}).Decode(t, &person)
-	priya.Do(t, http.MethodPost, "/api/teams/T-1002/impact", map[string]any{
+	priya.Do(t, http.MethodPost, "/api/v1/teams/T-1002/impact", map[string]any{
 		"name": "Mobility China", "description": "Mobility and retail marketing in China.", "colour": "violet", "memberIds": []string{"U-1005", "U-1006"}, "version": 1,
 	}).Decode(t, &team)
 
@@ -367,7 +367,7 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 	mei := server.SignIn(t, "mei.lin@shell.com")
 	server.GrantRole(t, "mei.lin@shell.com", "globalPlanner", "all") // 014: every market's plans
 
-	got := summaries(t, priya, []string{"/api/currencies/USD", "/api/currencies/EUR"})
+	got := summaries(t, priya, []string{"/api/v1/currencies/USD", "/api/v1/currencies/EUR"})
 	budgetCurrency := func(c *apitest.Client) string {
 		t.Helper()
 		var plan struct { // the stored budget is USD; the figures are in the person's display currency
@@ -375,7 +375,7 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 				Budget *struct{ Amount, Currency string }
 			}
 		}
-		c.Do(t, http.MethodGet, "/api/plans/P-1002", nil).Decode(t, &plan)
+		c.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil).Decode(t, &plan)
 		if plan.Figures.Budget == nil {
 			t.Fatal("plan P-1002 has no budget")
 		}
@@ -383,8 +383,8 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 	}
 
 	want := map[string]string{
-		"/api/currencies/USD": "Used by 5 line items (1 in the recycle bin) · Display currency of 5 people · Plan currency of 3 plans",
-		"/api/currencies/EUR": "Used by 3 line items · Display currency of 1 person",
+		"/api/v1/currencies/USD": "Used by 5 line items (1 in the recycle bin) · Display currency of 5 people · Plan currency of 3 plans",
+		"/api/v1/currencies/EUR": "Used by 3 line items · Display currency of 1 person",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Used by =\n%v\nwant\n%v", got, want)
@@ -407,7 +407,7 @@ func TestPlanChangeEffects_DisallowedActivities_FR019(t *testing.T) {
 	}
 	changeEffects := func(planID, modelID string) effects {
 		t.Helper()
-		response := mei.Do(t, http.MethodPost, "/api/plans/"+planID+"/change-effects",
+		response := mei.Do(t, http.MethodPost, "/api/v1/plans/"+planID+"/change-effects",
 			map[string]any{"modelId": modelID, "attributes": map[string]any{}})
 		if response.Status != http.StatusOK {
 			t.Fatalf("change effects of %s = %d %s, want 200", planID, response.Status, response.Body)

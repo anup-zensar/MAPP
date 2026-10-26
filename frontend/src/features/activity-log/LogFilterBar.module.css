@@ -92,7 +92,7 @@
   padding: var(--space-1);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
 }
 
@@ -131,7 +131,7 @@
 .menuItem[data-state='checked'] .box {
   border-color: var(--blue);
   background: var(--blue);
-  color: var(--on-accent);
+  color: var(--surface);
 }
 
 .box svg {

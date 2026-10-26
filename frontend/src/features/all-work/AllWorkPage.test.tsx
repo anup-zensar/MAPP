@@ -37,7 +37,7 @@ function renderPage(
 ): ReturnType<typeof renderWithProviders> & { api: ReturnType<typeof mockApi> } {
   const api = mockApi({
     ...PAGE_ANSWERS,
-    'GET /api/all-work': { body: gridResult() },
+    'GET /api/v1/all-work': { body: gridResult() },
     ...answers,
   });
   const rendered = renderWithProviders(<AllWorkPage />, {
@@ -48,10 +48,10 @@ function renderPage(
   return { ...rendered, api };
 }
 
-/** The query strings sent to GET /api/all-work, in order. */
+/** The query strings sent to GET /api/v1/all-work, in order. */
 function viewQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
   return api.requests
-    .filter((request) => request.method === 'GET' && request.path === '/api/all-work')
+    .filter((request) => request.method === 'GET' && request.path === '/api/v1/all-work')
     .map((request) => new URLSearchParams(request.search));
 }
 
@@ -101,8 +101,8 @@ describe('AllWorkPage (US1)', () => {
 
   it('starts from the year the API calls current and the person’s remembered columns (FR-009, FR-019)', async () => {
     const { api } = renderPage({
-      'GET /api/all-work/options': { body: allWorkOptions({ year: 2027, currentYear: 2027 }) },
-      'GET /api/all-work/preferences': {
+      'GET /api/v1/all-work/options': { body: allWorkOptions({ year: 2027, currentYear: 2027 }) },
+      'GET /api/v1/all-work/preferences': {
         body: { columns: ['plannedCost', 'id'], sort: null },
       },
     });
@@ -116,7 +116,7 @@ describe('AllWorkPage (US1)', () => {
   it('shows grey shapes while loading, then the error with Try again', async () => {
     let calls = 0;
     const { user } = renderPage({
-      'GET /api/all-work': () => {
+      'GET /api/v1/all-work': () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: gridResult() };
       },
@@ -131,8 +131,8 @@ describe('AllWorkPage (US1)', () => {
 
   it('says that the year has no plans yet, with the way to the Plans page', async () => {
     renderPage({
-      'GET /api/all-work/options': { body: allWorkOptions({ plans: [] }) },
-      'GET /api/all-work': {
+      'GET /api/v1/all-work/options': { body: allWorkOptions({ plans: [] }) },
+      'GET /api/v1/all-work': {
         body: emptyResult({ count: { shown: 0, total: 0, noun: 'activities' } }),
       },
     });
@@ -145,7 +145,7 @@ describe('AllWorkPage (US1)', () => {
   it('applies the filters of the address once, and offers Clear filters when nothing matches (D-122)', async () => {
     const { api, user, router } = renderPage(
       {
-        'GET /api/all-work': (request) =>
+        'GET /api/v1/all-work': (request) =>
           new URL(request.url).searchParams.has('activityStatus')
             ? { body: emptyResult() }
             : { body: gridResult() },
@@ -203,7 +203,7 @@ describe('AllWorkPage (US1)', () => {
 
   it('opens a row’s record after checking that it still exists (FR-016, D-123)', async () => {
     const { api, user, router } = renderPage({
-      'GET /api/all-work/records/I-1001': {
+      'GET /api/v1/all-work/records/I-1001': {
         body: { recordId: 'I-1001', level: 'initiative', name: 'Helix digital', planId: 'P-1001' },
       },
     });
@@ -213,16 +213,20 @@ describe('AllWorkPage (US1)', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/initiatives/I-1001'),
     );
-    expect(api.requests.map((request) => request.path)).toContain('/api/all-work/records/I-1001');
+    expect(api.requests.map((request) => request.path)).toContain(
+      '/api/v1/all-work/records/I-1001',
+    );
   });
 
   it('says that a record was deleted and refreshes the view (edge case, D-123)', async () => {
     const { api, user, router } = renderPage({
-      'GET /api/all-work/records/A-1002': {
+      'GET /api/v1/all-work/records/A-1002': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This activity was deleted — it is in the recycle bin',
+          error: {
+            code: 'not_found',
+            message: 'This activity was deleted — it is in the recycle bin',
+          },
         },
       },
     });
@@ -240,7 +244,7 @@ describe('AllWorkPage (US1)', () => {
   it('keeps the view, the expansion and the scroll position when coming back (FR-009, FR-016)', async () => {
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const { api, user, router } = renderPage({
-      'GET /api/all-work/records/L-1001': {
+      'GET /api/v1/all-work/records/L-1001': {
         body: {
           recordId: 'L-1001',
           level: 'lineItem',
@@ -266,7 +270,7 @@ describe('AllWorkPage (US1)', () => {
 
   it('shows the rows 50 to a page, with the totals row on every page (D-115)', async () => {
     const result = manyActivities(60);
-    const { user } = renderPage({ 'GET /api/all-work': { body: result } });
+    const { user } = renderPage({ 'GET /api/v1/all-work': { body: result } });
 
     expect(await screen.findByText('Rows 1–50 of 63')).toBeInTheDocument();
     expect(rowNames()).toHaveLength(51);
@@ -286,14 +290,16 @@ describe('AllWorkPage (US1)', () => {
   it('names a refused filter in a message and sets it back (plan "States")', async () => {
     const { api } = renderPage(
       {
-        'GET /api/all-work': (request) =>
+        'GET /api/v1/all-work': (request) =>
           new URL(request.url).searchParams.has('search')
             ? {
                 status: 400,
                 body: {
-                  code: 'validation_failed',
-                  message: 'Use 200 characters or fewer.',
-                  fields: [{ field: 'search', message: 'Use 200 characters or fewer.' }],
+                  error: {
+                    code: 'validation_failed',
+                    message: 'Use 200 characters or fewer.',
+                    fields: [{ field: 'search', message: 'Use 200 characters or fewer.' }],
+                  },
                 },
               }
             : { body: gridResult() },
@@ -327,7 +333,7 @@ describe('AllWorkPage filters and search (US2)', () => {
 
   it('applies a filter at once: the rows, the chip, the count and the cards follow (US2 scenario 2, FR-004, FR-005)', async () => {
     const { api, user } = renderPage({
-      'GET /api/all-work': (request) =>
+      'GET /api/v1/all-work': (request) =>
         new URL(request.url).searchParams.get('activityStatus') === 'declined'
           ? { body: declinedOnly() }
           : { body: gridResult() },
@@ -369,7 +375,7 @@ describe('AllWorkPage filters and search (US2)', () => {
       count: { shown: 1, total: 3, noun: 'activities' },
     });
     const { api, user } = renderPage({
-      'GET /api/all-work': (request) =>
+      'GET /api/v1/all-work': (request) =>
         new URL(request.url).searchParams.get('search') === 'A-1002'
           ? { body: found }
           : { body: gridResult() },
@@ -398,7 +404,7 @@ describe('AllWorkPage filters and search (US2)', () => {
 
   it('keeps the filters and the search while the person moves around MAPP (FR-009)', async () => {
     const { api, user, router } = renderPage({
-      'GET /api/all-work': (request) =>
+      'GET /api/v1/all-work': (request) =>
         new URL(request.url).searchParams.has('activityStatus')
           ? { body: declinedOnly() }
           : { body: gridResult() },
@@ -427,7 +433,7 @@ describe('AllWorkPage filters and search (US2)', () => {
       count: { shown: 1, total: 2, noun: 'initiatives' },
     });
     renderPage(
-      { 'GET /api/all-work': { body: result } },
+      { 'GET /api/v1/all-work': { body: result } },
       '/all-work?showLevels=initiativesWithoutActivities',
     );
 
@@ -443,7 +449,7 @@ describe('AllWorkPage filters and search (US2)', () => {
 describe('AllWorkPage columns and sort (US3)', () => {
   it('shows a column ticked in the chooser and remembers the choice for the person (US3 scenario 1, FR-021)', async () => {
     const { api, user } = renderPage({
-      'PUT /api/all-work/preferences': (request) =>
+      'PUT /api/v1/all-work/preferences': (request) =>
         request.json().then((body: unknown) => ({ body })),
     });
     await screen.findByRole('link', { name: 'Helix launch' });
@@ -459,7 +465,7 @@ describe('AllWorkPage columns and sort (US3)', () => {
       ]),
     );
     await waitFor(() =>
-      expect(api.bodiesOf('PUT /api/all-work/preferences')).toEqual([
+      expect(api.bodiesOf('PUT /api/v1/all-work/preferences')).toEqual([
         { columns: [...defaultPreferences().columns, 'attr.SA-1001'], sort: null },
       ]),
     );
@@ -467,7 +473,7 @@ describe('AllWorkPage columns and sort (US3)', () => {
 
   it('asks for the rows sorted by a heading, and remembers the sort (US3 scenario 2, FR-015)', async () => {
     const { api, user } = renderPage({
-      'PUT /api/all-work/preferences': (request) =>
+      'PUT /api/v1/all-work/preferences': (request) =>
         request.json().then((body: unknown) => ({ body })),
     });
     await screen.findByRole('link', { name: 'Helix launch' });
@@ -478,7 +484,7 @@ describe('AllWorkPage columns and sort (US3)', () => {
     await waitFor(() => expect(viewQueries(api).at(-1)?.get('sort')).toBe('plannedCost:desc'));
 
     await waitFor(() =>
-      expect(api.bodiesOf('PUT /api/all-work/preferences').at(-1)).toEqual({
+      expect(api.bodiesOf('PUT /api/v1/all-work/preferences').at(-1)).toEqual({
         columns: defaultPreferences().columns,
         sort: { column: 'plannedCost', direction: 'desc' },
       }),
@@ -497,7 +503,7 @@ describe('AllWorkPage Budget & cost (US4)', () => {
   }
 
   it('switches views keeping the filters, the search and the expansion (FR-001)', async () => {
-    const { api, user } = renderPage({ 'GET /api/all-work': byView });
+    const { api, user } = renderPage({ 'GET /api/v1/all-work': byView });
     await user.click(await screen.findByRole('button', { name: 'Expand Helix launch event' }));
     await user.click(screen.getByRole('button', { name: 'Plan status' }));
     await user.click(
@@ -527,7 +533,7 @@ describe('AllWorkPage Budget & cost (US4)', () => {
   });
 
   it('shows quarters with the Monthly · Quarterly switch (US4 scenario 3, FR-022)', async () => {
-    const { api, user } = renderPage({ 'GET /api/all-work': byView });
+    const { api, user } = renderPage({ 'GET /api/v1/all-work': byView });
     await screen.findByRole('link', { name: 'Helix launch' });
     await user.click(screen.getByRole('tab', { name: 'Budget & cost' }));
     await screen.findByRole('columnheader', { name: 'Mar' });
@@ -552,7 +558,7 @@ describe('AllWorkPage Budget & cost (US4)', () => {
 describe('AllWorkPage Calendar (US5)', () => {
   it('shows the Calendar timeline, and the Month layout with the switch (FR-025, FR-028)', async () => {
     const { api, user } = renderPage({
-      'GET /api/all-work': (request) =>
+      'GET /api/v1/all-work': (request) =>
         new URL(request.url).searchParams.get('view') === 'calendar'
           ? { body: calendarResult() }
           : { body: gridResult() },
@@ -593,8 +599,8 @@ describe('AllWorkPage saved views (US6)', () => {
   function viewAnswers(initial = [declined]): Record<string, MockHandler> {
     let items: SavedView[] = [...initial];
     return {
-      'GET /api/saved-views': () => ({ body: { items, total: items.length } }),
-      'POST /api/saved-views': async (request) => {
+      'GET /api/v1/saved-views': () => ({ body: { items, total: items.length } }),
+      'POST /api/v1/saved-views': async (request) => {
         const body = (await request.json()) as SavedViewCreate;
         const view = savedView({
           id: 'SV-1009',
@@ -605,7 +611,7 @@ describe('AllWorkPage saved views (US6)', () => {
         items = [...items, view];
         return { status: 201, body: view };
       },
-      'PATCH /api/saved-views/SV-1001': async (request) => {
+      'PATCH /api/v1/saved-views/SV-1001': async (request) => {
         const body = (await request.json()) as SavedViewUpdate;
         items = items.map((view) => (view.id === 'SV-1001' ? { ...view, ...body } : view));
         return { body: items.find((view) => view.id === 'SV-1001') };
@@ -648,7 +654,7 @@ describe('AllWorkPage saved views (US6)', () => {
   it('saves what is shown under a name and marks it as the active view (US6 scenario 1, FR-029)', async () => {
     const { api, user } = renderPage({
       ...viewAnswers([]),
-      'GET /api/all-work': (request) =>
+      'GET /api/v1/all-work': (request) =>
         new URL(request.url).searchParams.get('view') === 'budget'
           ? { body: budgetResult() }
           : { body: gridResult() },
@@ -665,7 +671,7 @@ describe('AllWorkPage saved views (US6)', () => {
 
     expect(await screen.findByText("View 'Lubricants by month' saved")).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'View: Lubricants by month' })).toBeVisible();
-    const [body] = api.bodiesOf('POST /api/saved-views') as { state: ViewState }[];
+    const [body] = api.bodiesOf('POST /api/v1/saved-views') as { state: ViewState }[];
     expect(body.state.view).toBe('budget');
   });
 
@@ -688,7 +694,7 @@ describe('AllWorkPage saved views (US6)', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Update view' }));
 
     expect(await screen.findByText("View 'Declined activities' updated")).toBeInTheDocument();
-    const [body] = api.bodiesOf('PATCH /api/saved-views/SV-1001') as { state: ViewState }[];
+    const [body] = api.bodiesOf('PATCH /api/v1/saved-views/SV-1001') as { state: ViewState }[];
     expect(body.state.filters.activityStatuses).toEqual([]);
     expect(await screen.findByRole('button', { name: 'View: Declined activities' })).toBeVisible();
   });
@@ -705,7 +711,7 @@ describe('AllWorkPage saved views (US6)', () => {
       await screen.findByRole('button', { name: 'View: Declined activities Modified' }),
     ).toBeVisible();
     await new Promise((resolve) => setTimeout(resolve, 600));
-    expect(api.bodiesOf('PUT /api/all-work/preferences')).toEqual([]);
+    expect(api.bodiesOf('PUT /api/v1/all-work/preferences')).toEqual([]);
   });
 
   it('goes back to the standard view (FR-009)', async () => {

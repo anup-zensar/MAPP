@@ -35,7 +35,7 @@ func eur(text string) amount { return amount{Amount: text, Currency: "EUR"} }
 // useEuros makes EUR (0.92 per USD in the demo data) the display currency of the signed-in person.
 func useEuros(t *testing.T, c *apitest.Client) {
 	t.Helper()
-	response := c.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR"})
+	response := c.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "EUR"})
 	assertStatus(t, response, http.StatusOK)
 }
 
@@ -47,7 +47,7 @@ func TestListPlanCampaigns_DisplayCurrency_D220(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	useEuros(t, priya)
 
-	response := priya.Do(t, http.MethodGet, "/api/plans/P-1001/campaigns", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/campaigns", nil)
 
 	assertStatus(t, response, http.StatusOK)
 	var tree struct {
@@ -95,7 +95,7 @@ func TestGetCampaignAndInitiative_DisplayCurrency_D220(t *testing.T) {
 	useEuros(t, priya)
 
 	var campaign displayed
-	response := priya.Do(t, http.MethodGet, "/api/campaigns/C-1001", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001", nil)
 	assertStatus(t, response, http.StatusOK)
 	response.Decode(t, &campaign)
 	if *campaign.Display.Budget != eur("644000.00") || *campaign.Budget != usd("700000.00") {
@@ -103,14 +103,14 @@ func TestGetCampaignAndInitiative_DisplayCurrency_D220(t *testing.T) {
 	}
 
 	var initiative displayed
-	response = priya.Do(t, http.MethodGet, "/api/initiatives/I-1001", nil)
+	response = priya.Do(t, http.MethodGet, "/api/v1/initiatives/I-1001", nil)
 	assertStatus(t, response, http.StatusOK)
 	response.Decode(t, &initiative)
 	if *initiative.Display.Budget != eur("276000.00") || *initiative.Budget != usd("300000.00") {
 		t.Errorf("initiative budget = %+v, display %+v", initiative.Budget, initiative.Display.Budget)
 	}
 
-	response = daniel.Do(t, http.MethodGet, "/api/campaigns/C-1001", nil)
+	response = daniel.Do(t, http.MethodGet, "/api/v1/campaigns/C-1001", nil)
 	assertStatus(t, response, http.StatusOK)
 	response.Decode(t, &campaign)
 	if *campaign.Display.Budget != usd("700000.00") || *campaign.Display.BudgetAndCost.PlannedCost != usd("275000.00") {

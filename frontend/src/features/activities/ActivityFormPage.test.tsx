@@ -15,9 +15,9 @@ const NEW_ROUTE = '/plans/P-1001/initiatives/I-1001/activities/new';
 
 function openNewForm(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
-    'GET /api/initiatives/I-1001/activity-form': { body: newForm() },
-    'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'GET /api/people': { body: PEOPLE },
+    'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm() },
+    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
+    'GET /api/v1/people': { body: PEOPLE },
     ...answers,
   });
   const rendered = renderWithProviders(<ActivityFormPage mode="new" />, {
@@ -93,7 +93,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('creates the activity, says so and opens its page (FR-003, FR-004)', async () => {
     const { user, api, router } = openNewForm({
-      'POST /api/initiatives/I-1001/activities': {
+      'POST /api/v1/initiatives/I-1001/activities': {
         status: 201,
         body: launchFilm({ id: 'A-1043', name: 'Trade show' }),
       },
@@ -107,7 +107,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1043'),
     );
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/activities')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/activities')).toEqual([
       {
         name: 'Trade show',
         externalName: '',
@@ -147,7 +147,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
     expect(screen.getByLabelText('Activity name')).toHaveAccessibleDescription(
       "Required 'Digital & social' already has an activity called 'Launch film'.",
     );
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/activities')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/activities')).toEqual([]);
 
     fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2025-12-01' } });
     fireEvent.change(screen.getByLabelText('End date'), { target: { value: '2026-07-31' } });
@@ -161,7 +161,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('shows the problems the API finds under the fields', async () => {
     const { user } = openNewForm({
-      'POST /api/initiatives/I-1001/activities': validationFailed([
+      'POST /api/v1/initiatives/I-1001/activities': validationFailed([
         { field: 'ownerId', message: 'Choose an active person.' },
       ]),
     });
@@ -193,7 +193,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('opens a fresh form after Save and add another, with View in the message', async () => {
     const { user, router } = openNewForm({
-      'POST /api/initiatives/I-1001/activities': {
+      'POST /api/v1/initiatives/I-1001/activities': {
         status: 201,
         body: launchFilm({ id: 'A-1043', name: 'Trade show' }),
       },
@@ -231,7 +231,7 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('says when the model has no activity types (edge case)', async () => {
     openNewForm({
-      'GET /api/initiatives/I-1001/activity-form': { body: newForm({ activityTypes: [] }) },
+      'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm({ activityTypes: [] }) },
     });
 
     const notice = await screen.findByRole('note');
@@ -246,12 +246,14 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('says when the initiative no longer exists', async () => {
     openNewForm({
-      'GET /api/initiatives/I-1001/activity-form': {
+      'GET /api/v1/initiatives/I-1001/activity-form': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This initiative no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This initiative no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });
@@ -265,10 +267,13 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   it('offers Try again when the form cannot be loaded', async () => {
     let calls = 0;
     openNewForm({
-      'GET /api/initiatives/I-1001/activity-form': () => {
+      'GET /api/v1/initiatives/I-1001/activity-form': () => {
         calls += 1;
         return calls === 1
-          ? { status: 500, body: { code: 'internal_error', message: 'Broken', fields: [] } }
+          ? {
+              status: 500,
+              body: { error: { code: 'internal_error', message: 'Broken', fields: [] } },
+            }
           : { body: newForm() };
       },
     });

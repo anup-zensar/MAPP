@@ -17,7 +17,7 @@ func NewRouter() *Router {
 	return &Router{mux: http.NewServeMux()}
 }
 
-// Handle registers h for pattern, written as an http.ServeMux pattern: "PATCH /api/sample-folders/{folderId}".
+// Handle registers h for pattern, written as an http.ServeMux pattern: "PATCH /api/v1/sample-folders/{folderId}".
 // Registering the same pattern twice panics when the API starts, which is how ServeMux reports the mistake.
 func (r *Router) Handle(pattern string, h http.HandlerFunc) {
 	r.mux.Handle(pattern, h)

@@ -36,7 +36,7 @@ export const DECLINED = notificationOf({
   read: true,
 });
 
-/** The answer of GET /api/notifications for these items, counting the unread ones. */
+/** The answer of GET /api/v1/notifications for these items, counting the unread ones. */
 export function pageOf(items: AppNotification[], total = items.length): NotificationPage {
   return { items, total, unread: items.filter((item) => !item.read).length };
 }

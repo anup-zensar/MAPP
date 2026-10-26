@@ -7,8 +7,8 @@ import { logPage, logSummary } from './testData';
 describe('Activity log route (feature 011)', () => {
   it('opens /activity-log: "Activity log", current in the sidebar, no longer Coming soon (FR-001)', async () => {
     renderApp('/activity-log', {
-      'GET /api/activity-log/summary': { body: logSummary() },
-      'GET /api/activity-log': { body: logPage([]) },
+      'GET /api/v1/activity-log/summary': { body: logSummary() },
+      'GET /api/v1/activity-log': { body: logPage([]) },
     });
 
     expect(

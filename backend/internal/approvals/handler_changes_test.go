@@ -33,8 +33,8 @@ func TestRecall_FR021(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	recall := map[string]any{"roundId": "AR-1008", "reason": "Wrong workflow — use the fleet one."}
 
-	response := mei.Do(t, http.MethodPost, "/api/activities/"+fleetCardLaunch+"/approval/recall", recall)
-	again := mei.Do(t, http.MethodPost, "/api/activities/"+fleetCardLaunch+"/approval/recall", map[string]any{"roundId": "AR-1008"})
+	response := mei.Do(t, http.MethodPost, "/api/v1/activities/"+fleetCardLaunch+"/approval/recall", recall)
+	again := mei.Do(t, http.MethodPost, "/api/v1/activities/"+fleetCardLaunch+"/approval/recall", map[string]any{"roundId": "AR-1008"})
 
 	approval := decodeApproval(t, response)
 	round := approval.Rounds[0]
@@ -46,16 +46,16 @@ func TestRecall_FR021(t *testing.T) {
 		entry.Comment != "Wrong workflow — use the fleet one." {
 		t.Errorf("latest history entry = %+v, want Mei Lin's recall at level 2 with the reason", entry)
 	}
-	if waiting := rowIDs(decodeRows(t, alex.Do(t, http.MethodGet, "/api/approvals?tab=waiting", nil))); len(waiting) != 0 {
+	if waiting := rowIDs(decodeRows(t, alex.Do(t, http.MethodGet, "/api/v1/approvals?tab=waiting", nil))); len(waiting) != 0 {
 		t.Errorf("Alex's waiting = %q, want none", waiting)
 	}
 	assertError(t, again, http.StatusConflict, "version_conflict", "The submission was recalled by Mei Lin")
 
-	approved := decodeApproval(t, mei.Do(t, http.MethodGet, "/api/activities/"+socialAlwaysOn+"/approval", nil))
-	refused := mei.Do(t, http.MethodPost, "/api/activities/"+socialAlwaysOn+"/approval/recall", map[string]any{"roundId": approved.Rounds[0].ID})
+	approved := decodeApproval(t, mei.Do(t, http.MethodGet, "/api/v1/activities/"+socialAlwaysOn+"/approval", nil))
+	refused := mei.Do(t, http.MethodPost, "/api/v1/activities/"+socialAlwaysOn+"/approval/recall", map[string]any{"roundId": approved.Rounds[0].ID})
 	assertError(t, refused, http.StatusBadRequest, "bad_request",
 		"Approved activities can't be recalled. Changing its planned cost, dates or line-item amounts sends it back for approval.")
-	gone := mei.Do(t, http.MethodPost, "/api/activities/A-9999/approval/recall", recall)
+	gone := mei.Do(t, http.MethodPost, "/api/v1/activities/A-9999/approval/recall", recall)
 	assertError(t, gone, http.StatusNotFound, "not_found", "This activity no longer exists — someone may have deleted it.")
 }
 
@@ -73,18 +73,18 @@ func TestPlannedCostChangeRestartsApproval_FR022(t *testing.T) {
 	if submitted.Status != activities.StatusCreated || approved.Status != activities.StatusCreated {
 		t.Errorf("statuses %s, %s; want both Created", submitted.Status, approved.Status)
 	}
-	open := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/activities/"+tradeMagazineAds+"/approval", nil))
+	open := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/v1/activities/"+tradeMagazineAds+"/approval", nil))
 	if round := open.Rounds[0]; round.Number != 2 || round.Outcome != approvals.OutcomeRestarted || round.History[0].Action != "restarted" ||
 		round.History[0].Actor.Name != "Priya Raman" || !slices.Equal(changeTexts(round.History[0]),
 		[]string{"Planned cost changed from 30,000.00 USD to 35,000.00 USD"}) {
 		t.Errorf("round 2 = %s, latest entry %+v; want restarted with the planned cost change", round.Outcome, round.History[0])
 	}
-	closed := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/activities/"+socialAlwaysOn+"/approval", nil))
+	closed := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/v1/activities/"+socialAlwaysOn+"/approval", nil))
 	if round := closed.Rounds[0]; round.Outcome != approvals.OutcomeApproved || round.History[0].Action != "restarted" ||
 		round.History[0].Level != 0 || !slices.Equal(changeTexts(round.History[0]), []string{"Planned cost changed from 80,000.00 USD to 90,000.00 USD"}) {
 		t.Errorf("approved round = %s, latest entry %+v; want still approved, with the restart", round.Outcome, round.History[0])
 	}
-	if rows := rowIDs(decodeRows(t, priya.Do(t, http.MethodGet, "/api/approvals?tab=open", nil))); slices.Contains(rows, tradeMagazineAds) {
+	if rows := rowIDs(decodeRows(t, priya.Do(t, http.MethodGet, "/api/v1/approvals?tab=open", nil))); slices.Contains(rows, tradeMagazineAds) {
 		t.Errorf("open = %q, want %s gone", rows, tradeMagazineAds)
 	}
 }
@@ -97,12 +97,12 @@ func TestLineItemCurrencyChangeRestartsApproval_FR022(t *testing.T) {
 	form := lineItemForm(t, priya, "L-1003") // Venue hire, 15,800.00 GBP
 	form["currency"], form["restartApproval"] = "EUR", true
 
-	response := priya.Do(t, http.MethodPatch, "/api/line-items/L-1003", form)
+	response := priya.Do(t, http.MethodPatch, "/api/v1/line-items/L-1003", form)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("PATCH L-1003 = %d %s, want 200", response.Status, response.Body)
 	}
-	approval := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/activities/"+socialAlwaysOn+"/approval", nil))
+	approval := decodeApproval(t, priya.Do(t, http.MethodGet, "/api/v1/activities/"+socialAlwaysOn+"/approval", nil))
 	latest := approval.Rounds[0].History[0]
 	want := []string{"Planned cost of line item 'Venue hire' (L-1003): 15,800.00 GBP → 15,800.00 EUR"}
 	if approval.Status != "created" || latest.Action != "restarted" || !slices.Equal(changeTexts(latest), want) {
@@ -120,18 +120,18 @@ func TestDeleteSubmittedActivity_UndoKeepsRound_RestoreCancels_FR023(t *testing.
 	mei := server.SignIn(t, meisEmail)
 	server.GrantRole(t, meisEmail, "globalPlanner", "all") // 014: every market's plans
 	daniel := server.SignIn(t, danielsEmail)
-	path := "/api/activities/" + tradeMagazineAds
+	path := "/api/v1/activities/" + tradeMagazineAds
 
 	undoEntry := deleteActivity(t, priya, tradeMagazineAds)
-	whileDeleted := rowIDs(decodeRows(t, daniel.Do(t, http.MethodGet, "/api/approvals?tab=open", nil)))
-	undone := priya.Do(t, http.MethodPost, "/api/recycle-bin/"+undoEntry+"/undo", nil)
+	whileDeleted := rowIDs(decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=open", nil)))
+	undone := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+undoEntry+"/undo", nil)
 	afterUndo := decodeApproval(t, daniel.Do(t, http.MethodGet, path+"/approval", nil))
 	server.Advance(time.Hour)
 	deletedAt := now.Add(time.Hour)
 	restoreEntry := deleteActivity(t, mei, tradeMagazineAds)
 	server.Advance(24 * time.Hour)
 	priya, daniel = server.SignIn(t, priyasEmail), server.SignIn(t, danielsEmail) // the day ended their sessions
-	restored := priya.Do(t, http.MethodPost, "/api/recycle-bin/"+restoreEntry+"/restore", nil)
+	restored := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+restoreEntry+"/restore", nil)
 	afterRestore := decodeApproval(t, daniel.Do(t, http.MethodGet, path+"/approval", nil))
 
 	if slices.Contains(whileDeleted, tradeMagazineAds) {
@@ -158,7 +158,7 @@ func TestDeleteSubmittedActivity_UndoKeepsRound_RestoreCancels_FR023(t *testing.
 	if entry := round.History[0]; entry.Action != "cancelled" || entry.Actor.Name != "Mei Lin" || !entry.At.Equal(deletedAt) {
 		t.Errorf("latest history entry = %+v, want cancelled by Mei Lin at the delete", entry)
 	}
-	if rows := rowIDs(decodeRows(t, daniel.Do(t, http.MethodGet, "/api/approvals?tab=waiting", nil))); len(rows) != 0 {
+	if rows := rowIDs(decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=waiting", nil))); len(rows) != 0 {
 		t.Errorf("Daniel's waiting = %q, want none", rows)
 	}
 }
@@ -172,16 +172,16 @@ func TestWorkflowFieldLockedWhileSubmitted_FR013(t *testing.T) {
 	other := "WF-1002"
 	form.ApprovalWorkflowID = &other
 
-	locked := priya.Do(t, http.MethodPatch, "/api/activities/"+tradeMagazineAds, form)
+	locked := priya.Do(t, http.MethodPatch, "/api/v1/activities/"+tradeMagazineAds, form)
 
 	if locked.Status != http.StatusBadRequest || !strings.Contains(string(locked.Body),
 		`{"field":"approvalWorkflowId","message":"Recall the activity to choose another workflow."}`) {
 		t.Errorf("answer = %d %s, want the workflow locked with the FR-013 reason", locked.Status, locked.Body)
 	}
-	decodeApproval(t, priya.Do(t, http.MethodPost, "/api/activities/"+tradeMagazineAds+"/approval/recall", map[string]any{"roundId": "AR-1004"}))
+	decodeApproval(t, priya.Do(t, http.MethodPost, "/api/v1/activities/"+tradeMagazineAds+"/approval/recall", map[string]any{"roundId": "AR-1004"}))
 	form = activityForm(t, priya, tradeMagazineAds)
 	form.ApprovalWorkflowID = &other
-	if saved := priya.Do(t, http.MethodPatch, "/api/activities/"+tradeMagazineAds, form); saved.Status != http.StatusOK {
+	if saved := priya.Do(t, http.MethodPatch, "/api/v1/activities/"+tradeMagazineAds, form); saved.Status != http.StatusOK {
 		t.Errorf("after the recall: %d %s, want 200", saved.Status, saved.Body)
 	}
 }
@@ -193,7 +193,7 @@ func editActivity(t *testing.T, client *apitest.Client, id string, change func(u
 	form := activityForm(t, client, id)
 	change(&form)
 	form.RestartApproval = true
-	response := client.Do(t, http.MethodPatch, "/api/activities/"+id, form)
+	response := client.Do(t, http.MethodPatch, "/api/v1/activities/"+id, form)
 	if response.Status != http.StatusOK {
 		t.Fatalf("PATCH %s = %d %s, want 200", id, response.Status, response.Body)
 	}
@@ -205,7 +205,7 @@ func editActivity(t *testing.T, client *apitest.Client, id string, change func(u
 // activityForm reads the activity id and returns its whole editable state, as 006's edit form sends it.
 func activityForm(t *testing.T, client *apitest.Client, id string) activities.Update {
 	t.Helper()
-	response := client.Do(t, http.MethodGet, "/api/activities/"+id, nil)
+	response := client.Do(t, http.MethodGet, "/api/v1/activities/"+id, nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET %s = %d %s", id, response.Status, response.Body)
 	}
@@ -248,7 +248,7 @@ func activityForm(t *testing.T, client *apitest.Client, id string) activities.Up
 // lineItemForm reads the line item id and returns its whole form, as 007's edit page sends it.
 func lineItemForm(t *testing.T, client *apitest.Client, id string) map[string]any {
 	t.Helper()
-	response := client.Do(t, http.MethodGet, "/api/line-items/"+id, nil)
+	response := client.Do(t, http.MethodGet, "/api/v1/line-items/"+id, nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET %s = %d %s", id, response.Status, response.Body)
 	}
@@ -282,7 +282,7 @@ func lineItemForm(t *testing.T, client *apitest.Client, id string) map[string]an
 // deleteActivity deletes the activity id through 006's DELETE as client and returns its recycle-bin entry.
 func deleteActivity(t *testing.T, client *apitest.Client, id string) string {
 	t.Helper()
-	response := client.Do(t, http.MethodDelete, "/api/activities/"+id, nil)
+	response := client.Do(t, http.MethodDelete, "/api/v1/activities/"+id, nil)
 	if response.Status != http.StatusOK {
 		t.Fatalf("DELETE %s = %d %s, want 200", id, response.Status, response.Body)
 	}

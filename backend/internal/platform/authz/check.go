@@ -73,23 +73,22 @@ func RequireIn(ctx context.Context, p Permission, plan PlanFacts) error {
 	return errs.Forbidden(g.Refusal(p, &plan))
 }
 
-// RequireView refuses, with 403 forbidden and message 4, a record of the plan that the person acting may
-// not see (FR-008); recordType names the record mid-sentence ("plan", "campaign", …). The message names
-// nothing of the record.
+// RequireView answers a record of the plan that the person acting may not see as missing: 404 not_found with
+// NotFoundMessage; recordType names the record mid-sentence ("plan", "campaign", …).
 func RequireView(ctx context.Context, plan PlanFacts, recordType string) error {
 	if CanView(ctx, plan) {
 		return nil
 	}
-	return errs.Forbidden(NoAccessMessage(recordType))
+	return errs.NotFound(NotFoundMessage(recordType))
 }
 
-// RequireViewActivity refuses, like RequireView, an activity (or a record under it, recordType) that the
+// RequireViewActivity answers, like RequireView, an activity (or a record under it, recordType) that the
 // person acting may not see: they see it when they see its plan, own it or are named to approve it.
 func RequireViewActivity(ctx context.Context, a ActivityFacts, recordType string) error {
 	if CanViewActivity(ctx, a) {
 		return nil
 	}
-	return errs.Forbidden(NoAccessMessage(recordType))
+	return errs.NotFound(NotFoundMessage(recordType))
 }
 
 // Availability says whether the person may take one action on a record now, and why not (contract

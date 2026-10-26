@@ -52,7 +52,10 @@
   gap: var(--space-6);
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .defaultText {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);

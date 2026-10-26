@@ -18,12 +18,12 @@ import { testUser } from '@/test/users';
 import { FinancialsPage } from './FinancialsPage';
 import { TransactionPanel } from './TransactionPanel';
 
-const LIST = 'GET /api/financials/transactions';
+const LIST = 'GET /api/v1/financials/transactions';
 
 function renderPanel(id: string, answer: MockHandler, more: Record<string, MockHandler> = {}) {
   const api = mockApi({
     [LIST]: { body: transactionPage() },
-    [`GET /api/financials/transactions/${id}`]: answer,
+    [`GET /api/v1/financials/transactions/${id}`]: answer,
     ...more,
   });
   return { ...renderFinancials(`/financials/transactions/${id}?q=helix`), api };
@@ -117,7 +117,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
     const { user } = renderPanel(
       'FT-1004',
       { body: transactionOf(FT_1004) },
-      { 'GET /api/line-items/L-1007': { body: STATION_SIGNAGE } },
+      { 'GET /api/v1/line-items/L-1007': { body: STATION_SIGNAGE } },
     );
 
     const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
@@ -139,7 +139,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
       'FT-1004',
       { body: manuallyLinked() },
       {
-        'POST /api/financials/transactions/FT-1004/unlink': {
+        'POST /api/v1/financials/transactions/FT-1004/unlink': {
           body: transactionOf(FT_1004, { version: 3 }),
         },
       },
@@ -163,7 +163,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
         await screen.findAllByText("'PO 4500001004 / 10' unlinked from 'Station signage (L-1007)'")
       )[0],
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/financials/transactions/FT-1004/unlink')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/financials/transactions/FT-1004/unlink')).toEqual([
       { version: 2 },
     ]);
   });
@@ -174,7 +174,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
       'FT-1004',
       () => ({ body: unlinked ? transactionOf(FT_1004, { version: 3 }) : manuallyLinked() }),
       {
-        'POST /api/financials/transactions/FT-1004/unlink': () => {
+        'POST /api/v1/financials/transactions/FT-1004/unlink': () => {
           unlinked = true;
           return { body: transactionOf(FT_1004, { version: 3 }) };
         },
@@ -197,8 +197,8 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
       'FT-1004',
       () => ({ body: linked ? manuallyLinked() : transactionOf(FT_1004) }),
       {
-        'GET /api/line-items/L-1007': { body: STATION_SIGNAGE },
-        'POST /api/financials/transactions/FT-1004/link': () => {
+        'GET /api/v1/line-items/L-1007': { body: STATION_SIGNAGE },
+        'POST /api/v1/financials/transactions/FT-1004/link': () => {
           linked = true;
           return { body: manuallyLinked() };
         },
@@ -220,7 +220,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
   it('says when the transaction does not exist', async () => {
     renderPanel('FT-9999', {
       status: 404,
-      body: { code: 'not_found', message: "This GSAP transaction doesn't exist." },
+      body: { error: { code: 'not_found', message: "This GSAP transaction doesn't exist." } },
     });
 
     expect(await screen.findByText("This GSAP transaction doesn't exist.")).toBeInTheDocument();

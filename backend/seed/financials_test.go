@@ -28,7 +28,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 	card := func(id string) financials.RecordView {
 		t.Helper()
 		var v financials.RecordView
-		get("/api/financials/records/"+id, &v)
+		get("/api/v1/financials/records/"+id, &v)
 		return v
 	}
 
@@ -73,7 +73,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 			}
 		}
 		var page financials.TransactionPage
-		get("/api/financials/transactions?recordId="+id, &page)
+		get("/api/v1/financials/transactions?recordId="+id, &page)
 		if page.Totals != (financials.Totals{Committed: v.Figures.Committed, Invoiced: v.Figures.Invoiced, Paid: v.Figures.Paid,
 			Accrued: v.Figures.Accrued}) || page.Total != v.Figures.TransactionCount {
 			t.Errorf("%s: the Financials page totals %+v (%d), the card %+v", v.Record.Name, page.Totals, page.Total, v.Figures)
@@ -95,7 +95,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 	}
 
 	var all financials.TransactionPage
-	get("/api/financials/transactions?year=2026", &all)
+	get("/api/v1/financials/transactions?year=2026", &all)
 	// Priya does not see the not-linked PO: not-linked transactions show only to people who may import (014).
 	if all.Counts != (financials.TypeCounts{All: 10, PurchaseOrder: 3, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: 0}) ||
 		all.Totals.Committed != usd("35652.17") || all.Totals.Invoiced != usd("33152.17") ||
@@ -108,7 +108,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 	}
 
 	var overview financials.Overview
-	get("/api/financials/overview?scope=myTeams", &overview)
+	get("/api/v1/financials/overview?scope=myTeams", &overview)
 	o := overview.Figures
 	if o.Committed != usd("35652.17") || o.PlannedCost == nil || *o.PlannedCost != usd("460000.00") || o.CommittedPercent == nil ||
 		*o.CommittedPercent != 8 || overview.ActivitiesAbovePlanned != 1 || overview.NotLinked != 0 {
@@ -121,7 +121,7 @@ func TestSeed_FinancialsStory_015(t *testing.T) {
 func TestSeed_FinancialsLinkOnlyThreeLineItems_D306(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, "alex.morgan@shell.com")
-	response := alex.Do(t, http.MethodGet, "/api/financials/transactions?pageSize=50", nil)
+	response := alex.Do(t, http.MethodGet, "/api/v1/financials/transactions?pageSize=50", nil)
 	var page financials.TransactionPage
 	response.Decode(t, &page)
 	linkedTo := map[string]int{}

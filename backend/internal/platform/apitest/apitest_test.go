@@ -19,13 +19,13 @@ func TestDo_ReportsARequestThatBreaksTheContract(t *testing.T) {
 	recorder := &failureRecorder{TB: t}
 	notAnEmail := map[string]any{"email": 42, "password": "mapp"}
 
-	server.Do(recorder, http.MethodPost, "/api/auth/sign-in", notAnEmail)
+	server.Do(recorder, http.MethodPost, "/api/v1/auth/sign-in", notAnEmail)
 	if len(recorder.failures) == 0 {
 		t.Error("a sign-in with a number as e-mail was not reported")
 	}
 
 	recorder.failures = nil
-	server.Do(recorder, http.MethodPost, "/api/auth/sign-in", notAnEmail, apitest.SkipRequestValidation())
+	server.Do(recorder, http.MethodPost, "/api/v1/auth/sign-in", notAnEmail, apitest.SkipRequestValidation())
 	if len(recorder.failures) != 0 {
 		t.Errorf("SkipRequestValidation() still reported: %q", recorder.failures)
 	}
@@ -37,13 +37,13 @@ func TestDo_ReportsAPathThatIsNotInTheContract(t *testing.T) {
 	server := apitest.New(t)
 	recorder := &failureRecorder{TB: t}
 
-	server.Do(recorder, http.MethodGet, "/api/nowhere", nil)
+	server.Do(recorder, http.MethodGet, "/api/v1/nowhere", nil)
 	if len(recorder.failures) == 0 {
 		t.Error("a path that is not in the contract was not reported")
 	}
 
 	recorder.failures = nil
-	server.Do(recorder, http.MethodGet, "/api/nowhere", nil, apitest.SkipValidation())
+	server.Do(recorder, http.MethodGet, "/api/v1/nowhere", nil, apitest.SkipValidation())
 	if len(recorder.failures) != 0 {
 		t.Errorf("SkipValidation() still reported: %q", recorder.failures)
 	}
@@ -107,13 +107,13 @@ func (r *failureRecorder) Errorf(format string, args ...any) {
 func TestServer_GrantRole(t *testing.T) {
 	server := apitest.New(t)
 	sara := server.SignIn(t, "sara.novak@shell.com")
-	before := sara.Do(t, http.MethodGet, "/api/access-rules", nil)
+	before := sara.Do(t, http.MethodGet, "/api/v1/access-rules", nil)
 	if before.Status != http.StatusForbidden {
 		t.Fatalf("a Viewer reading the access rules = %d %s, want 403", before.Status, before.Body)
 	}
 
 	server.GrantRole(t, "sara.novak@shell.com", "administrator", "all")
-	after := sara.Do(t, http.MethodGet, "/api/access-rules", nil)
+	after := sara.Do(t, http.MethodGet, "/api/v1/access-rules", nil)
 	if after.Status != http.StatusOK {
 		t.Errorf("after GrantRole = %d %s, want 200", after.Status, after.Body)
 	}
@@ -125,7 +125,7 @@ func TestServer_GrantRole(t *testing.T) {
 			} `json:"roles"`
 		} `json:"access"`
 	}
-	sara.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	sara.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	got := fmt.Sprint(me.Access.Roles)
 	if got != "[{{Administrator} {All markets}} {{Viewer} {My teams}}]" {
 		t.Errorf("Sara's roles = %s", got)

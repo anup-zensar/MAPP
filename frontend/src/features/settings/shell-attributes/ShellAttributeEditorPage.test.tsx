@@ -20,7 +20,7 @@ import {
 } from './testData';
 
 const LIST = {
-  'GET /api/shell-attributes': { body: page([BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES]) },
+  'GET /api/v1/shell-attributes': { body: page([BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES]) },
   ...FORM_ANSWERS,
 };
 
@@ -66,7 +66,7 @@ function offered(name: RegExp): string[] {
 describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
   it('creates "Media channel" with four options and opens it (US2-1)', async () => {
     const { user, api, router } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/shell-attributes': { status: 201, body: { ...MEDIA_CHANNEL, id: 'SA-1020' } },
+      'POST /api/v1/shell-attributes': { status: 201, body: { ...MEDIA_CHANNEL, id: 'SA-1020' } },
     });
 
     expect(
@@ -93,7 +93,7 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
       expect(router.state.location.pathname).toBe('/settings/shell-attributes/SA-1020'),
     );
     expect(await findMessages()).toHaveTextContent("Shell attribute 'Media channel' created");
-    expect(api.bodiesOf('POST /api/shell-attributes')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/shell-attributes')).toEqual([
       {
         label: 'Media channel',
         helpText: '',
@@ -155,23 +155,25 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
 
     expect(await screen.findAllByText("'tv' appears twice.")).toHaveLength(2);
     expect(screen.getAllByText('Enter a label.')).toHaveLength(2);
-    expect(api.bodiesOf('POST /api/shell-attributes')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/shell-attributes')).toEqual([]);
   });
 
   it("shows the API's problems together, at the fields (US2-2)", async () => {
     const { user } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/shell-attributes': {
+      'POST /api/v1/shell-attributes': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the highlighted fields.',
-          fields: [
-            {
-              field: 'label',
-              message: "The Activity form already has a Shell attribute called 'PIR'.",
-            },
-            { field: 'options[0].label', message: 'Use 120 characters or fewer.' },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the highlighted fields.',
+            fields: [
+              {
+                field: 'label',
+                message: "The Activity form already has a Shell attribute called 'PIR'.",
+              },
+              { field: 'options[0].label', message: 'Use 120 characters or fewer.' },
+            ],
+          },
         },
       },
     });
@@ -222,7 +224,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
       ],
     };
     renderEditor('/settings/shell-attributes/SA-1010/edit', {
-      'GET /api/shell-attributes/SA-1010': { body: locked },
+      'GET /api/v1/shell-attributes/SA-1010': { body: locked },
     });
 
     expect(
@@ -246,7 +248,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
 
   it('shows the Business unit lock on its section (FR-023)', async () => {
     renderEditor('/settings/shell-attributes/SA-1001/edit', {
-      'GET /api/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
+      'GET /api/v1/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
     });
 
     await screen.findByRole('heading', { level: 1, name: "Edit Shell attribute 'Business unit'" });
@@ -261,8 +263,8 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
 
   it('warns how many records become incomplete before saving a new marking (US2-5)', async () => {
     const { user, api, router } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/shell-attributes/SA-1011': { body: PIR },
-      'POST /api/shell-attributes/SA-1011/impact': {
+      'GET /api/v1/shell-attributes/SA-1011': { body: PIR },
+      'POST /api/v1/shell-attributes/SA-1011/impact': {
         body: {
           warnings: [
             {
@@ -274,7 +276,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
           ],
         },
       },
-      'PATCH /api/shell-attributes/SA-1011': { body: { ...PIR, marking: 'neededToSubmit' } },
+      'PATCH /api/v1/shell-attributes/SA-1011': { body: { ...PIR, marking: 'neededToSubmit' } },
     });
 
     await user.selectOptions(
@@ -290,7 +292,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
       '7 activities have no value yet and will show as incomplete. Submitted and approved activities keep their status.',
     );
     expect(within(dialog).getByRole('button', { name: 'Keep editing' })).toHaveFocus();
-    expect(api.bodiesOf('PATCH /api/shell-attributes/SA-1011')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/shell-attributes/SA-1011')).toEqual([]);
     await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() =>
@@ -298,27 +300,29 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
     );
     expect(await findMessages()).toHaveTextContent("Shell attribute 'PIR' saved");
     const change = { marking: 'neededToSubmit', version: 1 };
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1011/impact')).toEqual([change]);
-    expect(api.bodiesOf('PATCH /api/shell-attributes/SA-1011')).toEqual([change]);
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1011/impact')).toEqual([change]);
+    expect(api.bodiesOf('PATCH /api/v1/shell-attributes/SA-1011')).toEqual([change]);
   });
 
   it('keeps the typed values after a conflict and saves over it on purpose (FR-007)', async () => {
     let gets = 0;
     let patches = 0;
     const { user, api } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/shell-attributes/SA-1011': () => {
+      'GET /api/v1/shell-attributes/SA-1011': () => {
         gets += 1;
         return { body: gets === 1 ? PIR : { ...PIR, label: 'PIR code', version: 3 } };
       },
-      'PATCH /api/shell-attributes/SA-1011': () => {
+      'PATCH /api/v1/shell-attributes/SA-1011': () => {
         patches += 1;
         return patches === 1
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Someone else changed this Shell attribute.',
-                conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Someone else changed this Shell attribute.',
+                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+                },
               },
             }
           : { body: { ...PIR, label: 'PIR number', version: 4 } };
@@ -337,7 +341,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Shell attribute 'PIR number' saved");
-    expect(api.bodiesOf('PATCH /api/shell-attributes/SA-1011')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/shell-attributes/SA-1011')).toEqual([
       { label: 'PIR number', version: 1 },
       { label: 'PIR number', version: 3 },
     ]);
@@ -345,9 +349,9 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
 
   it('says when the attribute no longer exists', async () => {
     renderEditor('/settings/shell-attributes/SA-9999/edit', {
-      'GET /api/shell-attributes/SA-9999': {
+      'GET /api/v1/shell-attributes/SA-9999': {
         status: 404,
-        body: { code: 'not_found', message: 'This Shell attribute no longer exists.' },
+        body: { error: { code: 'not_found', message: 'This Shell attribute no longer exists.' } },
       },
     });
 
@@ -363,7 +367,7 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
 describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-023)', () => {
   it('links each option of a dependent attribute, listing every unlinked one at once (US3-2)', async () => {
     const { user, api, router } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/shell-attributes': {
+      'POST /api/v1/shell-attributes': {
         status: 201,
         body: { ...MEDIA_CHANNEL, id: 'SA-1020', label: 'Spot type' },
       },
@@ -395,7 +399,7 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
     expect(
       screen.getAllByText("Link 'Radio spot' to at least one media channel option."),
     ).toHaveLength(2);
-    expect(api.bodiesOf('POST /api/shell-attributes')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/shell-attributes')).toEqual([]);
 
     const first = screen.getByRole('group', { name: 'Option 1' });
     expect(first).toHaveTextContent('Shown when one of these media channel options is chosen.');
@@ -410,7 +414,7 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/settings/shell-attributes/SA-1020'),
     );
-    expect(api.bodiesOf('POST /api/shell-attributes')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/shell-attributes')).toEqual([
       {
         label: 'Spot type',
         helpText: '',
@@ -430,7 +434,7 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
 
   it('shows an attribute only for chosen business units (FR-023)', async () => {
     const { user, api } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/shell-attributes': { status: 201, body: { ...PIR, id: 'SA-1021' } },
+      'POST /api/v1/shell-attributes': { status: 201, body: { ...PIR, id: 'SA-1021' } },
     });
 
     await user.type(await screen.findByRole('textbox', { name: /^Label/ }), 'Lubricants code');
@@ -444,8 +448,8 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
     await user.click(within(condition).getByRole('checkbox', { name: 'Lubricants' }));
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
-    await waitFor(() => expect(api.bodiesOf('POST /api/shell-attributes')).toHaveLength(1));
-    expect(api.bodiesOf('POST /api/shell-attributes')[0]).toMatchObject({
+    await waitFor(() => expect(api.bodiesOf('POST /api/v1/shell-attributes')).toHaveLength(1));
+    expect(api.bodiesOf('POST /api/v1/shell-attributes')[0]).toMatchObject({
       type: 'text',
       parentAttributeId: '',
       conditionOptionIds: [LUBRICANTS],
@@ -455,7 +459,7 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
 
   it('says why no condition can be set while there is no Business unit attribute', async () => {
     renderEditor('/settings/shell-attributes/new?level=plan', {
-      'GET /api/shell-attribute-forms/plan': {
+      'GET /api/v1/shell-attribute-forms/plan': {
         body: { ...emptyForm('plan'), businessUnitAttributeId: null, businessUnitOptions: [] },
       },
     });
@@ -472,8 +476,8 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
 
   it('links every active option when an attribute starts depending on another (FR-022)', async () => {
     const { user, api, router } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/shell-attributes/SA-1011': { body: PIR },
-      'PATCH /api/shell-attributes/SA-1011': {
+      'GET /api/v1/shell-attributes/SA-1011': { body: PIR },
+      'PATCH /api/v1/shell-attributes/SA-1011': {
         body: { ...PIR, parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true } },
       },
     });
@@ -497,7 +501,7 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/settings/shell-attributes/SA-1011'),
     );
-    expect(api.bodiesOf('PATCH /api/shell-attributes/SA-1011')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/shell-attributes/SA-1011')).toEqual([
       {
         parentAttributeId: 'SA-1010',
         optionLinks: [
@@ -516,8 +520,8 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
       condition: [{ id: LUBRICANTS, name: 'Lubricants', active: true }],
     };
     const { user, api } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/shell-attributes/SA-1011': { body: region },
-      'PATCH /api/shell-attributes/SA-1011': { body: PIR },
+      'GET /api/v1/shell-attributes/SA-1011': { body: region },
+      'PATCH /api/v1/shell-attributes/SA-1011': { body: PIR },
     });
 
     const dependsOn = await screen.findByRole('combobox', { name: /Depends on/ });
@@ -533,7 +537,7 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
-      expect(api.bodiesOf('PATCH /api/shell-attributes/SA-1011')).toEqual([
+      expect(api.bodiesOf('PATCH /api/v1/shell-attributes/SA-1011')).toEqual([
         { parentAttributeId: '', conditionOptionIds: [], version: 1 },
       ]),
     );

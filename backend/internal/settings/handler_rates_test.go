@@ -33,7 +33,7 @@ func TestRatesAPI_HistoryAndCurrent_FR003_FR009(t *testing.T) {
 		Total   int
 		Current struct{ Currency, Rate, RateDate, Source, ImportFileName string }
 	}
-	alex.Do(t, http.MethodGet, "/api/currencies/EUR/rates", nil).Decode(t, &history)
+	alex.Do(t, http.MethodGet, "/api/v1/currencies/EUR/rates", nil).Decode(t, &history)
 	var current struct {
 		Today string
 		Items []struct {
@@ -43,10 +43,10 @@ func TestRatesAPI_HistoryAndCurrent_FR003_FR009(t *testing.T) {
 		}
 		Total int
 	}
-	alex.Do(t, http.MethodGet, "/api/exchange-rates/current", nil).Decode(t, &current)
-	gone := alex.Do(t, http.MethodGet, "/api/currencies/XXX/rates", nil)
+	alex.Do(t, http.MethodGet, "/api/v1/exchange-rates/current", nil).Decode(t, &current)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/currencies/XXX/rates", nil)
 	var usd struct{ Items []rateRecord }
-	alex.Do(t, http.MethodGet, "/api/currencies/USD/rates", nil).Decode(t, &usd)
+	alex.Do(t, http.MethodGet, "/api/v1/currencies/USD/rates", nil).Decode(t, &usd)
 
 	if history.Total != 31 || len(history.Items) != 31 {
 		t.Fatalf("EUR history = %d rates, want 31", history.Total)
@@ -75,21 +75,21 @@ func TestRatesAPI_AddUpdateDelete_FR003_FR005(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	impact := alex.Do(t, http.MethodPost, "/api/currencies/EUR/rates/impact", map[string]any{"date": "2027-01-01", "rate": "0.95"})
-	invalid := alex.Do(t, http.MethodPost, "/api/currencies/EUR/rates", map[string]any{"date": "2026-03-12", "rate": "0"})
-	usd := alex.Do(t, http.MethodPost, "/api/currencies/USD/rates", map[string]any{"date": "2026-03-12", "rate": "1"})
+	impact := alex.Do(t, http.MethodPost, "/api/v1/currencies/EUR/rates/impact", map[string]any{"date": "2027-01-01", "rate": "0.95"})
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/currencies/EUR/rates", map[string]any{"date": "2026-03-12", "rate": "0"})
+	usd := alex.Do(t, http.MethodPost, "/api/v1/currencies/USD/rates", map[string]any{"date": "2026-03-12", "rate": "1"})
 	var added rateRecord
-	mustCreate(t, alex, "/api/currencies/EUR/rates", map[string]any{"date": "2027-01-01", "rate": "0.95"}).Decode(t, &added)
-	editImpact := alex.Do(t, http.MethodPost, "/api/exchange-rates/"+added.ID+"/impact", map[string]any{"rate": "0.96", "version": 1})
+	mustCreate(t, alex, "/api/v1/currencies/EUR/rates", map[string]any{"date": "2027-01-01", "rate": "0.95"}).Decode(t, &added)
+	editImpact := alex.Do(t, http.MethodPost, "/api/v1/exchange-rates/"+added.ID+"/impact", map[string]any{"rate": "0.96", "version": 1})
 	var edited rateRecord
-	alex.Do(t, http.MethodPatch, "/api/exchange-rates/"+added.ID, map[string]any{"rate": "0.96", "version": 1}).Decode(t, &edited)
-	stale := alex.Do(t, http.MethodPatch, "/api/exchange-rates/"+added.ID, map[string]any{"rate": "0.97", "version": 1})
+	alex.Do(t, http.MethodPatch, "/api/v1/exchange-rates/"+added.ID, map[string]any{"rate": "0.96", "version": 1}).Decode(t, &edited)
+	stale := alex.Do(t, http.MethodPatch, "/api/v1/exchange-rates/"+added.ID, map[string]any{"rate": "0.97", "version": 1})
 	var deleted struct {
 		RecycleBinEntry struct{ ID, RecordType, RecordName string }
 	}
-	alex.Do(t, http.MethodDelete, "/api/exchange-rates/"+added.ID, nil).Decode(t, &deleted)
-	gone := alex.Do(t, http.MethodDelete, "/api/exchange-rates/XR-9999", nil)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
+	alex.Do(t, http.MethodDelete, "/api/v1/exchange-rates/"+added.ID, nil).Decode(t, &deleted)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/exchange-rates/XR-9999", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
 
 	assertAnswer(t, impact, http.StatusOK, `{"warnings":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"date","message":"EUR already has a rate on 12 Mar 2026."},`+
@@ -109,7 +109,7 @@ func TestRatesAPI_AddUpdateDelete_FR003_FR005(t *testing.T) {
 		t.Errorf("deleted = %+v", deleted)
 	}
 	assertAnswer(t, gone, http.StatusNotFound,
-		`{"code":"not_found","message":"This exchange rate no longer exists — someone may have deleted it.","fields":[]}`)
+		`{"error":{"code":"not_found","message":"This exchange rate no longer exists — someone may have deleted it.","fields":[]}}`)
 	if undone.Status != http.StatusOK {
 		t.Errorf("undo = %d %s", undone.Status, undone.Body)
 	}
@@ -122,7 +122,7 @@ func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 	server.Advance(24 * time.Hour) // 13 Mar 2026: a day without a rate yet
 	alex := server.SignIn(t, alexsEmail)
 
-	sample := alex.Do(t, http.MethodGet, "/api/exchange-rates/import-sample", nil)
+	sample := alex.Do(t, http.MethodGet, "/api/v1/exchange-rates/import-sample", nil)
 	body := map[string]any{"fileName": "gsap_rates_2026-03-13.csv", "content": base64.StdEncoding.EncodeToString(sample.Body)}
 	var check struct {
 		Feed string
@@ -132,22 +132,22 @@ func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 		}
 		Counts struct{ Add, Replace, Present, NotUsed, Problem int }
 	}
-	alex.Do(t, http.MethodPost, "/api/exchange-rates/import-check", body).Decode(t, &check)
+	alex.Do(t, http.MethodPost, "/api/v1/exchange-rates/import-check", body).Decode(t, &check)
 	var imported struct {
 		ID, FileName, Feed, FirstDate, LastDate string
 		Added                                   int
 		ImportedBy                              struct{ Name string }
 	}
-	mustCreate(t, alex, "/api/exchange-rates/import", body).Decode(t, &imported)
-	again := alex.Do(t, http.MethodPost, "/api/exchange-rates/import", body)
-	unreadable := alex.Do(t, http.MethodPost, "/api/exchange-rates/import-check",
+	mustCreate(t, alex, "/api/v1/exchange-rates/import", body).Decode(t, &imported)
+	again := alex.Do(t, http.MethodPost, "/api/v1/exchange-rates/import", body)
+	unreadable := alex.Do(t, http.MethodPost, "/api/v1/exchange-rates/import-check",
 		map[string]any{"fileName": "x.csv", "content": base64.StdEncoding.EncodeToString([]byte("rate_type,rate\nM,1\n"))})
 	var recent struct {
 		Items []struct{ ID string }
 		Total int
 	}
-	alex.Do(t, http.MethodGet, "/api/exchange-rates/imports?limit=5", nil).Decode(t, &recent)
-	badLimit := alex.Do(t, http.MethodGet, "/api/exchange-rates/imports?limit=0", nil, apitest.SkipRequestValidation())
+	alex.Do(t, http.MethodGet, "/api/v1/exchange-rates/imports?limit=5", nil).Decode(t, &recent)
+	badLimit := alex.Do(t, http.MethodGet, "/api/v1/exchange-rates/imports?limit=0", nil, apitest.SkipRequestValidation())
 
 	wantSample := "rate_type,from_currency,to_currency,valid_from,rate\nM,USD,CNY,2026-03-13,7.1355\nM,USD,EUR,2026-03-13,0.9246\n" +
 		"M,USD,GBP,2026-03-13,0.79395\nM,USD,INR,2026-03-13,83.9175\n"
@@ -187,13 +187,13 @@ func TestFieldHelpAPI_ListAndUpdate_FR045_FR046_FR048(t *testing.T) {
 		}
 		Total, ShellAttributesWithoutHelp int
 	}
-	alex.Do(t, http.MethodGet, "/api/field-help", nil).Decode(t, &page)
-	edited := alex.Do(t, http.MethodPatch, "/api/field-help/plan.budget", map[string]any{"text": "The plan's money.", "version": 0})
-	stale := alex.Do(t, http.MethodPatch, "/api/field-help/plan.budget", map[string]any{"text": "Daniel's.", "version": 0}) // settings.manage: administrators only (014)
-	reset := alex.Do(t, http.MethodPatch, "/api/field-help/plan.budget", map[string]any{"text": nil, "version": 1})
-	tooLong := alex.Do(t, http.MethodPatch, "/api/field-help/plan.name", map[string]any{"text": strings.Repeat("a", 301), "version": 0},
+	alex.Do(t, http.MethodGet, "/api/v1/field-help", nil).Decode(t, &page)
+	edited := alex.Do(t, http.MethodPatch, "/api/v1/field-help/plan.budget", map[string]any{"text": "The plan's money.", "version": 0})
+	stale := alex.Do(t, http.MethodPatch, "/api/v1/field-help/plan.budget", map[string]any{"text": "Daniel's.", "version": 0}) // settings.manage: administrators only (014)
+	reset := alex.Do(t, http.MethodPatch, "/api/v1/field-help/plan.budget", map[string]any{"text": nil, "version": 1})
+	tooLong := alex.Do(t, http.MethodPatch, "/api/v1/field-help/plan.name", map[string]any{"text": strings.Repeat("a", 301), "version": 0},
 		apitest.SkipRequestValidation())
-	unknown := alex.Do(t, http.MethodPatch, "/api/field-help/plan.colour", map[string]any{"text": "x", "version": 0})
+	unknown := alex.Do(t, http.MethodPatch, "/api/v1/field-help/plan.colour", map[string]any{"text": "x", "version": 0})
 
 	if page.Total < 90 || page.Items[0].Key != "plan.name" || page.Items[0].Level != "plan" || !page.Items[0].IsDefault ||
 		page.Items[0].Version != 0 || page.ShellAttributesWithoutHelp != 0 {
@@ -202,12 +202,12 @@ func TestFieldHelpAPI_ListAndUpdate_FR045_FR046_FR048(t *testing.T) {
 	assertAnswer(t, edited, http.StatusOK, `{"key":"plan.budget","level":"plan","label":"Plan budget","text":"The plan's money.",`+
 		`"defaultText":"The money this plan may spend in its year, in the plan currency. Campaign budgets are allocated from it.",`+
 		`"isDefault":false,"version":1,"updatedAt":"2026-03-12T09:00:00Z","updatedBy":{"id":"U-1001","name":"Alex Morgan"}}`)
-	assertAnswer(t, stale, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Alex Morgan changed this field help",`+
-		`"fields":[],"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T09:00:00Z"}}`)
+	assertAnswer(t, stale, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Alex Morgan changed this field help",`+
+		`"fields":[],"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T09:00:00Z"}}}`)
 	assertAnswer(t, reset, http.StatusOK, `{"key":"plan.budget","level":"plan","label":"Plan budget",`+
 		`"text":"The money this plan may spend in its year, in the plan currency. Campaign budgets are allocated from it.",`+
 		`"defaultText":"The money this plan may spend in its year, in the plan currency. Campaign budgets are allocated from it.",`+
 		`"isDefault":true,"version":0,"updatedAt":null,"updatedBy":null}`)
 	assertAnswer(t, tooLong, http.StatusBadRequest, validationBody(`{"field":"text","message":"Use 300 characters or fewer."}`))
-	assertAnswer(t, unknown, http.StatusNotFound, `{"code":"not_found","message":"This help entry doesn't exist.","fields":[]}`)
+	assertAnswer(t, unknown, http.StatusNotFound, `{"error":{"code":"not_found","message":"This help entry doesn't exist.","fields":[]}}`)
 }

@@ -20,7 +20,7 @@ export interface SidebarProps {
 /**
  * The left sidebar (FR-010, FR-011, design system §2): the sections, a "More" group, and Collapse
  * at the bottom. It is white, 240 px wide, with 40 px items; the current section has the 4 px
- * yellow "you are here" bar, bold text and a yellow tint (Shell). Collapsed, it is a 64 px icon
+ * yellow "you are here" bar, bold text and the hover grey (Shell). Collapsed, it is a 64 px icon
  * rail; the person's choice is saved for them. The logo, bell and account menu sit in the top bar.
  */
 export function Sidebar({ inDrawer = false }: SidebarProps) {

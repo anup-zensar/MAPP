@@ -5,7 +5,7 @@
  * and bodies are checked by TypeScript. Wrap every call in call(), which returns the data or throws
  * an ApiError:
  *
- *   const me = await call(api.GET('/api/me'));
+ *   const me = await call(api.GET('/api/v1/me'));
  */
 import createClient from 'openapi-fetch';
 import { ApiError } from './errors';
@@ -81,7 +81,7 @@ export function setForbiddenHandler(handler: (() => void) | null): void {
 }
 
 // Any call answering "sign in again" means the session has ended — except signing in itself and
-// the session check (GET /api/me), whose 401 answers the session code handles (research R15). Any
+// the session check (GET /api/v1/me), whose 401 answers the session code handles (research R15). Any
 // call refused by the person's roles means their access may have changed (feature 014, FR-020).
 api.use({
   async onResponse({ request, response }) {
@@ -96,9 +96,10 @@ api.use({
     if (!isErrorBody(body)) {
       return;
     }
-    if (sessionLost && (body.code === 'sign_in_required' || body.code === 'session_expired')) {
+    const { code } = body.error;
+    if (sessionLost && (code === 'sign_in_required' || code === 'session_expired')) {
       sessionLostHandler?.();
-    } else if (response.status === 403 && body.code === 'forbidden') {
+    } else if (response.status === 403 && code === 'forbidden') {
       forbiddenHandler?.();
     }
   },
@@ -106,13 +107,17 @@ api.use({
 
 function isSessionCall(request: Request): boolean {
   const path = new URL(request.url).pathname;
-  return path.startsWith('/api/auth/') || (request.method === 'GET' && path === '/api/me');
+  return path.startsWith('/api/v1/auth/') || (request.method === 'GET' && path === '/api/v1/me');
 }
 
-/** An error answer of MAPP's API: JSON with a code (anything else came from elsewhere). */
+/** An error answer of MAPP's API: JSON {"error": {"code", …}} (anything else came from elsewhere). */
 function isErrorBody(value: unknown): value is ErrorBody {
+  if (typeof value !== 'object' || value === null || !('error' in value)) {
+    return false;
+  }
+  const { error } = value;
   return (
-    typeof value === 'object' && value !== null && 'code' in value && typeof value.code === 'string'
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
   );
 }
 

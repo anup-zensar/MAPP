@@ -28,7 +28,7 @@ export function useGlobalBudgets(year: number | null) {
   return useQuery({
     queryKey: [...GLOBAL_BUDGETS_KEY, 'list', year],
     queryFn: () =>
-      call(api.GET('/api/global-budgets', { params: { query: year === null ? {} : { year } } })),
+      call(api.GET('/api/v1/global-budgets', { params: { query: year === null ? {} : { year } } })),
   });
 }
 
@@ -42,7 +42,7 @@ export function useGlobalBudget(globalBudgetId: string) {
 
 export function fetchGlobalBudget(globalBudgetId: string): Promise<GlobalBudget> {
   return call(
-    api.GET('/api/global-budgets/{globalBudgetId}', { params: { path: { globalBudgetId } } }),
+    api.GET('/api/v1/global-budgets/{globalBudgetId}', { params: { path: { globalBudgetId } } }),
   );
 }
 
@@ -52,7 +52,7 @@ export function useAllocationOptions(globalBudgetId: string, enabled = true) {
     queryKey: [...GLOBAL_BUDGETS_KEY, 'options', globalBudgetId],
     queryFn: () =>
       call(
-        api.GET('/api/global-budgets/{globalBudgetId}/allocation-options', {
+        api.GET('/api/v1/global-budgets/{globalBudgetId}/allocation-options', {
           params: { path: { globalBudgetId } },
         }),
       ),
@@ -63,7 +63,7 @@ export function useAllocationOptions(globalBudgetId: string, enabled = true) {
 export function useCreateGlobalBudget() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: (body: GlobalBudgetCreate) => call(api.POST('/api/global-budgets', { body })),
+    mutationFn: (body: GlobalBudgetCreate) => call(api.POST('/api/v1/global-budgets', { body })),
     onSettled: refresh,
   });
 }
@@ -74,7 +74,7 @@ export function useUpdateGlobalBudget() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: GlobalBudgetUpdate }) =>
       call(
-        api.PATCH('/api/global-budgets/{globalBudgetId}', {
+        api.PATCH('/api/v1/global-budgets/{globalBudgetId}', {
           params: { path: { globalBudgetId: id } },
           body,
         }),
@@ -89,7 +89,7 @@ export function useDeleteGlobalBudget() {
   return useMutation({
     mutationFn: (id: string) =>
       call(
-        api.DELETE('/api/global-budgets/{globalBudgetId}', {
+        api.DELETE('/api/v1/global-budgets/{globalBudgetId}', {
           params: { path: { globalBudgetId: id } },
         }),
       ),
@@ -123,7 +123,7 @@ export function useAllocate() {
       planVersion: number;
     }) =>
       call(
-        api.POST('/api/global-budgets/{globalBudgetId}/allocations', {
+        api.POST('/api/v1/global-budgets/{globalBudgetId}/allocations', {
           params: { path: { globalBudgetId } },
           body: { planId, amount, planVersion },
         }),
@@ -148,7 +148,7 @@ export function useUpdateAllocation() {
       planVersion: number;
     }) =>
       call(
-        api.PATCH('/api/budget-allocations/{allocationId}', {
+        api.PATCH('/api/v1/budget-allocations/{allocationId}', {
           params: { path: { allocationId } },
           body: { amount, version, planVersion },
         }),
@@ -163,7 +163,7 @@ export function useRemoveAllocation() {
   return useMutation({
     mutationFn: (allocationId: string) =>
       call(
-        api.DELETE('/api/budget-allocations/{allocationId}', {
+        api.DELETE('/api/v1/budget-allocations/{allocationId}', {
           params: { path: { allocationId } },
         }),
       ),

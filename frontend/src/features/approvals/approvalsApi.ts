@@ -39,7 +39,9 @@ export function useActivityApproval(activityId: string, enabled = true) {
   return useQuery({
     queryKey: approvalKey(activityId),
     queryFn: () =>
-      call(api.GET('/api/activities/{activityId}/approval', { params: { path: { activityId } } })),
+      call(
+        api.GET('/api/v1/activities/{activityId}/approval', { params: { path: { activityId } } }),
+      ),
     enabled,
   });
 }
@@ -53,7 +55,7 @@ export function fetchSubmission(
     queryKey: ['approval-submission', activityId],
     queryFn: () =>
       call(
-        api.GET('/api/activities/{activityId}/approval/submission', {
+        api.GET('/api/v1/activities/{activityId}/approval/submission', {
           params: { path: { activityId } },
         }),
       ),
@@ -65,7 +67,7 @@ export function fetchSubmission(
 export function useApprovalRows(tab: ApprovalTab, enabled = true) {
   return useQuery({
     queryKey: ['approvals', tab],
-    queryFn: () => call(api.GET('/api/approvals', { params: { query: { tab } } })),
+    queryFn: () => call(api.GET('/api/v1/approvals', { params: { query: { tab } } })),
     enabled,
   });
 }
@@ -75,7 +77,9 @@ export function useApprovalPreview(activityId: string) {
   return useQuery({
     queryKey: ['approval-preview', activityId],
     queryFn: () =>
-      call(api.GET('/api/approvals/activities/{activityId}', { params: { path: { activityId } } })),
+      call(
+        api.GET('/api/v1/approvals/activities/{activityId}', { params: { path: { activityId } } }),
+      ),
   });
 }
 
@@ -91,7 +95,7 @@ export function useSubmitActivity() {
   return useMutation({
     mutationFn: ({ activityId, version, comment }: SubmitInput) =>
       call(
-        api.POST('/api/activities/{activityId}/approval/submit', {
+        api.POST('/api/v1/activities/{activityId}/approval/submit', {
           params: { path: { activityId } },
           body: comment ? { version, comment } : { version },
         }),
@@ -117,8 +121,8 @@ export function useDecide() {
       const params = { path: { activityId } };
       return call(
         mode === 'approve'
-          ? api.POST('/api/activities/{activityId}/approval/approve', { params, body })
-          : api.POST('/api/activities/{activityId}/approval/decline', { params, body }),
+          ? api.POST('/api/v1/activities/{activityId}/approval/approve', { params, body })
+          : api.POST('/api/v1/activities/{activityId}/approval/decline', { params, body }),
       );
     },
     onSettled: () => invalidateAllButSession(queryClient),
@@ -137,7 +141,7 @@ export function useRecall() {
   return useMutation({
     mutationFn: ({ activityId, roundId, reason }: RecallInput) =>
       call(
-        api.POST('/api/activities/{activityId}/approval/recall', {
+        api.POST('/api/v1/activities/{activityId}/approval/recall', {
           params: { path: { activityId } },
           body: reason ? { roundId, reason } : { roundId },
         }),
@@ -157,7 +161,9 @@ export function useApprovalMonitoring(enabled = true) {
   return useQuery({
     queryKey: ['approval-monitoring', monthStart],
     queryFn: () =>
-      call(api.GET('/api/approvals/monitoring', { params: { query: { monthStart, monthEnd } } })),
+      call(
+        api.GET('/api/v1/approvals/monitoring', { params: { query: { monthStart, monthEnd } } }),
+      ),
     refetchInterval: 30_000,
     enabled,
   });
@@ -167,7 +173,7 @@ export function useApprovalMonitoring(enabled = true) {
 export function useRunEscalations() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => call(api.POST('/api/approvals/escalations/run')),
+    mutationFn: () => call(api.POST('/api/v1/approvals/escalations/run')),
     onSettled: () => invalidateAllButSession(queryClient),
   });
 }

@@ -2,14 +2,14 @@ import { createContext, useContext } from 'react';
 import type { components } from '@/api/schema';
 import type { Theme } from './theme';
 
-/** The signed-in person with their preferences, as GET /api/me answers. */
+/** The signed-in person with their preferences, as GET /api/v1/me answers. */
 export type CurrentUser = components['schemas']['CurrentUser'];
 
 /** The preferences to change; a field that is left out stays as it is. */
 export type PreferencesUpdate = components['schemas']['PreferencesUpdate'];
 
 /**
- * Where TanStack Query keeps the session: the person GET /api/me answered, null when nobody is
+ * Where TanStack Query keeps the session: the person GET /api/v1/me answered, null when nobody is
  * signed in, and nothing at all until the first answer.
  */
 export const SESSION_KEY = ['session'];

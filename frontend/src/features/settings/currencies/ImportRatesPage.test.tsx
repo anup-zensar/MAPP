@@ -23,7 +23,7 @@ function rateFile(name = 'gsap_rates_2026-10-20.csv', content = CSV): File {
 }
 
 function renderImport(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'POST /api/exchange-rates/import-check': { body: REVIEW }, ...answers });
+  const api = mockApi({ 'POST /api/v1/exchange-rates/import-check': { body: REVIEW }, ...answers });
   const rendered = renderWithProviders(<ImportRatesPage />, {
     route: '/settings/currencies/import',
     path: '/settings/currencies/import',
@@ -49,7 +49,7 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     const review = await screen.findByRole('region', {
       name: "Review of 'gsap_rates_2026-10-20.csv'",
     });
-    expect(api.bodiesOf('POST /api/exchange-rates/import-check')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/exchange-rates/import-check')).toEqual([
       { fileName: 'gsap_rates_2026-10-20.csv', content: btoa(CSV) },
     ]);
     const counts = within(review).getByRole('list', { name: 'Rows by outcome' });
@@ -67,20 +67,20 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     expect(within(review).getByText('0.9214 → 0.923')).toBeVisible();
     expect(within(review).getByRole('rowheader', { name: '41' })).toBeInTheDocument();
     // Nothing is saved yet.
-    expect(api.requests.some((r) => r.path === '/api/exchange-rates/import')).toBe(false);
+    expect(api.requests.some((r) => r.path === '/api/v1/exchange-rates/import')).toBe(false);
     expect(within(review).getByRole('button', { name: 'Import 5 rates' })).toBeInTheDocument();
   });
 
   it('imports the rows to add and replace in one step, then goes back to Currencies (FR-007)', async () => {
     const { user, api, router } = renderImport({
-      'POST /api/exchange-rates/import': { body: IMPORTED },
+      'POST /api/v1/exchange-rates/import': { body: IMPORTED },
     });
     await user.upload(fileField(), rateFile());
 
     await user.click(await screen.findByRole('button', { name: 'Import 5 rates' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/settings/currencies'));
-    expect(api.bodiesOf('POST /api/exchange-rates/import')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/exchange-rates/import')).toEqual([
       { fileName: 'gsap_rates_2026-10-20.csv', content: btoa(CSV) },
     ]);
     expect(
@@ -99,12 +99,12 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
 
     expect(screen.queryByRole('region', { name: /^Review of/ })).not.toBeInTheDocument();
     expect(fileField()).toHaveValue('');
-    expect(api.requests.some((r) => r.path === '/api/exchange-rates/import')).toBe(false);
+    expect(api.requests.some((r) => r.path === '/api/v1/exchange-rates/import')).toBe(false);
   });
 
   it('says when nothing in the file would change a rate', async () => {
     const { user } = renderImport({
-      'POST /api/exchange-rates/import-check': { body: REVIEW_NOTHING_NEW },
+      'POST /api/v1/exchange-rates/import-check': { body: REVIEW_NOTHING_NEW },
     });
     await user.upload(fileField(), rateFile('gsap_rates_2026-10-19.csv'));
 
@@ -129,12 +129,12 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'The file is larger than 2 MB. Split it and import each part.',
     );
-    expect(api.requests.some((r) => r.path === '/api/exchange-rates/import-check')).toBe(false);
+    expect(api.requests.some((r) => r.path === '/api/v1/exchange-rates/import-check')).toBe(false);
   });
 
   it("shows the API's message for a file it can't read", async () => {
     const { user } = renderImport({
-      'POST /api/exchange-rates/import-check': {
+      'POST /api/v1/exchange-rates/import-check': {
         status: 400,
         body: validationFailed([
           { field: 'content', message: 'The file has no column "valid_from".' },
@@ -168,7 +168,7 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
 
     it('downloads a file of today’s rates', async () => {
       const { user } = renderImport({
-        'GET /api/exchange-rates/import-sample': () =>
+        'GET /api/v1/exchange-rates/import-sample': () =>
           new Response('rate_type,from_currency\n', {
             headers: {
               'Content-Type': 'text/csv',
@@ -194,7 +194,7 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
 
 describe('RecentImports (016 FR-007, US1-3)', () => {
   function renderRecent(answer: MockHandler) {
-    mockApi({ 'GET /api/exchange-rates/imports': answer });
+    mockApi({ 'GET /api/v1/exchange-rates/imports': answer });
     return renderWithProviders(<RecentImports />, { user: testUser() });
   }
 

@@ -76,7 +76,12 @@
   cursor: pointer;
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .row:hover {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 

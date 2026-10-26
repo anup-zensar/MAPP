@@ -41,7 +41,7 @@ function renderExport(
   result: AllWorkResult | undefined,
   answer: MockHandler = () => fileAnswer(XLSX_NAME, 'application/octet-stream'),
 ) {
-  const api = mockApi({ 'GET /api/all-work/export': answer });
+  const api = mockApi({ 'GET /api/v1/all-work/export': answer });
   const rendered = renderWithProviders(<ExportMenu state={state} result={result} />, {
     user: testUser(),
   });
@@ -49,7 +49,7 @@ function renderExport(
 }
 
 function exportQuery(api: ReturnType<typeof mockApi>): URLSearchParams {
-  const request = api.requests.find((candidate) => candidate.path === '/api/all-work/export');
+  const request = api.requests.find((candidate) => candidate.path === '/api/v1/all-work/export');
   return new URLSearchParams(request?.search);
 }
 
@@ -127,16 +127,20 @@ describe('ExportMenu (US7)', () => {
     expect(
       within(messages).getByText('Nothing to export — clear a filter first.'),
     ).toBeInTheDocument();
-    expect(api.requests.filter((request) => request.path === '/api/all-work/export')).toEqual([]);
+    expect(api.requests.filter((request) => request.path === '/api/v1/all-work/export')).toEqual(
+      [],
+    );
   });
 
   it('shows the API’s message when the file cannot be written', async () => {
     const { user } = renderExport(standard2026(), gridResult(), {
       status: 400,
       body: {
-        code: 'validation_failed',
-        message: 'Choose a year from 2000 to 2100.',
-        fields: [{ field: 'year', message: 'Choose a year from 2000 to 2100.' }],
+        error: {
+          code: 'validation_failed',
+          message: 'Choose a year from 2000 to 2100.',
+          fields: [{ field: 'year', message: 'Choose a year from 2000 to 2100.' }],
+        },
       },
     });
 

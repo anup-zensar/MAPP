@@ -22,7 +22,7 @@ const POLL_MS = 30_000;
 export function useNotifications() {
   return useQuery({
     queryKey: NOTIFICATIONS_KEY,
-    queryFn: () => call(api.GET('/api/notifications')),
+    queryFn: () => call(api.GET('/api/v1/notifications')),
     refetchInterval: POLL_MS,
     refetchOnWindowFocus: true,
   });
@@ -37,7 +37,7 @@ export function useMarkRead() {
   return useMutation({
     mutationFn: (notificationId: string) =>
       call(
-        api.POST('/api/notifications/{notificationId}/read', {
+        api.POST('/api/v1/notifications/{notificationId}/read', {
           params: { path: { notificationId } },
         }),
       ),
@@ -62,7 +62,7 @@ export function useMarkRead() {
 export function useMarkAllRead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => call(api.POST('/api/notifications/read-all')),
+    mutationFn: () => call(api.POST('/api/v1/notifications/read-all')),
     onSuccess: () => {
       queryClient.setQueryData<NotificationPage>(NOTIFICATIONS_KEY, (page) =>
         page ? withAllRead(page) : page,

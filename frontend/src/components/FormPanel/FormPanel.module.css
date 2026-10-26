@@ -4,17 +4,17 @@
   gap: var(--space-4);
 }
 
-/* A failed save that is not about one field, such as a conflict: a red-tinted box above the
-   form, like the error summary (design system §6.4). */
+/* A failed save that is not about one field, such as a conflict: a box with a red bar above
+   the form, like the error summary (design system §6.4). Red is never tinted. */
 .failure {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--status-problem) 40%, transparent);
+  border: 1px solid var(--card-border);
   border-left: 4px solid var(--status-problem);
   border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--status-problem) 8%, var(--surface));
+  background: var(--surface);
   color: var(--ink);
   font-size: var(--text-sm);
 }

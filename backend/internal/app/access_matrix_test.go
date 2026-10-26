@@ -30,7 +30,7 @@ func matrixPath(route string) (method, path string, planning bool) {
 	return method, pathParameter.ReplaceAllString(path, "X-1001"), planning
 }
 
-// heldPermissions returns the permissions the signed-in person holds in any scope, from GET /api/me.
+// heldPermissions returns the permissions the signed-in person holds in any scope, from GET /api/v1/me.
 func heldPermissions(t *testing.T, client *apitest.Client) []authz.Permission {
 	t.Helper()
 	var me struct {
@@ -38,7 +38,7 @@ func heldPermissions(t *testing.T, client *apitest.Client) []authz.Permission {
 			Permissions []struct{ Key authz.Permission }
 		}
 	}
-	client.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	client.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	var held []authz.Permission
 	for _, p := range me.Access.Permissions {
 		held = append(held, p.Key)
@@ -46,13 +46,13 @@ func heldPermissions(t *testing.T, client *apitest.Client) []authz.Permission {
 	return held
 }
 
-// Every operation of plan Table C refuses the people its rule does not allow, with 403 forbidden and the
-// message of the rule, and every refusal is an answer of the contract (SC-001, FR-009, FR-010):
+// Every operation of plan Table C refuses the people its rule does not allow, and every refusal is an
+// answer of the contract (SC-001, FR-009, FR-010, 022 FR-005):
 //
 //   - a Need or InPlan operation refuses a person who holds its permission nowhere — Sara (Viewer) for every
-//     change of planning records, Priya (Planner) for the administration operations — with message 2;
-//   - a View or InPlan operation on a Lubricants record refuses Mei, who plans for Mobility China only, with
-//     message 4, which names nothing of the record.
+//     change of planning records, Priya (Planner) for the administration operations — with 403 and message 2;
+//   - a View or InPlan operation on a Lubricants record answers Mei, who plans for Mobility China only, with
+//     404 not_found, as for a record that does not exist.
 //
 // Operations that are not served yet (notYetServed: 012 and the operations of later features) are skipped;
 // their rules are checked by TestRouteRules_EveryOperation_SC001 and apply as soon as they are served.
@@ -86,7 +86,7 @@ func TestAccessMatrix_EveryOperationRefusesWhomItsRuleExcludes_SC001(t *testing.
 				info, _ := authz.Lookup(string(rule.Permission))
 				want = info.Noun + " isn't part of " + roles + ". Ask an administrator if you need it."
 			case person.name == "Mei" && planning && (rule.Kind == access.View || rule.Kind == access.InPlan):
-				want = "" // message 4, whose record type depends on the path
+				want = "" // not found, with the record type of the path
 			default:
 				continue // allowed by the rule; the service's own checks are tested by each feature
 			}
@@ -94,13 +94,13 @@ func TestAccessMatrix_EveryOperationRefusesWhomItsRuleExcludes_SC001(t *testing.
 			response := client.Do(t, method, path, nil, apitest.SkipRequestValidation())
 			var answer errorAnswer
 			response.Decode(t, &answer)
+			e := answer.Error
 			switch {
-			case response.Status != http.StatusForbidden || answer.Code != "forbidden":
-				t.Errorf("%s: %s %s = %d %s, want 403 forbidden", person.name, method, path, response.Status, response.Body)
-			case want != "" && answer.Message != want:
-				t.Errorf("%s: %s %s message = %q\nwant %q", person.name, method, path, answer.Message, want)
-			case want == "" && !strings.HasPrefix(answer.Message, "You don't have access to this "):
-				t.Errorf("%s: %s %s message = %q, want message 4", person.name, method, path, answer.Message)
+			case want == "" && (response.Status != http.StatusNotFound || e.Code != "not_found" ||
+				!strings.HasSuffix(e.Message, " no longer exists — someone may have deleted it.")):
+				t.Errorf("%s: %s %s = %d %s, want 404 not_found", person.name, method, path, response.Status, response.Body)
+			case want != "" && (response.Status != http.StatusForbidden || e.Code != "forbidden" || e.Message != want):
+				t.Errorf("%s: %s %s = %d %s\nwant 403 forbidden %q", person.name, method, path, response.Status, response.Body, want)
 			}
 			checked[person.name]++
 		}
