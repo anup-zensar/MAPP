@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  FT_1003,
-  FT_1004,
-  FT_1009,
-  manuallyLinked,
-  transactionOf,
-} from '@/testing/fixtures/financials';
+import { manuallyLinked, transactionOf } from '@/testing/fixtures/financial-transactions';
+import { FT_1003, FT_1004, FT_1009 } from '@/testing/fixtures/financials';
 import {
   accruedLabel,
   countLine,

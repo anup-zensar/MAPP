@@ -1,61 +1,31 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Outlet } from 'react-router';
 import type { HttpHandler } from 'msw';
+import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import {
-  FT_1003,
-  FT_1004,
-  FT_1005,
   manuallyLinked,
   STATION_SIGNAGE,
   transactionOf,
-  transactionPage,
-} from '@/testing/fixtures/financials';
-import { SessionProvider } from '@/session/SessionProvider';
-import { renderRoutes } from '@/testing/render';
-import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { FinancialsPage } from './FinancialsPage';
-import { TransactionPanel } from './TransactionPanel';
+} from '@/testing/fixtures/financial-transactions';
+import { FT_1003, FT_1004, FT_1005, transactionPage } from '@/testing/fixtures/financials';
+import { renderFinancials } from '@/testing/fixtures/financials-page';
+import { reply } from '@/testing/replies';
 
-function renderPanel(id: string, answer: LooseAnswer, more: HttpHandler[] = []) {
+function renderPanel(
+  id: string,
+  answer: Answer<'GET /api/v1/financials/transactions/{transactionId}'>,
+  more: HttpHandler[] = [],
+) {
   const api = mockApi([
-    looseReply('GET /api/v1/financials/transactions', { body: transactionPage() }),
-    looseReply('GET /api/v1/financials/transactions/{transactionId}', answer, {
+    reply('GET /api/v1/financials/transactions', { body: transactionPage() }),
+    reply('GET /api/v1/financials/transactions/{transactionId}', answer, {
       transactionId: id,
     }),
     ...more,
   ]);
   return { ...renderFinancials(`/financials/transactions/${id}?q=helix`), api };
-}
-
-/**
- * Renders the Financials page as the router does: the list at /financials and the details panel
- * as its child route. Other addresses show "Another page". For tests only.
- */
-function renderFinancials(route = '/financials') {
-  return renderRoutes(
-    [
-      {
-        element: (
-          <SessionProvider>
-            <Outlet />
-          </SessionProvider>
-        ),
-        children: [
-          {
-            path: '/financials',
-            element: <FinancialsPage />,
-            children: [{ path: 'transactions/:transactionId', element: <TransactionPanel /> }],
-          },
-          { path: '*', element: <p>Another page</p> },
-        ],
-      },
-    ],
-    { route, user: testUser() },
-  );
 }
 
 describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
@@ -99,7 +69,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
     expect(within(panel).queryByRole('button', { name: 'Link to a line item' })).toBeNull();
     expect(within(panel).queryByRole('button', { name: 'Unlink' })).toBeNull();
 
-    await user.click(within(panel).getAllByRole('button', { name: 'Close' }).at(-1)!);
+    await user.click(nth(within(panel).getAllByRole('button', { name: 'Close' }), -1));
     await waitFor(() => expect(router.state.location.pathname).toBe('/financials'));
     expect(router.state.location.search).toBe('?q=helix');
   });
@@ -117,7 +87,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
 
   it('shows a not-linked transaction with its reason and Link to a line item (US3 scenario 4)', async () => {
     const { user } = renderPanel('FT-1004', { body: transactionOf(FT_1004) }, [
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         { body: STATION_SIGNAGE },
         { lineItemId: 'L-1007' },
@@ -140,7 +110,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
 
   it('unlinks a manual link after asking (US7 scenario 2)', async () => {
     const { api, user } = renderPanel('FT-1004', { body: manuallyLinked() }, [
-      looseReply(
+      reply(
         'POST /api/v1/financials/transactions/{transactionId}/unlink',
         {
           body: transactionOf(FT_1004, { version: 3 }),
@@ -178,7 +148,7 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
       'FT-1004',
       () => ({ body: unlinked ? transactionOf(FT_1004, { version: 3 }) : manuallyLinked() }),
       [
-        looseReply(
+        reply(
           'POST /api/v1/financials/transactions/{transactionId}/unlink',
           () => {
             unlinked = true;
@@ -205,12 +175,12 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
       'FT-1004',
       () => ({ body: linked ? manuallyLinked() : transactionOf(FT_1004) }),
       [
-        looseReply(
+        reply(
           'GET /api/v1/line-items/{lineItemId}',
           { body: STATION_SIGNAGE },
           { lineItemId: 'L-1007' },
         ),
-        looseReply(
+        reply(
           'POST /api/v1/financials/transactions/{transactionId}/link',
           () => {
             linked = true;
@@ -236,7 +206,9 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
   it('says when the transaction does not exist', async () => {
     renderPanel('FT-9999', {
       status: 404,
-      body: { error: { code: 'not_found', message: "This GSAP transaction doesn't exist." } },
+      body: {
+        error: { code: 'not_found', message: "This GSAP transaction doesn't exist.", fields: [] },
+      },
     });
 
     expect(await screen.findByText("This GSAP transaction doesn't exist.")).toBeInTheDocument();

@@ -5,12 +5,12 @@ import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import {
-  FT_1004,
   manuallyLinked,
   STATION_SIGNAGE,
   transactionOf,
-} from '@/testing/fixtures/financials';
-import { looseReply } from '@/testing/replies';
+} from '@/testing/fixtures/financial-transactions';
+import { FT_1004 } from '@/testing/fixtures/financials';
+import { reply } from '@/testing/replies';
 import { LinkTransactionDialog } from './LinkTransactionDialog';
 
 const LINK = 'POST /api/v1/financials/transactions/FT-1004/link';
@@ -18,12 +18,12 @@ const LINK = 'POST /api/v1/financials/transactions/FT-1004/link';
 function renderDialog(answers: HttpHandler[] = []) {
   const onClose = vi.fn();
   const api = mockApi([
-    looseReply(
+    reply(
       'GET /api/v1/line-items/{lineItemId}',
       { body: STATION_SIGNAGE },
       { lineItemId: 'L-1007' },
     ),
-    looseReply(
+    reply(
       'POST /api/v1/financials/transactions/{transactionId}/link',
       { body: manuallyLinked() },
       { transactionId: 'FT-1004' },
@@ -64,11 +64,13 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
 
   it('says when no line item has the ID, and checks the ID before asking', async () => {
     const { api, user } = renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         {
           status: 404,
-          body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
+          body: {
+            error: { code: 'not_found', message: 'This line item no longer exists.', fields: [] },
+          },
         },
         { lineItemId: 'L-9999' },
       ),
@@ -88,15 +90,17 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
 
   it("shows the API's refusal at the field (US7 scenario 4)", async () => {
     const { user, onClose } = renderDialog([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         {
           status: 404,
-          body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
+          body: {
+            error: { code: 'not_found', message: 'This line item no longer exists.', fields: [] },
+          },
         },
         { lineItemId: 'L-1005' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/financials/transactions/{transactionId}/link',
         {
           status: 400,
@@ -129,7 +133,7 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
 
   it('names who changed the transaction meanwhile (D-030)', async () => {
     const { user } = renderDialog([
-      looseReply(
+      reply(
         'POST /api/v1/financials/transactions/{transactionId}/link',
         {
           status: 409,
@@ -137,6 +141,7 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
             error: {
               code: 'version_conflict',
               message: 'Someone else changed this GSAP transaction.',
+              fields: [],
               conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-10-20T09:30:00Z' },
             },
           },

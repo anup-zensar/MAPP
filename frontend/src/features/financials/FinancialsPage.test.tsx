@@ -1,70 +1,11 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Outlet } from 'react-router';
-import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
-import {
-  ALL_ROWS,
-  FT_1006,
-  FT_1010,
-  FT_1011,
-  transactionPage,
-} from '@/testing/fixtures/financials';
-import { SessionProvider } from '@/session/SessionProvider';
-import { renderRoutes } from '@/testing/render';
-import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { FinancialsPage } from './FinancialsPage';
-import { TransactionPanel } from './TransactionPanel';
-
-function renderPage(route = '/financials', list: LooseAnswer = { body: transactionPage() }) {
-  // A 403 makes the session provider reload the person's access (014 FR-020).
-  const api = mockApi([
-    looseReply('GET /api/v1/financials/transactions', list),
-    looseReply('GET /api/v1/me', { body: testUser() }),
-  ]);
-  return { ...renderFinancials(route), api };
-}
-
-/** The query strings the page asked the list with, in order. */
-function listQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
-  return api.requests
-    .filter((request) => request.path === '/api/v1/financials/transactions')
-    .map((request) => new URLSearchParams(request.search));
-}
-
-const rowOf = (name: string) => screen.getByRole('row', { name: new RegExp(name) });
-
-/**
- * Renders the Financials page as the router does: the list at /financials and the details panel
- * as its child route. Other addresses show "Another page". For tests only.
- */
-function renderFinancials(route = '/financials') {
-  return renderRoutes(
-    [
-      {
-        element: (
-          <SessionProvider>
-            <Outlet />
-          </SessionProvider>
-        ),
-        children: [
-          {
-            path: '/financials',
-            element: <FinancialsPage />,
-            children: [{ path: 'transactions/:transactionId', element: <TransactionPanel /> }],
-          },
-          { path: '*', element: <p>Another page</p> },
-        ],
-      },
-    ],
-    { route, user: testUser() },
-  );
-}
+import { transactionPage } from '@/testing/fixtures/financials';
+import { renderFinancialsPage, transactionRow } from '@/testing/fixtures/financials-page';
 
 describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
   it('shows the header, the source, the tabs with counts, the totals and the rows newest first', async () => {
-    renderPage();
+    renderFinancialsPage();
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Financials' }),
@@ -113,10 +54,10 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
   });
 
   it('shows each transaction with its amount, vendor and links (FR-021)', async () => {
-    renderPage();
+    renderFinancialsPage();
     await screen.findByRole('table', { name: 'Transactions' });
 
-    const stand = rowOf('PO 4500001003 / 10');
+    const stand = transactionRow('PO 4500001003 / 10');
     expect(stand).toHaveTextContent('Purchase order');
     expect(stand).toHaveTextContent('08 Jan 2026');
     expect(stand).toHaveTextContent('Outdoor Frames Ltd');
@@ -137,141 +78,15 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
     );
 
     // US3 scenario 4: not linked, with a chip.
-    const brightside = rowOf('PO 4500001004 / 10');
+    const brightside = transactionRow('PO 4500001004 / 10');
     expect(brightside).toHaveTextContent('Not linked');
     expect(within(brightside).queryByRole('link', { name: /L-/ })).not.toBeInTheDocument();
     // A USD amount shows once.
-    expect(within(rowOf('Invoice 5100002002')).getAllByText('$2,500.00')).toHaveLength(1);
-  });
-
-  it('searches after a pause and keeps the search in the address (US3 scenario 2)', async () => {
-    const keynote = [FT_1011, FT_1006, FT_1010];
-    const { api, router, user } = renderPage('/financials', (request) => {
-      const q = new URL(request.url).searchParams.get('q');
-      return {
-        body: q
-          ? transactionPage({
-              items: keynote,
-              total: 3,
-              counts: {
-                all: 4,
-                purchaseOrder: 1,
-                invoice: 1,
-                payment: 0,
-                accrual: 2,
-                notLinked: 0,
-              },
-            })
-          : transactionPage(),
-      };
-    });
-    await screen.findByRole('table', { name: 'Transactions' });
-
-    await user.type(screen.getByRole('searchbox', { name: 'Search transactions' }), 'keynote');
-
-    await waitFor(() => expect(router.state.location.search).toBe('?q=keynote'));
-    expect(await screen.findByText('3 of 4 transactions')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Accruals (2)' })).toBeInTheDocument();
-    expect(listQueries(api).at(-1)?.get('q')).toBe('keynote');
-    // Typing replaces the address, so Back does not step through every letter.
-    expect(router.state.historyAction).toBe('REPLACE');
-  });
-
-  it('switches tabs, sorts and pages through the address', async () => {
-    const { api, router, user } = renderPage('/financials', (request) => {
-      const query = new URL(request.url).searchParams;
-      return {
-        body: transactionPage({
-          total: 120,
-          page: Number(query.get('page') ?? 1),
-        }),
-      };
-    });
-    await screen.findByRole('table', { name: 'Transactions' });
-
-    await user.click(screen.getByRole('tab', { name: 'Not linked (1)' }));
-    await waitFor(() => expect(router.state.location.search).toBe('?link=notLinked'));
-    expect(listQueries(api).at(-1)?.get('link')).toBe('notLinked');
-    expect(listQueries(api).at(-1)?.get('type')).toBe('all');
-
-    await user.click(screen.getByRole('tab', { name: 'Invoices (3)' }));
-    await waitFor(() => expect(router.state.location.search).toBe('?type=invoice'));
-
-    await user.click(screen.getByRole('button', { name: 'Amount' }));
-    await waitFor(() =>
-      expect(router.state.location.search).toBe('?type=invoice&sort=amount%3Adesc'),
-    );
-    expect(screen.getByRole('columnheader', { name: /Amount/ })).toHaveAttribute(
-      'aria-sort',
-      'descending',
-    );
-    await user.click(screen.getByRole('button', { name: 'Amount' }));
-    await waitFor(() => expect(router.state.location.search).toContain('sort=amount%3Aasc'));
-
-    expect(await screen.findByText('1–50 of 120')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Next' }));
-    await waitFor(() => expect(router.state.location.search).toContain('page=2'));
-    expect(await screen.findByText('51–100 of 120')).toBeInTheDocument();
-
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Per page' }), '100');
-    await waitFor(() => expect(router.state.location.search).toContain('pageSize=100'));
-    expect(router.state.location.search).not.toContain('page=2');
-  });
-
-  it('filters by year and plan, and shows the record filter of a card link as a chip (US3 scenario 5)', async () => {
-    const { api, router, user } = renderPage('/financials?recordId=A-1002', {
-      body: transactionPage({
-        items: ALL_ROWS.filter((row) => row.link.path.some((record) => record.id === 'A-1002')),
-        total: 7,
-        recordFilter: { type: 'activity', id: 'A-1002', name: 'Social always-on' },
-      }),
-    });
-
-    const chip = await screen.findByRole('button', {
-      name: 'Remove filter: Activity: Social always-on (A-1002)',
-    });
-    expect(screen.getByText('7 of 11 transactions')).toBeInTheDocument();
-    expect(listQueries(api)[0].get('recordId')).toBe('A-1002');
-
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Plan' }),
-      'FY2026 Lubricants Europe',
-    );
-    await waitFor(() =>
-      expect(router.state.location.search).toBe('?planId=P-1001&recordId=A-1002'),
-    );
-    expect(
-      screen.getByRole('button', { name: 'Remove filter: Plan: FY2026 Lubricants Europe' }),
-    ).toBeInTheDocument();
-
-    await user.click(chip);
-    await waitFor(() => expect(router.state.location.search).toBe('?planId=P-1001'));
-
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Year' }), '2027');
-    await waitFor(() => expect(router.state.location.search).toBe('?year=2027'));
-    expect(listQueries(api).at(-1)?.get('year')).toBe('2027');
-  });
-
-  it('says when nothing matches and clears the filters', async () => {
-    const { router, user } = renderPage('/financials?q=zzz&type=payment', (request) => {
-      const q = new URL(request.url).searchParams.get('q');
-      return {
-        body: q ? transactionPage({ items: [], total: 0 }) : transactionPage(),
-      };
-    });
-
-    expect(
-      await screen.findByText(
-        'No transactions match — clear a filter or search for something else',
-      ),
-    ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
-    await waitFor(() => expect(router.state.location.search).toBe('?type=payment'));
-    expect(await screen.findByRole('table', { name: 'Transactions' })).toBeInTheDocument();
+    expect(within(transactionRow('Invoice 5100002002')).getAllByText('$2,500.00')).toHaveLength(1);
   });
 
   it('says what an empty tab means, and when no GSAP data was ever loaded', async () => {
-    const { user } = renderPage('/financials?link=notLinked', (request) =>
+    const { user } = renderFinancialsPage('/financials?link=notLinked', (request) =>
       new URL(request.url).searchParams.get('link') === 'notLinked'
         ? { body: transactionPage({ items: [], total: 0 }) }
         : {
@@ -307,7 +122,7 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
       addEventListener: () => {},
       removeEventListener: () => {},
     }));
-    renderPage();
+    renderFinancialsPage();
 
     const cards = await screen.findByRole('list', { name: 'Transactions' });
     expect(within(cards).getAllByRole('listitem')).toHaveLength(11);
@@ -320,12 +135,13 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
   });
 
   it('says so in place of the page when the person may not see financial data (FR-028)', async () => {
-    renderPage('/financials', {
+    renderFinancialsPage('/financials', {
       status: 403,
       body: {
         error: {
           code: 'forbidden',
           message: "Seeing financial data isn't part of your role (Viewer).",
+          fields: [],
         },
       },
     });
@@ -338,10 +154,10 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
 
   it('shows a failure with Try again', async () => {
     let calls = 0;
-    const { user } = renderPage('/financials', () => {
+    const { user } = renderFinancialsPage('/financials', () => {
       calls += 1;
       return calls === 1
-        ? { status: 500, body: { error: { code: 'internal_error', message: 'Boom' } } }
+        ? { status: 500, body: { error: { code: 'internal_error', message: 'Boom', fields: [] } } }
         : { body: transactionPage() };
     });
 

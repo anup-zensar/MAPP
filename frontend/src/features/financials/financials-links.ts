@@ -58,55 +58,6 @@ export const DEFAULT_FILTERS: FinancialFilters = {
   pageSize: 50,
 };
 
-const SORT_COLUMNS: SortColumn[] = [
-  'postingDate',
-  'documentNumber',
-  'type',
-  'vendor',
-  'amount',
-  'linkedTo',
-];
-const TYPE_TABS: FinancialTab[] = ['purchaseOrder', 'invoice', 'payment', 'accrual'];
-const PLAN_ID = /^P-[0-9]+$/;
-const RECORD_ID = /^[PCIAL]-[0-9]+$/;
-
-/**
- * The filters an address holds. Anything the page cannot use (an unknown tab, a bad year, page 0)
- * falls back to its default, so an old or edited link still opens a working page.
- */
-export function readFilters(params: URLSearchParams): FinancialFilters {
-  const type = params.get('type') ?? '';
-  const link = params.get('link') ?? '';
-  const year = Number(params.get('year'));
-  const [sort, direction] = (params.get('sort') ?? '').split(':');
-  const page = Number(params.get('page'));
-  const pageSize = Number(params.get('pageSize'));
-  const planId = params.get('planId') ?? '';
-  const recordId = params.get('recordId') ?? '';
-
-  return {
-    tab:
-      link === 'notLinked'
-        ? 'notLinked'
-        : TYPE_TABS.includes(type as FinancialTab)
-          ? (type as FinancialTab)
-          : 'all',
-    q: (params.get('q') ?? '').slice(0, 200),
-    year: Number.isInteger(year) && year >= 2000 && year <= 2100 ? year : null,
-    planId: PLAN_ID.test(planId) ? planId : '',
-    recordId: RECORD_ID.test(recordId) ? recordId : '',
-    sort: SORT_COLUMNS.includes(sort as SortColumn) ? (sort as SortColumn) : DEFAULT_FILTERS.sort,
-    direction:
-      direction === 'asc' || direction === 'desc'
-        ? direction
-        : SORT_COLUMNS.includes(sort as SortColumn)
-          ? 'asc'
-          : DEFAULT_FILTERS.direction,
-    page: Number.isInteger(page) && page >= 1 ? page : 1,
-    pageSize: PAGE_SIZES.includes(pageSize as PageSize) ? (pageSize as PageSize) : 50,
-  };
-}
-
 /** The address parameters of the filters, defaults left out ("?type=invoice&q=keynote"). */
 export function writeFilters(filters: Partial<FinancialFilters>): URLSearchParams {
   const full = { ...DEFAULT_FILTERS, ...filters };
@@ -138,6 +89,27 @@ export function writeFilters(filters: Partial<FinancialFilters>): URLSearchParam
     params.set('pageSize', String(full.pageSize));
   }
   return params;
+}
+
+/** A search, year, plan or record filter is in use (the tab and sort are not filters). */
+export function filtersInUse(filters: FinancialFilters): boolean {
+  return (
+    filters.q.trim() !== '' ||
+    filters.year !== null ||
+    filters.planId !== '' ||
+    filters.recordId !== ''
+  );
+}
+
+/** Clear filters: the search, year, plan and record filter go; the tab and sort stay. */
+export function clearedFilters(filters: FinancialFilters): Partial<FinancialFilters> {
+  return {
+    ...DEFAULT_FILTERS,
+    tab: filters.tab,
+    sort: filters.sort,
+    direction: filters.direction,
+    pageSize: filters.pageSize,
+  };
 }
 
 /**

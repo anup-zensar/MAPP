@@ -1,33 +1,19 @@
-import { CircleAlert, Download, FileText, LoaderCircle, RotateCcw } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CircleAlert, Download, LoaderCircle } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { useToast } from '@/ui/Toast/useToast';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { downloadSampleFile, useCheckImport, useImportExtract } from './api';
-import type {
-  FinancialImportCheck,
-  FinancialImportNotLinkedRow,
-  FinancialImportProblem,
-  FinancialImportRequest,
-} from './api';
-import {
-  importButtonLabel,
-  importCountsText,
-  importedToast,
-  listHeading,
-  notLinkedLine,
-  NOTHING_TO_IMPORT,
-  problemLine,
-  refusedText,
-  relinkedText,
-} from './financials-text';
+import type { FinancialImportCheck, FinancialImportRequest } from './api';
+import { importButtonLabel, importedToast, refusedText, relinkedText } from './financials-text';
+import { ImportCheckResult } from './ImportCheckResult';
+import { importFileSchema } from './schemas';
 import styles from './ImportDialog.module.css';
 
-/** The largest file the API takes (FR-004): 700 KB. */
-export const MAX_FILE_BYTES = 700 * 1024;
-const TOO_LARGE = 'The file is larger than 700 KB — split it into smaller files.';
-const NO_FILE = 'Choose a .csv file — GSAP extracts are imported as CSV.';
 const UNREADABLE = "The file couldn't be read — choose it again.";
 
 const REQUIRED_COLUMNS = ['type', 'document_number', 'posting_date', 'amount', 'currency'];
@@ -64,28 +50,28 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
   const importExtract = useImportExtract();
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
+  const form = useForm({
+    resolver: zodResolver(importFileSchema),
+    defaultValues: { file: null },
+    ...CHECK_ON_SAVE,
+  });
+  const file = useWatch({ control: form.control, name: 'file' });
+  const fileError = form.formState.errors.file?.message;
   const [failure, setFailure] = useState<string | null>(null);
   const [step, setStep] = useState<Step>({ kind: 'choose' });
   const busy = check.isPending || importExtract.isPending;
 
-  async function runCheck(chosen: File | null) {
+  function checkFile() {
     setFailure(null);
-    if (!chosen) {
-      setFileError(NO_FILE);
-      return;
-    }
-    if (chosen.size > MAX_FILE_BYTES) {
-      setFileError(TOO_LARGE);
-      return;
-    }
-    setFileError(null);
+    void form.handleSubmit(({ file: chosen }) => runCheck(chosen))();
+  }
+
+  async function runCheck(chosen: File) {
     let request: FinancialImportRequest;
     try {
       request = { fileName: chosen.name, content: await readAsBase64(chosen) };
     } catch {
-      setFileError(UNREADABLE);
+      form.setError('file', { message: UNREADABLE });
       return;
     }
     try {
@@ -126,7 +112,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
     );
     if (fileProblem) {
       setStep({ kind: 'choose' });
-      setFileError(fileProblem.message);
+      form.setError('file', { message: fileProblem.message });
       return;
     }
     setFailure(checking ? apiError.message : `Nothing was imported. ${apiError.message}`);
@@ -134,9 +120,8 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
 
   function chooseAnother() {
     setStep({ kind: 'choose' });
-    setFile(null);
+    form.reset();
     setFailure(null);
-    setFileError(null);
     if (input.current) {
       input.current.value = '';
     }
@@ -164,7 +149,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
       return;
     }
     if (step.kind === 'choose') {
-      void runCheck(file);
+      checkFile();
     } else if (importable) {
       void runImport(step.request);
     } else {
@@ -229,9 +214,9 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
               aria-describedby={fileError ? `${inputId}-error` : undefined}
               onChange={(event) => {
                 const chosen = event.target.files?.[0] ?? null;
-                setFile(chosen);
+                form.setValue('file', chosen);
                 if (chosen) {
-                  void runCheck(chosen);
+                  checkFile();
                 }
               }}
             />
@@ -250,7 +235,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
           )}
         </div>
       ) : (
-        <CheckResult
+        <ImportCheckResult
           check={step.check}
           importable={importable}
           importing={importExtract.isPending}
@@ -258,86 +243,6 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
         />
       )}
     </FormDialog>
-  );
-}
-
-interface CheckResultProps {
-  check: FinancialImportCheck;
-  importable: boolean;
-  importing: boolean;
-  onChooseAnother: () => void;
-}
-
-/** What the import will do: the counts, then every problem and every not-linked row. */
-function CheckResult({ check, importable, importing, onChooseAnother }: CheckResultProps) {
-  return (
-    <div className={styles.step}>
-      <div className={styles.summary} role="status">
-        <FileText aria-hidden="true" />
-        <div>
-          <p className={styles.fileName}>{check.fileName}</p>
-          <p>{importCountsText(check.counts)}</p>
-          {check.unusedColumns.length > 0 && (
-            <p className={styles.muted}>{`Columns not used: ${check.unusedColumns.join(', ')}`}</p>
-          )}
-        </div>
-      </div>
-      {!importable && <p className={styles.nothing}>{NOTHING_TO_IMPORT}</p>}
-      {check.problemsTotal > 0 && (
-        <RowList<FinancialImportProblem>
-          heading={listHeading('Problems', check.problems.length, check.problemsTotal)}
-          rows={check.problems}
-          line={problemLine}
-          tone="problem"
-        />
-      )}
-      {check.notLinkedTotal > 0 && (
-        <RowList<FinancialImportNotLinkedRow>
-          heading={listHeading('Not linked', check.notLinked.length, check.notLinkedTotal)}
-          rows={check.notLinked}
-          line={notLinkedLine}
-        />
-      )}
-      {importing && (
-        <p className={styles.checking} role="status">
-          <LoaderCircle aria-hidden="true" className={styles.spinner} />
-          {`Importing ${check.fileName}…`}
-        </p>
-      )}
-      {importable && (
-        <div>
-          <Button variant="tertiary" size="sm" icon={<RotateCcw />} onClick={onChooseAnother}>
-            Choose another file
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface RowListProps<T> {
-  heading: string;
-  rows: T[];
-  line: (row: T) => string;
-  tone?: 'problem';
-}
-
-function RowList<T>({ heading, rows, line, tone }: RowListProps<T>) {
-  const id = useId();
-  return (
-    <section aria-labelledby={id} className={styles.rows}>
-      <h3 id={id} className={tone === 'problem' ? styles.problemHeading : styles.heading}>
-        {heading}
-      </h3>
-      {/* A long list scrolls; it can take the focus, so the keyboard can scroll it too. */}
-      {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- the list scrolls */}
-      <ul className={styles.list} tabIndex={0} aria-labelledby={id}>
-        {rows.map((row) => {
-          const text = line(row);
-          return <li key={text}>{text}</li>;
-        })}
-      </ul>
-    </section>
   );
 }
 

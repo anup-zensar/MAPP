@@ -4,7 +4,7 @@ import type { HttpHandler } from 'msw';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
-import { checkResult } from '@/testing/fixtures/financials';
+import { checkResult } from '@/testing/fixtures/financial-imports';
 import { reply } from '@/testing/replies';
 import { ImportDialog } from './ImportDialog';
 
@@ -74,9 +74,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
         '4 rows: 2 new, 1 updated, 1 unchanged, 0 refused · 1 not linked',
       ),
     ).toBeInTheDocument();
-    const [checked] = api.bodiesOf(CHECK) as { fileName: string; content: string }[];
-    expect(checked.fileName).toBe('gsap-2026-10-19.csv');
-    expect(atob(checked.content)).toBe(CSV);
+    const checked = { fileName: 'gsap-2026-10-19.csv', content: btoa(CSV) };
+    expect(api.bodiesOf(CHECK)).toEqual([checked]);
     const notLinked = within(dialog).getByRole('region', { name: 'Not linked (1)' });
     expect(notLinked).toHaveTextContent(
       'Row 5 · PO 4500001009 / 10: No line item for HX key HX1099 — check the tracking key in GSAP.',
