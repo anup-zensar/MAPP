@@ -439,3 +439,64 @@ func (r iteratorForAddRates) Err() error {
 func (q *Queries) AddRates(ctx context.Context, arg []AddRatesParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"exchange_rates"}, []string{"id", "currency", "date", "rate_micros", "source", "import_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddRates{rows: arg})
 }
+
+// iteratorForAddTransactions implements pgx.CopyFromSource.
+type iteratorForAddTransactions struct {
+	rows                 []AddTransactionsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddTransactions) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddTransactions) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].Type,
+		r.rows[0].DocumentNumber,
+		r.rows[0].LineNumber,
+		r.rows[0].PoNumber,
+		r.rows[0].PoLineNumber,
+		r.rows[0].PostingDate,
+		r.rows[0].AccrualMonth,
+		r.rows[0].AmountMinor,
+		r.rows[0].Currency,
+		r.rows[0].VendorCode,
+		r.rows[0].VendorName,
+		r.rows[0].Description,
+		r.rows[0].SwbsCode,
+		r.rows[0].TrackingKey,
+		r.rows[0].SentLineItemID,
+		r.rows[0].LineItemID,
+		r.rows[0].MatchedBy,
+		r.rows[0].NotLinkedReason,
+		r.rows[0].ManualLinkByID,
+		r.rows[0].ManualLinkByName,
+		r.rows[0].ManualLinkAt,
+		r.rows[0].ImportID,
+		r.rows[0].Version,
+		r.rows[0].CreatedAt,
+		r.rows[0].CreatedByID,
+		r.rows[0].CreatedByName,
+		r.rows[0].UpdatedAt,
+		r.rows[0].UpdatedByID,
+		r.rows[0].UpdatedByName,
+	}, nil
+}
+
+func (r iteratorForAddTransactions) Err() error {
+	return nil
+}
+
+func (q *Queries) AddTransactions(ctx context.Context, arg []AddTransactionsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"financial_transactions"}, []string{"id", "type", "document_number", "line_number", "po_number", "po_line_number", "posting_date", "accrual_month", "amount_minor", "currency", "vendor_code", "vendor_name", "description", "swbs_code", "tracking_key", "sent_line_item_id", "line_item_id", "matched_by", "not_linked_reason", "manual_link_by_id", "manual_link_by_name", "manual_link_at", "import_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddTransactions{rows: arg})
+}

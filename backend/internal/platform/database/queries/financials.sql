@@ -110,3 +110,14 @@ ON CONFLICT (id) DO UPDATE SET
 -- name: DeleteFinancialImport :exec
 DELETE FROM financial_imports
 WHERE id = $1;
+
+-- name: AddTransactions :copyfrom
+INSERT INTO financial_transactions (
+    id, type, document_number, line_number, po_number, po_line_number, posting_date, accrual_month, amount_minor,
+    currency, vendor_code, vendor_name, description, swbs_code, tracking_key, sent_line_item_id, line_item_id,
+    matched_by, not_linked_reason, manual_link_by_id, manual_link_by_name, manual_link_at, import_id, version,
+    created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
+    $25, $26, $27, $28, $29, $30
+);

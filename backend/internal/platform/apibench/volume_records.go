@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"testing"
 
 	"mapp/internal/history"
 	"mapp/internal/people"
@@ -66,22 +67,34 @@ func (v *volume) waitingForApproval() {
 
 // gsapRows imports 5,000 rows: a purchase order and an invoice for 2,500 line items of Priya's plans.
 func (v *volume) gsapRows() {
+	v.alex.Do(v.tb, http.MethodPost, "/api/v1/financials/imports", v.gsapFile(6))
+	v.progress("%d GSAP rows", gsapRows)
+}
+
+// gsapFile is a 5,000-row GSAP extract; each series gives other document numbers, so its rows are new.
+func (v *volume) gsapFile(series int) map[string]any {
 	lines := []string{gsapHeader}
 	for n := 1; len(lines) <= gsapRows; n++ {
 		for _, li := range v.lineItemsOf(v.planNamed(fmt.Sprintf("Volume Lubricants %03d", n))) {
 			number := strings.TrimPrefix(li.ID, ids.PrefixLineItem+"-")
-			po := "46" + number
+			po := fmt.Sprintf("4%d%s", series, number)
 			lines = append(lines,
 				fmt.Sprintf("PO,%s,10,,,2026-02-01,,1000.00,EUR,V-1,Vendor %s,Volume,,HX%s,", po, number, number),
-				fmt.Sprintf("INVOICE,52%s,,%s,10,2026-02-02,,400.00,EUR,V-1,Vendor %s,Volume,,,", number, po, number))
+				fmt.Sprintf("INVOICE,5%d%s,,%s,10,2026-02-02,,400.00,EUR,V-1,Vendor %s,Volume,,,", series-4, number, po, number))
 			if len(lines) > gsapRows {
 				break
 			}
 		}
 	}
 	content := base64.StdEncoding.EncodeToString([]byte(strings.Join(lines, "\n") + "\n"))
-	v.alex.Do(v.tb, http.MethodPost, "/api/v1/financials/imports", map[string]any{"fileName": "volume.csv", "content": content})
-	v.progress("%d GSAP rows", gsapRows)
+	return map[string]any{"fileName": "volume.csv", "content": content}
+}
+
+// GSAPFile is a 5,000-row GSAP extract of new transactions for the volume's line items: series 7 to 9.
+func (s *Server) GSAPFile(tb testing.TB, series int) map[string]any {
+	tb.Helper()
+	v := &volume{tb: tb, ctx: tb.Context(), set: s.set}
+	return v.gsapFile(series)
 }
 
 // allocations allocates the global budget to every Lubricants volume plan.
