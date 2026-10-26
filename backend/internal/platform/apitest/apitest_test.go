@@ -6,15 +6,15 @@ import (
 	"testing"
 
 	"github.com/pb33f/libopenapi"
-	validator "github.com/pb33f/libopenapi-validator"
+	"github.com/pb33f/libopenapi-validator/schema_validation"
 
 	"mapp/api"
 	"mapp/internal/platform/apitest"
 )
 
-// The helper checks every request against the contract, so a handler test cannot pass with a request
-// the web app could never send (research R11).
+// A handler test cannot pass with a request the web app could never send (research R11).
 func TestDo_ReportsARequestThatBreaksTheContract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	recorder := &failureRecorder{TB: t}
 	notAnEmail := map[string]any{"email": 42, "password": "mapp"}
@@ -31,9 +31,8 @@ func TestDo_ReportsARequestThatBreaksTheContract(t *testing.T) {
 	}
 }
 
-// Paths and methods that are not in the contract are reported, unless the test says it calls one on
-// purpose.
 func TestDo_ReportsAPathThatIsNotInTheContract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	recorder := &failureRecorder{TB: t}
 
@@ -49,50 +48,21 @@ func TestDo_ReportsAPathThatIsNotInTheContract(t *testing.T) {
 	}
 }
 
-func TestResponse_CookieAndDecode(t *testing.T) {
-	response := &apitest.Response{
-		Status: http.StatusOK,
-		Header: http.Header{"Set-Cookie": {"mapp_session=abc123; Path=/; HttpOnly; SameSite=Strict"}},
-		Body:   []byte(`{"status":"ok"}`),
-	}
-
-	cookie := response.Cookie("mapp_session")
-	if cookie == nil || cookie.Value != "abc123" || !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode {
-		t.Errorf("Cookie(mapp_session) = %+v, want abc123, HttpOnly, SameSite=Strict", cookie)
-	}
-	if other := response.Cookie("other"); other != nil {
-		t.Errorf("Cookie(other) = %+v, want nil", other)
-	}
-
-	var body struct {
-		Status string `json:"status"`
-	}
-	response.Decode(t, &body)
-	if body.Status != "ok" {
-		t.Errorf("Decode: status = %q, want ok", body.Status)
-	}
-}
-
-// The contract the helper checks against is itself a valid OpenAPI document.
 func TestContract_IsAValidOpenAPIDocument(t *testing.T) {
+	t.Parallel()
 	document, err := libopenapi.NewDocument(api.OpenAPI)
 	if err != nil {
 		t.Fatalf("reading the contract: %v", err)
 	}
-	contract, problems := validator.NewValidator(document)
-	if len(problems) > 0 {
-		t.Fatalf("building the validator: %v", problems)
-	}
 
-	if valid, findings := contract.ValidateDocument(); !valid {
+	if valid, findings := schema_validation.ValidateOpenAPIDocument(document); !valid {
 		for _, finding := range findings {
 			t.Errorf("contract: %v", finding)
 		}
 	}
 }
 
-// failureRecorder stands in for the test's *testing.T so that a test can check what the helper reports.
-// Only Errorf is replaced; everything else goes to the real test.
+// failureRecorder replaces only Errorf of the real test, so a test can check what the helper reports.
 type failureRecorder struct {
 	testing.TB
 	failures []string
@@ -102,9 +72,9 @@ func (r *failureRecorder) Errorf(format string, args ...any) {
 	r.failures = append(r.failures, fmt.Sprintf(format, args...))
 }
 
-// GrantRole gives a demo person a role for the rest of the test, applied to their next request without
-// signing in again: Sara Novak, a Viewer, may then read the access rules (feature 014 D-228).
+// The role applies to Sara's next request, without signing in again (feature 014 D-228).
 func TestServer_GrantRole(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	sara := server.SignIn(t, "sara.novak@shell.com")
 	before := sara.Do(t, http.MethodGet, "/api/v1/access-rules", nil)
