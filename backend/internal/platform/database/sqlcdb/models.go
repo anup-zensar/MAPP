@@ -8,6 +8,19 @@ import (
 	"time"
 )
 
+type AccessRule struct {
+	ID              string
+	NoSelfApproval  bool
+	NewPersonRoleID *string
+	Version         int
+	CreatedAt       time.Time
+	CreatedByID     string
+	CreatedByName   string
+	UpdatedAt       time.Time
+	UpdatedByID     string
+	UpdatedByName   string
+}
+
 type ActivityLog struct {
 	ID              string
 	Seq             int
@@ -208,6 +221,42 @@ type RecycleBin struct {
 	ResolutionByID   *string
 	ResolutionByName *string
 	ResolutionAt     *time.Time
+}
+
+type Role struct {
+	ID            string
+	Name          string
+	Description   string
+	BuiltIn       string
+	Permissions   []string
+	DefaultScope  string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type RoleAssignment struct {
+	ID            string
+	PersonID      string
+	RoleID        string
+	ScopeType     string
+	Version       int
+	CreatedAt     time.Time
+	CreatedByID   string
+	CreatedByName string
+	UpdatedAt     time.Time
+	UpdatedByID   string
+	UpdatedByName string
+}
+
+type RoleAssignmentTeam struct {
+	AssignmentID string
+	Position     int
+	TeamID       string
 }
 
 type SampleFolder struct {
