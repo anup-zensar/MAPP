@@ -9,7 +9,8 @@ import {
   SHOW_LEVELS_LABELS,
   STRATEGIC_LABELS,
 } from './all-work-text';
-import type { FilterValue, Filters, ViewState } from './all-work-types';
+import type { FilterValue, Filters, SavedView, ViewState } from './all-work-types';
+import { NAME_MAX, nameTaken, viewNamed } from './view-names';
 import { NO_FILTERS, withYears } from './view-state';
 
 /** The address parameters other pages may link with (the API's names, D-122). */
@@ -144,3 +145,28 @@ function readAddress(params: URLSearchParams): Address {
   });
   return parsed.success ? parsed.data : NO_ADDRESS;
 }
+
+/** A saved view's name: required and at most 60 characters (data-model §1.1, FR-029). */
+const viewName = z
+  .string()
+  .refine((name) => name.trim() !== '', 'Enter a name for the view.')
+  // Characters, not UTF-16 units: "é" or an emoji counts once.
+  .refine((name) => [...name.trim()].length <= NAME_MAX, 'Use 60 characters or fewer.');
+
+/** Save current view (FR-029): a name the person already uses is replaced after a question. */
+export const saveViewSchema = z.object({ name: viewName, isDefault: z.boolean() });
+
+export type SaveViewValues = z.infer<typeof saveViewSchema>;
+
+/** Rename view (FR-029): the same name rules, and not the name of another of the views. */
+export function renameViewSchema(views: SavedView[], viewId: string) {
+  return z.object({
+    name: viewName.superRefine((name, context) => {
+      if (viewNamed(views, name, viewId)) {
+        context.addIssue({ code: 'custom', message: nameTaken(name) });
+      }
+    }),
+  });
+}
+
+export type RenameViewValues = z.infer<ReturnType<typeof renameViewSchema>>;
