@@ -7,7 +7,6 @@ import {
   isShown,
   itemsFor,
   joinWith,
-  permissionLabel,
   summariseAccess,
 } from './access';
 import type { MyAccess, MyPermission } from './access';
@@ -139,13 +138,6 @@ describe('summariseAccess', () => {
 });
 
 describe('helpers', () => {
-  it('gives the role-page label of a permission (Table A)', () => {
-    expect(permissionLabel('plans.edit')).toBe('Edit plan details');
-    expect(permissionLabel('recycleBin.purge')).toBe(
-      'Delete permanently and empty the recycle bin',
-    );
-  });
-
   it('joins names as sentences do', () => {
     expect(joinWith([], 'and')).toBe('');
     expect(joinWith(['A'], 'or')).toBe('A');

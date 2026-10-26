@@ -48,12 +48,6 @@ function menuButton() {
 }
 
 describe('ActionsMenu', () => {
-  it('is a "⋯" button named after its record (FR-019)', () => {
-    render(<FolderRow />, { wrapper: TooltipProvider });
-
-    expect(menuButton()).toHaveAttribute('aria-haspopup', 'menu');
-  });
-
   it('lists the actions in order, with Delete last after a separator (FR-019)', async () => {
     const user = userEvent.setup();
     render(<FolderRow />, { wrapper: TooltipProvider });

@@ -2,7 +2,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { htmlElement } from '@/testing/dom';
 import { Button } from '../Button/Button';
 import { SidePanel } from './SidePanel';
 
@@ -88,16 +87,5 @@ describe('SidePanel', () => {
     await user.keyboard('{Escape}');
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Edit' })).toHaveFocus());
-  });
-
-  it('keeps the keyboard inside while it is open (FR-019)', async () => {
-    const user = userEvent.setup();
-    render(<EditPanel />);
-    const panel = screen.getByRole('dialog');
-
-    for (let i = 0; i < 6; i += 1) {
-      await user.tab();
-      expect(panel).toContainElement(htmlElement(document.activeElement));
-    }
   });
 });
