@@ -441,10 +441,7 @@ func WriteError(c *gin.Context, err error) {
 		slog.ErrorContext(c.Request.Context(), "request failed", "error", err)
 		appErr = errInternal
 	}
-	body := errorBody{Code: appErr.Code, Message: appErr.Message, Fields: map[string]string{}}
-	for _, field := range appErr.Fields {
-		body.Fields[field.Field] = field.Message
-	}
+	body := errorBody{Code: appErr.Code, Message: appErr.Message, Fields: append([]errs.FieldError{}, appErr.Fields...)}
 	c.AbortWithStatusJSON(statusOf(appErr.Kind), errorEnvelope{Error: body})
 }
 ```
@@ -804,7 +801,7 @@ field reported at once:
 
 ```json
 { "error": { "code": "validation_failed", "message": "Some fields need attention.",
-             "fields": { "name": "Name must be 1 to 200 characters." } } }
+             "fields": [ { "field": "name", "message": "Name must be 1 to 200 characters." } ] } }
 ```
 
 Every list response uses one generic envelope with an enforced maximum page size:

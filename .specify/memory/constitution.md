@@ -1,7 +1,8 @@
 <!--
 Sync Impact Report
-- Version change: 3.0.0 → 3.1.0 (MINOR: a supply-chain rule added to Principle VII; no principle
-  removed or redefined). It ships together with 3.0.0 on the same branch:
+- Version change: 3.1.0 → 3.1.1 (PATCH: B6's error example shows `fields` as the list the API sends,
+  feature 022). Before it, 3.0.0 → 3.1.0 (MINOR: a supply-chain rule added to Principle VII; no
+  principle removed or redefined). It ships together with 3.0.0 on the same branch:
   IV PostgreSQL in every environment, Docker optional; V file-length limit; VI store and
   end-to-end tests on PostgreSQL.
 - Modified principles: VII Security and Privacy by Design — release age: a package version must be
@@ -580,7 +581,9 @@ These rules apply to everything under `backend/` and refine the Core Principles 
 - Paths are versioned (`/api/v1/...`). Breaking changes require a new version; additive changes
   MUST remain backward compatible.
 - JSON field names are `camelCase`. Errors use one envelope:
-  `{"error": {"code": "...", "message": "...", "fields": {...}}}` with stable, documented codes.
+  `{"error": {"code": "...", "message": "...", "fields": [{"field": "...", "message": "..."}]}}` with
+  stable, documented codes; `fields` is a list, so it keeps the order and allows several messages
+  for one field.
   List responses use one pagination envelope.
 - Request bodies MUST have a size limit. Validation failures return 400 with per-field detail,
   all problems at once.
@@ -1113,5 +1116,6 @@ amended to match.
 | 2.1.1 | 2026-10-26 | Merge of 1.1.2 from `develop`: the product is named MAPP in every rule; the Go module is `mapp` and browser-storage keys start `mapp.` | D-319 |
 | 3.0.0 | 2026-10-26 | IV: PostgreSQL in every environment from the start (pgx, sqlc, goose), replacing "SQLite now, PostgreSQL later"; Docker optional — `compose.yaml` runs PostgreSQL for those who want it, a native install works as well, and no test requires Docker. V: file length limit of 300 non-blank lines (401+ never merged) | Product owner instruction of 2026-10-26 |
 | 3.1.0 | 2026-10-26 | VII: release age — a package version (npm package or Go module) must have been published at least 24 hours before it is installed or added; npm's built-in `min-release-age=1` in `frontend/.npmrc`, reviewers for Go modules | Product owner instruction of 2026-10-26 |
+| 3.1.1 | 2026-10-26 | B6: the error envelope's `fields` is a list of `{field, message}` — it keeps the order and allows several messages for one field (feature 022) | Product owner decision of 2026-10-26 |
 
-**Version**: 3.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 3.1.1 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

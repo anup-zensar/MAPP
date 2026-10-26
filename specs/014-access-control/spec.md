@@ -62,8 +62,8 @@ Approvals, Activity log and Recycle bin with the seed; open a plan of another ma
    reads "1 plan", and the summary cards add up that plan only.
 2. **Given** the seed, **When** Carlos opens Plans, **Then** he sees all three plans.
 3. **Given** the seed, **When** Mei types the address of *FY2026 Lubricants Europe* or one of its activities,
-   **Then** MAPP shows "You don't have access to this plan. Ask an administrator if you need it." with a
-   link to Home, and shows nothing of the record (not even its name).
+   **Then** MAPP shows the plan's not-found page, exactly as for a plan that does not exist, and shows
+   nothing of the record (not even its name) — constitution VII, changed by feature 022.
 4. **Given** the seed, **When** Priya opens Home, All work (any view, including Budget & cost and Calendar), and
    exports All work, **Then** every row, count and total covers *FY2026 Lubricants Europe* only, and the export
    contains no other plan.
@@ -281,7 +281,7 @@ access changes".
   is not blocked.
 - **Approver loses the approving permission** with activities waiting: the chain shows "(can't approve — no
   approving role)" next to the name; someone allowed to decide on behalf can act.
-- **Notifications and links** to records the person can no longer see open the no-access page.
+- **Notifications and links** to records the person can no longer see open the not-found page (feature 022).
 - **Recycle bin**: an entry is listed only when the person can see its record; restoring needs the delete
   permission of that level in the record's plan (or, for Settings, people, roles and global budgets, the
   permission that manages them); permanent delete and emptying the bin need "Delete permanently".
@@ -331,9 +331,9 @@ access changes".
   Approvals (All open, counts); the Activity log and every record's History; the Recycle bin; global budget rows
   (FR-033). The "My teams" switches of 004, 009 and 010 keep working as a narrowing inside what the person can
   see.
-- **FR-008** (BUS.ADM.020): Opening a record the person cannot see MUST show "You don't have access to this
-  <record type>. Ask an administrator if you need it." and nothing of the record. Records that do not exist keep
-  their "not found" page.
+- **FR-008** (BUS.ADM.020): Opening a record the person cannot see MUST look exactly like opening a record
+  that does not exist — the "not found" page and nothing of the record (constitution VII; changed by feature
+  022, which replaced "You don't have access to this <record type>").
 
 **View versus edit**
 
@@ -562,8 +562,8 @@ change; each is listed for Shell to confirm (Q-010, Q-011, Q-006, Q-014 of the g
   it can be added as a fourth scope type later.
 - **Visibility**: a plan is visible only inside the roles' scope (answers Q-006: "yes, hide plans from people
   outside the plan's teams"), plus owners and named approvers (Edge cases).
-- **Refusals**: 403 for a record outside the person's access (with a message that names nothing of the record);
-  404 only for records that do not exist.
+- **Refusals**: 404 for a record outside the person's access, identical to a record that does not exist; 403
+  only for an action the person's roles do not allow on a record they can see (feature 022, constitution VII).
 - **Financial data**: every default role may see it; the permission exists so Shell can restrict it.
 - **Global budgets**: a global planner shares a global budget top-down; the allocation becomes the plan budget and
   is read-only for local owners (Q-011's first option). "Request and approve" allocations, budgets per business
