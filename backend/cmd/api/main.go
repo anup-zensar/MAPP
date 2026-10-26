@@ -50,7 +50,7 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	listener, err := listen(cfg.Host, cfg.Port)
+	listener, err := listen(ctx, cfg.Host, cfg.Port)
 	if err != nil {
 		return err
 	}
@@ -87,8 +87,9 @@ func openDatabase(ctx context.Context, url string) (*database.DB, error) {
 
 // listen opens port on host: 127.0.0.1, so that other computers cannot reach the API, or 0.0.0.0 inside the
 // container, whose port compose publishes on 127.0.0.1 only.
-func listen(host string, port int) (net.Listener, error) {
-	listener, err := net.Listen("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
+func listen(ctx context.Context, host string, port int) (net.Listener, error) {
+	var config net.ListenConfig
+	listener, err := config.Listen(ctx, "tcp", net.JoinHostPort(host, strconv.Itoa(port)))
 	if isPortInUse(err) {
 		return nil, fmt.Errorf("Port %d is already in use — stop the other program or set APP_PORT.", port)
 	}
