@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { PEOPLE } from '@/testing/fixtures/approval-workflows';
 import { closestTo, nth } from '@/testing/dom';
@@ -10,7 +10,6 @@ import { budgetSummary, globalBudget } from '@/testing/fixtures/global-budgets';
 import { reply } from '@/testing/replies';
 import { GlobalBudgetsPage } from './GlobalBudgetsPage';
 
-const CURRENT_YEAR = new Date().getFullYear();
 const AVAILABLE = { available: true, reason: '' };
 
 function listOf(items = [budgetSummary()]) {
@@ -26,6 +25,14 @@ function renderPage(route = '/budgets', answers: HttpHandler[] = []) {
 }
 
 describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
+  // The page opens on the current year, and the year choices start from it.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-03-12T09:00:00Z') });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('lists the global budgets of the year with their four figures', async () => {
     const { api } = renderPage();
 
@@ -44,7 +51,7 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
     expect(figure('Unallocated')).toHaveTextContent('$500,000.00');
     expect(figure('Planned cost')).toHaveTextContent('$670,000.00');
     expect(screen.getByText('1 global budget')).toBeInTheDocument();
-    expect(nth(api.requests, 0).search).toBe(`?year=${CURRENT_YEAR}`);
+    expect(nth(api.requests, 0).search).toBe('?year=2026');
   });
 
   it('shows an over-allocated budget in red with words (US6 scenario 5)', async () => {
@@ -99,7 +106,8 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
 
     await user.click(screen.getByRole('button', { name: 'New global budget' }));
     const panel = await screen.findByRole('dialog', { name: 'New global budget' });
-    await user.type(within(panel).getByRole('textbox', { name: /Name/ }), 'FY2027 Global brand');
+    await user.click(within(panel).getByRole('textbox', { name: /Name/ }));
+    await user.paste('FY2027 Global brand');
     await user.selectOptions(within(panel).getByRole('combobox', { name: /Year/ }), '2027');
     await user.type(within(panel).getByRole('textbox', { name: /Amount/ }), '1.5m');
     await user.click(within(panel).getByRole('combobox', { name: /Owner/ }));
@@ -145,10 +153,8 @@ describe('GlobalBudgetsPage (014 US6, FR-036)', () => {
 
     await user.click(screen.getByRole('button', { name: 'New global budget' }));
     const panel = await screen.findByRole('dialog', { name: 'New global budget' });
-    await user.type(
-      within(panel).getByRole('textbox', { name: /Name/ }),
-      'FY2026 Global marketing budget',
-    );
+    await user.click(within(panel).getByRole('textbox', { name: /Name/ }));
+    await user.paste('FY2026 Global marketing budget');
     await user.type(within(panel).getByRole('textbox', { name: /Amount/ }), '100');
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
