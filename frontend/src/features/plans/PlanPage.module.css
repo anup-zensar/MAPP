@@ -12,6 +12,12 @@
   min-width: 0;
 }
 
+/* The cards above the tabs load on their own and grow when they arrive. Out of scroll anchoring, they
+   let the browser keep the tabs' content where the person sees it, an open row menu included. */
+.body > :not(:last-child) {
+  overflow-anchor: none;
+}
+
 /* Details and Goals: 8 + 4 from 1280 px, stacked below. Goals keeps its own height and stays in
    view beside the long Details card, instead of a stretched card with a blank block in it (UI
    audit PL-07, X-12). */
