@@ -1,6 +1,6 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 2.1) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
 `backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
 
@@ -41,7 +41,9 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 8. **Meaningful tests only** (constitution VI). Required: unit tests for every rule and calculation, a
    test for every acceptance scenario, an end-to-end test for every P1 story, a contract test for every
    endpoint, a scope-isolation test for every scoped store read, a test for each state a data view
-   renders, and a failing test first for every bug. Never write tests that restate the code, test the
+   renders, and a failing test first for every bug. Only end-to-end tests and the scope-isolation tests
+   use a real database; every other test uses fakes, and SQL queries, constraints and migrations are not
+   tested on a database. Never write tests that restate the code, test the
    framework or generated code, only check that a mock was called, repeat another test, snapshot the DOM,
    or exist only for coverage. New code reaches 80% decision coverage (SEMS). Deterministic: fixed clock
    and seed.
@@ -115,19 +117,19 @@ Software Design & Construction Policy and SEMS, which are mandatory.
   Layout in `backend/docs/GO_STANDARDS.md` §2: `cmd/api`, `cmd/seed`, `internal/app`,
   `internal/platform/{actor,authz,clock,errs,web,database,logging,telemetry,…}`, then one package per
   business area with `model.go · store.go · store_postgres.go · service.go · handler.go` plus tests.
-  Lint: `backend/.golangci.yml`. Configuration: `DATABASE_URL`, and `TEST_DATABASE_URL` for store tests.
+  Lint: `backend/.golangci.yml`. Configuration: `DATABASE_URL`, and `TEST_DATABASE_URL` for the scope-isolation tests.
 - **Web app (`frontend/`)**: React 19 + TypeScript 5.9 (strict, F5 options), Vite, React Router (data
   router without loaders or actions), TanStack Query, React Hook Form + Zod, Radix primitives,
   lucide-react, CSS Modules with the design tokens in `src/ui/`, `openapi-fetch` with types generated
   by `openapi-typescript` into `src/api/generated/` (never edit by hand). Folders as in constitution F2.
   Import alias `@/` = `frontend/src`.
 - **Tests**: Go `testing` + `httptest` + `go-cmp`, contract tests with `libopenapi-validator` through
-  `internal/platform/apitest`, store tests on a fresh PostgreSQL database per test; Vitest + Testing
+  `internal/platform/apitest`, scope-isolation store tests on a fresh PostgreSQL database per test, every other Go test on fakes; Vitest + Testing
   Library + `user-event` + MSW + `vitest-axe` + `fast-check`; Playwright + axe against the real API and
   PostgreSQL.
 - **Commands**: `docker compose up -d postgres` (only if you run PostgreSQL in Docker); backend
   `golangci-lint fmt ./...`, `golangci-lint run ./...`, `sqlc generate && sqlc vet`, `go test -race ./...`
-  (`-short` skips store tests), `govulncheck ./...`, `go run ./cmd/seed`, `go run ./cmd/api`; frontend
+  (`-short` skips the database tests), `govulncheck ./...`, `go run ./cmd/seed`, `go run ./cmd/api`; frontend
   `npm run dev`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test:coverage`,
   `npm run test:e2e`, `npm run api:types` after changing the contract.
 
