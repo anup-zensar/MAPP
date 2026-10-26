@@ -5,17 +5,28 @@
   "description": "MAPP web app (React + TypeScript) - Shell's marketing planning application, Plan module.",
   "type": "module",
   "engines": {
-    "node": ">=22.22"
+    "node": ">=22.22",
+    "npm": ">=11.10.0"
   },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 ChromeAndroid versions",
+    "last 2 Edge versions",
+    "last 2 Firefox versions",
+    "last 2 FirefoxAndroid versions",
+    "last 2 Safari versions",
+    "last 2 iOS versions"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b tsconfig.app.json && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=test-results/junit.xml",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "api:types": "openapi-typescript ../backend/api/openapi.yaml -o src/api/schema.d.ts",
@@ -44,6 +55,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "5.0.5",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",

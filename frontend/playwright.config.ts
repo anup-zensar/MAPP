@@ -22,6 +22,8 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${webPort}`,
     trace: 'retain-on-failure',
+    // Without fades, axe checks a dialog's final colours instead of a frame of its fade-in.
+    reducedMotion: 'reduce',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [

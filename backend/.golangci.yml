@@ -117,10 +117,8 @@ linters:
           deny:
             - pkg: gorm.io
               desc: "ORMs are not allowed; write SQL for sqlc (constitution B1)"
-            - pkg: github.com/mattn/go-sqlite3
-              desc: "cgo driver; use the pure-Go SQLite driver (constitution B1, B8)"
             - pkg: github.com/testcontainers
-              desc: "no Docker in this phase; test against SQLite files (constitution B1, B9)"
+              desc: "no test may require Docker; use dbtest with TEST_DATABASE_URL (constitution B1, B9)"
             - pkg: github.com/sirupsen/logrus
               desc: "use log/slog (constitution B7)"
             - pkg: go.uber.org/zap
@@ -144,7 +142,7 @@ linters:
               desc: "services must not depend on the transport (constitution B2)"
             - pkg: net/http
               desc: "services must not depend on the transport (constitution B2)"
-            - pkg: database/sql
+            - pkg: github.com/jackc/pgx
               desc: "services reach the database only through their Store interface (constitution B2)"
             - pkg: mapp/internal/platform/database
               desc: "services reach the database only through their Store interface (constitution B2)"

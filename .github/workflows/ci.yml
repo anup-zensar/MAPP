@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, release, develop]
+  push:
+    branches: [main, release, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Format
+        run: |
+          unformatted="$(gofmt -s -l .; go run golang.org/x/tools/cmd/goimports@v0.52.0 -local mapp -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "Not formatted — run: golangci-lint fmt ./..."
+            echo "$unformatted" | sort -u
+            exit 1
+          fi
+      - name: Vet
+        run: go vet ./...
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          working-directory: backend
+          # New and changed lines only, diffed with git: GitHub's pull-request diff API stops at 300 files.
+          args: >-
+            ${{ github.event_name == 'pull_request'
+                && format('--new-from-merge-base=origin/{0}', github.base_ref)
+                || format('--new-from-rev={0}', github.event.before) }}
+      - name: Test
+        run: |
+          set -o pipefail
+          go test -race -covermode=atomic -coverprofile=coverage.out ./... | tee go-test.txt
+      - name: Vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test
+          path: |
+            backend/go-test.txt
+            backend/coverage.out
+          retention-days: 30
+          if-no-files-found: ignore
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Format
+        run: npm run format:check
+      - name: Type check
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: API types
+        run: npm run api:check
+      - name: Test
+        run: npm run test:coverage
+      - name: Build
+        run: npm run build
+      - name: Audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-test
+          path: |
+            frontend/coverage/lcov.info
+            frontend/test-results/junit.xml
+          retention-days: 30
+          if-no-files-found: ignore
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end
+        run: npm run test:e2e
+      - name: Upload traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e
+          path: frontend/test-results/
+          retention-days: 30

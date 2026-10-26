@@ -169,7 +169,8 @@ test('US3: an activity’s History, with and without its line items, and Open in
   // Include line items (US3 scenario 2): the line item's entries appear, naming it.
   const include = history.getByRole('checkbox', { name: 'Include line items' });
   await expect(include).not.toBeChecked();
-  await include.check();
+  await include.click();
+  await expect(include).toBeChecked();
   await expect(entry(history, `Mei Lin changed line item '${lineItem.name}'`)).toBeVisible();
   await expect(entry(history, `Mei Lin created line item '${lineItem.name}'`)).toBeVisible();
 

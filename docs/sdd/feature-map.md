@@ -28,6 +28,15 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 016 | [016-planning-and-currency-extensions](../../specs/016-planning-and-currency-extensions/spec.md) | Dated exchange rates and a simulated GSAP rate import, plan currency, budget by month, split activity, plan type and multi-year views, Shell-attribute filters and Breakdown, field help (BUS.BUD.050, BUS.PLN.020, BUS.PLN.040, BUS.BUD.020, BUS.UX.020) | P1 | 002, 004–007, 010, 014 | Built — finish open: attribute filters and Breakdown screens (T074–T077), field-help tips (T084–T088), Import GSAP rates route (T028), e2e (T089) |
 | 017 | [017-approval-rules](../../specs/017-approval-rules/spec.md) | Approval rules: approver sources (named people, line manager, role), any or all, conditional and automatic levels, backup approvers, delegation, reminders and escalation, Monitoring (BUS.WFL.010) | P1 | 003, 008, 014 | Built — finish open: approvals read roles from 014 (T001, T008), line manager on People (T036), e2e (T047–T049) |
 | 018 | [018-pinned-plans](../../specs/018-pinned-plans/spec.md) | Pinned plans: pin plans to the top of the Plans list with a star, saved per person as the display preference pinnedPlanIds (D-317) | P2 | 004 | Done |
+| 019 | [019-alignment-guardrails](../../specs/019-alignment-guardrails/spec.md) | Alignment guardrails: CI with three checks, branch rules, npm release age, ADR-0010 (constitution 3.1.0) | P1 | — | In progress |
+| 020 | — | Shell palette: design tokens with Shell's exact colours (constitution X) | P1 | 019 | Planned |
+| 021 | — | Comment budget: comments cut to at most 5% of each file (constitution VIII) | P2 | 019 | Planned |
+| 022 | — | API v1: `/api/v1` paths, one error envelope, 404 for out-of-scope records, `/healthz` and `/readyz` | P1 | 019 | Planned |
+| 023 | — | PostgreSQL storage: pgx, sqlc and goose replace the JSON file store | P1 | 022 | Planned |
+| 024 | — | Gin transport, middleware and OpenTelemetry | P2 | 022 | Planned |
+| 025 | — | Backend layout: singular packages, `internal/platform/database`, files within 300 lines | P2 | 023, 024 | Planned |
+| 026 | — | Web-app structure: constitution F2 folders, React Hook Form + Zod, MSW, per-route splitting | P2 | 019 | Planned |
+| 027 | — | Test hygiene: drop tests that prove nothing; coverage threshold once SonarQube exists | P3 | 019 | Planned |
 
 ## Scope boundaries
 

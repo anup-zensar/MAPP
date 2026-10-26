@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"mapp/internal/platform/race"
 )
 
 // stressYear is a year of the size of SC-004: 20 plans, each with 5 campaigns of 5 initiatives of 10
@@ -76,7 +78,7 @@ func TestQuery_StressYear_SC004(t *testing.T) {
 		if r.Count.Total != 5000 || len(r.Rows) == 0 {
 			t.Errorf("%s: count %+v, %d rows", name, r.Count, len(r.Rows))
 		}
-		if elapsed > time.Second {
+		if elapsed > time.Second && !race.Enabled {
 			t.Errorf("%s took %s, want under 1 second", name, elapsed)
 		}
 		t.Logf("%s: %d rows in %s", name, len(r.Rows), elapsed)

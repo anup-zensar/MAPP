@@ -15,3 +15,4 @@ Consequences. Add a new ADR (next number) instead of editing an accepted one; ma
 | [0007](0007-activity-log-and-recycle-bin-core.md) | Activity log and recycle bin core | Accepted |
 | [0008](0008-role-based-access-with-team-scopes.md) | Role-based access with team scopes | Accepted |
 | [0009](0009-simulated-gsap-feeds-behind-adapters.md) | Simulated GSAP feeds behind adapters | Accepted |
+| [0010](0010-quality-gates-and-branch-rules.md) | Quality gates and branch rules | Accepted |

@@ -6,8 +6,8 @@ constitution states the rules; this guide shows how to follow them, with code. R
 **B3** or **Principle VI** point to the constitution. Where the two disagree, the constitution wins
 and this guide is corrected.
 
-The guide is adapted from the Go standards of the separate NorthStar backend repository: SQLite
-instead of PostgreSQL, no Docker, access scopes instead of tenants, and the comment budget
+The guide is adapted from the Go standards of the separate NorthStar backend repository: access
+scopes instead of tenants, Docker optional (no test requires it), and the comment budget
 (Principle VIII). The samples show the target patterns. They have not yet been compiled against
 this repository, whose code is aligned to constitution 2.x by dedicated features (Governance →
 Alignment); the first of those features compiles the samples and corrects this guide where needed.
@@ -39,18 +39,20 @@ Blocks marked **✗ Avoid** show what not to do.
 |---|---|
 | Go, pinned by `go` and `toolchain` in `go.mod` | Language and standard tooling |
 | Gin | HTTP routing, handler layer only |
-| SQLite through a pure-Go `database/sql` driver (no cgo) | The database: one local file. The driver is chosen in the SQLite feature's `research.md` |
-| sqlc | Generates type-safe Go from SQL (engine `sqlite`) |
+| PostgreSQL 18 | The database, in every environment; natively installed or through `compose.yaml` (§6) |
+| pgx v5 | PostgreSQL driver and connection pool |
+| sqlc | Generates type-safe Go from SQL (engine `postgresql`) |
 | goose | SQL migrations, embedded in the binary |
-| OpenTelemetry Go (`otelgin` and a `database/sql` tracer) | Traces and metrics |
+| OpenTelemetry Go (`otelgin`, `otelpgx`) | Traces and metrics |
 | libopenapi-validator (through `internal/platform/apitest`) | Contract tests against `api/openapi.yaml` |
 | go-cmp | Test comparisons |
 | golangci-lint v2 | Linting and formatting, configured by `.golangci.yml` |
 | govulncheck | Known-vulnerability scan of reachable code |
 | SonarQube | Quality gate; configured when CI is set up |
 
-There is no Docker in this phase (constitution, Current Phase & Scope). Every test, the store tests
-included, runs against SQLite files the test creates itself (§12).
+Docker is optional (constitution, Current Phase & Scope): PostgreSQL runs natively or through
+`compose.yaml`, and no test requires Docker. Store tests use the PostgreSQL server named by
+`TEST_DATABASE_URL` and skip under `-short` (§12).
 
 Install the command-line tools once:
 
@@ -68,8 +70,9 @@ Run these from `backend/`. They are the same checks CI runs (constitution, *Qual
 golangci-lint fmt ./...            # gofmt + goimports
 golangci-lint run ./...            # all linters in .golangci.yml
 sqlc generate && sqlc vet          # regenerate queries; must leave no diff
-go test -race ./...                # every test, store tests on SQLite included
-go test -race -coverprofile=cover.out ./...   # the same, with coverage
+docker compose up -d postgres      # only if you run PostgreSQL in Docker (§6)
+go test -race -short ./...         # unit tests; no database needed
+go test -race -coverprofile=cover.out ./...   # everything, store tests on PostgreSQL included
 govulncheck ./...                  # reachable known vulnerabilities
 goose -dir internal/platform/database/migrations create add_campaigns sql   # new migration
 go run ./cmd/seed                  # create and migrate the local database, load the demo data
@@ -96,12 +99,12 @@ backend/
 │   ├── budget/                 # one package per business area (plan/, campaign/, ...)
 │   │   ├── model.go            # domain types, statuses, invariants and the area's errors
 │   │   ├── store.go            # the Store interface the service needs
-│   │   ├── store_sqlite.go     # SQLiteStore: sqlc queries ↔ domain types
+│   │   ├── store_postgres.go   # PostgresStore: sqlc queries ↔ domain types
 │   │   ├── service.go          # use cases and business rules (no Gin, no SQL)
 │   │   ├── handler.go          # Gin handlers and request/response types
 │   │   ├── service_test.go     # unit tests with an in-memory fake Store
 │   │   ├── handler_test.go     # HTTP and contract tests with httptest
-│   │   └── store_sqlite_test.go  # store tests against a real SQLite file
+│   │   └── store_postgres_test.go  # store tests against real PostgreSQL
 │   └── platform/               # cross-cutting infrastructure, one package per concern
 │       ├── actor/              # the signed-in person, from the request context
 │       ├── authz/              # permissions and the teams an actor may act in
@@ -111,11 +114,11 @@ backend/
 │       ├── logging/            # slog setup and request-scoped attributes
 │       ├── telemetry/          # OpenTelemetry setup
 │       └── database/
-│           ├── database.go     # Open (with the SQLite settings), Write, Queries, Migrate
+│           ├── database.go     # Open (the pgx pool), Write, Queries, Migrate
 │           ├── migrations/     # goose SQL files, embedded with //go:embed
 │           ├── queries/        # sqlc input: one .sql file per area
 │           ├── sqlcdb/         # sqlc output: generated, committed, never edited
-│           └── dbtest/         # creates a migrated SQLite file per test
+│           └── dbtest/         # a fresh, migrated PostgreSQL database per test
 ├── api/
 │   └── openapi.yaml            # the API contract (B6)
 ├── docs/
@@ -161,11 +164,11 @@ Dependencies point inward: **handler → service → store**. The service holds 
 and knows nothing about HTTP or SQL. The handler translates HTTP. The store translates SQL.
 
 `depguard` in `.golangci.yml` fails the build if a `service.go` imports Gin, `net/http`,
-`database/sql` or `internal/platform/database`.
+pgx or `internal/platform/database`.
 
 ### Define interfaces where they are consumed
 
-The service declares the `Store` it needs, in `store.go`. The SQLite store satisfies it
+The service declares the `Store` it needs, in `store.go`. The PostgreSQL store satisfies it
 implicitly, and tests substitute a fake (B2). Every method that reads plan-owned records takes the
 caller's scope, so a record outside it behaves exactly like a missing one (Principle VII).
 
@@ -194,7 +197,7 @@ func NewService(store Store, access Scoper, now clock.Clock) *Service {
 ```
 
 Keep interfaces small. Do not create an interface for a type with only one implementation and
-no test fake. Return concrete types (`*Service`, `*SQLiteStore`), and accept interfaces.
+no test fake. Return concrete types (`*Service`, `*PostgresStore`), and accept interfaces.
 
 ### Wire dependencies in one place
 
@@ -203,7 +206,7 @@ service locators. All wiring lives in `internal/app`:
 
 ```go
 func mountBudgets(r gin.IRoutes, db *database.DB, access budget.Scoper, now clock.Clock) {
-	service := budget.NewService(budget.NewSQLiteStore(db), access, now)
+	service := budget.NewService(budget.NewPostgresStore(db), access, now)
 	budget.NewHandler(service).RegisterRoutes(r)
 }
 ```
@@ -421,7 +424,7 @@ func (s *Service) Get(ctx context.Context, who actor.Actor, id string) (Budget, 
   (Go 1.26+) to extract a type. Never compare error strings.
 - Error strings are lowercase, with no trailing punctuation: `"get budget B-7: budget not found"`.
 - Translate infrastructure errors at the boundary that understands them. The store turns
-  `sql.ErrNoRows` into `ErrNotFound`, so nothing above it knows about SQL.
+  `pgx.ErrNoRows` into `ErrNotFound`, so nothing above it knows about pgx.
 
 ### Handle each error exactly once
 
@@ -465,35 +468,53 @@ func Recover() gin.HandlerFunc {
 
 ## 6. Data access
 
-### Opening the database
+### PostgreSQL on a developer's machine
 
-The API and the seed command open the SQLite file once, through `database.Open`, and pass the
-handle to every store. The settings of constitution B5 go in the driver's connection string, so
-that every connection the pool opens gets them, not only the first:
+Every environment runs the same PostgreSQL major version (18). Locally a developer picks one of
+two ways, and both listen on `127.0.0.1:5432`:
 
-- `foreign_keys = ON` — SQLite ignores foreign keys without it;
-- `journal_mode = WAL` — readers no longer block the writer;
-- a `busy_timeout` (for example 5 s) — a second writer waits instead of failing at once;
-- the driver's immediate-transaction option, so every transaction starts with `BEGIN IMMEDIATE`.
-  SQLite allows one writer at a time; taking the write lock at the start means two writers queue
-  on `busy_timeout` instead of one failing midway with `SQLITE_BUSY`.
+- **Native install:** Homebrew (`brew install postgresql@18`), the Windows installer, or the Linux
+  package. Create a `mapp` role and database once.
+- **Docker, if preferred:** `docker compose up -d postgres` with the repository's `compose.yaml`,
+  which runs PostgreSQL and nothing else.
 
-The exact connection-string syntax depends on the driver chosen in `research.md`.
+The API reads `DATABASE_URL`; store tests read `TEST_DATABASE_URL` (§12). CI starts PostgreSQL as
+a service of the pipeline. No test and no command requires Docker.
+
+```sh
+export DATABASE_URL='postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable'
+export TEST_DATABASE_URL='postgres://mapp@127.0.0.1:5432/postgres?sslmode=disable'
+```
+
+### Opening the pool
+
+The API and the seed command open one `pgx` pool at startup, through `database.Open`, pass it to
+every store, and close it on shutdown (B3).
 
 ```go
-func Open(ctx context.Context, path string) (*DB, error) {
-	sqlDB, err := sql.Open(driverName, connectionString(path))
+// Open returns a traced pool once the database answers a ping. Errors never
+// include dsn, because it can hold credentials.
+func Open(ctx context.Context, dsn string) (*DB, error) {
+	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("open database: %w", err)
+		return nil, errors.New("parse database url: malformed url or parameters")
 	}
-	if err = sqlDB.PingContext(ctx); err != nil {
-		return nil, errors.Join(fmt.Errorf("ping database: %w", err), sqlDB.Close())
+	cfg.ConnConfig.Tracer = otelpgx.NewTracer()
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("create pool: %w", err)
 	}
-	return &DB{sql: sqlDB}, nil
+	if err = pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("ping database: %w", err)
+	}
+	return &DB{pool: pool}, nil
 }
 ```
 
-The database file is never committed (`.gitignore`); `go run ./cmd/seed` creates it.
+Set `pool_max_conns` in the connection string per environment. Across all API processes, the
+total must stay below PostgreSQL's `max_connections`.
 
 ### Migrations (goose)
 
@@ -503,17 +524,17 @@ migration is never edited; fix it with a new one. Migrations are forward-only (B
 ```sql
 -- +goose Up
 CREATE TABLE budgets (
-    id            TEXT    PRIMARY KEY,
-    team_id       TEXT    NOT NULL REFERENCES teams (id),
-    name          TEXT    NOT NULL,
-    fiscal_year   INTEGER NOT NULL,
-    status        TEXT    NOT NULL DEFAULT 'draft'
-                          CHECK (status IN ('draft', 'active', 'closed')),
-    planned_minor INTEGER NOT NULL DEFAULT 0,
-    currency      TEXT    NOT NULL CHECK (length(currency) = 3),
-    created_at    TEXT    NOT NULL,
-    updated_at    TEXT    NOT NULL
-) STRICT;
+    id            text        PRIMARY KEY,
+    team_id       text        NOT NULL REFERENCES teams (id),
+    name          text        NOT NULL,
+    fiscal_year   integer     NOT NULL,
+    status        text        NOT NULL DEFAULT 'draft'
+                              CHECK (status IN ('draft', 'active', 'closed')),
+    planned_minor bigint      NOT NULL DEFAULT 0,
+    currency      text        NOT NULL CHECK (length(currency) = 3),
+    created_at    timestamptz NOT NULL,
+    updated_at    timestamptz NOT NULL
+);
 
 CREATE INDEX budgets_team_id_idx ON budgets (team_id, id);
 
@@ -524,27 +545,33 @@ DROP TABLE budgets;
 - Let the database enforce invariants it can check: `NOT NULL`, `CHECK`, foreign keys and unique
   constraints. Application validation gives friendly messages; the database guarantees
   correctness.
-- Tables are `STRICT`, so a value of the wrong type fails instead of being stored silently.
-- Money is integer minor units (`planned_minor` is in cents), or a canonical decimal string where
-  more scale is needed (exchange rates). Never `REAL`, and never a column with `NUMERIC` affinity,
-  which may turn a decimal into a float.
-- Calendar dates are `TEXT` in `YYYY-MM-DD`; timestamps are `TEXT` in RFC 3339, in UTC. Times
-  come from the injected clock, not from `CURRENT_TIMESTAMP`, so tests are deterministic.
-- Keep SQL portable: standard SQL, ids and foreign keys, nothing that leans on SQLite's dynamic
-  typing or `rowid`. The PostgreSQL move then rewrites queries mechanically (Principle IV).
+- Money is `bigint` minor units (`planned_minor` is in cents), or `numeric` where more scale is
+  needed (exchange rates). Never `real` or `double precision`.
+- Calendar dates are `date`; timestamps are `timestamptz`, in UTC. Times come from the injected
+  clock, not from `now()`, so tests are deterministic.
 - `cmd/seed` applies migrations locally, and a deploy step will later. The API never migrates at
-  startup; it stops with a clear message if the database is not at the latest migration.
+  startup; it stops with a clear message if the database is not at the latest migration. A
+  PostgreSQL session lock keeps concurrent runs safe:
 
 ```go
 //go:embed migrations/*.sql
 var embeddedMigrations embed.FS
 
-func Migrate(ctx context.Context, db *DB) error {
+// Migrate applies every pending migration. A PostgreSQL session lock
+// serialises concurrent runs, so no migration is applied twice.
+func Migrate(ctx context.Context, db *DB) (err error) {
+	sqlDB := stdlib.OpenDBFromPool(db.pool)
+	defer func() { err = errors.Join(err, sqlDB.Close()) }()
+
 	files, err := fs.Sub(embeddedMigrations, "migrations")
 	if err != nil {
 		return fmt.Errorf("read migrations: %w", err)
 	}
-	provider, err := goose.NewProvider(goose.DialectSQLite3, db.sql, files)
+	locker, err := lock.NewPostgresSessionLocker()
+	if err != nil {
+		return fmt.Errorf("create migration lock: %w", err)
+	}
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, files, goose.WithSessionLocker(locker))
 	if err != nil {
 		return fmt.Errorf("load migrations: %w", err)
 	}
@@ -564,13 +591,13 @@ name fails at `sqlc generate`, not in production.
 ```sql
 -- name: GetBudget :one
 SELECT * FROM budgets
-WHERE id = sqlc.arg(id) AND team_id IN (sqlc.slice(team_ids));
+WHERE id = sqlc.arg(id) AND team_id = ANY(sqlc.arg(team_ids)::text[]);
 
 -- name: ListBudgets :many
 SELECT * FROM budgets
-WHERE team_id IN (sqlc.slice(team_ids))
+WHERE team_id = ANY(sqlc.arg(team_ids)::text[])
 ORDER BY
-    CASE WHEN sqlc.arg(sort_key) = 'name' THEN name END,
+    CASE WHEN sqlc.arg(sort_key)::text = 'name' THEN name END,
     created_at,
     id
 LIMIT sqlc.arg(row_limit) OFFSET sqlc.arg(row_offset);
@@ -578,7 +605,7 @@ LIMIT sqlc.arg(row_limit) OFFSET sqlc.arg(row_offset);
 -- name: ActivateDraftBudget :execrows
 UPDATE budgets
 SET status = 'active', updated_at = sqlc.arg(updated_at)
-WHERE id = sqlc.arg(id) AND status = 'draft' AND team_id IN (sqlc.slice(team_ids));
+WHERE id = sqlc.arg(id) AND status = 'draft' AND team_id = ANY(sqlc.arg(team_ids)::text[]);
 ```
 
 `sqlc.yaml`:
@@ -586,14 +613,18 @@ WHERE id = sqlc.arg(id) AND status = 'draft' AND team_id IN (sqlc.slice(team_ids
 ```yaml
 version: "2"
 sql:
-  - engine: sqlite
+  - engine: postgresql
     schema: internal/platform/database/migrations
     queries: internal/platform/database/queries
     gen:
       go:
         package: sqlcdb
         out: internal/platform/database/sqlcdb
+        sql_package: pgx/v5
         emit_empty_slices: true
+        overrides:
+          - db_type: timestamptz
+            go_type: time.Time
 ```
 
 **Scope isolation is in every query.** Each query on plan-owned data filters by the teams of the
@@ -605,15 +636,15 @@ queries need one form only.
 public names to a closed set of keys (`sort_key` above), and the query branches on the key.
 
 **Pagination:** offset pagination (above) is fine for short lists. For large or append-heavy
-tables, use keyset pagination (`WHERE (created_at, id) > (?, ?) ORDER BY created_at, id LIMIT ?`),
-which stays fast at any depth.
+tables, use keyset pagination (`WHERE (created_at, id) > ($1, $2) ORDER BY created_at, id LIMIT
+$3`), which stays fast at any depth.
 
 ### The store translates between SQL and the domain
 
 ```go
-func (s *SQLiteStore) Get(ctx context.Context, scope authz.Scope, id string) (Budget, error) {
+func (s *PostgresStore) Get(ctx context.Context, scope authz.Scope, id string) (Budget, error) {
 	row, err := s.db.Queries(ctx).GetBudget(ctx, sqlcdb.GetBudgetParams{ID: id, TeamIds: scope.TeamIDs})
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return Budget{}, ErrNotFound
 	}
 	if err != nil {
@@ -659,27 +690,20 @@ a constraint such as a partial unique index, and map the unique violation to `Ki
 
 The service owns transaction boundaries (B5), and a change and its activity-log entry commit
 together. `database.DB.Write` runs a function in one transaction that it carries in the context,
-so every store called with that context — the area's own and the activity log's — joins it:
+so every store called with that context — the area's own and the activity log's — joins it.
+`pgx.BeginFunc` commits when the function returns `nil` and rolls back on an error or a panic:
 
 ```go
-// Write commits if fn returns nil and rolls back otherwise. Inside a
-// transaction it runs fn in the same transaction.
+// Write runs fn in one transaction; inside a transaction it reuses it.
 func (d *DB) Write(ctx context.Context, fn func(context.Context) error) error {
 	if _, ok := txFrom(ctx); ok {
 		return fn(ctx)
 	}
-	tx, err := d.sql.BeginTx(ctx, nil)
+	err := pgx.BeginFunc(ctx, d.pool, func(tx pgx.Tx) error {
+		return fn(withTx(ctx, tx))
+	})
 	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	// After a successful Commit, Rollback is a no-op, so this also covers an
-	// error or a panic in fn.
-	defer func() { _ = tx.Rollback() }()
-	if err = fn(withTx(ctx, tx)); err != nil {
-		return err
-	}
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("commit transaction: %w", err)
+		return fmt.Errorf("transaction: %w", err)
 	}
 	return nil
 }
@@ -688,14 +712,13 @@ func (d *DB) Queries(ctx context.Context) *sqlcdb.Queries {
 	if tx, ok := txFrom(ctx); ok {
 		return sqlcdb.New(tx)
 	}
-	return sqlcdb.New(d.sql)
+	return sqlcdb.New(d.pool)
 }
 ```
 
 The service declares the transactor it needs (`Write(ctx, fn) error`) next to its `Store`, as it
 does today with `store.Transactor`. Keep transactions short. Never call external services or wait
-on user input inside one: SQLite has a single writer, so a long write transaction stalls every
-other write.
+on user input inside one: it holds locks and a pool connection while you wait.
 
 ---
 
@@ -927,7 +950,7 @@ func RequestID() gin.HandlerFunc {
 
 `telemetry.Start` installs the OpenTelemetry providers, configured by the standard `OTEL_*`
 environment variables. In the local phase no exporter sends data off the machine (B7). `otelgin`
-traces every request, and a `database/sql` tracer traces every query. Add your own spans only
+traces every request, and `otelpgx` traces every query. Add your own spans only
 around significant work that is not already an HTTP or database call. Export request rate, error
 rate and duration (RED) metrics for every route.
 
@@ -983,7 +1006,7 @@ func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
 		Host:            env.text("HOST", defaultHost),
 		Port:            env.text("PORT", defaultPort),
-		DatabasePath:    env.required("DATABASE_PATH"),
+		DatabaseURL:     env.required("DATABASE_URL"),
 		DemoSignIn:      env.flag("DEMO_SIGN_IN", false),
 		LogLevel:        env.level("LOG_LEVEL", slog.LevelInfo),
 		MaxBodyBytes:    env.bytes("MAX_BODY_BYTES", defaultMaxBodyBytes),
@@ -1061,7 +1084,7 @@ func (in CreateInput) normalized() CreateInput {
 - Value receivers for small immutable types; pointer receivers when the method mutates or the
   type holds a mutex or is large. Don't mix the two on one type.
 - No naked returns in functions longer than five lines (`nakedret`). No dot imports, `unsafe`,
-  `//go:linkname` or cgo without an ADR. The SQLite driver is pure Go for this reason.
+  `//go:linkname` or cgo without an ADR.
 
 ### Complexity metrics (Principle V)
 
@@ -1201,7 +1224,7 @@ func TestServiceActivate(t *testing.T) {
 ### Fakes, not mocking frameworks
 
 A hand-written fake of the consumer's interface is short, readable and behaves like the real
-thing. This one limits every method to the scope's teams, as the SQLite store does:
+thing. This one limits every method to the scope's teams, as the PostgreSQL store does:
 
 ```go
 type fakeStore struct {
@@ -1236,16 +1259,18 @@ envelope, and validate every response against `api/openapi.yaml` through
 `gin.SetMode(gin.TestMode)` changes global state, so call it once in `TestMain`, before any
 parallel test starts.
 
-### Store tests against a real SQLite database
+### Store tests against real PostgreSQL
 
-Mocks cannot prove that SQL is right, so stores are tested against the engine the application
-runs on: SQLite now, PostgreSQL once it replaces SQLite (Principle VI). `dbtest.New(t)` creates a
-database file in `t.TempDir()`, applies every migration, and closes it when the test ends. No
-Docker is involved.
+Mocks cannot prove that SQL is right, so stores are tested against PostgreSQL, the engine every
+environment runs (Principle VI). `dbtest.NewDB(t)` connects to the server in `TEST_DATABASE_URL`,
+creates a database for the test from a template that already holds every migration (a fast
+`CREATE DATABASE … TEMPLATE …`), and drops it when the test ends. It skips under `-short`, so
+`go test -short ./...` needs no database. No test needs Docker: the server can be a native
+install or the Compose service.
 
 ```go
-func TestSQLiteStoreScopeIsolation(t *testing.T) {
-	store := budget.NewSQLiteStore(dbtest.New(t))
+func TestPostgresStoreScopeIsolation(t *testing.T) {
+	store := budget.NewPostgresStore(dbtest.NewDB(t))
 	ctx := t.Context()
 	owned, err := store.Create(ctx, budget.CreateInput{TeamID: teamA, Name: "FY27", FiscalYear: 2027, Currency: "EUR"}, fixedTime)
 	if err != nil {
@@ -1481,13 +1506,13 @@ The same failure gets logged at every layer, five lines per incident with no ext
 | State | Package-level mutable variables, singletons, `init()` that does I/O | Constructor injection (`gochecknoglobals`, `gochecknoinits`) |
 | Database | Building SQL with `+` or `fmt.Sprintf` | sqlc queries with parameters; allowlists for sort keys |
 | Database | A query on plan-owned data without the scope's teams in its `WHERE` | Scoped queries plus an isolation test |
-| Database | A connection without the SQLite settings, or a cgo driver | `database.Open` with the pure-Go driver (§6) |
+| Database | A pool per request, or a connection string in a log or an error | One pool from `database.Open`, opened at startup (§6) |
 | Database | Read, check in Go, then update | One conditional `UPDATE`, or a constraint |
 | Database | Long transactions, or network calls inside a transaction | Short transactions; do external I/O before or after |
 | Database | Unbounded `SELECT` for list endpoints | Pagination with a maximum page size |
-| Database | N+1: one query per row of a list | A join or `WHERE id IN (sqlc.slice(ids))` |
+| Database | N+1: one query per row of a list | A join or `WHERE id = ANY($1)` |
 | Database | Editing a merged migration; migrating at API startup | A new migration; `cmd/seed` (or a deploy step) applies it |
-| Data | `float64` for money; `REAL` or `NUMERIC` columns | `int64` minor units, or a canonical decimal string, in a `STRICT` table |
+| Data | `float64` for money; `real` or `double precision` columns | `bigint` minor units, or `numeric` |
 | Data | `t1 == t2` for `time.Time`; local time zones; `time.Now()` in a service | `t1.Equal(t2)`; UTC; the injected clock |
 | HTTP | `router.Run()` or `http.ListenAndServe` without timeouts | `http.Server` with all four timeouts, on `127.0.0.1` |
 | HTTP | `io.ReadAll(r.Body)` with no limit | `http.MaxBytesReader` (the `LimitBody` middleware) |
@@ -1512,7 +1537,7 @@ Copy this into the pull request description and tick each item.
 - [ ] Requirement IDs addressed: …
 - [ ] `golangci-lint fmt` and `golangci-lint run` are clean
 - [ ] `sqlc generate` produces no diff; `sqlc vet` passes
-- [ ] New migrations apply to an empty SQLite database; no merged migration edited
+- [ ] New migrations apply to an empty PostgreSQL database; no merged migration edited
 - [ ] `go test -race ./...` passes, store and contract tests included
 - [ ] Every changed rule, validation and access check has a test for each outcome; new-code coverage ≥ 80%; no test written only for coverage
 - [ ] `govulncheck ./...` is clean
@@ -1539,10 +1564,8 @@ Metric exceptions and justifications: …
 - [Go Concurrency Patterns: Context](https://go.dev/blog/context) and
   [Pipelines and cancellation](https://go.dev/blog/pipelines)
 - [sqlc documentation](https://docs.sqlc.dev/) and [goose](https://pressly.github.io/goose/)
-- SQLite: [STRICT tables](https://www.sqlite.org/stricttables.html),
-  [write-ahead logging](https://www.sqlite.org/wal.html),
-  [foreign keys](https://www.sqlite.org/foreignkeys.html),
-  [transactions](https://www.sqlite.org/lang_transaction.html)
+- [pgx](https://github.com/jackc/pgx) and the
+  [PostgreSQL documentation](https://www.postgresql.org/docs/current/)
 - [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/) and
   [OWASP API Security Top 10](https://owasp.org/API-Security/)
 - [golangci-lint linters](https://golangci-lint.run/docs/linters/)

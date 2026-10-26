@@ -69,7 +69,11 @@ Tip: when running a command for an existing spec on its branch, Spec Kit finds t
 
 ## 6. Branches, commits and reviews
 
-- Branch per feature: `NNN-short-name`. Merge to `main` when Done, with a merge commit.
+- Branches (constitution 3.x): `main` (production), `release`, `develop` (integration) and the
+  module branch `plan-module`. A feature branch is `feature/NNN-short-name`, created by Spec Kit
+  from `develop` or the module branch; work without a spec uses `docs/…` or `fix/…`. Nobody pushes
+  directly to `main`, `release` or `develop`: changes arrive by pull request, approved by someone
+  other than the author, with the three checks green ([quality gates](quality-gates.md)).
 - Commit messages: Conventional Commits with the feature number and requirement IDs, e.g.
   `feat(007): even spread puts remainder in last month (FR-009)`.
 - A pull request (or local review) checks: tests green, behaviour matches the spec, screens match the

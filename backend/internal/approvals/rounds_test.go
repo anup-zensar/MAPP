@@ -34,15 +34,15 @@ func TestSubmission_ListsLevelsAndNote_FR011(t *testing.T) {
 		RoundNumber: 1, Ready: true, Problems: []SubmitProblem{},
 		Workflow: &WorkflowRef{ID: chinaFlow, Name: "China BC approval workflow", Active: true},
 		Levels: []LevelView{
-			{Number: 1, Label: "Level 1", Approvers: []PersonView{PersonView{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}, ApproverType: SourcePeople, Mode: ModeAny,
+			{Number: 1, Label: "Level 1", Approvers: []PersonView{{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}, ApproverType: SourcePeople, Mode: ModeAny,
 				Summary: "Level 1 · Carlos Mendes"},
-			{Number: 2, Label: "Level 2", Approvers: []PersonView{PersonView{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, ApproverType: SourcePeople, Mode: ModeAny,
+			{Number: 2, Label: "Level 2", Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, ApproverType: SourcePeople, Mode: ModeAny,
 				Summary: "Level 2 · Alex Morgan"},
 		},
 		UnassignedPlannedCost: &note,
 		Outcomes: []SubmissionLevel{ // 017 FR-013: both levels need a decision
-			{Number: 1, Label: "Level 1", Outcome: ResolutionDecide, Approvers: []PersonView{PersonView{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
-			{Number: 2, Label: "Level 2", Outcome: ResolutionDecide, Approvers: []PersonView{PersonView{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
+			{Number: 1, Label: "Level 1", Outcome: ResolutionDecide, Approvers: []PersonView{{ID: carlos.ID, Name: "Carlos Mendes", Initials: "CM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
+			{Number: 2, Label: "Level 2", Outcome: ResolutionDecide, Approvers: []PersonView{{ID: alex.ID, Name: "Alex Morgan", Initials: "AM", Active: true}}, Mode: ModeAny, Excluded: []ExcludedView{}},
 		},
 	}
 	if !reflect.DeepEqual(submission, want) {

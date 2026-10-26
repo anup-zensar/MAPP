@@ -3,6 +3,7 @@ import { Outlet } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { SessionProvider } from '@/app/SessionProvider';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { budgetByMonth } from '@/features/budget-phasing/testData';
 import { financialsNotServed } from '@/features/plans/testData';
 import { campaignForm } from '@/test/attributeForms';
 import { mockApi } from '@/test/mockApi';
@@ -449,6 +450,7 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
         }),
       },
       'PATCH /api/campaigns/C-1001': { body: campaign() },
+      'GET /api/plans/P-1001/budget-by-month': { body: budgetByMonth() },
     });
     const form = await findForm();
     const budget = within(form).getByLabelText('Campaign budget');
