@@ -1,6 +1,6 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 4.1) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4.2) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
 `backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
 
@@ -22,7 +22,9 @@ Software Design & Construction Policy and SEMS, which are mandatory.
    nesting 4, fan-out 7, 40 statements, 5 terms per expression). A beginner must be able to follow it.
 3. **Comments are rare** (constitution VIII): at most 5% of a file's non-blank lines, rounded up; only
    *why*, a constraint or non-obvious behaviour; no doc comment that repeats a name. Requirement IDs go
-   in test names and pull requests, not in comments. Tool directives don't count.
+   in test names and pull requests, not in comments. Tool directives don't count. A change that touches a
+   file brings that whole file's comments within the budget, not only its own lines (except feature 025's
+   mechanical moves).
 4. **Two parts only:** React + TypeScript in `frontend/`, Go in `backend/`. Go packages per business
    area, each handler → service → store; Gin only in handlers; all business rules in services. The
    server is the source of truth: the web app never recomputes a figure the API provides.

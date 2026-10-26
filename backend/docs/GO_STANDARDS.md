@@ -1112,7 +1112,8 @@ behaviour (demo sign-in, seeding) needs an explicit setting (B7). `APP_HOST` acc
 - **Comment budget (Principle VIII).** At most 5% of a file's non-blank lines hold a comment,
   rounded up: one in a 20-line file, five in a 100-line file. Tests count; generated code does
   not, and neither do tool directives (`//go:`, `//nolint`, goose's `-- +goose` and sqlc's
-  `-- name:` annotations).
+  `-- name:` annotations). A change that touches a file brings the whole file within the budget,
+  not only the lines it changed; feature 025's mechanical moves are the exception.
 - **A package** opens with a one- or two-line package comment (`revive: package-comments`).
 - **An exported identifier** gets a doc comment only when its name and signature do not already
   state its contract — for example which errors it returns, or what it requires of the caller.
