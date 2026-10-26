@@ -133,8 +133,8 @@ broken-pipe handling is kept.
 ## R8 — Telemetry providers and exporters
 
 - **Decision**: a new package `internal/platform/telemetry`. `Start(cfg, console io.Writer)` returns a
-  `*Telemetry` with `Tracer trace.TracerProvider` and `Meter metric.MeterProvider`, and `Shutdown(ctx)`
-  flushes.
+  `*Telemetry` with the SDK's `Tracer *sdktrace.TracerProvider` and `Meter *sdkmetric.MeterProvider`, and
+  `Shutdown(ctx)` flushes.
   - The providers are always the SDK's, so trace IDs exist and reach the logs even with no exporter.
     `none` (the default) attaches no exporter: spans are dropped when they end and metrics stay in memory.
     `console` attaches `stdouttrace` and `stdoutmetric` writing to standard error, because standard output

@@ -28,11 +28,11 @@ request.
 
 ## Phase 1: Setup — can start before 022
 
-- [ ] T001 [P] Write `docs/architecture/adr/0011-gin-transport-and-opentelemetry.md` (use the next free
+- [x] T001 [P] Write `docs/architecture/adr/0011-gin-transport-and-opentelemetry.md` (use the next free
   number if 023 has taken 0011): Gin confined to the transport, the middleware order and its reason,
   OpenTelemetry with exporters `none` and `console` only, no propagation. Mark ADR-0003 "Superseded in part"
   and update `docs/architecture/adr/README.md` (FR-014)
-- [ ] T002 [P] Add the depguard rule `transport-only` to `backend/.golangci.yml`: deny
+- [x] T002 [P] Add the depguard rule `transport-only` to `backend/.golangci.yml`: deny
   `github.com/gin-gonic/gin` except in `**/*handler*.go`, `**/middleware*.go`, `internal/platform/web/**`,
   `internal/app/**`, `cmd/api/**` and tests (FR-002, R14)
 
@@ -40,21 +40,20 @@ request.
 
 ## Phase 2: Foundational, part 1 — can start before 022 (none of 022's files)
 
-- [ ] T003 Add `LogLevel`, `ShutdownTimeout` and `Telemetry{Traces, Metrics}` to the typed config in
+- [x] T003 Add `LogLevel`, `ShutdownTimeout` and `Telemetry{Traces, Metrics}` to the typed config in
   `backend/internal/app/config.go`, reading `LOG_LEVEL`, `SHUTDOWN_TIMEOUT`, `OTEL_TRACES_EXPORTER` and
   `OTEL_METRICS_EXPORTER`. Use the defaults and allowed values of FR-012; every problem goes into one
   message (FR-012)
-- [ ] T004 Add a table-driven `TestLoadConfig_LogShutdownAndTelemetry_024_FR012` to
-  `backend/internal/app/config_test.go`. Cases: the defaults; valid values; three invalid values reported
-  together; `otlp` refused
-- [ ] T005 [P] Create `backend/internal/platform/logging/logging.go` with `New` and `WithAttrs` (R7). In
-  `logging_test.go`, write `TestHandler_AddsContextAttributesAndTraceID_024_FR006` and
-  `TestWithAttrs_ChildDoesNotChangeParent_024_FR006`
-- [ ] T006 [P] Create `backend/internal/platform/telemetry/telemetry.go` with `Start`, `Shutdown`, exporters
+- [x] T004 In `backend/internal/app/config_test.go`, extend the defaults and every-variable tests, and write
+  the table-driven `TestLoadConfig_RefusesInvalidValues_024_FR012` (`otlp` refused),
+  `TestLoadConfig_LimitsAreAccepted_024_FR012` and `TestLoadConfig_ReportsEveryProblem_024_FR012`
+- [x] T005 [P] Create `backend/internal/platform/logging/logging.go` with `New` and `WithAttrs` (R7). In
+  `logging_test.go`, write `TestHandler_AddsRequestAttributesAndTraceID_024_FR006` and
+  `TestWithAttrs_SiblingsKeepTheirOwnAttributes_024_FR006`
+- [x] T006 [P] Create `backend/internal/platform/telemetry/telemetry.go` with `Start`, `Shutdown`, exporters
   `none`/`console` and resource `service.name=mapp-api` (R8). First re-check the publish dates of the
   OpenTelemetry v1.47.0 modules, then `go get` them. In `telemetry_test.go`, write
-  `TestStart_NoneWritesNothingButMakesTraceIDs_024_FR008` and
-  `TestStart_ConsoleWritesToTheGivenWriter_024_FR008`
+  `TestStart_OnlyConsoleWritesAndTraceIDsAlwaysExist_024_FR008`
 
 **Checkpoint**: gates green; nothing calls the new packages yet except their tests.
 
@@ -66,17 +65,17 @@ request.
 
 **Independent Test**: start the API, start a slow request, send SIGTERM; start it with invalid settings.
 
-- [ ] T007 [US3] Create `backend/internal/app/server.go` with `Serve(ctx, listener, handler,
+- [x] T007 [US3] Create `backend/internal/app/server.go` with `Serve(ctx, listener, handler,
   shutdownTimeout)`. It sets the timeouts of FR-011, routes `ErrorLog` to slog, serves in one owned goroutine
   and shuts down under `context.WithoutCancel` plus the deadline (R13) (FR-011)
-- [ ] T008 [US3] In `backend/internal/app/server_test.go`, write
+- [x] T008 [US3] In `backend/internal/app/server_test.go`, write
   `TestServe_DrainsTheRequestInProgress_024_FR011` (the handler blocks on a channel; cancel; release; the
-  answer is 200 and `Serve` returns nil) and `TestServe_DeadlinePassed_ReturnsError_024_FR011`. Use no sleeps
-- [ ] T009 [US3] In `backend/cmd/api/main.go`, use `signal.NotifyContext(…, os.Interrupt, syscall.SIGTERM)`,
+  answer is 204 and `Serve` returns nil) and `TestServe_DeadlinePassed_ReturnsError_024_FR011`. Use no sleeps
+- [x] T009 [US3] In `backend/cmd/api/main.go`, use `signal.NotifyContext(…, os.Interrupt, syscall.SIGTERM)`,
   `slog.SetDefault(logging.New(os.Stdout, cfg.LogLevel))` and `app.Serve`. The startup line becomes the
   `MAPP API listening` record (`url`, `environment`, `demo_sign_in`), and a configuration error is logged as
-  JSON. In `main_test.go`, change `TestStartupLine` to check the record's attributes; `listen` and its tests
-  stay (FR-006, FR-011)
+  JSON. `TestStartupLine` goes with the printed line (the record only repeats configuration values that
+  `config_test.go` covers); `listen` and its tests stay (FR-006, FR-011)
 
 **Checkpoint**: User Story 3 works on today's `net/http` router; gates and the end-to-end suite green.
 
