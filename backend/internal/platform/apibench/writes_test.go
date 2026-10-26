@@ -14,6 +14,7 @@ func BenchmarkChanges(b *testing.B) {
 	server := apibench.New(b, apibench.Volume)
 	c := &changes{server: server, alex: server.SignIn(b, alex), daniel: server.SignIn(b, daniel)}
 	records := server.Records(b)
+	b.Run("approve", func(b *testing.B) { c.approve(b) }) // before the restores, which end the rounds waiting for Daniel
 	for _, size := range []struct {
 		name       string
 		tree, copy apibench.Tree
@@ -30,7 +31,6 @@ func BenchmarkChanges(b *testing.B) {
 		b.Run(size.name+"/delete permanently", func(b *testing.B) { c.purge(b, size.copy.Plan) })
 	}
 	b.Run("submit and recall", func(b *testing.B) { c.submitAndRecall(b, readyActivity(b, server, c.alex)) })
-	b.Run("approve", func(b *testing.B) { c.approve(b) })
 	b.Run("small/empty recycle bin", func(b *testing.B) { c.emptyBin(b, records.Small.Plan, false) })
 	b.Run("large/empty recycle bin", func(b *testing.B) { c.emptyBin(b, records.Template.Plan, true) })
 }

@@ -2,6 +2,8 @@ package apibench
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"testing"
 
 	"mapp/internal/activities"
@@ -69,12 +71,19 @@ func initiativeHolding(a activities.Activity, initiatives []campaigns.Initiative
 func (v *volume) initiativeAndOtherCampaign(_ context.Context, initiatives []campaigns.Initiative, list []campaigns.Campaign) (string, string) {
 	for _, i := range initiatives {
 		for _, c := range list {
-			if c.ID != i.CampaignID && holds(c.StartDate, c.EndDate, i.StartDate, i.EndDate) {
+			if c.ID != i.CampaignID && holds(c.StartDate, c.EndDate, i.StartDate, i.EndDate) && !named(initiatives, c.ID, i.Name) {
 				return i.ID, c.ID
 			}
 		}
 	}
 	return "", ""
+}
+
+// named reports whether the campaign campaignID has an initiative called name: a move there is refused.
+func named(initiatives []campaigns.Initiative, campaignID, name string) bool {
+	return slices.ContainsFunc(initiatives, func(i campaigns.Initiative) bool {
+		return i.CampaignID == campaignID && strings.EqualFold(i.Name, name)
+	})
 }
 
 // holds reports whether the dates from–to lie within start–end; a missing date limits nothing.
