@@ -49,6 +49,7 @@ func itemIDs(page HomeAttentionPage) []string {
 // line items above the planned cost; children's budgets above a budget; planned cost above a budget; fields
 // still needed with the records below that need attention.
 func TestAttention_EachReason_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	declinedAt := now.Add(-5 * 24 * time.Hour)
 	roadshow := activityIn("A-1005", "Fleet roadshow", now)
@@ -119,6 +120,7 @@ func TestAttention_EachReason_FR011(t *testing.T) {
 // Only records the person owns are listed: someone else's plan is not, nor is a record without any reason
 // (FR-011).
 func TestAttention_OnlyOwnedRecords_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	mine := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
 	mine.OwnerID, mine.ItemsBelow = priya.ID, 1
@@ -147,6 +149,7 @@ func TestAttention_OnlyOwnedRecords_FR011(t *testing.T) {
 // A record with several problems appears once with all its reasons, in the order of FR-011 (FR-012, US3
 // scenario 4).
 func TestAttention_OneItemAllReasons_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	p := newPlan("P-1001", "FY2026 Lubricants Europe", 2026, lubricantsEurope)
 	p.OwnerID, p.Budget, p.PlannedCost, p.RemainingBudget = priya.ID, usdPtr(t, "1000.00"), usdPtr(t, "1500.00"), usdPtr(t, "-200.00")
@@ -176,6 +179,7 @@ func TestAttention_OneItemAllReasons_FR012(t *testing.T) {
 // Items are ordered by their first reason: declined, then balance, then budget, then missing fields; within
 // a group the most recently changed first, then by ID (FR-012).
 func TestAttention_Order_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	at := func(hoursAgo int) time.Time { return now.Add(-time.Duration(hoursAgo) * time.Hour) }
 	missingOld := activityIn("A-1001", "Missing, old", at(30))
@@ -207,6 +211,7 @@ func TestAttention_Order_FR012(t *testing.T) {
 // Line items never appear on their own: their problems count in their activity as line items needing
 // attention (Assumptions).
 func TestAttention_LineItemsThroughActivity_Assumption(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	act := activityIn("A-1001", "Launch film", now)
 	act.LineItemsNeedingAttention = 2
@@ -228,6 +233,7 @@ func TestAttention_LineItemsThroughActivity_Assumption(t *testing.T) {
 // last), then name, then ID; each row with its place, dates, planned cost in the display currency, the
 // fields still needed and the line items needing attention (FR-014, US4 scenario 1).
 func TestMyActivities_Groups_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	d := func(text string) *date.Date { day := date.MustParse(text); return &day }
 	withStatus := func(id, name, status string, start *date.Date) Activity {
@@ -284,6 +290,7 @@ func TestMyActivities_Groups_FR014(t *testing.T) {
 // The group is the status the activity's page shows, not the stored one: an approved activity shows In
 // progress or Complete, and an ongoing one is never Complete (edge case, domain model §2.3).
 func TestMyActivities_UsesDisplayedStatus_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFakeSources()
 	running := activityIn("A-1002", "Social always-on", now)
 	running.Status, running.DisplayStatus = "approved", "inProgress"

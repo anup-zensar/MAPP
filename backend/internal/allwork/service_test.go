@@ -33,6 +33,7 @@ func newTestService(t *testing.T, src Source) (*Service, string) {
 // Without a year the view shows the current year (FR-004); the answer names the year, today, the display
 // currency and when it was read.
 func TestQuery_DefaultYearIsCurrentYear_FR004(t *testing.T) {
+	t.Parallel()
 	src := newFakeSource(seedYear())
 	src.currencies["U-1002"] = Currency{Code: "EUR", Rate: mustRate("0.92")}
 	s, _ := newTestService(t, src)
@@ -56,6 +57,7 @@ func TestQuery_DefaultYearIsCurrentYear_FR004(t *testing.T) {
 // All work never creates, changes or deletes a record (FR-002): a query leaves every file of the data
 // folder — the business records and the activity log — as it was.
 func TestQuery_NeverWrites_FR002(t *testing.T) {
+	t.Parallel()
 	s, dir := newTestService(t, newFakeSource(seedYear()))
 	err := s.tx.Write(t.Context(), func(ctx context.Context) error { // some data first
 		return store.Put(ctx, "plans", "P-1001", map[string]string{"id": "P-1001"})
@@ -100,6 +102,7 @@ func folderContents(t *testing.T, dir string) map[string]string {
 // The Calendar shows the Grid's rows without line items and unassigned rows (FR-025), and no grid
 // columns.
 func TestQuery_CalendarViewHasNoLineItemRows_FR025(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 
 	r, err := s.Query(t.Context(), priyaActs, Query{View: ViewCalendar})
@@ -120,6 +123,7 @@ func TestQuery_CalendarViewHasNoLineItemRows_FR025(t *testing.T) {
 // The Calendar gets today for the Today line and, on every row, the dates, Ongoing, owner, status and
 // planned cost its bars and tips show (FR-026).
 func TestQuery_TodayAndDatesForCalendar_FR026(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 
 	r, err := s.Query(t.Context(), priyaActs, Query{View: ViewCalendar})
@@ -152,6 +156,7 @@ func TestQuery_TodayAndDatesForCalendar_FR026(t *testing.T) {
 // A row's record that someone deleted is in the recycle bin: "This activity was deleted — it is in the
 // recycle bin" (edge case, D-123); a record that still exists is located with its plan.
 func TestLocate_DeletedRecordInRecycleBin_EdgeCase(t *testing.T) {
+	t.Parallel()
 	src := newFakeSource(seedYear())
 	src.inBin["A-9001"] = true
 	src.inBin["L-9001"] = true
@@ -173,6 +178,7 @@ func TestLocate_DeletedRecordInRecycleBin_EdgeCase(t *testing.T) {
 // A record that is gone and not in the recycle bin "no longer exists" (edge case); an ID of no planning
 // level is a record that does not exist.
 func TestLocate_UnknownRecord_EdgeCase(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 
 	for id, want := range map[string]string{
@@ -191,6 +197,7 @@ func TestLocate_UnknownRecord_EdgeCase(t *testing.T) {
 // the year's plans by name; the people who own something in the year's plans, by name, inactive ones kept;
 // the teams with the person's own first; the business units and activity types; the column catalogue.
 func TestOptions_YearsOwnersTeamsMineFirst_FR004(t *testing.T) {
+	t.Parallel()
 	src := newFakeSource(seedYear())
 	src.years[2024] = YearData{Nodes: []Node{}}
 	src.years[2027] = YearData{Nodes: []Node{{Level: LevelPlan, ID: "P-1003", Name: "FY2027 Global Brand"}}}
@@ -238,6 +245,7 @@ func TestOptions_YearsOwnersTeamsMineFirst_FR004(t *testing.T) {
 // leftOut (FR-031): a plan that is not a plan of the year, a person, team, business unit or activity type
 // that does not exist, an unknown column and an unknown sort column.
 func TestQuery_UnknownIdsAndColumnsLeftOut_FR031(t *testing.T) {
+	t.Parallel()
 	s, _ := newTestService(t, newFakeSource(seedYear()))
 	q := Query{
 		View: ViewGrid, Plans: []string{"P-1001", "P-9001"}, Owners: []string{"U-9001"}, Teams: []string{"T-9001"},

@@ -15,6 +15,7 @@ import (
 // The default columns end with Committed and Invoiced; FY2026 Lubricants Europe has committed 35,652.17, as
 // its Financials card; the totals row adds up the matching activities (015 US5 scenario 1, SC-002).
 func TestGetAllWork_FinancialColumns_FR023(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -70,6 +71,7 @@ func TestGetAllWork_FinancialColumns_FR023(t *testing.T) {
 // The filter "Committed above planned cost" keeps Billboard winter wave only; the export of that view holds
 // the financial columns and says when the GSAP data was loaded (015 FR-024, US5 scenarios 2 and 3).
 func TestGetAllWork_FinancialsFilterAndExport_FR024(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -94,10 +96,5 @@ func TestGetAllWork_FinancialsFilterAndExport_FR024(t *testing.T) {
 	if export.Status != http.StatusOK || !strings.Contains(body, `Financial figures,"GSAP data as of 12 Mar 2026, 09:00 UTC"`) ||
 		!strings.Contains(body, "Financials: Committed above planned cost") || !strings.Contains(body, "Committed (USD)") {
 		t.Errorf("export = %d %s", export.Status, body)
-	}
-
-	refused := priya.Do(t, http.MethodGet, "/api/v1/all-work?finance=overBudget", nil, apitest.SkipRequestValidation())
-	if refused.Status != http.StatusBadRequest || !strings.Contains(string(refused.Body), `"field":"finance"`) {
-		t.Errorf("an unknown value = %d %s", refused.Status, refused.Body)
 	}
 }

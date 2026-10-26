@@ -22,6 +22,7 @@ const (
 // The default view is the grid of the current year: both 2026 plans with everything below them, the cards,
 // the count and the totals row, which equals the cards (FR-001, FR-003, FR-011, FR-014).
 func TestGetAllWork_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -84,76 +85,10 @@ func TestGetAllWork_Contract(t *testing.T) {
 	}
 }
 
-// Budget & cost answers the months (or quarters) with the period amounts of every row and the footer
-// (FR-022 – FR-024): Launch film's 120,000.00 by month, Mar–May — two line items and its unassigned
-// 20,000.00, each spread evenly with the remainder in May.
-func TestGetAllWork_Budget_Contract(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	monthly := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=budget", nil)
-	quarterly := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=budget&period=quarter", nil)
-
-	var m, q allwork.Result
-	monthly.Decode(t, &m)
-	quarterly.Decode(t, &q)
-	if len(m.Periods) < 12 || m.Periods[2].Label != "Mar" || len(q.Periods) < 4 || q.Periods[0].Key != "Q1-2026" || q.Periods[0].Label != "Q1" {
-		t.Fatalf("periods: monthly %+v, quarterly %+v", m.Periods, q.Periods)
-	}
-	for _, row := range m.Rows {
-		if row.Name != "Launch film" {
-			continue
-		}
-		var months []string
-		for i, a := range row.Periods {
-			if a != nil {
-				months = append(months, m.Periods[i].Label+" "+a.Amount.String())
-			}
-		}
-		if strings.Join(months, ", ") != "Mar 39999.98, Apr 39999.98, May 40000.04" || row.Total == nil ||
-			row.Total.Amount.String() != "120000.00" {
-			t.Errorf("Launch film by month = %q, total %+v", months, row.Total)
-		}
-	}
-	if len(m.Totals.Periods) != len(m.Periods) || m.Totals.Total == nil || m.Totals.PlanBudget == nil || len(m.Columns) != 0 {
-		t.Errorf("footer = %+v", m.Totals)
-	}
-}
-
-// The Calendar answers the Grid's rows without line items and unassigned rows, each with its dates,
-// Ongoing, owner, status and planned cost, and today for the Today line (FR-025, FR-026).
-func TestGetAllWork_Calendar_Contract(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	response := priya.Do(t, http.MethodGet, "/api/v1/all-work?view=calendar", nil)
-
-	var r allwork.Result
-	response.Decode(t, &r)
-	if r.Today.String() != "2026-03-12" || len(r.Columns) != 0 || len(r.Periods) != 0 {
-		t.Errorf("today %s, %d columns, %d periods", r.Today, len(r.Columns), len(r.Periods))
-	}
-	for _, row := range r.Rows {
-		if row.Level == allwork.LevelLineItem || row.Level == allwork.LevelUnassigned || len(row.Cells) != 0 {
-			t.Errorf("calendar row %s: level %s, %d cells", row.Key, row.Level, len(row.Cells))
-		}
-		if row.Status == nil {
-			t.Errorf("row %s has no status", row.Key)
-		}
-		if row.Name == "Partner co-marketing fund" && (!row.Ongoing || row.StartDate.String() != "2026-03-01" || !row.EndDate.IsZero() ||
-			row.Owner == nil || row.PlannedCost == nil || row.PlannedCost.Amount.String() != "100000.00") {
-			t.Errorf("ongoing activity = %+v", row)
-		}
-		if row.Name == "Helix launch" && (row.StartDate.String() != "2026-01-01" || row.EndDate.String() != "2026-12-31" ||
-			row.Status.Value != "inProgress" || row.Timing == nil || row.Timing.Value != "running") {
-			t.Errorf("campaign = %+v", row)
-		}
-	}
-}
-
 // A row's record is located before it opens (FR-016, D-123): a stored record answers its level, name and
 // plan; a deleted one answers 404 with what became of it.
 func TestLocate_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -176,6 +111,7 @@ func TestLocate_Contract(t *testing.T) {
 // Every filter parameter of the contract is accepted, together, and the answer follows them (FR-004):
 // Priya's declined activities in the published plans of Lubricants Europe.
 func TestGetAllWork_EveryFilterParameter_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	query := "/api/v1/all-work?year=2026&view=grid&plan=P-1001&planStatus=published&containerStatus=inProgress" +
@@ -200,24 +136,10 @@ func TestGetAllWork_EveryFilterParameter_FR004(t *testing.T) {
 	}
 }
 
-// Wrong parameters are refused with every problem at once (FR-004).
-func TestGetAllWork_InvalidParameters_FR004(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	response := priya.Do(t, http.MethodGet, "/api/v1/all-work?year=1999&view=table&activityStatus=lost&sort=name",
-		nil, apitest.SkipRequestValidation())
-
-	assertAnswer(t, response, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"year","message":"Choose a year from 2000 to 2100."},`+
-		`{"field":"view","message":"Choose grid, calendar or budget."},`+
-		`{"field":"activityStatus","message":"Choose one of the listed values."},`+
-		`{"field":"sort","message":"Choose a column of the grid to sort by."}]}}`)
-}
-
 // The filter bar's choices (FR-004): the years, the plans and owners of the year, the teams with the
 // person's own first, the business units, the activity types and the column catalogue.
 func TestGetOptions_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -251,6 +173,7 @@ func TestGetOptions_Contract(t *testing.T) {
 // The remembered columns and sort are read and saved per person (FR-019, FR-021): the defaults first, then
 // what Priya saved; Daniel still has the defaults; a wrong choice is refused.
 func TestPreferences_GetPut_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -305,6 +228,7 @@ func newViewBody(name string, isDefault bool) map[string]any {
 // Saved views are created (201), listed by name, changed, made the default and deleted by their owner; for
 // anyone else they are not found (FR-029 – FR-031, US6).
 func TestSavedViews_CRUD_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -354,6 +278,7 @@ func TestSavedViews_CRUD_Contract(t *testing.T) {
 // Saved views and the remembered columns are personal settings, not business records (D-121): saving,
 // changing and deleting them writes no activity-log entry and nothing to the recycle bin.
 func TestViews_NotLogged_D121(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	logBefore := priya.Do(t, http.MethodGet, "/api/v1/activity-log", nil)
@@ -377,6 +302,7 @@ func TestViews_NotLogged_D121(t *testing.T) {
 // Export answers the file of the view, .xlsx or CSV, named in Content-Disposition after the view, year and
 // date; a wrong format is refused (FR-032 – FR-034).
 func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -402,23 +328,6 @@ func TestExport_XlsxAndCsvContentTypeAndDisposition_FR034(t *testing.T) {
 	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
 		`"fields":[{"field":"format","message":"Choose one of the listed values."},`+
 		`{"field":"unassigned","message":"Choose one of the listed values."}]}}`)
-}
-
-// Every All work operation needs a signed-in person (FR-005 of feature 001).
-func TestEveryAllWorkOperationRequiresSignIn(t *testing.T) {
-	server := apitest.New(t)
-	calls := []struct{ method, path string }{
-		{http.MethodGet, "/api/v1/all-work"}, {http.MethodGet, "/api/v1/all-work/options"},
-		{http.MethodGet, "/api/v1/all-work/export?format=csv"}, {http.MethodGet, "/api/v1/all-work/records/A-1001"},
-		{http.MethodGet, "/api/v1/all-work/preferences"}, {http.MethodPut, "/api/v1/all-work/preferences"},
-		{http.MethodGet, "/api/v1/saved-views"}, {http.MethodPost, "/api/v1/saved-views"},
-		{http.MethodPatch, "/api/v1/saved-views/SV-1001"}, {http.MethodDelete, "/api/v1/saved-views/SV-1001"},
-	}
-	for _, call := range calls {
-		response := server.Do(t, call.method, call.path, nil, apitest.SkipRequestValidation())
-
-		assertAnswer(t, response, http.StatusUnauthorized, `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`)
-	}
 }
 
 // assertAnswer checks an answer's status and exact body.

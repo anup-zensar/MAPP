@@ -23,6 +23,7 @@ func childrenOf(r Result, parentKey string) []string {
 // A sort orders the children of every parent — and the plans — ascending or descending, and without a sort
 // they are in the plan tree's order again; the hierarchy stays intact (FR-015, US3 scenario 2).
 func TestSort_ChildrenOfEveryParentAscDescDefault_FR015(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	ascending := view(b, Query{Sort: &Sort{Column: "plannedCost", Direction: SortAscending}})
 	descending := view(b, Query{Sort: &Sort{Column: "plannedCost", Direction: SortDescending}})
@@ -56,6 +57,7 @@ func TestSort_ChildrenOfEveryParentAscDescDefault_FR015(t *testing.T) {
 // Records without a value come last in both directions, statuses sort in their lifecycle order, and an
 // activity's unassigned row stays after its line items (FR-015).
 func TestSort_EmptyLast_StatusLifecycle_UnassignedStays_FR015(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	tests := []struct {
 		sort   Sort

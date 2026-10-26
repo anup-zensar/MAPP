@@ -30,6 +30,7 @@ func rolesOf(r Result) []string {
 // Each filter of FR-004 is tested on its level (FR-004, FR-005): the matching activities of each filter on
 // its own, on the demo year (with FY2026 Mobility China made a Strategic / AOP plan).
 func TestFilter_EachFilterOnItsLevel_FR004(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	b.node("P-1002").Strategic = true
 	lubricants := []string{"A-1001", "A-1002", "A-1003", "A-1004", "A-1005", "A-1006", "A-1007"}
@@ -65,6 +66,7 @@ func TestFilter_EachFilterOnItsLevel_FR004(t *testing.T) {
 // "Activity status: Declined" shows only the branches that lead to a declined activity (FR-005, US2
 // scenario 2): the containers above it hold the filter through it, and the cards count only the matches.
 func TestFilter_ActivityStatusShowsOnlyBranchesToMatches_FR005(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{ActivityStatuses: []string{"declined"}})
 
 	want := []string{"P-1001 match", "C-1002 match", "I-1004 match", "A-1006 match", "A-1006:unassigned match"}
@@ -83,6 +85,7 @@ func TestFilter_ActivityStatusShowsOnlyBranchesToMatches_FR005(t *testing.T) {
 // Filtering by owner shows that person's records; their parents appear as context rows, which the cards do
 // not count (FR-005, US2 scenario 3).
 func TestFilter_OwnerParentsAreContext_FR005(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{Owners: []string{daniel.ID}})
 
 	want := []string{"P-1001 context", "C-1002 match", "I-1003 match", "I-1004 match", "A-1007 match",
@@ -100,6 +103,7 @@ func TestFilter_OwnerParentsAreContext_FR005(t *testing.T) {
 // A filter tested only on higher levels holds for a record when its nearest ancestor at a tested level meets
 // it (FR-005, D-113): an activity follows its initiative's status and its plan's status.
 func TestFilter_HigherLevelFilterInheritedFromNearestAncestor_FR005(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 
 	approved := view(b, Query{ContainerStatuses: []string{"allApproved"}})
@@ -115,6 +119,7 @@ func TestFilter_HigherLevelFilterInheritedFromNearestAncestor_FR005(t *testing.T
 // Campaign / initiative status: values of one group — Approval progress or Timing — combine with OR, and
 // the two groups with AND; a record without dates has no Timing (FR-005, D-113).
 func TestFilter_ContainerStatusOrWithinGroupAndAcross_FR005(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		values                 []string
 		campaigns, initiatives []string
@@ -140,6 +145,7 @@ func TestFilter_ContainerStatusOrWithinGroupAndAcross_FR005(t *testing.T) {
 // the record's path is shown as context, the fields that matched are named, and a hit in a long text comes
 // with an excerpt (FR-006, US2 scenario 1).
 func TestSearch_MatchesNameIdExternalNameDescription_IgnoringCase_FR006(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	tests := []struct {
 		search, match string
@@ -177,6 +183,7 @@ func TestSearch_MatchesNameIdExternalNameDescription_IgnoringCase_FR006(t *testi
 // A line item whose name, ID or description holds the text makes its activity a match, and is marked
 // itself (FR-006).
 func TestSearch_LineItemHitMakesActivityMatch_FR006(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{Search: "venue"})
 
 	if got := matched(r, LevelActivity); !reflect.DeepEqual(got, []string{"A-1002"}) {
@@ -196,6 +203,7 @@ func TestSearch_LineItemHitMakesActivityMatch_FR006(t *testing.T) {
 // A matching container shows everything inside it (FR-006): its campaigns, initiatives and activities meet
 // the search through it.
 func TestSearch_MatchingContainerShowsEverythingInside_FR006(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{Search: "RIMULA"})
 
 	want := []string{"P-1001 context", "C-1002 match", "I-1003 match", "A-1005 match", "A-1005:unassigned match",
@@ -216,6 +224,7 @@ func TestSearch_MatchingContainerShowsEverythingInside_FR006(t *testing.T) {
 // Complete branches only keeps the branches that reach at least one activity (FR-007): the initiative
 // without activities goes, and so does a matching initiative whose activities a filter hides.
 func TestShowLevels_CompleteBranchesOnly_FR007(t *testing.T) {
+	t.Parallel()
 	all := view(seedYear(), Query{ShowLevels: ShowCompleteBranches})
 	if hasRow(all.Rows, "I-1007") || !hasRow(all.Rows, "I-1006") || all.Count.Shown != 10 {
 		t.Errorf("complete branches: Loyalty shown %v, Fleet cards shown %v, count %+v", hasRow(all.Rows, "I-1007"),
@@ -234,6 +243,7 @@ func TestShowLevels_CompleteBranchesOnly_FR007(t *testing.T) {
 // Campaigns without initiatives lists only campaigns that have no initiative at all, under their plans as
 // context, and the count counts campaigns (FR-007, FR-008).
 func TestShowLevels_CampaignsWithoutInitiatives_FR007(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	b.campaign("P-1002", "C-1004", "Brand awareness", owner(mei))
 
@@ -254,6 +264,7 @@ func TestShowLevels_CampaignsWithoutInitiatives_FR007(t *testing.T) {
 // Initiatives without activities lists only initiatives with no activity at all, under their plans and
 // campaigns as context, and the count counts initiatives (FR-007, FR-008, US2 scenario 4).
 func TestShowLevels_InitiativesWithoutActivities_FR007(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{ShowLevels: ShowInitiativesWithoutActivities})
 
 	if got := rolesOf(r); !reflect.DeepEqual(got, []string{"P-1002 context", "C-1003 context", "I-1007 match"}) {
@@ -267,6 +278,7 @@ func TestShowLevels_InitiativesWithoutActivities_FR007(t *testing.T) {
 // The count reads "Showing N of M activities", M being every activity of the year's plans, or counts
 // campaigns or initiatives under the last two Show levels choices (FR-008).
 func TestCount_ShowingNOfMWithNoun_FR008(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		q    Query
 		want Count
@@ -288,6 +300,7 @@ func TestCount_ShowingNOfMWithNoun_FR008(t *testing.T) {
 // For every combination of filters, search and Show levels tried, in every view, the totals row equals
 // the summary cards (FR-014, SC-003).
 func TestRollup_TotalsEqualSummaryCards_EveryFilterCombination_SC003(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	data := b.data()
 	for _, statuses := range [][]string{nil, {"declined"}, {"approved", "complete", "inProgress"}} {
@@ -311,6 +324,7 @@ func TestRollup_TotalsEqualSummaryCards_EveryFilterCombination_SC003(t *testing.
 // order (not in the order they were read), line items in creation order, the unassigned row last under its
 // activity; each row has its parent, depth and level.
 func TestTree_PlansByNameChildrenInPlanTreeOrder_FR011(t *testing.T) {
+	t.Parallel()
 	b := newYear()
 	zeta := b.plan("P-1001", "zeta plan")
 	alpha := b.plan("P-1002", "Alpha plan")
@@ -349,6 +363,7 @@ func TestTree_PlansByNameChildrenInPlanTreeOrder_FR011(t *testing.T) {
 // line items, with the amount, negative when its line items exceed its planned cost; an activity with a
 // balance of 0.00, or with neither a planned cost nor a line item, gets none (FR-012).
 func TestUnassignedRows_OnlyNonZeroBalances_FR012(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{})
 
 	var unassigned []string

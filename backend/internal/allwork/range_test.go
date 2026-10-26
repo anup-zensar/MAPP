@@ -133,6 +133,7 @@ func levelKeys(r Result, levels ...Level) []string {
 // A range is yearFrom to yearTo, at most 5 years; year is the alias of a one-year range; a longer or reversed
 // range is refused on yearTo (FR-034, D-269).
 func TestQuery_YearRange_FR034(t *testing.T) {
+	t.Parallel()
 	q, err := ParseQuery(url.Values{"yearFrom": {"2026"}, "yearTo": {"2027"}})
 	alias, aliasErr := ParseQuery(url.Values{"year": {"2025"}})
 	_, tooLong := ParseQuery(url.Values{"yearFrom": {"2026"}, "yearTo": {"2031"}})
@@ -155,6 +156,7 @@ func TestQuery_YearRange_FR034(t *testing.T) {
 // The view over a range reads every year of it: the plans of both years, each plan row with its year, the
 // count over the range (FR-034).
 func TestTree_PlansOfEveryYear_FR034(t *testing.T) {
+	t.Parallel()
 	nodes := twoYears()
 	src := newFakeSource(newYear())
 	src.years = map[int]YearData{}
@@ -198,6 +200,7 @@ func TestTree_PlansOfEveryYear_FR034(t *testing.T) {
 
 // Yearly gives one column per year of the range (FR-035).
 func TestPeriods_Yearly_FR035(t *testing.T) {
+	t.Parallel()
 	r := rangeView(twoYears(), Query{View: ViewBudget, Period: PeriodYear}, 2026, 2027).result
 
 	if got := periodKeys(r); !slices.Equal(got, []string{"2026", "2027"}) {
@@ -219,6 +222,7 @@ func periodKeys(r Result) []string {
 
 // Quarterly over two years has the keys Q1-2026 … Q4-2027 and the labels "Q1 2026" … (FR-035).
 func TestPeriods_QuarterKeysAcrossYears_FR035(t *testing.T) {
+	t.Parallel()
 	r := rangeView(twoYears(), Query{View: ViewBudget, Period: PeriodQuarter}, 2026, 2027).result
 
 	want := []string{"Q1-2026", "Q2-2026", "Q3-2026", "Q4-2026", "Q1-2027", "Q2-2027", "Q3-2027", "Q4-2027"}
@@ -233,6 +237,7 @@ func TestPeriods_QuarterKeysAcrossYears_FR035(t *testing.T) {
 
 // Amounts outside the range are under Other years (FR-035).
 func TestPeriods_OtherYearsOutsideRange_FR035(t *testing.T) {
+	t.Parallel()
 	nodes := twoYears()
 	for i := range nodes {
 		if nodes[i].ID == "L-1" { // part of Agency in 2028
@@ -249,6 +254,7 @@ func TestPeriods_OtherYearsOutsideRange_FR035(t *testing.T) {
 
 // Plan type and Plan currency are tested on plans (FR-037).
 func TestFilters_PlanTypeAndCurrency_FR037(t *testing.T) {
+	t.Parallel()
 	byType := rangeView(twoYears(), Query{PlanTypes: []string{"crossMarket"}}, 2026, 2027).result
 	byCurrency := rangeView(twoYears(), Query{PlanCurrencies: []string{"USD"}}, 2026, 2027).result
 
@@ -263,6 +269,7 @@ func TestFilters_PlanTypeAndCurrency_FR037(t *testing.T) {
 // The Standard columns Year, Plan type, Plan currency, Plan budget (plan currency) and Planned cost (plan
 // currency) (FR-037).
 func TestColumns_YearTypeCurrencyPlanAmounts_FR037(t *testing.T) {
+	t.Parallel()
 	nodes := twoYears()
 	for i := range nodes {
 		switch nodes[i].ID {
@@ -310,6 +317,7 @@ func cell016(c *Cell) string {
 // periods where the planned cost is above it (FR-038): P-2001 is phased at 1,000.00 a month; March holds A-3's
 // 8,000.00 and June the 3,000.00 of A-4's line item.
 func TestCompare_PhasedBudgetAndOverPeriods_FR038(t *testing.T) {
+	t.Parallel()
 	var year2027 []Node
 	for _, n := range twoYears() {
 		if n.PlanID == "P-2001" {
@@ -339,6 +347,7 @@ func TestCompare_PhasedBudgetAndOverPeriods_FR038(t *testing.T) {
 // A saved view of 010 (only year) reads as the range year–year with the new filters empty (FR-043,
 // data-model §5.2).
 func TestViews_OldYearReadAsRange_FR043(t *testing.T) {
+	t.Parallel()
 	old := ViewState{View: ViewGrid, Year: 2026, Filters: Filters{Strategic: StrategicInclude, ShowLevels: ShowEverything},
 		Expansion: Expansion{Mode: "default"}, Period: PeriodMonth, CalendarLayout: "timeline"}
 
@@ -360,6 +369,7 @@ func TestViews_OldYearReadAsRange_FR043(t *testing.T) {
 // dates — the web app draws the year and quarter bands and "Continues from / into" at the range's edges from
 // the range the result states — and, as in one year, no line-item or unassigned rows.
 func TestQuery_CalendarOverRange_FR036(t *testing.T) {
+	t.Parallel()
 	r := rangeView(twoYears(), Query{View: ViewCalendar}, 2026, 2027).result
 
 	dates := map[string][2]string{}

@@ -69,6 +69,7 @@ func rowNamed(t *testing.T, table [][]string, name string) []string {
 // The file holds every matching and context row — collapsed branches too — with Level, Path and Name, the
 // view's columns in order and the totals row; context rows are marked (FR-032, US7 scenario 1).
 func TestExport_GridHasEveryRowLevelPathColumnsTotals_FR032(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	f := exportOf(t, b, Query{}, FormatCSV, true)
 
@@ -129,6 +130,7 @@ func slicesIndex(table [][]string, name string) int {
 // The Calendar exports each record's ID, status, dates, owner and planned cost; Budget & cost its Plan
 // budget, its periods and its total (FR-032, US7 scenario 2).
 func TestExport_CalendarAndBudgetColumns_FR032(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 
 	_, calendar := csvLines(t, exportOf(t, b, Query{View: ViewCalendar}, FormatCSV, true))
@@ -159,6 +161,7 @@ func TestExport_CalendarAndBudgetColumns_FR032(t *testing.T) {
 // Money is exported as numbers in the display currency, with the currency in the heading; a local amount
 // has a Currency column beside it; dates are dates and statuses words (FR-033).
 func TestExport_MoneyNumbersCurrencyHeadingsDatesStatusWords_FR033(t *testing.T) {
+	t.Parallel()
 	eur := Currency{Code: "EUR", Rate: mustRate("0.92")}
 	q := Query{Columns: []string{"plannedCost", "startDate", "status", "lineItem.localPlannedCost", "budgetUsed"}}
 	f := exportOf(t, seedYear(), q, FormatXLSX, true, eur)
@@ -204,6 +207,7 @@ func TestExport_MoneyNumbersCurrencyHeadingsDatesStatusWords_FR033(t *testing.T)
 // exporter and time — on an "About this export" sheet in a spreadsheet — and its name gives the view, year
 // and date (FR-034).
 func TestExport_NotesBeforeData_AboutSheet_FileName_FR034(t *testing.T) {
+	t.Parallel()
 	b := seedYear()
 	q := Query{ActivityStatuses: []string{"declined"}, Owners: []string{priya.ID}, Strategic: StrategicExclude,
 		Search: "fleet", ShowLevels: ShowCompleteBranches}
@@ -255,6 +259,7 @@ func TestExport_NotesBeforeData_AboutSheet_FileName_FR034(t *testing.T) {
 // Unassigned planned cost rows are exported as the screen shows them: with the switch on, not with it off
 // (FR-012).
 func TestExport_UnassignedFollowsSwitch_FR012(t *testing.T) {
+	t.Parallel()
 	count := func(unassigned bool) int {
 		_, table := csvLines(t, exportOf(t, seedYear(), Query{}, FormatCSV, unassigned))
 		n := 0

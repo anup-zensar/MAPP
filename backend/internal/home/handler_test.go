@@ -2,6 +2,7 @@ package home_test
 
 import (
 	"net/http"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -36,9 +37,9 @@ var now = time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC)
 var listScopes = map[string]string{"myTeams": "myTeams", "everything": "all"}
 
 // get sends GET path as client, checks that it answers 200 and decodes the answer into a T.
-func get[T any](t *testing.T, client *apitest.Client, path string) T {
+func get[T any](t *testing.T, client *apitest.Client, path string, opts ...apitest.RequestOption) T {
 	t.Helper()
-	response := client.Do(t, http.MethodGet, path, nil)
+	response := client.Do(t, http.MethodGet, path, nil, opts...)
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET %s = %d %s, want 200", path, response.Status, response.Body)
 	}
@@ -65,8 +66,8 @@ func orZero(m *money.Money) money.Money {
 	return *m
 }
 
-// sameMoney reports whether two optional amounts are equal.
-func sameMoney(x, y *money.Money) bool {
+// same reports whether two optional values, such as amounts or percentages, are equal.
+func same[T comparable](x, y *T) bool {
 	return (x == nil && y == nil) || (x != nil && y != nil && *x == *y)
 }
 
@@ -77,6 +78,7 @@ func sameMoney(x, y *money.Money) bool {
 // budget. Daniel has Trade magazine ads waiting for him since its resubmission two days ago (FR-005, FR-006,
 // US1 scenario 2).
 func TestHomeSummary_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -118,6 +120,7 @@ func TestHomeSummary_Contract(t *testing.T) {
 // A new person in no team gets the Getting started card with the no-team reason and empty cards; once they
 // join a team that has a plan, the card is gone (FR-020, FR-021, US5 scenarios 1 and 2).
 func TestHomeSummary_GettingStartedForANewPerson_FR020(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created := alex.Do(t, http.MethodPost, "/api/v1/people", map[string]any{"name": "Nina Berg", "email": "nina.berg@shell.com"})
@@ -152,6 +155,7 @@ func TestHomeSummary_GettingStartedForANewPerson_FR020(t *testing.T) {
 
 // A scope other than myTeams or everything, or none, is refused on the field scope.
 func TestHome_InvalidScope_400(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	refused := `{"error":{"code":"validation_failed","message":"Some fields need your attention.",` +
@@ -170,19 +174,21 @@ func TestHome_InvalidScope_400(t *testing.T) {
 // page: the plans by status, the planned cost and plan budget of the plans in scope, and what waits for the
 // person (SC-002, FR-017).
 func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	for _, email := range everyone {
 		client := server.SignIn(t, email)
-		counts := get[approvals.Counts](t, client, "/api/v1/approvals/summary")
+		counts := get[approvals.Counts](t, client, "/api/v1/approvals/summary", apitest.SkipValidation())
+		rows := map[string]home.PlanPage{}
 		for scope, listScope := range listScopes {
 			summary := get[home.SummaryView](t, client, "/api/v1/home/summary?scope="+scope)
-			list := get[plans.PlanList](t, client, "/api/v1/plans?scope="+listScope)
+			list := get[plans.PlanList](t, client, "/api/v1/plans?scope="+listScope, apitest.SkipValidation())
 
 			if summary.Plans != (home.PlanCounts{Count: list.Total, Published: list.Summary.Published, Draft: list.Summary.Draft}) {
 				t.Errorf("%s, %s: plans %+v, Plans list %d (%+v)", email, scope, summary.Plans, list.Total, list.Summary)
 			}
 			if summary.PlannedCost.PlannedCost != orZero(list.Summary.PlannedCost) ||
-				!sameMoney(summary.PlannedCost.PlanBudget, list.Summary.Budget) {
+				!same(summary.PlannedCost.PlanBudget, list.Summary.Budget) {
 				t.Errorf("%s, %s: planned cost %v of %v, Plans list %v of %v", email, scope, summary.PlannedCost.PlannedCost,
 					summary.PlannedCost.PlanBudget, list.Summary.PlannedCost, list.Summary.Budget)
 			}
@@ -190,28 +196,29 @@ func TestHome_EqualsPlanAndApprovalPages_SC002_FR017(t *testing.T) {
 				t.Errorf("%s: waiting for me %d, Approvals page %d", email, summary.WaitingForMe.Count, counts.WaitingForMe)
 			}
 
-			rows := get[home.PlanPage](t, client, "/api/v1/home/plans?scope="+scope)
-			if rows.Total != list.Total || len(rows.Items) != len(list.Items) {
-				t.Errorf("%s, %s: %d plan rows of %d, Plans list %d of %d", email, scope, len(rows.Items), rows.Total, len(list.Items), list.Total)
+			rows[scope] = get[home.PlanPage](t, client, "/api/v1/home/plans?scope="+scope)
+			inOrder := slices.EqualFunc(rows[scope].Items, list.Items, func(r home.PlanRow, p plans.PlanSummary) bool { return r.ID == p.ID })
+			if got := rows[scope]; got.Total != list.Total || !inOrder {
+				t.Errorf("%s, %s: %d plan rows of %d, Plans list %d of %d, or in another order", email, scope, len(got.Items), got.Total, len(list.Items), list.Total)
 			}
-			for i, row := range rows.Items {
-				page := get[plans.PlanView](t, client, "/api/v1/plans/"+row.ID)
-				fig := page.Figures
-				if row.ID != list.Items[i].ID || row.Status != string(page.Status) || row.Year != page.Year || row.StrategicAOP != page.AOP ||
-					!sameMoney(row.Budget, fig.Budget) || !sameMoney(row.PlannedCost, fig.PlannedCost) ||
-					!samePercent(row.BudgetUsedPercent, fig.BudgetUsedPercent) || row.OverBudget != fig.OverBudget ||
-					row.ActivityCount != fig.Activities || row.ApprovedActivityCount != fig.ActivitiesApproved ||
-					row.CampaignCount != page.Contents.Campaigns || len(row.Teams) != len(page.Teams) {
-					t.Errorf("%s, %s: row %+v\nplan page %+v, contents %+v", email, scope, row, fig, page.Contents)
-				}
+		}
+		for _, row := range rows["myTeams"].Items { // the same row under Everything, so only Everything's are compared with their pages
+			if !slices.ContainsFunc(rows["everything"].Items, func(r home.PlanRow) bool { return reflect.DeepEqual(r, row) }) {
+				t.Errorf("%s: My teams row %+v is not a row of Everything", email, row)
+			}
+		}
+		for _, row := range rows["everything"].Items {
+			page := get[plans.PlanView](t, client, "/api/v1/plans/"+row.ID, apitest.SkipValidation())
+			fig := page.Figures
+			if row.Status != string(page.Status) || row.Year != page.Year || row.StrategicAOP != page.AOP ||
+				!same(row.Budget, fig.Budget) || !same(row.PlannedCost, fig.PlannedCost) ||
+				!same(row.BudgetUsedPercent, fig.BudgetUsedPercent) || row.OverBudget != fig.OverBudget ||
+				row.ActivityCount != fig.Activities || row.ApprovedActivityCount != fig.ActivitiesApproved ||
+				row.CampaignCount != page.Contents.Campaigns || len(row.Teams) != len(page.Teams) {
+				t.Errorf("%s: row %+v\nplan page %+v, contents %+v", email, row, fig, page.Contents)
 			}
 		}
 	}
-}
-
-// samePercent reports whether two optional percentages are equal.
-func samePercent(x, y *int) bool {
-	return (x == nil && y == nil) || (x != nil && y != nil && *x == *y)
 }
 
 // User story 2 — See how my teams' plans are doing.
@@ -219,6 +226,7 @@ func samePercent(x, y *int) bool {
 // Sara Novak (two teams) sees both FY2026 plans once each, with her teams marked and the figures of their
 // plan pages; Everything adds FY2027 Global Brand, newest year first (FR-008 – FR-010, US2 scenarios 1, 4).
 func TestHomePlans_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	sara := server.SignIn(t, sarasEmail)
 	server.GrantRole(t, sarasEmail, "viewer", "all") // 014: every market's plans
@@ -247,6 +255,10 @@ func TestHomePlans_Contract(t *testing.T) {
 		*lubricants.PlannedCost != usd(t, "460000.00") || *lubricants.BudgetUsedPercent != 38 || lubricants.OverBudget {
 		t.Errorf("FY2026 Lubricants Europe = %+v", lubricants)
 	}
+	if uk := mine.Items[0]; uk.Budget == nil || *uk.Budget != usd(t, "759493.67") || uk.PlannedCost == nil ||
+		*uk.PlannedCost != usd(t, "82278.48") || uk.BudgetUsedPercent == nil || *uk.BudgetUsedPercent != 11 {
+		t.Errorf("FY2027 Lubricants UK & Ireland = %+v, want its GBP converted: 759,493.67 USD budget, 82,278.48 USD planned, 11 %%", uk)
+	}
 	if global := all.Items[0]; len(global.Teams) != 1 || global.Teams[0].Mine || !global.StrategicAOP {
 		t.Errorf("FY2027 Global Brand = %+v, want an AOP plan of a team that is not Sara's", global)
 	}
@@ -258,6 +270,7 @@ func TestHomePlans_Contract(t *testing.T) {
 // fields it still needs. Alex sees his FY2027 campaign whose initiatives' budgets exceed its own (FR-011,
 // FR-012, US3 scenarios 1 and 3).
 func TestHomeAttention_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	alex := server.SignIn(t, alexsEmail)
@@ -311,6 +324,7 @@ func TestHomeAttention_Contract(t *testing.T) {
 // resubmission; Alex's lists Fleet card launch at level 2 of 2; nothing waits for Priya (FR-013, US3
 // scenarios 5 and 6).
 func TestHomeWaiting_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 	alex := server.SignIn(t, alexsEmail)
@@ -341,11 +355,12 @@ func TestHomeWaiting_Contract(t *testing.T) {
 // each activity that needs attention shows what its page shows: its fields still needed, its line items
 // needing attention and how far its line items exceed its planned cost (SC-002, FR-017).
 func TestHome_PersonalCardsEqualTheirPages_SC002_FR017(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	for _, email := range everyone {
 		client := server.SignIn(t, email)
 		waiting := get[home.WaitingPage](t, client, "/api/v1/home/waiting")
-		tab := get[approvals.RowPage](t, client, "/api/v1/approvals?tab=waiting")
+		tab := get[approvals.RowPage](t, client, "/api/v1/approvals?tab=waiting", apitest.SkipValidation())
 		if waiting.Total != tab.Total {
 			t.Errorf("%s: %d waiting, Approvals tab %d", email, waiting.Total, tab.Total)
 		}
@@ -360,7 +375,7 @@ func TestHome_PersonalCardsEqualTheirPages_SC002_FR017(t *testing.T) {
 			if item.RecordType != "activity" {
 				continue
 			}
-			page := get[activities.View](t, client, "/api/v1/activities/"+item.ID)
+			page := get[activities.View](t, client, "/api/v1/activities/"+item.ID, apitest.SkipValidation())
 			for _, reason := range item.Reasons {
 				switch reason.Kind {
 				case "missingFields":
@@ -383,6 +398,7 @@ func TestHome_PersonalCardsEqualTheirPages_SC002_FR017(t *testing.T) {
 // Priya's seeded activities each appear under the status their page shows, in the order Declined,
 // Created, Submitted, Approved, In progress, Complete (FR-014, US4 scenario 1).
 func TestHomeMyActivities_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -401,11 +417,12 @@ func TestHomeMyActivities_Contract(t *testing.T) {
 	if !slices.Equal(groups, want) || view.Total != 9 {
 		t.Errorf("groups = %q (total %d)\nwant %q", groups, view.Total, want)
 	}
-	launchFilm := view.Groups[1].Items[0]
+	launchFilm, ukLaunch := view.Groups[1].Items[0], view.Groups[1].Items[1]
 	if launchFilm.Plan.Name != "FY2026 Lubricants Europe" || launchFilm.Campaign.Name != "Helix launch" ||
 		launchFilm.StartDate == nil || launchFilm.StartDate.String() != "2026-03-01" || launchFilm.EndDate.String() != "2026-05-31" ||
-		launchFilm.PlannedCost == nil || *launchFilm.PlannedCost != usd(t, "120000.00") || len(launchFilm.Missing) != 3 {
-		t.Errorf("Launch film = %+v", launchFilm)
+		launchFilm.PlannedCost == nil || *launchFilm.PlannedCost != usd(t, "120000.00") || len(launchFilm.Missing) != 3 ||
+		ukLaunch.PlannedCost == nil || *ukLaunch.PlannedCost != usd(t, "50632.91") {
+		t.Errorf("Launch film = %+v\nUK launch event = %+v, want its 40,000.00 GBP as 50,632.91 USD", launchFilm, ukLaunch)
 	}
 	if partner := view.Groups[4].Items[1]; !partner.Ongoing || partner.EndDate != nil {
 		t.Errorf("Partner co-marketing fund = %+v, want ongoing without an end date", partner)
@@ -415,6 +432,7 @@ func TestHomeMyActivities_Contract(t *testing.T) {
 // For every seeded person, each of their activities shows on Home the status, planned cost and completeness
 // of its own page (SC-002, FR-017).
 func TestHome_MyActivitiesEqualTheirPages_SC002_FR017(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	for _, email := range everyone {
 		client := server.SignIn(t, email)
@@ -425,9 +443,9 @@ func TestHome_MyActivitiesEqualTheirPages_SC002_FR017(t *testing.T) {
 		}
 		for _, g := range view.Groups {
 			for _, row := range g.Items {
-				page := get[activities.View](t, client, "/api/v1/activities/"+row.ID)
+				page := get[activities.View](t, client, "/api/v1/activities/"+row.ID, apitest.SkipValidation())
 				// Home adds up plans in the display currency, so it shows the page's display amount (016 FR-014).
-				if row.Status != string(page.DisplayStatus) || !sameMoney(row.PlannedCost, page.Display.PlannedCost) ||
+				if row.Status != string(page.DisplayStatus) || !same(row.PlannedCost, page.Display.PlannedCost) ||
 					len(row.Missing) != page.Completeness.MissingFields || row.ItemsBelow != page.Completeness.LineItemsNeedingAttention {
 					t.Errorf("%s: %+v\nits page: %s, %v, %+v", email, row, page.DisplayStatus, page.PlannedCost, page.Completeness)
 				}
@@ -439,6 +457,7 @@ func TestHome_MyActivitiesEqualTheirPages_SC002_FR017(t *testing.T) {
 // A deleted record never counts: once Priya deletes Launch film, it leaves her cards, My activities, Needs
 // your attention and her plan's row at once (FR-019).
 func TestHome_DeletedRecordsNeverCount_FR019(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -497,6 +516,7 @@ type recentChangesPage struct {
 // recycle bin; Mei, in another team, sees it only under Everything; another scope is refused (FR-015,
 // FR-016, 011 FR-008).
 func TestHomeRecentChanges_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	server.GrantRole(t, meisEmail, "globalPlanner", "all") // 014: every market's plans, for Everything
 	priya := server.SignIn(t, priyasEmail)

@@ -11,6 +11,7 @@ import (
 // End date, Plan budget, Planned cost, Line items, Unassigned planned cost, then 015's Committed and
 // Invoiced; Name is always shown and is not a column (FR-019, 015 FR-023).
 func TestColumns_DefaultColumns_FR019(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{})
 
 	var keys []string
@@ -40,6 +41,7 @@ func TestColumns_DefaultColumns_FR019(t *testing.T) {
 // Shell attributes in Settings' order; a new attribute is offered at once, an inactive one only while a
 // person's columns still name it, and no field that Finance or GSAP fill later is offered (FR-018).
 func TestColumns_StandardGroupAndLevelGroups_FR018(t *testing.T) {
+	t.Parallel()
 	columns := catalogue(fixtureAttributes)
 
 	groups := columnGroupsOf(offered(columns))
@@ -93,6 +95,7 @@ func TestColumns_StandardGroupAndLevelGroups_FR018(t *testing.T) {
 // shows its label, a % split its shares, a number stays a number, a yes/no is Yes or No (FR-020, US3
 // scenario 1).
 func TestCells_BlankOnOtherLevels_DashOnOwnLevel_SplitShares_FR020(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{Columns: []string{"attr.SA-1003", "attr.SA-1020", "attr.SA-1021", "plan.model",
 		"activity.ongoing", "lineItem.localPlannedCost", "lineItem.swbsStatus"}})
 
@@ -133,6 +136,7 @@ func TestCells_BlankOnOtherLevels_DashOnOwnLevel_SplitShares_FR020(t *testing.T)
 
 // Inactive options, types and people still appear, labelled "(inactive)" (edge case).
 func TestCells_InactiveValuesLabelled_EdgeCase(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{Columns: []string{"attr.SA-1004", "attr.SA-1020", "activity.type", "owner"}})
 
 	tests := []struct{ row, column, want string }{
@@ -157,6 +161,7 @@ func TestCells_InactiveValuesLabelled_EdgeCase(t *testing.T) {
 // owner, dates (plans: the whole year; "Ongoing"), money in the display currency, and a blank cell on
 // levels a column does not cover.
 func TestCells_StandardColumnsPerLevel_FR011_FR017(t *testing.T) {
+	t.Parallel()
 	r := view(seedYear(), Query{Columns: allColumns()})
 
 	tests := []struct{ row, column, want string }{
