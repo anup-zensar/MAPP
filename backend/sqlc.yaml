@@ -1,0 +1,16 @@
+version: "2"
+sql:
+  - engine: postgresql
+    schema: internal/platform/database/migrations
+    queries: internal/platform/database/queries
+    gen:
+      go:
+        package: sqlcdb
+        out: internal/platform/database/sqlcdb
+        sql_package: pgx/v5
+        emit_empty_slices: true
+        overrides:
+          - db_type: timestamptz
+            go_type: time.Time
+          - db_type: pg_catalog.int4
+            go_type: int
