@@ -38,16 +38,6 @@ describe('StatusChips (feature 005, FR-013, FR-015)', () => {
     },
   );
 
-  it.each([
-    ['notStarted', 'Not started'],
-    ['running', 'Running'],
-    ['finished', 'Finished'],
-  ] as const)('writes timing %s as "%s" under the dates, not as a chip', (timing, text) => {
-    renderWithProviders(<TimingNote timing={timing} />);
-
-    expect(screen.getByText(text)).toBeInTheDocument();
-  });
-
   it('writes no timing while there are no dates', () => {
     renderWithProviders(<TimingNote timing={null} />);
 

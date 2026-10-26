@@ -41,6 +41,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
         "Year can't change once the plan is saved — copy the plan into the next year or create a new plan.",
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /Year/ })).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /Plan name/ })).toHaveValue(
       'FY2026 Lubricants Europe',
     );
