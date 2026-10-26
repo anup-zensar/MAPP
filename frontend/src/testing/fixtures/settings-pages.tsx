@@ -2,11 +2,12 @@ import { screen } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import type { HttpHandler } from 'msw';
 import type { ReactElement } from 'react';
-import { ModelsPage } from '@/features/settings';
+import { ActivityTypesPage, ModelsPage } from '@/features/settings';
 import { closestTo } from '../dom';
 import { mockApi } from '../mock-api';
 import { renderWithProviders } from '../render';
 import { reply } from '../replies';
+import { TYPES } from './activity-types';
 import { ACTIVITY_TYPES, MODELS } from './settings';
 import { testUser } from './users';
 
@@ -15,6 +16,17 @@ export function renderModelsPage(answers: HttpHandler[] = [], route = '/settings
   return renderSettingsPage(<ModelsPage />, '/settings/models', route, [
     reply('GET /api/v1/models', { body: MODELS }),
     reply('GET /api/v1/activity-types', { body: ACTIVITY_TYPES }),
+    ...answers,
+  ]);
+}
+
+export function renderActivityTypesPage(
+  answers: HttpHandler[] = [],
+  route = '/settings/activity-types',
+) {
+  return renderSettingsPage(<ActivityTypesPage />, '/settings/activity-types', route, [
+    reply('GET /api/v1/activity-types', { body: TYPES }),
+    reply('GET /api/v1/models', { body: MODELS }),
     ...answers,
   ]);
 }
