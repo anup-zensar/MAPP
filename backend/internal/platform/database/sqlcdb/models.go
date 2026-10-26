@@ -8,9 +8,47 @@ import (
 	"time"
 )
 
+type ActivityLog struct {
+	ID              string
+	Seq             int
+	At              time.Time
+	ActorID         string
+	ActorName       string
+	Action          string
+	Verb            string
+	RecordType      string
+	RecordTypeLabel string
+	RecordID        string
+	RecordName      string
+	Path            []byte
+	Changes         []byte
+	Comment         string
+	Details         string
+	Items           []byte
+}
+
 type Counter struct {
 	Prefix string
 	Last   int
+}
+
+type RecycleBin struct {
+	ID               string
+	RecordType       string
+	RecordTypeLabel  string
+	RecordID         string
+	RecordName       string
+	Path             []byte
+	Parent           []byte
+	DeletedAt        time.Time
+	DeletedByID      string
+	DeletedByName    string
+	Contents         []byte
+	Snapshots        []byte
+	ResolutionHow    *string
+	ResolutionByID   *string
+	ResolutionByName *string
+	ResolutionAt     *time.Time
 }
 
 type SampleFolder struct {
