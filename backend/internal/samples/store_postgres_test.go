@@ -240,20 +240,18 @@ func TestPostgresStoreRefusesBrokenDataFR004(t *testing.T) {
 	}
 }
 
-// TestPostgresStoreRacingRenamesFR006 lets two people rename the same folder from version 1 at once: both have
-// read it before either saves. One save wins; the other must be refused, never overwrite it.
+// TestPostgresStoreRacingRenamesFR006 lets two people save a rename of the same folder from version 1 at
+// once. One save wins; the other must be refused with version_conflict, never overwrite it.
 func TestPostgresStoreRacingRenamesFR006(t *testing.T) {
 	t.Parallel()
 	db, s := newStore(t)
 	putFolders(t, db, s, newFolder("SF-1001", "Ideas"))
-	race := &renameRace{tx: db, repo: s}
-	race.bothRead.Add(2)
 
 	var renames sync.WaitGroup
 	names := []string{"Plans", "Notes"}
 	results := make([]error, len(names))
 	for i, name := range names {
-		renames.Go(func() { results[i] = race.renameFromVersion1(t.Context(), name) })
+		renames.Go(func() { results[i] = renameFromVersion1(t.Context(), db, s, name) })
 	}
 	renames.Wait()
 
@@ -271,31 +269,19 @@ func TestPostgresStoreRacingRenamesFR006(t *testing.T) {
 	}
 }
 
-// renameRace renames a folder as the samples service does, in a transaction of any store.Transactor.
-type renameRace struct {
-	tx       store.Transactor
-	repo     samples.Repository
-	bothRead sync.WaitGroup
-}
-
-func (r *renameRace) renameFromVersion1(ctx context.Context, name string) error {
-	firstAttempt := true
-	return r.tx.Write(ctx, func(ctx context.Context) error {
-		folder, _, err := r.repo.GetFolder(ctx, "SF-1001")
+// renameFromVersion1 renames the folder as the samples service does, in a transaction of any store.Transactor.
+func renameFromVersion1(ctx context.Context, tx store.Transactor, repo samples.Repository, name string) error {
+	return tx.Write(ctx, func(ctx context.Context) error {
+		folder, _, err := repo.GetFolder(ctx, "SF-1001")
 		if err != nil {
 			return err
-		}
-		if firstAttempt {
-			firstAttempt = false
-			r.bothRead.Done()
-			r.bothRead.Wait()
 		}
 		if conflict := folder.CheckVersion(1, "sample folder"); conflict != nil {
 			return conflict
 		}
 		folder.Name = name
 		folder.Touch(daniel, changedAt)
-		return r.repo.PutFolder(ctx, folder)
+		return repo.PutFolder(ctx, folder)
 	})
 }
 

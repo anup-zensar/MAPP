@@ -23,27 +23,33 @@ by goose's requirements: `golang.org/x/net` v0.60.0 → v0.61.0 (2026-10-09), `g
 v0.24.0 (2026-09-23), `golang.org/x/text` v0.42.0 → v0.43.0 (2026-10-09). No ADR is needed: all four are the
 constitution's named stack (B1).
 
-## R2 — Transactions: serializable `Write` with retry, snapshot `Read`
+## R2 — Transactions: one `Write` at a time, snapshot `Read`
 
-- **Decision**: `database.DB` implements today's `store.Transactor`. `Write` runs one `SERIALIZABLE`
-  transaction carried in the context and runs the function again (at most 5 attempts) when PostgreSQL
-  aborts it with a serialization failure (`40001`) or a deadlock (`40P01`); the function's own error is
-  returned unchanged. `Read` runs `REPEATABLE READ READ ONLY` (one consistent snapshot). Inside a
-  transaction both join it; `Write` inside `Read` returns `ErrReadOnly`. `Queries(ctx)` gives the sqlc
-  queries of the transaction in the context (or of the pool outside one).
+- **Decision**: `database.DB` implements today's `store.Transactor`. `Write` runs one `READ COMMITTED`
+  transaction carried in the context whose first statement takes a transaction-scoped advisory lock
+  (`pg_advisory_xact_lock`), so Writes run one at a time — across API processes too — and each statement
+  sees everything committed before it. The function's own error is returned unchanged; there are no
+  retries, so the function runs exactly once. `Read` runs `REPEATABLE READ READ ONLY` (one consistent
+  snapshot) and never waits for Writes. Inside a transaction both join it; `Write` inside `Read` returns
+  `ErrReadOnly`. `Queries(ctx)` gives the sqlc queries of the transaction in the context (or of the pool
+  outside one).
 - **Rationale**: the `Transactor` contract services rely on promises a `Write` "exclusive access" — the JSON
   store serialises writes with a mutex. Services are full of read-check-write rules (version checks, "name
-  unique ignoring case", readable-ID counters, "one open round per activity"). Under `READ COMMITTED`
-  every one of them would race; serializable isolation keeps them correct without rewriting a single
-  service. A retried attempt re-reads, so a lost race becomes an ordinary `version_conflict`. Measured in
-  the pilot: the racing-renames test fails under `READ COMMITTED` (both saves succeed) and passes under
-  `SERIALIZABLE`.
-- **Alternatives**: `READ COMMITTED` plus conditional updates (`WHERE version = $n`) in every store, as in
-  `GO_STANDARDS.md` §6 — rejected for this migration: it moves rules into SQL area by area and still leaves
-  uniqueness and counter races; the guide's sample is corrected in the documentation task. Retrying in
-  each service — rejected: duplicated in every service.
-- **Consequence**: a function passed to `Write` must change nothing outside the transaction (it may run
-  again). Today's services only assign captured result variables, which a retry overwrites.
+  unique ignoring case", readable-ID counters, "one open round per activity"). One writer at a time keeps
+  every one of them correct without rewriting a single service, exactly as today. It costs no
+  concurrency the application has: every Write logs its change, and every log entry raises the one `LOG`
+  counter, so any two Writes touch the same row anyway.
+- **Measured**: the first design ran Writes `SERIALIZABLE` with up to 5 retries. Two writers in a loop on
+  the counters starved each other (the loser's retry kept meeting the winner's next transaction) and
+  failed with `40001` after 5 attempts — the same would happen to any two concurrent Writes, because all
+  of them raise the `LOG` counter. With the lock, the racing tests pass every run and the lock test fails
+  (times out) when the lock is removed.
+- **Alternatives**: `SERIALIZABLE` with retries — rejected (above). `READ COMMITTED` without the lock plus
+  conditional updates (`WHERE version = $n`) in every store, as in `GO_STANDARDS.md` §6 — rejected for
+  this migration: it moves rules into SQL area by area and still leaves uniqueness and counter races; the
+  guide's sample is corrected in the documentation task.
+- **Consequence**: a function passed to `Write` must pass its context on: a Write started with a fresh
+  context inside another would wait for the lock the outer one holds (the JSON store has the same rule).
 
 ## R3 — Types and UTC
 
@@ -52,9 +58,11 @@ constitution's named stack (B1).
   fails without it on a machine in IST). Microsecond precision loses nothing: `clock.System` truncates to
   milliseconds. sqlc maps `timestamptz` to `time.Time` and `integer` to `int`, so stores convert nothing.
 - Money: `money.Amount` → `bigint` cents (`<name>_minor`); `money.Money` → `<name>_minor` plus
-  `<name>_currency`; `money.Rate` → `numeric(13,6)`; `money.Percent` → `numeric(5,2)` (B5 allows `numeric`
-  where more scale is needed); both converted through their exact text form (`ParseRate`, `String`).
-  `date.Date` → `date`; a month ("2026-03") → `date` on the first of the month.
+  `<name>_currency`; `money.Rate` → `bigint` millionths (`<name>_micros`); `money.Percent` → `bigint`
+  hundredths (`<name>_hundredths`): the same exact fixed-point integers the money package holds
+  (`RateFromMicros`, `PercentFromHundredths`), so stores convert nothing; `numeric` would need big-number
+  conversion for no gain (B5 allows either). `date.Date` → `date` (sqlc: `time.Time`); a month ("2026-03")
+  → `date` on the first of the month. Nullable columns map to Go pointers (`sqlc.yaml` overrides).
 
 ## R4 — Constraints that are never stricter than the services
 
@@ -116,17 +124,22 @@ regenerate with `go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate` from
 
 `record.Meta` → `version`, `created_at`, `created_by_id`, `created_by_name`, `updated_at`,
 `updated_by_id`, `updated_by_name` (names as they were, like the JSON store). An optional reference stored
-as `""` in Go is `NULL` in SQL (so the foreign key holds); optional pointers are `NULL`. Ordered lists a
-record owns are child tables with a `position`; the parent's `Put` replaces them. Lists keep the JSON
-store's order: `ORDER BY length(id), id COLLATE "C"` (byte order, shorter ids first).
+as `""` in Go is `NULL` in SQL (so the foreign key holds); optional pointers are `NULL`. A list of
+references a record owns is a child table (with a `position` when its order matters); a list of plain
+values (permissions, column keys, soft ids) is a `text[]` column. The parent's `Put` replaces its child
+rows. Every store returns exactly what was saved: a `nil` list stays `nil` and an empty one stays empty
+(`NULL` versus `'{}'` / `'[]'`), and a field the JSON store drops when empty (`omitempty`) reads back `nil`.
+Lists keep the JSON store's order: `ORDER BY length(id), id COLLATE "C"` (byte order, shorter ids first).
 
-## R10 — Where `jsonb` is used, and why
+## R10 — Where `json` is used, and why
 
-Only for values whose shape is not relational or must stay exactly as written: Shell-attribute values (the
+Only for values whose shape is not relational and that no query looks inside: Shell-attribute values (the
 value's type depends on the attribute, seven types); recycle-bin snapshots and activity-log `changes`,
 `path` and `items` (immutable copies of the past); approval-round level snapshots and rule facts (a frozen
-copy of the workflow at submission); a workflow level's two conditions; saved-view state and All-work
-column choices (screen state). Every `jsonb` column has a `CHECK (jsonb_typeof(…))`.
+copy of the workflow at submission); a workflow level's two conditions; saved-view state (screen state).
+They are `json`, not `jsonb`: `json` keeps the text byte for byte, so a value reads back exactly as it was
+written. `jsonb` re-orders keys and spacing, which would make `history.Diff`, comparing stored and new
+values, report changes nobody made. Every such column has a `CHECK (json_typeof(…) IN (…))`.
 
 ## R11 — Existing data and `store.Memo`
 

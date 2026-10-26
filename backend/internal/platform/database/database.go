@@ -8,17 +8,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mapp/internal/platform/database/sqlcdb"
-)
-
-const (
-	serializationFailure = "40001"
-	deadlockDetected     = "40P01"
-	maxWriteAttempts     = 5
 )
 
 var (
@@ -59,9 +52,8 @@ func (d *DB) Close() {
 	d.pool.Close()
 }
 
-// Write runs fn in one serializable transaction and returns fn's error unchanged. PostgreSQL aborts a
-// transaction that lost a race with another, and Write then runs fn again, so fn must change nothing outside
-// the transaction. Inside a Write, Write joins it; inside a Read, it returns ErrReadOnly.
+// Write runs fn in one transaction once the Writes before it have ended (one at a time, as on the JSON store),
+// and returns fn's error unchanged. Inside a Write it joins it (fn passes ctx on); inside a Read, ErrReadOnly.
 func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) error {
 	if current, ok := ctx.Value(txKey{}).(transaction); ok {
 		if current.readOnly {
@@ -69,15 +61,12 @@ func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) erro
 		}
 		return fn(ctx)
 	}
-	serializable := pgx.TxOptions{IsoLevel: pgx.Serializable}
-	var err error
-	for range maxWriteAttempts {
-		err = d.run(ctx, serializable, fn)
-		if !isRaceLost(err) {
-			return err
+	return d.run(ctx, pgx.TxOptions{}, func(ctx context.Context) error {
+		if err := d.Queries(ctx).LockWrites(ctx); err != nil {
+			return fmt.Errorf("wait for the other writes: %w", err)
 		}
-	}
-	return err
+		return fn(ctx)
+	})
 }
 
 // Read runs fn in a read-only transaction that sees one snapshot; inside a transaction, it joins it.
@@ -110,11 +99,6 @@ func (d *DB) run(ctx context.Context, options pgx.TxOptions, fn func(ctx context
 		return fmt.Errorf("commit transaction: %w", err)
 	}
 	return nil
-}
-
-func isRaceLost(err error) bool {
-	pgErr, ok := errors.AsType[*pgconn.PgError](err)
-	return ok && (pgErr.Code == serializationFailure || pgErr.Code == deadlockDetected)
 }
 
 func scanTimestampsInUTC(_ context.Context, conn *pgx.Conn) error {

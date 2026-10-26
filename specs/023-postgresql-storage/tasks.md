@@ -32,10 +32,10 @@ every scoped read (FR-008, FR-009). No test of generated code.
 
 ## Phase 2: Foundational (blocks every area)
 
-- [X] T004 [US2] `backend/internal/platform/database/database.go`: `Open` (pool, ping, UTC timestamps), `Close`, `Write` (serializable, retried on a lost race), `Read` (read-only snapshot), `Queries` (FR-001, FR-005–FR-007, R2, R3)
+- [X] T004 [US2] `backend/internal/platform/database/database.go`: `Open` (pool, ping, UTC timestamps), `Close`, `Write` (one at a time behind a transaction-scoped advisory lock), `Read` (read-only snapshot), `Queries` (FR-001, FR-005–FR-007, R2, R3)
 - [X] T005 [US1] `backend/internal/platform/database/migrate.go`: embedded migrations, `Migrate` with the PostgreSQL session locker (FR-002, R6)
 - [X] T006 [US3] `backend/internal/platform/database/dbtest/dbtest.go`: `NewDB` from a template per migration set, `NewEmptyDB`; skip under `-short`, fail without `TEST_DATABASE_URL` (FR-010, R5)
-- [X] T007 [US2] `backend/internal/platform/database/database_test.go`: a failed `Write` keeps nothing (nested `Write` included), `Write` inside `Read` refused, timestamps in UTC, concurrent `Migrate`
+- [X] T007 [US2] `backend/internal/platform/database/database_test.go`: a failed `Write` keeps nothing (nested `Write` included), a second `Write` waits for the first and sees its change, `Write` inside `Read` refused, timestamps in UTC, concurrent `Migrate`
 
 ---
 
@@ -76,7 +76,7 @@ interface, and its store tests. No service, handler or wiring changes.
 - [ ] T027 [US1] `cmd/seed`: open, `Migrate`, load the demo data; `-reset` empties the tables; seed idempotent (FR-002, spec US1-1) — depends on T026
 - [ ] T028 [US1] End-to-end tests start the API on a PostgreSQL database seeded per run (`frontend/e2e` setup, `DATABASE_URL`) — depends on T027
 - [ ] T029 [US1] CI (`.github/workflows/ci.yml`): PostgreSQL 18 service for `backend` and `e2e`, `TEST_DATABASE_URL`, a `sqlc generate` no-diff step and `sqlc vet` (FR-012, quality gates 3–4) — must land before the pull request is opened, because store tests fail without `TEST_DATABASE_URL`
-- [ ] T030 [P] Documentation: ADR superseding ADR-0004; `backend/README.md` and root `README.md` (PostgreSQL set-up, `DATABASE_URL`, `TEST_DATABASE_URL`, `CREATEDB` for tests); `GO_STANDARDS.md` §6 corrected to the serializable `Write` with retry and the UTC codec (R2, R3); `CLAUDE.md` "Current code" storage lines; feature map row 023
+- [ ] T030 [P] Documentation: ADR superseding ADR-0004; `backend/README.md` and root `README.md` (PostgreSQL set-up, `DATABASE_URL`, `TEST_DATABASE_URL`, `CREATEDB` for tests); `GO_STANDARDS.md` §6 corrected to the one-at-a-time `Write` and the UTC codec (R2, R3); `CLAUDE.md` "Current code" storage lines; feature map row 023
 
 ---
 

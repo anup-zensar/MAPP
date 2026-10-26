@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/database/dbtest"
 	"mapp/internal/platform/database/sqlcdb"
@@ -27,13 +29,9 @@ func folder(id string, at time.Time) sqlcdb.PutSampleFolderParams {
 
 func folderIDs(t *testing.T, db *database.DB) []string {
 	t.Helper()
-	rows, err := db.Queries(t.Context()).ListSampleFolders(t.Context())
+	ids, err := folderIDsIn(t.Context(), db)
 	if err != nil {
 		t.Fatalf("ListSampleFolders() error: %v", err)
-	}
-	ids := []string{}
-	for _, row := range rows {
-		ids = append(ids, row.ID)
 	}
 	return ids
 }
@@ -82,6 +80,58 @@ func TestWriteKeepsNothingWhenFnFailsFR006(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestWritesRunOneAtATimeFR006 starts a second Write while the first one is open: the second must wait for the
+// first to commit and then see its change, as on the JSON store.
+func TestWritesRunOneAtATimeFR006(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+
+	var second sync.WaitGroup
+	var secondSaw []string
+	var secondErr error
+	err := db.Write(ctx, func(ctx context.Context) error {
+		if err := db.Queries(ctx).PutSampleFolder(ctx, folder("SF-1001", savedAt)); err != nil {
+			return err
+		}
+		second.Go(func() {
+			secondErr = db.Write(t.Context(), func(ctx context.Context) error {
+				var err error
+				secondSaw, err = folderIDsIn(ctx, db)
+				return err
+			})
+		})
+		return untilAWriteWaits(ctx, db)
+	})
+	second.Wait()
+
+	if err = errors.Join(err, secondErr); err != nil {
+		t.Fatalf("Write() error: %v", err)
+	}
+	if diff := cmp.Diff([]string{"SF-1001"}, secondSaw); diff != "" {
+		t.Errorf("folders the second Write saw mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func untilAWriteWaits(ctx context.Context, db *database.DB) error {
+	for {
+		waiting, err := db.Queries(ctx).CountWaitingWrites(ctx)
+		if err != nil || waiting > 0 {
+			return err
+		}
+	}
+}
+
+func folderIDsIn(ctx context.Context, db *database.DB) ([]string, error) {
+	rows, err := db.Queries(ctx).ListSampleFolders(ctx)
+	ids := []string{}
+	for _, row := range rows {
+		ids = append(ids, row.ID)
+	}
+	return ids, err
 }
 
 func TestWriteInsideReadIsRefusedFR007(t *testing.T) {

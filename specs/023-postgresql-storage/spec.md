@@ -89,8 +89,8 @@ test database is left behind.
 
 - A JSON data folder from before this feature: not converted; the demo data is re-seeded (Assumptions).
 - Two seed runs at once: migrations wait for each other on a PostgreSQL session lock; none is applied twice.
-- A transaction that loses a race (serialization failure, deadlock): it runs again, up to five times,
-  before the error reaches the person as an internal error.
+- Two saves at the same moment: the second waits until the first has committed, then sees its change
+  (Writes run one at a time, as on the JSON store); reads never wait.
 - A record that refers to one in the recycle bin (a notification about a deleted activity, a transaction
   linked to a deleted line item, a pinned plan that was deleted): the reference is kept as a plain id.
 - A name that is unique "ignoring case" by the service's rule: the database index is never stricter than
@@ -115,10 +115,10 @@ test database is left behind.
   without being stricter than the service's rule.
 - **FR-005**: Money MUST be stored as `bigint` minor units (exchange rates and percentages as `numeric`),
   calendar dates as `date` and timestamps as `timestamptz`; timestamps MUST come back in UTC.
-- **FR-006**: Services MUST own their transactions: `Write` runs one serializable transaction carried in the
-  context, which every store and the activity log called with that context join; a change and its log
-  entry commit or roll back together; a transaction that loses a race runs again, so a stale save is
-  refused with `version_conflict` and never overwrites a newer one.
+- **FR-006**: Services MUST own their transactions: `Write` runs one transaction carried in the context,
+  which every store and the activity log called with that context join; a change and its log entry
+  commit or roll back together; Writes run one at a time, so a stale save is refused with
+  `version_conflict` and never overwrites a newer one.
 - **FR-007**: `Read` MUST run in a read-only transaction that sees one consistent snapshot; a `Write` inside
   it is refused.
 - **FR-008**: Each area's PostgreSQL store MUST implement the area's existing store interface with the same
@@ -139,8 +139,8 @@ test database is left behind.
 - **Migration**: a numbered SQL file under `internal/platform/database/migrations`, applied once, in order.
 - **Table**: one per stored record type, plus child tables for the ordered or many-valued lists a record
   owns (data model §2).
-- **Transaction**: a unit of work carried in the context; `Write` (serializable, retried on a lost race)
-  or `Read` (read-only snapshot).
+- **Transaction**: a unit of work carried in the context; `Write` (one at a time) or `Read` (read-only
+  snapshot).
 - **Test database**: a per-test copy of the migrated template on the test server.
 
 ## Success Criteria *(mandatory)*

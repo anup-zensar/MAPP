@@ -129,7 +129,7 @@ finance_budget_items   id FBI-n · budget_id → finance_budgets · name text NO
 
 The legacy `Currency.Rate`, `RateChangedAt` and `RateChangedBy` fields have no columns: `MigrateRates`
 already moves them into `exchange_rates`, and a fresh seed has none. "A code is unique within the
-budget's year" spans two tables and stays a service rule (safe under serializable writes, R2).
+budget's year" spans two tables and stays a service rule (safe because Writes run one at a time, R2).
 
 ### 00005 — access
 

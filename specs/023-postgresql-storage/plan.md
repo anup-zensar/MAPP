@@ -7,7 +7,8 @@
 ## Summary
 
 A new `internal/platform/database` package opens the pgx pool, applies embedded goose migrations under a
-session lock and runs serializable `Write` and snapshot `Read` transactions carried in the context; it
+session lock and runs `Write` transactions one at a time and snapshot `Read` transactions, both carried
+in the context; it
 implements today's `store.Transactor`, so services keep their code. sqlc compiles one `.sql` file per area
 into committed `sqlcdb` code, and `dbtest` gives each store test its own database copied from a migrated
 template. Each area gains a `store_postgres.go` beside its JSON repository, implementing the same
@@ -72,7 +73,7 @@ repository methods
 | Tampering: SQL injection | every query | sqlc parameters only; the test helper's DDL quotes identifiers it generates itself |
 | Information disclosure: credentials in logs | `Open`, `dbtest` | errors never include the URL; `TEST_DATABASE_URL` is named, never printed |
 | Information disclosure: another market's plans | plan-owned reads | scope filter in SQL plus an isolation test per read (FR-009) |
-| Tampering: lost update between concurrent saves | every `Write` | serializable transactions with retry (R2); racing-save test |
+| Tampering: lost update between concurrent saves | every `Write` | one Write at a time (R2); lock test and racing-save test |
 | Repudiation: a change without its log entry | every service | change and log entry in one `Write`; append-only trigger on `activity_log` |
 | Denial of service: connection exhaustion | pool | one pool per process; `pool_max_conns` in `DATABASE_URL` per environment |
 
@@ -81,7 +82,7 @@ repository methods
 | Risk | Response | Owner |
 |---|---|---|
 | A service relies on JSON-store behaviour no interface states (ordering, nil lists, `store.Memo`) | The full backend and end-to-end suites run on PostgreSQL before the JSON store is removed (T025–T028); R9 conventions | Team |
-| Serializable retries under load | Local single-user app; 5 attempts; a lost race after them surfaces as an internal error and is logged | Team |
+| One writer at a time limits write throughput | As today on the JSON store; every Write raises the shared `LOG` counter anyway (R2); revisit with a measurement if Azure load needs it | Team |
 | A foreign key refuses a delete the service allows | Each area task tests its deletes against the constraints (data model §4) | Team |
 | 022/024 change the wiring and the store interfaces while this runs | Area tasks for plan-owned data and the switch wait for them (tasks.md) | Product owner |
 
@@ -140,4 +141,4 @@ its current files (`repository.go` is renamed `store.go` by 025).
 
 | Deviation | Why needed | Simpler alternative rejected because |
 |---|---|---|
-| `Write` retries a serializable transaction (not in GO_STANDARDS §6's sample) | keeps every service's read-check-write rule correct without rewriting it (R2) | `READ COMMITTED` lets two saves both pass a version or uniqueness check — proved by the racing test |
+| `Write` takes a transaction-scoped advisory lock so Writes run one at a time (not in GO_STANDARDS §6's sample) | keeps every service's read-check-write rule correct without rewriting it, as the JSON store did (R2) | `READ COMMITTED` alone lets two saves both pass a version or uniqueness check; `SERIALIZABLE` with retries starved under two writers (measured, R2) |
