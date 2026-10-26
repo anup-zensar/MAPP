@@ -4,7 +4,6 @@
  * count, a name or a time are made in this file and its neighbours (chain, history, decision
  * messages), so they read the same everywhere.
  */
-import { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
 
 type ApprovalPerson = components['schemas']['ApprovalPerson'];
@@ -16,16 +15,6 @@ export const ACTIVITY_GONE = 'This activity no longer exists — someone may hav
 /** Shown when an Approved activity cannot be recalled (API reason and web). */
 export const APPROVED_NO_RECALL =
   "Approved activities can't be recalled. Changing its planned cost, dates or line-item amounts sends it back for approval.";
-
-/** Any failure as an ApiError, so its plain-language message can be shown. */
-export function asApiError(error: unknown): ApiError {
-  return error instanceof ApiError ? error : new ApiError('other');
-}
-
-/** The session ended: the sign-in page says so, so nothing else needs to. */
-export function isSessionLost(error: ApiError): boolean {
-  return error.kind === 'signInRequired' || error.kind === 'sessionExpired';
-}
 
 /** "1 activity" / "3 activities". */
 export function activitiesCount(count: number): string {

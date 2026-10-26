@@ -14,9 +14,9 @@ import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { PersonField, usePeople } from '@/features/people';
 import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { fetchLatestDelegation, useCreateDelegation, useUpdateDelegation } from './delegations-api';
 import type { ApprovalDelegation, DelegationScope } from './delegations-api';
-import { asApiError, isSessionLost } from './messages';
 import { delegationChanges, delegationSchema, delegationValuesOf, newDelegation } from './schemas';
 import type { DelegationValues } from './schemas';
 

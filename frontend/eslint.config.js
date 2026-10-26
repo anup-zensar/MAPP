@@ -14,7 +14,17 @@ const FEATURES = readdirSync(`${SRC}/features`);
 const LOWER_LAYERS = ['ui', 'api', 'session', 'format'].map((dir) => `./src/${dir}`);
 const TESTS = ['src/**/*.test.{ts,tsx}', 'src/testing/**'];
 // Features whose code still has type assertions (026 aligns them one by one; then this goes).
-const ALIGNED = ['sign-in', 'people', 'notifications', 'recycle-bin', 'placeholders'];
+const ALIGNED = [
+  'sign-in',
+  'people',
+  'notifications',
+  'recycle-bin',
+  'placeholders',
+  'approvals',
+  'approval-workflows',
+  'global-budgets',
+  'financials',
+];
 const NOT_ALIGNED_YET = FEATURES.filter((feature) => !ALIGNED.includes(feature));
 const TEST_ONLY = {
   group: ['msw', 'msw/*', 'openapi-msw', '@/testing', '@/testing/*'],

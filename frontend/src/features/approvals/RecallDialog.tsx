@@ -6,10 +6,10 @@ import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
 import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { useRecall } from './api';
 import type { ActivityApproval } from './api';
 import { alreadyDecidedMessage } from './decision-messages';
-import { asApiError, isSessionLost } from './messages';
 import { recallSchema } from './schemas';
 import styles from './approval-dialogs.module.css';
 

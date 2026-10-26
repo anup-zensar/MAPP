@@ -12,10 +12,10 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useToast } from '@/ui/Toast/useToast';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { DelegationForm } from './DelegationForm';
 import { useCancelDelegation, useDelegations } from './delegations-api';
 import type { ApprovalDelegation, DelegationScope } from './delegations-api';
-import { asApiError, isSessionLost } from './messages';
 import styles from './DelegationPanel.module.css';
 
 /** How many ended and cancelled delegations show before "Show all". */

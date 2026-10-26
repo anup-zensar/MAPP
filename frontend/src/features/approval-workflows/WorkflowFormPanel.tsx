@@ -17,7 +17,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
-import { asApiError, isSessionLost } from '@/features/approvals';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { useFormatters } from '@/format/useFormatters';
 import { LevelsEditor } from './LevelsEditor';
 import {

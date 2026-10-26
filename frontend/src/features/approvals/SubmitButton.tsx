@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { fetchSubmission, useSubmitActivity } from './api';
 import type { ApprovalSubmission } from './api';
 import type { ApprovalActivity, ShowSubmitProblems } from './approval-types';
 import { submitConflictMessage } from './decision-messages';
-import { asApiError, isSessionLost } from './messages';
 import { SubmitDialog } from './SubmitDialog';
 
 export interface SubmitButtonProps {

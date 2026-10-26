@@ -9,7 +9,7 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useToast } from '@/ui/Toast/useToast';
-import { asApiError, isSessionLost } from '@/features/approvals';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { useListFilters } from '@/ui/useListFilters';
 import { useStatusFlow } from '@/ui/useStatusFlow';
 import { useFormatters } from '@/format/useFormatters';

@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { useRunEscalations } from './api';
 import { escalationRunText, notEscalatedText } from './decision-messages';
-import { asApiError, isSessionLost } from './messages';
 
 /** Long enough to read a list of activities that could not be escalated. */
 const NOT_ESCALATED_MS = 10_000;

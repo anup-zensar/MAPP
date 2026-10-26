@@ -19,11 +19,4 @@ export type {
   ApprovalSubmission,
 } from './api';
 export { declineBoxText } from './decision-messages';
-export {
-  activitiesCount,
-  asApiError,
-  isSessionLost,
-  levelOf,
-  names,
-  timingsText,
-} from './messages';
+export { activitiesCount, levelOf, names, timingsText } from './messages';

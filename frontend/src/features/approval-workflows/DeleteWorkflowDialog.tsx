@@ -1,7 +1,7 @@
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
-import { asApiError, isSessionLost } from '@/features/approvals';
+import { asApiError, isSessionLost } from '@/api/errors';
 import { WORKFLOWS_KEY, useDeleteWorkflow } from './api';
 import type { ApprovalWorkflow } from './api';
 
