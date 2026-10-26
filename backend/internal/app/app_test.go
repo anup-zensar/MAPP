@@ -2,15 +2,11 @@ package app_test
 
 import (
 	"net/http"
-	"regexp"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/pb33f/libopenapi"
-
-	"mapp/api"
 	"mapp/internal/app"
 	"mapp/internal/auth"
 	"mapp/internal/platform/apitest"
@@ -24,36 +20,11 @@ const (
 	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
 )
 
-// priyaSignsIn is the body of a sign-in as Priya Raman with the demo password.
 var priyaSignsIn = map[string]string{"email": "priya.raman@shell.com", "password": "mapp"}
 
-// GET /api/v1/environment answers without a session and says in which environment the API runs and whether
-// demo sign-in is on (FR-009, 022 FR-009).
-func TestEnvironment_EnvironmentAndDemoSignIn_FR009(t *testing.T) {
-	for env, demoSignIn := range map[string]bool{"local": true, "development": true, "production": false} {
-		t.Run(env, func(t *testing.T) {
-			server := apitest.New(t, apitest.WithEnv(env))
-
-			response := server.Do(t, http.MethodGet, "/api/v1/environment", nil)
-
-			if response.Status != http.StatusOK {
-				t.Fatalf("status = %d, want 200", response.Status)
-			}
-			var environment struct {
-				Environment string `json:"environment"`
-				DemoSignIn  bool   `json:"demoSignIn"`
-			}
-			response.Decode(t, &environment)
-			if environment.Environment != env || environment.DemoSignIn != demoSignIn {
-				t.Errorf("environment = %+v, want environment %s, demoSignIn %v", environment, env, demoSignIn)
-			}
-		})
-	}
-}
-
-// Demo sign-in exists only in the local and development environments. In production both of its routes
-// answer 404, as for any path the API does not serve, and the environment answer says it is off (FR-009).
+// In production the demo sign-in routes answer 404 like any path the API does not serve.
 func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
+	t.Parallel()
 	environments := []struct {
 		env        string
 		demoSignIn bool
@@ -64,12 +35,14 @@ func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
 	}
 	for _, tt := range environments {
 		t.Run(tt.env, func(t *testing.T) {
+			t.Parallel()
 			server := apitest.New(t, apitest.WithEnv(tt.env))
 
 			demoPeople := server.Do(t, http.MethodGet, "/api/v1/auth/demo-people", nil)
 			signIn := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", priyaSignsIn)
 			var environment struct {
-				DemoSignIn bool `json:"demoSignIn"`
+				Environment string `json:"environment"`
+				DemoSignIn  bool   `json:"demoSignIn"`
 			}
 			server.Do(t, http.MethodGet, "/api/v1/environment", nil).Decode(t, &environment)
 
@@ -84,16 +57,16 @@ func TestDemoMode_RoutesOnlyInLocalAndDevelopment_FR009(t *testing.T) {
 					}
 				}
 			}
-			if environment.DemoSignIn != tt.demoSignIn {
-				t.Errorf("environment demoSignIn = %v, want %v", environment.DemoSignIn, tt.demoSignIn)
+			if environment.Environment != tt.env || environment.DemoSignIn != tt.demoSignIn {
+				t.Errorf("environment = %+v, want %s with demoSignIn %v", environment, tt.env, tt.demoSignIn)
 			}
 		})
 	}
 }
 
-// A session made while demo sign-in was on is refused once the API runs in production, where no way to
-// sign in exists until Shell single sign-on arrives (FR-009).
+// No way to sign in exists in production until Shell single sign-on arrives.
 func TestDemoModeOff_ExistingSessionRefused_FR009(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	local := apitest.New(t, apitest.WithDataDir(dir))
 	signIn := local.Do(t, http.MethodPost, "/api/v1/auth/sign-in", priyaSignsIn)
@@ -114,9 +87,9 @@ func TestDemoModeOff_ExistingSessionRefused_FR009(t *testing.T) {
 	}
 }
 
-// Every other path or method under /api/ answers the API's JSON error format, never plain text; so do the
-// unversioned paths of before /api/v1 (022 FR-001).
+// The unversioned paths of before /api/v1 answer the JSON error too.
 func TestUnknownPathOrMethod_AnswersJSONNotFound_022_FR001(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	calls := []struct{ method, path string }{
 		{http.MethodGet, "/api/v1/nowhere"},
@@ -135,8 +108,9 @@ func TestUnknownPathOrMethod_AnswersJSONNotFound_022_FR001(t *testing.T) {
 	}
 }
 
-// A request addressed to another host is refused: protection against DNS rebinding (research R6).
+// Protection against DNS rebinding (research R6).
 func TestOtherHost_IsRefused(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 
 	response := server.Do(t, http.MethodGet, "/api/v1/environment", nil, apitest.WithHost("evil.example"))
@@ -146,9 +120,9 @@ func TestOtherHost_IsRefused(t *testing.T) {
 	}
 }
 
-// Every answer is JSON, and tells the browser not to keep a copy and not to guess the content type
-// (research R10).
+// The browser keeps no copy and does not guess the content type (research R10).
 func TestAnswers_CarryTheAPIHeaders(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	answers := map[string]*apitest.Response{
 		"environment":  server.Do(t, http.MethodGet, "/api/v1/environment", nil),
@@ -169,77 +143,8 @@ func TestAnswers_CarryTheAPIHeaders(t *testing.T) {
 	}
 }
 
-// Routes lists the operations the API serves, which tests compare with the contract; the catch-all for
-// unknown paths is not one of them.
-func TestNew_RoutesListTheOperations(t *testing.T) {
-	routes := newApp(t, "local").Routes
-
-	if !slices.Contains(routes, "GET /healthz") {
-		t.Errorf("Routes = %q, want it to contain GET /healthz", routes)
-	}
-	if slices.Contains(routes, "/api/") {
-		t.Errorf("Routes = %q, want no catch-all", routes)
-	}
-}
-
-// The API serves exactly the operations of its contract, backend/api/openapi.yaml: every operation of the
-// contract is served, and every route the API serves is in the contract (research R11). The API runs in
-// demo mode, so that demo sign-in and the developer sample records are served too.
-//
-// Operations of the Plan module that are designed but not built yet are listed in notYetServed and skipped.
-func TestRoutesMatchContract(t *testing.T) {
-	served := newApp(t, "local").Routes
-	var inContract []string
-	for _, op := range contractOperations(t) {
-		inContract = append(inContract, op.route)
-	}
-
-	for _, route := range inContract {
-		if !slices.Contains(served, route) && !slices.Contains(notYetServed, route) {
-			t.Errorf("the contract's operation %s is not served (and not listed in notYetServed)", route)
-		}
-	}
-	for _, route := range served {
-		if !slices.Contains(inContract, route) {
-			t.Errorf("the API serves %s, which is not in the contract", route)
-		}
-	}
-}
-
-// Every operation except the probes, the environment and demo sign-in needs a signed-in person, and refuses a request without a
-// session with sign_in_required before it reads anything else of the request (FR-005). Operations listed in
-// notYetServed are skipped until they are built.
-func TestEveryProtectedOperationRequiresSignIn_FR005(t *testing.T) {
-	server := apitest.New(t)
-	var public []string
-
-	for _, op := range contractOperations(t) {
-		if !op.needsSession {
-			public = append(public, op.route)
-			continue
-		}
-		if slices.Contains(notYetServed, op.route) {
-			continue // not built yet: it would answer 404
-		}
-		method, path, _ := strings.Cut(op.route, " ")
-		path = pathParameter.ReplaceAllString(path, "X-1001") // any value: the sign-in check comes first
-
-		response := server.Do(t, method, path, nil, apitest.SkipRequestValidation()) // no cookie and no body
-
-		if response.Status != http.StatusUnauthorized || string(response.Body) != signInRequiredBody {
-			t.Errorf("%s without a session = %d %s\nwant 401 %s", op.route, response.Status, response.Body, signInRequiredBody)
-		}
-	}
-	wantPublic := []string{"GET /healthz", "GET /readyz", "GET /api/v1/environment", "GET /api/v1/auth/demo-people",
-		"POST /api/v1/auth/sign-in", "POST /api/v1/auth/sign-out"}
-	if !slices.Equal(public, wantPublic) {
-		t.Errorf("operations without a session = %q, want only %q", public, wantPublic)
-	}
-}
-
-// The developer sample records exist only where demo sign-in is on (D-036). Elsewhere their routes are
-// not served, and they answer 404 like any unknown path.
 func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
+	t.Parallel()
 	for env, served := range map[string]bool{"local": true, "development": true, "production": false} {
 		t.Run(env, func(t *testing.T) {
 			var sampleRoutes []string
@@ -266,10 +171,9 @@ func TestSampleRecords_OnlyInLocalAndDevelopment_D036(t *testing.T) {
 	}
 }
 
-// Settings exist in every environment, not only where demo sign-in is on, and their kinds are registered
-// with history, so that a deleted Settings record is in the recycle bin and its delete can be undone
-// (FR-006, FR-004).
+// A deleted Settings record is in the recycle bin in every environment, and its delete can be undone.
 func TestSettingsKindsRegistered_FR006(t *testing.T) {
+	t.Parallel()
 	for _, env := range []string{"local", "development", "production"} {
 		if !slices.Contains(newApp(t, env).Routes, "DELETE /api/v1/currencies/{code}") {
 			t.Errorf("%s: the Settings routes are not served", env)
@@ -293,53 +197,6 @@ func TestSettingsKindsRegistered_FR006(t *testing.T) {
 	}
 }
 
-// notYetServed lists the operations of the contract that are designed but not served yet: the operations of
-// the Plan module, features 002-012 and 014-017, merged into backend/api/openapi.yaml before they are built
-// (decisions D-192, D-298). The routes are written as the tests format them, "METHOD /path" with the contract's path.
-//
-// Each feature's backend removes its own operations from this list in the change that serves them.
-// TestNotYetServedIsAccurate fails when a listed operation is served or is not in the contract, so the list
-// cannot go stale. The list must be empty when the Plan module is done; then remove it and its uses.
-var notYetServed = []string{
-	// 012 Bulk actions and import
-	"GET /api/v1/bulk-actions/fields",
-	"POST /api/v1/bulk-actions/targets",
-	"POST /api/v1/bulk-actions/preview",
-	"POST /api/v1/bulk-actions",
-	"POST /api/v1/bulk-actions/{bulkActionId}/undo",
-	"GET /api/v1/plans/{planId}/imports",
-	"POST /api/v1/plans/{planId}/imports",
-	"POST /api/v1/plans/{planId}/imports/check",
-	"GET /api/v1/plans/{planId}/import-template",
-	"GET /api/v1/imports/{importId}",
-	"POST /api/v1/imports/{importId}/undo",
-}
-
-// The list of operations not yet served stays accurate: every entry is an operation of the contract, none
-// is served already, and none is listed twice (decision D-192).
-func TestNotYetServedIsAccurate(t *testing.T) {
-	served := newApp(t, "local").Routes
-	var inContract []string
-	for _, op := range contractOperations(t) {
-		inContract = append(inContract, op.route)
-	}
-
-	seen := map[string]bool{}
-	for _, route := range notYetServed {
-		if seen[route] {
-			t.Errorf("notYetServed lists %s twice", route)
-		}
-		seen[route] = true
-		if !slices.Contains(inContract, route) {
-			t.Errorf("notYetServed lists %s, which is not an operation of the contract", route)
-		}
-		if slices.Contains(served, route) {
-			t.Errorf("notYetServed lists %s, which the API now serves: remove it from the list", route)
-		}
-	}
-}
-
-// newApp builds the API in the environment env on an empty data folder.
 func newApp(t *testing.T, env string) *app.App {
 	t.Helper()
 	db, err := store.Open(t.TempDir())
@@ -357,39 +214,4 @@ func newApp(t *testing.T, env string) *app.App {
 		t.Fatalf("New: %v", err)
 	}
 	return built
-}
-
-// pathParameter finds the parameters of a contract path, such as {folderId}.
-var pathParameter = regexp.MustCompile(`\{[^/]+\}`)
-
-// operation is one operation of the contract.
-type operation struct {
-	route        string // "METHOD /path", the form of App.Routes and of the route table
-	needsSession bool
-}
-
-// contractOperations returns the operations of the contract, backend/api/openapi.yaml, in its order.
-func contractOperations(t *testing.T) []operation {
-	t.Helper()
-	document, err := libopenapi.NewDocument(api.OpenAPI)
-	if err != nil {
-		t.Fatalf("reading the contract: %v", err)
-	}
-	contract, err := document.BuildV3Model()
-	if err != nil {
-		t.Fatalf("reading the contract: %v", err)
-	}
-
-	var operations []operation
-	for path, item := range contract.Model.Paths.PathItems.FromOldest() {
-		for method, op := range item.GetOperations().FromOldest() {
-			operations = append(operations, operation{
-				route: strings.ToUpper(method) + " " + path,
-				// An operation without a security list of its own needs the contract's default, the session
-				// cookie. The public ones say "security: []", which libopenapi reads as an empty list.
-				needsSession: op.Security == nil || len(op.Security) > 0,
-			})
-		}
-	}
-	return operations
 }

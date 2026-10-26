@@ -10,10 +10,9 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// Every operation of the contract has its access rule in access/routes.go — also the operations of 012 and
-// 015–017 that are not served yet, so they are protected the moment they are (D-301) — every served route
-// has one, and the table names no operation that is not in the contract (SC-001, FR-009, FR-010).
+// Operations not served yet have their rule too, so they are protected the moment they are (D-301).
 func TestEveryOperationHasAnAccessRule_SC001(t *testing.T) {
+	t.Parallel()
 	rules := access.RulePatterns()
 	var inContract []string
 	for _, op := range contractOperations(t) {
@@ -34,8 +33,8 @@ func TestEveryOperationHasAnAccessRule_SC001(t *testing.T) {
 	}
 }
 
-// The public operations are exactly the six the contract serves without a session, and only they (FR-010).
 func TestPublicRules_OnlyTheSixWithoutSession_FR010(t *testing.T) {
+	t.Parallel()
 	var public []string
 	for _, op := range contractOperations(t) {
 		rule, _ := access.RuleFor(op.route)
@@ -56,11 +55,10 @@ func TestPublicRules_OnlyTheSixWithoutSession_FR010(t *testing.T) {
 	}
 }
 
-// Every served operation that needs a permission refuses a signed-in person whose roles do not include it
-// with 403 forbidden and the role message, before reading anything else of the request — the middleware is
-// on every route (FR-009, FR-010, D-228). Sara Novak is a Viewer: she holds plans.view, data.export and
-// finance.view only.
+// The role check comes before anything else of the request. Sara Novak holds plans.view, data.export
+// and finance.view only.
 func TestEveryNeedRule_RefusesWithoutThePermission_FR009_FR010(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	sara := server.SignIn(t, "sara.novak@shell.com")
 	viewer := []string{"plans.view", "data.export", "finance.view"}

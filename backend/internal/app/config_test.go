@@ -11,6 +11,7 @@ import (
 )
 
 func TestLoadConfig_Defaults(t *testing.T) {
+	t.Parallel()
 	cfg, err := app.LoadConfig(environment(nil))
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
@@ -27,6 +28,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 }
 
 func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
+	t.Parallel()
 	cfg, err := app.LoadConfig(environment(map[string]string{
 		"APP_ENV":               "development",
 		"APP_HOST":              "0.0.0.0",
@@ -54,6 +56,7 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 
 // Invalid values stop the API with the plan's messages; no exporter may send telemetry off this computer.
 func TestLoadConfig_RefusesInvalidValues_024_FR012(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		variable string
@@ -86,6 +89,7 @@ func TestLoadConfig_RefusesInvalidValues_024_FR012(t *testing.T) {
 }
 
 func TestLoadConfig_LimitsAreAccepted_024_FR012(t *testing.T) {
+	t.Parallel()
 	limits := map[string][]string{"APP_PORT": {"1", "65535"}, "SHUTDOWN_TIMEOUT": {"1s", "60s"}}
 	for variable, values := range limits {
 		for _, value := range values {
@@ -98,6 +102,7 @@ func TestLoadConfig_LimitsAreAccepted_024_FR012(t *testing.T) {
 
 // Every invalid value is reported at once, so one start is enough to see what to fix.
 func TestLoadConfig_ReportsEveryProblem_024_FR012(t *testing.T) {
+	t.Parallel()
 	_, err := app.LoadConfig(environment(map[string]string{
 		"APP_ENV":              "test",
 		"APP_PORT":             "-1",
@@ -122,6 +127,7 @@ func TestLoadConfig_ReportsEveryProblem_024_FR012(t *testing.T) {
 
 // Demo sign-in exists only in the local and development environments (FR-009).
 func TestDemoMode_OnlyLocalAndDevelopment_FR009(t *testing.T) {
+	t.Parallel()
 	for env, want := range map[string]bool{"local": true, "development": true, "production": false} {
 		cfg, err := app.LoadConfig(environment(map[string]string{"APP_ENV": env}))
 		if err != nil {

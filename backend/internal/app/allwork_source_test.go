@@ -16,8 +16,6 @@ import (
 // everyColumn names the columns whose values the source reads only when a view shows them.
 var everyColumn = []string{"completeness", "plan.goalMql", "plan.goalRevenue", "inq", "mql", "revenue"}
 
-// newSeededApp builds the API on the demo data, loaded at 12 Mar 2026 09:00 UTC, and returns it with its
-// store.
 func newSeededApp(t testing.TB) (*App, *store.DB) {
 	t.Helper()
 	db, err := store.Open(t.TempDir())
@@ -39,10 +37,9 @@ func newSeededApp(t testing.TB) (*App, *store.DB) {
 	return built, db
 }
 
-// All work reads the demo year 2026 with the values the owning features calculate (FR-001): both 2026
-// plans with their campaigns, initiatives, activities and line items, each with its status, money, owner
-// and place in the plan tree.
+// Both 2026 plans with everything inside, each with its status, money, owner and place in the plan tree.
 func TestPlanningSource_ReadsSeedYear_FR001(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	var data allwork.YearData
 	err := db.Read(t.Context(), func(ctx context.Context) error {
@@ -116,10 +113,9 @@ func TestPlanningSource_ReadsSeedYear_FR001(t *testing.T) {
 	}
 }
 
-// The level-specific columns come with the demo year's values (FR-018, FR-020): the plan's model and teams,
-// a campaign's Cluster, an activity's type and a line item's local amount and spread; every Shell attribute
-// of Settings is a column of its level.
+// Every Shell attribute of Settings is a column of its level.
 func TestPlanningSource_LevelFieldsAndAttributes_FR018(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	var data allwork.YearData
 	var attributes []allwork.Attribute
@@ -167,9 +163,8 @@ func TestPlanningSource_LevelFieldsAndAttributes_FR018(t *testing.T) {
 	}
 }
 
-// The source finds a stored record with its plan, says when a deleted one is in the recycle bin, and reads
-// the person's display currency (FR-016, FR-017).
 func TestPlanningSource_LocateBinAndCurrency_FR016(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	err := db.Read(t.Context(), func(ctx context.Context) error {
 		location, found, err := built.allWork.Locate(ctx, "L-1002")

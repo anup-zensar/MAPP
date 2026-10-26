@@ -8,18 +8,15 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// availability is one ActionAvailability of an answer.
 type availability struct {
 	Available bool
 	Reason    string
 }
 
-// The planning answers carry what the reader may do with the record, and why not, so the web app shows
-// actions without working out a permission itself (FR-011, FR-015). Sara (Viewer) may change nothing in
-// the Lubricants plan, with her role named as the reason; Priya (Planner of Lubricants Europe) may change
-// everything but may not delete the plan; both see the "From finance" sections. Every answer is validated
-// against the contract, so the access objects have the contract's shape.
+// Sara (Viewer) may change nothing in the Lubricants plan, her role named as the reason; Priya (Planner)
+// may change everything but not delete the plan. The web app never works out a permission itself.
 func TestAnswers_CarryWhatTheReaderMayDo_FR011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	sara, priya := server.SignIn(t, sarasEmail), server.SignIn(t, priyasEmail)
 	const viewOnly = "isn't part of your role (Viewer). Ask an administrator if you need it."
@@ -98,7 +95,6 @@ func at(v any, path ...any) any {
 	return v
 }
 
-// asAvailability reads a decoded ActionAvailability.
 func asAvailability(v any) (availability, bool) {
 	object, ok := v.(map[string]any)
 	if !ok {
