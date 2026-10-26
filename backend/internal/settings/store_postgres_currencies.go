@@ -2,10 +2,7 @@ package settings
 
 import (
 	"context"
-	"errors"
 	"fmt"
-
-	"github.com/jackc/pgx/v5"
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/database"
@@ -16,23 +13,21 @@ import (
 )
 
 func (s *PostgresStore) GetCurrency(ctx context.Context, code string) (Currency, bool, error) {
-	row, err := s.db.Queries(ctx).GetCurrency(ctx, code)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Currency{}, false, nil
-	}
-	if err != nil {
-		return Currency{}, false, fmt.Errorf("select currency %s: %w", code, err)
+	currencies, err := s.currencies(ctx)
+	row, found := currencies.Find(code)
+	if err != nil || !found {
+		return Currency{}, false, err
 	}
 	return currencyFromRow(row), true, nil
 }
 
 func (s *PostgresStore) ListCurrencies(ctx context.Context) ([]Currency, error) {
-	rows, err := s.db.Queries(ctx).ListCurrencies(ctx)
+	rows, err := s.currencies(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select currencies: %w", err)
+		return nil, err
 	}
-	currencies := make([]Currency, 0, len(rows))
-	for _, row := range rows {
+	currencies := make([]Currency, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
 		currencies = append(currencies, currencyFromRow(row))
 	}
 	return currencies, nil
@@ -53,33 +48,31 @@ func (s *PostgresStore) PutCurrency(ctx context.Context, c Currency) error {
 	if c.RateChangedBy != (actor.Actor{}) {
 		params.RateChangedByID, params.RateChangedByName = &c.RateChangedBy.ID, &c.RateChangedBy.Name
 	}
-	if err := s.db.Queries(ctx).PutCurrency(ctx, params); err != nil {
+	if err := s.change(ctx).PutCurrency(ctx, params); err != nil {
 		return fmt.Errorf("save currency %s: %w", c.Code, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) DeleteCurrency(ctx context.Context, code string) error {
-	if err := s.db.Queries(ctx).DeleteCurrency(ctx, code); err != nil {
+	if err := s.change(ctx).DeleteCurrency(ctx, code); err != nil {
 		return fmt.Errorf("delete currency %s: %w", code, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) GetRate(ctx context.Context, id string) (ExchangeRate, bool, error) {
-	row, err := s.db.Queries(ctx).GetRate(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ExchangeRate{}, false, nil
-	}
-	if err != nil {
-		return ExchangeRate{}, false, fmt.Errorf("select exchange rate %s: %w", id, err)
+	rates, err := s.rates(ctx)
+	row, found := rates.Find(id)
+	if err != nil || !found {
+		return ExchangeRate{}, false, err
 	}
 	return rateFromRow(row), true, nil
 }
 
 func (s *PostgresStore) ListRates(ctx context.Context) ([]ExchangeRate, error) {
-	rows, err := s.db.Queries(ctx).ListRates(ctx)
-	return ratesFromRows(rows, err)
+	rows, err := s.rates(ctx)
+	return ratesFromRows(rows.Rows, err)
 }
 
 func (s *PostgresStore) RatesOf(ctx context.Context, code string) ([]ExchangeRate, error) {
@@ -88,7 +81,7 @@ func (s *PostgresStore) RatesOf(ctx context.Context, code string) ([]ExchangeRat
 }
 
 func (s *PostgresStore) PutRate(ctx context.Context, r ExchangeRate) error {
-	err := s.db.Queries(ctx).PutRate(ctx, sqlcdb.PutRateParams{
+	err := s.change(ctx).PutRate(ctx, sqlcdb.PutRateParams{
 		ID: r.ID, Currency: r.Currency, Date: r.Date.Time(), RateMicros: r.Rate.Micros(), Source: string(r.Source),
 		ImportID: database.NullIfEmpty(r.ImportID), Version: r.Version, CreatedAt: r.CreatedAt,
 		CreatedByID: r.CreatedBy.ID, CreatedByName: r.CreatedBy.Name, UpdatedAt: r.UpdatedAt,
@@ -101,14 +94,14 @@ func (s *PostgresStore) PutRate(ctx context.Context, r ExchangeRate) error {
 }
 
 func (s *PostgresStore) DeleteRate(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteRate(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteRate(ctx, id); err != nil {
 		return fmt.Errorf("delete exchange rate %s: %w", id, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) PutRateImport(ctx context.Context, i RateImport) error {
-	err := s.db.Queries(ctx).InsertRateImport(ctx, sqlcdb.InsertRateImportParams{
+	err := s.change(ctx).InsertRateImport(ctx, sqlcdb.InsertRateImportParams{
 		ID: i.ID, FileName: i.FileName, Feed: i.Feed, FirstDate: database.DateColumn(i.FirstDate), LastDate: database.DateColumn(i.LastDate),
 		Added: i.Added, Replaced: i.Replaced, Unchanged: i.Unchanged, NotUsed: i.NotUsed, Problems: i.Problems,
 		Version: i.Version, CreatedAt: i.CreatedAt, CreatedByID: i.CreatedBy.ID, CreatedByName: i.CreatedBy.Name,
@@ -121,23 +114,21 @@ func (s *PostgresStore) PutRateImport(ctx context.Context, i RateImport) error {
 }
 
 func (s *PostgresStore) GetRateImport(ctx context.Context, id string) (RateImport, bool, error) {
-	row, err := s.db.Queries(ctx).GetRateImport(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return RateImport{}, false, nil
-	}
-	if err != nil {
-		return RateImport{}, false, fmt.Errorf("select rate import %s: %w", id, err)
+	imports, err := s.rateImports(ctx)
+	row, found := imports.Find(id)
+	if err != nil || !found {
+		return RateImport{}, false, err
 	}
 	return rateImportFromRow(row), true, nil
 }
 
 func (s *PostgresStore) ListRateImports(ctx context.Context) ([]RateImport, error) {
-	rows, err := s.db.Queries(ctx).ListRateImports(ctx)
+	rows, err := s.rateImports(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select rate imports: %w", err)
+		return nil, err
 	}
-	imports := make([]RateImport, 0, len(rows))
-	for _, row := range rows {
+	imports := make([]RateImport, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
 		imports = append(imports, rateImportFromRow(row))
 	}
 	return imports, nil

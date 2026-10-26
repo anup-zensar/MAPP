@@ -2,10 +2,8 @@ package settings
 
 import (
 	"context"
-	"errors"
 	"fmt"
-
-	"github.com/jackc/pgx/v5"
+	"slices"
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/database"
@@ -25,30 +23,28 @@ func NewPostgresStore(db *database.DB) *PostgresStore {
 }
 
 func (s *PostgresStore) GetModel(ctx context.Context, id string) (Model, bool, error) {
-	row, err := s.db.Queries(ctx).GetModel(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Model{}, false, nil
-	}
-	if err != nil {
-		return Model{}, false, fmt.Errorf("select model %s: %w", id, err)
+	models, err := s.models(ctx)
+	row, found := models.Find(id)
+	if err != nil || !found {
+		return Model{}, false, err
 	}
 	return modelFromRow(row.Model, row.ActivityTypeIds), true, nil
 }
 
 func (s *PostgresStore) ListModels(ctx context.Context) ([]Model, error) {
-	rows, err := s.db.Queries(ctx).ListModels(ctx)
+	rows, err := s.models(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select models: %w", err)
+		return nil, err
 	}
-	models := make([]Model, 0, len(rows))
-	for _, row := range rows {
+	models := make([]Model, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
 		models = append(models, modelFromRow(row.Model, row.ActivityTypeIds))
 	}
 	return models, nil
 }
 
 func (s *PostgresStore) PutModel(ctx context.Context, m Model) error {
-	q := s.db.Queries(ctx)
+	q := s.change(ctx)
 	err := q.PutModel(ctx, sqlcdb.PutModelParams{
 		ID: m.ID, Name: m.Name, InqToMqlRateHundredths: m.InqToMqlRate.Hundredths(),
 		MqlToDealRateHundredths: m.MqlToDealRate.Hundredths(), AverageDealSizeMinor: m.AverageDealSize.Amount.Cents(),
@@ -69,30 +65,28 @@ func (s *PostgresStore) PutModel(ctx context.Context, m Model) error {
 }
 
 func (s *PostgresStore) DeleteModel(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteModel(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteModel(ctx, id); err != nil {
 		return fmt.Errorf("delete model %s: %w", id, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) GetActivityType(ctx context.Context, id string) (ActivityType, bool, error) {
-	row, err := s.db.Queries(ctx).GetActivityType(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return ActivityType{}, false, nil
-	}
-	if err != nil {
-		return ActivityType{}, false, fmt.Errorf("select activity type %s: %w", id, err)
+	types, err := s.activityTypes(ctx)
+	row, found := types.Find(id)
+	if err != nil || !found {
+		return ActivityType{}, false, err
 	}
 	return activityTypeFromRow(row), true, nil
 }
 
 func (s *PostgresStore) ListActivityTypes(ctx context.Context) ([]ActivityType, error) {
-	rows, err := s.db.Queries(ctx).ListActivityTypes(ctx)
+	rows, err := s.activityTypes(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select activity types: %w", err)
+		return nil, err
 	}
-	types := make([]ActivityType, 0, len(rows))
-	for _, row := range rows {
+	types := make([]ActivityType, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
 		types = append(types, activityTypeFromRow(row))
 	}
 	return types, nil
@@ -108,14 +102,14 @@ func (s *PostgresStore) PutActivityType(ctx context.Context, t ActivityType) err
 		cents := cost.Amount.Cents()
 		params.DefaultPlannedCostMinor, params.DefaultPlannedCostCurrency = &cents, &cost.Currency
 	}
-	if err := s.db.Queries(ctx).PutActivityType(ctx, params); err != nil {
+	if err := s.change(ctx).PutActivityType(ctx, params); err != nil {
 		return fmt.Errorf("save activity type %s: %w", t.ID, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) DeleteActivityType(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteActivityType(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteActivityType(ctx, id); err != nil {
 		return fmt.Errorf("delete activity type %s: %w", id, err)
 	}
 	return nil
@@ -127,7 +121,7 @@ func modelFromRow(row sqlcdb.Model, activityTypeIDs []string) Model {
 		MqlToDealRate: money.PercentFromHundredths(row.MqlToDealRateHundredths),
 		AverageDealSize: money.Money{Amount: money.FromCents(row.AverageDealSizeMinor),
 			Currency: row.AverageDealSizeCurrency},
-		ActivityTypeIDs: activityTypeIDs, Active: row.Active,
+		ActivityTypeIDs: slices.Clone(activityTypeIDs), Active: row.Active,
 		Meta: record.Meta{
 			Version:   row.Version,
 			CreatedAt: row.CreatedAt,

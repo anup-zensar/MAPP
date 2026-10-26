@@ -60,6 +60,7 @@ func (d *DB) Ping(ctx context.Context) error {
 
 // Write runs fn in one transaction once the Writes before it have ended (one at a time, as on the JSON store),
 // and returns fn's error unchanged. Inside a Write it joins it (fn passes ctx on); inside a Read, ErrReadOnly.
+// Stores keep what they read in it (memo) until they change it.
 func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) error {
 	if current, ok := ctx.Value(txKey{}).(transaction); ok {
 		if current.readOnly {
@@ -67,7 +68,7 @@ func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) erro
 		}
 		return fn(ctx)
 	}
-	return d.run(ctx, pgx.TxOptions{}, func(ctx context.Context) error {
+	return d.run(memo.With(ctx), pgx.TxOptions{}, func(ctx context.Context) error {
 		if err := d.Queries(ctx).LockWrites(ctx); err != nil {
 			return fmt.Errorf("wait for the other writes: %w", err)
 		}

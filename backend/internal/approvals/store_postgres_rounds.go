@@ -50,7 +50,7 @@ func (s *PostgresStore) PutRound(ctx context.Context, r Round) error {
 	if err := errors.Join(levelsErr, factsErr); err != nil {
 		return fmt.Errorf("encode approval round %s: %w", r.ID, err)
 	}
-	err := s.db.Queries(ctx).PutRound(ctx, sqlcdb.PutRoundParams{
+	err := s.change(ctx).PutRound(ctx, sqlcdb.PutRoundParams{
 		ID: r.ID, ActivityID: r.ActivityID, Number: r.Number, WorkflowID: r.WorkflowID, WorkflowName: r.WorkflowName,
 		Levels: levels, CurrentLevel: r.CurrentLevel, Outcome: string(r.Outcome), SubmittedAt: r.SubmittedAt,
 		SubmittedByID: r.SubmittedBy.ID, SubmittedByName: r.SubmittedBy.Name, Comment: r.Comment, EndedAt: r.EndedAt,
@@ -79,7 +79,7 @@ func (s *PostgresStore) PutAction(ctx context.Context, a Action) error {
 	}
 	params.AsDelegateOfID, params.AsDelegateOfName = actorColumns(a.AsDelegateOf)
 	params.EscalatedToID, params.EscalatedToName = actorColumns(a.EscalatedTo)
-	if err := s.db.Queries(ctx).InsertAction(ctx, params); err != nil {
+	if err := s.change(ctx).InsertAction(ctx, params); err != nil {
 		return fmt.Errorf("save approval history entry %s: %w", a.ID, err)
 	}
 	return nil

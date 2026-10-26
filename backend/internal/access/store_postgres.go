@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jackc/pgx/v5"
 
@@ -11,8 +12,12 @@ import (
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/database/sqlcdb"
+	"mapp/internal/platform/memo"
 	"mapp/internal/platform/record"
 )
+
+// keptArea is what the transaction memo keeps of access: roles, assignments and rules.
+const keptArea = "access"
 
 // PostgresStore is the Repository on PostgreSQL. A role's permissions are a text[] column (values of a
 // fixed list); an assignment's chosen teams are a child table, so each team must exist.
@@ -25,23 +30,21 @@ func NewPostgresStore(db *database.DB) *PostgresStore {
 }
 
 func (s *PostgresStore) GetRole(ctx context.Context, id string) (Role, bool, error) {
-	row, err := s.db.Queries(ctx).GetRole(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Role{}, false, nil
-	}
-	if err != nil {
-		return Role{}, false, fmt.Errorf("select role %s: %w", id, err)
+	roles, err := s.roles(ctx)
+	row, found := roles.Find(id)
+	if err != nil || !found {
+		return Role{}, false, err
 	}
 	return roleFromRow(row), true, nil
 }
 
 func (s *PostgresStore) ListRoles(ctx context.Context) ([]Role, error) {
-	rows, err := s.db.Queries(ctx).ListRoles(ctx)
+	rows, err := s.roles(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select roles: %w", err)
+		return nil, err
 	}
-	roles := make([]Role, 0, len(rows))
-	for _, row := range rows {
+	roles := make([]Role, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
 		roles = append(roles, roleFromRow(row))
 	}
 	return roles, nil
@@ -52,7 +55,7 @@ func (s *PostgresStore) PutRole(ctx context.Context, r Role) error {
 	for _, p := range r.Permissions {
 		permissions = append(permissions, string(p))
 	}
-	err := s.db.Queries(ctx).PutRole(ctx, sqlcdb.PutRoleParams{
+	err := s.change(ctx).PutRole(ctx, sqlcdb.PutRoleParams{
 		ID: r.ID, Name: r.Name, Description: r.Description, BuiltIn: r.BuiltIn, Permissions: permissions,
 		DefaultScope: string(r.DefaultScope), Version: r.Version, CreatedAt: r.CreatedAt,
 		CreatedByID: r.CreatedBy.ID, CreatedByName: r.CreatedBy.Name, UpdatedAt: r.UpdatedAt,
@@ -65,7 +68,7 @@ func (s *PostgresStore) PutRole(ctx context.Context, r Role) error {
 }
 
 func (s *PostgresStore) DeleteRole(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteRole(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteRole(ctx, id); err != nil {
 		return fmt.Errorf("delete role %s: %w", id, err)
 	}
 	return nil
@@ -80,7 +83,7 @@ func (s *PostgresStore) AssignmentsOfPerson(ctx context.Context, personID string
 }
 
 func (s *PostgresStore) PutAssignment(ctx context.Context, a Assignment) error {
-	q := s.db.Queries(ctx)
+	q := s.change(ctx)
 	err := q.PutAssignment(ctx, sqlcdb.PutAssignmentParams{
 		ID: a.ID, PersonID: a.PersonID, RoleID: a.RoleID, ScopeType: string(a.ScopeType), Version: a.Version,
 		CreatedAt: a.CreatedAt, CreatedByID: a.CreatedBy.ID, CreatedByName: a.CreatedBy.Name,
@@ -99,20 +102,27 @@ func (s *PostgresStore) PutAssignment(ctx context.Context, a Assignment) error {
 }
 
 func (s *PostgresStore) DeleteAssignment(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteAssignment(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteAssignment(ctx, id); err != nil {
 		return fmt.Errorf("delete role assignment %s: %w", id, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) GetRules(ctx context.Context) (Rules, bool, error) {
-	row, err := s.db.Queries(ctx).GetAccessRules(ctx, rulesID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Rules{}, false, nil
-	}
+	kept, err := memo.Get(ctx, keptArea+":rules", func(ctx context.Context) (*sqlcdb.AccessRule, error) {
+		row, err := s.db.Queries(ctx).GetAccessRules(ctx, rulesID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return &row, err
+	})
 	if err != nil {
 		return Rules{}, false, fmt.Errorf("select access rules: %w", err)
 	}
+	if kept == nil {
+		return Rules{}, false, nil
+	}
+	row := *kept
 	return Rules{
 		ID: row.ID, NoSelfApproval: row.NoSelfApproval, NewPersonRoleID: database.EmptyIfNull(row.NewPersonRoleID),
 		Meta: record.Meta{
@@ -126,7 +136,7 @@ func (s *PostgresStore) GetRules(ctx context.Context) (Rules, bool, error) {
 }
 
 func (s *PostgresStore) PutRules(ctx context.Context, r Rules) error {
-	err := s.db.Queries(ctx).PutAccessRules(ctx, sqlcdb.PutAccessRulesParams{
+	err := s.change(ctx).PutAccessRules(ctx, sqlcdb.PutAccessRulesParams{
 		ID: rulesID, NoSelfApproval: r.NoSelfApproval, NewPersonRoleID: database.NullIfEmpty(r.NewPersonRoleID),
 		Version: r.Version, CreatedAt: r.CreatedAt, CreatedByID: r.CreatedBy.ID, CreatedByName: r.CreatedBy.Name,
 		UpdatedAt: r.UpdatedAt, UpdatedByID: r.UpdatedBy.ID, UpdatedByName: r.UpdatedBy.Name,
@@ -138,16 +148,21 @@ func (s *PostgresStore) PutRules(ctx context.Context, r Rules) error {
 }
 
 func (s *PostgresStore) assignments(ctx context.Context, personID *string) ([]Assignment, error) {
-	rows, err := s.db.Queries(ctx).ListAssignments(ctx, personID)
+	rows, err := memo.Get(ctx, keptArea+":assignments", func(ctx context.Context) ([]sqlcdb.ListAssignmentsRow, error) {
+		return s.db.Queries(ctx).ListAssignments(ctx, nil)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("select role assignments: %w", err)
 	}
 	assignments := make([]Assignment, 0, len(rows))
 	for _, row := range rows {
 		a := row.RoleAssignment
+		if personID != nil && a.PersonID != *personID {
+			continue
+		}
 		assignments = append(assignments, Assignment{
 			ID: a.ID, PersonID: a.PersonID, RoleID: a.RoleID, ScopeType: authz.ScopeType(a.ScopeType),
-			TeamIDs: row.TeamIds,
+			TeamIDs: slices.Clone(row.TeamIds),
 			Meta: record.Meta{
 				Version:   a.Version,
 				CreatedAt: a.CreatedAt,
@@ -158,6 +173,23 @@ func (s *PostgresStore) assignments(ctx context.Context, personID *string) ([]As
 		})
 	}
 	return assignments, nil
+}
+
+// roles reads every role once per transaction (memo): every request checks the actor's roles, often more
+// than once, and only this store changes them.
+func (s *PostgresStore) roles(ctx context.Context) (memo.Table[sqlcdb.Role], error) {
+	table, err := memo.GetTable(ctx, keptArea+":roles", func(ctx context.Context) ([]sqlcdb.Role, error) {
+		return s.db.Queries(ctx).ListRoles(ctx)
+	}, func(r sqlcdb.Role) string { return r.ID })
+	if err != nil {
+		return memo.Table[sqlcdb.Role]{}, fmt.Errorf("select roles: %w", err)
+	}
+	return table, nil
+}
+
+func (s *PostgresStore) change(ctx context.Context) *sqlcdb.Queries {
+	memo.Forget(ctx, keptArea)
+	return s.db.Queries(ctx)
 }
 
 func roleFromRow(row sqlcdb.Role) Role {
