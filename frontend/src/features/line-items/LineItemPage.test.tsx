@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { financialsNotServed } from '@/features/plans/testData';
 import { mockApi } from '@/test/mockApi';
 import type { MockHandler } from '@/test/mockApi';
 import { findMessages, renderWithProviders } from '@/test/render';
@@ -171,6 +172,7 @@ describe('LineItemPage (US4, FR-026)', () => {
       'GET /api/line-items/L-2002': {
         body: details({ lineItem: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) }),
       },
+      ...financialsNotServed('L-2002'),
     });
     await screen.findByRole('heading', { level: 1, name: 'Agency fee' });
 
