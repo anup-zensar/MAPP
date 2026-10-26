@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	alex  = "alex.morgan@shell.com"
-	priya = "priya.raman@shell.com"
+	alex         = "alex.morgan@shell.com"
+	priya        = "priya.raman@shell.com"
+	requestLimit = time.Minute
 )
 
 // Data is what a benchmark database holds: the demo data alone, or the volume of the scale targets as well.
@@ -123,13 +124,26 @@ func (c *Client) Send(tb testing.TB, method, path string, body any) Response {
 }
 
 // Measure sends the request for every iteration of b and reports the statements per request beside the time.
+// A request still running after requestLimit is stopped and counted in the metric stopped/op, with the
+// statements it had sent, so that a page taking many minutes cannot hold up the run.
 func (c *Client) Measure(b *testing.B, method, path string, body any) {
 	b.Helper()
-	var queries int64
+	var queries, stopped int64
 	for b.Loop() {
-		queries += c.Do(b, method, path, body).Queries
+		ctx, cancel := context.WithTimeout(querycount.With(b.Context()), requestLimit)
+		answer := c.server.do(ctx, request{method: method, path: path, body: body, cookie: c.cookie})
+		queries += querycount.Of(ctx)
+		if ctx.Err() != nil {
+			stopped++
+		} else if answer.Code >= http.StatusMultipleChoices {
+			b.Fatalf("apibench: %s %s: %d %s", method, path, answer.Code, answer.Body)
+		}
+		cancel()
 	}
 	b.ReportMetric(float64(queries)/float64(b.N), "queries/op")
+	if stopped > 0 {
+		b.ReportMetric(float64(stopped)/float64(b.N), "stopped/op")
+	}
 }
 
 func (s *Server) do(ctx context.Context, r request) *httptest.ResponseRecorder {
