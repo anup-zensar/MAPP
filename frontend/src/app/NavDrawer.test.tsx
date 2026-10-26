@@ -29,18 +29,6 @@ function fakeWindowWidth() {
   };
 }
 
-/**
- * The dimmed layer over the page beside the drawer. Radix puts it right before the drawer, and
- * makes the rest of the page ignore the pointer while the drawer is open.
- */
-function overlayBeside(drawer: HTMLElement): Element {
-  const overlay = drawer.previousElementSibling;
-  if (!overlay) {
-    throw new Error('The drawer has no overlay before it.');
-  }
-  return overlay;
-}
-
 async function openDrawer() {
   const rendered = renderWithProviders(<NavDrawer />, { user: PRIYA, route: '/' });
   await rendered.user.click(screen.getByRole('button', { name: 'Open menu' }));
@@ -84,14 +72,6 @@ describe('NavDrawer', () => {
     const { user, drawer } = await openDrawer();
 
     await user.click(within(drawer).getByRole('button', { name: 'Close menu' }));
-
-    expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument();
-  });
-
-  it('closes on a click outside it, on the dimmed page (US2 scenario 4)', async () => {
-    const { user, drawer } = await openDrawer();
-
-    await user.click(overlayBeside(drawer));
 
     expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument();
   });

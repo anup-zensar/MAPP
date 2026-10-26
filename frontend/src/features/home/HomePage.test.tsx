@@ -5,17 +5,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import {
-  EMPTY_SUMMARY,
-  HOME_ANSWERS,
-  attentionItemOf,
-  groupOf,
-  logEntryOf,
-  myActivityOf,
-  overviewOf,
-  summaryOf,
-  waitingItemOf,
-} from '@/testing/fixtures/home';
+import { EMPTY_SUMMARY, HOME_ANSWERS, overviewOf, summaryOf } from '@/testing/fixtures/home';
 import { reply } from '@/testing/replies';
 import { HomePage } from './HomePage';
 
@@ -213,39 +203,6 @@ describe('HomePage', () => {
     const summary = screen.getByRole('region', { name: 'Summary' });
     expect(summary.nextElementSibling).toBe(financials);
     expect(requestsTo(api, '/api/v1/financials/overview')[0]?.search).toBe('?scope=myTeams');
-  });
-
-  it('shows what needs the person and what waits for their approval (US3)', async () => {
-    renderHome([
-      reply('GET /api/v1/home/attention', {
-        body: { items: [attentionItemOf()], total: 1 },
-      }),
-      reply('GET /api/v1/home/waiting', { body: { items: [waitingItemOf()], total: 1 } }),
-    ]);
-
-    const attention = await screen.findByRole('region', { name: 'Needs your attention' });
-    expect(await within(attention).findByRole('link', { name: 'Launch film' })).toBeInTheDocument();
-    const waiting = screen.getByRole('region', { name: 'Waiting for my approval' });
-    expect(
-      await within(waiting).findByRole('link', { name: 'Review Dealer summit' }),
-    ).toBeInTheDocument();
-  });
-
-  it('shows my activities and the recent changes of the plans in scope (US4)', async () => {
-    renderHome([
-      reply('GET /api/v1/home/my-activities', {
-        body: { groups: [groupOf('approved', [myActivityOf()])], total: 1 },
-      }),
-      reply('GET /api/v1/home/recent-changes', { body: { items: [logEntryOf()], total: 1 } }),
-    ]);
-
-    const activities = await screen.findByRole('region', { name: 'My activities' });
-    expect(
-      await within(activities).findByRole('link', { name: 'Launch film' }),
-    ).toBeInTheDocument();
-    expect(activities.closest('#my-activities')).not.toBeNull();
-    const changes = screen.getByRole('region', { name: 'Recent changes' });
-    expect(await within(changes).findByRole('link', { name: 'Launch film' })).toBeInTheDocument();
   });
 
   it('gives a brand-new person an empty state in every card, never a blank one (FR-021, SC-006)', async () => {

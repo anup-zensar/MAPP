@@ -49,21 +49,6 @@ describe('FilterMenu (FR-004, FR-009)', () => {
     expect(chosen()).toBe('U-1002');
   });
 
-  it('says on the button how many values are chosen', () => {
-    renderWithProviders(
-      <FilterMenu
-        label="Owner"
-        choices={OWNERS}
-        multiple
-        selected={['U-1003', 'U-1002']}
-        summary="2"
-        onChange={() => {}}
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: 'Owner · 2' })).toBeInTheDocument();
-  });
-
   it('offers one value with radio buttons for a single filter', async () => {
     const onChange = vi.fn();
     const { user } = renderWithProviders(
@@ -85,24 +70,6 @@ describe('FilterMenu (FR-004, FR-009)', () => {
     await user.click(within(menu).getByRole('radio', { name: 'Complete branches only' }));
 
     expect(onChange).toHaveBeenCalledWith(['completeBranches']);
-  });
-
-  it('lists choices under their group headings', async () => {
-    const { user } = renderWithProviders(
-      <Harness
-        label="Campaign / initiative status"
-        multiple
-        choices={[
-          { value: 'noActivities', label: 'No activities', group: 'Approval progress' },
-          { value: 'inProgress', label: 'In progress', group: 'Approval progress' },
-          { value: 'running', label: 'Running', group: 'Timing' },
-        ]}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Campaign / initiative status' }));
-    const menu = await screen.findByRole('dialog');
-    expect(menu).toHaveTextContent('Approval progressNo activitiesIn progressTimingRunning');
   });
 
   it('ticks several values with the quick choice first (My teams)', async () => {

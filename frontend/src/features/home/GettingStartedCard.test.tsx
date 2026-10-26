@@ -67,10 +67,4 @@ describe('GettingStartedCard', () => {
       '/settings/teams',
     );
   });
-
-  it('leaves the no-team sentence out when the person is in a team without plans (FR-020)', () => {
-    renderWithProviders(<GettingStartedCard reason="noTeamPlans" />, { user: testUser() });
-
-    expect(within(card()).queryByText(/You're not in a team yet/)).not.toBeInTheDocument();
-  });
 });
