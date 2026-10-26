@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import type { components } from '@/api/generated/schema';
-import { parseMoneyInput, parseWholeInput } from '@/format/decimal';
-import type { ActivityFormData } from './api';
+import { parseMoneyInput, parseWholeInput, toCents } from '@/format/decimal';
+import type { ActivityDestination, ActivityFormData } from './api';
 import { endOf, sameName } from './activity-form-state';
 import type { FormState } from './activity-form-state';
+import { CHOOSE_ANOTHER_INITIATIVE } from './activity-text';
+import { NOTHING_CHOSEN } from './split-text';
 
 type AttributeValues = components['schemas']['AttributeValues'];
 
@@ -157,6 +159,57 @@ function isWholeOrEmpty(text: string): boolean {
 function length(text: string): number {
   return [...text].length;
 }
+
+/** The copy's initiative: the chosen one, else the activity's own when a copy can go there. */
+export function copyTargetOf(chosen: string, items: ActivityDestination[]): string {
+  return (
+    chosen || (items.find((item) => item.current && item.copyProblem === null)?.initiative.id ?? '')
+  );
+}
+
+export function copySchema(items: ActivityDestination[]) {
+  return z
+    .object({ initiativeId: z.string() })
+    .refine(
+      ({ initiativeId }) =>
+        items.some(
+          (item) =>
+            item.initiative.id === copyTargetOf(initiativeId, items) && item.copyProblem === null,
+        ),
+      { message: CHOOSE_ANOTHER_INITIATIVE, path: ['initiativeId'] },
+    );
+}
+
+export function moveSchema(items: ActivityDestination[]) {
+  return z
+    .object({ initiativeId: z.string(), search: z.string() })
+    .refine(
+      ({ initiativeId }) =>
+        !items.some((item) => !item.current) ||
+        items.some((item) => item.initiative.id === initiativeId && item.moveProblem === null),
+      { message: CHOOSE_ANOTHER_INITIATIVE, path: ['initiativeId'] },
+    );
+}
+
+export function isNothingChosen(lineItemIds: string[], amount: string): boolean {
+  const parsed = amount.trim() === '' ? null : parseMoneyInput(amount);
+  return lineItemIds.length === 0 && (!parsed || toCents(parsed.amount) <= 0n);
+}
+
+/** Split activity: null keeps the suggested name, the own initiative and the ticked items' total. */
+export const splitSchema = z
+  .object({
+    name: z.string().nullable(),
+    initiativeId: z.string().nullable(),
+    lineItemIds: z.array(z.string()),
+    plannedCost: z.string().nullable(),
+  })
+  .refine((values) => !isNothingChosen(values.lineItemIds, values.plannedCost ?? '0.00'), {
+    message: NOTHING_CHOSEN,
+    path: ['lineItemIds'],
+  });
+
+export type SplitValues = z.infer<typeof splitSchema>;
 
 const activityTabSchema = z.enum(['overview', 'details', 'approval', 'history']);
 
