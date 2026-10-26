@@ -27,6 +27,8 @@ info:
     - Deleting a business record answers the recycle-bin entry so the web app can offer Undo.
     - Money is {"amount": "1234.50", "currency": "USD"} (Money in answers, MoneyInput or decimal strings in requests).
     - Every response has the header Cache-Control no-store.
+    - Every response has the header X-Request-ID, a random ID the server makes and writes in its log
+      records (feature 024); an X-Request-ID sent by the client is ignored.
 servers:
   - url: http://127.0.0.1:8080
     description: Local API (development)

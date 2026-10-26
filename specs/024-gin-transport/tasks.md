@@ -145,16 +145,16 @@ end-to-end suite green with no test expectation changed.
 
 **Independent Test**: spec User Story 2.
 
-- [ ] T022 [P] [US2] Create `backend/internal/platform/web/telemetry_test.go` with an engine on an in-memory
+- [x] T022 [P] [US2] Create `backend/internal/platform/web/telemetry_test.go` with an engine on an in-memory
   span exporter and a manual metric reader: `TestEngine_TracesAndMeasuresEveryRoute_024_FR008_FR009` checks
   one span per request named by its route, a duration measured with route and status, a panic counted as a
   500, and a client's `traceparent` not continued
-- [ ] T023 [US2] Create `backend/internal/app/logging_test.go` (through `apitest`, not parallel, swapping the
+- [x] T023 [US2] Create `backend/internal/app/logging_test.go` (through `apitest`, not parallel, swapping the
   default slog logger). In `TestRequestLogs_CarryRequestTraceAndActor_024_FR006`, Sara's refused delete and
   a successful read must produce records that are all JSON, with `request_id` equal to the header and with
   `trace_id`, and `actor_id` `U-1006` after sign-in; none may contain "Sara", "Novak", "@" or the session
   cookie
-- [ ] T024 [US2] ⏳022 Add "Every response has the header X-Request-ID" to the conventions in
+- [x] T024 [US2] ⏳022 Add "Every response has the header X-Request-ID" to the conventions in
   `backend/api/openapi.yaml`. `npm run api:types` shows no diff (FR-005)
 
 **Checkpoint**: User Story 2 testable on its own.
