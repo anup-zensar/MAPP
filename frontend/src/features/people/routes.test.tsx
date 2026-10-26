@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 
 const META = {
   version: 1,
@@ -16,15 +16,15 @@ const EUROPE = {
   id: 'T-1001',
   name: 'Lubricants Europe',
   description: '',
-  colour: 'blue',
+  colour: 'blue' as const,
   active: true,
   members: [],
   plans: [],
   ...META,
 };
 const TEAMS: HttpHandler[] = [
-  looseReply('GET /api/v1/teams', { body: { items: [EUROPE], total: 1 } }),
-  looseReply('GET /api/v1/teams/{teamId}', { body: EUROPE }, { teamId: 'T-1001' }),
+  reply('GET /api/v1/teams', { body: { items: [EUROPE], total: 1 } }),
+  reply('GET /api/v1/teams/{teamId}', { body: EUROPE }, { teamId: 'T-1001' }),
 ];
 const PRIYA = {
   id: 'U-1002',
@@ -37,13 +37,9 @@ const PRIYA = {
   ...META,
 };
 const PEOPLE: HttpHandler[] = [
-  looseReply('GET /api/v1/people', { body: { items: [PRIYA], total: 1 } }),
-  looseReply(
-    'GET /api/v1/people/{personId}',
-    { body: { ...PRIYA, usage: [] } },
-    { personId: 'U-1002' },
-  ),
-  looseReply(
+  reply('GET /api/v1/people', { body: { items: [PRIYA], total: 1 } }),
+  reply('GET /api/v1/people/{personId}', { body: { ...PRIYA, usage: [] } }, { personId: 'U-1002' }),
+  reply(
     'GET /api/v1/people/{personId}/roles',
     {
       status: 403,
@@ -53,7 +49,7 @@ const PEOPLE: HttpHandler[] = [
   ),
 ];
 const CURRENCIES: HttpHandler[] = [
-  looseReply('GET /api/v1/me/display-currencies', {
+  reply('GET /api/v1/me/display-currencies', {
     body: { items: [{ code: 'USD', name: 'US dollar', active: true }], total: 1 },
   }),
 ];
@@ -102,11 +98,11 @@ describe('People, teams and profile routes (feature 003)', () => {
     let saved = false;
     const { user } = renderApp('/profile', [
       ...CURRENCIES,
-      looseReply('PATCH /api/v1/me', () => {
+      reply('PATCH /api/v1/me', () => {
         saved = true;
         return { body: renamed };
       }),
-      looseReply('GET /api/v1/me', () => ({ body: saved ? renamed : testUser() })),
+      reply('GET /api/v1/me', () => ({ body: saved ? renamed : testUser() })),
     ]);
     const accountButtons = () => screen.getAllByRole('button', { name: 'Priya — account menu' });
     const editDetails = await screen.findByRole('button', { name: 'Edit details' });
