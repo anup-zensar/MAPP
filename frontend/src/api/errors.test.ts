@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
+import { pending, reply } from '@/testing/replies';
 import { api, call, setSessionLostHandler } from './client';
 import { ApiError, conflictMessage, resolvedMessage } from './errors';
 import type { components } from './generated/schema';
@@ -94,9 +95,13 @@ describe('call()', () => {
 
   it('passes a cancelled request (AbortError) on unchanged', async () => {
     const abort = new DOMException('The operation was aborted.', 'AbortError');
-    mockApi({ 'GET /api/v1/environment': () => Promise.reject(abort) });
+    mockApi([reply('GET /api/v1/environment', pending)]);
+    const controller = new AbortController();
 
-    await expect(call(api.GET('/api/v1/environment'))).rejects.toBe(abort);
+    const answer = call(api.GET('/api/v1/environment', { signal: controller.signal }));
+    controller.abort(abort);
+
+    await expect(answer).rejects.toBe(abort);
   });
 
   it('shows a general message for a failed answer that is not MAPP JSON (FR-020)', async () => {

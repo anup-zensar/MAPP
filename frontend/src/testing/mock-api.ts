@@ -1,33 +1,14 @@
-import { vi } from 'vitest';
+import { http as msw, HttpResponse } from 'msw';
+import type { HttpHandler } from 'msw';
+import { setupServer } from 'msw/node';
+import { ORIGIN, reply } from './replies';
 
 /**
- * A fake MAPP API for component and page tests (research R19).
+ * The fake MAPP API of component and page tests (research R19, 026 R9), on Mock Service Worker.
+ * A request no handler answers gets a 501 and fails the test afterwards (testing/setup.ts).
  *
- * mockApi() replaces the browser's fetch with canned answers, one per "METHOD /path":
- *
- *   const api = mockApi({
- *     'GET /api/v1/me': { body: priya },
- *     'PATCH /api/v1/me/preferences': { status: 400, body: validationError },
- *   });
- *
- * A request without a canned answer is remembered, and the test setup fails the test afterwards,
- * so a missing answer never looks like a server that cannot be reached. The test setup also puts
- * the real fetch back after every test.
+ *   const api = mockApi([reply('GET /api/v1/me', { body: priya })]);
  */
-
-/** A canned answer: a status (200 when left out) and a JSON body (no body when left out). */
-export interface MockAnswer {
-  status?: number;
-  body?: unknown;
-}
-
-/**
- * What an endpoint answers: a canned answer, or a function for anything special — answers that
- * change from call to call, a Response that is not JSON, a request that never finishes or a
- * network failure (a rejected promise).
- */
-export type MockHandler =
-  MockAnswer | ((request: Request) => MockAnswer | Response | Promise<MockAnswer | Response>);
 
 /** One request the code under test made. */
 export interface RecordedRequest {
@@ -43,58 +24,100 @@ export interface RecordedRequest {
 export interface MockedApi {
   /** Every request, in the order they were made. */
   requests: RecordedRequest[];
-  /** The bodies sent to one "METHOD /path", in order. */
+  /** The bodies sent to one "METHOD /path" (the path as sent, with its IDs), in order. */
   bodiesOf(key: string): unknown[];
 }
 
+/** A canned answer of the untyped form, until every test answers through `reply`. */
+export interface MockAnswer {
+  status?: number;
+  body?: unknown;
+}
+
+export type MockHandler =
+  MockAnswer | ((request: Request) => MockAnswer | Response | Promise<MockAnswer | Response>);
+
 /**
  * The app frame's background requests (feature 008: the sidebar's Approvals count and the bell's
- * notifications, asked on every signed-in page). mockApi answers them with "nothing waiting"
- * unless the test gives its own answer, so page tests of any feature need not mock them.
+ * notifications, asked on every signed-in page), answered "nothing waiting" unless a test answers.
  */
-export const FRAME_ANSWERS: Record<string, MockAnswer> = {
-  'GET /api/v1/approvals/summary': {
+export const FRAME_ANSWERS: HttpHandler[] = [
+  reply('GET /api/v1/approvals/summary', {
     body: { waitingForMe: 0, allOpen: 0, approvedThisMonth: 0, declinedThisMonth: 0 },
-  },
-  'GET /api/v1/notifications': { body: { items: [], total: 0, unread: 0 } },
-};
+  }),
+  reply('GET /api/v1/notifications', { body: { items: [], total: 0, unread: 0 } }),
+];
 
-/** Requests that had no canned answer, as "METHOD /path"; read by the test setup. */
-const unmockedRequests: string[] = [];
+const TEST_HEADER = 'X-Test-Run';
+let run = 0;
+let recorded: RecordedRequest[] = [];
+const unanswered: string[] = [];
 
-/** Replaces fetch with the given canned answers for the rest of the test. */
-export function mockApi(handlers: Record<string, MockHandler>): MockedApi {
-  const requests: RecordedRequest[] = [];
+/** A request a finished test left behind fails as a network error, unseen by the current test. */
+const leftover = msw.all(`${ORIGIN}/*`, ({ request }) =>
+  request.headers.get(TEST_HEADER) === String(run) ? undefined : HttpResponse.error(),
+);
 
-  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+const recorder = msw.all(`${ORIGIN}/*`, async ({ request }) => {
+  recorded.push(await describe(request));
+});
+
+const lastResort = msw.all(`${ORIGIN}/*`, ({ request }) => {
+  const key = keyOf(request);
+  unanswered.push(key);
+  return HttpResponse.json({ message: `mockApi has no answer for ${key}` }, { status: 501 });
+});
+
+/** The fake network of every test; testing/setup.ts starts and stops it. */
+export const server = setupServer(lastResort);
+
+/**
+ * Marks every request with the test that sends it. MSW answers a request a few ticks later, when
+ * the next test may have begun; the mark keeps each answer and record with its own test.
+ */
+export function markRequests(): void {
+  const intercepted = globalThis.fetch;
+  globalThis.fetch = (input, init) => {
     const request = new Request(input, init);
-    const url = new URL(request.url);
-    const key = `${request.method} ${url.pathname}`;
-    requests.push({
-      method: request.method,
-      path: url.pathname,
-      search: url.search,
-      body: parseBody(await request.clone().text()),
-    });
+    request.headers.set(TEST_HEADER, String(run));
+    return intercepted(request);
+  };
+}
 
-    const handler = handlers[key] ?? FRAME_ANSWERS[key];
-    if (!handler) {
-      unmockedRequests.push(key);
-      return jsonResponse({ status: 501, body: { message: `mockApi has no answer for ${key}` } });
-    }
-    const answer = typeof handler === 'function' ? await handler(request) : handler;
-    return answer instanceof Response ? answer : jsonResponse(answer);
-  });
-
+/** Answers this test's requests with `handlers` (a later one wins) and records every request. */
+export function mockApi(handlers: HttpHandler[] | Record<string, MockHandler>): MockedApi {
+  const list = Array.isArray(handlers) ? handlers : Object.entries(handlers).map(untyped);
+  run += 1;
+  recorded = [];
+  const requests = recorded;
+  server.resetHandlers();
+  server.use(...FRAME_ANSWERS);
+  server.use(...list.toReversed());
+  server.use(leftover, recorder);
   return {
     requests,
     bodiesOf: (key) => requests.filter((r) => `${r.method} ${r.path}` === key).map((r) => r.body),
   };
 }
 
-/** Returns the requests that had no canned answer since the last call, and forgets them. */
+/** Returns the requests that had no answer since the last call, and forgets them. */
 export function takeUnmockedRequests(): string[] {
-  return unmockedRequests.splice(0);
+  return unanswered.splice(0);
+}
+
+function untyped([key, handler]: [string, MockHandler]): HttpHandler {
+  const [method = '', path = ''] = key.split(' ');
+  return msw.all(`${ORIGIN}${path}`, async ({ request }) => {
+    if (request.method !== method) {
+      return undefined;
+    }
+    try {
+      const answer = typeof handler === 'function' ? await handler(request) : handler;
+      return answer instanceof Response ? answer : jsonResponse(answer);
+    } catch {
+      return HttpResponse.error();
+    }
+  });
 }
 
 function jsonResponse({ status = 200, body }: MockAnswer): Response {
@@ -107,7 +130,17 @@ function jsonResponse({ status = 200, body }: MockAnswer): Response {
   });
 }
 
-function parseBody(text: string): unknown {
+async function describe(request: Request): Promise<RecordedRequest> {
+  const url = new URL(request.url);
+  const text = await request.clone().text();
+  return { method: request.method, path: url.pathname, search: url.search, body: parse(text) };
+}
+
+function keyOf(request: Request): string {
+  return `${request.method} ${new URL(request.url).pathname}`;
+}
+
+function parse(text: string): unknown {
   if (text === '') {
     return undefined;
   }

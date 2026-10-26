@@ -3,13 +3,13 @@
  *
  * - Adds the jest-dom matchers such as toBeInTheDocument() and toHaveAccessibleName().
  * - Fills in the browser features jsdom does not have, which Radix and the theme code use.
- * - Gives every test an API without answers, so no test can ever reach a real server; a test that
- *   makes a request without a canned answer fails (research R19).
+ * - Starts the fake network (Mock Service Worker) and gives every test an API without answers, so
+ *   no test can ever reach a real server; a request without an answer fails the test (R19).
  */
 import '@testing-library/jest-dom/vitest';
 import { cleanup, configure } from '@testing-library/react';
-import { afterEach, beforeEach, vi } from 'vitest';
-import { mockApi, takeUnmockedRequests } from './mock-api';
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
+import { markRequests, mockApi, server, takeUnmockedRequests } from './mock-api';
 
 // findBy… and waitFor wait up to 3 seconds: on a busy laptop a page can need more than the default 1 s.
 configure({ asyncUtilTimeout: 3000 });
@@ -42,8 +42,17 @@ Element.prototype.releasePointerCapture = () => {};
 // React Router's ScrollRestoration scrolls to the top after every navigation; jsdom cannot scroll.
 window.scrollTo = () => {};
 
+beforeAll(() => {
+  server.listen({ onUnhandledFrame: 'error' });
+  markRequests();
+});
+
+afterAll(() => {
+  server.close();
+});
+
 beforeEach(() => {
-  mockApi({});
+  mockApi([]);
 });
 
 afterEach(() => {
@@ -54,7 +63,7 @@ afterEach(() => {
   if (unmocked.length > 0) {
     throw new Error(
       `The test made requests without a canned answer: ${unmocked.join(', ')}. ` +
-        'Add them to mockApi({ … }).',
+        'Add them to mockApi([ … ]).',
     );
   }
 });

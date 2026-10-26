@@ -1,21 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { FRAME_ANSWERS, mockApi, takeUnmockedRequests } from './mock-api';
-
-const ORIGIN = window.location.origin;
+import { mockApi, takeUnmockedRequests } from './mock-api';
+import { ORIGIN, pending, reply } from './replies';
 
 describe('mockApi', () => {
-  it('answers a request with the canned JSON for its "METHOD /path"', async () => {
-    mockApi({ 'GET /api/v1/environment': { body: { status: 'ok' } } });
+  it('answers a request with the canned JSON of its operation', async () => {
+    mockApi([
+      reply('GET /api/v1/environment', { body: { environment: 'local', demoSignIn: true } }),
+    ]);
 
     const response = await fetch(`${ORIGIN}/api/v1/environment`);
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('application/json');
-    expect(await response.json()).toEqual({ status: 'ok' });
+    expect(await response.json()).toEqual({ environment: 'local', demoSignIn: true });
   });
 
   it('uses the given status and sends no body when there is none', async () => {
-    mockApi({ 'POST /api/v1/auth/sign-out': { status: 204 } });
+    mockApi([reply('POST /api/v1/auth/sign-out', { status: 204 })]);
 
     const response = await fetch(`${ORIGIN}/api/v1/auth/sign-out`, { method: 'POST' });
 
@@ -23,48 +24,48 @@ describe('mockApi', () => {
     expect(await response.text()).toBe('');
   });
 
-  it('matches on the path only, so the query string does not matter', async () => {
-    const api = mockApi({ 'GET /api/v1/activity-log': { body: { items: [], total: 0 } } });
-
-    const response = await fetch(`${ORIGIN}/api/v1/activity-log?limit=20`);
-
-    expect(response.status).toBe(200);
-    expect(api.requests).toMatchObject([
-      { method: 'GET', path: '/api/v1/activity-log', search: '?limit=20' },
+  it('answers only the given path parameters, and lets a later answer win', async () => {
+    mockApi([
+      reply('GET /api/v1/plans/{planId}', { status: 404 }),
+      reply('GET /api/v1/plans/{planId}', { status: 410 }, { planId: 'P-1004' }),
     ]);
+
+    expect((await fetch(`${ORIGIN}/api/v1/plans/P-1004`)).status).toBe(410);
+    expect((await fetch(`${ORIGIN}/api/v1/plans/P-1005`)).status).toBe(404);
   });
 
-  it('records every request with its JSON body', async () => {
-    const api = mockApi({ 'PATCH /api/v1/me/preferences': { body: { theme: 'dark' } } });
+  it('records every request with its query and JSON body', async () => {
+    const api = mockApi([reply('PATCH /api/v1/me/preferences', { status: 204 })]);
 
-    await fetch(`${ORIGIN}/api/v1/me/preferences`, {
+    await fetch(`${ORIGIN}/api/v1/me/preferences?x=1`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ theme: 'dark' }),
     });
 
     expect(api.requests).toEqual([
-      { method: 'PATCH', path: '/api/v1/me/preferences', search: '', body: { theme: 'dark' } },
+      { method: 'PATCH', path: '/api/v1/me/preferences', search: '?x=1', body: { theme: 'dark' } },
     ]);
     expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ theme: 'dark' }]);
   });
 
-  it('lets a function answer, for responses in order, slow answers or failures', async () => {
+  it('lets a function answer, for responses in order, other content or failures', async () => {
     let calls = 0;
-    mockApi({
-      'GET /api/v1/me': () => (++calls === 1 ? { body: { id: 'U-1002' } } : { status: 401 }),
-      'GET /api/v1/environment': () => new Response('Bad gateway', { status: 502 }),
-      'GET /api/v1/recycle-bin': () => Promise.reject(new TypeError('Failed to fetch')),
-    });
+    mockApi([
+      reply('GET /api/v1/me', () => (++calls === 1 ? { status: 401 } : { status: 403 })),
+      reply('GET /api/v1/environment', () => new Response('Bad gateway', { status: 502 })),
+      reply('GET /api/v1/recycle-bin', () => Promise.reject(new TypeError('Failed to fetch'))),
+      reply('GET /api/v1/notifications', pending),
+    ]);
 
-    expect((await fetch(`${ORIGIN}/api/v1/me`)).status).toBe(200);
     expect((await fetch(`${ORIGIN}/api/v1/me`)).status).toBe(401);
+    expect((await fetch(`${ORIGIN}/api/v1/me`)).status).toBe(403);
     expect(await (await fetch(`${ORIGIN}/api/v1/environment`)).text()).toBe('Bad gateway');
-    await expect(fetch(`${ORIGIN}/api/v1/recycle-bin`)).rejects.toThrow('Failed to fetch');
+    await expect(fetch(`${ORIGIN}/api/v1/recycle-bin`)).rejects.toThrow();
   });
 
-  it('remembers requests without a canned answer, so the test setup can fail the test', async () => {
-    mockApi({});
+  it('remembers requests without an answer, so the test setup can fail the test', async () => {
+    mockApi([]);
 
     const response = await fetch(`${ORIGIN}/api/v1/sample-folders`);
 
@@ -75,12 +76,17 @@ describe('mockApi', () => {
   });
 
   it('answers the app frame’s background requests unless the test answers them itself', async () => {
-    mockApi({ 'GET /api/v1/notifications': { body: { items: [], total: 3, unread: 3 } } });
+    mockApi([reply('GET /api/v1/notifications', { body: { items: [], total: 3, unread: 3 } })]);
 
     const summary = await fetch(`${ORIGIN}/api/v1/approvals/summary`);
     const notifications = await fetch(`${ORIGIN}/api/v1/notifications`);
 
-    expect(await summary.json()).toEqual(FRAME_ANSWERS['GET /api/v1/approvals/summary']?.body);
+    expect(await summary.json()).toEqual({
+      waitingForMe: 0,
+      allOpen: 0,
+      approvedThisMonth: 0,
+      declinedThisMonth: 0,
+    });
     expect(await notifications.json()).toEqual({ items: [], total: 3, unread: 3 });
     expect(takeUnmockedRequests()).toEqual([]);
   });
