@@ -715,8 +715,10 @@ run **one at a time**: the first statement of each takes a transaction-scoped ad
 services' read-check-write rules (version checks, uniqueness ignoring case, readable-ID counters) stay
 correct without a conditional `UPDATE` in every store. `SERIALIZABLE` with retries was measured and
 starved under two writers, because every Write raises the shared activity-log counter (feature 023,
-research R2). `Read` is a read-only snapshot that never waits for a Write, and keeps what is worked out
-from the data (`store.Memo`, through `internal/platform/memo`) for the rest of the transaction:
+research R2). `Read` is a read-only snapshot that never waits for a Write. Both carry a memo
+(`internal/platform/memo`, ADR-0014): each store keeps what it reads under its area for the rest of the
+transaction and forgets the area before any change it makes, so a list never reads a parent or a Settings
+record once per row (B5) and a save still reads its own changes:
 
 ```go
 // Write runs fn in one transaction once the Writes before it have ended, and returns fn's error unchanged.
@@ -728,7 +730,7 @@ func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) erro
 		}
 		return fn(ctx)
 	}
-	return d.run(ctx, pgx.TxOptions{}, func(ctx context.Context) error {
+	return d.run(memo.With(ctx), pgx.TxOptions{}, func(ctx context.Context) error {
 		if err := d.Queries(ctx).LockWrites(ctx); err != nil { // SELECT pg_advisory_xact_lock(…)
 			return fmt.Errorf("wait for the other writes: %w", err)
 		}
