@@ -18,9 +18,9 @@ func pgCurrency(code, name string) settings.Currency {
 	return settings.Currency{Code: code, Name: name, Symbol: "", Active: true, Meta: pgMeta}
 }
 
-func pgRate(id, currency, day string, source settings.RateSource, importID string) settings.ExchangeRate {
+func pgRate(id, currency, day string) settings.ExchangeRate {
 	return settings.ExchangeRate{ID: id, Currency: currency, Date: date.MustParse(day),
-		Rate: money.RateFromMicros(920000), Source: source, ImportID: importID, Meta: pgMeta}
+		Rate: money.RateFromMicros(920000), Source: settings.RateManual, Meta: pgMeta}
 }
 
 func TestPostgresStoreCurrenciesAndRatesFR008(t *testing.T) {
@@ -34,13 +34,14 @@ func TestPostgresStoreCurrenciesAndRatesFR008(t *testing.T) {
 		{ID: "RI-1001", FileName: "rates.csv", Feed: "gsapDailyRatesFile", FirstDate: &first, LastDate: &last, Added: 2, Meta: pgMeta},
 		{ID: "RI-1002", FileName: "empty.csv", Feed: "gsapDailyRatesFile", Problems: 1, Meta: pgMeta},
 	}
-	later := pgRate("XR-1001", "EUR", "2026-03-02", settings.RateManual, "")
-	earlier := pgRate("XR-1002", "EUR", "2026-03-01", settings.RateGSAPImport, "RI-1001")
+	later := pgRate("XR-1001", "EUR", "2026-03-02")
+	earlier := pgRate("XR-1002", "EUR", "2026-03-01")
+	earlier.Source, earlier.ImportID = settings.RateGSAPImport, "RI-1001"
 	pgWrite(t, db, func(ctx context.Context) error {
 		return errors.Join(s.PutCurrency(ctx, pgCurrency("USD", "US dollar")), s.PutCurrency(ctx, legacy),
 			s.PutCurrency(ctx, pgCurrency("JPY", "Japanese yen")), s.PutRateImport(ctx, imports[0]),
 			s.PutRateImport(ctx, imports[1]), s.PutRate(ctx, later), s.PutRate(ctx, earlier),
-			s.PutRate(ctx, pgRate("XR-1003", "JPY", "2026-03-01", settings.RateManual, "")))
+			s.PutRate(ctx, pgRate("XR-1003", "JPY", "2026-03-01")))
 	})
 
 	currencies, currenciesErr := s.ListCurrencies(t.Context())
@@ -109,13 +110,13 @@ func TestPostgresStoreRefusesBrokenRatesFR004(t *testing.T) {
 		write func(ctx context.Context, s *settings.PostgresStore) error
 	}{
 		{name: "a second rate for the same currency and day", write: func(ctx context.Context, s *settings.PostgresStore) error {
-			return s.PutRate(ctx, pgRate("XR-1002", "EUR", "2026-03-01", settings.RateManual, ""))
+			return s.PutRate(ctx, pgRate("XR-1002", "EUR", "2026-03-01"))
 		}},
 		{name: "a rate for US dollars", write: func(ctx context.Context, s *settings.PostgresStore) error {
-			return s.PutRate(ctx, pgRate("XR-1002", "USD", "2026-03-02", settings.RateManual, ""))
+			return s.PutRate(ctx, pgRate("XR-1002", "USD", "2026-03-02"))
 		}},
 		{name: "a rate of a currency that does not exist", write: func(ctx context.Context, s *settings.PostgresStore) error {
-			return s.PutRate(ctx, pgRate("XR-1002", "GBP", "2026-03-02", settings.RateManual, ""))
+			return s.PutRate(ctx, pgRate("XR-1002", "GBP", "2026-03-02"))
 		}},
 		{name: "US dollars set inactive", write: func(ctx context.Context, s *settings.PostgresStore) error {
 			return s.PutCurrency(ctx, usdInactive)
@@ -130,7 +131,7 @@ func TestPostgresStoreRefusesBrokenRatesFR004(t *testing.T) {
 			db, s := pgStore(t)
 			pgWrite(t, db, func(ctx context.Context) error {
 				return errors.Join(s.PutCurrency(ctx, pgCurrency("USD", "US dollar")), s.PutCurrency(ctx, pgCurrency("EUR", "Euro")),
-					s.PutRate(ctx, pgRate("XR-1001", "EUR", "2026-03-01", settings.RateManual, "")))
+					s.PutRate(ctx, pgRate("XR-1001", "EUR", "2026-03-01")))
 			})
 
 			err := db.Write(t.Context(), func(ctx context.Context) error { return tt.write(ctx, s) })

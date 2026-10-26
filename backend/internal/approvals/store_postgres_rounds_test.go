@@ -59,15 +59,21 @@ func pgPlanned(t *testing.T) (*database.DB, *approvals.PostgresStore) {
 	return db, s
 }
 
-func pgRound(id, activityID string, number int, outcome approvals.Outcome, approvers ...actor.Actor) approvals.Round {
+func pgRound(id, activityID string, number int, outcome approvals.Outcome) approvals.Round {
 	cost := money.USD(money.FromCents(120000))
 	return approvals.Round{ID: id, ActivityID: activityID, Number: number, WorkflowID: "WF-1001", WorkflowName: "Standard",
-		Levels: []approvals.RoundLevel{{Number: 1, Name: "Finance", Approvers: append([]actor.Actor{}, approvers...),
+		Levels: []approvals.RoundLevel{{Number: 1, Name: "Finance", Approvers: []actor.Actor{},
 			ApproverType: approvals.SourcePeople, Mode: approvals.ModeAny, Resolution: approvals.ResolutionDecide,
 			Excluded:  []approvals.Excluded{{Person: actor.Actor{ID: "U-1001", Name: "Priya Raman"}, Reason: approvals.ReasonOwner}},
 			StartedAt: &submitted}},
 		CurrentLevel: 1, Outcome: outcome, SubmittedAt: submitted, SubmittedBy: actor.Actor{ID: "U-1001", Name: "Priya Raman"},
 		Facts: &approvals.RuleFacts{PlannedCost: &cost, BusinessUnits: []approvals.FactOption{}}, Meta: pgMeta}
+}
+
+// named names the approver Mei Chen in the round's first level.
+func named(r approvals.Round) approvals.Round {
+	r.Levels[0].Approvers = []actor.Actor{approver}
+	return r
 }
 
 func pgAction(id, roundID, activityID string) approvals.Action {
@@ -81,7 +87,7 @@ func TestPostgresStoreRoundsAndActionsFR008(t *testing.T) {
 	t.Parallel()
 	db, s := pgPlanned(t)
 	ended := submitted.Add(time.Hour)
-	first := pgRound("AR-1001", "A-1001", 1, approvals.OutcomeApproved, approver)
+	first := named(pgRound("AR-1001", "A-1001", 1, approvals.OutcomeApproved))
 	first.EndedAt = &ended
 	first.Levels = append(first.Levels, approvals.RoundLevel{Number: 2, Name: "Before 017"})
 	second := pgRound("AR-1000", "A-1001", 2, approvals.OutcomeOpen)
@@ -114,7 +120,7 @@ func TestPostgresStoreRoundScopeIncludesNamedApproversFR009(t *testing.T) {
 	db, s := pgPlanned(t)
 	pgWrite(t, db, func(ctx context.Context) error {
 		return errors.Join(s.PutRound(ctx, pgRound("AR-1001", "A-1001", 1, approvals.OutcomeOpen)),
-			s.PutRound(ctx, pgRound("AR-1002", "A-1002", 1, approvals.OutcomeOpen, approver)),
+			s.PutRound(ctx, named(pgRound("AR-1002", "A-1002", 1, approvals.OutcomeOpen))),
 			s.PutAction(ctx, pgAction("AH-1001", "AR-1001", "A-1001")), s.PutAction(ctx, pgAction("AH-1002", "AR-1002", "A-1002")))
 	})
 	tests := []struct {

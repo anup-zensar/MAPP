@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -154,14 +155,7 @@ func TestPostgresStoreCampaignScopeIsolationFR009(t *testing.T) {
 			if diff := cmp.Diff(tt.wantInitiatives, initiativeIDs(visibleInitiatives)); diff != "" {
 				t.Errorf("InitiativesInScope() mismatch (-want +got):\n%s", diff)
 			}
-			for _, id := range []string{"C-1001", "C-1002"} {
-				if _, found, err := s.GetCampaignInScope(t.Context(), tt.scope, id); err != nil || found != contains(tt.wantCampaigns, id) {
-					t.Errorf("GetCampaignInScope(%s) = found %v, error %v", id, found, err)
-				}
-			}
-			if _, found, err := s.GetInitiativeInScope(t.Context(), tt.scope, "I-1002"); err != nil || found != contains(tt.wantInitiatives, "I-1002") {
-				t.Errorf("GetInitiativeInScope(I-1002) = found %v, error %v", found, err)
-			}
+			assertScopedGets(t, s, tt.scope, slices.Concat(tt.wantCampaigns, tt.wantInitiatives))
 		})
 	}
 }
@@ -205,6 +199,18 @@ func TestPostgresStoreRefusesBrokenCampaignsFR004(t *testing.T) {
 	}
 }
 
+func assertScopedGets(t *testing.T, s *campaigns.PostgresStore, scope authz.Scope, visible []string) {
+	t.Helper()
+	for _, id := range []string{"C-1001", "C-1002"} {
+		if _, found, err := s.GetCampaignInScope(t.Context(), scope, id); err != nil || found != slices.Contains(visible, id) {
+			t.Errorf("GetCampaignInScope(%s) = found %v, error %v", id, found, err)
+		}
+	}
+	if _, found, err := s.GetInitiativeInScope(t.Context(), scope, "I-1002"); err != nil || found != slices.Contains(visible, "I-1002") {
+		t.Errorf("GetInitiativeInScope(I-1002) = found %v, error %v", found, err)
+	}
+}
+
 func campaignIDs(list []campaigns.Campaign) []string {
 	ids := []string{}
 	for _, c := range list {
@@ -219,13 +225,4 @@ func initiativeIDs(list []campaigns.Initiative) []string {
 		ids = append(ids, i.ID)
 	}
 	return ids
-}
-
-func contains(ids []string, id string) bool {
-	for _, candidate := range ids {
-		if candidate == id {
-			return true
-		}
-	}
-	return false
 }
