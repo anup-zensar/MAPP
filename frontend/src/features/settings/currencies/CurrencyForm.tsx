@@ -18,7 +18,7 @@ import { lockOf, rateLine } from './currency-actions';
 import { changedFields, createBody, startValues } from './currency-values';
 import { liveRate } from './rate-input';
 import { rateSourceLine } from './rate-words';
-import { ReadOnlyField } from './ReadOnlyField';
+import { ReadOnlyField } from '../ReadOnlyField';
 import { currencySchema } from './schemas';
 import type { CurrencyValues } from './schemas';
 
