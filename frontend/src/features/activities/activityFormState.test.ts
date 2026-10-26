@@ -10,7 +10,7 @@ import {
   validate,
 } from './activityFormState';
 import type { FormState } from './activityFormState';
-import { editForm, launchFilm, newForm } from './testData';
+import { editForm, launchFilm, newForm } from '@/testing/fixtures/activities';
 
 function newState(overrides: Partial<FormState> = {}): FormState {
   return {

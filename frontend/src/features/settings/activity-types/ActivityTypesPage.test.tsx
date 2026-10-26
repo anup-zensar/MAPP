@@ -4,7 +4,7 @@ import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import {
   deleted,
   inUse,
@@ -15,7 +15,7 @@ import {
   RETAIL,
   validationFailed,
   versionConflict,
-} from '../testRecords';
+} from '@/testing/fixtures/settings';
 import { ActivityTypesPage } from './ActivityTypesPage';
 
 type ActivityType = components['schemas']['ActivityType'];

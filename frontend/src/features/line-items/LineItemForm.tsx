@@ -17,7 +17,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
-import { FormCard, FormCardFrame, FormLayout } from '@/features/activities/FormRail';
+import { FormCard, FormCardFrame, FormLayout } from '@/ui/FormRail/FormRail';
 import { PersonField } from '@/features/people';
 import { toCents } from '@/format/decimal';
 import { recordHref } from '@/ui/record-links';

@@ -8,8 +8,8 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/format/useFormatters';
-import { saveFailureOf } from '../shared/saveFailure';
-import styles from '../shared/SettingsTable.module.css';
+import { saveFailureOf } from '../save-failure';
+import styles from '@/ui/settings-table.module.css';
 import {
   fetchFinanceBudgetItem,
   useCreateFinanceBudgetItem,

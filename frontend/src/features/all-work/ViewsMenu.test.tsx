@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import type { ViewsMenuProps } from './ViewsMenu';
 import { ViewsMenu } from './ViewsMenu';
-import { savedView } from './testData';
+import { savedView } from '@/testing/fixtures/all-work';
 
 const DECLINED = savedView();
 const BY_MONTH = savedView({ id: 'SV-1002', name: 'Lubricants by month', isDefault: true });

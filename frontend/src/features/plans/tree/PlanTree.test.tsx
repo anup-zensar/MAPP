@@ -3,8 +3,8 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { plan } from '../testData';
+import { testUser } from '@/testing/fixtures/users';
+import { plan } from '@/testing/fixtures/plans';
 import { PlanTree } from './PlanTree';
 
 /** Two campaigns, one with an initiative: the rows feature 005 adds under the plan. */

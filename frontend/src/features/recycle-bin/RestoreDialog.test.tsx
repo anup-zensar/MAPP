@@ -5,10 +5,10 @@ import { SESSION_KEY } from '@/session/useSession';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { RestoreDialog } from './RestoreDialog';
 import type { BinItem } from './binText';
-import { binItem, lineItemEntry, restorePreview } from './testData';
+import { binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 
 const PREVIEW = 'GET /api/v1/recycle-bin/BIN-1001/restore-preview';
 const RESTORE = 'POST /api/v1/recycle-bin/BIN-1001/restore';

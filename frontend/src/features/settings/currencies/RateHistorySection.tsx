@@ -10,7 +10,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import { formatRate } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
-import settingsStyles from '../shared/SettingsTable.module.css';
+import settingsStyles from '@/ui/settings-table.module.css';
 import { inverseLine } from './currencyActions';
 import { RateDialog } from './RateDialog';
 import { RATE_LISTS, useDeleteRate, useRateHistory } from './ratesApi';

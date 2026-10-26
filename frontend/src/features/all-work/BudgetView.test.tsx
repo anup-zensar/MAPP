@@ -1,10 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { AllWorkResult } from './allWorkTypes';
 import { BudgetView } from './BudgetView';
-import { budgetResult, standard2026, usd } from './testData';
+import { budgetResult, standard2026, usd } from '@/testing/fixtures/all-work';
 import { visibleRows } from './viewState';
 
 const OPEN_ALL = { ...standard2026(), expansion: { mode: 'allExpanded' as const, toggled: [] } };

@@ -5,7 +5,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from './mockApi';
 import type { MockHandler } from './mockApi';
 import { renderRoutes } from './render';
-import { testUser } from './users';
+import { testUser } from './fixtures/users';
 
 /**
  * Opens the whole app at `path` as a signed-in person, as a page load does: GET /api/v1/me answers

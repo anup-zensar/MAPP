@@ -4,9 +4,9 @@ import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ImportOptionsDialog } from './ImportOptionsDialog';
-import { shellAttribute } from './testData';
+import { shellAttribute } from '@/testing/fixtures/shell-attributes';
 
 type ImportRow = components['schemas']['ImportRow'];
 

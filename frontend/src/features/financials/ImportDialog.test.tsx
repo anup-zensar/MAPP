@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ImportDialog } from './ImportDialog';
-import { checkResult } from './testData';
+import { checkResult } from '@/testing/fixtures/financials';
 
 const CHECK = 'POST /api/v1/financials/imports/check';
 const IMPORT = 'POST /api/v1/financials/imports';

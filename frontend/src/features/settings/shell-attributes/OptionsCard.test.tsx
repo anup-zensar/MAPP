@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { OptionsCard } from './OptionsCard';
 import {
   emptyForm,
@@ -14,7 +14,7 @@ import {
   shellAttribute,
   shellOption,
   usedBy,
-} from './testData';
+} from '@/testing/fixtures/shell-attributes';
 
 const OPTIONS_PATH = 'GET /api/v1/shell-attributes/SA-1010/options';
 

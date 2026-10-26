@@ -5,9 +5,9 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { CurrencyPicker } from './CurrencyPicker';
-import { DISPLAY_CURRENCIES } from './testData';
+import { DISPLAY_CURRENCIES } from '@/testing/fixtures/home';
 
 const CURRENCY_LIST = { body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length } };
 

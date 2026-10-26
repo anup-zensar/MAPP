@@ -1,10 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HOME_ANSWERS } from '@/features/home/testData';
+import { HOME_ANSWERS } from '@/testing/fixtures/home';
 import { mockApi } from '@/testing/mockApi';
 import { renderRoutes } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { COMING_SOON_SECTIONS, MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import { routes } from './router';
 

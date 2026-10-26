@@ -9,7 +9,7 @@ import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import { filterTree } from '@/ui/TreeTable/filterTree';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { TreeNode, TreeTableColumn, TreeTableFooter } from '@/ui/TreeTable/TreeTable';
-import { BudgetCell, PlannedCostCell } from '@/features/campaigns/BudgetCost';
+import { BudgetCell, PlannedCostCell } from '../campaigns/BudgetCost';
 import { useFormatters } from '@/format/useFormatters';
 import { PlanCompleteness, PlanStatusChip } from '../PlanFacts';
 import type { Plan } from '../plansApi';

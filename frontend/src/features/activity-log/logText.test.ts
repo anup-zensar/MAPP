@@ -11,7 +11,7 @@ import {
   recordLink,
   sentenceLead,
 } from './logText';
-import { logEntry } from './testData';
+import { logEntry } from '@/testing/fixtures/activity-log';
 
 describe('entry sentence (FR-005, FR-006)', () => {
   it('names the person, the verb, the record type and the record', () => {

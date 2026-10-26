@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Tooltip } from 'radix-ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpreadGrid } from './SpreadGrid';
-import { launchFilmSection, usd } from './testData';
+import { launchFilmSection, usd } from '@/testing/fixtures/line-items';
 
 const KEY = 'mapp.lineItemGrid';
 

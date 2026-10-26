@@ -8,10 +8,9 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useAccess } from '@/session/access';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { SETTINGS_SECTIONS } from './sections';
 import type { SettingsSection } from './sections';
 import styles from './SettingsPage.module.css';
-import { SettingsCount } from './shared/SettingsCount';
+import { SettingsCount } from '@/ui/SettingsCount/SettingsCount';
 
 type SettingsOverview = components['schemas']['SettingsOverview'];
 
@@ -23,9 +22,10 @@ type Counts =
  * Settings (feature 002, FR-001): one card per section — its icon, name, one-line explanation and
  * the number of active records — each opening the section's own page. Sections still to come show
  * "Coming soon" and are not links. When the counts can't be loaded the cards stay usable. A card
- * whose section the person's roles do not open is left out (feature 014, FR-012).
+ * whose section the person's roles do not open is left out (feature 014, FR-012). The sections
+ * come from app/settings-sections.ts.
  */
-export function SettingsPage() {
+export function SettingsPage({ sections }: { sections: SettingsSection[] }) {
   usePageTitle('Settings');
   const { has } = useAccess();
   const overview = useSettingsOverview();
@@ -51,7 +51,7 @@ export function SettingsPage() {
         </div>
       )}
       <ul role="list" aria-label="Sections" className={styles.grid}>
-        {itemsFor(SETTINGS_SECTIONS, has).map((section) => (
+        {itemsFor(sections, has).map((section) => (
           <SectionCard key={section.path} section={section} counts={counts} />
         ))}
       </ul>

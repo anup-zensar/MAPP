@@ -6,7 +6,7 @@ import { Card } from '@/ui/Card/Card';
 import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { cx } from '@/ui/cx';
 import { formatWhole } from '@/format/decimal';
 import { fieldHref, recordHref } from '@/ui/record-links';

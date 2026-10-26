@@ -6,7 +6,7 @@ import { useFormatters } from '@/format/useFormatters';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ProfilePage } from './ProfilePage';
 
 const USD = { code: 'USD', name: 'US dollar', active: true };

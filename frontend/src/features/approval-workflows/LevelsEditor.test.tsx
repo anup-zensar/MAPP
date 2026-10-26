@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { emptyLevel, toInputs } from './levelDrafts';
 import type { LevelDraft } from './levelDrafts';
 import { LevelsEditor } from './LevelsEditor';
-import { PEOPLE, RULE_OPTIONS } from './testData';
+import { PEOPLE, RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
 
 function Harness({ start, problems = [] }: { start: LevelDraft[]; problems?: FieldProblem[] }) {
   const [levels, setLevels] = useState(start);

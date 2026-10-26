@@ -5,7 +5,7 @@ import { renderWithProviders } from '@/testing/render';
 import { Sidebar } from './Sidebar';
 import styles from './Sidebar.module.css';
 import type { CurrentUser } from '@/session/useSession';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

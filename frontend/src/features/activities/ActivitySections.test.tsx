@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { ActivityAttributes, ActivityDetails, ActivityGoals } from './ActivitySections';
-import { activityAttributeForm, launchFilm, MODEL } from './testData';
+import { activityAttributeForm, launchFilm, MODEL } from '@/testing/fixtures/activities';
 
 function value(label: string): HTMLElement {
   return screen.getByText(label, { selector: 'dt' }).nextElementSibling as HTMLElement;

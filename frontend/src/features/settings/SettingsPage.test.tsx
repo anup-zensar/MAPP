@@ -1,24 +1,21 @@
 import { screen, within } from '@testing-library/react';
 import { Construction } from 'lucide-react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { SettingsPage } from './SettingsPage';
+import { SETTINGS_OWN_SECTIONS } from './sections';
 import type { SettingsSection } from './sections';
 
 // Feature 002's five sections, then a section of a later feature that has no page yet.
-vi.mock('./sections', async (importOriginal) => {
-  const original = await importOriginal<typeof import('./sections')>();
-  const later: SettingsSection = {
-    title: 'Later section',
-    description: 'A section of a later feature.',
-    path: '/settings/later',
-    icon: Construction,
-    comingSoon: true,
-  };
-  return { ...original, SETTINGS_SECTIONS: [...original.SETTINGS_OWN_SECTIONS, later] };
-});
+const LATER: SettingsSection = {
+  title: 'Later section',
+  description: 'A section of a later feature.',
+  path: '/settings/later',
+  icon: Construction,
+  comingSoon: true,
+};
 
 const OVERVIEW = {
   models: 3,
@@ -29,7 +26,10 @@ const OVERVIEW = {
 };
 
 function renderSettings() {
-  return renderWithProviders(<SettingsPage />, { route: '/settings', user: testUser() });
+  return renderWithProviders(<SettingsPage sections={[...SETTINGS_OWN_SECTIONS, LATER]} />, {
+    route: '/settings',
+    user: testUser(),
+  });
 }
 
 function card(title: string): HTMLElement {

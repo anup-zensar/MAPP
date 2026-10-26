@@ -5,10 +5,10 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import { mockApi } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { activityRecord } from '@/features/line-items/testData';
+import { testUser } from '@/testing/fixtures/users';
+import { activityRecord } from '@/testing/fixtures/line-items';
 import { activityActionsForInitiative, useActivityRows } from './activityTreeRows';
-import { destinations, launchFilm, launchFilmRow } from './testData';
+import { destinations, launchFilm, launchFilmRow } from '@/testing/fixtures/activities';
 
 const DELETED = {
   recycleBinEntry: {

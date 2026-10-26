@@ -13,7 +13,7 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { formatWhole } from '@/format/decimal';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { ListToolbar } from '../shared/ListToolbar';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
 import {
   dependsOnText,
   isChoiceType,
@@ -32,8 +32,8 @@ import type { AttributeMove, ShellAttribute } from './shellAttributesApi';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
 import { useFailureToast } from './useStatusChange';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
-import { useCanChange } from '../shared/useCanChange';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 
 type StatusFilter = 'active' | 'inactive' | 'all';
 

@@ -3,11 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { LogFilterBar, SEARCH_DELAY_MS } from './LogFilterBar';
 import { NO_FILTERS } from './logFilters';
 import type { LogFilterState } from './logFilters';
-import { logSummary } from './testData';
+import { logSummary } from '@/testing/fixtures/activity-log';
 
 type OnChange = (filters: LogFilterState, typing?: boolean) => void;
 

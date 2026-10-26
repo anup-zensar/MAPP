@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router';
 import type { components } from '@/api/generated/schema';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { AttentionChip } from '@/features/campaigns/AttentionChip';
-import { completenessFieldHref } from '@/features/budget-phasing/phasingLinks';
+import { AttentionChip } from './campaigns/AttentionChip';
+import { completenessFieldHref } from './phasing/phasingLinks';
 import { recordHref } from '@/ui/record-links';
 import type { PlanningRecordType } from '@/ui/record-links';
 import styles from './PlanFacts.module.css';

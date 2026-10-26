@@ -4,10 +4,10 @@ import { formatDateTime } from '@/format/intl';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { ActivityLogEntry, HomeScope } from './homeApi';
 import { RecentChangesCard } from './RecentChangesCard';
-import { LUBRICANTS_PLAN, logEntryOf } from './testData';
+import { LUBRICANTS_PLAN, logEntryOf } from '@/testing/fixtures/home';
 
 const page = (items: ActivityLogEntry[]) => ({ body: { items, total: items.length } });
 

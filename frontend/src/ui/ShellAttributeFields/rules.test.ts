@@ -5,7 +5,7 @@ import {
   LUBRICANTS,
   MOBILITY,
   planForm,
-} from '@/testing/attributeForms';
+} from '@/testing/fixtures/attribute-forms';
 import {
   allowedOptions,
   autoFill,

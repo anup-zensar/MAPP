@@ -26,7 +26,7 @@ import {
   wasInText,
 } from './binText';
 import type { RestorePreviewChange } from './binText';
-import { PLAN_REF, binItem, lineItemEntry, restorePreview } from './testData';
+import { PLAN_REF, binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 
 const PARENT = { type: 'initiative', typeLabel: 'initiative', id: 'I-1009', name: 'Trade shows' };
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatDate, formatDateRange } from '@/format/intl';
-import { activityBannerText } from './activityStatus';
+import { activityBannerText } from '@/ui/ActivityStatusChip/activity-status';
 import {
   activityEditHref,
   activityHref,

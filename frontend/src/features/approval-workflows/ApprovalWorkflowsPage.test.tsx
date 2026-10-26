@@ -3,9 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ApprovalWorkflowsPage } from './ApprovalWorkflowsPage';
-import { CHINA_WORKFLOW, detailsOf, PEOPLE, workflowOf } from './testData';
+import {
+  CHINA_WORKFLOW,
+  detailsOf,
+  PEOPLE,
+  workflowOf,
+} from '@/testing/fixtures/approval-workflows';
 
 const LIST = 'GET /api/v1/approval-workflows';
 const ITEMS = [CHINA_WORKFLOW, workflowOf()];

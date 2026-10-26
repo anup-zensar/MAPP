@@ -33,13 +33,13 @@ import type { ImpactWarning, Person, PersonDetails, PersonUpdate } from './peopl
 import { RecordLine } from './RecordLine';
 import { removedIds } from './removedIds';
 import { TeamField } from './TeamField';
-import { PersonRolesFact } from '@/features/access/PersonRolesFact';
-import styles from '@/features/settings/shared/SettingsTable.module.css';
+import { PersonRolesFact } from './access/PersonRolesFact';
+import styles from '@/ui/settings-table.module.css';
 import { personStatusItem } from './personActions';
 import type { PersonActions } from './personActions';
 import { approvesInText, ownsText } from './texts';
 import panel from './panels.module.css';
-import { CanChange } from '../settings/shared/CanChange';
+import { CanChange } from '@/ui/CanChange/CanChange';
 
 /** Above this many teams, the details offer "Search teams". */
 const SEARCH_ABOVE = 10;

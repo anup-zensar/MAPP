@@ -1,9 +1,16 @@
 import { House } from 'lucide-react';
-import type { ComingSoonSection } from '@/app/navigation';
+import type { LucideIcon } from 'lucide-react';
 import { LinkButton } from '@/ui/Button/Button';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { CentredMessage } from './CentredMessage';
 import styles from './ComingSoonPage.module.css';
+
+/** A section a later feature builds; until then its page says in one sentence what it will do. */
+export interface ComingSoonSection {
+  label: string;
+  icon: LucideIcon;
+  comingSoon: string;
+}
 
 export interface ComingSoonPageProps {
   /** The section a later feature builds (navigation.ts). */

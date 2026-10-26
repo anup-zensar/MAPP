@@ -26,7 +26,7 @@ import { fieldId, usdOf } from './activityFormState';
 import type { FormState } from './activityFormState';
 import styles from './ActivityForm.module.css';
 import { ACTIVITY_SECTION } from './activityFormProgress';
-import { FormCard, FormCardFrame } from './FormRail';
+import { FormCard, FormCardFrame } from '@/ui/FormRail/FormRail';
 import { GoalsFields } from './GoalsFields';
 
 type ActivityStatus = components['schemas']['ActivityStatus'];

@@ -12,12 +12,12 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { plural } from '@/format/text';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { ListToolbar } from '../shared/ListToolbar';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
-import styles from '../shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '../shared/useListFilters';
-import type { ListFilters } from '../shared/useListFilters';
-import { useSettingStatus } from '../shared/useSettingStatus';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import type { ListFilters } from '@/ui/useListFilters';
+import { useSettingStatus } from '../useSettingStatus';
 import { FinanceBudgetItemDetails } from './FinanceBudgetItemDetails';
 import { FinanceBudgetItemForm } from './FinanceBudgetItemForm';
 import page from './FinanceBudgetItemsPage.module.css';
@@ -31,8 +31,8 @@ import type { FinanceBudget, FinanceBudgetItem, FinanceBudgetPage } from './fina
 import { moreActions } from './financeItemActions';
 import type { FinanceItemActions } from './financeItemActions';
 import { RenameBudgetDialog } from './RenameBudgetDialog';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
-import { useCanChange } from '../shared/useCanChange';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 
 const ITEM_NOUN = { one: 'finance budget item', many: 'finance budget items' };
 

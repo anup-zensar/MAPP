@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ActivityLogPage } from './ActivityLogPage';
-import { TODAY_NOON, logEntry, logPage, logSummary } from './testData';
+import { TODAY_NOON, logEntry, logPage, logSummary } from '@/testing/fixtures/activity-log';
 
 const LOG = 'GET /api/v1/activity-log';
 const SUMMARY = 'GET /api/v1/activity-log/summary';

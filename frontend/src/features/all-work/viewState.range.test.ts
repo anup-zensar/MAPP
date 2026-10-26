@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { standard2026 } from './testData';
+import { standard2026 } from '@/testing/fixtures/all-work';
 import type { ViewState } from './allWorkTypes';
 import {
   chipsOf,

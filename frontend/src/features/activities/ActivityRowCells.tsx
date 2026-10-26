@@ -4,7 +4,7 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/format/useFormatters';
 import type { ActivitySummary } from './activitiesApi';
 import styles from './ActivityRowCells.module.css';
-import { ActivityStatusChip } from './ActivityStatusChip';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { lineItemsAttentionText } from './activityText';
 
 /**

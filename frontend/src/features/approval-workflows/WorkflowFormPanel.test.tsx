@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { detailsOf, PEOPLE, workflowOf } from './testData';
+import { testUser } from '@/testing/fixtures/users';
+import { detailsOf, PEOPLE, workflowOf } from '@/testing/fixtures/approval-workflows';
 import { WorkflowFormPanel } from './WorkflowFormPanel';
 import type { ApprovalWorkflow } from './workflowsApi';
 

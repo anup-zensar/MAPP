@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { AttentionCard } from './AttentionCard';
 import type { HomeAttentionItem } from './homeApi';
-import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from './testData';
+import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from '@/testing/fixtures/home';
 
 const page = (items: HomeAttentionItem[]) => ({ body: { items, total: items.length } });
 

@@ -3,9 +3,9 @@ import type { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { SpreadEffectNote } from './SpreadEffectNote';
-import { eur, launchFilmSection, lineItem, spreadMonth, usd } from './testData';
+import { eur, launchFilmSection, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
 
 const SECTION = 'GET /api/v1/activities/A-1001/line-items';
 

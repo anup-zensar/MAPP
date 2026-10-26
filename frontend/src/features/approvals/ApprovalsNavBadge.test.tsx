@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar } from '@/app/Sidebar';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const counts = (waitingForMe: number) => ({
   body: { waitingForMe, allOpen: 5, approvedThisMonth: 2, declinedThisMonth: 1 },

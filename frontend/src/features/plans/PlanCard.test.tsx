@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { PlanCard } from './PlanCard';
-import { seedList } from './testData';
+import { seedList } from '@/testing/fixtures/plans';
 
 const [europe, china, lastYear] = seedList().items;
 

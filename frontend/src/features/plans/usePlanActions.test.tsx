@@ -4,8 +4,8 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { plan } from './testData';
+import { testUser } from '@/testing/fixtures/users';
+import { plan } from '@/testing/fixtures/plans';
 import { usePlanActions } from './usePlanActions';
 import type { ActionPlan } from './usePlanActions';
 

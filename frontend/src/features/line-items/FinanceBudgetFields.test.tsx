@@ -14,7 +14,7 @@ import {
   EVENTS,
   formOptions,
   MOBILITY_RETAIL,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 const ITEMS = [DIGITAL, EVENTS, MOBILITY_RETAIL, DIGITAL_2027];
 

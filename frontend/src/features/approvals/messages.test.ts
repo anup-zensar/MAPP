@@ -10,7 +10,7 @@ import {
   roundOutcomeText,
   submitConflictMessage,
 } from './messages';
-import { ALEX, CARLOS, DANIEL, roundOf } from './testData';
+import { ALEX, CARLOS, DANIEL, roundOf } from '@/testing/fixtures/approvals';
 
 function conflict(message: string, changedAt: string) {
   return new ApiError('conflict', {

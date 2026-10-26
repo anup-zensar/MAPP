@@ -26,7 +26,7 @@ import { useShellAttribute } from './shellAttributesApi';
 import type { ShellAttribute } from './shellAttributesApi';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 
 const NOT_FOUND = 'This Shell attribute no longer exists — someone may have deleted it.';
 

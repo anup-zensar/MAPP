@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { ActivityApproval } from './approvalsApi';
 import { DecisionDialog } from './DecisionDialog';
 import type { DecisionDialogProps } from './DecisionDialog';
-import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from './testData';
+import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from '@/testing/fixtures/approvals';
 
 const APPROVE = 'POST /api/v1/activities/A-1042/approval/approve';
 const DECLINE = 'POST /api/v1/activities/A-1042/approval/decline';

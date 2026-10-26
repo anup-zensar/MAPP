@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { ActivitySplitOptions, ActivitySplitPreview, ActivitySplitSide } from './splitApi';
 import { SplitActivityDialog } from './SplitActivityDialog';
-import { destination, launchFilm, OWN_INITIATIVE } from './testData';
+import { destination, launchFilm, OWN_INITIATIVE } from '@/testing/fixtures/activities';
 
 const OPTIONS = 'GET /api/v1/activities/A-1042/split-options';
 const PREVIEW = 'POST /api/v1/activities/A-1042/split-preview';

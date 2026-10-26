@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
 import { InitiativeActivities } from './InitiativeActivities';
-import { launchFilmRow } from './testData';
+import { launchFilmRow } from '@/testing/fixtures/activities';
 
 describe('InitiativeActivities (feature 006, FR-001)', () => {
   it("lists the initiative's activities with their status, and offers Add activity", async () => {

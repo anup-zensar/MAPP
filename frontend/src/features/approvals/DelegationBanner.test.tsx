@@ -2,9 +2,9 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { DelegationBanner } from './DelegationBanner';
-import { CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from './testData';
+import { CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from '@/testing/fixtures/approvals';
 
 const LIST = 'GET /api/v1/approval-delegations';
 

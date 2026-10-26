@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectCurrentSection, renderApp } from '@/testing/app';
-import { BUSINESS_UNIT, FORM_ANSWERS, page } from './testData';
+import { BUSINESS_UNIT, FORM_ANSWERS, page } from '@/testing/fixtures/shell-attributes';
 
 /** What the Shell attribute pages ask the API when they open. */
 const ANSWERS = {

@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { HomeScope, HomeSummary } from './homeApi';
 import { SummaryCards } from './SummaryCards';
-import { summaryOf, usd } from './testData';
+import { summaryOf, usd } from '@/testing/fixtures/home';
 
 function renderCards(
   scope: HomeScope = 'myTeams',

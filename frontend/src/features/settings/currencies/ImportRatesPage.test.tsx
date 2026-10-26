@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { expectNoAxeViolations } from '../shared/axeCheck';
-import { validationFailed } from '../testRecords';
+import { testUser } from '@/testing/fixtures/users';
+import { expectNoAxeViolations } from '@/testing/axe';
+import { validationFailed } from '@/testing/fixtures/settings';
 import { ImportRatesPage } from './ImportRatesPage';
 import { RecentImports } from './RecentImports';
 import {
@@ -14,7 +14,7 @@ import {
   RECENT_IMPORTS_PAGE,
   REVIEW,
   REVIEW_NOTHING_NEW,
-} from './rateTestData';
+} from '@/testing/fixtures/rates';
 
 const CSV = 'rate_type,from_currency,to_currency,valid_from,rate\nM,USD,EUR,2026-10-20,0.9230\n';
 

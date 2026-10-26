@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ManageViewsPanel } from './ManageViewsPanel';
-import { savedView } from './testData';
+import { savedView } from '@/testing/fixtures/all-work';
 
 const DECLINED = savedView();
 const BY_MONTH = savedView({ id: 'SV-1002', name: 'Lubricants by month', isDefault: true });

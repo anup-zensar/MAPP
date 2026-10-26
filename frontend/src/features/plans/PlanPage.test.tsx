@@ -1,17 +1,17 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
-import { planForm } from '@/testing/attributeForms';
+import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
+import { planForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { PlanPage } from './PlanPage';
 import type { Plan } from './plansApi';
-import { financialsNotServed, plan } from './testData';
+import { financialsNotServed, plan } from '@/testing/fixtures/plans';
 
 // Feature 005 fills the plan tree; its own tests cover that.
-vi.mock('@/features/campaigns/useCampaignTreeContent', () => ({
+vi.mock('./campaigns/useCampaignTreeContent', () => ({
   useCampaignTreeContent: () => ({
     nodes: [],
     toolbarActions: null,

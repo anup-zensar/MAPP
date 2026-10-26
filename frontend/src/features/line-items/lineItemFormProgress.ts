@@ -1,7 +1,7 @@
 import { missingAttributes, visibleAttributes } from '@/ui/ShellAttributeFields/rules';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
-import { countFilled } from '@/features/activities/formProgress';
-import type { RailSection } from '@/features/activities/formProgress';
+import { countFilled } from '@/ui/FormRail/form-progress';
+import type { RailSection } from '@/ui/FormRail/form-progress';
 import type { LineItemFormState } from './lineItemFormState';
 import {
   SECTION_BASICS,

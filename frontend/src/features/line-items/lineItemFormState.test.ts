@@ -27,7 +27,7 @@ import {
   lineItem,
   PRIYA_REF,
   USD,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 const CURRENCIES = [USD, EUR, GBP];
 const MAR_MAY = { startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false };

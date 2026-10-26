@@ -2,11 +2,11 @@ import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { NO_FILTERS, applyFilters, filterChips, filterOptions } from './approvalFilters';
 import type { ApprovalFilterValues } from './approvalFilters';
 import { ApprovalsFilters } from './ApprovalsFilters';
-import { DANIEL, rowOf } from './testData';
+import { DANIEL, rowOf } from '@/testing/fixtures/approvals';
 
 const ROWS = [
   rowOf(),

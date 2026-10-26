@@ -4,10 +4,10 @@ import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { HistorySection } from './HistorySection';
 import { showHistory } from './showHistory';
-import { logEntry, logPage } from './testData';
+import { logEntry, logPage } from '@/testing/fixtures/activity-log';
 
 const LOG = 'GET /api/v1/activity-log';
 const PREFERENCES = 'PATCH /api/v1/me/preferences';

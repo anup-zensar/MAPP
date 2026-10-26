@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { formatWaitingTime, localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import type { Formatters } from '@/format/useFormatters';

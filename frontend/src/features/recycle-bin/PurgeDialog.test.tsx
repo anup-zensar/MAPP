@@ -4,10 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { BinItem } from './binText';
 import { PurgeDialog } from './PurgeDialog';
-import { binItem, lineItemEntry } from './testData';
+import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
 
 const PURGE = 'DELETE /api/v1/recycle-bin/BIN-1001';
 

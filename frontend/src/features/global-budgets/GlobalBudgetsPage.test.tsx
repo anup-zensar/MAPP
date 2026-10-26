@@ -1,12 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PEOPLE } from '@/features/approval-workflows/testData';
+import { PEOPLE } from '@/testing/fixtures/approval-workflows';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { GlobalBudgetsPage } from './GlobalBudgetsPage';
-import { budgetSummary, globalBudget } from './testData';
+import { budgetSummary, globalBudget } from '@/testing/fixtures/global-budgets';
 
 const LIST = 'GET /api/v1/global-budgets';
 const CURRENT_YEAR = new Date().getFullYear();

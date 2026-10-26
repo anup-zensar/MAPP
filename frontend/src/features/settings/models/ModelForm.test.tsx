@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { ACTIVITY_TYPES, LUBRICANTS, PRINT, ref, RETAIL } from '../testRecords';
+import { testUser } from '@/testing/fixtures/users';
+import { ACTIVITY_TYPES, LUBRICANTS, PRINT, ref, RETAIL } from '@/testing/fixtures/settings';
 import { ModelForm } from './ModelForm';
 import type { ModelFormMode } from './ModelForm';
 

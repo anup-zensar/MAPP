@@ -14,11 +14,11 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import { useToast } from '@/ui/Toast/useToast';
-import { ListToolbar } from '@/features/settings/shared/ListToolbar';
-import styles from '@/features/settings/shared/SettingsTable.module.css';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import styles from '@/ui/settings-table.module.css';
 import lists from './lists.module.css';
-import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
-import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import { useStatusFlow } from '@/ui/useStatusFlow';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useShowFailure } from './feedback';
 import { fetchLatestPerson, usePeople, useSetPersonStatus } from './peopleApi';
@@ -27,8 +27,8 @@ import { personStatusItem } from './personActions';
 import type { PersonActions } from './personActions';
 import { PersonDetailsPanel, PersonFormPanel } from './PersonPanels';
 import { deactivateSentences, isInUse, SELF_DEACTIVATION } from './texts';
-import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
-import { useCanChange } from '../settings/shared/useCanChange';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 
 const PERSON_NOUN = { one: 'person', many: 'people' };
 

@@ -15,7 +15,7 @@ import {
   weekStart,
 } from './logFilters';
 import type { LogFilterState } from './logFilters';
-import { logSummary } from './testData';
+import { logSummary } from '@/testing/fixtures/activity-log';
 
 /** Runs `check` with the computer's clock in another time zone (the tests run in UTC). */
 function inTimeZone(timeZone: string, check: () => void): void {

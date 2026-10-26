@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { FieldHelpTip, useFieldHelp } from '.';
-import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from './fieldHelpTestData';
+import { testUser } from '@/testing/fixtures/users';
+import { FieldHelpTip } from './FieldHelpTip';
+import { useFieldHelp } from './useFieldHelp';
+import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
 
 /** Shows what help() answers for each key, as a page would pass it to a field's tip. */
 function Texts({ keys, fallback }: { keys: string[]; fallback?: string }) {

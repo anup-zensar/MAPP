@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { MonitoringView } from './MonitoringView';
-import { ALEX, monitoringOf } from './testData';
+import { ALEX, monitoringOf } from '@/testing/fixtures/approvals';
 
 const MONITORING = 'GET /api/v1/approvals/monitoring';
 const RUN = 'POST /api/v1/approvals/escalations/run';

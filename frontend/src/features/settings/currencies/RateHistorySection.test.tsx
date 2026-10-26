@@ -4,11 +4,11 @@ import { localDate } from '@/format/intl';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { expectNoAxeViolations } from '../shared/axeCheck';
-import { deleted, validationFailed, versionConflict } from '../testRecords';
+import { testUser } from '@/testing/fixtures/users';
+import { expectNoAxeViolations } from '@/testing/axe';
+import { deleted, validationFailed, versionConflict } from '@/testing/fixtures/settings';
 import { RateHistorySection } from './RateHistorySection';
-import { EUR_CURRENT, EUR_FUTURE, EUR_ONLY_CURRENT, EUR_RATES } from './rateTestData';
+import { EUR_CURRENT, EUR_FUTURE, EUR_ONLY_CURRENT, EUR_RATES } from '@/testing/fixtures/rates';
 
 const NO_IMPACT = { body: { warnings: [] } };
 

@@ -7,11 +7,11 @@ import { ActivityLogPage } from '@/features/activity-log/ActivityLogPage';
 import { AllWorkPage } from '@/features/all-work/AllWorkPage';
 import { ApprovalWorkflowsPage } from '@/features/approval-workflows/ApprovalWorkflowsPage';
 import { ApprovalsPage } from '@/features/approvals/ApprovalsPage';
-import { CampaignPanel } from '@/features/campaigns/CampaignPanel';
-import { InitiativePanel } from '@/features/campaigns/InitiativePanel';
-import { NewCampaignPanel } from '@/features/campaigns/NewCampaignPanel';
-import { NewInitiativePanel } from '@/features/campaigns/NewInitiativePanel';
-import { ACCESS_ROUTES } from '@/features/access/accessRoutes';
+import { CampaignPanel } from '@/features/plans/campaigns/CampaignPanel';
+import { InitiativePanel } from '@/features/plans/campaigns/InitiativePanel';
+import { NewCampaignPanel } from '@/features/plans/campaigns/NewCampaignPanel';
+import { NewInitiativePanel } from '@/features/plans/campaigns/NewInitiativePanel';
+import { ACCESS_ROUTES } from '@/features/people/access/accessRoutes';
 import { ComponentGalleryPage } from '@/features/dev/ComponentGalleryPage';
 import { GlobalBudgetPage } from '@/features/global-budgets/GlobalBudgetPage';
 import { GlobalBudgetsPage } from '@/features/global-budgets/GlobalBudgetsPage';
@@ -50,6 +50,7 @@ import { RequireSignIn } from '@/session/RequireSignIn';
 import type { PageHandle } from '@/session/RequireSignIn';
 import { RootLayout } from './RootLayout';
 import { RouteErrorPage } from './RouteErrorPage';
+import { SETTINGS_SECTIONS } from './settings-sections';
 
 /** The tab title shown while the session is checked (each page names itself afterwards). */
 function titled(title: string): { handle: PageHandle } {
@@ -63,7 +64,11 @@ function titled(title: string): { handle: PageHandle } {
  */
 const PLAN_MODULE_ROUTES: RouteObject[] = [
   // 002 Settings
-  { path: '/settings', element: <SettingsPage />, ...titled('Settings') },
+  {
+    path: '/settings',
+    element: <SettingsPage sections={SETTINGS_SECTIONS} />,
+    ...titled('Settings'),
+  },
   { path: '/settings/models', element: <ModelsPage />, ...titled('Models') },
   { path: '/settings/activity-types', element: <ActivityTypesPage />, ...titled('Activity types') },
   {

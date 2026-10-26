@@ -7,7 +7,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
 import { useUnsavedChanges } from './useUnsavedChanges';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

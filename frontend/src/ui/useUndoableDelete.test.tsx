@@ -6,7 +6,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { useUndoableDelete } from './useUndoableDelete';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 type DeleteResult = components['schemas']['DeleteResult'];
 

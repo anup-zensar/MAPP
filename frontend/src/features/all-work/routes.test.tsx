@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { COMING_SOON_SECTIONS } from '@/app/navigation';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 import { resetAllWorkStore } from './allWorkStore';
-import { gridResult, PAGE_ANSWERS } from './testData';
+import { gridResult, PAGE_ANSWERS } from '@/testing/fixtures/all-work';
 
 afterEach(() => resetAllWorkStore());
 

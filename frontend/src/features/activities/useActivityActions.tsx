@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { showHistory } from '@/features/activity-log/showHistory';
-import { gateItem } from '@/features/plans/gateAction';
+import { gateItem } from '@/session/gate-action';
 import type { Activity } from './activitiesApi';
 import { ActivityDeleteQuestion } from './ActivityDeleteQuestion';
 import { CopyActivityDialog } from './CopyActivityDialog';

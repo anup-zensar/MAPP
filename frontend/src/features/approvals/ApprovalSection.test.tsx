@@ -3,12 +3,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ApprovalSection } from './ApprovalSection';
 import type { ActivityApproval } from './approvalsApi';
 import type { ApprovalActivity } from './approvalTypes';
 import { APPROVED_NO_RECALL } from './messages';
-import { ALEX, approvalOf, CARLOS, DANIEL, DECLINE, PRIYA, roundOf, SUBMITTED } from './testData';
+import {
+  ALEX,
+  approvalOf,
+  CARLOS,
+  DANIEL,
+  DECLINE,
+  PRIYA,
+  roundOf,
+  SUBMITTED,
+} from '@/testing/fixtures/approvals';
 
 const APPROVAL = 'GET /api/v1/activities/A-1042/approval';
 

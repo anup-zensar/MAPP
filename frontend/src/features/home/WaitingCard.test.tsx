@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { WaitingItem } from './homeApi';
-import { waitingItemOf } from './testData';
+import { waitingItemOf } from '@/testing/fixtures/home';
 import { WaitingCard } from './WaitingCard';
 
 const daysAgo = (days: number) => new Date(Date.now() - (days * 24 + 1) * 3_600_000).toISOString();

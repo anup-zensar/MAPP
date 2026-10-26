@@ -2,11 +2,11 @@ import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { emptyCondition } from './levelDrafts';
 import type { ConditionDraft } from './levelDrafts';
 import { RuleConditionFields } from './RuleConditionFields';
-import { RULE_OPTIONS } from './testData';
+import { RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
 
 function Harness({ reason = '' }: { reason?: string }) {
   const [value, setValue] = useState<ConditionDraft>(emptyCondition());

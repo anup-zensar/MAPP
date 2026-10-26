@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { expectCurrentSection, renderApp } from '@/testing/app';
-import { logPage, logSummary } from './testData';
+import { logPage, logSummary } from '@/testing/fixtures/activity-log';
 
 // Feature 011's address for the Activity log (build guide §5), under More in the sidebar.
 describe('Activity log route (feature 011)', () => {

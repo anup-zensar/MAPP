@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ShellAttributesPage } from './ShellAttributesPage';
 import {
   ACTIVITY_ATTRIBUTES,
@@ -14,7 +14,7 @@ import {
   OLD_NOTES,
   page,
   PIR,
-} from './testData';
+} from '@/testing/fixtures/shell-attributes';
 
 const ALL = [BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES];
 const LIST = 'GET /api/v1/shell-attributes';

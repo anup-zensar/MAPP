@@ -6,7 +6,7 @@ import { ApiError } from '@/api/errors';
 import { useAccess } from './access';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { CurrentUser } from './useSession';
 
 const FORBIDDEN = {

@@ -1,15 +1,20 @@
 import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
-import { approvalOf } from '@/features/approvals/testData';
-import { activityRecord } from '@/features/line-items/testData';
+import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
+import { approvalOf } from '@/testing/fixtures/approvals';
+import { activityRecord } from '@/testing/fixtures/line-items';
 import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ActivityPage } from './ActivityPage';
-import { activityAttributeForm, editForm, incompleteLaunchFilm, launchFilm } from './testData';
+import {
+  activityAttributeForm,
+  editForm,
+  incompleteLaunchFilm,
+  launchFilm,
+} from '@/testing/fixtures/activities';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
 configure({ asyncUtilTimeout: 10_000 });

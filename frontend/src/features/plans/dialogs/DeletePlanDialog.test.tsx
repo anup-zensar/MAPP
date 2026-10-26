@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
 import type { Plan } from '../plansApi';
-import { plan } from '../testData';
+import { plan } from '@/testing/fixtures/plans';
 import { DeletePlanDialog } from './DeletePlanDialog';
 
 function renderDialog(target: Plan) {

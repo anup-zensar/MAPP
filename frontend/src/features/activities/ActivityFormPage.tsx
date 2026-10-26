@@ -46,7 +46,7 @@ import type { ReapprovalChange } from './activityFormState';
 import styles from './ActivityFormPage.module.css';
 import { FormSkeleton, LoadFailed } from './ActivityLoadStates';
 import { activityHref } from './activityText';
-import { FormLayout } from './FormRail';
+import { FormLayout } from '@/ui/FormRail/FormRail';
 import { ReapprovalDialog } from './ReapprovalDialog';
 
 export interface ActivityFormPageProps {

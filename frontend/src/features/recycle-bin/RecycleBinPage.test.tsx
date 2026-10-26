@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { BinItem } from './binText';
 import { RecycleBinPage } from './RecycleBinPage';
-import { binItem, lineItemEntry, restorePreview } from './testData';
+import { binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 
 const BIN = 'GET /api/v1/recycle-bin';
 const PARENT = { type: 'initiative', typeLabel: 'initiative', id: 'I-1009', name: 'Trade shows' };

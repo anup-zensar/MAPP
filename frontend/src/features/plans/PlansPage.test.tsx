@@ -3,10 +3,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { remember, DEFAULT_FILTERS } from './listPreferences';
 import { PlansPage } from './PlansPage';
-import { seedList } from './testData';
+import { seedList } from '@/testing/fixtures/plans';
 
 afterEach(() => window.localStorage.clear());
 

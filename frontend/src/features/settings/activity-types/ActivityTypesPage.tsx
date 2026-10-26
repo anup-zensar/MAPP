@@ -11,12 +11,12 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
-import { ListToolbar } from '../shared/ListToolbar';
-import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
-import styles from '../shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '../shared/useListFilters';
-import type { ListFilters } from '../shared/useListFilters';
-import { useSettingStatus } from '../shared/useSettingStatus';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import type { ListFilters } from '@/ui/useListFilters';
+import { useSettingStatus } from '../useSettingStatus';
 import { modelNames, moreActions } from './activityTypeActions';
 import type { ActivityTypeActions } from './activityTypeActions';
 import { ActivityTypeDetails } from './ActivityTypeDetails';
@@ -27,8 +27,8 @@ import {
   useDeleteActivityType,
 } from './activityTypesApi';
 import type { ActivityType } from './activityTypesApi';
-import { CanChange, SettingsViewOnlyNote } from '../shared/CanChange';
-import { useCanChange } from '../shared/useCanChange';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 
 const TYPE_NOUN = { one: 'activity type', many: 'activity types' };
 

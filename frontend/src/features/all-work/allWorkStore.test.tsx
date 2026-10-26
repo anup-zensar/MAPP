@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SESSION_KEY } from '@/session/useSession';
 import { resetAllWorkStore, useAllWorkState } from './allWorkStore';
-import { standard2026 } from './testData';
+import { standard2026 } from '@/testing/fixtures/all-work';
 
 afterEach(() => resetAllWorkStore());
 

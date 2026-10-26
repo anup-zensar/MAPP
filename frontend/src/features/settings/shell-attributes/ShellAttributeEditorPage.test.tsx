@@ -5,7 +5,7 @@ import { SessionProvider } from '@/session/SessionProvider';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderRoutes } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ShellAttributeEditorPage } from './ShellAttributeEditorPage';
 import {
   ACTIVITY_ATTRIBUTES,
@@ -17,7 +17,7 @@ import {
   MEDIA_CHANNEL,
   page,
   PIR,
-} from './testData';
+} from '@/testing/fixtures/shell-attributes';
 
 const LIST = {
   'GET /api/v1/shell-attributes': { body: page([BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES]) },

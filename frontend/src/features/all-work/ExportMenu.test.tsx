@@ -3,10 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { AllWorkResult, ViewState } from './allWorkTypes';
 import { ExportMenu } from './ExportMenu';
-import { DEFAULT_COLUMNS, emptyResult, gridResult, standard2026 } from './testData';
+import {
+  DEFAULT_COLUMNS,
+  emptyResult,
+  gridResult,
+  standard2026,
+} from '@/testing/fixtures/all-work';
 
 const XLSX_NAME = 'MAPP All work – Grid – 2026 – 18 Oct 2026.xlsx';
 

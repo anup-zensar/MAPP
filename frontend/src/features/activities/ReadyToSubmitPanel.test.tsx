@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { ReadyToSubmitPanel } from './ReadyToSubmitPanel';
-import { incompleteLaunchFilm, launchFilm } from './testData';
+import { incompleteLaunchFilm, launchFilm } from '@/testing/fixtures/activities';
 
 describe('ReadyToSubmitPanel (feature 006, FR-022 – FR-024)', () => {
   it('lists every problem at once, grouped and in order, each a link to where it is fixed', () => {

@@ -14,12 +14,12 @@ import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
 import { DecisionButton } from '@/features/approvals/DecisionButton';
 import { DecisionDialog } from '@/features/approvals/DecisionDialog';
 import { SubmitButton } from '@/features/approvals/SubmitButton';
-import { allows, gateItem } from '@/features/plans/gateAction';
+import { allows, gateItem } from '@/session/gate-action';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import type { Activity } from './activitiesApi';
 import styles from './ActivityHeader.module.css';
-import { ActivityStatusChip } from './ActivityStatusChip';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { activityEditHref, datesText, lineItemsAttentionText } from './activityText';
 
 export interface ActivityHeaderProps {

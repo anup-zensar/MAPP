@@ -7,7 +7,7 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { useFormatters } from '@/format/useFormatters';
-import { allows } from './gateAction';
+import { allows } from '@/session/gate-action';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import styles from './PlanHeader.module.css';
 import type { Plan } from './plansApi';

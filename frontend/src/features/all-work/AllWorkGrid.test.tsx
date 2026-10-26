@@ -2,10 +2,10 @@ import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { AllWorkGrid } from './AllWorkGrid';
 import type { AllWorkResult, AllWorkRow, ViewState } from './allWorkTypes';
-import { gridResult, seedRows, standard2026, usd } from './testData';
+import { gridResult, seedRows, standard2026, usd } from '@/testing/fixtures/all-work';
 import { continuedPath, nextSort, pageOf, toggleRow, visibleRows } from './viewState';
 
 /** The grid with its expansion kept the way the page keeps it. */

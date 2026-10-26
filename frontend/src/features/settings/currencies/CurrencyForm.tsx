@@ -9,9 +9,9 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { inverseRate, parseDecimalInput } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
-import { ImpactDialog } from '../shared/ImpactDialog';
-import { saveFailureOf } from '../shared/saveFailure';
-import styles from '../shared/SettingsTable.module.css';
+import { ImpactDialog } from '../ImpactDialog';
+import { saveFailureOf } from '../save-failure';
+import styles from '@/ui/settings-table.module.css';
 import {
   checkCurrencyImpact,
   fetchCurrency,

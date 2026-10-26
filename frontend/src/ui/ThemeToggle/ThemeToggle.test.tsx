@@ -4,7 +4,7 @@ import { mockApi } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { ThemeToggle } from './ThemeToggle';
 import type { CurrentUser } from '@/session/useSession';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

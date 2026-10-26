@@ -39,9 +39,9 @@ import { teamMoreItems } from './teamActions';
 import type { TeamActions } from './teamActions';
 import { removedIds } from './removedIds';
 import { deleteTeamText, teamInUseText, usedByText } from './texts';
-import list from '@/features/settings/shared/SettingsTable.module.css';
+import list from '@/ui/settings-table.module.css';
 import styles from './panels.module.css';
-import { CanChange } from '../settings/shared/CanChange';
+import { CanChange } from '@/ui/CanChange/CanChange';
 
 /** The team palette (D-025), in the order of the Colour field. */
 const COLOURS: { id: TeamColour; label: string }[] = [

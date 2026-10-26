@@ -1,12 +1,19 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PEOPLE } from '@/features/approval-workflows/testData';
+import { PEOPLE } from '@/testing/fixtures/approval-workflows';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { DelegationPanel } from './DelegationPanel';
-import { ALEX, CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from './testData';
+import {
+  ALEX,
+  CARLOS,
+  DANIEL,
+  delegationOf,
+  NO_DELEGATIONS,
+  PRIYA,
+} from '@/testing/fixtures/approvals';
 
 const LIST = 'GET /api/v1/approval-delegations';
 const CREATE = 'POST /api/v1/approval-delegations';

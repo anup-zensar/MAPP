@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ApprovalChain } from './ApprovalChain';
-import { ALEX, CARLOS, DANIEL, PRIYA, roundOf } from './testData';
+import { ALEX, CARLOS, DANIEL, PRIYA, roundOf } from '@/testing/fixtures/approvals';
 
 describe('ApprovalChain (feature 008, US2)', () => {
   it('shows each level in order with its approvers and state (FR-024)', () => {

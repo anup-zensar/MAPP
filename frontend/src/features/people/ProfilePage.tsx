@@ -10,7 +10,7 @@ import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import type { TeamRef } from '@/ui/TeamPill/TeamPill';
-import { YourAccessCard } from '@/features/access/YourAccessCard';
+import { YourAccessCard } from './access/YourAccessCard';
 import { DATE_FORMATS } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';

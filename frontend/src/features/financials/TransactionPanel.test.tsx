@@ -10,11 +10,11 @@ import {
   STATION_SIGNAGE,
   transactionOf,
   transactionPage,
-} from './testData';
+} from '@/testing/fixtures/financials';
 import { Outlet } from 'react-router';
 import { SessionProvider } from '@/session/SessionProvider';
 import { renderRoutes } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { FinancialsPage } from './FinancialsPage';
 import { TransactionPanel } from './TransactionPanel';
 

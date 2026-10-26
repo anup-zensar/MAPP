@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
+import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 import type { MockHandler } from '@/testing/mockApi';
 import {
@@ -10,7 +10,7 @@ import {
   lineItemRecord,
   transaction,
   transactionPage,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 const FORM_OPTIONS: Record<string, MockHandler> = {
   ...formAnswers(),

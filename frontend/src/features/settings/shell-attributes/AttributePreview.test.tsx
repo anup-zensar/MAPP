@@ -1,12 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/testing/attributeForms';
+import { campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { AttributePreview } from './AttributePreview';
-import { shellAttribute } from './testData';
+import { shellAttribute } from '@/testing/fixtures/shell-attributes';
 
 /** Region, which depends on Cluster on the campaign form (campaignForm()). */
 const REGION = shellAttribute({

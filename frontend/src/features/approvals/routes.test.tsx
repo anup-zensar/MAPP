@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { detailsOf } from '@/features/approval-workflows/testData';
-import { NO_DELEGATIONS } from '@/features/approvals/testData';
+import { detailsOf } from '@/testing/fixtures/approval-workflows';
+import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 
 const NO_ROWS = { body: { items: [], total: 0 } };

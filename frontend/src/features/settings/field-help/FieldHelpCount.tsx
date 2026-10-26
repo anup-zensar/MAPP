@@ -1,5 +1,5 @@
 import { formatWhole } from '@/format/decimal';
-import { SettingsCount } from '../shared/SettingsCount';
+import { SettingsCount } from '@/ui/SettingsCount/SettingsCount';
 import { useFieldHelpEntries } from './fieldHelpApi';
 
 /** "3 edited" on the Field help card of the Settings page (016 plan, "Pages"). */

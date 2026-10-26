@@ -4,7 +4,7 @@ import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { RecordFinancials } from './RecordFinancials';
 
 type FinancialRecordView = components['schemas']['FinancialRecordView'];

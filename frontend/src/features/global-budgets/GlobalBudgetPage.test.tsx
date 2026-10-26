@@ -3,9 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { GlobalBudgetPage } from './GlobalBudgetPage';
-import { BRAND_OPTION, globalBudget, LUBRICANTS, MOBILITY } from './testData';
+import {
+  BRAND_OPTION,
+  globalBudget,
+  LUBRICANTS,
+  MOBILITY,
+} from '@/testing/fixtures/global-budgets';
 
 const ONE = 'GET /api/v1/global-budgets/GB-1001';
 

@@ -3,9 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { LinkTransactionDialog } from './LinkTransactionDialog';
-import { FT_1004, manuallyLinked, STATION_SIGNAGE, transactionOf } from './testData';
+import {
+  FT_1004,
+  manuallyLinked,
+  STATION_SIGNAGE,
+  transactionOf,
+} from '@/testing/fixtures/financials';
 
 const LINK = 'POST /api/v1/financials/transactions/FT-1004/link';
 

@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { NotificationList } from './NotificationList';
-import { DECLINED, NOW, notificationOf, pageOf } from './testData';
+import { DECLINED, NOW, notificationOf, pageOf } from '@/testing/fixtures/notifications';
 
 const LIST = 'GET /api/v1/notifications';
 const READ = 'POST /api/v1/notifications/NT-1003/read';

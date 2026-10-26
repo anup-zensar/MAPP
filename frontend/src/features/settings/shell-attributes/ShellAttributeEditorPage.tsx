@@ -24,8 +24,8 @@ import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
-import { ImpactDialog } from '../shared/ImpactDialog';
-import { saveFailureOf } from '../shared/saveFailure';
+import { ImpactDialog } from '../ImpactDialog';
+import { saveFailureOf } from '../save-failure';
 import {
   conditionText,
   DEFAULT_SECTION,

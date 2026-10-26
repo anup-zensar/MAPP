@@ -13,7 +13,7 @@ import { centsInput, moneyText } from '@/features/line-items/lineItemMath';
 import { parseMoneyInput, toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import type { Activity } from './activitiesApi';
-import { ActivityStatusChip } from './ActivityStatusChip';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { activityHref } from './activityText';
 import { DestinationList } from './DestinationList';
 import { useSplitActivity, useSplitOptions, useSplitPreview } from './splitApi';

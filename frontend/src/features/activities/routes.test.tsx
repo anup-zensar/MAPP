@@ -1,11 +1,17 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
-import { approvalOf } from '@/features/approvals/testData';
-import { activityRecord } from '@/features/line-items/testData';
+import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
+import { approvalOf } from '@/testing/fixtures/approvals';
+import { activityRecord } from '@/testing/fixtures/line-items';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 import type { MockHandler } from '@/testing/mockApi';
-import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
+import {
+  activityAttributeForm,
+  editForm,
+  launchFilm,
+  newForm,
+  PEOPLE,
+} from '@/testing/fixtures/activities';
 
 // The parts features 007 and 008 show on the activity pages are tested by those features; here
 // they stand in, so those features never break these tests.

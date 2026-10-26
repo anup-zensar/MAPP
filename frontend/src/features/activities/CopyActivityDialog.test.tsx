@@ -4,10 +4,15 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { Activity } from './activitiesApi';
 import { CopyActivityDialog } from './CopyActivityDialog';
-import { destinations, launchFilm, OWN_INITIATIVE, RETAIL_EVENTS } from './testData';
+import {
+  destinations,
+  launchFilm,
+  OWN_INITIATIVE,
+  RETAIL_EVENTS,
+} from '@/testing/fixtures/activities';
 
 /** The dialog as the More menu holds it: closing it takes it off the page. */
 function Harness({ activity }: { activity: Activity }) {

@@ -14,7 +14,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
-import { allows, gateItem } from '@/features/plans/gateAction';
+import { allows, gateItem } from '@/session/gate-action';
 import { formatRate, toCents } from '@/format/decimal';
 import { localDate } from '@/format/intl';
 import { fieldHref, recordHref } from '@/ui/record-links';

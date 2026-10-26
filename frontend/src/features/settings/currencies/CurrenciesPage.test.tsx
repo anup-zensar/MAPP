@@ -3,10 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { CURRENCIES, deleted, EUR, JPY, validationFailed, versionConflict } from '../testRecords';
+import { testUser } from '@/testing/fixtures/users';
+import {
+  CURRENCIES,
+  deleted,
+  EUR,
+  JPY,
+  validationFailed,
+  versionConflict,
+} from '@/testing/fixtures/settings';
 import { CurrenciesPage } from './CurrenciesPage';
-import { EUR_RATES, NO_IMPORTS, NO_RATES, RECENT_IMPORTS_PAGE } from './rateTestData';
+import { EUR_RATES, NO_IMPORTS, NO_RATES, RECENT_IMPORTS_PAGE } from '@/testing/fixtures/rates';
 
 const USD_LOCK = "USD is MAPP's base currency; its rate is always 1.";
 

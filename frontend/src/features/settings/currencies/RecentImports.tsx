@@ -3,7 +3,7 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { formatWhole } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
-import settingsStyles from '../shared/SettingsTable.module.css';
+import settingsStyles from '@/ui/settings-table.module.css';
 import { RECENT_IMPORTS, useRateImports } from './ratesApi';
 import type { RateImport } from './ratesApi';
 import styles from './rates.module.css';

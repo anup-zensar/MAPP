@@ -6,7 +6,7 @@ import { mockApi } from '@/testing/mockApi';
 import { renderRoutes, renderWithProviders } from '@/testing/render';
 import type { RenderOptions } from '@/testing/render';
 import { SignInPage } from './SignInPage';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

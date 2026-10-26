@@ -1,10 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { ApprovalTab } from './approvalsApi';
 import { ApprovalsTable } from './ApprovalsTable';
-import { ALEX, CARLOS, DANIEL, rowOf } from './testData';
+import { ALEX, CARLOS, DANIEL, rowOf } from '@/testing/fixtures/approvals';
 
 function renderTable(rows = [rowOf()], tab: ApprovalTab = 'waiting') {
   const onOpen = vi.fn();

@@ -5,7 +5,7 @@ import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { usePlanActivities } from './activitiesApi';
-import { ActivityStatusChip } from './ActivityStatusChip';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { activityHref, newActivityHref } from './activityText';
 import styles from './InitiativeActivities.module.css';
 

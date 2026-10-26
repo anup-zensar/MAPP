@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ApprovalStatusAction } from './ApprovalStatusAction';
 import type { ApprovalActivity } from './approvalTypes';
-import { approvalOf, submissionOf } from './testData';
+import { approvalOf, submissionOf } from '@/testing/fixtures/approvals';
 
 const SUBMISSION = 'GET /api/v1/activities/A-1042/approval/submission';
 const SUBMIT = 'POST /api/v1/activities/A-1042/approval/submit';

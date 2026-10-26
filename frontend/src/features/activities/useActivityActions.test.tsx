@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { mockApi } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { Activity } from './activitiesApi';
-import { destinations, launchFilm } from './testData';
+import { destinations, launchFilm } from '@/testing/fixtures/activities';
 import { useActivityActions } from './useActivityActions';
 
 const DELETED = {

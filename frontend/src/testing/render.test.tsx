@@ -10,7 +10,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { mockApi } from './mockApi';
 import { findMessages, renderRoutes, renderWithProviders } from './render';
-import { testUser } from './users';
+import { testUser } from './fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

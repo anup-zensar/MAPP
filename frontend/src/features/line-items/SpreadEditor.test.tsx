@@ -14,7 +14,7 @@ import {
 import type { LineItemFormState } from './lineItemFormState';
 import type { ActivityDates } from './lineItemMath';
 import { SpreadEditor } from './SpreadEditor';
-import { EUR, eur, formOptions, lineItem, spreadMonth, usd } from './testData';
+import { EUR, eur, formOptions, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
 
 const MAR_MAY: ActivityDates = { startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false };
 

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { NavDrawer } from './NavDrawer';
 import type { CurrentUser } from '@/session/useSession';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser({
   preferences: { ...testUser().preferences, sidebarCollapsed: true },

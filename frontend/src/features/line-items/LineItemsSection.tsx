@@ -9,7 +9,7 @@ import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { components } from '@/api/generated/schema';
-import { allows, gateItem } from '@/features/plans/gateAction';
+import { allows, gateItem } from '@/session/gate-action';
 import { cx } from '@/ui/cx';
 import { fieldHref, recordHref } from '@/ui/record-links';
 import { useFinancialRecord } from './gsapFinancials';

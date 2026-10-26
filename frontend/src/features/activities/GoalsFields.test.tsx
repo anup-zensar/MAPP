@@ -5,7 +5,7 @@ import { renderWithProviders } from '@/testing/render';
 import { emptyGoals } from './activityFormState';
 import type { GoalsState } from './activityFormState';
 import { GoalsFields } from './GoalsFields';
-import { MODEL } from './testData';
+import { MODEL } from '@/testing/fixtures/activities';
 
 function Goals({ start = emptyGoals() }: { start?: GoalsState }) {
   const [goals, setGoals] = useState(start);

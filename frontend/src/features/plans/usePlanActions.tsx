@@ -6,7 +6,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { CopyPlanDialog } from './dialogs/CopyPlanDialog';
-import { gateItem } from './gateAction';
+import { gateItem } from '@/session/gate-action';
 import type { CopyRefusal } from './dialogs/CopyPlanDialog';
 import { DeletePlanDialog } from './dialogs/DeletePlanDialog';
 import { PublishBlockedDialog } from './dialogs/PublishBlockedDialog';

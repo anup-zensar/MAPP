@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
-import { expectNoAxeViolations } from '../shared/axeCheck';
-import { validationFailed, versionConflict } from '../testRecords';
+import { testUser } from '@/testing/fixtures/users';
+import { expectNoAxeViolations } from '@/testing/axe';
+import { validationFailed, versionConflict } from '@/testing/fixtures/settings';
 import { FieldHelpPage } from './FieldHelpPage';
-import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from './fieldHelpTestData';
+import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
 
 function renderHelp(answers: Record<string, MockHandler> = {}, route = '/settings/field-help') {
   const api = mockApi({ 'GET /api/v1/field-help': { body: FIELD_HELP_PAGE }, ...answers });

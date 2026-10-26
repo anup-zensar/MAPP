@@ -3,14 +3,14 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button } from '@/ui/Button/Button';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { MetaLine } from '../shared/MetaLine';
-import { SETTING_NOUNS } from '../shared/settingsNouns';
-import styles from '../shared/SettingsTable.module.css';
-import { UsageLine } from '../shared/UsageLine';
+import { MetaLine } from '../MetaLine';
+import { SETTING_NOUNS } from '../settings-nouns';
+import styles from '@/ui/settings-table.module.css';
+import { UsageLine } from '../UsageLine';
 import type { FinanceBudget, FinanceBudgetItem } from './financeBudgetsApi';
 import { moreActions } from './financeItemActions';
 import type { FinanceItemActions } from './financeItemActions';
-import { CanChange } from '../shared/CanChange';
+import { CanChange } from '@/ui/CanChange/CanChange';
 
 export interface FinanceBudgetItemDetailsProps {
   /** The item; null when it no longer exists. */

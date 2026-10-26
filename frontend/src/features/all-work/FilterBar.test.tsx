@@ -2,10 +2,10 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { AllWorkOptions, AllWorkResult, ViewState } from './allWorkTypes';
 import { FilterBar } from './FilterBar';
-import { allWorkOptions, standard2026 } from './testData';
+import { allWorkOptions, standard2026 } from '@/testing/fixtures/all-work';
 
 /** The filter bar with the state kept as the page keeps it; the state is shown as JSON. */
 function Harness({

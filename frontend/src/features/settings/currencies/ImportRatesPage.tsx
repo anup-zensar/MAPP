@@ -10,7 +10,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import { formatRate, formatWhole } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
-import settingsStyles from '../shared/SettingsTable.module.css';
+import settingsStyles from '@/ui/settings-table.module.css';
 import { CURRENCIES_PATH } from './currencyPaths';
 import { checkRateImport, downloadRateSample, useImportRates } from './ratesApi';
 import type {

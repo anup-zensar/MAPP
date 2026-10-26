@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { ClipboardList } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { LinkSummaryCard } from './LinkSummaryCard';
 
 describe('LinkSummaryCard', () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 import {
   activityRecord,
@@ -12,7 +12,7 @@ import {
   transaction,
   transactionPage,
   usd,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 function renderActivity(answer: MockHandler) {
   mockApi({ 'GET /api/v1/financials/records/A-1001': answer });

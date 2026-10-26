@@ -1,4 +1,4 @@
-import { SettingsCount } from '@/features/settings/shared/SettingsCount';
+import { SettingsCount } from '@/ui/SettingsCount/SettingsCount';
 import { useWorkflows } from './workflowsApi';
 
 /**

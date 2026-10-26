@@ -8,7 +8,7 @@ import {
   LUBRICANTS,
   MOBILITY,
   planForm,
-} from '@/testing/attributeForms';
+} from '@/testing/fixtures/attribute-forms';
 import { renderWithProviders } from '@/testing/render';
 import { ShellAttributeFields } from './ShellAttributeFields';
 import type { ShellAttributeFieldsProps } from './ShellAttributeFields';

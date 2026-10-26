@@ -3,7 +3,7 @@ import { declineBoxText, levelOf, names } from '@/features/approvals/messages';
 import { Notice } from '@/features/line-items/Notice';
 import { useFormatters } from '@/format/useFormatters';
 import type { Activity } from './activitiesApi';
-import { activityBannerText } from './activityStatus';
+import { activityBannerText } from '@/ui/ActivityStatusChip/activity-status';
 
 export interface ActivityStatusNoticeProps {
   activity: Activity;

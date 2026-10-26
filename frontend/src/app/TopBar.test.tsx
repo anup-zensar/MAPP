@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { TopBar } from './TopBar';
 import type { CurrentUser } from '@/session/useSession';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

@@ -1,11 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
-import { financialsNotServed } from '@/features/plans/testData';
+import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
+import { financialsNotServed } from '@/testing/fixtures/plans';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { LineItemPage } from './LineItemPage';
 import {
   approvedActivity,
@@ -20,7 +20,7 @@ import {
   transaction,
   transactionPage,
   usd,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 const GET = 'GET /api/v1/line-items/L-1001';
 const DUPLICATE = 'POST /api/v1/line-items/L-1001/duplicate';

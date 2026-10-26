@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { CurrentUser } from '@/session/useSession';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { ComponentGalleryPage } from './ComponentGalleryPage';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

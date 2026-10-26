@@ -1,13 +1,19 @@
 import { configure, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { launchFilmSection } from '@/features/line-items/testData';
+import { launchFilmSection } from '@/testing/fixtures/line-items';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { Activity } from './activitiesApi';
 import { ActivityFormPage } from './ActivityFormPage';
-import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
+import {
+  activityAttributeForm,
+  editForm,
+  launchFilm,
+  newForm,
+  PEOPLE,
+} from '@/testing/fixtures/activities';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
 configure({ asyncUtilTimeout: 10_000 });

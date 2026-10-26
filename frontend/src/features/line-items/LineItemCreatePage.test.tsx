@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { LineItemCreatePage } from './LineItemCreatePage';
-import { attribute, option } from '@/testing/attributeForms';
+import { attribute, option } from '@/testing/fixtures/attribute-forms';
 import {
   activity,
   approvedActivity,
@@ -17,7 +17,7 @@ import {
   restartRefusal,
   usd,
   validationError,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 const PATH = '/activities/:activityId/line-items/new';
 const ROUTE = '/activities/A-1001/line-items/new';

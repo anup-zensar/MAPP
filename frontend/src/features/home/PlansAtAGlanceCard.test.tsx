@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { HomePlanRow, HomeScope } from './homeApi';
 import { PlansAtAGlanceCard } from './PlansAtAGlanceCard';
-import { planRowOf, usd } from './testData';
+import { planRowOf, usd } from '@/testing/fixtures/home';
 
 const LUBRICANTS = planRowOf();
 const CHINA = planRowOf({

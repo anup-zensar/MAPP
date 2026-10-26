@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { LineItemsSection } from './LineItemsSection';
 import {
   activity,
@@ -13,7 +13,7 @@ import {
   lineItem,
   lineItemRecord,
   usd,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 const SECTION = 'GET /api/v1/activities/A-1001/line-items';
 const FINANCIALS = 'GET /api/v1/financials/records/A-1001';

@@ -8,7 +8,7 @@ import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { ApprovalAlert } from '@/features/approvals/ApprovalAlert';
-import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
+import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { ApprovalChain } from '@/features/approvals/ApprovalChain';
 import { timingsText } from '@/features/approvals/messages';
 import { localDate } from '@/format/intl';
@@ -19,7 +19,7 @@ import type { WorkflowActions } from './workflowActions';
 import { usedByText, WORKFLOW_GONE } from './workflowTexts';
 import { useWorkflowDetails } from './workflowsApi';
 import type { ApprovalWorkflowDetails } from './workflowsApi';
-import { CanChange } from '../settings/shared/CanChange';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import styles from './WorkflowDetailsPanel.module.css';
 
 export interface WorkflowDetailsPanelProps {

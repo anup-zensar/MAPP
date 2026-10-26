@@ -11,10 +11,10 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { TeamPill } from '@/ui/TeamPill/TeamPill';
-import { ListToolbar } from '@/features/settings/shared/ListToolbar';
-import styles from '@/features/settings/shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
-import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import styles from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import { useStatusFlow } from '@/ui/useStatusFlow';
 import { formatWhole } from '@/format/decimal';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useShowFailure } from './feedback';
@@ -25,8 +25,8 @@ import type { TeamActions } from './teamActions';
 import { DeleteTeamDialog, TeamDetailsPanel, TeamFormPanel } from './TeamPanels';
 import { usedByText } from './texts';
 import page from './lists.module.css';
-import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
-import { useCanChange } from '../settings/shared/useCanChange';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 
 const TEAM_NOUN = { one: 'team', many: 'teams' };
 

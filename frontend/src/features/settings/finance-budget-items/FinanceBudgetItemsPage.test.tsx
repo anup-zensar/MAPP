@@ -4,7 +4,7 @@ import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import {
   deleted,
   MADE,
@@ -12,7 +12,7 @@ import {
   USED_BY_TWO_PLANS,
   validationFailed,
   versionConflict,
-} from '../testRecords';
+} from '@/testing/fixtures/settings';
 import { FinanceBudgetItemsPage } from './FinanceBudgetItemsPage';
 
 type FinanceBudget = components['schemas']['FinanceBudget'];

@@ -1,12 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { HOME_ANSWERS } from '@/features/home/testData';
+import { HOME_ANSWERS } from '@/testing/fixtures/home';
 import { mockApi } from '@/testing/mockApi';
 import { renderRoutes } from '@/testing/render';
 import { routes } from './router';
 import type { CurrentUser } from '@/session/useSession';
-import { NO_DELEGATIONS } from '@/features/approvals/testData';
-import { testUser } from '@/testing/users';
+import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
+import { testUser } from '@/testing/fixtures/users';
 
 const PRIYA: CurrentUser = testUser();
 

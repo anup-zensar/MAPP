@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { campaignForm } from '@/testing/attributeForms';
+import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
 import {

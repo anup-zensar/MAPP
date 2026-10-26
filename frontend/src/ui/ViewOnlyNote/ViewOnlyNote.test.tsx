@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { CurrentUser } from '@/session/useSession';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ViewOnlyNote } from './ViewOnlyNote';
 import { viewOnlyText } from './viewOnlyText';
 

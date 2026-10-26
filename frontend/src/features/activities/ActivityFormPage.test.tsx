@@ -3,9 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ActivityFormPage } from './ActivityFormPage';
-import { activityAttributeForm, launchFilm, newForm, PEOPLE, validationFailed } from './testData';
+import {
+  activityAttributeForm,
+  launchFilm,
+  newForm,
+  PEOPLE,
+  validationFailed,
+} from '@/testing/fixtures/activities';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
 configure({ asyncUtilTimeout: 10_000 });

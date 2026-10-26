@@ -1,6 +1,11 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { activityForm, campaignForm, LUBRICANTS, MOBILITY } from '@/testing/attributeForms';
+import {
+  activityForm,
+  campaignForm,
+  LUBRICANTS,
+  MOBILITY,
+} from '@/testing/fixtures/attribute-forms';
 import { renderWithProviders } from '@/testing/render';
 import { ShellAttributeValues } from './ShellAttributeValues';
 

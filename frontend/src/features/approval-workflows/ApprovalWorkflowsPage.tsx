@@ -14,11 +14,11 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useToast } from '@/ui/Toast/useToast';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { asApiError, isSessionLost } from '@/features/approvals/messages';
-import { ListToolbar } from '@/features/settings/shared/ListToolbar';
-import list from '@/features/settings/shared/SettingsTable.module.css';
-import { filterRecords, useListFilters } from '@/features/settings/shared/useListFilters';
-import type { ListFilters } from '@/features/settings/shared/useListFilters';
-import { useStatusFlow } from '@/features/settings/shared/useStatusFlow';
+import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import list from '@/ui/settings-table.module.css';
+import { filterRecords, useListFilters } from '@/ui/useListFilters';
+import type { ListFilters } from '@/ui/useListFilters';
+import { useStatusFlow } from '@/ui/useStatusFlow';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
@@ -35,8 +35,8 @@ import {
 } from './workflowsApi';
 import type { ApprovalWorkflow } from './workflowsApi';
 import styles from './ApprovalWorkflowsPage.module.css';
-import { CanChange, SettingsViewOnlyNote } from '../settings/shared/CanChange';
-import { useCanChange } from '../settings/shared/useCanChange';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 
 const WORKFLOW_NOUN = { one: 'approval workflow', many: 'approval workflows' };
 

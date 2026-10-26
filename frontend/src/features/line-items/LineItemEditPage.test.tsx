@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { LineItemEditPage } from './LineItemEditPage';
 import {
   approvedActivity,
@@ -17,7 +17,7 @@ import {
   notFound,
   spreadMonth,
   usd,
-} from './testData';
+} from '@/testing/fixtures/line-items';
 
 const GET = 'GET /api/v1/line-items/L-1001';
 const PATCH = 'PATCH /api/v1/line-items/L-1001';

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { ShellAttributePage } from './ShellAttributePage';
 import {
   BUSINESS_UNIT,
@@ -14,7 +14,7 @@ import {
   page,
   PIR,
   shellOption,
-} from './testData';
+} from '@/testing/fixtures/shell-attributes';
 
 const TV = shellOption({ id: 'SO-1101', label: 'TV', attributeId: 'SA-1010' });
 

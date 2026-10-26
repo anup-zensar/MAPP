@@ -8,7 +8,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 import type { components } from '@/api/generated/schema';
-import { gateItem } from '@/features/plans/gateAction';
+import { gateItem } from '@/session/gate-action';
 import { useFormatters } from '@/format/useFormatters';
 import { fetchLatestActivity, usePlanActivities } from './activitiesApi';
 import type { Activity, ActivitySummary } from './activitiesApi';

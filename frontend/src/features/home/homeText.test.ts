@@ -26,7 +26,7 @@ import {
   plansWithoutBudgetText,
   viewAllPlansText,
 } from './homeText';
-import { logEntryOf, reasonOf, usd } from './testData';
+import { logEntryOf, reasonOf, usd } from '@/testing/fixtures/home';
 
 describe('homeText — the greeting (design system §2.3)', () => {
   it('greets the person by first name (FR-001)', () => {

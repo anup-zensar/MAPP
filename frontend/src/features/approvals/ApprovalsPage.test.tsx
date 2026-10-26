@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import type { ApprovalRow } from './approvalsApi';
 import { ApprovalsPage } from './ApprovalsPage';
 import {
@@ -17,7 +17,7 @@ import {
   previewOf,
   roundOf,
   rowOf,
-} from './testData';
+} from '@/testing/fixtures/approvals';
 
 const SUMMARY = {
   body: { waitingForMe: 3, allOpen: 5, approvedThisMonth: 2, declinedThisMonth: 1 },

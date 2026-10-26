@@ -2,11 +2,11 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/users';
+import { testUser } from '@/testing/fixtures/users';
 import { PlanForm } from './PlanForm';
 import type { PlanFormProps } from './PlanForm';
 import { valuesFromDefaults, valuesFromPlan } from './planFormValues';
-import { FINANCE_BUDGETS, FORM_ANSWERS, plan, planDefaults } from './testData';
+import { FINANCE_BUDGETS, FORM_ANSWERS, plan, planDefaults } from '@/testing/fixtures/plans';
 
 function renderForm(props: Partial<PlanFormProps> = {}, answers = {}) {
   const api = mockApi({ ...FORM_ANSWERS, ...answers });
