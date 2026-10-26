@@ -11,16 +11,13 @@ import (
 
 	"mapp/internal/activities"
 	"mapp/internal/approvals"
-	"mapp/internal/campaigns"
 	"mapp/internal/history"
 	"mapp/internal/lineitems"
-	"mapp/internal/people"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
-	"mapp/internal/settings"
 )
 
 // HistoryDays is how far back the demo history goes: every activity-log entry of the seed is dated within
@@ -108,7 +105,7 @@ func (d *demo) addHistory(ctx context.Context) error {
 		return err
 	}
 	h.fallbackOwner = h.people[alexID]
-	if h.records, err = loadTree(ctx); err != nil {
+	if h.records, err = h.loadTree(ctx); err != nil {
 		return err
 	}
 
@@ -123,7 +120,7 @@ func (d *demo) addHistory(ctx context.Context) error {
 		return err
 	}
 
-	repo := history.NewJSONRepository()
+	repo := d.stores.History
 	// Time order; entries of the same moment keep the order they were made in (parents before children).
 	slices.SortStableFunc(h.entries, func(x, y history.Entry) int { return x.At.Compare(y.At) })
 	for _, e := range h.entries {
@@ -150,7 +147,7 @@ type demoHistory struct {
 
 // loadPeople reads the seeded people, to name the actors of the entries.
 func (h *demoHistory) loadPeople(ctx context.Context) error {
-	list, err := people.NewJSONRepository().List(ctx)
+	list, err := h.stores.People.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -183,79 +180,6 @@ func (h *demoHistory) add(at time.Time, by actor.Actor, action history.Action, v
 		At: at, Actor: by, Action: action, Verb: verb, RecordType: k.name, RecordTypeLabel: k.singular,
 		RecordID: id, RecordName: name, Path: slices.Clone(path), Changes: changes, Comment: comment, Details: details,
 	})
-}
-
-// treeRecord is one stored planning record, with its path.
-type treeRecord struct {
-	kind     kindLabel
-	id, name string
-	ownerID  string
-	path     []history.RecordRef
-	plan     *plans.Plan          // set for plans
-	activity *activities.Activity // set for activities
-}
-
-// loadTree reads every stored plan, campaign, initiative, activity and line item, in tree order: each plan,
-// then each of its campaigns followed by everything under it, and so on down to the line items, by ID at
-// every level, so parents always come before their children.
-func loadTree(ctx context.Context) ([]treeRecord, error) {
-	planList, err := plans.NewJSONRepository().List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	campaignRepo := campaigns.NewJSONRepository()
-	campaignList, err := campaignRepo.ListCampaigns(ctx)
-	if err != nil {
-		return nil, err
-	}
-	initiativeList, err := campaignRepo.ListInitiatives(ctx)
-	if err != nil {
-		return nil, err
-	}
-	activityList, err := activities.NewJSONRepository().List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	lineItemList, err := lineitems.NewJSONRepository().List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// The repositories list records by ID (the store's order), so every level is in ID order.
-	var records []treeRecord
-	visit := func(r treeRecord) []history.RecordRef {
-		records = append(records, r)
-		return append(slices.Clone(r.path), ref(r.kind, r.id, r.name))
-	}
-	for i := range planList {
-		p := &planList[i]
-		planPath := visit(treeRecord{kind: planningKinds.plan, id: p.ID, name: p.Name, ownerID: p.OwnerID, path: []history.RecordRef{}, plan: p})
-		for _, c := range campaignList {
-			if c.PlanID != p.ID {
-				continue
-			}
-			campaignPath := visit(treeRecord{kind: planningKinds.campaign, id: c.ID, name: c.Name, ownerID: deref(c.OwnerID), path: planPath})
-			for _, in := range initiativeList {
-				if in.CampaignID != c.ID {
-					continue
-				}
-				initiativePath := visit(treeRecord{kind: planningKinds.initiative, id: in.ID, name: in.Name, ownerID: deref(in.OwnerID), path: campaignPath})
-				for j := range activityList {
-					a := &activityList[j]
-					if a.InitiativeID != in.ID {
-						continue
-					}
-					activityPath := visit(treeRecord{kind: planningKinds.activity, id: a.ID, name: a.Name, ownerID: a.OwnerID,
-						path: initiativePath, activity: a})
-					for _, li := range lineItemList {
-						if li.ActivityID == a.ID {
-							visit(treeRecord{kind: planningKinds.lineItem, id: li.ID, name: li.Name, ownerID: li.OwnerID, path: activityPath})
-						}
-					}
-				}
-			}
-		}
-	}
-	return records, nil
 }
 
 // deref returns the text p points at, or "" for nil.
@@ -326,7 +250,7 @@ func statusChange[S ~string](from, to S, words map[S]string) (history.Change, er
 // 1 of", "declined"), the actor, the time, the comment, the round's details and the status change (step 3).
 // Rounds that ended before the log starts are left out; the activity's own approval history keeps them.
 func (h *demoHistory) addApprovalActions(ctx context.Context) error {
-	repo := approvals.NewJSONRepository()
+	repo := h.stores.Approvals
 	rounds, err := repo.ListRounds(ctx)
 	if err != nil {
 		return err
@@ -486,7 +410,7 @@ func (h *demoHistory) addDeletedInitiative(ctx context.Context, priya actor.Acto
 	}
 	activity.Meta = record.NewMeta(priya, created.Add(binCreatedSpread))
 
-	currency, found, err := settings.NewJSONRepository().GetCurrency(ctx, binLineItem.currency)
+	currency, found, err := h.stores.Settings.GetCurrency(ctx, binLineItem.currency)
 	if err != nil || !found {
 		return history.BinEntry{}, cmpErr(err, fmt.Errorf("seed: there is no currency %s", binLineItem.currency))
 	}

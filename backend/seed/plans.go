@@ -55,7 +55,7 @@ const ukPlan = "FY2027 Lubricants UK & Ireland"
 // addPlans creates the three demo plans through the plans repository, looking up the model, team, owner,
 // finance budget and business unit by name.
 func (d *demo) addPlans(ctx context.Context) error {
-	repo := plans.NewJSONRepository()
+	repo := d.stores.Plans
 	d.plans, d.planCurrencies = map[string]string{}, map[string]string{}
 	for _, p := range demoPlans {
 		var r resolver

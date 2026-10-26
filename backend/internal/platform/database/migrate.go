@@ -24,7 +24,29 @@ func Migrations() fs.FS {
 }
 
 // Migrate applies every pending migration; a PostgreSQL session lock makes concurrent runs wait their turn.
-func Migrate(ctx context.Context, d *DB) (err error) {
+func Migrate(ctx context.Context, d *DB) error {
+	return withMigrations(d, func(provider *goose.Provider) error {
+		if _, err := provider.Up(ctx); err != nil {
+			return fmt.Errorf("apply migrations: %w", err)
+		}
+		return nil
+	})
+}
+
+// HasPending reports whether a migration is still to be applied, without waiting for a running Migrate.
+func HasPending(ctx context.Context, d *DB) (bool, error) {
+	var pending bool
+	err := withMigrations(d, func(provider *goose.Provider) error {
+		var err error
+		if pending, err = provider.HasPending(ctx); err != nil {
+			return fmt.Errorf("check migrations: %w", err)
+		}
+		return nil
+	})
+	return pending, err
+}
+
+func withMigrations(d *DB, fn func(provider *goose.Provider) error) (err error) {
 	sqlDB := stdlib.OpenDBFromPool(d.pool)
 	defer func() { err = errors.Join(err, sqlDB.Close()) }()
 
@@ -36,8 +58,5 @@ func Migrate(ctx context.Context, d *DB) (err error) {
 	if err != nil {
 		return fmt.Errorf("load migrations: %w", err)
 	}
-	if _, err = provider.Up(ctx); err != nil {
-		return fmt.Errorf("apply migrations: %w", err)
-	}
-	return nil
+	return fn(provider)
 }

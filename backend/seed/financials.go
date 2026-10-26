@@ -4,9 +4,7 @@ import (
 	"context"
 
 	"mapp/internal/financials"
-	"mapp/internal/lineitems"
 	"mapp/internal/platform/money"
-	"mapp/internal/settings"
 )
 
 // addFinancials loads the demo GSAP data of feature 015 (FR-031, data model §6): the 11 fictitious
@@ -15,7 +13,7 @@ import (
 // fees (L-1004) and Stand build (L-1006) only, plus one PO whose HX key matches no line item (D-306). The
 // step runs after approvals and writes no activity-log entry (D-188).
 func (d *demo) addFinancials(ctx context.Context) error {
-	items, err := lineitems.NewJSONRepository().List(ctx)
+	items, err := d.stores.LineItems.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -23,7 +21,7 @@ func (d *demo) addFinancials(ctx context.Context) error {
 	for _, li := range items {
 		stored[li.ID] = true
 	}
-	currencies, err := settings.NewJSONRepository().ListCurrencies(ctx)
+	currencies, err := d.stores.Settings.ListCurrencies(ctx)
 	if err != nil {
 		return err
 	}
@@ -31,7 +29,7 @@ func (d *demo) addFinancials(ctx context.Context) error {
 	for _, c := range currencies {
 		rates[c.Code] = c.Rate
 	}
-	_, err = financials.LoadDemo(ctx, financials.NewJSONRepository(), d.ids, stored, rates, d.at)
+	_, err = financials.LoadDemo(ctx, d.stores.Financials, d.ids, stored, rates, d.at)
 	return err
 }
 

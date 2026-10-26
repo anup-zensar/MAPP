@@ -142,7 +142,7 @@ func (d *demo) addActivities(ctx context.Context) error {
 	if err := d.addWorkflows(ctx); err != nil {
 		return err
 	}
-	repo := activities.NewJSONRepository()
+	repo := d.stores.Activities
 	d.activities = map[string]string{}
 	for _, a := range demoActivities {
 		var r resolver
@@ -208,7 +208,7 @@ func (d *demo) activityOf(a demoActivity, initiativeID string) (activities.Activ
 
 // addWorkflows creates WF-1001 and WF-1002, active, in feature 008's shape.
 func (d *demo) addWorkflows(ctx context.Context) error {
-	repo := approvals.NewJSONRepository()
+	repo := d.stores.Approvals
 	d.workflows = map[string]string{}
 	for _, w := range demoWorkflows {
 		var r resolver

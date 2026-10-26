@@ -22,6 +22,7 @@ import (
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -75,7 +76,7 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("store.Open: %v", err)
 	}
 	clock := &testClock{now: start}
-	if err := seed.Load(t.Context(), db, clock.Now, seed.WithoutHistory()); err != nil {
+	if err := seed.Load(t.Context(), stores.JSON(db), clock.Now, seed.WithoutHistory()); err != nil {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())

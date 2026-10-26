@@ -17,6 +17,7 @@ import (
 	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/store"
 	"mapp/internal/platform/web"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -200,7 +201,7 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 		t.Fatalf("store.Open: %v", err)
 	}
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err := seed.Load(t.Context(), db, now); err != nil {
+	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	service := auth.NewService(db, auth.NewJSONRepository(), people.NewJSONRepository(), true, demoPassword, now)

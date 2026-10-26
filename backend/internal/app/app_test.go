@@ -15,6 +15,7 @@ import (
 	"mapp/internal/auth"
 	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/store"
+	"mapp/internal/stores"
 )
 
 const (
@@ -351,7 +352,7 @@ func newApp(t *testing.T, env string) *app.App {
 	}
 	fixedClock := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
 
-	built, err := app.New(cfg, db, fixedClock)
+	built, err := app.New(cfg, stores.JSON(db), fixedClock)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}

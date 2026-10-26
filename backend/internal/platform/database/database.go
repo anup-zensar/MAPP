@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mapp/internal/platform/database/sqlcdb"
+	"mapp/internal/platform/memo"
 )
 
 var (
@@ -52,6 +53,10 @@ func (d *DB) Close() {
 	d.pool.Close()
 }
 
+func (d *DB) Ping(ctx context.Context) error {
+	return d.pool.Ping(ctx)
+}
+
 // Write runs fn in one transaction once the Writes before it have ended (one at a time, as on the JSON store),
 // and returns fn's error unchanged. Inside a Write it joins it (fn passes ctx on); inside a Read, ErrReadOnly.
 func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) error {
@@ -75,7 +80,7 @@ func (d *DB) Read(ctx context.Context, fn func(ctx context.Context) error) error
 		return fn(ctx)
 	}
 	readOnlySnapshot := pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}
-	return d.run(ctx, readOnlySnapshot, fn)
+	return d.run(memo.With(ctx), readOnlySnapshot, fn)
 }
 
 func (d *DB) Queries(ctx context.Context) *sqlcdb.Queries {

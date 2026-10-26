@@ -24,6 +24,7 @@ import (
 	"mapp/internal/platform/record"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -106,7 +107,7 @@ func TestLoad_RefusesAStoreWithData_FR028(t *testing.T) {
 		t.Fatalf("Write: %v", err)
 	}
 
-	err = seed.Load(t.Context(), db, fixedClock)
+	err = seed.Load(t.Context(), stores.JSON(db), fixedClock)
 
 	if !errors.Is(err, seed.ErrNotEmpty) {
 		t.Errorf("Load = %v, want ErrNotEmpty", err)
@@ -120,7 +121,7 @@ func TestLoad_RefusesAStoreWithData_FR028(t *testing.T) {
 func TestLoad_Twice_FR028(t *testing.T) {
 	db := loadedStore(t)
 
-	err := seed.Load(t.Context(), db, fixedClock)
+	err := seed.Load(t.Context(), stores.JSON(db), fixedClock)
 
 	if !errors.Is(err, seed.ErrNotEmpty) {
 		t.Errorf("second Load = %v, want ErrNotEmpty", err)
@@ -388,7 +389,7 @@ func openStore(t *testing.T) *store.DB {
 func loadedStore(t *testing.T) *store.DB {
 	t.Helper()
 	db := openStore(t)
-	if err := seed.Load(t.Context(), db, fixedClock); err != nil {
+	if err := seed.Load(t.Context(), stores.JSON(db), fixedClock); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
 	return db

@@ -1,15 +1,18 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"mapp/internal/platform/errs"
-	"mapp/internal/platform/store"
 	"mapp/internal/platform/web"
 )
+
+const readinessTimeout = 2 * time.Second
 
 type environmentAnswer struct {
 	Environment string `json:"environment"`
@@ -18,12 +21,14 @@ type environmentAnswer struct {
 
 // probeRoutes registers the liveness and readiness probes, which stay outside /api/v1, and the environment
 // answer the web app's developer pages read.
-func probeRoutes(r gin.IRoutes, cfg Config, db *store.DB) {
+func probeRoutes(r gin.IRoutes, cfg Config, ready func(ctx context.Context) error) {
 	r.GET("/healthz", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
 	r.GET("/readyz", func(c *gin.Context) {
-		if err := db.Ready(); err != nil {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), readinessTimeout)
+		defer cancel()
+		if err := ready(ctx); err != nil {
 			slog.ErrorContext(c.Request.Context(), "not ready", "error", err)
 			web.RespondError(c, errs.Unavailable())
 			return

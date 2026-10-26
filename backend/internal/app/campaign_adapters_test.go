@@ -14,6 +14,7 @@ import (
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -27,7 +28,7 @@ func TestCampaignLevels_AddFacts_For004(t *testing.T) {
 		t.Fatalf("store.Open: %v", err)
 	}
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err := seed.Load(t.Context(), db, now); err != nil {
+	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())

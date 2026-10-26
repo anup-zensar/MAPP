@@ -9,6 +9,43 @@ import (
 	"context"
 )
 
+const dataTables = `-- name: DataTables :many
+SELECT tablename::text FROM pg_catalog.pg_tables
+WHERE schemaname = 'public' AND tablename <> 'goose_db_version'
+ORDER BY tablename
+`
+
+func (q *Queries) DataTables(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, dataTables)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var tablename string
+		if err := rows.Scan(&tablename); err != nil {
+			return nil, err
+		}
+		items = append(items, tablename)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const databaseExists = `-- name: DatabaseExists :one
+SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1::text)
+`
+
+func (q *Queries) DatabaseExists(ctx context.Context, name string) (bool, error) {
+	row := q.db.QueryRow(ctx, databaseExists, name)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const lockWrites = `-- name: LockWrites :exec
 SELECT pg_advisory_xact_lock(hashtext('mapp.write'))
 `

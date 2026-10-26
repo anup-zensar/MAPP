@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const anyCounter = `-- name: AnyCounter :one
+SELECT EXISTS (SELECT 1 FROM counters)
+`
+
+func (q *Queries) AnyCounter(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, anyCounter)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const incrementCounter = `-- name: IncrementCounter :one
 INSERT INTO counters (prefix, last)
 VALUES ($1, $2)

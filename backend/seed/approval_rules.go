@@ -7,8 +7,6 @@ import (
 
 	"mapp/internal/activities"
 	"mapp/internal/approvals"
-	"mapp/internal/people"
-	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/ids"
@@ -33,7 +31,7 @@ var demoManagers = map[string]string{
 
 // addLineManagers sets the line managers once every demo person exists (the end of the people step, D-306).
 func (d *demo) addLineManagers(ctx context.Context) error {
-	repo := people.NewJSONRepository()
+	repo := d.stores.People
 	for _, p := range demoPeople {
 		manager, has := demoManagers[p.name]
 		if !has {
@@ -74,7 +72,7 @@ const standardFlow = "Standard marketing approval"
 // marketing approval": level 1 the owner's line manager, approved automatically below 10,000.00 USD; level 2
 // Alex Morgan from 100,000.00 USD; level 3 Daniel Okoro and Alex Morgan, all must approve, for Mobility.
 func (d *demo) addApprovalRules(ctx context.Context) error {
-	repo := approvals.NewJSONRepository()
+	repo := d.stores.Approvals
 	for name, timing := range demoTimings {
 		var r resolver
 		id := r.id(d.workflows, "approval workflow", name)
@@ -149,7 +147,7 @@ func days(n int) *int {
 // approver, and the values the rules use of the activity.
 func (d *demo) roundRules(ctx context.Context, round *approvals.Round, workflow approvals.Workflow, act activities.Activity, planID string) error {
 	round.ReminderDays, round.EscalationDays = workflow.ReminderDays, workflow.EscalationDays
-	peopleRepo := people.NewJSONRepository()
+	peopleRepo := d.stores.People
 	for i := range round.Levels {
 		l := &round.Levels[i]
 		l.ApproverType, l.Mode, l.Resolution, l.Excluded = approvals.SourcePeople, approvals.ModeAny, approvals.ResolutionDecide, []approvals.Excluded{}
@@ -186,7 +184,7 @@ func named(actors []actor.Actor, personID string) bool {
 // business units of its plan, planID.
 func (d *demo) ruleFacts(ctx context.Context, act activities.Activity, planID string) (approvals.RuleFacts, error) {
 	facts := approvals.RuleFacts{PlannedCost: act.PlannedCost, BusinessUnits: []approvals.FactOption{}}
-	settingsRepo := settings.NewJSONRepository()
+	settingsRepo := d.stores.Settings
 	if act.ActivityTypeID != "" {
 		t, found, err := settingsRepo.GetActivityType(ctx, act.ActivityTypeID)
 		if err != nil {
@@ -196,7 +194,7 @@ func (d *demo) ruleFacts(ctx context.Context, act activities.Activity, planID st
 			facts.ActivityType = &approvals.FactRef{ID: t.ID, Name: t.Name}
 		}
 	}
-	plan, found, err := plans.NewJSONRepository().Get(ctx, planID)
+	plan, found, err := d.stores.Plans.Get(ctx, planID)
 	if err != nil || !found {
 		return approvals.RuleFacts{}, cmpErr(err, fmt.Errorf("seed: plan %s is not stored", planID))
 	}
@@ -227,7 +225,7 @@ func (d *demo) addDelegation(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
 	}
-	p, _, err := people.NewJSONRepository().Get(ctx, daniel)
+	p, _, err := d.stores.People.Get(ctx, daniel)
 	if err != nil {
 		return err
 	}
@@ -236,7 +234,7 @@ func (d *demo) addDelegation(ctx context.Context) error {
 		return err
 	}
 	today := date.Today(d.at)
-	return approvals.NewJSONRepository().PutDelegation(ctx, approvals.Delegation{
+	return d.stores.Approvals.PutDelegation(ctx, approvals.Delegation{
 		ID: id, PersonID: daniel, DelegateID: carlos, StartDate: today.AddDays(7), EndDate: today.AddDays(11), Note: "Annual leave",
 		Meta: record.NewMeta(p.Actor(), d.at.Add(-day)),
 	})
