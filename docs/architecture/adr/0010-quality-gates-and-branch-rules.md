@@ -13,7 +13,9 @@ implements this decision.
 - **One GitHub Actions workflow** (`.github/workflows/ci.yml`) with three checks, each gate a named
   step: `backend` (format, vet, lint on new and changed lines, race-enabled tests with coverage,
   `govulncheck`), `frontend` (format, type check, lint with zero warnings, API-types drift, tests
-  with coverage, build, `npm audit`), `e2e` (Playwright against the real API). Dependency
+  with coverage, build, `npm audit`), `e2e` (Playwright against the real API). A first `changes` job
+  skips the checks a pull request's files cannot affect (documentation alone skips all three); skipped
+  checks count as passed, and a failed `changes` job runs them all. Dependency
   vulnerabilities are covered by `npm audit` and `govulncheck`; branch names are a convention
   (Spec Kit creates `feature/NNN-short-name`), not a check.
 - **Branch rules** as a repository ruleset (`.github/rulesets/protected-branches.json`) on `main`,

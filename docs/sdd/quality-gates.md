@@ -2,6 +2,9 @@
 
 Every pull request into `develop`, `release` or `main` runs three checks
 (`.github/workflows/ci.yml`, [ADR-0010](../architecture/adr/0010-quality-gates-and-branch-rules.md)).
+A pull request runs only the checks its files can affect: documentation alone (`*.md`, `docs/`, `specs/`,
+`.specify/`) skips all three; `backend/` skips `frontend` unless the API contract changed; `frontend/` skips
+`backend`. A skipped check counts as passed. Pushes to `develop`, `release` and `main` always run all three.
 Run the same commands before you push.
 
 | Check | Run locally |
