@@ -10,8 +10,8 @@ Run the same commands before you push.
 | Check | Run locally |
 |---|---|
 | `backend` | in `backend/`: `gofmt -s -l .` and `go run golang.org/x/tools/cmd/goimports@v0.52.0 -local mapp -l .` (print nothing), `go vet ./...`, `golangci-lint run --new-from-merge-base=origin/develop ./...`, `go test -race ./...`, `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...` |
-| `frontend` | in `frontend/`: `npm run format:check`, `npm run typecheck`, `npm run lint`, `npm run api:check`, `npm run test:coverage`, `npm run build`, `npm audit --omit=dev --audit-level=high` |
-| `e2e` | in `frontend/`: `npm run test:e2e` |
+| `frontend` | in `frontend/`: `pnpm run format:check`, `pnpm run typecheck`, `pnpm run lint`, `pnpm run api:check`, `pnpm run test:coverage`, `pnpm run build`, `pnpm audit --prod --audit-level high` |
+| `e2e` | in `frontend/`: `pnpm run test:e2e` |
 
 ## Branches
 
@@ -32,8 +32,8 @@ green.
 - **File length** (constitution V): at most 300 non-blank lines; 301–400 needs a reason in the pull
   request; 401 or more is never merged.
 - **Release age of Go modules** (constitution VII): a module version added or upgraded was published
-  more than 24 hours ago — see `https://proxy.golang.org/<module>/@v/<version>.info`. npm enforces
-  this itself (`frontend/.npmrc`, npm 11.10 or newer).
+  more than 24 hours ago — see `https://proxy.golang.org/<module>/@v/<version>.info`. pnpm enforces
+  this itself (`minimumReleaseAge` in `frontend/pnpm-workspace.yaml`).
 
 ## For a repository administrator
 

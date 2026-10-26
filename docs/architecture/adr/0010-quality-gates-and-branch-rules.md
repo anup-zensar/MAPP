@@ -13,17 +13,18 @@ implements this decision.
 - **One GitHub Actions workflow** (`.github/workflows/ci.yml`) with three checks, each gate a named
   step: `backend` (format, vet, lint on new and changed lines, race-enabled tests with coverage,
   `govulncheck`), `frontend` (format, type check, lint with zero warnings, API-types drift, tests
-  with coverage, build, `npm audit`), `e2e` (Playwright against the real API). A first `changes` job
+  with coverage, build, `pnpm audit`), `e2e` (Playwright against the real API). A first `changes` job
   skips the checks a pull request's files cannot affect (documentation alone skips all three); skipped
   checks count as passed, and a failed `changes` job runs them all. Dependency
-  vulnerabilities are covered by `npm audit` and `govulncheck`; branch names are a convention
+  vulnerabilities are covered by `pnpm audit` and `govulncheck`; branch names are a convention
   (Spec Kit creates `feature/NNN-short-name`), not a check.
 - **Branch rules** as a repository ruleset (`.github/rulesets/protected-branches.json`) on `main`,
   `release` and `develop`: no bypass, no deletion, no force push, pull requests only with one
   approval from someone other than the last pusher, stale approvals dismissed, the three checks
   required. A repository administrator applies it.
-- **Release age**: npm's built-in `min-release-age=1` with `engine-strict` and `engines.npm
-  >=11.10.0` in `frontend/`.
+- **Release age**: pnpm's built-in `minimumReleaseAge: 1440` and `engineStrict` in
+  `frontend/pnpm-workspace.yaml`, with pnpm pinned by `packageManager` (ADR-0014; before it, npm's
+  `min-release-age=1`).
 
 ## Deviations agreed by the product owner (2026-10-26)
 | Constitution | Deviation | Until |

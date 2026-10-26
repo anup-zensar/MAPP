@@ -10,28 +10,28 @@ Modules on the design tokens of `src/ui/tokens.css`; how screens look is in
 Run them in this folder (`frontend/`). Start the API first (see [backend/README.md](../backend/README.md)):
 the development server forwards `/api` to <http://127.0.0.1:8080> (or to `MAPP_API_URL`).
 
-| Command             | What it does                                                                             |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| `npm install`       | Installs the dependencies (first time, and after `package.json` changes)                 |
-| `npm run dev`       | Development server on <http://127.0.0.1:5173>                                            |
-| `npm run build`     | Type-checks the app code (not the tests) and builds it into `dist/`                      |
-| `npm run preview`   | Serves that build on <http://127.0.0.1:4173>                                             |
-| `npm run check`     | All checks: API types up to date, type check, lint, format, unit and component tests     |
-| `npm test`          | Unit and component tests once (`npm run test:watch` keeps watching)                      |
-| `npm run test:e2e`  | Browser tests (Playwright), see below                                                    |
-| `npm run api:types` | Regenerates `src/api/generated/schema.d.ts` after a change to `backend/api/openapi.yaml` |
-| `npm run format`    | Formats every file with Prettier (`npm run lint` runs ESLint alone)                      |
+| Command              | What it does                                                                             |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| `pnpm install`       | Installs the dependencies (first time, and after `package.json` changes)                 |
+| `pnpm run dev`       | Development server on <http://127.0.0.1:5173>                                            |
+| `pnpm run build`     | Type-checks the app code (not the tests) and builds it into `dist/`                      |
+| `pnpm run preview`   | Serves that build on <http://127.0.0.1:4173>                                             |
+| `pnpm run check`     | All checks: API types up to date, type check, lint, format, unit and component tests     |
+| `pnpm test`          | Unit and component tests once (`pnpm run test:watch` keeps watching)                     |
+| `pnpm run test:e2e`  | Browser tests (Playwright), see below                                                    |
+| `pnpm run api:types` | Regenerates `src/api/generated/schema.d.ts` after a change to `backend/api/openapi.yaml` |
+| `pnpm run format`    | Formats every file with Prettier (`pnpm run lint` runs ESLint alone)                     |
 
-`npm run test:e2e` builds the app and starts its own API and web app on ports 18080 and 14173, with
+`pnpm run test:e2e` builds the app and starts its own API and web app on ports 18080 and 14173, with
 fresh demo data in a temporary folder, so Go must be installed too. On a new computer, run
-`npx playwright install chromium` once first.
+`pnpm exec playwright install chromium` once first.
 
 Ports are strict: when one is busy, the server stops with a message instead of moving to another port.
 
 ## Folders
 
 The layout of constitution F2 (feature 026). Every folder may import only the folders below it, and
-`npm run lint` checks it.
+`pnpm run lint` checks it.
 
 ```
 src/

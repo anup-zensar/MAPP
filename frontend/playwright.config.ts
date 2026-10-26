@@ -38,7 +38,7 @@ export default defineConfig({
     },
     {
       // The production build, served on 127.0.0.1 with /api forwarded to the test API.
-      command: `npm run build && npx vite preview --host 127.0.0.1 --port ${webPort} --strictPort`,
+      command: `pnpm run build && pnpm exec vite preview --host 127.0.0.1 --port ${webPort} --strictPort`,
       env: { ...process.env, MAPP_API_URL: `http://127.0.0.1:${apiPort}` },
       url: `http://127.0.0.1:${webPort}`,
       timeout: 180_000,

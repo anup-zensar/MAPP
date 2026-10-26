@@ -4,9 +4,10 @@
   "version": "0.1.0",
   "description": "MAPP web app (React + TypeScript) - Shell's marketing planning application, Plan module.",
   "type": "module",
+  "packageManager": "pnpm@12.15.0",
   "engines": {
     "node": ">=22.22",
-    "npm": ">=11.10.0"
+    "pnpm": ">=12.15.0"
   },
   "browserslist": [
     "last 2 Chrome versions",
@@ -31,7 +32,7 @@
     "test:e2e": "playwright test",
     "api:types": "openapi-typescript ../backend/api/openapi.yaml -o src/api/generated/schema.d.ts",
     "api:check": "openapi-typescript ../backend/api/openapi.yaml -o src/api/generated/schema.d.ts --check",
-    "check": "npm run api:check && npm run typecheck && npm run lint && npm run format:check && npm run test"
+    "check": "pnpm run api:check && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run test"
   },
   "dependencies": {
     "@fontsource/jost": "5.3.0",

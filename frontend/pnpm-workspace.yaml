@@ -1,0 +1,6 @@
+# pnpm settings for the web app (ADR-0014). Versions must be published at least a day before they are
+# installed (constitution VII), and the Node.js and pnpm versions in package.json's engines are enforced.
+minimumReleaseAge: 1440
+engineStrict: true
+allowBuilds:
+  unrs-resolver: false

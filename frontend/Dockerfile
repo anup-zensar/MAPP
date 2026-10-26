@@ -4,10 +4,10 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 # Dependencies first, so a change to the code alone reuses this layer.
-COPY package.json package-lock.json .npmrc ./
-RUN npm ci --no-audit --no-fund
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN corepack enable && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # Only the built files reach this image; it runs as a non-root user and listens on 8080.
 FROM nginxinc/nginx-unprivileged:1.29-alpine
