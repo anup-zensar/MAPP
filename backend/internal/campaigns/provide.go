@@ -44,22 +44,23 @@ type InitiativeFacts struct {
 func (s *Service) PlanRollups(ctx context.Context, planIDs []string) (map[string]PlanRollup, error) {
 	rollups := make(map[string]PlanRollup, len(planIDs))
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
+		var found []PlanFacts
 		for _, planID := range planIDs {
-			plan, found, err := s.deps.Plans.Plan(ctx, planID)
+			plan, stored, err := s.deps.Plans.Plan(ctx, planID)
 			if err != nil {
 				return err
 			}
-			if !found {
+			if !stored {
 				rollups[planID] = PlanRollup{AllocatedToCampaigns: money.USD(money.Amount{}), PublishProblems: []RecordProblems{}}
 				continue
 			}
-			tree, err := s.planCampaigns(ctx, plan)
-			if err != nil {
-				return err
-			}
-			rollups[planID] = rollupOf(tree)
+			found = append(found, plan)
 		}
-		return nil
+		trees, err := s.planTrees(ctx, found) // every plan at once, so many plans cost what one does
+		for i, tree := range trees {
+			rollups[found[i].ID] = rollupOf(tree)
+		}
+		return err
 	})
 	if err != nil {
 		return nil, err
