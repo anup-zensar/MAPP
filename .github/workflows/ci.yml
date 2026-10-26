@@ -26,6 +26,8 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v7
         with:
           go-version-file: backend/go.mod
@@ -45,7 +47,11 @@ jobs:
         with:
           version: v2.15.0
           working-directory: backend
-          only-new-issues: true
+          # New and changed lines only, diffed with git: GitHub's pull-request diff API stops at 300 files.
+          args: >-
+            ${{ github.event_name == 'pull_request'
+                && format('--new-from-merge-base=origin/{0}', github.base_ref)
+                || format('--new-from-rev={0}', github.event.before) }}
       - name: Test
         run: |
           set -o pipefail
