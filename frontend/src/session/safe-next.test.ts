@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { safeNext } from './safe-next';
 
@@ -40,4 +41,14 @@ describe('safeNext', () => {
       expect(safeNext(raw)).toBe('/');
     },
   );
+
+  it('sends any address only to a page of MAPP other than sign-in (FR-005)', () => {
+    fc.assert(
+      fc.property(fc.oneof(fc.string(), fc.webUrl(), fc.webPath()), (raw) => {
+        const next = new URL(safeNext(raw), window.location.origin);
+        expect(next.origin).toBe(window.location.origin);
+        expect(next.pathname.toLowerCase().replace(/\/+$/, '')).not.toBe('/sign-in');
+      }),
+    );
+  });
 });

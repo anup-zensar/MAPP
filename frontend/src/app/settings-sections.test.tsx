@@ -7,7 +7,8 @@ import { FIELD_HELP_PAGE } from '@/testing/fixtures/field-help';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { SettingsPage } from '@/features/settings';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
+import type { components } from '@/api/generated/schema';
 import { SETTINGS_SECTIONS } from './settings-sections';
 
 // The real list of cards: 002's five and Field help (016), then People and Teams (003), Approval
@@ -21,18 +22,43 @@ const OVERVIEW = {
   financeBudgetItems: 1_250,
 };
 
-/** A list answer of records that only matter by their status here. */
-function listOf(active: boolean[]) {
-  return {
-    body: {
-      items: active.map((isActive, index) => ({
-        id: `R-${index}`,
-        name: `R ${index}`,
-        active: isActive,
-      })),
-      total: active.length,
-    },
-  };
+type Person = components['schemas']['Person'];
+type Team = components['schemas']['Team'];
+
+const META = {
+  version: 1,
+  createdAt: '2026-01-05T09:00:00Z',
+  createdBy: { id: 'U-1001', name: 'Alex Morgan' },
+  updatedAt: '2026-01-05T09:00:00Z',
+  updatedBy: { id: 'U-1001', name: 'Alex Morgan' },
+};
+
+/** People that only matter by their status here. */
+function peopleOf(active: boolean[]): Person[] {
+  return active.map((isActive, index) => ({
+    ...META,
+    id: `U-${2000 + index}`,
+    name: `Person ${index}`,
+    email: `person.${index}@shell.com`,
+    jobTitle: 'Marketer',
+    initials: 'PE',
+    active: isActive,
+    teams: [],
+  }));
+}
+
+/** Teams that only matter by their status here. */
+function teamsOf(active: boolean[]): Team[] {
+  return active.map((isActive, index) => ({
+    ...META,
+    id: `T-${2000 + index}`,
+    name: `Team ${index}`,
+    description: '',
+    colour: 'blue',
+    active: isActive,
+    members: [],
+    plans: [],
+  }));
 }
 
 function card(title: string): HTMLElement {
@@ -49,17 +75,19 @@ function card(title: string): HTMLElement {
 describe('SettingsPage, the cards of other features (FR-001)', () => {
   it('shows the People, Teams and Approval workflows cards with their texts and active counts, like the others', async () => {
     mockApi([
-      looseReply('GET /api/v1/settings/overview', { body: OVERVIEW }),
-      looseReply('GET /api/v1/people', listOf([true, true, true, true, true, true, false])),
-      looseReply('GET /api/v1/teams', listOf([true, true, true])),
-      looseReply('GET /api/v1/approval-workflows', {
+      reply('GET /api/v1/settings/overview', { body: OVERVIEW }),
+      reply('GET /api/v1/people', {
+        body: { items: peopleOf([true, true, true, true, true, true, false]), total: 7 },
+      }),
+      reply('GET /api/v1/teams', { body: { items: teamsOf([true, true, true]), total: 3 } }),
+      reply('GET /api/v1/approval-workflows', {
         body: {
           items: [workflowOf(), workflowOf({ id: 'WF-1003' }), CHINA_WORKFLOW], // CHINA_WORKFLOW is inactive
           total: 3,
         },
       }),
-      looseReply('GET /api/v1/roles', { body: { items: ROLES, total: ROLES.length } }),
-      looseReply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE }),
+      reply('GET /api/v1/roles', { body: { items: ROLES, total: ROLES.length } }),
+      reply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE }),
     ]);
     renderWithProviders(<SettingsPage sections={SETTINGS_SECTIONS} />, {
       route: '/settings',

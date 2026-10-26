@@ -1,7 +1,15 @@
 import { useSearchParams } from 'react-router';
+import { z } from 'zod';
+
+const statusSchema = z.enum(['active', 'inactive', 'all']).catch('active');
 
 /** The status filter of a Settings list: Active (the default), Inactive or All. */
-export type StatusFilter = 'active' | 'inactive' | 'all';
+export type StatusFilter = z.infer<typeof statusSchema>;
+
+/** The status filter in the address (`?status=`); Active for anything else. */
+export function statusFilterOf(raw: string | null): StatusFilter {
+  return statusSchema.parse(raw);
+}
 
 export interface ListFilters {
   /** What is typed in the search box. */
@@ -23,9 +31,7 @@ export interface ListFilters {
  */
 export function useListFilters(): ListFilters {
   const [params, setParams] = useSearchParams();
-  const rawStatus = params.get('status');
-  const status: StatusFilter =
-    rawStatus === 'inactive' || rawStatus === 'all' ? rawStatus : 'active';
+  const status = statusFilterOf(params.get('status'));
 
   function update(changes: Record<string, string | null>, replace = true) {
     setParams(

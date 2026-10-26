@@ -4,7 +4,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { Sidebar } from './Sidebar';
 import styles from './Sidebar.module.css';
 
@@ -69,8 +69,8 @@ describe('Sidebar', () => {
 
   it('collapses and saves that for the person (FR-011, US2 scenario 3)', async () => {
     const api = mockApi([
-      looseReply('PATCH /api/v1/me/preferences', {
-        body: { theme: 'system', sidebarCollapsed: true },
+      reply('PATCH /api/v1/me/preferences', {
+        body: { ...PRIYA.preferences, theme: 'system', sidebarCollapsed: true },
       }),
     ]);
     const { user } = renderWithProviders(<Sidebar />, { user: PRIYA });
@@ -110,8 +110,8 @@ describe('Sidebar', () => {
 
   it('expands again and saves that for the person (FR-011)', async () => {
     const api = mockApi([
-      looseReply('PATCH /api/v1/me/preferences', {
-        body: { theme: 'system', sidebarCollapsed: false },
+      reply('PATCH /api/v1/me/preferences', {
+        body: { ...PRIYA.preferences, theme: 'system', sidebarCollapsed: false },
       }),
     ]);
     const { user } = renderWithProviders(<Sidebar />, { user: COLLAPSED });

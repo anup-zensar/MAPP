@@ -27,6 +27,18 @@ describe('ApprovalsNavBadge (feature 008, FR-027)', () => {
     expect(asked?.search).toMatch(/monthStart=.+&monthEnd=.+/);
   });
 
+  it('shows the count on the icon rail too', async () => {
+    mockApi([reply('GET /api/v1/approvals/summary', counts(3))]);
+    const collapsed = testUser({
+      preferences: { ...testUser().preferences, sidebarCollapsed: true },
+    });
+    renderWithProviders(<Sidebar />, { user: collapsed });
+
+    expect(
+      await screen.findByRole('link', { name: 'Approvals 3 waiting for you' }, { timeout: 10_000 }),
+    ).toBeInTheDocument();
+  });
+
   it('shows nothing at 0', async () => {
     const api = mockApi([reply('GET /api/v1/approvals/summary', counts(0))]);
     renderWithProviders(<Sidebar />, { user: testUser() });

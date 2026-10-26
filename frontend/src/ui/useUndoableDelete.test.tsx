@@ -6,7 +6,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { useUndoableDelete } from './useUndoableDelete';
 
 type DeleteResult = components['schemas']['DeleteResult'];
@@ -98,6 +98,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+type ErrorDetail = components['schemas']['ErrorDetail'];
+type ErrorCode = ErrorDetail['code'];
+
 describe('useUndoableDelete', () => {
   it('says what moved to the recycle bin and offers Undo (FR-026, design system §6.5)', async () => {
     const { user } = renderWithProviders(<DeleteButton result={IDEAS_DELETED} />, {
@@ -173,7 +176,7 @@ describe('useUndoableDelete', () => {
 
   it('brings the record back with Undo and says so (FR-026, US5 scenario 3)', async () => {
     const api = mockApi([
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/undo',
         { body: IDEAS_RESTORED },
         { entryId: 'BIN-1001' },
@@ -191,7 +194,7 @@ describe('useUndoableDelete', () => {
 
   it('refreshes the lists it was given after an Undo (FR-026)', async () => {
     mockApi([
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/undo',
         { body: IDEAS_RESTORED },
         { entryId: 'BIN-1001' },
@@ -205,7 +208,7 @@ describe('useUndoableDelete', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['recycle-bin'] });
   });
 
-  it.each([
+  it.each<[ErrorCode, string, Partial<ErrorDetail>]>([
     ['undo_expired', 'Undo is no longer available — restore it from the recycle bin', {}],
     [
       'restore_parent_first',
@@ -221,7 +224,7 @@ describe('useUndoableDelete', () => {
     'says why an Undo was refused, %s, and refreshes the lists (FR-025, FR-026, edge case)',
     async (code, message, extra) => {
       mockApi([
-        looseReply(
+        reply(
           'POST /api/v1/recycle-bin/{entryId}/undo',
           { status: 409, body: { error: { code, message, fields: [], ...extra } } },
           { entryId: 'BIN-1001' },
@@ -240,7 +243,7 @@ describe('useUndoableDelete', () => {
   it('says who already undid or restored it, in the person’s own time (FR-025)', async () => {
     vi.setSystemTime(new Date('2026-03-12T09:06:00Z'));
     mockApi([
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/undo',
         {
           status: 409,
@@ -273,7 +276,7 @@ describe('useUndoableDelete', () => {
   it('offers Try again when the server cannot be reached (FR-020)', async () => {
     let attempts = 0;
     const api = mockApi([
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/undo',
         () =>
           ++attempts === 1
@@ -294,7 +297,7 @@ describe('useUndoableDelete', () => {
 
   it('leaves a lost session to the sign-in page, without a message of its own (US4 scenario 2)', async () => {
     mockApi([
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/undo',
         {
           status: 401,

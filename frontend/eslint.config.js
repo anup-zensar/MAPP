@@ -127,6 +127,11 @@ export default defineConfig([
     },
   },
   {
+    // Fast refresh never loads test code.
+    files: TESTS,
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
     files: ['vite.config.ts', 'playwright.config.ts', 'e2e/**/*.ts'],
     languageOptions: { globals: globals.node },
   },

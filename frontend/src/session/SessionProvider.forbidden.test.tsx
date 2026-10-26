@@ -6,18 +6,14 @@ import { ApiError } from '@/api/errors';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
+import { apiError, reply } from '@/testing/replies';
 import { useAccess } from './access';
 import type { CurrentUser } from './useSession';
 
-const FORBIDDEN = {
-  error: {
-    code: 'forbidden',
-    message:
-      "Changing activities and line items isn't part of your role (Viewer). Ask an administrator if you need it.",
-    fields: [],
-  },
-};
+const FORBIDDEN = apiError(
+  'forbidden',
+  "Changing activities and line items isn't part of your role (Viewer). Ask an administrator if you need it.",
+);
 
 /** Sara Novak while she is a Viewer, and after an administrator made her a Planner. */
 const VIEWER_ACCESS: NonNullable<CurrentUser['access']> = {
@@ -68,12 +64,12 @@ function ChangePage() {
 describe('SessionProvider after a 403', () => {
   it('reloads the person’s access when a call is refused by their roles (feature 014, FR-020)', async () => {
     const mocked = mockApi([
-      looseReply(
+      reply(
         'DELETE /api/v1/activities/{activityId}',
         { status: 403, body: FORBIDDEN },
         { activityId: 'A-1001' },
       ),
-      looseReply('GET /api/v1/me', { body: PLANNER }),
+      reply('GET /api/v1/me', { body: PLANNER }),
     ]);
     const { user } = renderWithProviders(<ChangePage />, { user: VIEWER });
     expect(screen.getByText('View only')).toBeInTheDocument();

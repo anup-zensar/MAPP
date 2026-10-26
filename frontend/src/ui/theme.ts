@@ -6,8 +6,12 @@
  * last one, so the script in index.html paints the right colours before the app has loaded.
  */
 
+import { z } from 'zod';
+
+const preferenceSchema = z.enum(['system', 'light', 'dark']).catch('system');
+
 /** What the person chose. */
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type ThemePreference = z.infer<typeof preferenceSchema>;
 
 /** The colours actually shown. */
 export type Theme = 'light' | 'dark';
@@ -19,8 +23,7 @@ const DARK_QUERY = '(prefers-color-scheme: dark)';
 /** The preference this browser remembers; "system" when there is none or storage is blocked. */
 export function readStoredPreference(): ThemePreference {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' ? stored : 'system';
+    return preferenceSchema.parse(localStorage.getItem(STORAGE_KEY));
   } catch {
     return 'system';
   }

@@ -4,7 +4,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { ThemeToggle } from './ThemeToggle';
 
 const PRIYA: CurrentUser = testUser();
@@ -34,8 +34,8 @@ describe('ThemeToggle', () => {
 
   it('turns the whole app dark at once and saves the choice for the person (FR-014, US2 scenario 5)', async () => {
     const api = mockApi([
-      looseReply('PATCH /api/v1/me/preferences', {
-        body: { theme: 'dark', sidebarCollapsed: false },
+      reply('PATCH /api/v1/me/preferences', {
+        body: { ...PRIYA.preferences, theme: 'dark' },
       }),
     ]);
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA });
@@ -50,8 +50,8 @@ describe('ThemeToggle', () => {
 
   it('switches a person in dark mode back to light (FR-014)', async () => {
     const api = mockApi([
-      looseReply('PATCH /api/v1/me/preferences', {
-        body: { theme: 'light', sidebarCollapsed: false },
+      reply('PATCH /api/v1/me/preferences', {
+        body: { ...PRIYA.preferences, theme: 'light' },
       }),
     ]);
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA_IN_DARK });
@@ -76,7 +76,7 @@ describe('ThemeToggle', () => {
   it('keeps the new choice and offers Try again when it cannot be saved (plan "Preferences and theme")', async () => {
     let saves = 0;
     const api = mockApi([
-      looseReply('PATCH /api/v1/me/preferences', () =>
+      reply('PATCH /api/v1/me/preferences', () =>
         ++saves === 1
           ? {
               status: 500,
@@ -88,7 +88,7 @@ describe('ThemeToggle', () => {
                 },
               },
             }
-          : { body: { theme: 'dark', sidebarCollapsed: false } },
+          : { body: { ...PRIYA.preferences, theme: 'dark' } },
       ),
     ]);
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA });
@@ -111,7 +111,7 @@ describe('ThemeToggle', () => {
 
   it('leaves a lost session to the sign-in page, without a message (US4 scenario 2)', async () => {
     mockApi([
-      looseReply('PATCH /api/v1/me/preferences', {
+      reply('PATCH /api/v1/me/preferences', {
         status: 401,
         body: { error: { code: 'session_expired', message: 'Please sign in again', fields: [] } },
       }),

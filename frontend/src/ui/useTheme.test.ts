@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readStoredPreference } from './theme';
@@ -118,6 +119,15 @@ describe('readStoredPreference', () => {
 
     localStorage.setItem('mapp.theme', 'purple');
     expect(readStoredPreference()).toBe('system');
+  });
+
+  it('reads any stored text as one of the three preferences (FR-014)', () => {
+    fc.assert(
+      fc.property(fc.string(), (stored) => {
+        localStorage.setItem('mapp.theme', stored);
+        expect(['system', 'light', 'dark']).toContain(readStoredPreference());
+      }),
+    );
   });
 
   it('falls back to "system" when the browser blocks storage (FR-014)', () => {

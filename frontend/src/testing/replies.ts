@@ -2,7 +2,7 @@ import { http as msw, HttpResponse } from 'msw';
 import type { HttpHandler } from 'msw';
 import { createOpenApiHttp } from 'openapi-msw';
 import type { PathsFor, ResponseBodyFor } from 'openapi-msw';
-import type { paths } from '@/api/generated/schema';
+import type { components, paths } from '@/api/generated/schema';
 
 export const ORIGIN = window.location.origin;
 
@@ -86,6 +86,17 @@ export function looseReply(
         ? respond(answer, request)
         : undefined,
   );
+}
+
+type ErrorDetail = components['schemas']['ErrorDetail'];
+
+/** The API's error envelope, with no field problems unless `detail` gives them. */
+export function apiError(
+  code: ErrorDetail['code'],
+  message: string,
+  detail: Partial<ErrorDetail> = {},
+): components['schemas']['Error'] {
+  return { error: { code, message, fields: [], ...detail } };
 }
 
 /** An answer that never comes: the screen stays in its loading state. */
