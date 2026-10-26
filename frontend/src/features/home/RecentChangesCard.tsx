@@ -6,8 +6,7 @@ import { Card } from '@/ui/Card/Card';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { recordHref } from '@/ui/record-links';
-import type { PlanningRecordType } from '@/ui/record-links';
+import { isPlanningType, recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import { useHomeRecentChanges } from './api';
 import type { ActivityLogEntry, HomeScope } from './api';
@@ -47,18 +46,6 @@ export function RecentChangesCard({ scope }: { scope: HomeScope }) {
       )}
     </Card>
   );
-}
-
-const PLANNING_TYPES: PlanningRecordType[] = [
-  'plan',
-  'campaign',
-  'initiative',
-  'activity',
-  'lineItem',
-];
-
-function isPlanningType(type: string): type is PlanningRecordType {
-  return PLANNING_TYPES.some((known) => known === type);
 }
 
 /** Where an entry's record is now: its page while it exists (D-194), otherwise no address. */

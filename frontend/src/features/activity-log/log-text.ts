@@ -8,7 +8,7 @@ import type { components } from '@/api/generated/schema';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 import { formatWhole } from '@/format/decimal';
 import { formatWeekdayDate } from '@/format/intl';
-import { recordHref } from '@/ui/record-links';
+import { isPlanningType, recordHref } from '@/ui/record-links';
 import type { PlanningRecordType } from '@/ui/record-links';
 import { plural } from '@/format/text';
 
@@ -46,10 +46,6 @@ export function capitalise(text: string): string {
 /** The mid-sentence name of a planning record type ("line item"); the type itself otherwise. */
 export function planningLabel(type: string): string {
   return isPlanningType(type) ? PLANNING_LABELS[type] : type;
-}
-
-export function isPlanningType(type: string): type is PlanningRecordType {
-  return Object.hasOwn(PLANNING_LABELS, type);
 }
 
 /** "PR" for Priya Raman: the first letters of the first and the last name (FR-005 avatar). */

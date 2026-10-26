@@ -15,6 +15,19 @@
 /** The planning records that have their own page or panel. */
 export type PlanningRecordType = 'plan' | 'campaign' | 'initiative' | 'activity' | 'lineItem';
 
+const PLANNING_RECORD_TYPES: readonly PlanningRecordType[] = [
+  'plan',
+  'campaign',
+  'initiative',
+  'activity',
+  'lineItem',
+];
+
+/** Whether a record type of the API (a string in the contract) is one of these records. */
+export function isPlanningType(type: string): type is PlanningRecordType {
+  return PLANNING_RECORD_TYPES.some((known) => known === type);
+}
+
 /**
  * The address of a record's page or panel. Campaigns and initiatives open as panels over their
  * plan's page, so they need `planId`; an activity without it gets the short address that finds

@@ -1,6 +1,6 @@
 import type { components } from '@/api/generated/schema';
-import { recordHref } from '@/ui/record-links';
-import { contentsText, isPlanningType, titled } from './bin-text';
+import { isPlanningType, recordHref } from '@/ui/record-links';
+import { contentsText, titled } from './bin-text';
 import type { BinItem, RecordRef } from './bin-text';
 
 export type RestorePreview = components['schemas']['RestorePreview'];

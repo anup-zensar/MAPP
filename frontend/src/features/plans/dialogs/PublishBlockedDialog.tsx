@@ -1,9 +1,8 @@
 import { Link } from 'react-router';
 import type { components } from '@/api/generated/schema';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
-import { fieldHref } from '@/ui/record-links';
+import { fieldHref, isPlanningType } from '@/ui/record-links';
 import { groupLabel } from '../plan-text';
-import { isPlanningType } from '../planning-type';
 import styles from './dialogs.module.css';
 
 type ReadinessGroup = components['schemas']['ReadinessGroup'];

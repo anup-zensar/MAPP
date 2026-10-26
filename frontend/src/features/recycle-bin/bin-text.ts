@@ -11,14 +11,6 @@ export type BinRecord = components['schemas']['RecycleBinRecord'];
 export type ContentCount = components['schemas']['ContentCount'];
 export type RecordRef = components['schemas']['RecordRef'];
 
-const PLANNING_TYPES = ['plan', 'campaign', 'initiative', 'activity', 'lineItem'] as const;
-
-export type PlanningType = (typeof PLANNING_TYPES)[number];
-
-export function isPlanningType(recordType: string): recordType is PlanningType {
-  return PLANNING_TYPES.some((type) => type === recordType);
-}
-
 /** "line item" → "Line item". */
 export function capitalise(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);

@@ -6,13 +6,13 @@ import { LevelTag } from '@/ui/LevelTag/LevelTag';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
+import { isPlanningType } from '@/ui/record-links';
 import { availabilityProps, isShown } from '@/session/access';
 import { initialsOf } from '@/features/activity-log';
 import { useFormatters } from '@/format/useFormatters';
 import {
   capitalise,
   insideRecords,
-  isPlanningType,
   restoreStateLine,
   rowContentsText,
   wasInText,

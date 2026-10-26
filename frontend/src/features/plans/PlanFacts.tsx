@@ -1,12 +1,11 @@
 import { useNavigate } from 'react-router';
 import type { components } from '@/api/generated/schema';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { recordHref } from '@/ui/record-links';
+import { isPlanningType, recordHref } from '@/ui/record-links';
 import { AttentionChip } from './campaigns/AttentionChip';
 import { completenessFieldHref } from './phasing/phasing-links';
 import styles from './PlanFacts.module.css';
 import { fieldsNeededText, groupLabel, STATUS } from './plan-text';
-import { isPlanningType } from './planning-type';
 import type { PlanStatus } from './plan-text';
 
 type Completeness = components['schemas']['Completeness'];
