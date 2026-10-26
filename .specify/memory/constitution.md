@@ -1,52 +1,23 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.1 → 2.0.0 (MAJOR: principles redefined and added). The NorthStar backend
-  constitution 1.1.0 and frontend constitution 1.0.0 are merged into this one root constitution.
-  Where NorthStar and this constitution disagreed, NorthStar wins because it carries Shell's SEMS
-  compliance points; the product owner's instructions of 2026-10-26 override both.
-- Principles (old → new):
-  - I Spec First → I Spec-First and Traceability (requirement IDs, third-party IP rule)
-  - II Shell Business, Plain Language → II (same substance; IP rule reconciled with D-318)
-  - (new) III Documented Design (threat model, risk model, ADRs, interface contracts)
-  - IV Simple, Layered Architecture → IV Two Parts, Server as Source of Truth (SQLite now)
-  - VII Keep It Small and Readable → V Simplicity and Controlled Complexity (quality metrics)
-  - V Tested Business Rules → VI Meaningful Tests (SEMS 80% floor; no box-ticking tests)
-  - VI Safe by Default → VII Security and Privacy by Design (tenant isolation applied to team
-    scopes: an out-of-scope record answers 404)
-  - (new) VIII Clean Construction (comment budget: at most 5% of a file's lines)
-  - III Simple, Friendly Experience → IX Tasteful, Intuitive Experience (modern UI, visual
-    hierarchy, no surprises)
-  - (new) X Shell Colour Palette (NON-NEGOTIABLE): primary yellow is #FFC600 (was #FFC800)
-- Added sections: Backend (Go) Standards B1–B9; Frontend (TypeScript and React) Standards F1–F10;
-  quality and release gates; remediation, work management, asset and export metadata, agent
-  assets; SEMS Compliance
-- Removed sections: Technology Choices (now the table in Current Phase & Scope, B1 and F1)
-- Deliberate departures from the NorthStar constitutions:
-  - Storage: SQLite with a pure-Go driver instead of PostgreSQL everywhere; no Docker, so no
-    testcontainers; store, integration and end-to-end tests run on SQLite (product owner)
-  - Comments: the 5% budget replaces "every exported identifier has a doc comment" and
-    requirement IDs in code comments (product owner)
-  - Tests: NorthStar IV(b), "a test for every outcome of every decision", is narrowed to decisions
-    that carry a rule, a validation, an access check or a user-visible state; the SEMS 80% floor
-    stays (product owner: no tests for the sake of tests)
-  - Multi-tenancy: the product serves Shell only; tenant-isolation rules apply to access scopes
-  - Hive9 stays a source of requirements (D-318), but nothing of it is copied
-  - Specs, ADRs and Spec Kit stay at the repository root, one setup for both stacks
-- Templates: plan-template.md reads its gates from this file; spec-, tasks- and
-  checklist-template.md name no principle. No template change needed. The PowerShell template
-  resolver could not run (no pwsh on this machine); the only layer present is the core
-  constitution-template.md, which was used.
-- Existing code that is now non-compliant (brought into compliance when modified, see
-  Governance): net/http instead of Gin; the JSON file store instead of SQLite, sqlc and goose;
-  /api/ paths without v1; a flat error body; /api/health instead of /healthz and /readyz; no
-  OpenTelemetry; no golangci-lint config or GO_STANDARDS.md; no CI; frontend folders differ from
-  F2; no React Hook Form, Zod, MSW, fast-check or jsx-a11y; colour tokens differ from Principle
-  X; out-of-scope records answer 403; comments are 11.5% of Go lines and 7.9% of TypeScript
-  lines (500 of 523 Go files and 503 of 815 TypeScript files over budget)
+- Version change: 2.0.0 → 2.1.0 (MINOR: Governance gains the alignment plan for existing code and
+  names the Go guidance; no principle added, removed or redefined)
+- Modified principles: VIII Clean Construction — the tool directives the comment budget ignores
+  now include goose's and sqlc's annotations (sqlc needs one `-- name:` line per query),
+  `prettier-ignore` and triple-slash references
+- Modified sections: Backend (Go) Standards (points to backend/docs/GO_STANDARDS.md); Development
+  Workflow and Quality Gates (no direct pushes to main, release or develop); Governance (new
+  Alignment rule, Compliance follows it, guidance files listed); Amendment History
+- Added sections: none
+- Removed sections: none
+- Files added with this amendment: backend/docs/GO_STANDARDS.md, backend/.golangci.yml and
+  backend/CLAUDE.md, adapted from the NorthStar backend; the root CLAUDE.md now follows this
+  constitution
+- Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
-  - A decision-log entry for this amendment; CLAUDE.md, docs/product/design-system.md and
-    ADR-0004 to be aligned with it
+  - A decision-log entry for 2.0.0 and 2.1.0; docs/product/design-system.md and ADR-0004 to be
+    aligned with them
 -->
 
 
@@ -298,7 +269,8 @@ In addition:
   CSS, SQL; tests included), the lines that hold a comment MUST NOT exceed **5% of the file's
   non-blank lines**, rounded up: a 20-line file may have one, a 100-line file five. Generated
   files are excluded, and so are tool directives (`//go:`, `//nolint`, `eslint-disable`,
-  `@ts-expect-error` with its reason).
+  `prettier-ignore`, `@ts-expect-error` with its reason, `/// <reference>`, goose's `-- +goose`
+  and sqlc's `-- name:` annotations).
 - **What a comment says.** Names, types and small functions carry the meaning. A comment is
   written only for what the code cannot say: why a choice was made, a constraint, a non-obvious
   behaviour, or the measurement behind an optimisation. A comment never restates the code and
@@ -504,6 +476,7 @@ both be non-negotiable without conflict.
 ## Backend (Go) Standards
 
 These rules apply to everything under `backend/` and refine the Core Principles for Go.
+`backend/docs/GO_STANDARDS.md` explains them with code samples.
 
 ### B1. Approved Stack and Toolchain
 
@@ -944,6 +917,10 @@ branch (now `plan-module`) collects one module's features and merges into `devel
 request when the module is ready. Feature branches are named `feature/NNN-short-name`, matching
 the spec folder `specs/NNN-short-name`, start from their module branch (or `develop`) and merge
 back through a pull request. `release` merges into `main` only after its quality gates pass.
+Nobody pushes directly to `main`, `release` or `develop`: every change reaches them through a
+reviewed pull request from a working branch — `feature/NNN-short-name` for a specified feature,
+`docs/short-name` or `fix/short-name` for work without a spec, a module branch, or `develop` into
+`release` and `release` into `main`. Branch protection on GitHub MUST enforce this.
 
 **Spec Kit flow:** run from the repository root, where `.specify/` lives.
 
@@ -1095,15 +1072,24 @@ amended to match.
   who agreed it and what it covers. A value in an "Unacceptable" band is never merged.
 - **Compliance:** `/speckit-plan` and `/speckit-analyze` check every feature against this
   document, and every code review verifies it. SEMS compliance is also assessed by automation and
-  by audit; a point reported as not met is treated as a failed gate. Code that predates this
-  version MUST be brought into compliance when it is modified; remaining non-compliance is tracked
-  as backlog work.
+  by audit; a point reported as not met is treated as a failed gate. Code that predates 2.0.0 is
+  brought into compliance as Alignment describes; remaining non-compliance is tracked as backlog
+  work.
+- **Alignment of existing code:** code written before 2.0.0 is aligned to it by dedicated features
+  that the product owner schedules (decided 2026-10-26), not as a side effect of other work. Until
+  a package or screen is aligned, a change to it keeps that package's current stack and structure
+  (for example `net/http`, the JSON file store and today's folders), and the gates it cannot meet
+  yet — the B1 and F1 stack, sqlc and goose, linter findings on lines the change did not touch,
+  and the comment budget in files that existed before 2.0.0 — apply to it from its alignment on.
+  Everything else in this constitution applies to every change now, and new packages, screens and
+  files meet all of it from the start.
 - **Third parties:** a third party that develops code in this repository MUST follow this
   constitution and SEMS in full.
 - **Enforcement and guidance files:** `backend/.golangci.yml`, `frontend/eslint.config.js` and the
-  compiler options in `frontend/tsconfig*.json` enforce the machine-checkable rules; `CLAUDE.md`
-  is the runtime guidance for AI agents. Where any of them disagrees with this constitution, this
-  constitution wins and the file is corrected.
+  compiler options in `frontend/tsconfig*.json` enforce the machine-checkable rules;
+  `backend/docs/GO_STANDARDS.md` explains the Go rules with examples and is loaded for AI agents by
+  `backend/CLAUDE.md`; the root `CLAUDE.md` is the runtime guidance for AI agents. Where any of
+  them disagrees with this constitution, this constitution wins and the file is corrected.
 
 ### Amendment History
 
@@ -1113,5 +1099,6 @@ amended to match.
 | 1.1.0 | 2026-10-20 | II: NorthStar's design system is the layout and interaction reference; GSAP data from simulated feeds, live integration still out. III: Shell's enterprise design language instead of "white, one blue primary action"; WCAG 2.2 AA instead of 2.1 AA. IV: Shell's systems behind adapter interfaces. VI: role- and team-based access control enforced by the server instead of "every signed-in user can do everything"; demo sign-in stays until single sign-on. Current Phase & Scope and Technology Choices follow (features 014–017) | D-223, D-239, D-242, D-259, D-308, D-310–D-315; ADR-0008, ADR-0009 |
 | 1.1.1 | 2026-10-22 | II (wording): requirements and features come from the available documentation and the Hive9 application itself; NorthStar's design system is the layout and interaction reference | D-318 |
 | 2.0.0 | 2026-10-26 | The NorthStar backend (1.1.0) and frontend (1.0.0) constitutions merged into this one, NorthStar winning where they disagreed (SEMS): Documented Design, Clean Construction, quality metrics, Backend Standards B1–B9 (Gin, sqlc, goose, OpenTelemetry), Frontend Standards F1–F10, quality and release gates, SEMS Compliance, `main`/`release`/`develop` with `feature/NNN-short-name` branches. Product owner's additions: SQLite now and PostgreSQL later, no Docker; comments at most 5% of a file's lines; meaningful tests only; IX modern, tasteful UI with visual hierarchy and no surprises; X Shell colour palette, non-negotiable (primary yellow `#FFC600`). Scope isolation answers 404 for out-of-scope records | Product owner instruction of 2026-10-26 |
+| 2.1.0 | 2026-10-26 | Governance: existing code is aligned by dedicated features, and until then a change keeps its package's stack. Workflow: no direct pushes to `main`, `release` or `develop`; every change arrives by pull request from a working branch, enforced by branch protection. VIII: the comment budget ignores goose, sqlc and other tool directives. Backend Standards point to `backend/docs/GO_STANDARDS.md`; `backend/.golangci.yml` and `backend/CLAUDE.md` added | Product owner instruction of 2026-10-26 |
 
-**Version**: 2.0.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 2.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
