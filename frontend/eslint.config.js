@@ -24,6 +24,7 @@ const ALIGNED = [
   'approval-workflows',
   'global-budgets',
   'financials',
+  'settings',
 ];
 const NOT_ALIGNED_YET = FEATURES.filter((feature) => !ALIGNED.includes(feature));
 const TEST_ONLY = {
