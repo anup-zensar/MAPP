@@ -1,0 +1,22 @@
+# Optional: PostgreSQL for developers who prefer Docker to a native install (constitution,
+# Current Phase & Scope). Start it with `docker compose up -d postgres`. Local development only:
+# it listens on 127.0.0.1 and trusts local connections, so it holds no password.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: mapp
+      POSTGRES_DB: mapp
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mapp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

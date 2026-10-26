@@ -1,24 +1,22 @@
 <!--
 Sync Impact Report
-- Version change: 2.1.0 → 2.1.1 (PATCH: merges 1.1.2 from `develop` — the product is named MAPP
-  throughout, D-319). The 2.0.0 → 2.1.0 changes listed below come with it (MINOR: Governance gains
-  the alignment plan for existing code and names the Go guidance; no principle added, removed or
-  redefined)
-- Modified principles: VIII Clean Construction — the tool directives the comment budget ignores
-  now include goose's and sqlc's annotations (sqlc needs one `-- name:` line per query),
-  `prettier-ignore` and triple-slash references
-- Modified sections: Backend (Go) Standards (points to backend/docs/GO_STANDARDS.md); Development
-  Workflow and Quality Gates (no direct pushes to main, release or develop); Governance (new
-  Alignment rule, Compliance follows it, guidance files listed); Amendment History
+- Version change: 2.1.1 → 3.0.0 (MAJOR: Principle IV's storage rule is redefined — PostgreSQL now,
+  not SQLite now and PostgreSQL later)
+- Modified principles:
+  - IV Two Parts, Server as Source of Truth — the data lives in PostgreSQL from the start
+  - V Simplicity and Controlled Complexity — new metric: file length (non-blank lines)
+  - VI Meaningful Tests — store and end-to-end tests run on PostgreSQL
+- Modified sections: Current Phase & Scope (PostgreSQL locally, natively or through the optional
+  Compose file; Docker optional); B1, B2, B5, B9 (pgx, sqlc for PostgreSQL, test databases from
+  TEST_DATABASE_URL); F10; quality gates 4 and 13; Amendment History
 - Added sections: none
 - Removed sections: none
-- Files added with this amendment: backend/docs/GO_STANDARDS.md, backend/.golangci.yml and
-  backend/CLAUDE.md, adapted from the NorthStar backend; the root CLAUDE.md now follows this
-  constitution
+- Files changed with this amendment: backend/docs/GO_STANDARDS.md, backend/.golangci.yml,
+  backend/CLAUDE.md, CLAUDE.md; compose.yaml added (PostgreSQL only, optional)
 - Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
-  - A decision-log entry for 2.0.0 and 2.1.0; docs/product/design-system.md and ADR-0004 to be
+  - A decision-log entry for 2.0.0–3.0.0; docs/product/design-system.md and ADR-0004 to be
     aligned with them
 -->
 
@@ -118,8 +116,8 @@ recovered from code alone, so they are written down where maintainers look.
 ### IV. Two Parts, Server as Source of Truth
 
 - Exactly two runtime parts: a **React + TypeScript web app** (`frontend/`) and a **Go API**
-  (`backend/`). The database is embedded in the API's process (SQLite) until PostgreSQL arrives.
-  Adding a third part (worker, queue, cache, separate service) requires an ADR.
+  (`backend/`), storing their data in **PostgreSQL**. Adding a third part (worker, queue, cache,
+  separate service) requires an ADR.
 - The Go API is one program with one package per business area (plans, activities, line items,
   settings, people, approvals, audit). Each package has the same three layers: **handler (HTTP)
   → service (business rules) → store (storage)**, described in B2.
@@ -129,16 +127,17 @@ recovered from code alone, so they are written down where maintainers look.
   figure the server provides.
 - The API is **REST + JSON**, described in an **OpenAPI 3.1** file in the repository. The web
   app's API types are generated from it, so the two sides cannot drift apart.
-- All storage goes through store interfaces defined by the services. **Now:** a local **SQLite**
-  database file. **Later:** PostgreSQL, by adding a new store implementation — no change to
-  services or the web app. The data model is therefore relational and portable (B5).
+- All storage goes through store interfaces defined by the services, implemented on
+  **PostgreSQL** in every environment: a developer's machine, CI and, later, Azure Database for
+  PostgreSQL. One engine everywhere means no storage migration later. The data model is relational
+  (B5).
 - **Shell's systems are reached only through adapter interfaces** owned by the package that needs
   them (for example the transaction feed and the rate feed). **Now:** simulated adapters — a
   file-import endpoint (check, then import) and demo seed data. **Later:** the real feed implements
   the same interface, with no change to services or the web app (ADR-0009).
 
 **Rationale:** a small, predictable structure is easy for new developers and AI agents to follow,
-and keeps the moves to PostgreSQL, Azure and Shell's live systems cheap.
+and keeps the moves to Azure and Shell's live systems cheap.
 
 ### V. Simplicity and Controlled Complexity
 
@@ -157,9 +156,9 @@ and keeps the moves to PostgreSQL, Azure and Shell's live systems cheap.
   requirement demands otherwise.
 - Prefer the standard library and the approved stack (B1, F1). Every new dependency is justified
   (B1, F1).
-- Every function and expression MUST fall within the quality metrics below. A value in the "Needs
-  justification" band MUST carry a written justification (Governance → Exceptions); a value in the
-  "Unacceptable" band MUST NOT be merged. In React code the metrics apply to every function,
+- Every file, function and expression MUST fall within the quality metrics below. A value in the
+  "Needs justification" band MUST carry a written justification (Governance → Exceptions); a value
+  in the "Unacceptable" band MUST NOT be merged. In React code the metrics apply to every function,
   including components, hooks and callbacks: a component's props object is one parameter, and
   decisions inside JSX (`&&`, `||`, `??`, `?:`) count toward complexity.
 
@@ -171,8 +170,11 @@ and keeps the moves to PostgreSQL, Azure and Shell's live systems cheap.
 | Fan-out (distinct functions called) | Function | 0–7 | 8–10 | 11+ |
 | Length (statements, as counted by `funlen`) | Go function, excluding tests | 1–40 | 41–60 | 61+ |
 | Number of terms | Expression | 1–5 | 6–8 | 9+ |
+| Length (non-blank lines) | Hand-written source file, tests included | 1–300 | 301–400 | 401+ |
 
-Fan-out counts the distinct functions and methods a function calls, including hooks and calls
+File length counts the non-blank lines of a hand-written source file (Go, TypeScript, TSX, CSS,
+SQL); generated files are excluded. A file that grows past the limit is split by responsibility,
+not by cutting lines. Fan-out counts the distinct functions and methods a function calls, including hooks and calls
 inside its callbacks; language operators and JSX elements do not count. Terms are the operands in
 one expression: identifiers, literals and calls.
 
@@ -214,8 +216,8 @@ industry-standard but not complex.
 - Tests MUST be deterministic: fixed dates, an injected clock and seed data; no dependence on the
   real clock, execution order, network services outside the test's control, or `sleep`-based
   synchronisation.
-- Store, integration and end-to-end tests run against the same database engine as the running
-  application: SQLite now, PostgreSQL once it replaces SQLite.
+- Store, integration and end-to-end tests run against PostgreSQL, the same engine and major
+  version as every other environment. No test requires Docker.
 
 **Rationale:** planning money must be trustworthy and calculations cannot be checked by eye; but
 tests that prove nothing cost time to write, read and maintain, and erode trust in the suite.
@@ -457,9 +459,11 @@ both be non-negotiable without conflict.
 - **Out of scope for now:** the Finance budgets module, purchase requests, accrual calculation,
   Measure reporting, live GSAP integration, real sign-in (Microsoft Entra ID single sign-on),
   e-mail, AI features. Specs may mention these only as future integration points.
-- **Running locally:** the application runs on a developer laptop: the Go API with a local SQLite
-  database file, and the web app's development server. Servers listen on `127.0.0.1` only. No
-  cloud services at run time, and **no Docker or other containers** in this phase; CI and the
+- **Running locally:** the application runs on a developer laptop: the Go API, a local PostgreSQL
+  database, and the web app's development server. Servers listen on `127.0.0.1` only. **Docker is
+  optional:** a developer installs PostgreSQL natively or starts it with the repository's
+  `compose.yaml`, which runs PostgreSQL and nothing else; nothing else needs Docker, and the
+  application itself is not containerised in this phase. No cloud services at run time; CI and the
   scans in the quality gates run on GitHub.
 - **Demo data:** a clearly labelled, fictitious seed dataset is loaded by an explicit command; it
   never contains real Shell people or figures.
@@ -468,11 +472,11 @@ both be non-negotiable without conflict.
 |---|---|---|
 | Web app | React + TypeScript (strict), built with Vite (F1) | Same, served as static files |
 | API | Go with Gin, REST + JSON, OpenAPI 3.1 contract (B1, B6) | Same |
-| Storage | SQLite: one local file, pure-Go driver, behind store interfaces (B5) | PostgreSQL (Azure Database for PostgreSQL) through a new store implementation; tests move with it |
+| Storage | PostgreSQL behind store interfaces (B5): installed natively or through the optional `compose.yaml` | Azure Database for PostgreSQL, same major version |
 | Sign-in and access | Demo sign-in with seeded users; roles, permissions and team scopes kept in MAPP (ADR-0008) | Microsoft Entra ID single sign-on; roles may come from Entra app roles or groups |
 | Shell integrations | Simulated GSAP feeds behind adapters (ADR-0009) | Live GSAP feeds implementing the same adapters |
 | Visual design | Shell palette (Principle X), Jost and Arial, MAPP's own mark | Shell's typeface and pecten once Shell supplies them and consents |
-| Containers | None | Chosen by ADR before hosting |
+| Containers | Optional: `compose.yaml` runs PostgreSQL for developers who choose Docker | The application's images, chosen by ADR before hosting |
 | Hosting | Local laptop | Azure Container Apps behind Azure Front Door (see `docs/reference/README.md`) |
 
 ## Backend (Go) Standards
@@ -486,13 +490,13 @@ These rules apply to everything under `backend/` and refine the Core Principles 
 |---|---|
 | Language | Go, pinned by the `go` and `toolchain` directives in `go.mod`; a release the Go team still supports |
 | HTTP transport | Gin, confined to the handler layer |
-| Database | SQLite now (Principle IV): a pure-Go driver through `database/sql`, no cgo. PostgreSQL later, with `pgx/v5` |
-| Data access | `sqlc`-generated, type-safe queries (engine `sqlite` now, `postgresql` later) |
+| Database | PostgreSQL in every environment (Principle IV), one major version pinned for all of them |
+| Data access | `pgx/v5` connection pool + `sqlc`-generated, type-safe queries |
 | Schema migrations | `goose`, SQL migrations embedded in the binary |
 | Logging | `log/slog` with the JSON handler |
 | Telemetry | OpenTelemetry (traces and metrics) |
 | Contract tests | `github.com/pb33f/libopenapi-validator` against `backend/api/openapi.yaml` |
-| Testing | standard `testing`, `net/http/httptest`, `github.com/google/go-cmp`; SQLite databases created per test; no Docker or testcontainers |
+| Testing | standard `testing`, `net/http/httptest`, `github.com/google/go-cmp`; store tests on PostgreSQL databases created per test from `TEST_DATABASE_URL`; no test requires Docker (no testcontainers) |
 | Static analysis | `golangci-lint` v2 with `backend/.golangci.yml`, `govulncheck`, SonarQube |
 
 - ORMs (e.g. GORM, ent) and runtime auto-migration MUST NOT be used.
@@ -505,7 +509,7 @@ These rules apply to everything under `backend/` and refine the Core Principles 
 - Layout: `cmd/<binary>/main.go` only wires dependencies and calls `run`; all other code lives
   under `internal/`. Cross-cutting infrastructure lives in `internal/platform/<concern>/`. Each
   business area is a package `internal/<area>/` with the same files: `model.go`, `store.go` (the
-  store interface the service needs), `store_sqlite.go` (its sqlc-backed implementation),
+  store interface the service needs), `store_postgres.go` (its sqlc-backed implementation),
   `service.go` and `handler.go`, plus tests.
 - Dependencies MUST point inward: handler → service → store. Services MUST NOT import Gin or
   `net/http`; stores MUST NOT contain business rules. Import cycles are forbidden.
@@ -551,16 +555,13 @@ These rules apply to everything under `backend/` and refine the Core Principles 
 - All SQL MUST live in `.sql` files compiled by sqlc. Building SQL by string concatenation or
   formatting is forbidden; dynamic sorting and filtering MUST map client input through an
   allowlist to fixed SQL fragments.
-- **SQLite settings:** every connection enables `PRAGMA foreign_keys = ON`, `journal_mode = WAL`
-  and a `busy_timeout`; tables are declared `STRICT`; write transactions begin with
-  `BEGIN IMMEDIATE`. The database file is never committed and is created by the seed command.
-- **Portable, relational schema:** ids, foreign keys and constraints, no nested ownership tricks,
-  and SQL that stays close to standard SQL, so that the PostgreSQL move rewrites queries
-  mechanically.
-- **Types:** money is stored as integer minor units, or as a canonical decimal string where more
-  scale is needed (exchange rates); never `REAL` or `NUMERIC` affinity. Calendar dates are
-  `TEXT` in `YYYY-MM-DD`; timestamps are `TEXT` in RFC 3339 in UTC. On PostgreSQL these become
-  `bigint` or `numeric`, `date` and `timestamptz`.
+- **Relational schema:** ids, foreign keys, `NOT NULL`, `CHECK` and unique constraints; no nested
+  ownership tricks. The database enforces every invariant it can check.
+- **Types:** money is `bigint` minor units, or `numeric` where more scale is needed (exchange
+  rates); never `real` or `double precision`. Calendar dates are `date`; timestamps are
+  `timestamptz`, handled in UTC.
+- **Connections:** one `pgx` pool per process, opened at startup, sized per environment, closed on
+  shutdown. Connection strings come from the environment and never appear in logs or errors.
 - Every query on plan-owned data MUST filter by the actor's scope in the query itself, not after
   loading (Principle VII).
 - Schema changes MUST be goose migrations: reviewed, applied in CI to an empty database, and never
@@ -618,9 +619,11 @@ These rules apply to everything under `backend/` and refine the Core Principles 
 - Tests use the standard `testing` package with `go-cmp` for comparisons; a test with several
   input cases is table-driven with a descriptive name per case, and tests call `t.Parallel()`
   where they share no state.
-- Store and integration tests run against a real SQLite database created for the test (a
-  temporary file, migrated with goose). Handler tests use `net/http/httptest`; handler tests are
-  external test packages (`package <name>_test`).
+- Store and integration tests run against real PostgreSQL: each test gets its own database,
+  created from a migrated template on the server named by `TEST_DATABASE_URL` (a native install
+  or the Compose service) and dropped afterwards. They skip under `-short`, so unit tests need no
+  database. Handler tests use `net/http/httptest`; handler tests are external test packages
+  (`package <name>_test`).
 - Time-dependent code MUST receive an injected clock or be tested with `testing/synctest`;
   `time.Sleep` in tests is forbidden.
 - Parsers and importers (the GSAP file imports) MUST have fuzz tests. Every optimisation MUST be
@@ -900,7 +903,7 @@ frontend/
 - Automated accessibility checks run in every component test of a screen or dialog and in every
   end-to-end journey, and report no violations. An `axe` rule is disabled only for a named element
   and with a written justification in the test.
-- End-to-end tests use Playwright against the real Go API and its SQLite database (Principle VI).
+- End-to-end tests use Playwright against the real Go API and PostgreSQL (Principle VI).
   They cover sign-in and at least one journey for every P1 user story, and use web-first
   assertions, never fixed waits.
 - Tests are deterministic: fake timers or an injected clock, seeded randomness, no `sleep` or
@@ -950,7 +953,7 @@ MUST run in the approved CI/CD system (TOE default: GitHub Actions) and be requi
 1. `gofmt` and `goimports` report no changes.
 2. `go vet ./...` and `golangci-lint run` (with `backend/.golangci.yml`) report no findings.
 3. `sqlc generate` produces no diff, and `sqlc vet` passes.
-4. All goose migrations apply cleanly to an empty SQLite database.
+4. All goose migrations apply cleanly to an empty PostgreSQL database.
 5. `go test -race -coverprofile ./...` passes, contract tests included, and new-code coverage
    meets Principle VI.
 6. `govulncheck ./...` reports no reachable vulnerability.
@@ -964,7 +967,7 @@ MUST run in the approved CI/CD system (TOE default: GitHub Actions) and be requi
 11. `npm run test:coverage` passes, accessibility checks included; its results and coverage report
     are published, and new-code coverage meets Principle VI.
 12. `npm run build` succeeds and stays within the JavaScript budget (F8).
-13. `npm run test:e2e` passes against the real API and SQLite, accessibility checks included.
+13. `npm run test:e2e` passes against the real API and PostgreSQL, accessibility checks included.
 
 *Whole repository*
 
@@ -1082,7 +1085,8 @@ amended to match.
   a package or screen is aligned, a change to it keeps that package's current stack and structure
   (for example `net/http`, the JSON file store and today's folders), and the gates it cannot meet
   yet — the B1 and F1 stack, sqlc and goose, linter findings on lines the change did not touch,
-  and the comment budget in files that existed before 2.0.0 — apply to it from its alignment on.
+  and the comment budget and file-length limit in files that existed before 2.0.0 — apply to it
+  from its alignment on.
   Everything else in this constitution applies to every change now, and new packages, screens and
   files meet all of it from the start.
 - **Third parties:** a third party that develops code in this repository MUST follow this
@@ -1104,5 +1108,6 @@ amended to match.
 | 2.0.0 | 2026-10-26 | The NorthStar backend (1.1.0) and frontend (1.0.0) constitutions merged into this one, NorthStar winning where they disagreed (SEMS): Documented Design, Clean Construction, quality metrics, Backend Standards B1–B9 (Gin, sqlc, goose, OpenTelemetry), Frontend Standards F1–F10, quality and release gates, SEMS Compliance, `main`/`release`/`develop` with `feature/NNN-short-name` branches. Product owner's additions: SQLite now and PostgreSQL later, no Docker; comments at most 5% of a file's lines; meaningful tests only; IX modern, tasteful UI with visual hierarchy and no surprises; X Shell colour palette, non-negotiable (primary yellow `#FFC600`). Scope isolation answers 404 for out-of-scope records | Product owner instruction of 2026-10-26 |
 | 2.1.0 | 2026-10-26 | Governance: existing code is aligned by dedicated features, and until then a change keeps its package's stack. Workflow: no direct pushes to `main`, `release` or `develop`; every change arrives by pull request from a working branch, enforced by branch protection. VIII: the comment budget ignores goose, sqlc and other tool directives. Backend Standards point to `backend/docs/GO_STANDARDS.md`; `backend/.golangci.yml` and `backend/CLAUDE.md` added | Product owner instruction of 2026-10-26 |
 | 2.1.1 | 2026-10-26 | Merge of 1.1.2 from `develop`: the product is named MAPP in every rule; the Go module is `mapp` and browser-storage keys start `mapp.` | D-319 |
+| 3.0.0 | 2026-10-26 | IV: PostgreSQL in every environment from the start (pgx, sqlc, goose), replacing "SQLite now, PostgreSQL later"; Docker optional — `compose.yaml` runs PostgreSQL for those who want it, a native install works as well, and no test requires Docker. V: file length limit of 300 non-blank lines (401+ never merged) | Product owner instruction of 2026-10-26 |
 
-**Version**: 2.1.1 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 3.0.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

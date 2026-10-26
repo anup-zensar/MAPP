@@ -26,9 +26,9 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 4. **Two parts only:** React + TypeScript in `frontend/`, Go in `backend/`. Go packages per business
    area, each handler → service → store; Gin only in handlers; all business rules in services. The
    server is the source of truth: the web app never recomputes a figure the API provides.
-5. **Storage:** SQLite now — one local file, pure-Go driver, sqlc queries, goose migrations, `STRICT`
-   tables — behind store interfaces; PostgreSQL later. No Docker or containers. Keep the schema
-   relational and portable.
+5. **Storage:** PostgreSQL in every environment — pgx pool, sqlc queries, goose migrations — behind
+   store interfaces. Locally it runs natively or through the optional `compose.yaml`; no test or
+   command may require Docker. Keep the schema relational, with constraints for every invariant.
 6. **Contract first:** endpoints are described in `backend/api/openapi.yaml` (OpenAPI 3.1, `/api/v1`,
    one error envelope); the web app's API types are generated from it.
 7. **Demo sign-in, role- and team-based access** (D-004, D-223, ADR-0008): sign-in stays a demo until
@@ -64,12 +64,14 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 13. **Out of scope:** the Finance budgets module, purchase requests, accrual calculation, Measure, live
     GSAP integration, e-mail, real sign-in (SSO), AI. Do not build them. GSAP rates and transactions come
     only from simulated feeds behind adapters (ADR-0009).
-14. **Local only:** servers listen on `127.0.0.1`; no cloud services at run time; no Docker; no secrets in
-    the repository.
+14. **Local only:** servers listen on `127.0.0.1`; no cloud services at run time; Docker only optionally,
+    for PostgreSQL; no secrets in the repository.
 15. **Alignment** (constitution, Governance): code written before constitution 2.0.0 is aligned by
     dedicated features later. Until a package or screen is aligned, a change to it keeps its current
     stack and structure — don't migrate it as a side effect of another change. New packages, screens and
     files follow the constitution in full.
+16. **File length** (constitution V): at most 300 non-blank lines per source file, tests included; 301–400
+    needs a written justification; 401+ is never merged. Split by responsibility.
 
 ## Key documents
 
@@ -105,22 +107,24 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 
 ### Target (constitution 2.x) — new code, and each package or screen once aligned
 
-- **API (`backend/`)**: Go (pinned in `go.mod`), Gin in the handler layer only, SQLite through a pure-Go
-  `database/sql` driver, sqlc, goose, `log/slog` JSON, OpenTelemetry, `/healthz` and `/readyz`. Module
-  name `mapp`. Layout in `backend/docs/GO_STANDARDS.md` §2: `cmd/api`, `cmd/seed`,
-  `internal/app`, `internal/platform/{actor,authz,clock,errs,web,database,logging,telemetry,…}`, then
-  one package per business area with `model.go · store.go · store_sqlite.go · service.go · handler.go`
-  plus tests. Lint: `backend/.golangci.yml`.
+- **API (`backend/`)**: Go (pinned in `go.mod`), Gin in the handler layer only, PostgreSQL 18 through
+  `pgx/v5`, sqlc, goose, `log/slog` JSON, OpenTelemetry, `/healthz` and `/readyz`. Module name `mapp`.
+  Layout in `backend/docs/GO_STANDARDS.md` §2: `cmd/api`, `cmd/seed`, `internal/app`,
+  `internal/platform/{actor,authz,clock,errs,web,database,logging,telemetry,…}`, then one package per
+  business area with `model.go · store.go · store_postgres.go · service.go · handler.go` plus tests.
+  Lint: `backend/.golangci.yml`. Configuration: `DATABASE_URL`, and `TEST_DATABASE_URL` for store tests.
 - **Web app (`frontend/`)**: React 19 + TypeScript 5.9 (strict, F5 options), Vite, React Router (data
   router without loaders or actions), TanStack Query, React Hook Form + Zod, Radix primitives,
   lucide-react, CSS Modules with the design tokens in `src/ui/`, `openapi-fetch` with types generated
   by `openapi-typescript` into `src/api/generated/` (never edit by hand). Folders as in constitution F2.
   Import alias `@/` = `frontend/src`.
 - **Tests**: Go `testing` + `httptest` + `go-cmp`, contract tests with `libopenapi-validator` through
-  `internal/platform/apitest`, store tests on SQLite files per test; Vitest + Testing Library +
-  `user-event` + MSW + `vitest-axe` + `fast-check`; Playwright + axe against the real API and SQLite.
-- **Commands**: backend `golangci-lint fmt ./...`, `golangci-lint run ./...`, `sqlc generate && sqlc vet`,
-  `go test -race ./...`, `govulncheck ./...`, `go run ./cmd/seed`, `go run ./cmd/api`; frontend
+  `internal/platform/apitest`, store tests on a fresh PostgreSQL database per test; Vitest + Testing
+  Library + `user-event` + MSW + `vitest-axe` + `fast-check`; Playwright + axe against the real API and
+  PostgreSQL.
+- **Commands**: `docker compose up -d postgres` (only if you run PostgreSQL in Docker); backend
+  `golangci-lint fmt ./...`, `golangci-lint run ./...`, `sqlc generate && sqlc vet`, `go test -race ./...`
+  (`-short` skips store tests), `govulncheck ./...`, `go run ./cmd/seed`, `go run ./cmd/api`; frontend
   `npm run dev`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test:coverage`,
   `npm run test:e2e`, `npm run api:types` after changing the contract.
 
