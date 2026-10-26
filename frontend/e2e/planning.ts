@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { callApi, signInAs, uniqueName } from './fixtures';
+import { callApi, itemAt, signInAs, uniqueName } from './fixtures';
 
 // Records prepared through the API (contract: backend/api/openapi.yaml), for journeys that start from an
 // existing plan or activity. What a journey proves is always done on screen; these only set the stage.
@@ -274,7 +274,7 @@ export async function decideAs(
     'GET',
     `/api/v1/activities/${activityId}/approval`,
   );
-  const [round] = approval.rounds;
+  const round = itemAt(approval.rounds, 0);
   await callApi(page, 'POST', `/api/v1/activities/${activityId}/approval/${decision}`, {
     roundId: round.id,
     level: round.currentLevel,
@@ -301,7 +301,7 @@ export function idIn(url: string, pattern: RegExp): string {
   if (!match) {
     throw new Error(`No ID in ${url}`);
   }
-  return match[1];
+  return match[1] ?? '';
 }
 
 /** The plan page's tree (004's TreeTable, a treegrid). */

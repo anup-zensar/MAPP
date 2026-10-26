@@ -8,10 +8,15 @@ export function twelve(amount: string | null) {
   return Array.from({ length: 12 }, () => (amount === null ? null : gbp(amount)));
 }
 
+/** Twelve times the same amount, never empty. */
+export function twelveAmounts(amount: string) {
+  return Array.from({ length: 12 }, () => gbp(amount));
+}
+
 export function periods(overrides: Partial<BudgetByMonthPeriods> = {}): BudgetByMonthPeriods {
   return {
     budget: twelve('50000.00'),
-    plannedCost: twelve('40000.00') as { amount: string; currency: string }[],
+    plannedCost: twelveAmounts('40000.00'),
     difference: twelve('10000.00'),
     allocated: twelve('30000.00'),
     over: Array(12).fill(false),
@@ -22,9 +27,10 @@ export function periods(overrides: Partial<BudgetByMonthPeriods> = {}): BudgetBy
 export function quarters(overrides: Partial<BudgetByMonthPeriods> = {}): BudgetByMonthPeriods {
   const four = (amount: string | null) =>
     Array.from({ length: 4 }, () => (amount === null ? null : gbp(amount)));
+  const fourAmounts = (amount: string) => Array.from({ length: 4 }, () => gbp(amount));
   return {
     budget: four('150000.00'),
-    plannedCost: four('120000.00') as { amount: string; currency: string }[],
+    plannedCost: fourAmounts('120000.00'),
     difference: four('30000.00'),
     allocated: four('90000.00'),
     over: Array(4).fill(false),
@@ -75,7 +81,7 @@ export function phasing(overrides: Partial<BudgetPhasing> = {}): BudgetPhasing {
   return {
     method: 'evenly',
     months: [],
-    monthly: twelve('50000.00') as { amount: string; currency: string }[],
+    monthly: twelveAmounts('50000.00'),
     total: gbp('600000.00'),
     problem: null,
     ...overrides,

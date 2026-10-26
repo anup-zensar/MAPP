@@ -34,10 +34,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** A preference typed as any of them, so the test can change it. */
+function preference(value: ThemePreference): ThemePreference {
+  return value;
+}
+
 describe('useTheme', () => {
   it('shows the chosen theme on the whole app at once (FR-014)', () => {
     const { result, rerender } = renderHook(({ preference }) => useTheme(preference), {
-      initialProps: { preference: 'dark' as ThemePreference },
+      initialProps: { preference: preference('dark') },
     });
     expect(shownTheme()).toBe('dark');
     expect(result.current).toBe('dark');
@@ -81,7 +86,7 @@ describe('useTheme', () => {
   it('remembers the preference in this browser, never the colour it resolved to (FR-014)', () => {
     fakeComputerSetting('dark');
     const { rerender } = renderHook(({ preference }) => useTheme(preference), {
-      initialProps: { preference: 'system' as ThemePreference },
+      initialProps: { preference: preference('system') },
     });
     expect(localStorage.getItem('mapp.theme')).toBe('system');
 

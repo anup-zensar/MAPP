@@ -110,7 +110,10 @@ export function PersonPicker(props: PersonPickerProps) {
   const outsideTeams =
     teamIds !== undefined &&
     teamIds.length > 0 &&
-    known.some((id) => qualifyingTeams(byId.get(id) as PickerPerson).length === 0);
+    known.some((id) => {
+      const person = byId.get(id);
+      return person !== undefined && qualifyingTeams(person).length === 0;
+    });
   const locked = disabledReason ?? (teamIds?.length === 0 ? NO_TEAMS_REASON : undefined);
 
   return (
@@ -129,7 +132,10 @@ export function PersonPicker(props: PersonPickerProps) {
       }
       multiple={props.multiple}
       renderChip={(id) => {
-        const person = byId.get(id) as PickerPerson;
+        const person = byId.get(id);
+        if (!person) {
+          return { label: id };
+        }
         return {
           label: person.name,
           content: <PersonLabel person={person} you={id === currentUserId} />,

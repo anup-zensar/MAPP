@@ -41,7 +41,7 @@ export function SplitEditor({ name, options, value, onChange, error, ...frame }:
 
   function splitEvenly(optionIds: string[]): SplitShare[] {
     const shares = percentSplitEvenly(optionIds.length);
-    return optionIds.map((optionId, index) => ({ optionId, share: shares[index] }));
+    return optionIds.map((optionId, index) => ({ optionId, share: shares[index] ?? '0.00' }));
   }
 
   function choose(optionIds: string[]) {

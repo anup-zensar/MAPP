@@ -5,6 +5,7 @@ import { HOME_ANSWERS } from '@/testing/fixtures/home';
 import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { nth } from '@/testing/dom';
 import { COMING_SOON_SECTIONS, MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import { routes } from './router';
 
@@ -18,7 +19,7 @@ function BrokenPage(): never {
 
 /** The app's root route — its layout and its error page — with one test page inside. */
 function renderInRoot(page: ReactElement) {
-  const [root] = routes;
+  const root = nth(routes, 0);
   renderRoutes(
     [
       {

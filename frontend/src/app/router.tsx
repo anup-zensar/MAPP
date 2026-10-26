@@ -37,7 +37,7 @@ import {
 import { SignInPage } from '@/features/sign-in';
 import { RequirePermission } from '@/session/RequirePermission';
 import { RequireSignIn } from '@/session/RequireSignIn';
-import type { PageHandle } from '@/session/RequireSignIn';
+import type { PageHandle } from '@/session/page-handle';
 import { AppLayout } from './AppLayout';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';

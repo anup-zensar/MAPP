@@ -5,7 +5,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { NotFoundPage } from '@/features/placeholders';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useEnvironment } from '@/session/api';
-import type { PageHandle } from '@/session/RequireSignIn';
+import { requestedPageTitle } from '@/session/page-handle';
 
 /**
  * The gate in front of the developer pages (research R23, D-036): they exist only where demo
@@ -40,7 +40,7 @@ interface EnvironmentCheckProps {
 function EnvironmentCheck({ error, onRetry }: EnvironmentCheckProps) {
   const matches = useMatches();
   // Every developer route names its page in its handle, as every signed-in route does (router.tsx).
-  usePageTitle((matches[matches.length - 1].handle as PageHandle).title);
+  usePageTitle(requestedPageTitle(matches));
 
   return error ? (
     <ErrorState error={error} onRetry={onRetry} />

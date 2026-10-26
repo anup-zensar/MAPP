@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
+import { closestTo } from '@/testing/dom';
 import { TreeTable } from './TreeTable';
 import type { TreeNode } from './TreeTable';
 
@@ -93,12 +94,12 @@ describe('TreeTable', () => {
     expect(plan).toHaveAttribute('aria-level', '1');
     expect(plan).toHaveAttribute('aria-expanded', 'true');
     expect(plan).toHaveAttribute('tabindex', '0');
-    const campaign = screen.getByText('Helix launch').closest('tr');
+    const campaign = closestTo(screen.getByText('Helix launch'), 'tr');
     expect(campaign).toHaveAttribute('aria-level', '2');
     expect(campaign).toHaveAttribute('aria-expanded', 'false');
     expect(campaign).toHaveAttribute('tabindex', '-1');
-    expect(within(campaign as HTMLElement).getByText('CAMPAIGN')).toBeInTheDocument();
-    expect(within(campaign as HTMLElement).getByText('C-1001 · 2 initiatives')).toBeInTheDocument();
+    expect(within(campaign).getByText('CAMPAIGN')).toBeInTheDocument();
+    expect(within(campaign).getByText('C-1001 · 2 initiatives')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Helix launch' })).toHaveAttribute(
       'href',
       '/plans/P-1001/campaigns/C-1001',

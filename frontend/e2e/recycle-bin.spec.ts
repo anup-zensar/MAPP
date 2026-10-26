@@ -1,5 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { callApi, escapeRegExp, expectNoAxeViolations, expectToast, signInAs } from './fixtures';
+import {
+  callApi,
+  escapeRegExp,
+  expectNoAxeViolations,
+  expectToast,
+  itemAt,
+  signInAs,
+} from './fixtures';
 import { approveThroughApi, createPlanningRecords } from './planning';
 
 // End-to-end journeys of feature 011's Recycle bin (US1 find and restore, US4 restore with its parent,
@@ -100,7 +107,7 @@ test('US1: the seeded initiative is found by its activity’s ID and restored in
   await expectToast(page, "Initiative 'Trade shows' restored");
   await page.getByRole('button', { name: 'View', exact: true }).click();
   await expect(page).toHaveURL(
-    new RegExp(`/plans/P-\\d+/initiatives/${trade.records[0].recordId}$`),
+    new RegExp(`/plans/P-\\d+/initiatives/${itemAt(trade.records, 0).recordId}$`),
   );
   await expect(page.getByRole('dialog', { name: 'Trade shows' })).toBeVisible();
 

@@ -1,5 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { callApi, escapeRegExp, expectNoAxeViolations, expectToast, signInAs } from './fixtures';
+import {
+  callApi,
+  escapeRegExp,
+  expectNoAxeViolations,
+  expectToast,
+  itemAt,
+  signInAs,
+} from './fixtures';
 import { changeActivityPlannedCost, createInitiative, createPlanningRecords } from './planning';
 
 // End-to-end journeys across feature 011's Recycle bin, Activity log and History sections, and 009's
@@ -155,10 +162,11 @@ test('An activity deleted from its page is found in the recycle bin and restored
   await page.keyboard.press('Escape');
   await expect(chip(page, 'Action: Restored')).toBeVisible();
   await expect(page.getByText(/^1 of [\d,]+ entries$/)).toBeVisible();
-  await expectEntries(log.locator('ol[role="list"]'), [lifeOf[0]]);
+  const restored = itemAt(lifeOf, 0);
+  await expectEntries(log.locator('ol[role="list"]'), [restored]);
 
   // Its record link opens the activity, which exists again (FR-008).
-  await entry(page, lifeOf[0].text).getByRole('link', { name, exact: true }).click();
+  await entry(page, restored.text).getByRole('link', { name, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${escapeRegExp(records.activityPath)}$`));
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 

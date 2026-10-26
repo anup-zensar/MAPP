@@ -141,7 +141,7 @@ function cellOf(spec: RowSpec, key: string): AllWorkCell | null {
     case 'id':
       return { kind: 'text', text: spec.key };
     case 'status': {
-      const status = spec.status ? STATUS[spec.status] : null;
+      const status = spec.status ? (STATUS[spec.status] ?? null) : null;
       return status ? { kind: 'status', text: status.label, tone: status.tone } : { kind: 'empty' };
     }
     case 'owner':
@@ -166,7 +166,7 @@ function cellOf(spec: RowSpec, key: string): AllWorkCell | null {
 
 /** A contract-shaped row with the cells of `columns`. */
 export function row(spec: RowSpec, columns: string[] = DEFAULT_COLUMNS): AllWorkRow {
-  const status = spec.status ? STATUS[spec.status] : null;
+  const status = spec.status ? (STATUS[spec.status] ?? null) : null;
   return {
     key: spec.key,
     parentKey: spec.parentKey,
@@ -572,7 +572,10 @@ function periodsOf(byMonth: ByMonth, period: 'month' | 'quarter'): (Money | null
   const cents = (month: number) => Math.round(Number(byMonth[month] ?? 0) * 100);
   const amount = (value: number, any: boolean) => (any ? usd((value / 100).toFixed(2)) : null);
   if (period === 'month') {
-    return MONTHS.map((_, index) => (byMonth[index + 1] ? usd(byMonth[index + 1]) : null));
+    return MONTHS.map((_, index) => {
+      const value = byMonth[index + 1];
+      return value ? usd(value) : null;
+    });
   }
   return [0, 1, 2, 3].map((quarter) => {
     const months = [1, 2, 3].map((offset) => quarter * 3 + offset);

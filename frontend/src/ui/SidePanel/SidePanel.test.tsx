@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import { htmlElement } from '@/testing/dom';
 import { Button } from '../Button/Button';
 import { SidePanel } from './SidePanel';
 
@@ -96,7 +97,7 @@ describe('SidePanel', () => {
 
     for (let i = 0; i < 6; i += 1) {
       await user.tab();
-      expect(panel).toContainElement(document.activeElement as HTMLElement);
+      expect(panel).toContainElement(htmlElement(document.activeElement));
     }
   });
 });

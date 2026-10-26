@@ -7,7 +7,6 @@ import { ChoiceField } from '../ChoiceField/ChoiceField';
 import type { ChoiceOption } from '../ChoiceField/ChoiceField';
 import { DecimalField } from '../DecimalField/DecimalField';
 import { SplitEditor } from '../SplitEditor/SplitEditor';
-import type { SplitShare } from '../SplitEditor/SplitEditor';
 import { TextAreaField } from '../TextAreaField/TextAreaField';
 import { TextField } from '../TextField/TextField';
 import {
@@ -21,6 +20,7 @@ import {
   noOptionsForParent,
   optionIdsOf,
   parentOf,
+  splitShares,
   valuesToClear,
 } from './rules';
 import type {
@@ -245,7 +245,7 @@ function AttributeField({
               {...frame}
               name={name}
               options={options}
-              value={Array.isArray(value) ? (value as SplitShare[]) : []}
+              value={splitShares(value)}
               onChange={onChange}
             />
           );

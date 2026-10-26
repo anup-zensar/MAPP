@@ -61,7 +61,10 @@ export function FormDialog({
             focusBeforeOpen.current =
               document.activeElement instanceof HTMLElement ? document.activeElement : null;
             // The first field, or the submit button when there is none.
-            const content = event.currentTarget as HTMLElement;
+            const content = event.currentTarget;
+            if (!(content instanceof HTMLElement)) {
+              return;
+            }
             const first = content.querySelector<HTMLElement>(
               'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])',
             );

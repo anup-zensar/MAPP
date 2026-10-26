@@ -128,7 +128,7 @@ export function TreeTable({
         if (hasChildren && !expanded) {
           onToggle(node.id);
         } else if (hasChildren) {
-          focusRow(node.children[0].id);
+          focusRow(node.children[0]?.id);
         }
       },
       ArrowLeft: () => {

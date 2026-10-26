@@ -9,7 +9,6 @@ import type {
   FinancialTransaction,
   FinancialTransactionPage,
   FinancialTransactionRow,
-  LineItemPreview,
 } from '@/features/financials';
 
 const PLAN: FinancialRecordRef = { type: 'plan', id: 'P-1001', name: 'FY2026 Lubricants Europe' };
@@ -393,4 +392,4 @@ export const STATION_SIGNAGE = {
       { type: 'initiative', id: 'I-1005', name: 'Station promotions' },
     ],
   },
-} as unknown as LineItemPreview;
+};

@@ -36,7 +36,7 @@ export interface ParsedAmount {
  */
 export function parseMoneyInput(text: string): ParsedAmount | null {
   const suffix = /\s*([km])$/i.exec(text.trim());
-  const multiplier = !suffix ? 1n : suffix[1].toLowerCase() === 'k' ? 1_000n : 1_000_000n;
+  const multiplier = !suffix ? 1n : suffix[1]?.toLowerCase() === 'k' ? 1_000n : 1_000_000n;
   const number = readNumber(suffix ? text.trim().slice(0, suffix.index) : text);
   if (!number) {
     return null;
@@ -63,8 +63,10 @@ export function parseDecimalInput(text: string, decimals: 0 | 2 | 6): string | n
     return null;
   }
   const match = NUMBER.exec(text.trim());
-  // readNumber accepted the text, so the pattern matches.
-  const [, minus = '', integer, fraction] = match as RegExpExecArray;
+  if (!match) {
+    return null;
+  }
+  const [, minus = '', integer = '', fraction] = match;
   const plain = `${minus}${integer.replaceAll(',', '')}`;
   return fraction === undefined ? plain : `${plain}.${fraction}`;
 }
@@ -77,12 +79,12 @@ export function parseWholeInput(text: string): bigint | null {
 
 /** "250,000": a whole number with grouping. */
 export function formatWhole(value: bigint | number | string): string {
-  return grouped.format(value as Intl.StringNumericLiteral);
+  return grouped.format(typeof value === 'string' ? exact(value) : value);
 }
 
 /** "1,234.50": an amount from the API with grouping and two decimals, exactly (no currency). */
 export function formatAmount(amount: string): string {
-  return twoDecimals.format(amount as Intl.StringNumericLiteral);
+  return twoDecimals.format(exact(amount));
 }
 
 /**
@@ -95,12 +97,12 @@ export function formatMoneyText(money: { amount: string; currency: string }): st
 
 /** "2.00 %": a percentage from the API (model rates, split shares). */
 export function formatPercent(percent: string): string {
-  return `${twoDecimals.format(percent as Intl.StringNumericLiteral)} %`;
+  return `${twoDecimals.format(exact(percent))} %`;
 }
 
 /** "0.92", "150.00", "1.086957": an exchange rate with two to six decimals. */
 export function formatRate(rate: string): string {
-  return rateDecimals.format(rate as Intl.StringNumericLiteral);
+  return rateDecimals.format(exact(rate));
 }
 
 /**
@@ -196,7 +198,19 @@ function readNumber(text: string): ReadNumber | null {
   if (!match) {
     return null;
   }
-  const [, minus, integer, fraction = ''] = match;
+  const [, minus, integer = '', fraction = ''] = match;
   const digits = BigInt(`${integer.replaceAll(',', '')}${fraction}`);
   return { negative: minus === '-' && digits !== 0n, digits, decimals: fraction.length };
+}
+
+/**
+ * A decimal string as Intl.NumberFormat takes it, so it formats exactly, without floating point;
+ * anything else formats as NaN, as a plain string would.
+ */
+export function exact(value: string): Intl.StringNumericLiteral | number {
+  return isNumericLiteral(value) ? value : Number.NaN;
+}
+
+function isNumericLiteral(value: string): value is Intl.StringNumericLiteral {
+  return value.trim() !== '' && !Number.isNaN(Number(value));
 }

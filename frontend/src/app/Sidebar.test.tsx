@@ -92,9 +92,9 @@ describe('Sidebar', () => {
     renderWithProviders(<Sidebar />, { user: COLLAPSED, route: '/plans' });
 
     const plans = screen.getByRole('link', { name: 'Plans' });
-    expect(plans).toHaveClass(styles.item);
+    expect(plans).toHaveClass(String(styles.item));
     expect(plans).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass(styles.item);
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass(String(styles.item));
   });
 
   it('shows each item’s name in a tooltip in the icon rail (FR-011)', async () => {

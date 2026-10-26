@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { cx } from '../cx';
 import { InfoTip } from '../InfoTip/InfoTip';
@@ -59,7 +59,7 @@ export function LinkSummaryCard({
   );
 
   return (
-    <div className={styles.card} style={{ '--tint': tint } as CSSProperties}>
+    <div className={styles.card} style={{ '--tint': tint }}>
       <p className={styles.label}>
         <span className={styles.icon} aria-hidden="true">
           {icon}

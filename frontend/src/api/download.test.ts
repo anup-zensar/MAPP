@@ -87,7 +87,7 @@ describe('downloadFromApi (FR-034)', () => {
     ).catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(ApiError);
-    expect((failure as ApiError).message).toBe('Choose a year from 2000 to 2100.');
+    expect(failure).toHaveProperty('message', 'Choose a year from 2000 to 2100.');
     expect(clicked).toEqual([]);
   });
 });

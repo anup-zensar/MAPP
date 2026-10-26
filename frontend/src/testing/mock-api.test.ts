@@ -29,8 +29,9 @@ describe('mockApi', () => {
     const response = await fetch(`${ORIGIN}/api/v1/activity-log?limit=20`);
 
     expect(response.status).toBe(200);
-    expect(api.requests[0]).toMatchObject({ method: 'GET', path: '/api/v1/activity-log' });
-    expect(api.requests[0].search).toBe('?limit=20');
+    expect(api.requests).toMatchObject([
+      { method: 'GET', path: '/api/v1/activity-log', search: '?limit=20' },
+    ]);
   });
 
   it('records every request with its JSON body', async () => {
@@ -79,7 +80,7 @@ describe('mockApi', () => {
     const summary = await fetch(`${ORIGIN}/api/v1/approvals/summary`);
     const notifications = await fetch(`${ORIGIN}/api/v1/notifications`);
 
-    expect(await summary.json()).toEqual(FRAME_ANSWERS['GET /api/v1/approvals/summary'].body);
+    expect(await summary.json()).toEqual(FRAME_ANSWERS['GET /api/v1/approvals/summary']?.body);
     expect(await notifications.json()).toEqual({ items: [], total: 3, unread: 3 });
     expect(takeUnmockedRequests()).toEqual([]);
   });

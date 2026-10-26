@@ -1,15 +1,9 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Navigate, useLocation, useMatches } from 'react-router';
-import type { UIMatch } from 'react-router';
+import { requestedPageTitle } from './page-handle';
 import { SessionCheckPage } from './SessionCheckPage';
 import { signInAddress, useSession } from './useSession';
-
-/** What every route inside RequireSignIn says about its page, in its `handle` (router.tsx). */
-export interface PageHandle {
-  /** The page's name in the browser tab, shown already while the session is being checked. */
-  title: string;
-}
 
 /**
  * The gate in front of every page that needs a signed-in person (FR-005, plan "Session"). It
@@ -34,10 +28,4 @@ export function RequireSignIn({ children }: { children: ReactNode }) {
     return <Navigate to={signInAddress(location.pathname + location.search)} replace />;
   }
   return children;
-}
-
-/** The tab title of the page asked for: the `handle` of the deepest matching route. */
-function requestedPageTitle(matches: UIMatch[]): string {
-  // router.test.tsx checks that every route inside RequireSignIn has one.
-  return (matches[matches.length - 1].handle as PageHandle).title;
 }

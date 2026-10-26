@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { action, callApi, expectToast, signInAs, uniqueName } from './fixtures';
+import { action, callApi, expectToast, itemAt, signInAs, uniqueName } from './fixtures';
 import { createPlan, createPlanningRecords, idOf, type ListOf, type Named } from './planning';
 
 // End-to-end journeys through the client's BRD MVP gaps (features 014–017), against the real API with
@@ -364,7 +364,7 @@ test('016: a global planner allocates part of the global budget to a plan', asyn
     'GET',
     '/api/v1/global-budgets',
   );
-  const budget = list.items[0];
+  const budget = itemAt(list.items, 0);
   await signInAs(page, MEI);
   const plan = await createPlan(page, 'Allocation', budget.year);
 

@@ -55,6 +55,15 @@ export default defineConfig([
     },
   },
   {
+    // F5: no `as T` and no `!`; feature folders join as they are aligned.
+    files: ['src/**/*.{ts,tsx}', 'e2e/**/*.ts'],
+    ignores: ['src/features/**'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
+    },
+  },
+  {
     files: ['src/**/*.{ts,tsx}'],
     plugins: { 'import-x': importX },
     settings: {

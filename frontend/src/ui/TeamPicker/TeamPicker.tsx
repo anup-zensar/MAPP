@@ -32,7 +32,10 @@ export function TeamPicker({ name, teams, value, onChange, ...frame }: TeamPicke
       value={value.filter((id) => byId.has(id))}
       onChange={onChange}
       renderChip={(id) => {
-        const team = byId.get(id) as TeamRef;
+        const team = byId.get(id);
+        if (!team) {
+          return { label: id };
+        }
         return {
           label: team.name,
           content: <TeamPill team={team} />,

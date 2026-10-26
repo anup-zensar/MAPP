@@ -175,7 +175,7 @@ export function missingAttributes(
     if (isEmptyValue(attribute, value)) {
       missing.push({ field, label: attribute.label });
     } else if (attribute.type === 'multipleChoiceSplit' && Array.isArray(value)) {
-      const total = (value as SplitShare[]).reduce(
+      const total = splitShares(value).reduce(
         (sum, part) => sum + (toHundredths(part.share) ?? 0n),
         0n,
       );
@@ -210,15 +210,14 @@ export function autoFill(
   let current = values;
   const filled: AutoFilled[] = [];
   const queue = [changedAttributeId];
-  while (queue.length > 0) {
-    const parentId = queue.shift() as string;
+  for (let parentId = queue.shift(); parentId !== undefined; parentId = queue.shift()) {
     for (const attribute of allAttributes(form)) {
       if (attribute.parentAttributeId !== parentId || !attribute.active) {
         continue;
       }
-      const fitting = allowedOptions(attribute, current);
-      if (isEmptyValue(attribute, current[attribute.id]) && fitting.length === 1) {
-        const optionId = fitting[0].id;
+      const [only, ...others] = allowedOptions(attribute, current);
+      if (isEmptyValue(attribute, current[attribute.id]) && only && others.length === 0) {
+        const optionId = only.id;
         current = { ...current, [attribute.id]: valueOfOne(attribute, optionId) };
         filled.push({ attributeId: attribute.id, optionId });
         queue.push(attribute.id);
@@ -246,10 +245,10 @@ function withoutOptions(value: AttributeValue | undefined, options: FormOption[]
     return ids.has(value) ? null : value;
   }
   if (Array.isArray(value)) {
-    const kept = (value as (string | SplitShare)[]).filter(
-      (item) => !ids.has(typeof item === 'string' ? item : item.optionId),
-    );
-    return kept.length === 0 ? null : (kept as AttributeValue);
+    const keptShares = splitShares(value).filter((part) => !ids.has(part.optionId));
+    const keptIds = optionIdsOf(value).filter((id) => !ids.has(id));
+    const kept = keptShares.length > 0 ? keptShares : keptIds;
+    return kept.length === 0 ? null : kept;
   }
   return value ?? null;
 }
@@ -258,4 +257,11 @@ function sameOptions(a: AttributeValue | undefined, b: AttributeValue | undefine
   const left = [...optionIdsOf(a)].sort();
   const right = [...optionIdsOf(b)].sort();
   return left.length === right.length && left.every((id, index) => id === right[index]);
+}
+
+/** The parts of a split value ([] for any other value). */
+export function splitShares(value: AttributeValue | undefined): SplitShare[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is SplitShare => typeof item !== 'string')
+    : [];
 }

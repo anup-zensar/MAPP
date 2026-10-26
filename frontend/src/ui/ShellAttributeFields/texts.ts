@@ -2,13 +2,10 @@
  * The texts of Shell attributes on forms and details (feature 002 plan, "User-visible messages",
  * rows "Attribute fields on forms" and "Split editor"), and how a value reads.
  */
-import type { components } from '@/api/generated/schema';
 import { formatPercent, formatWhole } from '@/format/decimal';
 import { joinWithAnd, midSentence } from '@/format/text';
-import { allAttributes, isEmptyValue } from './rules';
+import { allAttributes, isEmptyValue, optionIdsOf, splitShares } from './rules';
 import type { AttributeForm, AttributeValue, FormAttribute } from './rules';
-
-type SplitShare = components['schemas']['SplitShare'];
 
 /** Shown for an empty value (design system §6.3). */
 export const EMPTY_VALUE = '—';
@@ -108,11 +105,13 @@ export function valueText(attribute: FormAttribute, value: AttributeValue | unde
   }
   switch (attribute.type) {
     case 'singleChoice':
-      return optionLabel(attribute, value as string);
+      return optionLabel(attribute, String(value));
     case 'multipleChoice':
-      return (value as string[]).map((id) => optionLabel(attribute, id)).join(', ');
+      return optionIdsOf(value)
+        .map((id) => optionLabel(attribute, id))
+        .join(', ');
     case 'multipleChoiceSplit':
-      return (value as SplitShare[])
+      return splitShares(value)
         .map((part) => `${optionLabel(attribute, part.optionId)} ${formatPercent(part.share)}`)
         .join(', ');
     case 'number':

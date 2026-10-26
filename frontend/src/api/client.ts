@@ -48,6 +48,7 @@ export async function call<T>(request: Promise<ApiResult<T>>): Promise<T> {
 
   const { data, error, response } = result;
   if (response.ok) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the one place that types a response body (F5)
     return data as T;
   }
   if (isErrorBody(error)) {

@@ -148,7 +148,7 @@ export function Combobox({
         break;
       case 'Enter':
         // Closed, Enter submits the form as in any field; open, it chooses.
-        if (isOpen && active >= 0) {
+        if (isOpen && shown[active]) {
           event.preventDefault();
           choose(shown[active].id);
         }
@@ -239,7 +239,7 @@ export function Combobox({
               onOpenAutoFocus={(event) => event.preventDefault()}
               onCloseAutoFocus={(event) => event.preventDefault()}
               onInteractOutside={(event) => {
-                if (anchor.current?.contains(event.target as Node)) {
+                if (event.target instanceof Node && anchor.current?.contains(event.target)) {
                   event.preventDefault();
                 }
               }}

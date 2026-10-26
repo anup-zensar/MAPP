@@ -1,0 +1,8 @@
+// Lets style={{ '--tint': value }} pass values to CSS custom properties without a cast.
+export {};
+
+declare module 'react' {
+  interface CSSProperties {
+    [property: `--${string}`]: string | number | undefined;
+  }
+}

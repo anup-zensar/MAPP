@@ -4,6 +4,7 @@
  * useFormatters(); these functions default to "DD MMM YYYY" ("12 Mar 2026").
  */
 import type { components } from '@/api/generated/schema';
+import { exact } from './decimal';
 
 /** How dates are shown and typed (feature 003, contract DateFormat). */
 export type DateFormat = components['schemas']['DateFormat'];
@@ -86,20 +87,20 @@ export function formatDate(date: string, format: DateFormat = DEFAULT_DATE_FORMA
  */
 export function parseDate(text: string, format: DateFormat = DEFAULT_DATE_FORMAT): string | null {
   const typed = text.trim();
-  let parts: { day: string; month: number; year: string } | null = null;
+  let parts: { day: string; month: number; year: string } | null;
   if (format === 'DD MMM YYYY') {
-    const match = /^(\d{1,2})\s+([a-z]{3,})\.?\s+(\d{4})$/i.exec(typed);
-    const month = match ? monthOfName(match[2]) : 0;
-    parts = match && month ? { day: match[1], month, year: match[3] } : null;
+    const [, day = '', name = '', year = ''] =
+      /^(\d{1,2})\s+([a-z]{3,})\.?\s+(\d{4})$/i.exec(typed) ?? [];
+    const month = monthOfName(name);
+    parts = day && month ? { day, month, year } : null;
   } else if (format === 'YYYY-MM-DD') {
-    const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(typed);
-    parts = match ? { day: match[3], month: Number(match[2]), year: match[1] } : null;
+    const [, year = '', month = '', day = ''] = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(typed) ?? [];
+    parts = year ? { day, month: Number(month), year } : null;
   } else {
-    const match = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(typed);
-    if (match) {
-      const [first, second] = format === 'DD/MM/YYYY' ? [1, 2] : [2, 1];
-      parts = { day: match[first], month: Number(match[second]), year: match[3] };
-    }
+    const [, first = '', second = '', year = ''] =
+      /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(typed) ?? [];
+    const [day, month] = format === 'DD/MM/YYYY' ? [first, second] : [second, first];
+    parts = year ? { day, month: Number(month), year } : null;
   }
   if (!parts) {
     return null;
@@ -215,8 +216,9 @@ export function formatMoney(value: string | null | undefined, currency: string):
   if (!value) {
     return NOTHING;
   }
-  const exact = value as Intl.StringNumericLiteral;
-  return currency === 'USD' ? dollars.format(exact) : `${amount.format(exact)} ${currency}`;
+  return currency === 'USD'
+    ? dollars.format(exact(value))
+    : `${amount.format(exact(value))} ${currency}`;
 }
 
 /**
@@ -227,10 +229,9 @@ export function formatMoneyCompact(value: string | null | undefined, currency: s
   if (!value || Math.abs(Number(value)) < 1000) {
     return formatMoney(value, currency);
   }
-  const exact = value as Intl.StringNumericLiteral;
   return currency === 'USD'
-    ? compactDollars.format(exact)
-    : `${compactAmount.format(exact)} ${currency}`;
+    ? compactDollars.format(exact(value))
+    : `${compactAmount.format(exact(value))} ${currency}`;
 }
 
 function twoDigits(n: number): string {

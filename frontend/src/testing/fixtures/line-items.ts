@@ -7,6 +7,7 @@
 import type { components } from '@/api/generated/schema';
 import { attribute, option } from './attribute-forms';
 import type { MockHandler } from '../mock-api';
+import { nth } from '../dom';
 
 type LineItem = components['schemas']['LineItem'];
 type LineItemActivity = components['schemas']['LineItemActivity'];
@@ -550,7 +551,7 @@ export function lineItemRecord(overrides: Partial<FinancialRecordView> = {}): Fi
   return {
     ...activityRecord(),
     record: { type: 'lineItem', id: 'L-1001', name: 'Agency fee' },
-    figures: activityRecord().breakdown[0].figures,
+    figures: nth(activityRecord().breakdown, 0).figures,
     breakdownLevel: null,
     breakdown: [],
     latest: [],

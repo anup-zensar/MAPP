@@ -34,6 +34,9 @@ export function Tabs<T extends string>({ label, tabs, value, onChange, children 
 
   function choose(index: number) {
     const tab = tabs[(index + tabs.length) % tabs.length];
+    if (!tab) {
+      return;
+    }
     onChange(tab.value);
     list.current?.querySelector<HTMLElement>(`[data-tab="${tab.value}"]`)?.focus();
   }
@@ -45,9 +48,10 @@ export function Tabs<T extends string>({ label, tabs, value, onChange, children 
       Home: 0,
       End: tabs.length - 1,
     };
-    if (event.key in moves) {
+    const move = moves[event.key];
+    if (move !== undefined) {
       event.preventDefault();
-      choose(moves[event.key]);
+      choose(move);
     }
   }
 

@@ -46,13 +46,13 @@ export function fileNameFromDisposition(header: string | null): string | null {
   const encoded = /filename\*\s*=\s*utf-8''([^;]+)/i.exec(header);
   if (encoded) {
     try {
-      return decodeURIComponent(encoded[1].trim());
+      return decodeURIComponent((encoded[1] ?? '').trim());
     } catch {
       // A badly encoded name: the plain one below will do.
     }
   }
   const plain = /filename\s*=\s*(?:"([^"]*)"|([^;]+))/i.exec(header);
-  const name = plain ? (plain[1] ?? plain[2]).trim() : '';
+  const name = (plain?.[1] ?? plain?.[2] ?? '').trim();
   return name === '' ? null : name;
 }
 

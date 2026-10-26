@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
+import { nth } from '@/testing/dom';
 import { Combobox } from './Combobox';
 import type { ComboboxOption } from './Combobox';
 
@@ -88,7 +89,7 @@ describe('Combobox', () => {
     await user.click(combobox());
     await user.keyboard('{ArrowDown}{ArrowDown}');
     const options = screen.getAllByRole('option');
-    expect(combobox()).toHaveAttribute('aria-activedescendant', options[2].id);
+    expect(combobox()).toHaveAttribute('aria-activedescendant', nth(options, 2).id);
     expect(options[0]).toHaveAttribute('aria-selected', 'true');
 
     await user.keyboard('{ArrowUp}{Enter}');

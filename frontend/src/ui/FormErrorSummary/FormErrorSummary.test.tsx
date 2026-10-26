@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+import { nth } from '@/testing/dom';
 import { FormErrorSummary } from './FormErrorSummary';
 
 const BOTH_EMPTY = [
@@ -32,7 +33,7 @@ describe('FormErrorSummary', () => {
   });
 
   it('counts a single problem in the singular (FR-020)', () => {
-    render(<Form errors={[BOTH_EMPTY[1]]} />);
+    render(<Form errors={[nth(BOTH_EMPTY, 1)]} />);
 
     expect(
       screen.getByRole('heading', { name: '1 problem needs your attention' }),
@@ -51,7 +52,7 @@ describe('FormErrorSummary', () => {
     const { rerender } = render(<Form errors={BOTH_EMPTY} />);
     await user.click(screen.getByRole('textbox', { name: 'E-mail' }));
 
-    rerender(<Form errors={[BOTH_EMPTY[1]]} />);
+    rerender(<Form errors={[nth(BOTH_EMPTY, 1)]} />);
 
     expect(screen.getByRole('alert').parentElement).toHaveFocus();
   });

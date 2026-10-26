@@ -19,20 +19,18 @@ const FORBIDDEN = {
 };
 
 /** Sara Novak while she is a Viewer, and after an administrator made her a Planner. */
-const VIEWER: CurrentUser = testUser({
-  id: 'U-1006',
-  name: 'Sara Novak',
-  access: {
-    roles: [],
-    permissions: [{ key: 'plans.view', all: true, teams: [] }],
-    administrators: [],
-    noSelfApproval: true,
-  },
-});
+const VIEWER_ACCESS: NonNullable<CurrentUser['access']> = {
+  roles: [],
+  permissions: [{ key: 'plans.view', all: true, teams: [] }],
+  administrators: [],
+  noSelfApproval: true,
+};
+
+const VIEWER: CurrentUser = testUser({ id: 'U-1006', name: 'Sara Novak', access: VIEWER_ACCESS });
 const PLANNER: CurrentUser = {
   ...VIEWER,
   access: {
-    ...VIEWER.access!,
+    ...VIEWER_ACCESS,
     permissions: [
       { key: 'plans.view', all: true, teams: [] },
       { key: 'activities.edit', all: true, teams: [] },
