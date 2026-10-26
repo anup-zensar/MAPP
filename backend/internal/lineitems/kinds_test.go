@@ -39,6 +39,7 @@ func (f *fixture) setStatus(id, status string) {
 
 // Undo brings the line item back exactly: the same ID, values and version (FR-030, domain model R14).
 func TestUndo_RestoresExactly_FR030(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, complete(input("Agency fee", "EUR", "46000.00")))
 	before := f.stored(t)
@@ -56,6 +57,7 @@ func TestUndo_RestoresExactly_FR030(t *testing.T) {
 // A delete that ended an approval stays ended after Undo: the activity is Created, and Undo restarts nothing
 // (FR-033).
 func TestUndo_EndedApprovalStaysEnded_FR033(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	venue := f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
 	f.setStatus(socialOnAir, "approved")
@@ -72,6 +74,7 @@ func TestUndo_EndedApprovalStaysEnded_FR033(t *testing.T) {
 // Bringing a line item back into a Submitted or Approved activity counts as adding one: the activity goes
 // back to Created and the restore says so (FR-033, D-147).
 func TestRestore_IntoApprovedRestarts_FR033(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "50000.00"))
 	entry := f.deleteNow(t, fee.ID, false)
@@ -97,6 +100,7 @@ func TestRestore_IntoApprovedRestarts_FR033(t *testing.T) {
 // Undo must put the line item back exactly, so it is refused when another line item of the activity has
 // meanwhile taken the name; the line item stays in the recycle bin (D-037).
 func TestUndo_NameTaken_D037(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
 	entry := f.deleteNow(t, fee.ID, false)
@@ -113,6 +117,7 @@ func TestUndo_NameTaken_D037(t *testing.T) {
 // A Restore renames a line item whose name is taken: " (restored)", " (restored 2)", …, with a note and a new
 // version (FR-030, 011 FR-022).
 func TestRestore_NameTakenSuffix_FR030(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
 	entry := f.deleteNow(t, fee.ID, false)
@@ -137,6 +142,7 @@ func TestRestore_NameTakenSuffix_FR030(t *testing.T) {
 // it brings them back, and line items that come back with their activity never restart its approval
 // (FR-033, data model §7.1).
 func TestDeleteActivity_TakesLineItems(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	f.create(t, priya, socialOnAir, confirmed(input("Venue hire", "GBP", "15800")))
 	f.create(t, priya, socialOnAir, input("Speaker fees", "USD", "5000"))
@@ -167,6 +173,7 @@ func TestDeleteActivity_TakesLineItems(t *testing.T) {
 // The log reads like the screens: the owner's name, amounts with thousands separators, the spread in words,
 // the finance budget item with its budget, Shell attributes by their labels (FR-027, data model §7.3).
 func TestDescribe_LogTexts_FR027(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tests := []struct {
 		field       string
@@ -203,6 +210,7 @@ func TestDescribe_LogTexts_FR027(t *testing.T) {
 
 // The kind keeps the stored line item as its snapshot, with the activity as its parent.
 func TestKind_SnapshotAndChildren(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	fee := f.create(t, priya, launchFilm, input("Agency fee", "USD", "1.00"))
 	f.create(t, priya, socialOnAir, confirmed(input("Elsewhere", "USD", "1.00")))

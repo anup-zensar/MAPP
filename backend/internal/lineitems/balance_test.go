@@ -38,6 +38,7 @@ func withPlannedCost(cost string) ActivityFacts {
 // The USD planned cost is the planned cost ÷ the currency's rate, rounded half-up to the cent (domain model
 // §4.3, the plan's shared example table).
 func TestPlannedCostUSD_HalfUp_FR011_SC003(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		cost, rate, want string
 	}{
@@ -63,6 +64,7 @@ func TestPlannedCostUSD_HalfUp_FR011_SC003(t *testing.T) {
 // Unassigned planned cost = the activity's planned cost − the sum of its line items' USD planned costs, to
 // the cent (FR-002, SC-004): 120,000.00 − (50,000.00 + 50,000.00) = 20,000.00 USD.
 func TestBalance_Formula_FR002_SC004(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		planned string
 		usd     []money.Amount
@@ -85,6 +87,7 @@ func TestBalance_Formula_FR002_SC004(t *testing.T) {
 
 // The balance reads as left, all assigned or exceeded (FR-002, D-016): exceeded is negative.
 func TestBalance_States_FR002(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		usd   []money.Amount
 		state string
@@ -106,6 +109,7 @@ func TestBalance_States_FR002(t *testing.T) {
 // An activity without a planned cost has no balance: no amount, no "exceeded" (D-144, 007-P5); what is
 // assigned is still added up.
 func TestBalance_NoPlannedCost_007P5(t *testing.T) {
+	t.Parallel()
 	b := Balance(withPlannedCost(""), amounts("1000.00", "250.50"), []string{"USD", "EUR"})
 
 	if b.State != BalanceNoPlannedCost || b.Balance != nil || b.PlannedCost != nil || b.RoundingHint ||
@@ -117,6 +121,7 @@ func TestBalance_NoPlannedCost_007P5(t *testing.T) {
 // The rounding hint shows when a few cents (at most 0.05 USD either way) are left and a line item uses
 // another currency than USD (spec edge case, D-145).
 func TestBalance_RoundingHint_EdgeCase(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		assigned   string
 		currencies []string

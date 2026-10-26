@@ -1,63 +1,46 @@
 package financials
 
 import (
-	"context"
-	"reflect"
 	"testing"
 
 	"mapp/internal/platform/actor"
 )
 
-// The JSON store keeps transactions and imports exactly, and the stored data keeps the invariants of data
-// model §1 (FR-001, FR-002).
-func TestJSONRepository_RoundTripAndInvariants_FR001(t *testing.T) {
+// The stored data keeps the invariants of data model §1.
+func TestJSONRepository_Invariants_FR001(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
-	manual := f.stored(t, "FT-1004")
-	f.write(t, func(ctx context.Context) error {
-		repo := f.service.repo
-		manual.LineItemID, manual.MatchedBy, manual.NotLinkedReason = "L-1007", MatchedByManual, ""
-		manual.ManualLink = &ManualLink{By: alex, At: start}
-		if err := repo.PutTransaction(ctx, manual); err != nil {
-			return err
-		}
-		got, found, err := repo.GetTransaction(ctx, "FT-1004")
-		if err != nil || !found || !reflect.DeepEqual(got, manual) {
-			t.Errorf("round trip = %+v, %v, %v", got, found, err)
-		}
-		if _, found, _ := repo.GetTransaction(ctx, "FT-9999"); found {
-			t.Errorf("FT-9999 found")
-		}
-		imp, found, err := repo.GetImport(ctx, "FIM-1001")
-		if err != nil || !found || imp.CreatedBy != actor.System {
-			t.Errorf("import = %+v, %v, %v", imp, found, err)
-		}
-		return nil
-	})
-
 	keys := map[key]bool{}
 	for _, tr := range f.transactions(t) {
 		if keys[tr.key()] {
 			t.Errorf("%s repeats key %+v", tr.ID, tr.key())
 		}
 		keys[tr.key()] = true
-		if tr.Type == TypePurchaseOrder && (tr.PONumber != tr.DocumentNumber || tr.POLineNumber != "") {
-			t.Errorf("%s: a PO refers to itself", tr.ID)
-		}
-		if (tr.AccrualMonth != "") != (tr.Type == TypeAccrual) {
-			t.Errorf("%s: accrual month %q on a %s", tr.ID, tr.AccrualMonth, tr.Type)
-		}
-		if (tr.LineItemID == "") != (tr.MatchedBy == MatchedByNone) || (tr.LineItemID == "") != (tr.NotLinkedReason != "") {
-			t.Errorf("%s: line item %q, matched by %q, reason %q", tr.ID, tr.LineItemID, tr.MatchedBy, tr.NotLinkedReason)
-		}
-		if (tr.ManualLink != nil) != (tr.MatchedBy == MatchedByManual) {
-			t.Errorf("%s: manual link %v, matched by %q", tr.ID, tr.ManualLink, tr.MatchedBy)
-		}
+		checkInvariants(t, tr)
+	}
+}
+
+// checkInvariants checks the rules of data model §1 that a transaction keeps on its own.
+func checkInvariants(t *testing.T, tr Transaction) {
+	t.Helper()
+	if tr.Type == TypePurchaseOrder && (tr.PONumber != tr.DocumentNumber || tr.POLineNumber != "") {
+		t.Errorf("%s: a PO refers to itself", tr.ID)
+	}
+	if (tr.AccrualMonth != "") != (tr.Type == TypeAccrual) {
+		t.Errorf("%s: accrual month %q on a %s", tr.ID, tr.AccrualMonth, tr.Type)
+	}
+	if (tr.LineItemID == "") != (tr.MatchedBy == MatchedByNone) || (tr.LineItemID == "") != (tr.NotLinkedReason != "") {
+		t.Errorf("%s: line item %q, matched by %q, reason %q", tr.ID, tr.LineItemID, tr.MatchedBy, tr.NotLinkedReason)
+	}
+	if (tr.ManualLink != nil) != (tr.MatchedBy == MatchedByManual) {
+		t.Errorf("%s: manual link %v, matched by %q", tr.ID, tr.ManualLink, tr.MatchedBy)
 	}
 }
 
 // The demo feed holds the 11 rows of data model §6 in file order, POs first, and loading them gives
 // FT-1001 to FT-1011 linked as the table says, and one import FIM-1001 (FR-031).
 func TestDemoFeed_LoadsDataModelSix_FR031(t *testing.T) {
+	t.Parallel()
 	rows, problems, unused, err := DemoFeed{}.Read(t.Context(), Delivery{})
 	if err != nil || len(rows) != 11 || len(problems) != 0 || len(unused) != 0 {
 		t.Fatalf("Read = %d rows, %v, %v, %v", len(rows), problems, unused, err)

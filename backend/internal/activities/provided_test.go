@@ -57,6 +57,7 @@ func (f *fixture) planFigures(t *testing.T, planIDs ...string) map[string]string
 // activities with fields still needed — are worked out from the activities when they are read, so they
 // follow every create, edit, delete, Undo and copy (FR-005, D-105; 004's activity level).
 func TestAddPlanFacts_FollowEveryChange_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	got := f.planFigures(t, lubricantsPlan, mobilityPlan, globalPlan)
@@ -114,6 +115,7 @@ func TestAddPlanFacts_FollowEveryChange_FR005(t *testing.T) {
 // an ongoing activity keeps no end date), new IDs, the status Created, line items through feature 007, and
 // no log entries of their own.
 func TestCopyAll_ShiftsYears(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	const events = "I-1003" // Partner co-marketing fund: Approved, ongoing from 1 Mar 2026
 	leap := date.MustParse("2028-02-29")
@@ -169,6 +171,7 @@ func TestCopyAll_ShiftsYears(t *testing.T) {
 // The activity level of a plan copy copies the activities of every copied initiative and leaves their line
 // items to the line-item level, so each line item is copied once (D-195).
 func TestCopyForInitiatives_LeavesLineItemsToTheirLevel_D195(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	var newIDs map[string]string

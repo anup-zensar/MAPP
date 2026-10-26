@@ -12,6 +12,7 @@ import (
 // A campaign copy copies all its initiatives' activities at once, yet the first initiative's A-1007, the highest
 // id, gets the first new ID, as one copy per initiative gave it, and line items follow that order (028 FR-004).
 func TestCopyMany_IDsInitiativeByInitiative_028_FR004(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	const events = "I-1003"
 	f.lineItems.facts["A-1007"] = activities.LineItemFacts{Count: 2}

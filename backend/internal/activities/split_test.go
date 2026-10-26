@@ -11,6 +11,7 @@ import (
 // An activity without a planned cost can still be split: its line items move, no amount does, and both
 // activities stay without a planned cost; an amount to move is refused (016 data-model §3.6, FR-026, FR-028).
 func TestSplit_NoPlannedCostMovesLineItemsOnly(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	view := f.create(t, ukInitiativeID, activities.Input{Name: "Dealer dinner", ActivityTypeID: eventType})
 	gbp := func(text string) money.Money { return money.Money{Amount: amount(t, text), Currency: "GBP"} }

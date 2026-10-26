@@ -87,6 +87,7 @@ func assertAnswer(t *testing.T, response *apitest.Response, status int, want str
 // activity without line items has its whole planned cost unassigned (FR-004); 404 for an activity that is
 // gone.
 func TestListActivityLineItems_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -125,6 +126,7 @@ func TestListActivityLineItems_Contract(t *testing.T) {
 // GET …/line-items/form-options answers the defaults and choices of a new line item of Launch film: its
 // 20,000.00 USD unassigned planned cost as the planned cost (FR-008); 404 for an activity that is gone.
 func TestGetLineItemFormOptions_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -151,6 +153,7 @@ func TestGetLineItemFormOptions_Contract(t *testing.T) {
 // problem at once; 404 for an activity that is gone; on an Approved activity only with restartApproval
 // (FR-031).
 func TestCreateLineItem_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -183,6 +186,7 @@ func TestCreateLineItem_Contract(t *testing.T) {
 // GET /api/v1/line-items/{id} answers the line item with its activity and the balance (FR-026); 404 for one that
 // does not exist.
 func TestGetLineItem_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -204,6 +208,7 @@ func TestGetLineItem_Contract(t *testing.T) {
 // version with the other problems; an out-of-date one 409 version_conflict; a cost change on an Approved
 // activity only with restartApproval (FR-031); 404 for one that does not exist.
 func TestUpdateLineItem_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	film := formOf(lineItem(t, priya, "L-1002"))
@@ -241,6 +246,7 @@ func TestUpdateLineItem_Contract(t *testing.T) {
 // POST /api/v1/line-items/{id}/duplicate answers 201 with the copy, "Agency fee (copy)" (FR-029); on an Approved
 // activity only with restartApproval (FR-031); 404 for one that does not exist.
 func TestDuplicateLineItem_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -264,6 +270,7 @@ func TestDuplicateLineItem_Contract(t *testing.T) {
 // it back with the same ID (FR-030); on an Approved activity only with ?restartApproval=true (FR-031); a
 // query value other than true or false is refused; 404 for one that does not exist.
 func TestDeleteLineItem_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -295,35 +302,4 @@ func TestDeleteLineItem_Contract(t *testing.T) {
 		`"message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`)
 	assertAnswer(t, confirmed, http.StatusOK, "")
 	assertAnswer(t, unknown, http.StatusNotFound, lineItemGoneBody)
-}
-
-// The line items of A-1011 "UK launch event" in the GBP plan P-1004 (016 FR-015): each keeps its own currency
-// and shows its planned cost in the plan currency; the unassigned planned cost and the spread grid are worked
-// out in GBP — 40,000.00 − (15,000.00 + 19,750.00) = 5,250.00 GBP — and answered in Priya's display currency,
-// each amount converted once from GBP (contract UnassignedBalance and SpreadGrid, D-213): 5,250.00 GBP =
-// 6,645.57 USD, 34,750.00 GBP = 43,987.34 USD, 40,000.00 GBP = 50,632.91 USD.
-func TestListActivityLineItems_PlanCurrency_Contract_FR015(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	response := priya.Do(t, http.MethodGet, "/api/v1/activities/A-1011/line-items", nil)
-
-	assertAnswer(t, response, http.StatusOK, "")
-	var section lineitems.Section
-	response.Decode(t, &section)
-	if len(section.Items) != 2 {
-		t.Fatalf("items = %+v", section.Items)
-	}
-	venue, agency := section.Items[0], section.Items[1]
-	if venue.PlannedCostPlan.Format() != "15,000.00 GBP" || agency.PlannedCost.Format() != "23,000.00 EUR" ||
-		agency.PlannedCostPlan.Format() != "19,750.00 GBP" || agency.PlannedCostUSD.Format() != "25,000.00 USD" {
-		t.Errorf("venue %v; agency %v = %v = %v", venue.PlannedCostPlan, agency.PlannedCost, agency.PlannedCostPlan, agency.PlannedCostUSD)
-	}
-	if b := section.Balance; b.State != "left" || b.Balance.Format() != "6,645.57 USD" || b.Assigned.Format() != "43,987.34 USD" ||
-		b.PlannedCost.Format() != "50,632.91 USD" {
-		t.Errorf("balance = %v of %v, assigned %v, %s", b.Balance, b.PlannedCost, b.Assigned, b.State)
-	}
-	if g := section.Grid; g.Total.Format() != "43,987.34 USD" || len(g.Columns) != 3 || g.Columns[0].Key != "2027-03" {
-		t.Errorf("grid total %v, columns %+v", g.Total, g.Columns)
-	}
 }

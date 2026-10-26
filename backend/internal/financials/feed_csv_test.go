@@ -34,6 +34,7 @@ func withCell(column, value string) string {
 // A valid row is read with every field; a PO refers to itself; letter case of the type, HX key and line item
 // ID does not matter (FR-004).
 func TestCSVFeed_ReadsAValidRow_FR004(t *testing.T) {
+	t.Parallel()
 	rows, problems, unused, err := readCSV(t, "gsap.csv", header, validRow,
 		"invoice,5100002001,,4500001001,10,2026-02-20,,-150.50,usd,,,,,hx1003,l-1003",
 		"Accrual,9100004001,,,,2026-09-30,2026-09,2500,USD,,,,,,")
@@ -61,6 +62,7 @@ func TestCSVFeed_ReadsAValidRow_FR004(t *testing.T) {
 
 // Every column rule refuses its row with its message on its column (FR-005).
 func TestCSVFeed_ColumnRules_FR005(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		column, value, message string
 	}{
@@ -105,6 +107,7 @@ func TestCSVFeed_ColumnRules_FR005(t *testing.T) {
 // Rules that depend on the type: PO number and PO line are read only on other types; the accrual month is
 // needed only on accruals and ignored on the others (FR-005).
 func TestCSVFeed_TypeDependentColumns_FR005(t *testing.T) {
+	t.Parallel()
 	invoice := "INVOICE,5100,,45 00,10,2026-02-20,,10.00,USD,,,,,,"
 	_, problems, _, _ := readCSV(t, "gsap.csv", header, invoice)
 	if len(problems) != 1 || problems[0].Column != colPONumber || problems[0].Message != `PO number: use 20 letters, digits, "-" or "/" at most.` {
@@ -134,6 +137,7 @@ func TestCSVFeed_TypeDependentColumns_FR005(t *testing.T) {
 
 // A row with several problems lists all of them; rows keep their file line numbers, empty lines skipped.
 func TestCSVFeed_EveryProblemWithItsRow_FR005(t *testing.T) {
+	t.Parallel()
 	_, problems, _, err := readCSV(t, "gsap.csv", header, validRow, "", ",,,,,,,,,,,,,,",
 		"REFUND,,10,,,2026-13-01,,x,USD,,,,,,")
 	if err != nil {
@@ -154,6 +158,7 @@ func TestCSVFeed_EveryProblemWithItsRow_FR005(t *testing.T) {
 // The header is matched ignoring case, order and surrounding spaces; unknown columns are named; a byte-order
 // mark and quoted cells are read (FR-004).
 func TestCSVFeed_HeaderBOMAndQuoting_FR004(t *testing.T) {
+	t.Parallel()
 	content := "\xEF\xBB\xBF Amount ,CURRENCY,Type,document_number,posting_date,cost_centre\n" +
 		"\"1234.50\",EUR,po,\"45/0001\",2026-03-01,CC-1\n"
 	rows, problems, unused, err := CSVFeed{}.Read(t.Context(), Delivery{FileName: "GSAP.CSV", Content: []byte(content)})
@@ -175,6 +180,7 @@ func TestCSVFeed_HeaderBOMAndQuoting_FR004(t *testing.T) {
 
 // A file the feed cannot use is refused as a whole with one message (plan, whole-file refusals).
 func TestCSVFeed_WholeFileRefusals_FR004(t *testing.T) {
+	t.Parallel()
 	big := header + "\n" + strings.Repeat(validRow+"\n", 700*1024/len(validRow)+1)
 	many := header + "\n" + strings.Repeat("PO,1,,,,2026-01-01,,1,USD,,,,,,\n", 5001)
 	cases := []struct {

@@ -42,6 +42,7 @@ func destinationText(d activities.Destination) string {
 // can't go there: its own initiative takes no move; dates that do not fit take neither; a name already there
 // takes no move, while a copy gets a name of its own (FR-029, FR-030).
 func TestDestinations_ReasonsPerTarget_FR029_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.create(t, printAndOutdoor, activities.Input{Name: "LAUNCH film", ActivityTypeID: eventType})
 
@@ -76,6 +77,7 @@ func TestDestinations_ReasonsPerTarget_FR029_FR030(t *testing.T) {
 // no activity with its name; every refusal says why and what to do, and nothing moves (FR-029, US5
 // scenario 1).
 func TestMove_Refusals_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.create(t, printAndOutdoor, activities.Input{Name: "LAUNCH film", ActivityTypeID: eventType})
 	move := func(initiativeID string, version *int) error {
@@ -105,6 +107,7 @@ func TestMove_Refusals_FR029(t *testing.T) {
 // A moved activity keeps its status, values and line items — moving restarts no approval — and one "moved"
 // entry names the old and the new initiative with their campaigns (FR-029).
 func TestMove_KeepsStatusAndLogsParent_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	before, _ := f.stored(t, socialAlwaysOn)
 	f.clock.Advance(time.Hour)
@@ -146,6 +149,7 @@ func TestMove_KeepsStatusAndLogsParent_FR029(t *testing.T) {
 
 // A copy is named "<name> (copy)", " (copy 2)", … — the first name free in its initiative (FR-030).
 func TestCopy_Names_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	copyInto := func(initiativeID string) string {
 		view, err := f.service.Copy(t.Context(), priya, launchFilm, activities.CopyInput{InitiativeID: initiativeID})
@@ -166,6 +170,7 @@ func TestCopy_Names_FR030(t *testing.T) {
 // its line items; one "copied" entry on the copy says where it came from and how many line items came along
 // (FR-030, R13, D-110, US5 scenario 2).
 func TestCopy_CreatedWithLineItems_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	registerLineItemKind(t, f.history)
 	f.lineItems.facts[socialAlwaysOn] = activities.LineItemFacts{Count: 2}
@@ -200,6 +205,7 @@ func TestCopy_CreatedWithLineItems_FR030(t *testing.T) {
 // A copy goes only into an initiative of the same plan whose dates contain the activity's; into its own
 // initiative it always fits (FR-030).
 func TestCopy_TargetDatesMustFit_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, dates := f.service.Copy(t.Context(), priya, launchFilm, activities.CopyInput{InitiativeID: retailEvents})

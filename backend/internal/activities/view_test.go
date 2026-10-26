@@ -14,6 +14,7 @@ import (
 // An activity is answered with its path, owner, type and workflow (each with its status), display status,
 // unassigned planned cost, line-item totals, completeness and the ready-to-submit check (FR-019 – FR-024).
 func TestView_DerivedValues_FR019_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.lineItems.facts["A-1001"] = activities.LineItemFacts{
 		Count: 3, PlannedCostPlan: money.FromCents(10_000_000), AutoSpread: 2, CustomSpread: 1,
@@ -52,6 +53,7 @@ func TestView_DerivedValues_FR019_FR020(t *testing.T) {
 // business unit, the Lubricants group is neither needed nor listed; a split not adding up to 100.00 % is
 // listed with its total (FR-015, FR-017, US2 independent test).
 func TestView_HiddenGroupsNotCountedSplitListed_FR015_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view := f.get(t, "A-1008")
@@ -72,6 +74,7 @@ func TestView_HiddenGroupsNotCountedSplitListed_FR015_FR017(t *testing.T) {
 // The plan's rows are every activity of every initiative of the plan, ordered by start date, then name
 // ignoring letter case, activities without a start date last (FR-033, D-111).
 func TestListForPlan_Order_FR033(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.create(t, "I-1005", activities.Input{Name: "b promo", ActivityTypeID: eventType, StartDate: text("2026-04-01")})
 	f.create(t, "I-1005", activities.Input{Name: "A promo", ActivityTypeID: eventType, StartDate: text("2026-04-01")})
@@ -100,6 +103,7 @@ func TestListForPlan_Order_FR033(t *testing.T) {
 // Approved activities show In progress from their start and Complete after their end, never when ongoing
 // (FR-021): the demo data on 12 Mar 2026.
 func TestView_DisplayStatusOfDemoActivities_FR021(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	want := map[string]activities.DisplayStatus{
 		"A-1002": activities.DisplayInProgress, // 1 Jan – 30 Jun

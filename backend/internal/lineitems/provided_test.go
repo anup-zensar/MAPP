@@ -14,6 +14,7 @@ import (
 // Copies for features 004–006 (data model §5): every stored field and the same names, new IDs, the actor as
 // creator, and no log entries of their own.
 func TestCopyLineItems_SameYear(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	agency := f.create(t, priya, launchFilm, complete(input("Agency fee", "EUR", "46000.00")))
 	custom := input("Venue hire", "USD", "12000.00")
@@ -58,6 +59,7 @@ func TestCopyLineItems_SameYear(t *testing.T) {
 // A copy into the next year's plan moves the finance budget year and the custom months one year on, and
 // links the copy to the new year's only active item with the same code, otherwise to none (007-P9, D-148).
 func TestCopyLineItems_NextYear_007P9(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	year := func(y int) *int { return &y }
 	items := []LineItem{

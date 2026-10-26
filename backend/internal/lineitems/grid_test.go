@@ -52,6 +52,7 @@ func cellTexts(cells []*money.Money) []string {
 // The grid has a column per month of the activity and per month a custom spread uses, sorted, without
 // filling gaps; months outside the activity's dates are marked (FR-003, FR-018).
 func TestGrid_Columns_FR003(t *testing.T) {
+	t.Parallel()
 	launch := newFakeActivities().facts[launchFilm] // Mar–May 2026
 	ongoing := newFakeActivities().facts[partnerFund]
 	tests := []struct {
@@ -92,6 +93,7 @@ func TestGrid_Columns_FR003(t *testing.T) {
 // Without activity dates, Evenly, first and last are not spread: their USD planned cost is in a "No dates
 // yet" column, after the months of custom spreads (D-032, FR-017).
 func TestGrid_NoDatesColumn_D032(t *testing.T) {
+	t.Parallel()
 	f := newFakeActivities().facts[lunarPromo]
 	views := []View{
 		viewOf("L-1", "Evenly", lineItem("920.00", SpreadEvenly), f, rate("0.92")),
@@ -115,6 +117,7 @@ func TestGrid_NoDatesColumn_D032(t *testing.T) {
 // adds up each column and the grand total every row (FR-003, FR-020): Agency fee 50,000.00 USD and Film
 // production 46,000.00 EUR, both evenly over Mar–May 2026.
 func TestGrid_Totals_FR003_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFakeActivities().facts[launchFilm]
 	film := lineItem("46000.00", SpreadEvenly)
 	film.Currency = "EUR"
