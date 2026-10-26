@@ -15,6 +15,7 @@ import (
 // The line items of 007 data model §8, L-1001 … L-1008, with their activities, currencies, planned costs,
 // spreads and finance coding; every one has its activity's owner and the finance budget year 2026.
 func TestLoad_LineItems_FR009(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	spendType := d.attributeID(t, settings.LevelLineItem, "Spend type")
 	glCode := d.attributeID(t, settings.LevelLineItem, "GL code")
@@ -67,6 +68,7 @@ func TestLoad_LineItems_FR009(t *testing.T) {
 // 20,000.00 USD unassigned (spec US1), Grand opening Shanghai's line items exceed its planned cost by
 // 500.00 USD (006 US2), Fleet roadshow has no line items (007 data model §3.7, §8).
 func TestLoad_UnassignedPlannedCost_US1(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	rates := d.currentRates()
 	want := map[string]string{

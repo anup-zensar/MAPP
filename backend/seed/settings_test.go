@@ -14,6 +14,7 @@ import (
 // default planned costs, 2 models with their rates and allowed types (in the order of the type list), 2
 // finance budgets of 2026 with 3 items each, 35 Shell attributes with 110 options (FR-032).
 func TestLoad_Settings_FR032(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 
 	// The current rate of each currency is its latest dated rate on or before the seed day (016 FR-002).
@@ -101,6 +102,7 @@ func TestLoad_Settings_FR032(t *testing.T) {
 // business-unit attribute; markings fit their level; splits only at activity and line-item level; each
 // level's positions run 1…n; the sections and conditions are those of the seed table (FR-016 – FR-023).
 func TestLoad_ShellAttributes_FR017_FR023(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	businessUnit := d.attributes[0]
 	if businessUnit.ID != "SA-1001" || businessUnit.Label != "Business unit" || businessUnit.Role != settings.RoleBusinessUnit ||
@@ -169,6 +171,7 @@ func TestLoad_ShellAttributes_FR017_FR023(t *testing.T) {
 // Dependent options are linked to their parent's options: every Region to a Cluster (Retail – India has
 // none, D-034), every GL code to one or more spend types, BTL – Event to exactly one GL code (FR-022).
 func TestLoad_DependentOptions_FR022(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	links := map[string][]string{} // "<attribute>: <option>" → parent option labels
 	for _, o := range d.options {
@@ -232,6 +235,7 @@ func TestLoad_DependentOptions_FR022(t *testing.T) {
 // but USD, a GSAP-imported rate for each of the 30 days before the seed day, swinging −0.6 % … +0.6 % around the
 // seeded rate, and the seeded rate on the seed day — so the current rates stay the seeded ones (D-274).
 func TestLoad_RateHistory_016_D274(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	today := date.Today(loadedAt)
 

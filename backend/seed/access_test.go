@@ -12,6 +12,7 @@ import (
 // The seed holds the five roles of spec Table B (RL-1001 … RL-1005) with their permissions, descriptions and
 // default scopes, the roles of the six demo people and the access rules' defaults (FR-040, plan "Demo data").
 func TestSeed_RolesAssignmentsAndRules_FR040(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 
 	type role struct {
