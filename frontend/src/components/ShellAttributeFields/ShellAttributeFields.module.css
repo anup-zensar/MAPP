@@ -22,12 +22,16 @@
   gap: var(--space-1);
 }
 
-/* The attribute a Settings preview is about. */
+/* The attribute a Settings preview is about: the hover grey, with Text Strong text on it. */
 .highlighted {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   margin: -8px;
   padding: var(--space-2);
   border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--blue) 8%, transparent);
+  background: var(--hover);
 }
 
 .note {

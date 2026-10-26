@@ -20,7 +20,7 @@
 }
 
 .input:focus {
-  border-color: var(--blue);
+  border-color: var(--control-border-hover);
 }
 
 .input::placeholder {
@@ -29,9 +29,9 @@
 
 .input:disabled,
 .input[aria-disabled='true'] {
-  border-color: var(--hairline);
-  background-color: var(--gray-bg);
-  color: var(--ink-2);
+  border-color: var(--disabled-border);
+  background-color: var(--disabled-bg);
+  color: var(--disabled-text);
   cursor: not-allowed;
 }
 

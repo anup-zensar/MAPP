@@ -1,5 +1,5 @@
 /* Shaped like StatusChip (24 px, 4 px corners, 12 px bold): green when everything is filled in,
-   red while something is missing (design system §4.1, §5.4). */
+   a red fill while something is missing (design system §4.1, §5.4; red is never tinted). */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -16,18 +16,19 @@
 }
 
 .complete {
-  background: color-mix(in srgb, var(--status-positive) 12%, transparent);
+  background: color-mix(in srgb, var(--status-positive) 12%, var(--surface));
   color: var(--status-positive-text);
 }
 
 .problem {
-  background: color-mix(in srgb, var(--status-problem) 12%, transparent);
-  color: var(--status-problem-text);
+  background: var(--danger-bg);
+  color: var(--on-accent);
   cursor: pointer;
 }
 
+/* Red has no hover shade (constitution X): the words are underlined instead. */
 .problem:hover {
-  background: color-mix(in srgb, var(--status-problem) 20%, transparent);
+  text-decoration: underline;
 }
 
 .problem:focus-visible {
@@ -51,8 +52,13 @@
   padding: var(--space-3) var(--space-2);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .list {
+  --ink-2: var(--ink);
 }
 
 .group ul {
@@ -92,8 +98,10 @@
   cursor: pointer;
 }
 
+/* A link is below 4.5:1 on the hover grey, so it turns Text Strong there (constitution X). */
 .item:hover {
   background: var(--hover);
+  color: var(--ink);
   text-decoration: underline;
 }
 

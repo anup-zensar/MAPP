@@ -61,7 +61,7 @@ export interface ShellAttributeFieldsProps {
   previousValues?: AttributeValues;
   /** Problems by field name, as the API names them: "attributes.SA-1003". */
   errors?: Record<string, string>;
-  /** An attribute to draw with a blue tint (the Settings preview). */
+  /** An attribute to draw on the hover grey (the Settings preview). */
   highlightAttributeId?: string;
   /** The plan's address, linked from the "appear once the business unit is chosen" note. */
   planLink?: string;

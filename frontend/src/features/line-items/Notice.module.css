@@ -33,8 +33,13 @@
   --tone: var(--success);
 }
 
-.danger {
+/* Red is never tinted (constitution X): a danger notice is white, framed, with its red bar. */
+.danger,
+:global(:root[data-theme='dark']) .danger {
   --tone: var(--danger);
+  border: 1px solid var(--card-border);
+  border-left: 4px solid var(--tone);
+  background: var(--surface);
 }
 
 .icon {

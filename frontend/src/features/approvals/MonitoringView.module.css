@@ -128,7 +128,10 @@
   padding-right: var(--card-padding);
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .table thead th {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   height: var(--control-md);
   border-bottom-color: var(--hairline);
   background: var(--gray-bg);

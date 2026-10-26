@@ -1,5 +1,5 @@
 /* Shaped like StatusChip (24 px, 4 px corners, 12 px bold), in the same status palette: green
-   (positive) when everything is filled in, red (problem) while fields are missing. */
+   (positive) when everything is filled in, a red fill (problem) while fields are missing. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -23,23 +23,24 @@
 
 /* A counted "items below" chip that is not a control. */
 .attention {
-  background: color-mix(in srgb, var(--status-problem) 12%, transparent);
-  color: var(--status-problem-text);
+  background: var(--danger-bg);
+  color: var(--on-accent);
 }
 
 .complete {
-  background: color-mix(in srgb, var(--status-positive) 12%, transparent);
+  background: color-mix(in srgb, var(--status-positive) 12%, var(--surface));
   color: var(--status-positive-text);
 }
 
 .incomplete {
-  background: color-mix(in srgb, var(--status-problem) 12%, transparent);
-  color: var(--status-problem-text);
+  background: var(--danger-bg);
+  color: var(--on-accent);
   cursor: pointer;
 }
 
+/* Red has no hover shade (constitution X): the words are underlined instead. */
 .incomplete:hover {
-  background: color-mix(in srgb, var(--status-problem) 20%, transparent);
+  text-decoration: underline;
 }
 
 .incomplete svg {
@@ -53,8 +54,13 @@
   padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .list {
+  --ink-2: var(--ink);
 }
 
 .list ul {
@@ -81,7 +87,9 @@ a.field {
   cursor: pointer;
 }
 
+/* A link is below 4.5:1 on the hover grey, so it turns Text Strong there (constitution X). */
 button.field:hover,
 a.field:hover {
   background: var(--hover);
+  color: var(--ink);
 }

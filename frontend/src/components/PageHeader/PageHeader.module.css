@@ -1,6 +1,9 @@
 /* The page header: breadcrumb (8 px), eyebrow or tag (4 px), title and actions, facts and
-   description (4 px), then 24 px to the content. */
+   description (4 px), then 24 px to the content. It sits on the grey page, where Text Subtle and
+   links are below 4.5:1, so its secondary text and links are Text Strong (constitution X). */
 .header {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   margin-bottom: var(--space-6);

@@ -9,7 +9,7 @@ export interface AvatarProps {
 }
 
 /**
- * A person's initials in a circle on Shell dark blue (design system §5). Hidden from screen
+ * A person's initials in a circle on Text Strong (design system §5). Hidden from screen
  * readers, because the person's name is always written next to it.
  */
 export function Avatar({ initials, size = 'md' }: AvatarProps) {

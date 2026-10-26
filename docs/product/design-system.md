@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Version** | 2.0 · 20 October 2026 |
+| **Version** | 2.1 · 26 October 2026 |
 | **Status** | Binding for every screen of the web app. Code that disagrees with this document is a defect. |
 | **Replaces** | Version 1 (Apple-inspired look: Apple blue `#0071e3`, blue-to-purple gradient, system font stack, pill shapes) |
 | **Decided by** | Product owner, 20 October 2026: Shell yellow primary button with dark text, at most one per page or dialog (D-310); light-grey canvas with white cards (D-311); Jost headings and Arial body, no Shell logo (D-312); WCAG 2.2 AA (D-313); red only for danger and errors (D-314) — decision log D-310–D-314 |
@@ -56,7 +56,7 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-│ Demo environment — sign-in and data are for demonstration only            (banner 32, navy)  │
+│ Demo environment — sign-in and data are for demonstration only            (banner 32, ink)   │
 ├──────────────────────────────────────────────────────────────────────────────────────────────┤
 │ [★] MAPP          (search slot, reserved)                       🔔3   (AB) Priya ▾      │ top bar 56, white
 ├────────────────────┬─────────────────────────────────────────────────────────────────────────┤
@@ -73,19 +73,19 @@ Section numbers §1–§10 are kept from version 1, so references in specs and c
 │ « Collapse sidebar │   MAPP · demo data                                     (footer 12) │
 └────────────────────┴─────────────────────────────────────────────────────────────────────────┘
  sidebar 240, white          content: #F5F5F5 canvas, column ≤ 1300 px centred, 24 px padding
- ▌ = 4 px yellow bar + bold label + pale-yellow fill on the current section
+ ▌ = 4 px yellow bar + bold label + hover-grey fill on the current section
 ```
 
 | Element | Rule |
 |---|---|
 | **Skip link** | First focusable element: "Skip to main content". Hidden until focused, then shown top-left: `--brand-yellow` fill, `--on-brand-yellow` text, 14 px bold, padding 16, radius 8. |
-| **Environment banner** | `DemoBanner`. 32 px, full width, Shell system navy `--banner-bg` with white 12 px text, one line, centred. Below 600 px the shorter text "Demo environment — demonstration data only". Not sticky. |
+| **Environment banner** | `DemoBanner`. 32 px, full width, Text Strong `--banner-bg` with `--banner-text` (Surface) 12 px text, one line, centred. Below 600 px the shorter text "Demo environment — demonstration data only". Not sticky. |
 | **Top bar** | 56 px, `--surface`, 1 px `--hairline` bottom border, full width, sticky at the top. **Left:** at ≥ 960 px the logo zone is 240 px wide, aligned with the sidebar (`Logo` + "MAPP"); below 960 px a 40 px **Open menu** icon button, then the logo mark. **Centre-left:** the global search slot (360–480 px), empty until a search feature is specified; never a fake control. **Right**, 8 px apart: notifications bell (40 px icon button with `CountBadge`), the account button (32 px avatar + first name at ≥ 960 px; avatar only below). The account menu holds the name and role, **My profile**, **Appearance** (Follow the computer · Light · Dark; D-038) and **Sign out**. A help button joins the right group, always in the same place (WCAG 3.2.6), when a help feature exists. |
-| **Sidebar** | 240 px, `--surface`, 1 px `--hairline` right border, sticky under the top bar, scrolls on its own. Items 40 px high, padding 0 16 0 20, 20 px icon + 12 px gap + 14 px label in `--ink`. Hover `--hover`, no movement. **Current section: a 4 px `--brand-yellow` bar on the start edge (full item height), `--brand-yellow-tint` fill, bold label, `aria-current="page"`.** Group label "More" 12 px bold `--ink-2`, sentence case, 24 px above and 8 px below. Count badges sit at the end of the item. At the bottom: **Collapse sidebar** (40 px, ghost). |
+| **Sidebar** | 240 px, `--surface`, 1 px `--hairline` right border, sticky under the top bar, scrolls on its own. Items 40 px high, padding 0 16 0 20, 20 px icon + 12 px gap + 14 px label in `--ink`. Hover `--hover`, no movement. **Current section: a 4 px `--brand-yellow` bar on the start edge (full item height), `--hover` fill, bold label, `aria-current="page"`.** Group label "More" 12 px bold `--ink-2`, sentence case, 24 px above and 8 px below. Count badges sit at the end of the item. At the bottom: **Collapse sidebar** (40 px, ghost). |
 | **Collapsed rail** | 64 px; icons centred; tooltips on the right; the yellow bar stays on the current item; badges become a small count at the icon's top end. Chosen by the person (saved, D-038) at ≥ 960 px; automatic between 600 and 959 px. |
 | **Drawer** | Below 600 px the sidebar is hidden. **Open menu** opens a 280 px drawer from the left with `--overlay`, focus kept inside, Escape and the close button close it and return the focus. It shows the same items with labels, no tooltips. Bell and account stay in the top bar. |
 | **Content area** | `--page-bg` (#F5F5F5) canvas. One column, at most `--content-max` (1300 px), centred in the space right of the sidebar, padding `--gutter` (24 px; `--gutter-sm` 16 px below 600 px), 24 px from the top bar to the breadcrumb row, 48 px bottom padding. When the sidebar collapses, the column grows (up to 1300 px). |
-| **Footer** | Inside the content column, after the page: 1 px `--hairline` top border, 16 px padding, one 12 px `--ink-2` row: "MAPP · demo data" (this phase). No marketing footer. |
+| **Footer** | Inside the content column, after the page: 1 px `--hairline` top border, 16 px padding, one 12 px `--ink` row (Text Subtle is too faint on the grey page, §3.1): "MAPP · demo data" (this phase). No marketing footer. |
 
 Primary navigation for this phase: **Home · Plans · Approvals · All work** and, under **More**,
 **Settings · Recycle bin · Activity log**. (Finance and Measure appear later.) My profile is reached from
@@ -122,8 +122,8 @@ Every signed-in page uses `PageHeader`; features never build their own header (�
 | Breadcrumb row | Always present and always one 12/18 line high, followed by 8 px, so the title sits at the **same position on every page** (desktop with the banner: title top at 138 px from the window top = banner 32 + top bar 56 + 24 + 18 + 8). Empty on top-level pages (Home, Plans, Approvals, All work, Settings). |
 | Title | `<h1>`, the only one on the page; Jost 700, 28/36 (20/28 below 600 px); `--ink`; wraps to at most 2 lines. It is the menu name on top-level pages ("All work", "My profile"), the record's name on record pages, and "New activity" / "Edit activity" on form pages (the record's name is then in the breadcrumb). No eyebrow, no grey "highlight" phrase, no upper case. Home is the only exception: its title greets ("Good morning, Priya") in 32/40. |
 | Actions | Right-aligned on the title's first line (vertically centred on it). Order from left to right: **⋯ More** (icon button), secondary buttons, **the primary button last**. At most one primary (§11, rule 1). Below 600 px the actions move under the title; only the primary and ⋯ stay, secondary actions move into ⋯. |
-| Meta row | Record pages only, 8 px under the title, items 8 px apart, 14 px `--ink-2`, single line that wraps: level tag, status chip, at most one completeness or problem chip, ID, owner, dates (one date format, §4.5). |
-| Description | List and settings pages only, optional, one sentence, 14/20 `--ink-2`, at most 720 px, 4 px under the title. |
+| Meta row | Record pages only, 8 px under the title, items 8 px apart, 14 px Text Strong (the header sits on the grey page, §3.1), single line that wraps: level tag, status chip, at most one completeness or problem chip, ID, owner, dates (one date format, §4.5). |
+| Description | List and settings pages only, optional, one sentence, 14/20 Text Strong, at most 720 px, 4 px under the title. |
 | Spacing | 24 px from the header to the content below it. |
 
 ### 2.4 Page templates
@@ -211,7 +211,7 @@ Every page is one of these five templates.
 |---|---|
 | Where a record opens | **Side panel** for short records without child tables: campaign, initiative, Settings items, person, team, approval workflow, approval preview. **Full page** for records with children or long forms: plan, activity, line item, Shell attribute. |
 | Breadcrumb | On every page below the top level, from the section to the current page. A side panel never repeats the page's breadcrumb; it names its parent as a value ("Plan: FY2026 Lubricants Europe"). Below 600 px only "‹ Parent" is shown. |
-| After create | Toast "Initiative 'Digital & social' created — View"; the new row is highlighted (`--brand-yellow-tint` and a 4 px yellow start bar) and scrolled into view. |
+| After create | Toast "Initiative 'Digital & social' created — View"; the new row is highlighted (`--hover` and a 4 px yellow start bar) and scrolled into view. |
 | After delete | Back to the parent; toast with **Undo** (10 seconds). |
 | Leaving with unsaved changes | "Discard changes?" with **Keep editing** (focused) and **Discard changes**. |
 | Approver's flow | Approvals → preview panel → **Approve** (primary) and **Decline** side by side → next item. |
@@ -226,71 +226,95 @@ values sit on `:root`, dark values on `:root[data-theme='dark']` (set by `theme.
 
 ### 3.1 Colour
 
-Contrast ratios use the WCAG 2.x formula. AA needs **4.5:1** for text, **3:1** for large text (≥ 24 px,
-or ≥ 18.66 px bold), icons, control borders and focus indicators. In the light columns the two ratios are
-on white and on grey (#F5F5F5); in the dark columns on `--page-bg` and on `--surface`.
+The palette is Shell's and is non-negotiable (constitution Principle X, feature 020): the tokens below
+carry Shell's values exactly, and no other value fills their roles — no tints, shades or opacity
+changes. Contrast ratios use the WCAG 2.x formula. AA needs **4.5:1** for text, **3:1** for large text
+(≥ 24 px, or ≥ 18.66 px bold), icons, control borders and focus indicators.
 
-**Surfaces, text and lines**
+**Brand colours (both themes)**
 
-| Token | Light | Contrast | Dark | Contrast | Use |
+| Token | Value | Contrast | Use |
+|---|---|---|---|
+| `--brand-yellow` | `#FFC600` Primary Yellow | 1.45 on white: **fill only** | The primary button, the 4 px "you are here" bar (current sidebar item, selected tab, highlighted row), the skip link |
+| `--brand-yellow-hover` / `-pressed` | `#FFCB14` / `#EBB600` | ink on them 9.56 / 7.78 | Primary hover and pressed |
+| `--on-brand-yellow` | `#292929` (light Text Strong, both themes) | **9.23 on yellow** | Text and icons on yellow (never white) |
+| `--danger-bg` | `#DD1D21` Secondary Red | white text 4.92 | The destructive confirm button, problem chips, a highlighted destructive menu item. Hover underlines the label: red has no hover shade |
+| `--on-accent` | `#FFFFFF` | – | Text and icons on red |
+| `--button-primary-bg`, `-bg-hover`, `-bg-pressed`, `-text` | aliases of the yellow tokens | – | The primary button |
+
+**Theme colours** (the palette role, then the token that carries it)
+
+| Palette role | Token | Light | Dark | Use |
+|---|---|---|---|---|
+| Foundation Base | `--page-bg`, `--gray-bg` | `#F5F5F5` | `#1C1C1C` | The canvas behind cards; fills inside cards (table header band, totals row, read-only boxes) |
+| Surface | `--surface` | `#FFFFFF` | `#292929` | Cards, panels, side panels, the drawer, the top bar and the sidebar |
+| Raised | `--raised` | `#FFFFFF` | `#343434` | Menus, popovers, dialogs and toasts |
+| Text Strong | `--ink` | `#292929` | `#F5F5F5` | All text, headings and icons; secondary text where Text Subtle is too faint (below) |
+| Text Subtle | `--ink-2`, `--muted` | `#757575` | `#919191` | Secondary text (labels, descriptions, meta, hints); placeholders |
+| Link | `--link` | `#4B78AA` | `#54B8C8` | Links; underlined inside sentences (WCAG 1.4.1). `--blue` is an alias: checked check boxes, radios and switches |
+| Link Visited | `--link-visited` | `#9A60A4` | `#AF81B7` | Defined, not applied to in-app links: in a single-page app nearly every link is visited |
+| Link Hover | `--link-hover` | `#6E94C0` | `#8CB4E6` TODO(DARK_TOKENS) | Large text and icon-only links only; a hovered body-size link keeps `--link` and is underlined |
+| Link Press | `--link-pressed` | `#4B78AA` | `#54B8C8` | As Link |
+| Border Strong | `--control-border-hover` | `#292929` | `#F5F5F5` | A hovered, focused or emphasised control (a filter in use) |
+| Border Medium | `--control-border` | `#757575` | `#919191` | Edges of inputs, selects, check boxes, segmented filters, outlined buttons (4.23 or more) |
+| Border Subtle | `--hairline`, `--row-divider`, `--card-border` | `rgba(28,28,28,.135)` | `rgba(255,255,255,.09)` | Card edges, dividers, lines between rows, error-box frames |
+| Hover Background | `--hover` | `#EBEBEB` | `#262626` | Hovered rows, items and buttons; the current sidebar item; the highlighted row |
+| Press Background | `--chip` | `#E0E0E0` | `#121212` | Pressed buttons; neutral chips and tags, progress tracks, loading shapes, search matches |
+| Disabled Background | `--disabled-bg` | `rgba(28,28,28,.04)` | `rgba(255,255,255,.032)` | Disabled controls, which still say why (§5.1) |
+| Disabled Text | `--disabled-text` | `rgba(28,28,28,.38)` | `#B0B8C1` TODO(DARK_TOKENS) | Labels of disabled controls |
+| Disabled Border | `--disabled-border` | `rgba(28,28,28,.135)` | `rgba(255,255,255,.09)` | Edges of disabled controls |
+
+**Built on the palette**
+
+| Token | Value | Use |
+|---|---|---|
+| `--focus-ring` | `--ink` (Text Strong of the active theme) | The 2 px focus ring with a 2 px offset (a 2 px inset inside scrolling boxes): 9:1 or more against every surface and against yellow |
+| `--brand-mark`, `--avatar-bg`, `--banner-bg`, `--tooltip-bg` | `--ink` | The MAPP mark's tile, initials circles, the environment banner, tooltips; what sits on them is `--surface` (`--banner-text`, `--tooltip-text`) |
+| `--overlay` | `rgba(0,0,0,.45)` / dark `rgba(0,0,0,.6)` | Behind dialogs, side panels and the drawer (elevation, like the shadows of §3.5) |
+
+**Where text may sit** (constitution X). Text Subtle, links and red text reach 4.5:1 only on some
+backgrounds; everywhere else they are written in Text Strong:
+
+| Text | Surface | Raised | Foundation Base | Hover Background | Press Background |
 |---|---|---|---|---|---|
-| `--page-bg` | `#F5F5F5` | – | `#14191F` | – | App canvas behind cards |
-| `--surface` | `#FFFFFF` | – | `#1D232A` | – | Cards, panels, dialogs, menus, top bar, sidebar |
-| `--gray-bg` | `#F5F5F5` | – | `#252C34` | – | Fills inside surfaces: table header, read-only field, totals row |
-| `--ink` | `#404040` | 10.37 · 9.51 | `#E0E0E0` | 13.38 · 12.00 | All text, headings and icons |
-| `--ink-2` | `#595959` | 7.00 · 6.42 | `#B0B8C1` | 8.81 · 7.90 | Secondary text: key–value labels, descriptions, meta |
-| `--muted` | `#6E6E6E` | 5.10 · 4.68 | `#949FAB` | 6.57 · 5.89 | Placeholders, hints, timestamps, disabled text; safe for small text |
-| `--control-border` | `#8C8C8C` | 3.36 · 3.08 | `#76818D` | 4.45 · 3.99 | Borders of inputs, selects, checkboxes, segmented filters, outlined buttons (WCAG 1.4.11) |
-| `--control-border-hover` | `#404040` | 10.37 | `#B0B8C1` | 7.90 | Border of a hovered control |
-| `--card-border` | `#E0E0E0` | decoration | `#2F3741` | decoration | The edge of a white card on the grey page (also visible in forced-colours mode) |
-| `--hairline` | `#D9D9D9` | decoration | `#38414B` | decoration | Dividers, top bar and sidebar borders, table outline |
-| `--row-divider` | `#E8E8E8` | decoration | `#2C343C` | decoration | Lines between table rows |
-| `--hover` | `rgba(64,64,64,.06)` | ink on it 9.43 | `rgba(255,255,255,.07)` | ink on it 9.78 | Hovered rows, items, ghost and secondary buttons |
-| `--chip` | `rgba(64,64,64,.08)` | ink on it 9.10 | `rgba(255,255,255,.09)` | ink on it 9.12 | Neutral chips, filter chips, team tags, progress track, skeleton; pressed buttons |
+| Text Strong, light · dark | 14.55 · 13.34 | 14.55 · 11.42 | 13.34 · 15.63 | 12.20 · 13.88 | 11.02 · 17.18 |
+| Text Subtle, light · dark | 4.61 · 4.62 | 4.61 · **3.95** | **4.23** · 5.41 | **3.86** · 4.80 | **3.49** · 5.94 |
+| Link, light · dark | 4.60 · 6.28 | 4.60 · 5.38 | **4.22** · 7.36 | **3.86** · 6.53 | **3.48** · 8.09 |
+| Red text, light | 4.92 | 4.92 | 4.51 | **4.12** | **3.72** |
 
-**Brand and interaction**
+Bold ratios are below 4.5:1: there the text is Text Strong unless it is large. The code does this by
+redefining the tokens on the container (`--ink-2: var(--ink)`, and `--link`, `--danger-text`,
+`--status-problem-text` where needed): the page header on the grey page, grey fills inside cards,
+hovered and highlighted rows and items, and menus and dialogs in the dark theme. Text written directly
+on `--chip` uses `--ink`. In the dark theme red is a fill only.
 
-| Token | Light | Contrast | Dark | Contrast | Use |
-|---|---|---|---|---|---|
-| `--brand-yellow` | `#FFC800` (Shell yellow) | 1.55 on white: **fill only** | `#D6A100` | – | The primary button, the 4 px "you are here" bar, the skip link |
-| `--brand-yellow-hover` / `-pressed` | `#F2B800` / `#E0A800` | ink on them 5.74 / 4.82 | `#FFC800` / `#B88A00` | dark text 11.37 / 5.61 | Primary hover and pressed |
-| `--on-brand-yellow` | `#404040` | **6.67 on yellow** | `#14191F` | **7.54 on dark yellow** | Text and icons on yellow (never white) |
-| `--brand-yellow-tint` | `#FFF4CC` | ink 9.41 · link 9.52 | `#3B3723` | ink 9.06 · link 5.57 | Current sidebar item, highlighted row (just created, moved or copied) |
-| `--brand-mark` | `#092949` (Shell system navy) | white on it 14.74 | `#0D3A66` | white 11.58 | The MAPP mark's tile, avatars |
-| `--button-primary-bg`, `-bg-hover`, `-bg-pressed`, `-text` | aliases of the four yellow tokens | – | aliases | – | The primary button |
-| `--focus-ring` | `#092949` (navy) | 14.74 · 13.52; 9.48 against yellow | `#FFC800` | 11.37 · 10.19 | Keyboard focus ring on every control |
-| `--blue` | `#003C88` (Shell dark blue) | 10.49 · 9.62 | `#8CB4E6` | 8.23 · 7.38 | Checked checkboxes and switches |
-| `--link` | `#003C88` | 10.49 · 9.62 | `#8CB4E6` | 8.23 · 7.38 | Links; underlined inside sentences (WCAG 1.4.1) |
-| `--danger-bg` / `-hover` | `#DD1D21` (Shell red) / `#B8171B` | white text 4.92 / 6.61 | `#C42B2F` / `#A82326` | white text 5.62 / 7.16 | The destructive confirm button only |
-| `--on-accent` | `#FFFFFF` | – | `#FFFFFF` | – | Text and icons on navy, dark blue and red |
-| `--banner-bg` / `--banner-text` | `#092949` / `#FFFFFF` | 14.74 | same | 14.74 | Environment banner |
-| `--overlay` | `rgba(0,0,0,.45)` | – | `rgba(0,0,0,.6)` | – | Behind dialogs, side panels and the drawer |
-| `--tooltip-bg` / `--tooltip-text` | `#262626` / `#FFFFFF` | 15.13 | `#3A434D` / `#F2F2F2` | 8.98 | Tooltip bubble |
-
-**Feedback colours** (one meaning each; the status families of §4.1 use them)
+**Feedback colours** (outside the palette, one meaning each; the status families of §4.1 use them)
 
 | Token pair (colour / `-text`) | Meaning | Light | Text on white · grey · its 8 % tint | Dark | Text on page · surface · its 12 % tint |
 |---|---|---|---|---|---|
-| `--info` / `--info-text` | Information, "running" | `#336094` / `#2B5482` | 7.80 · 7.15 · 6.94 | `#6F9BD1` / `#8FB4E3` | 8.25 · 7.39 · 6.15 |
-| `--success` / `--success-text` | Done well, approved | `#008557` / `#00704A` | 6.15 · 5.64 · 5.52 | `#3DBB8C` / `#4CC79A` | 8.37 · 7.50 · 6.11 |
-| `--warning` / `--warning-text` | Waits for someone, needs a look (amber, never brand yellow) | `#C77700` / `#8F5400` | 6.11 · 5.61 · 5.60 | `#E09A2A` / `#F0A640` | 8.61 · 7.72 · 6.32 |
-| `--danger` / `--danger-text` | Errors and danger only | `#DD1D21` / `#B8171B` | 6.61 · 6.06 · 5.82 | `#FF5C5F` / `#FF7B7E` | 7.06 · 6.32 · 5.44 |
+| `--info` / `--info-text` | Information, "running" | `#336094` / `#2B5482` | 7.80 · 7.15 · 6.94 | `#6F9BD1` / `#8FB4E3` | 7.96 · 6.79 · 5.63 |
+| `--success` / `--success-text` | Done well, approved | `#008557` / `#00704A` | 6.15 · 5.64 · 5.52 | `#3DBB8C` / `#4CC79A` | 8.07 · 6.89 · 5.61 |
+| `--warning` / `--warning-text` | Waits for someone, needs a look (amber, never brand yellow) | `#C77700` / `#8F5400` | 6.11 · 5.61 · 5.60 | `#E09A2A` / `#F0A640` | 8.30 · 7.09 · 5.74 |
+| `--danger` / `--danger-text` | Errors and danger only | `#DD1D21` / `#DD1D21` (Secondary Red) | 4.92 · 4.51 · never tinted | `#FF5C5F` / `#FF7B7E` TODO(DARK_TOKENS) | 6.81 · 5.81 · never tinted |
 
-The colours themselves (dots, bars, icons) are ≥ 3:1 on white and grey; ink text on every tint is ≥ 9:1.
+The colours themselves (dots, bars, icons) are ≥ 3:1 on white and grey. Red is never tinted: an error
+box is white with a Border Subtle frame and a red start bar, and a problem chip is a red fill.
 
-**Retired tokens:** `--brand-gradient` and `--brand-gradient-strong` (the logo, avatars and progress bars use
-solid colours). `--blue` keeps its name with the Shell dark-blue value and no longer marks selection or focus.
+**Retired tokens:** `--brand-gradient` and `--brand-gradient-strong` (version 2); `--brand-yellow-tint`
+and `--danger-bg-hover` (feature 020: palette colours are never tinted or shaded). The navy `#092949`
+and Shell dark blue `#003C88` roles moved to palette tokens; `#003C88` remains only as the plan level
+colour (§4.2).
 
 **What each colour may and may not do**
 
 | Colour | Use it for | Never use it for |
 |---|---|---|
-| Shell yellow | The one primary button of a page or dialog; the 4 px current-place bar on the current sidebar item and the selected tab; the skip link; the pale tint of the current sidebar item and the highlighted row | Text or icons on white or grey (1.55:1); a focus ring on light backgrounds; warnings (amber is used); large areas; chart series; a second yellow button |
-| Shell red | The destructive confirm button; error messages and icons; the problem status family (§4.1) | Headings, decoration, main actions, brand accents; red with yellow in stripes, gradients or shell shapes (Shell trade dress) |
-| Shell dark blue `#003C88` | Links; checked checkboxes and switches; the plan level | Buttons, headings or large areas |
-| Navy `#092949` | The focus ring in light mode; the MAPP mark and avatars; the environment banner | Other surfaces |
-| Shell secondary colours (blue, green, purple, teal, magenta) | Meaning only: feedback, status families, planning levels, team dots, charts — always next to a word | Buttons, headings, backgrounds of whole areas |
-| Ink and greys | Everything else | – |
+| Primary Yellow | The one primary button of a page or dialog; the 4 px current-place bar on the current sidebar item, the selected tab and the highlighted row; the skip link | Text, icons or thin lines on light surfaces (1.45:1); a focus ring; tints; warnings (amber is used); pins or favourites; large areas; chart series; a second yellow button |
+| Secondary Red | The destructive confirm button; problem chips; a highlighted destructive menu item; error messages and icons in the light theme, on Surface, Raised or Foundation Base | Tints or shades (hover underlines instead); text on any grey; text or thin lines in the dark theme (until TODO(DARK_TOKENS)); headings, decoration, main actions; red with yellow in stripes, gradients or shell shapes (Shell trade dress) |
+| Link blue | Links; checked check boxes, radios and switches (`--blue`) | Buttons, headings, tints, large areas |
+| Text Strong | All text and icons; inverse fills: the mark, avatars, the banner, tooltips, count badges, the chosen segment, today in calendars | – |
+| Colours outside the palette (blue, green, amber, purple, teal, magenta, slate) | Meaning only: feedback, status families, planning levels, team dots, charts — always next to a word | Buttons, headings, backgrounds of whole areas; anything that resembles Primary Yellow or Secondary Red |
+| Greys of the palette | Everything else | – |
 
 ### 3.2 Typography
 
@@ -411,9 +435,9 @@ chevron crops).
 
 ### 3.10 Logo and brand assets
 
-- **MAPP's own mark** in the logo slot: a 28 px tile, radius 8, filled `--brand-mark` (navy), with a
-  white four-point star, and the word "MAPP" in Jost 600 18 px `--ink`. The favicon is the same tile.
-  No gradient.
+- **MAPP's own mark** in the logo slot: a 28 px tile, radius 8, filled `--brand-mark` (Text Strong),
+  with a four-point star in `--surface`, and the word "MAPP" in Jost 600 18 px `--ink`. The favicon is
+  the same tile (`#292929` with a white star). No gradient.
 - **No Shell pecten, no "Shell" wordmark, no Shell typeface, no red-and-yellow shell shapes or stripes**
   until Shell gives trade-mark consent and artwork approval (§12). The word "Shell" may appear as plain
   text where it describes the business ("Shell attributes").
@@ -422,9 +446,11 @@ chevron crops).
 
 ### 3.11 Dark mode
 
-Built on Shell's own dark palette (blue-tinted charcoal, dimmed yellow with dark text, yellow focus ring).
-It follows the computer's setting first, then the person's choice in the account menu (D-038). Every pair
-in §3.1 and §4 passes AA in both themes; the token contrast test (§11, rule 8) checks them.
+Built on Shell's dark palette (constitution X): a `#1C1C1C` page, `#292929` cards and panels, `#343434`
+menus and dialogs, the same yellows with dark text, red only as a fill, and a Text Strong focus ring.
+In menus and dialogs secondary text is Text Strong (§3.1). Values marked TODO(DARK_TOKENS) keep the
+earlier dark values until Shell supplies them. It follows the computer's setting first, then the
+person's choice in the account menu (D-038). Every pair in §3.1 and §4 passes AA in both themes.
 
 ### 3.12 Token rules
 
@@ -446,16 +472,17 @@ Status is always **word + colour (+ icon where space allows)**; colour is never 
 belongs to exactly one family, and the same word never appears in two colours** (§11, rule 6). One mapping
 in code (`lib/statusTone.ts`) is the only place a word gets its family.
 
-| Family (token name) | Meaning | Words | Dot (light / dark) | Chip text light (on its 12 % tint) | Chip text dark (on its 16 % tint) |
+| Family (token name) | Meaning | Words | Dot (light / dark) | Chip text light (on its 12 % tint) | Chip text dark (on its 12 % tint) |
 |---|---|---|---|---|---|
-| **Neutral** (`--status-neutral`) | Not started, nothing to do yet, switched off | Draft, Created, Not started, No activities, Not requested, Inactive | `#6E6E6E` / `#8E99A4` | `#595959` (6.04) | `#B0B8C1` (6.10) |
-| **Waiting** (`--status-review` = warning) | Someone must decide or check; also non-blocking warnings | Submitted, Waiting for approval, Partly approved (n of m approved), Waiting for activity approval | `#C77700` / `#E09A2A` (amber — never brand yellow) | `#8F5400` (5.36) | `#F0A640` (5.84) |
-| **Positive** (`--status-positive` = success) | Agreed, published, complete and correct | Published, Approved, All approved, All filled in, Active (Settings records, people), Ready to send to GSAP | `#008557` / `#3DBB8C` | `#00704A` (5.22) | `#4CC79A` (5.67) |
-| **Running** (`--status-active` = info) | Approved and under way in time | In progress (activity running), Running | `#336094` / `#6F9BD1` | `#2B5482` (6.56) | `#8FB4E3` (5.73) |
-| **Done** (`--status-done`) | Finished | Complete, Finished | `#5B6B7A` / `#8696A6` | `#4D5C6A` (5.86) | `#A9B8C6` (6.11) |
-| **Problem** (`--status-problem` = danger) | An error or something that blocks the next step | Declined, *n* fields needed, *n* items below need attention, over-allocated budget, negative balance, failed | `#DD1D21` / `#FF5C5F` | `#B8171B` (5.45) | `#FF7B7E` (5.14) |
+| **Neutral** (`--status-neutral`) | Not started, nothing to do yet, switched off | Draft, Created, Not started, No activities, Not requested, Inactive | `#6E6E6E` / `#8E99A4` | `#595959` (6.04) | `#B0B8C1` (6.00) |
+| **Waiting** (`--status-review` = warning) | Someone must decide or check; also non-blocking warnings | Submitted, Waiting for approval, Partly approved (n of m approved), Waiting for activity approval | `#C77700` / `#E09A2A` (amber — never brand yellow) | `#8F5400` (5.36) | `#F0A640` (5.74) |
+| **Positive** (`--status-positive` = success) | Agreed, published, complete and correct | Published, Approved, All approved, All filled in, Active (Settings records, people), Ready to send to GSAP | `#008557` / `#3DBB8C` | `#00704A` (5.22) | `#4CC79A` (5.61) |
+| **Running** (`--status-active` = info) | Approved and under way in time | In progress (activity running), Running | `#336094` / `#6F9BD1` | `#2B5482` (6.56) | `#8FB4E3` (5.63) |
+| **Done** (`--status-done`) | Finished | Complete, Finished | `#5B6B7A` / `#8696A6` | `#4D5C6A` (5.86) | `#A9B8C6` (5.98) |
+| **Problem** (`--status-problem` = danger) | An error or something that blocks the next step | Declined, *n* fields needed, *n* items below need attention, over-allocated budget, negative balance, failed | `#DD1D21` / `#FF5C5F` | white on a `#DD1D21` fill (4.92) | white on a `#DD1D21` fill (4.92) |
 
-All chip texts also pass on white and on grey (≥ 5.6 light) and on the dark page and surface (≥ 6.3).
+All chip texts also pass on white and on grey (≥ 5.6 light) and on the dark page and surface (≥ 6.7).
+Red is never tinted (constitution X), so the problem chip is a Secondary Red fill in both themes.
 
 - "In progress" is used **only** for a running activity. The approval roll-up of plans, campaigns and
   initiatives is written "Partly approved" or "2 of 4 approved" (functional review A-02; product-owner
@@ -486,7 +513,7 @@ never look alike.
 The decorative dot of a team tag (the name is always written, D-025). Token names are stored data and do
 not change; the values are unchanged from version 1 and the same in both themes: `--team-blue` `#2A78D6`,
 `--team-violet` `#6E56CF`, `--team-teal` `#12A594`, `--team-magenta` `#D6409F`, `--team-orange` `#E5701A`,
-`--team-green` `#2F9E44`, `--team-slate` `#5B6B7A`, `--team-gold` `#C79400`. Because the dot is decoration
+`--team-green` `#2F9E44`, `--team-slate` `#5B6B7A`, `--team-gold` `#8B6914` (darker since feature 020, so it never reads as Primary Yellow). Because the dot is decoration
 next to the written name, it has no contrast requirement.
 
 ### 4.4 Money and numbers
@@ -538,9 +565,9 @@ in version 2.
 | `primary` | `--button-primary-bg` fill and border, `--button-primary-text`; hover `--button-primary-bg-hover`, pressed `--button-primary-bg-pressed`. **The page's or dialog's one main action** (§11, rule 1). |
 | `secondary` | `--surface` fill, 1 px `--control-border`, `--ink` text; hover `--hover` fill and `--control-border-hover`; pressed `--chip`. Every other button, including Cancel. |
 | `ghost` | Transparent, `--ink` text; hover `--hover`; pressed `--chip`. Icon buttons in headers and tables, "Collapse sidebar". |
-| `danger` | `--danger-bg` fill, `--on-accent` text; hover `--danger-bg-hover`. **Only** as the confirm button of a destructive `ConfirmDialog`; it then is that dialog's single main action. Elsewhere destructive actions are menu items (§6.1). |
+| `danger` | `--danger-bg` fill, `--on-accent` text; hover underlines the label (red has no hover shade). **Only** as the confirm button of a destructive `ConfirmDialog`; it then is that dialog's single main action. Elsewhere destructive actions are menu items (§6.1). |
 | Busy | A spinner replaces the icon, `aria-busy="true"`, the label stays, a second click is ignored. Never greyed out. |
-| Unavailable | Avoid. The button stays enabled and explains on click (§6.6); if truly disabled: `aria-disabled`, `--gray-bg` fill, `--muted` text, `--hairline` border, a `LockedNote` beside it. |
+| Unavailable | Avoid. The button stays enabled and explains on click (§6.6); if truly disabled: `disabled` or `aria-disabled`, the Disabled tokens (`--disabled-bg` fill, `--disabled-text` text, `--disabled-border` border; no fading), a `LockedNote` beside it. |
 | Words | A verb naming the action, sentence case: "Create campaign", "Submit for approval" — never "OK", "Yes" or "Submit". |
 
 **`ActionsMenu`** (the ⋯ menu)
@@ -548,9 +575,9 @@ in version 2.
 - Trigger: ghost icon button, `sm` in table rows and panel headers, `md` in the page header; named
   "Actions for <record>", with a tooltip.
 - Menu: 220–288 wide, `--surface`, radius 8, padding 4, `--shadow-md`. Items 40 high, padding 0 12, text
-  14, optional 16 icon, radius 4; hover and keyboard focus `--hover`; optional hint line 12 `--ink-2`.
+  14, optional 16 icon, radius 4; hover and keyboard focus `--hover` (plus the focus ring for the keyboard); optional hint line 12 `--ink-2`, Text Strong while the item is highlighted.
 - Order: View · Edit · Duplicate / Copy to… / Move to… · record-specific actions · View history · then a
-  1 px `--hairline` separator and **Delete** last in `--danger-text`.
+  1 px `--hairline` separator and **Delete** last in `--danger-text`; highlighted, it becomes a `--danger-bg` fill with white text.
 - Not modal; arrow keys move, Enter chooses, Escape closes and returns the focus to ⋯; the chosen action
   runs after the menu has closed. No tooltips inside a menu (research R14).
 
@@ -563,8 +590,9 @@ accepts at most one primary action (a second one is a development-time error).
 
 **`Breadcrumb`**
 
-- 12/18, items 8 apart with a 12 px chevron (`--ink-2`, hidden from screen readers); links `--link`,
-  underlined on hover and focus, each with a 24 px tall target; the current page `--ink-2`, not a link,
+- 12/18, items 8 apart with a 12 px chevron (`--muted`, hidden from screen readers); links and the
+  current page in Text Strong, because the breadcrumb sits on the grey page (§3.1); links underlined on
+  hover and focus, each with a 24 px tall target; the current page not a link,
   `aria-current="page"`; `nav aria-label="Breadcrumb"`.
 - Shown on every page below the top level; its row is reserved on every page (§2.3).
 - Below 600 px only "‹ <parent>" (a 16 px chevron and the parent's name) — never wraps to two lines.
@@ -610,7 +638,8 @@ accepts at most one primary action (a second one is a development-time error).
 
 One 40 px row inside the table card: `SearchField` · `SegmentedFilter` · **Filters (n)** (secondary) ·
 spacer · result count "4 of 6 plans" (14 `--ink-2`) · view switch · **Export** (secondary). Filter chips
-on a second row. Every list writes its count the same way: "*n* of *m* <things>".
+on a second row. Every list writes its count the same way: "*n* of *m* <things>". A toolbar that sits on
+the grey page instead (All work, Financials) writes its count, notes and links in Text Strong (§3.1).
 
 ### 5.3 Containers, panels and dialogs
 
@@ -684,7 +713,7 @@ changes?" before typed values are lost. Save is never disabled.
 |---|---|
 | Container | Inside a table card; a scroll box with `position: relative; overflow-x: auto` (UI audit X-02), focusable (`tabindex="0"`, named "<table name>, scrolls sideways") when it overflows, with a fade shadow on the edge that has more content (AW-05) |
 | Header row | 40 high, 12/18 Arial 700 `--ink`, **sentence case**, `--gray-bg` fill, 1 px `--hairline` bottom; sticky while the table scrolls; sortable headers are buttons with an arrow and `aria-sort` |
-| Rows | Min 40 high (compact 32), cells 8 × 12 (first and last 24 horizontal), 14/20 `--ink`, 1 px `--row-divider` between rows, no vertical lines; hover `--hover`; highlighted row `--brand-yellow-tint` with a 4 px yellow start bar |
+| Rows | Min 40 high (compact 32), cells 8 × 12 (first and last 24 horizontal), 14/20 `--ink`, 1 px `--row-divider` between rows, no vertical lines; hover `--hover`; highlighted row `--hover` with a 4 px yellow start bar; on both, secondary text, links and red text are Text Strong (§3.1) |
 | Name column | First; the record name as a link: `--link`, 14 regular, underline on hover and focus; min width 200; wraps at word boundaries to at most 2 lines, then ellipsis with the full name in a tooltip. Never breaks inside a word (no `overflow-wrap: anywhere` in tables, UI audit X-01). |
 | Person and team columns | `PersonLabel` / team tags, **no wrapping**, min width 160; more than 2 teams show "+n" with a tooltip |
 | Status column | At most two chips (§4.1), no wrapping |
@@ -747,10 +776,10 @@ out; the notes of the form.
 
 | Part | Spec |
 |---|---|
-| Label | Above the control, 14/20 Arial 700 `--ink`; then 8 px and the **marking** as a small tag ("Required", "Needed to publish", "Needed to submit": 20 high, padding 0 6, radius 4, `--chip`, 12/18 bold `--ink-2`); then an optional ⓘ |
+| Label | Above the control, 14/20 Arial 700 `--ink`; then 8 px and the **marking** as a small tag ("Required", "Needed to publish", "Needed to submit": 20 high, padding 0 6, radius 4, `--chip`, 12/18 bold `--ink`); then an optional ⓘ |
 | Hint | **Always under the label, above the control** (one rule, UI audit F-02), 14/20 `--ink-2` |
 | Control | 40 high (48 below 600 px), padding 0 12, radius 8, 1 px `--control-border`, `--surface`, text 14 `--ink` (16 below 600 px), placeholder `--muted` |
-| States | Hover: border `--control-border-hover`. Focus: the focus ring. Invalid: 1 px `--danger` border plus the message. Locked: `--gray-bg` fill, `--muted` text, `--hairline` border and a `LockedNote`. Read-only values are shown as text, not as inputs. |
+| States | Hover: border `--control-border-hover`. Focus: the focus ring. Invalid: 1 px `--danger` border plus the message. Locked: the Disabled tokens (`--disabled-bg`, `--disabled-text`, `--disabled-border`) and a `LockedNote`. Read-only values are shown as text, not as inputs. |
 | Note and error | Under the control, 4 px gap, 14/20: note `--ink-2`; error `--danger-text` with a 16 px alert icon. Screen readers hear marking, hint, note and error with the control (`aria-describedby`). |
 | Width | Full column by default; short values use fixed widths: `xs` 120 (percent, year), `sm` 240 (money, codes, dates), `md` 360 |
 
@@ -779,8 +808,8 @@ options ticked (16 px) and `aria-selected`; "No one matches 'xyz'." when empty; 
 (24 high, radius 4, `--chip`, ✕ in a 24 px target). People show avatar, name and job title; "(you)" first.
 Inactive values that are kept carry an ⓘ explaining why.
 
-**`CheckboxField`** — a 20 × 20 box, radius 4, 1.5 px `--control-border`; checked: `--blue` fill with a
-white tick (`accent-color: var(--blue)`); the label (14 `--ink`, regular) is part of the click target; the
+**`CheckboxField`** — a 20 × 20 box, radius 4, 1.5 px `--control-border`; checked: `--blue` (Link) fill with a
+tick the browser keeps legible (`accent-color: var(--blue)`); the label (14 `--ink`, regular) is part of the click target; the
 row is at least 24 high; ⓘ, hint, `LockedNote` and error as in `FieldShell`. A group of checkboxes is a
 `fieldset` whose legend uses the label style. Switches (All work) are 40 × 24, radius pill, `--control-border`
 when off and `--blue` when on, with the label on the right.
@@ -799,7 +828,7 @@ left" (`--ink-2`), "110.00% — 10.00% too much" (`--danger-text`); **Split even
 
 **`ShellAttributeFields`** — the attribute sections in the order of the form definition, each field by the
 choice rules above; dependent fields stay visible but locked with a reason until their parent is set; the
-Settings preview highlights one attribute with `--brand-yellow-tint` and a 4 px yellow start bar (was a
+Settings preview highlights one attribute with `--hover`, its secondary text in Text Strong (was a
 blue tint); never a heading equal to its parent's (X-09).
 
 **`FormSection`** — one white card per section on form pages: title `<h2>` Jost 600 18/24, optional
@@ -839,11 +868,12 @@ focused; F8 moves the focus to it; announced at once.
 reason), failed saves, "view only" notices, "Shown because the plan's business unit includes Lubricants".
 
 **`EmptyState`** — centred in its card, padding 48 24; a 48 px outline icon in `--ink-2`; title Jost 600
-20/28; one sentence 14 `--ink-2` (max 480 wide); the action. **The action is a secondary button when the
+20/28; one sentence 14 `--ink-2` (max 480 wide; Text Strong in a not-found or no-access message, which
+sits on the grey page without a card, §3.1); the action. **The action is a secondary button when the
 page header already holds the same primary action** ("New plan"), and the primary only when the page has
 no other (§11, rule 1).
 
-**`ErrorState`** — the same layout with a 48 px alert icon in `--danger-text` (a cloud icon when offline),
+**`ErrorState`** — the same layout with a white alert icon on a 48 px `--danger-bg` circle (a cloud icon when offline),
 the plain-language message as `role="alert"` and **Try again** (secondary, with a refresh icon). No
 technical details on screen.
 
@@ -856,11 +886,11 @@ nothing jumps when data arrives; a slow shimmer that stops with reduced motion; 
 hides it. It only describes: the control has its own name. Never inside menus, never on the close button
 of a dialog, panel or drawer (R14).
 
-**`DemoBanner`** — §2.1 (navy, 32 high, one line, 12 px white).
+**`DemoBanner`** — §2.1 (Text Strong, 32 high, one line, 12 px in `--banner-text`).
 
 ### 5.7 Brand
 
-**`Logo`** — §3.10: the 28 px navy tile with the white star (`md`; `lg` 32 on the sign-in page), optional
+**`Logo`** — §3.10: the 28 px Text Strong tile with the Surface-coloured star (`md`; `lg` 32 on the sign-in page), optional
 wordmark "MAPP" Jost 600 18. The tile is decoration; the link around it is named "MAPP home".
 
 ### 5.8 App shell parts (`frontend/src/app/`)
@@ -868,7 +898,7 @@ wordmark "MAPP" Jost 600 18. The tile is decoration; the link around it is named
 | Part | Spec |
 |---|---|
 | `TopBar` (new) | §2.1; replaces `MobileTopBar` at every width |
-| `Sidebar` | §2.1: white, 240 / 64, items 40, the yellow bar with the pale-yellow fill, "More" group label, Collapse at the bottom. Account, bell and theme move to the top bar. |
+| `Sidebar` | §2.1: white, 240 / 64, items 40, the yellow bar with the hover-grey fill, "More" group label, Collapse at the bottom. Account, bell and theme move to the top bar. |
 | `NavDrawer` | §2.1: below 600 px, 280 wide, from the left |
 | `AccountMenu` | Opened from the top bar's avatar button; a menu (§5.1 look) with name and role (not a link), My profile, Appearance (three choices, the current one ticked), a separator, Sign out |
 | `NotificationBell` | 40 px ghost icon button with `CountBadge`; opens a 360 wide popover (radius 8, `--shadow-md`) with the notices, **Mark all as read** (ghost) and links |
@@ -1024,15 +1054,15 @@ decision 4, D-313). Automated checks run axe with the tags `wcag2a`, `wcag2aa`, 
 
 - **Keyboard:** everything works with the keyboard; the order of focus follows the order on screen; menus,
   tabs, trees and comboboxes follow the WAI-ARIA patterns described in §5.
-- **Focus visible (2.4.7) and not obscured (2.4.11):** a 2 px `--focus-ring` (navy in light mode, yellow in
-  dark mode) with a 2 px offset on every control (inset inside tables, menus and trees), shown for keyboard
+- **Focus visible (2.4.7) and not obscured (2.4.11):** a 2 px `--focus-ring` (Text Strong of the active
+  theme) with a 2 px offset on every control (inset inside tables, menus and trees), shown for keyboard
   focus (`:focus-visible`), not after a mouse click (UI audit AX-03). Sticky top bar, table headers, form
   footers and toasts never cover the focused element: `scroll-padding` equals their height.
 - **Names:** every control has a visible label or an accessible name; icon-only buttons have a tooltip and a
   name. Exception: the close button inside a dialog, side panel or drawer has the name "Close" (or "Close
   menu") but no tooltip, because a tooltip there would swallow the first Escape (feature 001, research
   R14); inside the drawer, items show text labels instead of tooltips.
-- **Contrast:** text ≥ 4.5:1 (all text tokens pass on white, grey and their tints, §3.1, §4.1); control
+- **Contrast:** text ≥ 4.5:1 (Text Subtle, links and red text only where §3.1 allows them, Text Strong elsewhere; §4.1); control
   borders, focus rings and meaningful icons ≥ 3:1 (1.4.11). Yellow is never text and never the only sign of
   a state.
 - **Colour is never the only signal (1.4.1):** status as a word, the current place as bold text plus the
@@ -1115,8 +1145,8 @@ or one component (see the recommendations report for the questions to Shell).
 | Item | Now | When Shell supplies it |
 |---|---|---|
 | Heading typeface (Shell Heavy / Bold / Book, URW, proprietary) | Jost 600/700 (OFL) in `--font-heading` | Change `--font-heading` (and possibly `--font`) and self-host Shell's files under its licence |
-| Pecten and trade-mark consent | MAPP's navy tile and star | Replace `Logo` and the favicon, following Shell's placement and clear-space rules |
-| Official screen colour values | Live shell.com values: yellow `#FFC800`, red `#DD1D21`, secondaries | Update §3.1 and §4 tokens and re-run the contrast test |
+| Pecten and trade-mark consent | MAPP's Text Strong tile and star | Replace `Logo` and the favicon, following Shell's placement and clear-space rules |
+| Dark-theme values marked TODO(DARK_TOKENS) in constitution X | Earlier dark values: Link Hover `#8CB4E6`, Disabled Text `#B0B8C1`, error red `#FF5C5F` / `#FF7B7E` | Update §3.1 and `tokens.css` and re-run the contrast checks |
 | Shell's internal design system ("Shell DS") | This document | If mandatory for internal tools, its tokens and components replace ours where they differ |
 | Icon set | lucide outline icons | Swap the icon imports |
 | Internal accessibility checklist | WCAG 2.2 AA | Add its extra checks to §9 and the test suite |
@@ -1129,3 +1159,4 @@ or one component (see the recommendations report for the questions to Shell).
 |---|---|---|
 | 1 | 18 Oct 2026 | Apple-inspired design language (D-005), feature 001 tokens (research R17) |
 | 2 | 20 Oct 2026 | Shell visual language per the product-owner decisions of 20 Oct 2026 (D-310–D-314): Shell tokens light and dark with contrast values, Jost + Arial type scale, spacing, radius, elevation, control heights, breakpoints and widths; top bar and white sidebar with the yellow bar; one page header and five page templates; specs for every shared component; WCAG 2.2 AA; consistency checklist. §6–§8 and §10 kept, with §6.3 (one primary by role), §6.7 (set inactive) and §7 (rail, progress) added. |
+| 2.1 | 26 Oct 2026 | Feature 020, Shell palette (constitution X): Primary Yellow `#FFC600` (hover `#FFCB14`, press `#EBB600`), Secondary Red `#DD1D21` and every theme colour exactly, light and dark; `--raised`, link states and Disabled tokens added; `--brand-yellow-tint` and `--danger-bg-hover` retired, red and yellow never tinted or shaded; where Text Subtle, links and red text may sit, with Text Strong elsewhere; Text Strong focus ring; problem chips a red fill; the navy and dark-blue roles moved to palette tokens (§3.1, §3.10, §3.11, §4.1, §4.3, §5, §9, §12). |

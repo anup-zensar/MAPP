@@ -2,8 +2,11 @@
  * The filter bar under the view tabs (design system §5.2 list toolbar): the search and the count
  * on one row, the filter buttons on the next (they wrap), then the chips while filters are in
  * use. Below 600 px the filter buttons fold into a Filters (n) drawer (UI audit AW-03, PH-04).
+ * It sits on the grey page, so its secondary text and links are Text Strong (constitution X).
  */
 .bar {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

@@ -1,11 +1,11 @@
-/* White initials on Shell dark blue: 10.5:1 (8:1 on the dark-mode shade). */
+/* Surface-coloured initials on Text Strong: 13:1 or more in both themes. */
 .avatar {
   display: inline-grid;
   flex: none;
   place-items: center;
   border-radius: 50%;
   background: var(--avatar-bg);
-  color: var(--on-accent);
+  color: var(--surface);
   font-family: var(--font);
   font-weight: var(--weight-bold);
   line-height: 1;

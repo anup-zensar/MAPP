@@ -64,7 +64,7 @@
 .radioGroup:focus-visible {
   border-radius: var(--radius-1);
   outline: 2px solid var(--focus-ring);
-  outline-offset: 4px;
+  outline-offset: 2px;
 }
 
 .legend {
@@ -117,7 +117,10 @@
 }
 
 /* The choices of the rules could not be loaded: say so once, with Try again. */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .loadFailed {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-wrap: wrap;
   align-items: center;

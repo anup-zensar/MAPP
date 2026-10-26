@@ -34,7 +34,7 @@
 }
 
 .input:focus {
-  border-color: var(--blue);
+  border-color: var(--control-border-hover);
 }
 
 .input::placeholder {

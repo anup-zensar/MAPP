@@ -72,7 +72,10 @@
 }
 
 /* Long values wrap and are shown in full (FR-007). */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .details {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   align-self: stretch;
   margin: 0;
   padding: var(--space-2) var(--space-3) var(--space-2) var(--space-6);

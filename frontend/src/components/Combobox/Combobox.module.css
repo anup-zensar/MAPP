@@ -19,7 +19,7 @@
 }
 
 .control:focus-within {
-  border-color: var(--blue);
+  border-color: var(--control-border-hover);
 }
 
 /* The input carries the focus ring for the whole control. */
@@ -30,8 +30,8 @@
 
 .disabled,
 .disabled:hover {
-  border-color: var(--hairline);
-  background: var(--gray-bg);
+  border-color: var(--disabled-border);
+  background: var(--disabled-bg);
   cursor: not-allowed;
 }
 
@@ -109,8 +109,13 @@
   padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .popover {
+  --ink-2: var(--ink);
 }
 
 .count {
@@ -141,13 +146,17 @@
 }
 
 .option:hover {
+  --ink-2: var(--ink);
   background: var(--hover);
 }
 
-/* The option the arrow keys are on: the blue tint is its focus indicator. */
+/* The option the arrow keys are on: the hover grey and a Text Strong ring inside it. */
 .active,
 .active:hover {
-  background: color-mix(in srgb, var(--blue) 12%, transparent);
+  --ink-2: var(--ink);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+  background: var(--hover);
 }
 
 .optionContent {

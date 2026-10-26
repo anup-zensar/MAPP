@@ -129,6 +129,15 @@
   background: color-mix(in srgb, var(--bar-colour) 26%, var(--surface));
 }
 
+/* Red is never tinted (constitution X): a problem keeps its red edge on white. */
+.bar.problem {
+  background: var(--surface);
+}
+
+.bar.problem:hover {
+  background: var(--hover);
+}
+
 .bar:hover .barName {
   text-decoration: underline;
 }

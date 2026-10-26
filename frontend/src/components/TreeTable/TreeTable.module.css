@@ -58,7 +58,13 @@
   text-align: right;
 }
 
+/* Text Subtle, links and red text are below 4.5:1 on the hover grey, so they turn Text Strong
+   there (constitution X). */
 .row:hover {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 
@@ -68,10 +74,14 @@
   outline-offset: -2px;
 }
 
-/* The record just created, moved or copied: the yellow tint of "you are here". */
+/* The record just created, moved or copied: the hover grey, with Text Strong text. */
 .highlighted,
 .highlighted:hover {
-  background: var(--brand-yellow-tint);
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
+  background: var(--hover);
 }
 
 /* The 4 px level bar beside the name (design system §4). */
@@ -179,16 +189,15 @@
   text-align: right;
 }
 
-/* The ⋯ button stays in the page and focusable, faded until the row is hovered or focused
-   (feature 005: never hidden on touch screens). */
-.actionsCell > * {
-  opacity: 0.55;
-  transition: opacity 0.15s ease;
+/* The ⋯ button stays in the page and focusable, in Text Subtle until the row is hovered or
+   focused (feature 005: never hidden on touch screens): its icon follows --ink. */
+.actionsCell {
+  --ink: var(--ink-2);
 }
 
-.row:hover .actionsCell > *,
-.row:focus-within .actionsCell > * {
-  opacity: 1;
+.row:hover .actionsCell,
+.row:focus-within .actionsCell {
+  --ink: inherit;
 }
 
 .empty {
