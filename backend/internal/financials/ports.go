@@ -16,6 +16,12 @@ type Planning interface {
 	// Nodes returns every live plan, campaign, initiative, activity and line item, each with its parent
 	// and, among its siblings, its place in the plan tree.
 	Nodes(ctx context.Context) ([]Node, error)
+	// PlanNodes returns the nodes of the live plans planIDs and of everything below them, as Nodes does.
+	PlanNodes(ctx context.Context, planIDs []string) ([]Node, error)
+	// PlanOf returns the plan of the live planning record recordID, and false when the record is not live.
+	PlanOf(ctx context.Context, recordID string) (string, bool, error)
+	// PlanIDsOfYear returns the ids of the live plans of year.
+	PlanIDsOfYear(ctx context.Context, year int) ([]string, error)
 	// LineItemsInBin returns the ids of the line items held by a recycle-bin entry not yet undone or
 	// restored: deleted themselves or with a record above them. Matching treats them as stored (data model
 	// §4.2); a purged line item is neither live nor in the bin.

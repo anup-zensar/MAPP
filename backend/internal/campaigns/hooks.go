@@ -19,6 +19,12 @@ type Activities interface {
 	// IDs, Created, no approvals, comments, history or GSAP values), moving every date by yearShift years
 	// (target plan year − source plan year), inside the caller's Write; it writes no log entries.
 	CopyAll(ctx context.Context, a actor.Actor, fromInitiativeID, toInitiativeID string, yearShift int) (ActivityCopyCounts, error)
+	// CopyMany is CopyAll for many initiatives at once, initiative by initiative in the order of pairs.
+	CopyMany(ctx context.Context, a actor.Actor, pairs []CopyPair, yearShift int) (ActivityCopyCounts, error)
+}
+
+type CopyPair struct {
+	FromID, ToID string
 }
 
 // ActivitySummary is one activity as campaigns rolls it up.
@@ -50,6 +56,10 @@ func (NoActivities) Summaries(context.Context, []string) ([]ActivitySummary, err
 
 // CopyAll copies nothing.
 func (NoActivities) CopyAll(context.Context, actor.Actor, string, string, int) (ActivityCopyCounts, error) {
+	return ActivityCopyCounts{}, nil
+}
+
+func (NoActivities) CopyMany(context.Context, actor.Actor, []CopyPair, int) (ActivityCopyCounts, error) {
 	return ActivityCopyCounts{}, nil
 }
 

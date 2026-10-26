@@ -30,6 +30,15 @@ func (jsonRepository) GetTransaction(ctx context.Context, id string) (Transactio
 	return store.Get[Transaction](ctx, transactionsTable, id)
 }
 
+func (r jsonRepository) AddTransactions(ctx context.Context, list []Transaction) error {
+	for _, t := range list {
+		if err := r.PutTransaction(ctx, t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // PutTransaction saves a transaction under its id.
 func (jsonRepository) PutTransaction(ctx context.Context, t Transaction) error {
 	return store.Put(ctx, transactionsTable, t.ID, t)

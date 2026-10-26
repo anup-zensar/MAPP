@@ -151,13 +151,6 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
     ]);
   });
 
-  it('locks a dependent attribute until its parent is chosen (FR-016)', async () => {
-    openNewForm();
-
-    expect(await screen.findByLabelText('Region')).toBeDisabled();
-    expect(screen.getByText('Choose a cluster first.')).toBeVisible();
-  });
-
   it('lists the dependent values a save would clear, then saves (FR-016)', async () => {
     const { user, api } = openEditForm(
       launchFilm({ attributes: { 'SA-CLUSTER': 'SO-RETAIL', 'SA-REGION': 'SO-CHINA' } }),

@@ -18,10 +18,12 @@ func NewPostgresCounters(db *database.DB) *PostgresCounters {
 	return &PostgresCounters{db: db}
 }
 
-func (c *PostgresCounters) Increment(ctx context.Context, prefix string) (int, error) {
-	last, err := c.db.Queries(ctx).IncrementCounter(ctx, sqlcdb.IncrementCounterParams{Prefix: prefix, FirstNumber: firstNumber})
+func (c *PostgresCounters) Advance(ctx context.Context, prefix string, count int) (int, error) {
+	last, err := c.db.Queries(ctx).AdvanceCounter(ctx, sqlcdb.AdvanceCounterParams{
+		Prefix: prefix, FirstNumber: firstNumber, Count: count,
+	})
 	if err != nil {
-		return 0, fmt.Errorf("increment counter %s: %w", prefix, err)
+		return 0, fmt.Errorf("advance counter %s: %w", prefix, err)
 	}
 	return last, nil
 }

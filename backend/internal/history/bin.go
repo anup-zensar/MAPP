@@ -36,6 +36,7 @@ type heldRecord struct {
 type binIndex struct {
 	entries []BinEntry
 	held    map[recordKey]heldRecord
+	read    *readSnapshots // the stored records the restore rules and the log look up
 }
 
 // binIndex reads the recycle bin and indexes it. Call it inside a transaction.
@@ -44,7 +45,7 @@ func (s *Service) binIndex(ctx context.Context) (binIndex, error) {
 	if err != nil {
 		return binIndex{}, err
 	}
-	index := binIndex{entries: entries, held: map[recordKey]heldRecord{}}
+	index := binIndex{entries: entries, held: map[recordKey]heldRecord{}, read: s.newReadSnapshots()}
 	for _, e := range entries {
 		if e.Resolution != nil {
 			continue // a resolved entry holds nothing any more
@@ -58,12 +59,7 @@ func (s *Service) binIndex(ctx context.Context) (binIndex, error) {
 
 // isStored reports whether the record ref is stored: its kind is registered here and finds it.
 func (s *Service) isStored(ctx context.Context, ref RecordRef) (bool, error) {
-	k, found := s.findKind(ref.Type)
-	if !found {
-		return false, nil
-	}
-	_, stored, err := k.Snapshot(ctx, ref.ID)
-	return stored, err
+	return s.newReadSnapshots().isStored(ctx, ref)
 }
 
 // restoreState is where the parent of an unresolved recycle-bin entry is (011 data model §5).
@@ -81,7 +77,7 @@ func (s *Service) restoreStateOf(ctx context.Context, entry BinEntry, index binI
 	var chain []BinEntry
 	visited := map[string]bool{entry.ID: true} // the entries met so far: a loop would never end
 	for parent := entry.Parent; parent != nil; {
-		stored, err := s.isStored(ctx, *parent)
+		stored, err := index.read.isStored(ctx, *parent)
 		if err != nil {
 			return restoreState{}, err
 		}
@@ -145,6 +141,15 @@ func (s *Service) ListBinItems(ctx context.Context, a actor.Actor) ([]BinListIte
 // may see, newest first, as ListBinItems describes them. The list is never nil.
 func (s *Service) binItems(ctx context.Context, index binIndex) ([]BinListItem, error) {
 	items := []BinListItem{}
+	var parents []recordKey
+	for _, entry := range index.entries {
+		if entry.Resolution == nil && entry.Parent != nil {
+			parents = append(parents, recordKey{entry.Parent.Type, entry.Parent.ID})
+		}
+	}
+	if err := index.read.loadWithAncestors(ctx, parents); err != nil {
+		return nil, err
+	}
 	for _, entry := range slices.Backward(index.entries) { // the repository lists them oldest first
 		if entry.Resolution != nil || !s.knowsKindsOf(entry) || !s.canSeeBinEntry(ctx, entry) {
 			continue
@@ -448,6 +453,34 @@ func (s *Service) purge(ctx context.Context, a actor.Actor, entry BinEntry, now 
 	return s.repo.PutBinEntry(ctx, entry)
 }
 
+// purgeable returns the entries among entryIDs that Empty recycle bin deletes, each once, and their items of
+// the log entry: those still in the bin, of kinds this API knows, that the person acting may see.
+func (s *Service) purgeable(ctx context.Context, entryIDs []string) ([]string, []LogItem, error) {
+	all, err := s.repo.BinEntries(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	byID := make(map[string]BinEntry, len(all))
+	for _, e := range all {
+		byID[e.ID] = e
+	}
+	var ids []string
+	var items []LogItem
+	for _, id := range entryIDs {
+		entry, found := byID[id]
+		delete(byID, id) // an id listed twice counts once
+		if !found || entry.Resolution != nil || !s.knowsKindsOf(entry) || !s.canSeeBinEntry(ctx, entry) {
+			continue // 014: an entry the person cannot see was not in their confirmation either
+		}
+		ids = append(ids, id)
+		items = append(items, LogItem{
+			RecordType: entry.RecordType, RecordTypeLabel: entry.RecordTypeLabel, RecordID: entry.RecordID,
+			RecordName: entry.RecordName, Details: contentsText(entry.Contents),
+		})
+	}
+	return ids, items, nil
+}
+
 // EmptyBin deletes permanently the recycle-bin entries entryIDs, the ones the person saw in the
 // confirmation (FR-029, FR-030, D-180), in one Write. Entries that already left the bin, entries holding a
 // kind this API does not know and entries not listed are left alone (FR-032), and an id listed twice
@@ -460,40 +493,20 @@ func (s *Service) EmptyBin(ctx context.Context, a actor.Actor, entryIDs []string
 	}
 	var purged []LogItem
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		purged = nil
-		now := s.now()
-		seen := map[string]bool{}
-		for _, id := range entryIDs {
-			if seen[id] {
-				continue
-			}
-			seen[id] = true
-			entry, found, err := s.repo.GetBinEntry(ctx, id)
-			if err != nil {
-				return err
-			}
-			if !found || entry.Resolution != nil || !s.knowsKindsOf(entry) || !s.canSeeBinEntry(ctx, entry) {
-				continue // 014: an entry the person cannot see was not in their confirmation either
-			}
-			if err := s.purge(ctx, a, entry, now); err != nil {
-				return err
-			}
-			purged = append(purged, LogItem{
-				RecordType:      entry.RecordType,
-				RecordTypeLabel: entry.RecordTypeLabel,
-				RecordID:        entry.RecordID,
-				RecordName:      entry.RecordName,
-				Details:         contentsText(entry.Contents),
-			})
+		var ids []string
+		var err error
+		if ids, purged, err = s.purgeable(ctx, entryIDs); err != nil || len(ids) == 0 {
+			return err
 		}
-		if len(purged) == 0 {
-			return nil
+		resolution := Resolution{How: string(ActionDeletedPermanently), By: a, At: s.now()}
+		if err = s.repo.PurgeBinEntries(ctx, ids, resolution); err != nil {
+			return err
 		}
 		details := "1 item"
 		if len(purged) > 1 {
 			details = strconv.Itoa(len(purged)) + " items"
 		}
-		_, err := s.appendEntry(ctx, a, Entry{
+		_, err = s.appendEntry(ctx, a, Entry{
 			Action:          ActionEmptiedRecycleBin,
 			Verb:            verbEmptiedRecycleBin,
 			RecordType:      emptiedBinType,

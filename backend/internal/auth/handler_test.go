@@ -26,12 +26,9 @@ const (
 	demoPassword = "mapp"
 )
 
-// lubricantsEurope is the team T-1001 as answers show it.
 const lubricantsEurope = `{"id":"T-1001","name":"Lubricants Europe","colour":"blue","active":true}`
 
-// priyaBody is Priya Raman as the API answers her: with her access (feature 014, FR-024) — the Planner role
-// for her teams, its twelve permissions in Lubricants Europe, the administrator to ask and the
-// segregation-of-duties rule.
+// priyaBody carries her access: Planner in her team, the administrator to ask and no self-approval.
 var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email":"priya.raman@shell.com",` +
 	`"jobTitle":"Marketer","initials":"PR",` +
 	`"preferences":{"theme":"system","sidebarCollapsed":false,"displayCurrency":"USD","dateFormat":"DD MMM YYYY","homeScope":"myTeams","historyIncludeInside":false,"pinnedPlanIds":[]},` +
@@ -44,7 +41,6 @@ var priyaBody = `{"id":"U-1002","name":"Priya Raman","firstName":"Priya","email"
 	`"administrators":[{"id":"U-1001","name":"Alex Morgan","initials":"AM","jobTitle":"Marketing administrator","active":true}],` +
 	`"noSelfApproval":true}}`
 
-// inLubricantsEurope writes permissions held for Lubricants Europe only, as MyAccess lists them.
 func inLubricantsEurope(keys ...string) string {
 	parts := make([]string, 0, len(keys))
 	for _, key := range keys {
@@ -53,15 +49,13 @@ func inLubricantsEurope(keys ...string) string {
 	return strings.Join(parts, ",")
 }
 
-// The bodies of the API's answers, as the web app receives them.
 const (
 	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
 	incorrectBody      = `{"error":{"code":"incorrect_credentials","message":"Incorrect e-mail or password.","fields":[]}}`
 )
 
-// The sign-in page lists the active demo people, sorted by name, with the shared demo password
-// (FR-001, FR-002).
 func TestGetDemoPeople_ActivePeopleAndPassword_FR001_FR002(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 
 	response := server.Do(t, http.MethodGet, "/api/v1/auth/demo-people", nil)
@@ -84,9 +78,9 @@ func TestGetDemoPeople_ActivePeopleAndPassword_FR001_FR002(t *testing.T) {
 	}
 }
 
-// Without demo data the list is empty, never null, and the password is still there, so the sign-in page
-// can explain how to load the demo data (FR-028).
+// The sign-in page can then explain how to load the demo data.
 func TestDemoPeople_EmptyStore_FR028(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t, apitest.WithoutSeed())
 
 	response := server.Do(t, http.MethodGet, "/api/v1/auth/demo-people", nil)
@@ -94,10 +88,9 @@ func TestDemoPeople_EmptyStore_FR028(t *testing.T) {
 	assertAnswer(t, response, http.StatusOK, `{"password":"mapp","people":[]}`)
 }
 
-// Signing in answers the signed-in person and sets the session cookie: HttpOnly, SameSite=Strict, for the
-// whole site, and without an expiry date, so it lasts until the browser closes (FR-003, FR-006, research
-// R6). The e-mail's letter case and surrounding spaces do not matter.
+// The cookie lasts until the browser closes (research R6).
 func TestSignIn_SetsTheSessionCookie_FR003(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 
 	response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn(" Priya.Raman@Shell.COM ", demoPassword))
@@ -115,8 +108,8 @@ func TestSignIn_SetsTheSessionCookie_FR003(t *testing.T) {
 	assertAnswer(t, me, http.StatusOK, priyaBody)
 }
 
-// Every empty field is reported in one answer (FR-004).
 func TestSignIn_EmptyFields_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 
 	response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn("", ""))
@@ -125,32 +118,21 @@ func TestSignIn_EmptyFields_FR004(t *testing.T) {
 		`"fields":[{"field":"email","message":"Enter your e-mail"},{"field":"password","message":"Enter the password"}]}}`)
 }
 
-// An unknown e-mail and a wrong password get the same answer, without saying which was wrong, and no
-// session (FR-004).
+// The answer sets no cookie; the service test proves an unknown e-mail gets the same answer.
 func TestSignIn_IncorrectCredentials_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
-	attempts := []struct {
-		name string
-		body map[string]string
-	}{
-		{"wrong password", signIn(priyasEmail, "wrong")},
-		{"unknown e-mail", signIn("nobody@shell.com", demoPassword)},
-	}
 
-	for _, attempt := range attempts {
-		t.Run(attempt.name, func(t *testing.T) {
-			response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", attempt.body)
+	response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn(priyasEmail, "wrong"))
 
-			assertAnswer(t, response, http.StatusUnauthorized, incorrectBody)
-			if cookie := response.Cookie(auth.CookieName); cookie != nil {
-				t.Errorf("a session cookie was set: %+v", cookie)
-			}
-		})
+	assertAnswer(t, response, http.StatusUnauthorized, incorrectBody)
+	if cookie := response.Cookie(auth.CookieName); cookie != nil {
+		t.Errorf("a session cookie was set: %+v", cookie)
 	}
 }
 
-// Signing in again in the same browser ends the browser's earlier session (FR-006).
 func TestSignIn_EndsThisBrowsersPreviousSession_FR006(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	first := sessionCookie(t, server.Do(t, http.MethodPost, "/api/v1/auth/sign-in", signIn(priyasEmail, demoPassword)))
 
@@ -165,8 +147,9 @@ func TestSignIn_EndsThisBrowsersPreviousSession_FR006(t *testing.T) {
 	}
 }
 
-// Signing out ends the session and tells the browser to forget the cookie (FR-006, US4 scenario 1).
+// The browser is told to forget the cookie.
 func TestSignOut_EndsTheSession_FR006(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -181,8 +164,8 @@ func TestSignOut_EndsTheSession_FR006(t *testing.T) {
 	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/me", nil), http.StatusUnauthorized, signInRequiredBody)
 }
 
-// Signing out always succeeds, also when nobody is signed in.
 func TestSignOut_WithoutSession_FR006(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 
 	response := server.Do(t, http.MethodPost, "/api/v1/auth/sign-out", nil)
@@ -192,9 +175,9 @@ func TestSignOut_WithoutSession_FR006(t *testing.T) {
 	}
 }
 
-// A handler behind RequireSignIn gets the signed-in person as the actor and can save changes of its own:
-// the sign-in check's transaction has finished before the handler runs (FR-007, research R6).
+// The sign-in check's transaction has finished before the handler runs (research R6).
 func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	db, err := store.Open(dir)
 	if err != nil {
@@ -252,12 +235,10 @@ func TestRequireSignIn_HandlerCanWrite_FR007(t *testing.T) {
 	}
 }
 
-// signIn is the body of POST /api/v1/auth/sign-in.
 func signIn(email, password string) map[string]string {
 	return map[string]string{"email": email, "password": password}
 }
 
-// sessionCookie returns the session cookie a sign-in answer set. It stops the test when the sign-in failed.
 func sessionCookie(t *testing.T, response *apitest.Response) *http.Cookie {
 	t.Helper()
 	cookie := response.Cookie(auth.CookieName)
@@ -267,7 +248,6 @@ func sessionCookie(t *testing.T, response *apitest.Response) *http.Cookie {
 	return cookie
 }
 
-// assertAnswer checks the status and the exact body of an answer.
 func assertAnswer(t *testing.T, response *apitest.Response, status int, body string) {
 	t.Helper()
 	if response.Status != status || string(response.Body) != body {

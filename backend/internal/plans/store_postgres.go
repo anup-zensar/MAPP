@@ -3,16 +3,21 @@ package plans
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/database/sqlcdb"
+	"mapp/internal/platform/memo"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
 	"mapp/internal/rollup"
 	"mapp/internal/settings"
 )
+
+// keptArea is what the transaction memo keeps of plans.
+const keptArea = "plans"
 
 // PostgresStore is the Repository on PostgreSQL. Beside the Repository's reads of every plan (for internal
 // work such as usage counts), ListInScope and GetInScope read only what the person acting may see.
@@ -25,7 +30,11 @@ func NewPostgresStore(db *database.DB) *PostgresStore {
 }
 
 func (s *PostgresStore) Get(ctx context.Context, id string) (Plan, bool, error) {
-	return onePlan(s.list(ctx, sqlcdb.ListPlansParams{ID: &id}))
+	rows, err := s.records().ByID(ctx, []string{id})
+	if err != nil {
+		return Plan{}, false, fmt.Errorf("select plan %s: %w", id, err)
+	}
+	return onePlan(plansFromRows(rows))
 }
 
 func (s *PostgresStore) List(ctx context.Context) ([]Plan, error) {
@@ -52,7 +61,7 @@ func (s *PostgresStore) Put(ctx context.Context, p Plan) error {
 	if err != nil {
 		return fmt.Errorf("encode plan %s: %w", plan.ID, err)
 	}
-	q := s.db.Queries(ctx)
+	q := s.change(ctx)
 	months, amounts := plan.BudgetPhasing.MonthColumns()
 	err = q.PutPlan(ctx, params)
 	if err == nil {
@@ -74,7 +83,7 @@ func (s *PostgresStore) Put(ctx context.Context, p Plan) error {
 }
 
 func (s *PostgresStore) Delete(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeletePlan(ctx, id); err != nil {
+	if err := s.change(ctx).DeletePlan(ctx, id); err != nil {
 		return fmt.Errorf("delete plan %s: %w", id, err)
 	}
 	return nil
@@ -85,7 +94,23 @@ func (s *PostgresStore) list(ctx context.Context, filter sqlcdb.ListPlansParams)
 	if err != nil {
 		return nil, fmt.Errorf("select plans: %w", err)
 	}
+	s.records().Keep(ctx, rows)
 	return plansFromRows(rows)
+}
+
+// records keeps the plans a transaction reads by id (memo): pages read a record's plan for each record.
+func (s *PostgresStore) records() memo.Records[sqlcdb.ListPlansRow] {
+	return memo.Records[sqlcdb.ListPlansRow]{
+		Area: keptArea, ID: func(r sqlcdb.ListPlansRow) string { return r.Plan.ID },
+		Read: func(ctx context.Context, ids, _ []string) ([]sqlcdb.ListPlansRow, error) {
+			return s.db.Queries(ctx).ListPlans(ctx, sqlcdb.ListPlansParams{Ids: ids})
+		},
+	}
+}
+
+func (s *PostgresStore) change(ctx context.Context) *sqlcdb.Queries {
+	memo.Forget(ctx, keptArea)
+	return s.db.Queries(ctx)
 }
 
 func (s *PostgresStore) listInScope(ctx context.Context, scope authz.Scope, id *string) ([]Plan, error) {
@@ -100,6 +125,7 @@ func (s *PostgresStore) listInScope(ctx context.Context, scope authz.Scope, id *
 	for _, row := range rows {
 		listRows = append(listRows, sqlcdb.ListPlansRow(row))
 	}
+	s.records().Keep(ctx, listRows)
 	return plansFromRows(listRows)
 }
 
@@ -133,7 +159,7 @@ func plansFromRows(rows []sqlcdb.ListPlansRow) ([]Plan, error) {
 	for _, row := range rows {
 		r := row.Plan
 		p := Plan{
-			ID: r.ID, Name: r.Name, Year: r.Year, ModelID: r.ModelID, TeamIDs: row.TeamIds,
+			ID: r.ID, Name: r.Name, Year: r.Year, ModelID: r.ModelID, TeamIDs: slices.Clone(row.TeamIds),
 			OwnerID: database.EmptyIfNull(r.OwnerID), AOP: r.Aop, Description: r.Description,
 			DefaultFinanceBudgetID: database.EmptyIfNull(r.DefaultFinanceBudgetID), DefaultSpread: Spread(r.DefaultSpread),
 			BCPIR: r.Bcpir, GoalStage: GoalStage(r.GoalStage), GoalAmount: r.GoalAmount, Status: Status(r.Status),

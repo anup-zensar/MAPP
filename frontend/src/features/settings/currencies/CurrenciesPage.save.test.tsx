@@ -127,7 +127,7 @@ describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
 
     const name = within(form).getByRole('textbox', { name: /^Name/ });
     await user.clear(name);
-    await user.type(name, 'United States dollar');
+    await user.paste('United States dollar');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Currency 'United States dollar' saved");

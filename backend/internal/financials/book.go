@@ -25,15 +25,28 @@ type book struct {
 // load reads the book for the reader personID (an empty personID shows US dollars). It runs inside the
 // caller's transaction.
 func (s *Service) load(ctx context.Context, personID string) (*book, error) {
+	nodes, err := s.planning.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.newBook(ctx, personID, nodes)
+}
+
+// loadPlans reads the book with only the plans planIDs: a record's figures never depend on another plan.
+func (s *Service) loadPlans(ctx context.Context, personID string, planIDs []string) (*book, error) {
+	nodes, err := s.planning.PlanNodes(ctx, planIDs)
+	if err != nil {
+		return nil, err
+	}
+	return s.newBook(ctx, personID, nodes)
+}
+
+func (s *Service) newBook(ctx context.Context, personID string, nodes []Node) (*book, error) {
 	stored, err := s.repo.ListTransactions(ctx)
 	if err != nil {
 		return nil, err
 	}
 	rates, err := s.rates.Rates(ctx)
-	if err != nil {
-		return nil, err
-	}
-	nodes, err := s.planning.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +63,26 @@ func (s *Service) load(ctx context.Context, personID string) (*book, error) {
 			return nil, err
 		}
 	}
+	b.index(stored, rates)
+	b.tree = buildTree(nodes, b.factsByLineItem())
+	return b, nil
+}
+
+func (b *book) factsByLineItem() map[string]Facts {
+	facts := make(map[string]Facts, len(b.byLineItem))
+	for id, list := range b.byLineItem {
+		var f Facts
+		for _, t := range list {
+			f.add(t, b.usd[t.ID], b.accrualMonth)
+		}
+		facts[id] = f
+	}
+	return facts
+}
+
+// index keeps every stored transaction with its amount in USD, the linked ones by line item, and the latest
+// accrual month.
+func (b *book) index(stored []Transaction, rates money.Rates) {
 	for i := range stored {
 		t := &stored[i]
 		b.all[i] = t
@@ -59,16 +92,6 @@ func (s *Service) load(ctx context.Context, personID string) (*book, error) {
 		}
 	}
 	b.accrualMonth = latestAccrualMonth(b.all)
-	facts := make(map[string]Facts, len(b.byLineItem))
-	for id, list := range b.byLineItem {
-		var f Facts
-		for _, t := range list {
-			f.add(t, b.usd[t.ID], b.accrualMonth)
-		}
-		facts[id] = f
-	}
-	b.tree = buildTree(nodes, facts)
-	return b, nil
 }
 
 // lineItemOf returns the live line item t is linked to, nil when it is not linked or its line item is

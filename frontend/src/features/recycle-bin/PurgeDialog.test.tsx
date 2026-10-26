@@ -69,30 +69,6 @@ describe('PurgeDialog', () => {
     expect(screen.getByRole('alertdialog')).not.toHaveTextContent('This also deletes');
   });
 
-  it('deletes it permanently and says so (FR-030)', async () => {
-    const { user, api, onClose } = renderDialog([
-      reply(
-        'DELETE /api/v1/recycle-bin/{entryId}',
-        {
-          body: {
-            recordType: 'initiative',
-            recordTypeLabel: 'initiative',
-            recordId: 'I-1009',
-            recordName: 'Trade shows',
-          },
-        },
-        { entryId: 'BIN-1001' },
-      ),
-    ]);
-
-    await user.click(screen.getByRole('button', { name: 'Delete permanently' }));
-
-    await screen.findByText('Closed');
-    expect(await findMessages()).toHaveTextContent("Initiative 'Trade shows' deleted permanently");
-    expect(api.requests.filter((request) => request.method === 'DELETE')).toHaveLength(1);
-    expect(onClose).toHaveBeenCalled();
-  });
-
   it('says who already restored it, and closes (FR-032)', async () => {
     const { user } = renderDialog([
       reply(

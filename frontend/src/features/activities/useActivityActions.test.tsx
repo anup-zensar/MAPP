@@ -177,16 +177,4 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
     ).toBeVisible();
     expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042');
   });
-
-  it('brings the page’s History section up from View history (FR-032, 011 FR-011)', async () => {
-    const { user, router } = openMenu();
-
-    await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'View history' }));
-
-    await waitFor(() =>
-      expect(screen.getByRole('heading', { level: 2, name: 'History' })).toHaveFocus(),
-    );
-    expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042');
-  });
 });

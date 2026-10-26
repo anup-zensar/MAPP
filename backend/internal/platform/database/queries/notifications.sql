@@ -63,3 +63,8 @@ ON CONFLICT (id) DO UPDATE SET
     updated_at = excluded.updated_at,
     updated_by_id = excluded.updated_by_id,
     updated_by_name = excluded.updated_by_name;
+
+-- name: MarkNotificationsRead :exec
+UPDATE notifications
+SET read = true, read_at = sqlc.arg(read_at)
+WHERE id = ANY (sqlc.arg(ids)::text[]);

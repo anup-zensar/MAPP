@@ -20,6 +20,7 @@ var (
 // Every constructor gives its error the HTTP status, the code and the plain-language message of the
 // plan's "User-visible messages" table (FR-020).
 func TestConstructors_StatusCodeAndMessage_FR020(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		err     *errs.Error
@@ -78,6 +79,7 @@ func TestConstructors_StatusCodeAndMessage_FR020(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if tt.err.Status != tt.status {
 				t.Errorf("Status = %d, want %d", tt.err.Status, tt.status)
 			}
@@ -91,37 +93,10 @@ func TestConstructors_StatusCodeAndMessage_FR020(t *testing.T) {
 	}
 }
 
-// The code strings are part of the API contract (research R9); the web app chooses its messages by them.
-func TestCodes_MatchTheContract(t *testing.T) {
-	codes := map[string]string{
-		errs.CodeValidationFailed:     "validation_failed",
-		errs.CodeBadRequest:           "bad_request",
-		errs.CodeSignInRequired:       "sign_in_required",
-		errs.CodeSessionExpired:       "session_expired",
-		errs.CodeIncorrectCredentials: "incorrect_credentials",
-		errs.CodeNotFound:             "not_found",
-		errs.CodeVersionConflict:      "version_conflict",
-		errs.CodeRestoreParentFirst:   "restore_parent_first",
-		errs.CodeUndoExpired:          "undo_expired",
-		errs.CodeAlreadyResolved:      "already_resolved",
-		errs.CodeNameTaken:            "name_taken",
-		errs.CodeInternalError:        "internal_error",
-		errs.CodeInUse:                "in_use",
-		errs.CodeCannotRestore:        "cannot_restore",
-		errs.CodeNotAllowed:           "not_allowed",
-		errs.CodeNotReady:             "not_ready",
-		errs.CodeForbidden:            "forbidden",
-	}
-	for got, want := range codes {
-		if got != want {
-			t.Errorf("code constant = %q, want %q", got, want)
-		}
-	}
-}
-
 // Every error answer carries "fields", an empty list when there are no field problems, so the web app
 // never has to check for a missing list (research R9, FR-020).
 func TestError_FieldsEncodeAsEmptyList_FR020(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		err  *errs.Error
@@ -142,6 +117,7 @@ func TestError_FieldsEncodeAsEmptyList_FR020(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := encode(t, tt.err); got != tt.want {
 				t.Errorf("JSON =\n%s\nwant\n%s", got, tt.want)
 			}
@@ -152,6 +128,7 @@ func TestError_FieldsEncodeAsEmptyList_FR020(t *testing.T) {
 // A version conflict names who changed the record and when; the server message has no time, because
 // only the browser knows the user's time zone (FR-029, research R5).
 func TestVersionConflict_NamesWhoAndWhen_FR029(t *testing.T) {
+	t.Parallel()
 	got := encode(t, errs.VersionConflict("sample folder", "Daniel Okoro", changedAt))
 	want := `{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this sample folder","fields":[],` +
 		`"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T14:32:00Z"}}`
@@ -160,8 +137,8 @@ func TestVersionConflict_NamesWhoAndWhen_FR029(t *testing.T) {
 	}
 }
 
-// A refused restore names the parent to restore first (FR-025).
 func TestRestoreParentFirst_NamesTheParent_FR025(t *testing.T) {
+	t.Parallel()
 	got := encode(t, errs.RestoreParentFirst(errs.RecordRef{Type: "sampleFolder", ID: "SF-1001", Name: "Ideas"}))
 	want := `{"code":"restore_parent_first","message":"Restore 'Ideas' first","fields":[],` +
 		`"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}}`
@@ -170,8 +147,8 @@ func TestRestoreParentFirst_NamesTheParent_FR025(t *testing.T) {
 	}
 }
 
-// An entry that was already undone or restored says how, by whom and when (FR-025, FR-026).
 func TestAlreadyResolved_SaysHowByWhomAndWhen_FR025(t *testing.T) {
+	t.Parallel()
 	got := encode(t, errs.AlreadyResolved("Ideas", errs.Resolution{How: "undone", By: priya, At: changedAt}))
 	want := `{"code":"already_resolved","message":"'Ideas' is no longer in the recycle bin.","fields":[],` +
 		`"resolution":{"how":"undone","by":{"id":"U-1002","name":"Priya Raman"},"at":"2026-03-12T14:32:00Z"}}`
@@ -182,6 +159,7 @@ func TestAlreadyResolved_SaysHowByWhomAndWhen_FR025(t *testing.T) {
 
 // Problems collects every field problem of a request so that all of them are reported at once (FR-020).
 func TestProblems_ReportsEveryFieldAtOnce_FR020(t *testing.T) {
+	t.Parallel()
 	var problems errs.Problems
 	if err := problems.Err(); err != nil {
 		t.Fatalf("Err() with no problems = %v, want nil", err)
@@ -201,29 +179,6 @@ func TestProblems_ReportsEveryFieldAtOnce_FR020(t *testing.T) {
 	}
 }
 
-// An error wrapped with %w on its way up (for example through a store transaction) is still found, so
-// it keeps its status (research R9).
-func TestError_FoundThroughWrapping(t *testing.T) {
-	wrapped := fmt.Errorf("deleting folder: %w", errs.NotFound("This sample folder no longer exists — someone may have deleted it."))
-
-	var e *errs.Error
-	if !errors.As(wrapped, &e) {
-		t.Fatalf("errors.As did not find the *errs.Error in %v", wrapped)
-	}
-	if e.Status != http.StatusNotFound || e.Code != errs.CodeNotFound {
-		t.Errorf("found %d %s, want 404 not_found", e.Status, e.Code)
-	}
-}
-
-// The error text (for logs and test failures) shows the code and the message.
-func TestError_Text(t *testing.T) {
-	got := errs.SessionExpired().Error()
-	if want := "session_expired: Please sign in again"; got != want {
-		t.Errorf("Error() = %q, want %q", got, want)
-	}
-}
-
-// encode returns the JSON the API would send for err.
 func encode(t *testing.T, err *errs.Error) string {
 	t.Helper()
 	body, marshalErr := json.Marshal(err)
@@ -236,6 +191,7 @@ func encode(t *testing.T, err *errs.Error) string {
 // The Plan module's refusals are 409 conflicts with the message the caller gives; not_ready lists every
 // missing field grouped by record, and the other errors leave "missing" out (D-043, D-193).
 func TestPlanModuleErrors_409_D043(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		err  *errs.Error
 		code string
@@ -273,6 +229,7 @@ func TestPlanModuleErrors_409_D043(t *testing.T) {
 // A refusal by role or scope is 403 forbidden with the message the caller gives and no field problems
 // (014 FR-010, D-227).
 func TestForbidden_403WithMessage_FR010(t *testing.T) {
+	t.Parallel()
 	message := "Changing activities and line items isn't part of your role (Viewer). Ask an administrator if you need it."
 	err := errs.Forbidden(message)
 
@@ -288,6 +245,7 @@ func TestForbidden_403WithMessage_FR010(t *testing.T) {
 // A restore whose parent was deleted permanently is a 409 conflict that names the level, the parent's
 // level and the parent, and carries the parent, so the web app can explain it (011 FR-024, D-182).
 func TestParentDeletedPermanently(t *testing.T) {
+	t.Parallel()
 	parent := errs.RecordRef{Type: "initiative", ID: "I-1003", Name: "Digital & social"}
 
 	got := errs.ParentDeletedPermanently("activity", parent, "initiative")

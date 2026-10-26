@@ -161,11 +161,11 @@ type board struct {
 
 // board reads the board inside the caller's transaction.
 func (s *Service) board(ctx context.Context) (*board, error) {
-	list, err := s.activities.ListInScope(ctx, authz.ScopeOf(ctx)) // every tab and count is over these (014 FR-007)
+	rounds, err := s.repo.ListRounds(ctx)
 	if err != nil {
 		return nil, err
 	}
-	rounds, err := s.repo.ListRounds(ctx)
+	list, err := s.activitiesWithRounds(ctx, rounds)
 	if err != nil {
 		return nil, err
 	}
@@ -203,6 +203,24 @@ func (s *Service) board(ctx context.Context) (*board, error) {
 		b.workflows[w.ID] = w
 	}
 	return b, nil
+}
+
+// activitiesWithRounds reads the activities of rounds in the scope: every tab and count is over them alone.
+func (s *Service) activitiesWithRounds(ctx context.Context, rounds []Round) ([]ActivityFacts, error) {
+	return s.activities.ListInScope(ctx, authz.ScopeOf(ctx), activitiesOf(rounds))
+}
+
+// activitiesOf returns the ids of the activities of rounds, each once, in the order of their ids.
+func activitiesOf(rounds []Round) []string {
+	seen := map[string]bool{}
+	ids := []string{}
+	for _, r := range rounds {
+		if !seen[r.ActivityID] {
+			seen[r.ActivityID] = true
+			ids = append(ids, r.ActivityID)
+		}
+	}
+	return inIDOrder(ids)
 }
 
 // submitted calls fn for every Submitted activity with its open round and the round's history entries.

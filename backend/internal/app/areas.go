@@ -174,8 +174,8 @@ func (w *wiring) accessTargets() {
 func (w *wiring) financialsArea() error {
 	s := w.set
 	w.finance = financialPlanning{
-		plans: s.Plans, campaigns: w.campaigns, activities: w.activities, lineItems: s.LineItems,
-		settings: w.settings, people: w.people, history: w.history,
+		plans: s.Plans, campaigns: w.campaigns, campaignsRepo: s.Campaigns, activities: s.Activities,
+		lineItems: s.LineItems, settings: w.settings, people: w.people, history: w.history,
 	}
 	w.financials = financials.NewService(s.Tx, s.Financials, w.generator, w.history, financials.Deps{
 		Planning: w.finance, Rates: w.settings, Displays: financialDisplays{people: w.people},

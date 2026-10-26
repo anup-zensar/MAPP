@@ -6,6 +6,7 @@ import (
 	"mapp/internal/people"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
+	"mapp/internal/platform/memo"
 	"mapp/internal/platform/money"
 	"mapp/internal/settings"
 )
@@ -56,6 +57,14 @@ func (s *Service) derive(ctx context.Context, a Activity, pc planContext, facts 
 	d.completeness = completeness(d.readiness, facts)
 	d.missing = missingFields(d.readiness, missing)
 	return d, nil
+}
+
+// storedDerive is derive for an activity as stored, worked out once per transaction until data changes: the
+// plan levels and the campaign tree ask for the same activities.
+func (s *Service) storedDerive(ctx context.Context, a Activity, pc planContext, facts LineItemFacts) (derived, error) {
+	return memo.Get(ctx, memo.Derived+":activity:"+a.ID, func(ctx context.Context) (derived, error) {
+		return s.derive(ctx, a, pc, facts)
+	})
 }
 
 // viewOf returns activity a as the API answers it (Activity), with its line items' facts.

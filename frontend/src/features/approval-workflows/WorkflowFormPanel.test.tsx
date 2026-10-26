@@ -1,5 +1,5 @@
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
@@ -37,6 +37,10 @@ function renderPanel(workflow?: ApprovalWorkflow, answers: HttpHandler[] = []) {
 }
 
 describe('WorkflowFormPanel (feature 008, US4)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('creates a workflow with its levels and names it in the message (FR-002)', async () => {
     const { user, api, onClose } = renderPanel(undefined, [
       reply('POST /api/v1/approval-workflows', {
@@ -46,7 +50,8 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
     ]);
     const panel = screen.getByRole('dialog', { name: 'New approval workflow' });
 
-    await user.type(within(panel).getByRole('textbox', { name: /^Name/ }), 'Lubricants Asia');
+    await user.click(within(panel).getByRole('textbox', { name: /^Name/ }));
+    await user.paste('Lubricants Asia');
     await user.click(await within(panel).findByRole('combobox', { name: /Approvers/ }));
     await user.click(screen.getByRole('option', { name: /Carlos Mendes/ }));
     await user.click(within(panel).getByRole('button', { name: 'Add level' }));
@@ -159,6 +164,7 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
   });
 
   it('says who saved first, and takes their version for the next Save (FR-003)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-03-12T15:00:00Z') });
     let saves = 0;
     const { user, api } = renderPanel(workflowOf(), [
       reply(
@@ -173,7 +179,7 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
                     code: 'version_conflict',
                     message: 'Someone else saved first.',
                     fields: [],
-                    conflict: { changedBy: 'Alex Morgan', changedAt: new Date().toISOString() },
+                    conflict: { changedBy: 'Alex Morgan', changedAt: '2026-03-12T14:32:00Z' },
                   },
                 },
               }
@@ -192,9 +198,7 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(
-      await screen.findByText(
-        /^Not saved — Alex Morgan changed this approval workflow at \d\d:\d\d$/,
-      ),
+      await screen.findByText('Not saved — Alex Morgan changed this approval workflow at 14:32'),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await screen.findByText("Approval workflow 'Lubricants EU approval' saved");

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"crypto/rand"
 	"log/slog"
 	"net"
@@ -13,6 +14,7 @@ import (
 
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/logging"
+	"mapp/internal/platform/querycount"
 )
 
 const requestIDHeader = "X-Request-ID"
@@ -30,10 +32,19 @@ func RequestID() gin.HandlerFunc {
 func LogRequest() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
+		counted := countStatements(c)
 		c.Next()
 		slog.InfoContext(c.Request.Context(), "request", "method", c.Request.Method, "path", c.Request.URL.Path,
-			"route", c.FullPath(), "status", c.Writer.Status(), "duration_ms", time.Since(start).Milliseconds())
+			"route", c.FullPath(), "status", c.Writer.Status(), "duration_ms", time.Since(start).Milliseconds(),
+			"queries", querycount.Of(counted))
 	}
+}
+
+// countStatements gives the request a statement counter and returns the context that holds it.
+func countStatements(c *gin.Context) context.Context {
+	counted := querycount.With(c.Request.Context())
+	c.Request = c.Request.WithContext(counted)
+	return counted
 }
 
 // Recover answers a panic with internal_error unless the answer has started; a nil writer keeps Gin from

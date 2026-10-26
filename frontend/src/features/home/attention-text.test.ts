@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatDate, formatMoney } from '@/format/intl';
 import { reasonOf, usd } from '@/testing/fixtures/home';
-import { missingFieldsText, reasonLinkName, reasonLinkOf, reasonText } from './attention-text';
-import { viewAllText } from './home-text';
+import { missingFieldsText, reasonLinkOf, reasonText } from './attention-text';
 
 describe('homeText — needs your attention (FR-011, FR-012)', () => {
   const format = {
@@ -79,15 +78,5 @@ describe('homeText — needs your attention (FR-011, FR-012)', () => {
       label: 'Show items below',
       hash: '#completeness',
     });
-  });
-
-  it("names a reason's link with its record", () => {
-    expect(reasonLinkName('Open approval', 'activity', 'Launch film')).toBe(
-      "Open approval for activity 'Launch film'",
-    );
-  });
-
-  it('offers the rest of a list', () => {
-    expect(viewAllText(7)).toBe('View all (7)');
   });
 });

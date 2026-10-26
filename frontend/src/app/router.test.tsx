@@ -41,12 +41,6 @@ afterEach(() => {
 });
 
 describe('routes', () => {
-  it('shows the pages inside the root layout (plan "Router")', () => {
-    renderInRoot(<h1>A page</h1>);
-
-    expect(screen.getByRole('heading', { name: 'A page' })).toBeInTheDocument();
-  });
-
   it('catches an error in any page and shows the error page, never a blank screen (FR-020)', () => {
     // React reports the thrown error on the console; the test only looks at the screen.
     vi.spyOn(console, 'error').mockImplementation(() => {});

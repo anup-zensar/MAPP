@@ -2,10 +2,8 @@ package settings
 
 import (
 	"context"
-	"errors"
 	"fmt"
-
-	"github.com/jackc/pgx/v5"
+	"slices"
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/database"
@@ -14,30 +12,28 @@ import (
 )
 
 func (s *PostgresStore) GetAttribute(ctx context.Context, id string) (Attribute, bool, error) {
-	row, err := s.db.Queries(ctx).GetAttribute(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Attribute{}, false, nil
-	}
-	if err != nil {
-		return Attribute{}, false, fmt.Errorf("select Shell attribute %s: %w", id, err)
+	attributes, err := s.attributes(ctx)
+	row, found := attributes.Find(id)
+	if err != nil || !found {
+		return Attribute{}, false, err
 	}
 	return attributeFromRow(row.ShellAttribute, row.Condition), true, nil
 }
 
 func (s *PostgresStore) ListAttributes(ctx context.Context) ([]Attribute, error) {
-	rows, err := s.db.Queries(ctx).ListAttributes(ctx)
+	rows, err := s.attributes(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select Shell attributes: %w", err)
+		return nil, err
 	}
-	attributes := make([]Attribute, 0, len(rows))
-	for _, row := range rows {
+	attributes := make([]Attribute, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
 		attributes = append(attributes, attributeFromRow(row.ShellAttribute, row.Condition))
 	}
 	return attributes, nil
 }
 
 func (s *PostgresStore) PutAttribute(ctx context.Context, a Attribute) error {
-	q := s.db.Queries(ctx)
+	q := s.change(ctx)
 	err := q.PutAttribute(ctx, sqlcdb.PutAttributeParams{
 		ID: a.ID, Label: a.Label, HelpText: a.HelpText, Level: string(a.Level), Type: string(a.Type),
 		Marking: string(a.Marking), Section: a.Section, Position: a.Position,
@@ -58,19 +54,17 @@ func (s *PostgresStore) PutAttribute(ctx context.Context, a Attribute) error {
 }
 
 func (s *PostgresStore) DeleteAttribute(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteAttribute(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteAttribute(ctx, id); err != nil {
 		return fmt.Errorf("delete Shell attribute %s: %w", id, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) GetOption(ctx context.Context, id string) (Option, bool, error) {
-	row, err := s.db.Queries(ctx).GetOption(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Option{}, false, nil
-	}
-	if err != nil {
-		return Option{}, false, fmt.Errorf("select option %s: %w", id, err)
+	options, err := s.optionRows(ctx)
+	row, found := options.Find(id)
+	if err != nil || !found {
+		return Option{}, false, err
 	}
 	return optionFromRow(row.ShellAttributeOption, row.ParentOptionIds), true, nil
 }
@@ -84,12 +78,8 @@ func (s *PostgresStore) OptionsOf(ctx context.Context, attributeID string) ([]Op
 }
 
 func (s *PostgresStore) PutOption(ctx context.Context, o Option) error {
-	q := s.db.Queries(ctx)
-	err := q.PutOption(ctx, sqlcdb.PutOptionParams{
-		ID: o.ID, AttributeID: o.AttributeID, Label: o.Label, Position: o.Position, Active: o.Active,
-		Version: o.Version, CreatedAt: o.CreatedAt, CreatedByID: o.CreatedBy.ID, CreatedByName: o.CreatedBy.Name,
-		UpdatedAt: o.UpdatedAt, UpdatedByID: o.UpdatedBy.ID, UpdatedByName: o.UpdatedBy.Name,
-	})
+	q := s.change(ctx)
+	err := q.PutOption(ctx, optionParams(o))
 	if err == nil {
 		err = q.DeleteOptionParents(ctx, o.ID)
 	}
@@ -103,20 +93,22 @@ func (s *PostgresStore) PutOption(ctx context.Context, o Option) error {
 }
 
 func (s *PostgresStore) DeleteOption(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteOption(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteOption(ctx, id); err != nil {
 		return fmt.Errorf("delete option %s: %w", id, err)
 	}
 	return nil
 }
 
 func (s *PostgresStore) options(ctx context.Context, attributeID *string) ([]Option, error) {
-	rows, err := s.db.Queries(ctx).ListOptions(ctx, attributeID)
+	rows, err := s.optionRows(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("select options: %w", err)
+		return nil, err
 	}
-	options := make([]Option, 0, len(rows))
-	for _, row := range rows {
-		options = append(options, optionFromRow(row.ShellAttributeOption, row.ParentOptionIds))
+	options := make([]Option, 0, len(rows.Rows))
+	for _, row := range rows.Rows {
+		if attributeID == nil || row.ShellAttributeOption.AttributeID == *attributeID {
+			options = append(options, optionFromRow(row.ShellAttributeOption, row.ParentOptionIds))
+		}
 	}
 	return options, nil
 }
@@ -125,7 +117,7 @@ func attributeFromRow(row sqlcdb.ShellAttribute, condition []string) Attribute {
 	return Attribute{
 		ID: row.ID, Label: row.Label, HelpText: row.HelpText, Level: Level(row.Level), Type: AttributeType(row.Type),
 		Marking: Marking(row.Marking), Section: row.Section, Position: row.Position,
-		ParentAttributeID: database.EmptyIfNull(row.ParentAttributeID), Condition: condition, Role: row.Role,
+		ParentAttributeID: database.EmptyIfNull(row.ParentAttributeID), Condition: slices.Clone(condition), Role: row.Role,
 		Active: row.Active,
 		Meta: record.Meta{
 			Version:   row.Version,
@@ -140,7 +132,7 @@ func attributeFromRow(row sqlcdb.ShellAttribute, condition []string) Attribute {
 func optionFromRow(row sqlcdb.ShellAttributeOption, parentOptionIDs []string) Option {
 	return Option{
 		ID: row.ID, AttributeID: row.AttributeID, Label: row.Label, Position: row.Position,
-		ParentOptionIDs: parentOptionIDs, Active: row.Active,
+		ParentOptionIDs: slices.Clone(parentOptionIDs), Active: row.Active,
 		Meta: record.Meta{
 			Version:   row.Version,
 			CreatedAt: row.CreatedAt,

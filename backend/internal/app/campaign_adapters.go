@@ -40,6 +40,23 @@ func (p campaignPlans) PlansOfYear(ctx context.Context, year int) ([]campaigns.P
 	return facts, nil
 }
 
+// The names of the campaign and initiative levels of feature 004's level registry, also their history kinds.
+const (
+	campaignLevel   = "campaign"
+	initiativeLevel = "initiative"
+)
+
+// publishProblems are the problems of the records of level that block publishing, in tree order.
+func publishProblems(problems []campaigns.RecordProblems, level string) []plans.AttentionItem {
+	var items []plans.AttentionItem
+	for _, p := range problems {
+		if p.Record.Type == level {
+			items = append(items, plans.AttentionItem{Record: p.Record, Missing: p.Missing, BlocksPublish: true})
+		}
+	}
+	return items
+}
+
 // planFacts turns a stored plan into campaigns' PlanFacts: no owner and no budget become nil, the budget
 // money in the plan currency (016).
 func planFacts(p plans.Plan) campaigns.PlanFacts {
@@ -64,43 +81,36 @@ func planFacts(p plans.Plan) campaigns.PlanFacts {
 // the campaigns and initiatives that block publishing to its facts, and copy the campaigns with their
 // initiatives in a plan copy (CopyPlanContents). app.New registers them with planService.RegisterLevel.
 func campaignLevels(svc *campaigns.Service) []plans.Level {
-	addFacts := func(level string) func(ctx context.Context, planIDs []string, facts map[string]*plans.Facts) error {
-		return func(ctx context.Context, planIDs []string, facts map[string]*plans.Facts) error {
-			rollups, err := svc.PlanRollups(ctx, planIDs)
-			if err != nil {
-				return err
-			}
-			for _, planID := range planIDs {
-				r, f := rollups[planID], facts[planID]
-				if level == "campaign" {
-					f.Campaigns += r.Campaigns
-					f.CampaignBudgets = f.CampaignBudgets.Add(r.AllocatedToCampaigns.Amount)
-					f.AmountsSet += r.CampaignBudgetsSet // 016 FR-012
-				} else {
-					f.Initiatives += r.Initiatives
-					f.AmountsSet += r.InitiativeBudgetsSet
-				}
-				for _, p := range r.PublishProblems {
-					if p.Record.Type == level {
-						f.NeedsAttention = append(f.NeedsAttention, plans.AttentionItem{Record: p.Record, Missing: p.Missing, BlocksPublish: true})
-					}
-				}
-			}
-			return nil
+	addFacts := func(ctx context.Context, planIDs []string, facts map[string]*plans.Facts) error {
+		rollups, err := svc.PlanRollups(ctx, planIDs)
+		if err != nil {
+			return err
 		}
+		for _, planID := range planIDs {
+			r, f := rollups[planID], facts[planID]
+			f.Campaigns += r.Campaigns
+			f.CampaignBudgets = f.CampaignBudgets.Add(r.AllocatedToCampaigns.Amount)
+			f.Initiatives += r.Initiatives
+			f.AmountsSet += r.CampaignBudgetsSet + r.InitiativeBudgetsSet // 016 FR-012
+			f.NeedsAttention = append(f.NeedsAttention, publishProblems(r.PublishProblems, campaignLevel)...)
+			f.NeedsAttention = append(f.NeedsAttention, publishProblems(r.PublishProblems, initiativeLevel)...)
+		}
+		return nil
 	}
 	return []plans.Level{
-		{Name: "campaign", AddFacts: addFacts("campaign"), Copy: func(ctx context.Context, job *plans.CopyJob) error {
+		{Name: campaignLevel, AddFacts: addFacts, Copy: func(ctx context.Context, job *plans.CopyJob) error {
 			counts, newIDs, err := svc.CopyPlanContents(ctx, job.Actor, job.SourcePlanID, job.TargetPlanID, job.Years)
 			if err != nil {
 				return err
 			}
 			maps.Copy(job.NewIDs, newIDs)
-			job.Counts["campaign"] += counts.Campaigns
-			job.Counts["initiative"] += counts.Initiatives
+			job.Counts[campaignLevel] += counts.Campaigns
+			job.Counts[initiativeLevel] += counts.Initiatives
 			return nil
 		}},
-		// The campaign level copies the initiatives with their campaigns, so this level's Copy does nothing.
-		{Name: "initiative", AddFacts: addFacts("initiative"), Copy: func(context.Context, *plans.CopyJob) error { return nil }},
+		// The campaign level adds the initiatives' facts and copies them with their campaigns, so this level
+		// does nothing: the roll-ups of the plans are worked out once.
+		{Name: initiativeLevel, AddFacts: func(context.Context, []string, map[string]*plans.Facts) error { return nil },
+			Copy: func(context.Context, *plans.CopyJob) error { return nil }},
 	}
 }

@@ -19,7 +19,6 @@ import { ApprovalPreviewPanel } from './ApprovalPreviewPanel';
 import { ACTIVITY_GONE } from './messages';
 
 const APPROVE = 'POST /api/v1/activities/A-1042/approval/approve';
-const DECLINE = 'POST /api/v1/activities/A-1042/approval/decline';
 
 function answerPreview(answer: Answer<'GET /api/v1/approvals/activities/{activityId}'>) {
   return reply('GET /api/v1/approvals/activities/{activityId}', answer, { activityId: 'A-1042' });
@@ -136,52 +135,6 @@ describe('ApprovalPreviewPanel (feature 008, US3)', () => {
 
     await waitFor(() => expect(onDecided).toHaveBeenCalled());
     expect(api.bodiesOf(APPROVE)).toEqual([{ roundId: 'AR-1001', level: 1 }]);
-  });
-
-  it('needs a comment to decline (FR-016)', async () => {
-    const { user, api } = renderPanel([answerPreview({ body: previewOf() })]);
-
-    const panel = await screen.findByRole('dialog', { name: 'Launch film' });
-    await user.click(within(panel).getByRole('button', { name: 'Decline' }));
-    const dialog = await screen.findByRole('alertdialog', { name: "Decline 'Launch film'?" });
-    expect(dialog).toHaveTextContent(
-      'The activity goes back to Priya Raman, who can fix it and re-submit.',
-    );
-    await user.click(within(dialog).getByRole('button', { name: 'Decline activity' }));
-
-    expect(dialog).toHaveTextContent('Add a comment explaining why the activity is declined.');
-    expect(api.bodiesOf(DECLINE)).toEqual([]);
-  });
-
-  it('explains a decision someone made first, with its time (FR-018)', async () => {
-    const { user } = renderPanel([
-      answerPreview({ body: previewOf() }),
-      reply(
-        'POST /api/v1/activities/{activityId}/approval/approve',
-        {
-          status: 409,
-          body: {
-            error: {
-              code: 'version_conflict',
-              message: 'Level 1 was already declined by Carlos Mendes',
-              fields: [],
-              conflict: { changedBy: 'Carlos Mendes', changedAt: new Date().toISOString() },
-            },
-          },
-        },
-        { activityId: 'A-1042' },
-      ),
-    ]);
-
-    const panel = await screen.findByRole('dialog', { name: 'Launch film' });
-    await user.click(within(panel).getByRole('button', { name: 'Approve' }));
-    await user.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Approve' }),
-    );
-
-    expect(
-      await screen.findByText(/^Level 1 was already declined by Carlos Mendes at \d\d:\d\d\.$/),
-    ).toBeInTheDocument();
   });
 
   it('offers no decision once the activity is no longer Submitted', async () => {

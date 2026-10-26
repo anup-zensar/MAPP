@@ -23,7 +23,7 @@ implements this decision.
   approval from someone other than the last pusher, stale approvals dismissed, the three checks
   required. A repository administrator applies it.
 - **Release age**: pnpm's built-in `minimumReleaseAge: 1440` and `engineStrict` in
-  `frontend/pnpm-workspace.yaml`, with pnpm pinned by `packageManager` (ADR-0014; before it, npm's
+  `frontend/pnpm-workspace.yaml`, with pnpm pinned by `packageManager` (ADR-0015; before it, npm's
   `min-release-age=1`).
 
 ## Deviations agreed by the product owner (2026-10-26)

@@ -96,6 +96,55 @@ func (x lineItemActivities) Facts(ctx context.Context, id string) (lineitems.Act
 	return f, true, nil
 }
 
+// FactsOf returns the facts of the stored activities among ids: their initiatives, campaigns and plans are
+// read once for all of them, and kept for the transaction, before each activity's facts are put together.
+func (x lineItemActivities) FactsOf(ctx context.Context, ids []string) (map[string]lineitems.ActivityFacts, error) {
+	list, err := x.activities.ListByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	if err := x.readParents(ctx, list); err != nil {
+		return nil, err
+	}
+	facts := make(map[string]lineitems.ActivityFacts, len(list))
+	for _, act := range list {
+		f, found, err := x.Facts(ctx, act.ID)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			facts[act.ID] = f
+		}
+	}
+	return facts, nil
+}
+
+// readParents reads the initiatives, campaigns and plans of the activities list, one level at a time.
+func (x lineItemActivities) readParents(ctx context.Context, list []activities.Activity) error {
+	initiativeIDs := make([]string, 0, len(list))
+	for _, act := range list {
+		initiativeIDs = append(initiativeIDs, act.InitiativeID)
+	}
+	initiatives, err := x.campaigns.InitiativesByIDs(ctx, initiativeIDs)
+	if err != nil {
+		return err
+	}
+	campaignIDs := make([]string, 0, len(initiatives))
+	for _, i := range initiatives {
+		campaignIDs = append(campaignIDs, i.CampaignID)
+	}
+	campaignList, err := x.campaigns.CampaignsByIDs(ctx, campaignIDs)
+	if err != nil {
+		return err
+	}
+	planIDs := make([]string, 0, len(campaignList))
+	for _, c := range campaignList {
+		planIDs = append(planIDs, c.PlanID)
+	}
+	_, err = x.plans.ListByIDs(ctx, planIDs)
+	return err
+}
+
 // RestartApproval sends a Submitted or Approved activity back to Created with the reasons (006's rule,
 // which also tells approvals to end the open round).
 func (x lineItemActivities) RestartApproval(ctx context.Context, a actor.Actor, id string, reasons []string) error {
@@ -252,6 +301,15 @@ func lineItemProblem(item lineitems.Incomplete, m settings.MissingField) activit
 // the campaigns and initiatives above it (006 FR-030, 005 FR-027).
 func (x lineItemsForActivities) CopyAll(ctx context.Context, a actor.Actor, fromActivityID, toActivityID string, yearShift int) (int, error) {
 	return x.svc.CopyLineItems(ctx, a, fromActivityID, toActivityID, yearShift)
+}
+
+// CopyMany copies the line items of many activities at once: a campaign or initiative copy.
+func (x lineItemsForActivities) CopyMany(ctx context.Context, a actor.Actor, pairs []activities.CopyPair, yearShift int) (int, error) {
+	converted := make([]lineitems.CopyPair, 0, len(pairs))
+	for _, p := range pairs {
+		converted = append(converted, lineitems.CopyPair{FromID: p.FromID, ToID: p.ToID})
+	}
+	return x.svc.CopyLineItemsOf(ctx, a, converted, yearShift)
 }
 
 // DatesChanged needs nothing stored: a line item spread Evenly, First or Last month follows its activity's

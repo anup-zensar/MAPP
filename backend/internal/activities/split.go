@@ -545,11 +545,7 @@ func (s *Service) splitLinks(ctx context.Context, a Activity, planID string) (*S
 
 // splitOff returns the stored activities split off the activity id.
 func (s *Service) splitOff(ctx context.Context, id string) ([]Activity, error) {
-	all, err := s.repo.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return slices.DeleteFunc(all, func(x Activity) bool { return x.SplitFromID != id }), nil
+	return s.repo.ListSplitFrom(ctx, id)
 }
 
 // snapshotOf returns the snapshot of the record id among snapshots.

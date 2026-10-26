@@ -10,6 +10,7 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/database/sqlcdb"
+	"mapp/internal/platform/memo"
 	"mapp/internal/platform/record"
 )
 
@@ -27,6 +28,18 @@ func (s *PostgresStore) ListRounds(ctx context.Context) ([]Round, error) {
 
 func (s *PostgresStore) RoundsOf(ctx context.Context, activityID string) ([]Round, error) {
 	return s.rounds(ctx, sqlcdb.ListRoundsParams{ActivityID: &activityID})
+}
+
+// OpenRounds reads the open rounds once per transaction (memo): a restore asks for those of every activity
+// it puts back.
+func (s *PostgresStore) OpenRounds(ctx context.Context) ([]Round, error) {
+	return memo.Get(ctx, keptArea+":openRounds", func(ctx context.Context) ([]Round, error) {
+		rows, err := s.db.Queries(ctx).ListOpenRounds(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("select open approval rounds: %w", err)
+		}
+		return roundsFromRows(rows)
+	})
 }
 
 // RoundsInScope keeps the rounds of the activities the person acting may see; a round of an activity in the
@@ -50,7 +63,7 @@ func (s *PostgresStore) PutRound(ctx context.Context, r Round) error {
 	if err := errors.Join(levelsErr, factsErr); err != nil {
 		return fmt.Errorf("encode approval round %s: %w", r.ID, err)
 	}
-	err := s.db.Queries(ctx).PutRound(ctx, sqlcdb.PutRoundParams{
+	err := s.change(ctx).PutRound(ctx, sqlcdb.PutRoundParams{
 		ID: r.ID, ActivityID: r.ActivityID, Number: r.Number, WorkflowID: r.WorkflowID, WorkflowName: r.WorkflowName,
 		Levels: levels, CurrentLevel: r.CurrentLevel, Outcome: string(r.Outcome), SubmittedAt: r.SubmittedAt,
 		SubmittedByID: r.SubmittedBy.ID, SubmittedByName: r.SubmittedBy.Name, Comment: r.Comment, EndedAt: r.EndedAt,
@@ -79,7 +92,7 @@ func (s *PostgresStore) PutAction(ctx context.Context, a Action) error {
 	}
 	params.AsDelegateOfID, params.AsDelegateOfName = actorColumns(a.AsDelegateOf)
 	params.EscalatedToID, params.EscalatedToName = actorColumns(a.EscalatedTo)
-	if err := s.db.Queries(ctx).InsertAction(ctx, params); err != nil {
+	if err := s.change(ctx).InsertAction(ctx, params); err != nil {
 		return fmt.Errorf("save approval history entry %s: %w", a.ID, err)
 	}
 	return nil

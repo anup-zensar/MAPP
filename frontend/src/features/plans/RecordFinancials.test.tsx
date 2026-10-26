@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitForElementToBeRemoved, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mock-api';
@@ -134,7 +134,6 @@ describe('RecordFinancials (015 FR-018, FR-019)', () => {
       body: { error: { code: 'not_found', message: 'Not found', fields: [] } },
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.queryByRole('region', { name: 'Financials' })).not.toBeInTheDocument();
+    await waitForElementToBeRemoved(() => screen.queryByRole('region', { name: 'Financials' }));
   });
 });

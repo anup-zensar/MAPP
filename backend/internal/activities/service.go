@@ -243,7 +243,7 @@ func (s *Service) ListForPlan(ctx context.Context, a actor.Actor, planID string)
 		}
 		summaries = make([]Summary, 0, len(all.activities))
 		for _, activity := range all.activities {
-			d, err := s.derive(ctx, activity, all.contextOf(activity), facts[activity.ID])
+			d, err := s.storedDerive(ctx, activity, all.contextOf(activity), facts[activity.ID])
 			if err != nil {
 				return err
 			}
@@ -260,12 +260,7 @@ func (s *Service) ListForPlan(ctx context.Context, a actor.Actor, planID string)
 	if err != nil {
 		return nil, err
 	}
-	slices.SortStableFunc(summaries, func(x, y Summary) int {
-		if c := compareStart(x.StartDate, y.StartDate); c != 0 {
-			return c
-		}
-		return strings.Compare(strings.ToLower(x.Name), strings.ToLower(y.Name))
-	})
+	slices.SortStableFunc(summaries, func(x, y Summary) int { return comparePlanOrder(x.StartDate, x.Name, y.StartDate, y.Name) })
 	return s.shownSummaries(ctx, a, summaries)
 }
 
@@ -309,6 +304,19 @@ func (p planActivities) contextOf(a Activity) planContext {
 	pc.initiative = p.initiatives[a.InitiativeID]
 	pc.campaign = p.campaigns[pc.initiative.CampaignID]
 	return pc
+}
+
+// SortInPlanOrder sorts activities as a plan's list shows them: by start date, none last, then by name; it is
+// stable, so activities read in id order keep it otherwise.
+func SortInPlanOrder(list []Activity) {
+	slices.SortStableFunc(list, func(x, y Activity) int { return comparePlanOrder(x.StartDate, x.Name, y.StartDate, y.Name) })
+}
+
+func comparePlanOrder(xStart *date.Date, xName string, yStart *date.Date, yName string) int {
+	if c := compareStart(xStart, yStart); c != 0 {
+		return c
+	}
+	return strings.Compare(strings.ToLower(xName), strings.ToLower(yName))
 }
 
 // compareStart orders start dates, earliest first and no date last.

@@ -11,14 +11,15 @@ import (
 
 // Timestamps are stored in UTC (constitution VI).
 func TestSystem_IsUTC(t *testing.T) {
+	t.Parallel()
 	if loc := clock.System().Location(); loc != time.UTC {
 		t.Errorf("Location = %v, want UTC", loc)
 	}
 }
 
-// The time is cut to whole milliseconds, so a stored timestamp has at most 3 fractional digits and reads
-// back exactly as it was written (research R10).
+// Whole milliseconds: JSON keeps 3 fractional digits, so a stored timestamp reads back exactly (research R10).
 func TestSystem_SurvivesJSONRoundTrip(t *testing.T) {
+	t.Parallel()
 	now := clock.System()
 
 	body, err := json.Marshal(now)

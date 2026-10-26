@@ -10,7 +10,7 @@ Sync Impact Report
 - Files changed with this amendment: frontend/package.json, frontend/pnpm-lock.yaml,
   frontend/pnpm-workspace.yaml (replaces .npmrc and package-lock.json), CI, frontend/Dockerfile,
   frontend/playwright.config.ts, READMEs, agent guidance, GO_STANDARDS, quality-gates, ADR-0010,
-  ADR-0012, ADR-0014
+  ADR-0012, ADR-0015
 - Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
@@ -1128,6 +1128,6 @@ amended to match.
 | 4.0.0 | 2026-10-26 | VI, B9: only end-to-end tests and the scope-isolation tests of scoped store reads use a real database; every other test uses fakes, and database tests of queries, constraints or migrations are forbidden (they were required store tests before) | Product owner decision of 2026-10-26 |
 | 4.1.0 | 2026-10-26 | Current Phase & Scope: `compose.yaml` may also build and run the whole application locally for reviewers such as business analysts, published on `127.0.0.1` only and pushed nowhere; Docker and Podman stay optional for developers (ADR-0012) | Product owner instruction of 2026-10-26 |
 | 4.2.0 | 2026-10-26 | VIII, Governance: the comment budget is aligned file by file — a change that touches a file brings the whole file's comments within the budget, except in features 025, 027 and 028; feature 021 (a dedicated comment pass) is dropped | Product owner instruction of 2026-10-26 |
-| 4.3.0 | 2026-10-27 | F1 and VII: pnpm replaces npm as the web app's package manager (pinned through Corepack, `pnpm-lock.yaml`, `pnpm install --frozen-lockfile`); the 24-hour release age is pnpm's `minimumReleaseAge`, and dependency install scripts run only when allowed (ADR-0014) | Product owner instruction of 2026-10-27 |
+| 4.3.0 | 2026-10-27 | F1 and VII: pnpm replaces npm as the web app's package manager (pinned through Corepack, `pnpm-lock.yaml`, `pnpm install --frozen-lockfile`); the 24-hour release age is pnpm's `minimumReleaseAge`, and dependency install scripts run only when allowed (ADR-0015) | Product owner instruction of 2026-10-27 |
 
 **Version**: 4.3.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26

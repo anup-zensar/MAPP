@@ -88,9 +88,9 @@ const firstNumber = 1001
 // Counters is the repository of the last number given per prefix. The JSON store keeps it in the table
 // "counters"; PostgreSQL will have its own implementation.
 type Counters interface {
-	// Increment raises the counter of prefix by one and returns the new number, 1001 the first time.
-	// It runs inside the caller's Write.
-	Increment(ctx context.Context, prefix string) (int, error)
+	// Advance raises the counter of prefix by count (at least 1) and returns the new number: the last of the
+	// count numbers given out, 1001 the first time for a count of 1. It runs inside the caller's Write.
+	Advance(ctx context.Context, prefix string, count int) (int, error)
 }
 
 // Generator gives out readable IDs.
@@ -115,5 +115,22 @@ func (g *Generator) Next(ctx context.Context, prefix string) (string, error) {
 // NextNumber returns the number of the next ID of prefix, without the prefix. The activity log uses it to
 // order its entries (LOG-1001 has the sequence number 1001). Call it inside a Write.
 func (g *Generator) NextNumber(ctx context.Context, prefix string) (int, error) {
-	return g.counters.Increment(ctx, prefix)
+	return g.counters.Advance(ctx, prefix, 1)
+}
+
+// NextIDs returns the next count IDs of prefix in order, the same IDs count calls of Next would give, with one
+// raise of the counter. Call it inside a Write.
+func (g *Generator) NextIDs(ctx context.Context, prefix string, count int) ([]string, error) {
+	if count < 1 {
+		return []string{}, nil
+	}
+	last, err := g.counters.Advance(ctx, prefix, count)
+	if err != nil {
+		return nil, err
+	}
+	list := make([]string, 0, count)
+	for number := last - count + 1; number <= last; number++ {
+		list = append(list, fmt.Sprintf("%s-%d", prefix, number))
+	}
+	return list, nil
 }

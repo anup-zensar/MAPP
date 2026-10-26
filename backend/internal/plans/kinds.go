@@ -68,6 +68,7 @@ func (s *Service) Kinds() []history.Kind {
 		Singular:       kindSingular,
 		Plural:         kindPlural,
 		Snapshot:       s.snapshot,
+		SnapshotsOf:    s.snapshotsOf,
 		Remove:         s.repo.Delete,
 		Put:            s.put,
 		Describe:       s.describe,

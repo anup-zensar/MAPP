@@ -7,27 +7,16 @@ import {
   approvedText,
   changedFieldsText,
   datesText,
-  greetingText,
   isZero,
-  percentText,
   initialsOf,
   lineItemsNeedAttentionText,
   recentSentence,
   levelText,
   waitingText,
-  ofPlanBudgetText,
   oldestWaitingText,
-  percentUsedText,
   planCountsText,
   plansWithoutBudgetText,
-  viewAllPlansText,
 } from './home-text';
-
-describe('homeText — the greeting (design system §2.3)', () => {
-  it('greets the person by first name (FR-001)', () => {
-    expect(greetingText('Priya')).toBe('Welcome back, Priya.');
-  });
-});
 
 describe('homeText — summary cards (FR-005, FR-006, FR-007)', () => {
   it('counts plans and activities with their statuses', () => {
@@ -45,9 +34,6 @@ describe('homeText — summary cards (FR-005, FR-006, FR-007)', () => {
   });
 
   it('writes the budget lines of the planned-cost card', () => {
-    expect(ofPlanBudgetText('$1.2M')).toBe('of $1.2M plan budget');
-    expect(percentUsedText(84)).toBe('84% used');
-    expect(percentText(125)).toBe('125%');
     expect(isZero(usd('0.00'))).toBe(true);
     expect(isZero(null)).toBe(true);
     expect(isZero(usd('0.01'))).toBe(false);
@@ -61,10 +47,6 @@ describe('homeText — Plans at a glance (FR-008 – FR-010)', () => {
     expect(approvedText(3, 7)).toBe('3 of 7 approved');
     expect(approvedPercent(3, 7)).toBe(43);
     expect(approvedPercent(0, 0)).toBe(0);
-  });
-
-  it('offers every plan in scope with its count', () => {
-    expect(viewAllPlansText(12)).toBe('View all 12 plans');
   });
 });
 

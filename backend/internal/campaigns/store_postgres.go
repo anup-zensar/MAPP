@@ -24,7 +24,8 @@ func NewPostgresStore(db *database.DB) *PostgresStore {
 }
 
 func (s *PostgresStore) GetCampaign(ctx context.Context, id string) (Campaign, bool, error) {
-	return first(s.campaigns(ctx, sqlcdb.ListCampaignsParams{ID: &id}))
+	rows, err := s.campaignRecords().ByID(ctx, []string{id})
+	return first(campaignsFromRows(rows, err))
 }
 
 func (s *PostgresStore) ListCampaigns(ctx context.Context) ([]Campaign, error) {
@@ -32,11 +33,11 @@ func (s *PostgresStore) ListCampaigns(ctx context.Context) ([]Campaign, error) {
 }
 
 func (s *PostgresStore) CampaignsOfPlan(ctx context.Context, planID string) ([]Campaign, error) {
-	return s.campaigns(ctx, sqlcdb.ListCampaignsParams{PlanIds: []string{planID}})
+	return campaignsFromRows(s.campaignRecords().ByParent(ctx, []string{planID}))
 }
 
 func (s *PostgresStore) CampaignsOfPlans(ctx context.Context, planIDs []string) ([]Campaign, error) {
-	return s.campaigns(ctx, sqlcdb.ListCampaignsParams{PlanIds: append([]string{}, planIDs...)})
+	return campaignsFromRows(s.campaignRecords().ByParent(ctx, planIDs))
 }
 
 func (s *PostgresStore) CampaignsInScope(ctx context.Context, scope authz.Scope) ([]Campaign, error) {
@@ -48,21 +49,13 @@ func (s *PostgresStore) GetCampaignInScope(ctx context.Context, scope authz.Scop
 }
 
 func (s *PostgresStore) PutCampaign(ctx context.Context, c Campaign) error {
-	attributes, err := c.Attributes.Column()
+	params, err := campaignParams(c)
 	if err != nil {
-		return fmt.Errorf("encode campaign %s: %w", c.ID, err)
+		return err
 	}
-	minor, currency := database.MoneyColumns(c.Budget)
-	phasing := c.BudgetPhasing.Normalised()
-	months, amounts := phasing.MonthColumns()
-	q := s.db.Queries(ctx)
-	err = q.PutCampaign(ctx, sqlcdb.PutCampaignParams{
-		ID: c.ID, PlanID: c.PlanID, Name: c.Name, Description: c.Description, OwnerID: ownerColumn(c.OwnerID),
-		StartDate: database.DateColumn(c.StartDate), EndDate: database.DateColumn(c.EndDate), BudgetMinor: minor,
-		BudgetCurrency: currency, Attributes: attributes, PhasingMethod: string(phasing.Method), Version: c.Version,
-		CreatedAt: c.CreatedAt, CreatedByID: c.CreatedBy.ID, CreatedByName: c.CreatedBy.Name, UpdatedAt: c.UpdatedAt,
-		UpdatedByID: c.UpdatedBy.ID, UpdatedByName: c.UpdatedBy.Name,
-	})
+	months, amounts := c.BudgetPhasing.Normalised().MonthColumns()
+	q := s.change(ctx)
+	err = q.PutCampaign(ctx, params)
 	if err == nil {
 		err = q.DeleteCampaignPhasingMonths(ctx, c.ID)
 	}
@@ -76,7 +69,7 @@ func (s *PostgresStore) PutCampaign(ctx context.Context, c Campaign) error {
 }
 
 func (s *PostgresStore) DeleteCampaign(ctx context.Context, id string) error {
-	if err := s.db.Queries(ctx).DeleteCampaign(ctx, id); err != nil {
+	if err := s.change(ctx).DeleteCampaign(ctx, id); err != nil {
 		return fmt.Errorf("delete campaign %s: %w", id, err)
 	}
 	return nil
@@ -84,10 +77,8 @@ func (s *PostgresStore) DeleteCampaign(ctx context.Context, id string) error {
 
 func (s *PostgresStore) campaigns(ctx context.Context, filter sqlcdb.ListCampaignsParams) ([]Campaign, error) {
 	rows, err := s.db.Queries(ctx).ListCampaigns(ctx, filter)
-	if err != nil {
-		return nil, fmt.Errorf("select campaigns: %w", err)
-	}
-	return campaignsFromRows(rows)
+	s.campaignRecords().Keep(ctx, rows)
+	return campaignsFromRows(rows, err)
 }
 
 func (s *PostgresStore) campaignsInScope(ctx context.Context, scope authz.Scope, id *string) ([]Campaign, error) {
@@ -102,10 +93,14 @@ func (s *PostgresStore) campaignsInScope(ctx context.Context, scope authz.Scope,
 	for _, row := range rows {
 		listRows = append(listRows, sqlcdb.ListCampaignsRow(row))
 	}
-	return campaignsFromRows(listRows)
+	s.campaignRecords().Keep(ctx, listRows)
+	return campaignsFromRows(listRows, nil)
 }
 
-func campaignsFromRows(rows []sqlcdb.ListCampaignsRow) ([]Campaign, error) {
+func campaignsFromRows(rows []sqlcdb.ListCampaignsRow, err error) ([]Campaign, error) {
+	if err != nil {
+		return nil, fmt.Errorf("select campaigns: %w", err)
+	}
 	list := make([]Campaign, 0, len(rows))
 	for _, row := range rows {
 		r := row.Campaign

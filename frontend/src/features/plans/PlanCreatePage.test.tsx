@@ -94,6 +94,7 @@ describe('PlanCreatePage (US1)', () => {
 
     const summary = await screen.findByText('2 problems need your attention');
     expect(within(closestTo(summary, 'div')).getByText('Enter a plan name.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('alert').parentElement).toHaveFocus());
     expect(screen.getAllByText('Choose a model.')).toHaveLength(2);
     expect(router.state.location.pathname).toBe('/plans/new');
   });

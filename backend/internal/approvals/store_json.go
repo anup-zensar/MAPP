@@ -76,6 +76,14 @@ func (r jsonRepository) RoundsOf(ctx context.Context, activityID string) ([]Roun
 	return rounds, nil
 }
 
+func (r jsonRepository) OpenRounds(ctx context.Context) ([]Round, error) {
+	all, err := r.ListRounds(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return where(all, func(round Round) bool { return round.Outcome == OutcomeOpen }), nil
+}
+
 // PutRound saves a round under its id.
 func (jsonRepository) PutRound(ctx context.Context, round Round) error {
 	return store.Put(ctx, roundsTable, round.ID, round)

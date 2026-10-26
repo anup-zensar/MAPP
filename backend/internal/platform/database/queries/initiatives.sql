@@ -5,7 +5,7 @@ SELECT sqlc.embed(initiatives),
     coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM initiative_phasing_months m
         WHERE m.initiative_id = initiatives.id), '{}')::bigint[] AS phasing_amounts
 FROM initiatives
-WHERE (sqlc.narg(id)::text IS NULL OR id = sqlc.narg(id))
+WHERE (sqlc.narg(ids)::text[] IS NULL OR id = ANY (sqlc.narg(ids)::text[]))
     AND (sqlc.narg(campaign_ids)::text[] IS NULL OR campaign_id = ANY (sqlc.narg(campaign_ids)::text[]))
 ORDER BY length(id), id COLLATE "C";
 
@@ -61,3 +61,19 @@ JOIN unnest(sqlc.arg(amounts)::bigint[]) WITH ORDINALITY AS a(amount_minor, i) U
 -- name: DeleteInitiative :exec
 DELETE FROM initiatives
 WHERE id = $1;
+
+-- name: AddInitiatives :copyfrom
+INSERT INTO initiatives (
+    id, campaign_id, name, description, owner_id, start_date, end_date, budget_minor, budget_currency, attributes,
+    phasing_method, version, created_at, created_by_id, created_by_name, updated_at, updated_by_id, updated_by_name
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+);
+
+-- name: AddInitiativePhasingMonths :copyfrom
+INSERT INTO initiative_phasing_months (initiative_id, month, amount_minor)
+VALUES ($1, $2, $3);
+
+-- name: DeleteInitiatives :exec
+DELETE FROM initiatives
+WHERE id = ANY (sqlc.arg(ids)::text[]);

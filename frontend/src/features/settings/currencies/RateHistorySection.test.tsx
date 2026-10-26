@@ -1,7 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
-import { localDate } from '@/format/intl';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
@@ -13,6 +12,15 @@ import { reply } from '@/testing/replies';
 import { RateHistorySection } from './RateHistorySection';
 
 const NO_IMPACT = { body: { warnings: [] } };
+
+// RateDialog reads today from the clock; the rate of 01 Jan 2027 must stay a future one.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-20T12:00:00Z') });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function renderHistory(answers: HttpHandler[] = []) {
   const api = mockApi([
@@ -119,7 +127,7 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
         'POST /api/v1/currencies/{code}/rates',
         {
           status: 201,
-          body: { ...EUR_CURRENT, id: 'XR-1104', date: localDate(new Date()), rate: '0.93' },
+          body: { ...EUR_CURRENT, id: 'XR-1104', date: '2026-10-20', rate: '0.93' },
         },
         { code: 'EUR' },
       ),
@@ -128,16 +136,18 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Add rate' }));
     const dialog = await screen.findByRole('dialog', { name: 'Add rate of EUR' });
-    expect(within(dialog).getByLabelText(/^Date/)).toHaveValue(localDate(new Date()));
+    expect(within(dialog).getByLabelText(/^Date/)).toHaveValue('2026-10-20');
     await user.type(within(dialog).getByRole('textbox', { name: /^Rate/ }), '0.93');
     expect(dialog).toHaveTextContent('1 USD = 0.93 EUR · 1 EUR = 1.075269 USD');
     await user.click(within(dialog).getByRole('button', { name: 'Save rate' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(api.bodiesOf('POST /api/v1/currencies/EUR/rates')).toEqual([
-      { date: localDate(new Date()), rate: '0.93' },
+      { date: '2026-10-20', rate: '0.93' },
     ]);
-    expect(await within(await findMessages()).findByText(/^Rate of EUR on .* saved$/)).toBeTruthy();
+    expect(
+      await within(await findMessages()).findByText('Rate of EUR on 20 Oct 2026 saved'),
+    ).toBeInTheDocument();
   });
 
   it('says from when a future rate counts', async () => {
@@ -181,7 +191,9 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
     await user.type(within(dialog).getByRole('textbox', { name: /^Rate/ }), '0.95');
     await user.click(within(dialog).getByRole('button', { name: 'Save rate' }));
 
-    const question = await screen.findByRole('alertdialog', { name: /^Save the rate of EUR on/ });
+    const question = await screen.findByRole('alertdialog', {
+      name: 'Save the rate of EUR on 20 Oct 2026?',
+    });
     expect(question).toHaveTextContent(impact);
     expect(question).toHaveTextContent(plans);
     await user.click(within(question).getByRole('button', { name: 'Keep editing' }));

@@ -18,11 +18,9 @@ import (
 	"mapp/seed"
 )
 
-// The campaign and initiative levels add to a plan's facts for feature 004 its campaigns, initiatives and
-// campaign budgets, and every campaign and initiative that blocks publishing, from the demo data: FY2026
-// Lubricants Europe is complete, FY2026 Mobility China's Retail growth has no cluster or region and its
-// Fleet cards no dates (005 data model §9; D-195).
+// Lubricants Europe is complete; Mobility China's Retail growth has no cluster or region and Fleet cards no dates.
 func TestCampaignLevels_AddFacts_For004(t *testing.T) {
+	t.Parallel()
 	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
