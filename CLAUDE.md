@@ -135,13 +135,16 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 
 Fixed by feature 001 (`specs/001-app-shell-and-sign-in/research.md` explains each choice).
 
-- **API**: standard library at run time (`net/http` ServeMux patterns, `encoding/json`, `log/slog`).
+- **API**: Gin in the handler layer (feature 024): `internal/platform/web` holds the engine, its middleware
+  and `BindJSON` · `Respond` · `RespondError`; each area registers its handlers in `RegisterRoutes(r
+  gin.IRoutes)` and its access rule in `access/routes.go`. JSON logs through `internal/platform/logging`,
+  OpenTelemetry through `internal/platform/telemetry`.
   Packages: `internal/app` (wiring, config), `internal/platform/{actor,clock,errs,web,store,ids,record,apitest}`,
   then one package per business area (`auth`, `people`, `history`, `samples`, …), each `model.go ·
   repository.go · store_json.go · service.go · handler.go` plus tests.
 - **Storage**: JSON file store (`internal/platform/store`) with all-or-nothing transactions carried in
   the `context.Context`; services depend on `store.Transactor` and repository interfaces only.
-- **Contract**: paths under `/api/`; contract tests use `libopenapi-validator` through
+- **Contract**: paths under `/api/v1`; contract tests use `libopenapi-validator` through
   `internal/platform/apitest`; handler tests are external test packages (`package <name>_test`).
 - **Web app**: as in the target, but without React Hook Form, Zod, MSW or `fast-check`; folders
   `components/`, `lib/`, `styles/` (`src/styles/tokens.css`) and `test/`; generated types in

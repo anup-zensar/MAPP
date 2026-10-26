@@ -214,16 +214,16 @@ Then change the area's line in `app.go` to `RegisterRoutes(signedIn)`. Its tests
 
 ## Phase 7: Polish
 
-- [ ] T048 [P] In `backend/docs/GO_STANDARDS.md`, bring §4, §5, §7, §9 and §10 into line with the code:
+- [x] T048 [P] In `backend/docs/GO_STANDARDS.md`, bring §4, §5, §7, §9 and §10 into line with the code:
   helper names, the middleware order and its reason, telemetry exporters, the new variables. Drop the
   "not yet compiled" caveat for these sections (FR-014)
-- [ ] T049 [P] In `CLAUDE.md`, change the API line of "Active technologies" (Gin, slog JSON, OpenTelemetry).
+- [x] T049 [P] In `CLAUDE.md`, change the API line of "Active technologies" (Gin, slog JSON, OpenTelemetry).
   In `backend/README.md` and `README.md`, update the startup record, SIGTERM and the new variables. Update
   `docs/architecture/overview.md` (FR-014)
-- [ ] T050 [P] ⏳022 In `docs/sdd/feature-map.md`, link the 024 row to its folder and set its status
-- [ ] T051 Run every gate: the four checkpoint commands, `govulncheck ./...` (new modules), `npm run check`
+- [x] T050 [P] ⏳022 In `docs/sdd/feature-map.md`, link the 024 row to its folder and set its status
+- [x] T051 Run every gate: the four checkpoint commands, `govulncheck ./...` (new modules), `npm run check`
   and `npm run test:e2e`. The reviewer checks the comment budget and file length of new and changed files
-- [ ] T052 Open the pull request with the requirement IDs, the publish dates of Gin, otelgin and the
+- [x] T052 Open the pull request with the requirement IDs, the publish dates of Gin, otelgin and the
   OpenTelemetry modules, and any metric exceptions
 
 ---

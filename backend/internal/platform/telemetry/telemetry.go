@@ -35,8 +35,7 @@ type Telemetry struct {
 	Meter  *sdkmetric.MeterProvider
 }
 
-// Start always builds the SDK's providers, so every request gets a trace ID for the logs even when nothing
-// is exported.
+// Start always builds the SDK's providers, so requests have trace IDs for the logs even with no exporter.
 func Start(cfg Config, console io.Writer) (*Telemetry, error) {
 	service := resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(serviceName))
 	traceOptions := []sdktrace.TracerProviderOption{sdktrace.WithResource(service)}
