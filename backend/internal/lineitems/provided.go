@@ -110,11 +110,33 @@ func summaryOf(f ActivityFacts, views []View) *Summary {
 // yearShift of 1 — a copy into the next year's plan — the copies also move one year on (D-148, see
 // shiftYears). It joins the caller's Write and writes no log entries: the feature that copies writes the one
 // "copied" entry of the person's action (D-110). It returns how many line items it copied. It is the CopyAll
-// of feature 006's activities.LineItems, for single activity copies and the copies of campaigns and
-// initiatives.
+// of feature 006's activities.LineItems, for single activity copies.
 func (s *Service) CopyLineItems(ctx context.Context, a actor.Actor, fromActivityID, toActivityID string, yearShift int) (int, error) {
-	newIDs, err := s.CopyForActivities(ctx, a, map[string]string{fromActivityID: toActivityID}, yearShift)
-	return len(newIDs), err
+	return s.CopyLineItemsOf(ctx, a, []CopyPair{{FromID: fromActivityID, ToID: toActivityID}}, yearShift)
+}
+
+type CopyPair struct {
+	FromID, ToID string
+}
+
+// CopyLineItemsOf is CopyLineItems for many activities at once, activity by activity in the order of pairs.
+func (s *Service) CopyLineItemsOf(ctx context.Context, a actor.Actor, pairs []CopyPair, yearShift int) (int, error) {
+	copied := 0
+	err := s.tx.Write(ctx, func(ctx context.Context) error {
+		fromIDs, newActivityIDs := make([]string, 0, len(pairs)), make(map[string]string, len(pairs))
+		for _, p := range pairs {
+			fromIDs = append(fromIDs, p.FromID)
+			newActivityIDs[p.FromID] = p.ToID
+		}
+		items, err := s.repo.ListByActivities(ctx, fromIDs)
+		if err != nil {
+			return err
+		}
+		newIDs, err := s.addCopies(ctx, copyBy{actor: a, years: yearShift}, inPairOrder(pairs, items), newActivityIDs)
+		copied = len(newIDs)
+		return err
+	})
+	return copied, err
 }
 
 // CopyForActivities copies the line items of every activity of newActivityIDs (the id of a copied activity →
@@ -128,33 +150,58 @@ func (s *Service) CopyForActivities(ctx context.Context, a actor.Actor, newActiv
 		if err != nil {
 			return err
 		}
-		var budgetItems []BudgetItem // read only for a copy into another year
-		if yearShift != 0 && len(items) > 0 {
-			if budgetItems, err = s.deps.FinanceBudgets.Items(ctx); err != nil {
-				return err
-			}
-		}
-		for _, li := range items { // by id, so the copies get their IDs in the same order
-			c := copyOf(li)
-			c.ActivityID = newActivityIDs[li.ActivityID]
-			if c.ID, err = s.ids.Next(ctx, ids.PrefixLineItem); err != nil {
-				return err
-			}
-			c.Meta = record.NewMeta(a, s.now())
-			if yearShift != 0 {
-				shiftYears(&c, yearShift, budgetItems)
-			}
-			if err := s.repo.Put(ctx, c); err != nil {
-				return err
-			}
-			newIDs[li.ID] = c.ID
-		}
-		return nil
+		newIDs, err = s.addCopies(ctx, copyBy{actor: a, years: yearShift}, items, newActivityIDs)
+		return err
 	})
 	if err != nil {
 		return nil, err
 	}
 	return newIDs, nil
+}
+
+type copyBy struct {
+	actor actor.Actor
+	years int
+}
+
+// addCopies stores the copies of items with the next IDs in their order, in one write, and returns the new IDs.
+func (s *Service) addCopies(ctx context.Context, by copyBy, items []LineItem, newActivityIDs map[string]string) (map[string]string, error) {
+	var budgetItems []BudgetItem
+	var err error
+	if by.years != 0 && len(items) > 0 {
+		if budgetItems, err = s.deps.FinanceBudgets.Items(ctx); err != nil {
+			return nil, err
+		}
+	}
+	fresh, err := s.ids.NextIDs(ctx, ids.PrefixLineItem, len(items))
+	if err != nil {
+		return nil, err
+	}
+	copies, newIDs := make([]LineItem, 0, len(items)), make(map[string]string, len(items))
+	for i, li := range items {
+		c := copyOf(li)
+		c.ActivityID, c.ID, c.Meta = newActivityIDs[li.ActivityID], fresh[i], record.NewMeta(by.actor, s.now())
+		if by.years != 0 {
+			shiftYears(&c, by.years, budgetItems)
+		}
+		copies, newIDs[li.ID] = append(copies, c), c.ID
+	}
+	if err := s.repo.AddMany(ctx, copies); err != nil {
+		return nil, err
+	}
+	return newIDs, nil
+}
+
+func inPairOrder(pairs []CopyPair, items []LineItem) []LineItem {
+	byActivity := map[string][]LineItem{}
+	for _, li := range items {
+		byActivity[li.ActivityID] = append(byActivity[li.ActivityID], li)
+	}
+	ordered := make([]LineItem, 0, len(items))
+	for _, p := range pairs {
+		ordered = append(ordered, byActivity[p.FromID]...)
+	}
+	return ordered
 }
 
 // shiftYears moves the copy li of a line item years on (D-148, 004 FR-028): its finance budget year, and its
