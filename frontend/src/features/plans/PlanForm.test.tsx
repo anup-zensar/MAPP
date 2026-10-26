@@ -1,15 +1,17 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { FINANCE_BUDGETS, FORM_ANSWERS, plan, planDefaults } from '@/testing/fixtures/plans';
+import { reply } from '@/testing/replies';
 import { PlanForm } from './PlanForm';
 import type { PlanFormProps } from './PlanForm';
 import { valuesFromDefaults, valuesFromPlan } from './plan-form-values';
 
-function renderForm(props: Partial<PlanFormProps> = {}, answers = {}) {
-  const api = mockApi({ ...FORM_ANSWERS, ...answers });
+function renderForm(props: Partial<PlanFormProps> = {}, answers: HttpHandler[] = []) {
+  const api = mockApi([...FORM_ANSWERS, ...answers]);
   const defaults = planDefaults();
   const result = renderWithProviders(
     <PlanForm
@@ -143,10 +145,9 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
   });
 
   it('says when a year has no finance budgets yet', async () => {
-    renderForm(
-      {},
-      { 'GET /api/v1/finance-budgets': { body: { ...FINANCE_BUDGETS, items: [], total: 0 } } },
-    );
+    renderForm({}, [
+      reply('GET /api/v1/finance-budgets', { body: { ...FINANCE_BUDGETS, items: [], total: 0 } }),
+    ]);
 
     expect(
       await screen.findByText(

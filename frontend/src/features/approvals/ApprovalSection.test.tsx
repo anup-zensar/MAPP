@@ -1,7 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -14,12 +15,11 @@ import {
   roundOf,
   SUBMITTED,
 } from '@/testing/fixtures/approvals';
+import { looseReply } from '@/testing/replies';
 import { ApprovalSection } from './ApprovalSection';
 import type { ActivityApproval } from './api';
 import type { ApprovalActivity } from './approval-types';
 import { APPROVED_NO_RECALL } from './messages';
-
-const APPROVAL = 'GET /api/v1/activities/A-1042/approval';
 
 const ACTIVITY: ApprovalActivity = {
   id: 'A-1042',
@@ -30,8 +30,11 @@ const ACTIVITY: ApprovalActivity = {
 
 const NONE = { available: false, reason: '' };
 
-function renderSection(answer: MockHandler, extra: Record<string, MockHandler> = {}) {
-  const api = mockApi({ [APPROVAL]: answer, ...extra });
+function renderSection(answer: LooseAnswer, extra: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply('GET /api/v1/activities/{activityId}/approval', answer, { activityId: 'A-1042' }),
+    ...extra,
+  ]);
   const rendered = renderWithProviders(
     <ApprovalSection activity={ACTIVITY} onShowProblems={vi.fn()} />,
     { user: testUser() },
@@ -326,12 +329,16 @@ describe('ApprovalSection when approval ends early (feature 008, US5)', () => {
     });
     const { user, api } = renderSection(
       () => ({ body: recalled ? recalledApproval : approvalOf() }),
-      {
-        [RECALL]: () => {
-          recalled = true;
-          return { body: recalledApproval };
-        },
-      },
+      [
+        looseReply(
+          'POST /api/v1/activities/{activityId}/approval/recall',
+          () => {
+            recalled = true;
+            return { body: recalledApproval };
+          },
+          { activityId: 'A-1042' },
+        ),
+      ],
     );
 
     await user.click(await within(card()).findByRole('button', { name: 'Recall submission' }));

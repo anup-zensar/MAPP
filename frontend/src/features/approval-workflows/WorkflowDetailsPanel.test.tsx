@@ -2,17 +2,18 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ALEX, DANIEL } from '@/testing/fixtures/approvals';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { CHINA_WORKFLOW, detailsOf, workflowOf } from '@/testing/fixtures/approval-workflows';
+import { looseReply } from '@/testing/replies';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
 import { WORKFLOW_GONE } from './workflow-texts';
 
-const DETAILS = 'GET /api/v1/approval-workflows/WF-1001';
-
-function renderPanel(answer: MockHandler) {
-  mockApi({ [DETAILS]: answer });
+function renderPanel(answer: LooseAnswer) {
+  mockApi([
+    looseReply('GET /api/v1/approval-workflows/{workflowId}', answer, { workflowId: 'WF-1001' }),
+  ]);
   const actions = { edit: vi.fn(), setInactive: vi.fn(), setActive: vi.fn(), remove: vi.fn() };
   const onClose = vi.fn();
   const rendered = renderWithProviders(

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -15,13 +15,18 @@ import {
   SARA_ROLES,
   VIEWER,
 } from '@/testing/fixtures/access';
+import { looseReply } from '@/testing/replies';
 import { AccessPage } from './AccessPage';
 
 const ALEX_USER = testUser({ id: ALEX.id, name: ALEX.name, firstName: 'Alex', initials: 'AM' });
 
-function renderAccess(answers: Record<string, MockHandler> = {}, route = '/settings/access') {
+function renderAccess(answers: HttpHandler[] = [], route = '/settings/access') {
   // A change refreshes the session too: the signed-in person's own access may have changed.
-  const api = mockApi({ 'GET /api/v1/me': { body: ALEX_USER }, ...ACCESS_ANSWERS, ...answers });
+  const api = mockApi([
+    looseReply('GET /api/v1/me', { body: ALEX_USER }),
+    ...ACCESS_ANSWERS,
+    ...answers,
+  ]);
   return {
     api,
     ...renderWithProviders(<AccessPage />, { user: ALEX_USER, route, path: '/settings/access' }),
@@ -35,8 +40,8 @@ function rowOf(name: string) {
 
 describe('AccessPage: People tab (feature 014, US3)', () => {
   it('lists everyone with teams and roles, with a search and a role filter with No role (US3-1)', async () => {
-    const { user } = renderAccess({
-      'GET /api/v1/access/changes': {
+    const { user } = renderAccess([
+      looseReply('GET /api/v1/access/changes', {
         body: {
           items: [
             {
@@ -58,8 +63,8 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
           ],
           total: 1,
         },
-      },
-    });
+      }),
+    ]);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Roles and access' }),
@@ -93,8 +98,8 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
   });
 
   it('flags a scope that covers no team any more', async () => {
-    renderAccess({
-      'GET /api/v1/access/people': {
+    renderAccess([
+      looseReply('GET /api/v1/access/people', {
         body: {
           items: [
             {
@@ -104,8 +109,8 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
           ],
           total: 1,
         },
-      },
-    });
+      }),
+    ]);
 
     expect(await screen.findByText('No teams left in this scope')).toBeInTheDocument();
   });
@@ -116,10 +121,14 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
       roles: [...SARA_ROLES.roles],
       version: 3,
     };
-    const { api, user, router } = renderAccess({
-      'GET /api/v1/people/U-1006/roles': { body: SARA_ROLES },
-      'PUT /api/v1/people/U-1006/roles': { body: saved },
-    });
+    const { api, user, router } = renderAccess([
+      looseReply(
+        'GET /api/v1/people/{personId}/roles',
+        { body: SARA_ROLES },
+        { personId: 'U-1006' },
+      ),
+      looseReply('PUT /api/v1/people/{personId}/roles', { body: saved }, { personId: 'U-1006' }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Edit roles of Sara Novak' }));
     await waitFor(() => expect(router.state.location.search).toBe('?person=U-1006'));
@@ -162,19 +171,27 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
 
   it('shows the field problems of a save at their role', async () => {
     const { user } = renderAccess(
-      {
-        'GET /api/v1/people/U-1006/roles': { body: SARA_ROLES },
-        'PUT /api/v1/people/U-1006/roles': {
-          status: 400,
-          body: {
-            error: {
-              code: 'validation_failed',
-              message: 'Check the highlighted fields.',
-              fields: [{ field: 'roles.0.teamIds', message: 'Choose at least one team.' }],
+      [
+        looseReply(
+          'GET /api/v1/people/{personId}/roles',
+          { body: SARA_ROLES },
+          { personId: 'U-1006' },
+        ),
+        looseReply(
+          'PUT /api/v1/people/{personId}/roles',
+          {
+            status: 400,
+            body: {
+              error: {
+                code: 'validation_failed',
+                message: 'Check the highlighted fields.',
+                fields: [{ field: 'roles.0.teamIds', message: 'Choose at least one team.' }],
+              },
             },
           },
-        },
-      },
+          { personId: 'U-1006' },
+        ),
+      ],
       '/settings/access?person=U-1006',
     );
 
@@ -191,13 +208,25 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
     const warning =
       'Daniel Okoro is an approver in 1 approval workflow and has 2 activities waiting. Without a role that approves, an administrator will have to decide on their behalf.';
     const { api, user } = renderAccess(
-      {
-        'GET /api/v1/people/U-1003/roles': { body: DANIEL_ROLES },
-        'POST /api/v1/people/U-1003/roles/impact': {
-          body: { warnings: [{ kind: 'approverCannotApprove', message: warning, count: 2 }] },
-        },
-        'PUT /api/v1/people/U-1003/roles': { body: { ...DANIEL_ROLES, version: 4 } },
-      },
+      [
+        looseReply(
+          'GET /api/v1/people/{personId}/roles',
+          { body: DANIEL_ROLES },
+          { personId: 'U-1003' },
+        ),
+        looseReply(
+          'POST /api/v1/people/{personId}/roles/impact',
+          {
+            body: { warnings: [{ kind: 'approverCannotApprove', message: warning, count: 2 }] },
+          },
+          { personId: 'U-1003' },
+        ),
+        looseReply(
+          'PUT /api/v1/people/{personId}/roles',
+          { body: { ...DANIEL_ROLES, version: 4 } },
+          { personId: 'U-1003' },
+        ),
+      ],
       '/settings/access?person=U-1003',
     );
 
@@ -230,14 +259,26 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
     const refusal =
       'Alex Morgan is the only administrator. Give someone else the Administrator role first.';
     const { user } = renderAccess(
-      {
-        'GET /api/v1/people/U-1001/roles': { body: ALEX_ROLES },
-        'POST /api/v1/people/U-1001/roles/impact': { body: { warnings: [] } },
-        'PUT /api/v1/people/U-1001/roles': {
-          status: 409,
-          body: { error: { code: 'not_allowed', message: refusal, fields: [] } },
-        },
-      },
+      [
+        looseReply(
+          'GET /api/v1/people/{personId}/roles',
+          { body: ALEX_ROLES },
+          { personId: 'U-1001' },
+        ),
+        looseReply(
+          'POST /api/v1/people/{personId}/roles/impact',
+          { body: { warnings: [] } },
+          { personId: 'U-1001' },
+        ),
+        looseReply(
+          'PUT /api/v1/people/{personId}/roles',
+          {
+            status: 409,
+            body: { error: { code: 'not_allowed', message: refusal, fields: [] } },
+          },
+          { personId: 'U-1001' },
+        ),
+      ],
       '/settings/access?person=U-1001',
     );
 
@@ -257,7 +298,7 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
 
 describe('AccessPage: Roles tab (feature 014, US4)', () => {
   it('lists the roles with how many people hold them, Built in, and New role', async () => {
-    renderAccess({}, '/settings/access?tab=roles');
+    renderAccess([], '/settings/access?tab=roles');
 
     expect(screen.getByRole('tab', { name: 'Roles' })).toHaveAttribute('aria-selected', 'true');
     const planner = await screen.findByRole('row', { name: /^Planner/ });
@@ -277,7 +318,7 @@ describe('AccessPage: Roles tab (feature 014, US4)', () => {
   });
 
   it('says why a role people hold cannot be deleted (US4-4)', async () => {
-    const { api, user } = renderAccess({}, '/settings/access?tab=roles');
+    const { api, user } = renderAccess([], '/settings/access?tab=roles');
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Viewer' }));
     const remove = within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Delete' });
@@ -294,33 +335,41 @@ describe('AccessPage: Roles tab (feature 014, US4)', () => {
 
   it('deletes an unused role with Undo (US4-5)', async () => {
     const { user } = renderAccess(
-      {
-        'DELETE /api/v1/roles/RL-1006': {
-          body: {
-            recycleBinEntry: {
-              id: 'RB-1101',
+      [
+        looseReply(
+          'DELETE /api/v1/roles/{roleId}',
+          {
+            body: {
+              recycleBinEntry: {
+                id: 'RB-1101',
+                recordType: 'role',
+                recordTypeLabel: 'role',
+                recordId: FINANCE_REVIEWER.id,
+                recordName: FINANCE_REVIEWER.name,
+                path: [],
+                parent: null,
+                contents: [],
+                deletedAt: '2026-10-20T10:00:00Z',
+                deletedBy: { id: ALEX.id, name: ALEX.name },
+              },
+            },
+          },
+          { roleId: 'RL-1006' },
+        ),
+        looseReply(
+          'POST /api/v1/recycle-bin/{entryId}/undo',
+          {
+            body: {
               recordType: 'role',
               recordTypeLabel: 'role',
               recordId: FINANCE_REVIEWER.id,
               recordName: FINANCE_REVIEWER.name,
-              path: [],
-              parent: null,
-              contents: [],
-              deletedAt: '2026-10-20T10:00:00Z',
-              deletedBy: { id: ALEX.id, name: ALEX.name },
+              details: '',
             },
           },
-        },
-        'POST /api/v1/recycle-bin/RB-1101/undo': {
-          body: {
-            recordType: 'role',
-            recordTypeLabel: 'role',
-            recordId: FINANCE_REVIEWER.id,
-            recordName: FINANCE_REVIEWER.name,
-            details: '',
-          },
-        },
-      },
+          { entryId: 'RB-1101' },
+        ),
+      ],
       '/settings/access?tab=roles',
     );
 
@@ -340,7 +389,7 @@ describe('AccessPage: Roles tab (feature 014, US4)', () => {
   });
 
   it('offers only View and Copy for the Administrator role', async () => {
-    const { user } = renderAccess({}, '/settings/access?tab=roles');
+    const { user } = renderAccess([], '/settings/access?tab=roles');
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Administrator' }));
 
@@ -355,8 +404,8 @@ describe('AccessPage: Roles tab (feature 014, US4)', () => {
 describe('AccessPage: Rules tab (feature 014, FR-019)', () => {
   it('shows the rules and saves a change with their version', async () => {
     const { api, user } = renderAccess(
-      {
-        'PATCH /api/v1/access-rules': {
+      [
+        looseReply('PATCH /api/v1/access-rules', {
           body: {
             ...RULES,
             noSelfApproval: false,
@@ -364,8 +413,8 @@ describe('AccessPage: Rules tab (feature 014, FR-019)', () => {
             updatedAt: '2026-10-20T10:00:00Z',
             updatedBy: { id: ALEX.id, name: ALEX.name },
           },
-        },
-      },
+        }),
+      ],
       '/settings/access?tab=rules',
     );
 

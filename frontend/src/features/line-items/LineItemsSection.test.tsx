@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -13,17 +13,18 @@ import {
   lineItemRecord,
   usd,
 } from '@/testing/fixtures/line-items';
+import { looseReply } from '@/testing/replies';
 import { LineItemsSection } from './LineItemsSection';
 
-const SECTION = 'GET /api/v1/activities/A-1001/line-items';
-const FINANCIALS = 'GET /api/v1/financials/records/A-1001';
-
 function renderSection(
-  answer: MockHandler,
+  answer: LooseAnswer,
   state?: unknown,
-  financials: MockHandler = { body: activityRecord() },
+  financials: LooseAnswer = { body: activityRecord() },
 ) {
-  mockApi({ [SECTION]: answer, [FINANCIALS]: financials });
+  mockApi([
+    looseReply('GET /api/v1/activities/{activityId}/line-items', answer, { activityId: 'A-1001' }),
+    looseReply('GET /api/v1/financials/records/{recordId}', financials, { recordId: 'A-1001' }),
+  ]);
   return renderWithProviders(<LineItemsSection activityId="A-1001" />, {
     route: { pathname: '/plans/P-1001/activities/A-1001', state },
     user: testUser(),
@@ -274,12 +275,28 @@ describe('LineItemsSection (US1)', () => {
   });
 
   it('deletes from the row and offers Undo, staying on the activity (FR-030)', async () => {
-    mockApi({
-      [SECTION]: { body: launchFilmSection() },
-      [FINANCIALS]: { body: activityRecord() },
-      'GET /api/v1/financials/records/L-1001': { body: lineItemRecord() },
-      'DELETE /api/v1/line-items/L-1001': { body: deleteResult() },
-    });
+    mockApi([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/line-items',
+        { body: launchFilmSection() },
+        { activityId: 'A-1001' },
+      ),
+      looseReply(
+        'GET /api/v1/financials/records/{recordId}',
+        { body: activityRecord() },
+        { recordId: 'A-1001' },
+      ),
+      looseReply(
+        'GET /api/v1/financials/records/{recordId}',
+        { body: lineItemRecord() },
+        { recordId: 'L-1001' },
+      ),
+      looseReply(
+        'DELETE /api/v1/line-items/{lineItemId}',
+        { body: deleteResult() },
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
     const { user, router } = renderWithProviders(<LineItemsSection activityId="A-1001" />, {
       route: '/plans/P-1001/activities/A-1001',
       user: testUser(),

@@ -1,10 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { planRowOf, usd } from '@/testing/fixtures/home';
+import { looseReply } from '@/testing/replies';
 import type { HomePlanRow, HomeScope } from './api';
 import { PlansAtAGlanceCard } from './PlansAtAGlanceCard';
 
@@ -44,10 +45,10 @@ const page = (items: HomePlanRow[], total = items.length) => ({ body: { items, t
 
 function renderCard(
   scope: HomeScope = 'myTeams',
-  plans: MockHandler = page([LUBRICANTS, CHINA]),
+  plans: LooseAnswer = page([LUBRICANTS, CHINA]),
   onShowEverything = vi.fn(),
 ) {
-  const api = mockApi({ 'GET /api/v1/home/plans': plans });
+  const api = mockApi([looseReply('GET /api/v1/home/plans', plans)]);
   const rendered = renderWithProviders(
     <PlansAtAGlanceCard scope={scope} onShowEverything={onShowEverything} />,
     { user: testUser(), path: '/' },

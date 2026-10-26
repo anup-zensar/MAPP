@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -13,6 +13,7 @@ import {
   RETAIL_EVENTS,
   validationFailed,
 } from '@/testing/fixtures/activities';
+import { looseReply } from '@/testing/replies';
 import { MoveActivityDialog } from './MoveActivityDialog';
 
 const DATES_DONT_FIT = RETAIL_EVENTS.moveProblem ?? '';
@@ -27,7 +28,7 @@ function Harness() {
   );
 }
 
-function renderDialog(answers: Record<string, MockHandler>) {
+function renderDialog(answers: HttpHandler[]) {
   const api = mockApi(answers);
   const rendered = renderWithProviders(<Harness />, {
     user: testUser(),
@@ -38,7 +39,13 @@ function renderDialog(answers: Record<string, MockHandler>) {
 
 describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   it('offers the plan’s initiatives grouped by campaign, the unavailable ones with their reason', async () => {
-    renderDialog({ 'GET /api/v1/activities/A-1042/destinations': { body: destinations() } });
+    renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const dialog = screen.getByRole('dialog', { name: "Move activity 'Launch film'" });
     expect(dialog).toHaveAccessibleDescription(
@@ -62,9 +69,13 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   });
 
   it('finds initiatives by their name or their campaign’s name', async () => {
-    const { user } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-    });
+    const { user } = renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const search = await screen.findByRole('searchbox', { name: 'Search initiatives' });
     await user.type(search, 'rimula');
@@ -82,15 +93,23 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   });
 
   it('moves the activity with its version and says so (US5#1)', async () => {
-    const { user, api, router } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/move': {
-        body: launchFilm({
-          initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
-          version: 4,
-        }),
-      },
-    });
+    const { user, api, router } = renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/move',
+        {
+          body: launchFilm({
+            initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
+            version: 4,
+          }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Move activity' }));
     expect(await screen.findByText('Choose another initiative of this plan.')).toBeInTheDocument();
@@ -113,12 +132,18 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   it('shows the API’s refusal in the dialog and asks for the initiatives again (US5#1)', async () => {
     const refusal =
       "'Print & outdoor' already has an activity called 'Launch film'. Rename the activity first, or pick another initiative.";
-    const { user, api } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/move': validationFailed([
-        { field: 'initiativeId', message: refusal },
-      ]),
-    });
+    const { user, api } = renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/move',
+        validationFailed([{ field: 'initiativeId', message: refusal }]),
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('radio', { name: 'Print & outdoor' }));
     await user.click(screen.getByRole('button', { name: 'Move activity' }));
@@ -133,20 +158,28 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   });
 
   it('says who changed the activity meanwhile (409)', async () => {
-    const { user } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/move': {
-        status: 409,
-        body: {
-          error: {
-            code: 'version_conflict',
-            message: 'Not saved — Daniel Okoro changed this activity',
-            fields: [],
-            conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+    const { user } = renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/move',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'version_conflict',
+              message: 'Not saved — Daniel Okoro changed this activity',
+              fields: [],
+              conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('radio', { name: 'Print & outdoor' }));
     await user.click(screen.getByRole('button', { name: 'Move activity' }));
@@ -157,9 +190,13 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   });
 
   it('says when there is no other initiative to move it to', async () => {
-    renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations([OWN_INITIATIVE]) },
-    });
+    renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations([OWN_INITIATIVE]) },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     expect(
       await screen.findByText("There's no other initiative in this plan to move it to."),
@@ -169,10 +206,13 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
 
   it('shows grey lines while loading, then the error with Try again', async () => {
     let calls = 0;
-    const { user } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': () =>
-        ++calls === 1 ? { status: 500 } : { body: destinations([destination()]) },
-    });
+    const { user } = renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        () => (++calls === 1 ? { status: 500 } : { body: destinations([destination()]) }),
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
@@ -181,18 +221,22 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   });
 
   it('says when the activity is gone, and Cancel closes', async () => {
-    const { user } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This activity no longer exists — someone may have deleted it.',
-            fields: [],
+    const { user } = renderDialog([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This activity no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'This activity no longer exists — someone may have deleted it.',

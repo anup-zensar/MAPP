@@ -11,6 +11,7 @@ import type {
   RoleAssignment,
 } from '@/features/people';
 import { PERMISSIONS } from '@/features/people';
+import { reply } from '../replies';
 
 const META = {
   version: 1,
@@ -266,13 +267,13 @@ export const RULES: AccessRules = {
 export const NO_CHANGES = { items: [], total: 0 };
 
 /** Every list a page of Roles and access asks for, answered with the demo data. */
-export const ACCESS_ANSWERS = {
-  'GET /api/v1/roles': { body: { items: ROLES, total: ROLES.length } },
-  'GET /api/v1/access/people': { body: PEOPLE_ACCESS },
-  'GET /api/v1/access/permissions': { body: CATALOGUE },
-  'GET /api/v1/access-rules': { body: RULES },
-  'GET /api/v1/access/changes': { body: NO_CHANGES },
-  'GET /api/v1/teams': {
+export const ACCESS_ANSWERS = [
+  reply('GET /api/v1/roles', { body: { items: ROLES, total: ROLES.length } }),
+  reply('GET /api/v1/access/people', { body: PEOPLE_ACCESS }),
+  reply('GET /api/v1/access/permissions', { body: CATALOGUE }),
+  reply('GET /api/v1/access-rules', { body: RULES }),
+  reply('GET /api/v1/access/changes', { body: NO_CHANGES }),
+  reply('GET /api/v1/teams', {
     body: {
       items: TEAMS.map((team) => ({
         ...team,
@@ -283,5 +284,5 @@ export const ACCESS_ANSWERS = {
       })),
       total: TEAMS.length,
     },
-  },
-};
+  }),
+];

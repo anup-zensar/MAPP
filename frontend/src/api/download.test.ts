@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
+import { reply } from '@/testing/replies';
 import { api } from './client';
 import { ApiError } from './errors';
 import { downloadFromApi, fileNameFromDisposition, saveBlob } from './download';
@@ -50,12 +51,15 @@ describe('saveBlob', () => {
 
 describe('downloadFromApi (FR-034)', () => {
   it('saves the answered file under the name the API gives and returns it', async () => {
-    mockApi({
-      'GET /api/v1/all-work/export': () =>
-        new Response('View,Grid', {
-          headers: { 'Content-Type': 'text/csv', 'Content-Disposition': DISPOSITION },
-        }),
-    });
+    mockApi([
+      reply(
+        'GET /api/v1/all-work/export',
+        () =>
+          new Response('View,Grid', {
+            headers: { 'Content-Type': 'text/csv', 'Content-Disposition': DISPOSITION },
+          }),
+      ),
+    ]);
 
     const fileName = await downloadFromApi(
       api.GET('/api/v1/all-work/export', { params: { query: { format: 'csv' } }, parseAs: 'blob' }),
@@ -66,8 +70,8 @@ describe('downloadFromApi (FR-034)', () => {
   });
 
   it('turns an error answer into an ApiError with the API’s message, saving nothing', async () => {
-    mockApi({
-      'GET /api/v1/all-work/export': {
+    mockApi([
+      reply('GET /api/v1/all-work/export', {
         status: 400,
         body: {
           error: {
@@ -76,8 +80,8 @@ describe('downloadFromApi (FR-034)', () => {
             fields: [{ field: 'year', message: 'Choose a year from 2000 to 2100.' }],
           },
         },
-      },
-    });
+      }),
+    ]);
 
     const failure = await downloadFromApi(
       api.GET('/api/v1/all-work/export', {

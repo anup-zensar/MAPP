@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { attribute, option } from '@/testing/fixtures/attribute-forms';
@@ -17,18 +17,23 @@ import {
   usd,
   validationError,
 } from '@/testing/fixtures/line-items';
+import { reply } from '@/testing/replies';
 import { LineItemCreatePage } from './LineItemCreatePage';
 
 const PATH = '/activities/:activityId/line-items/new';
 const ROUTE = '/activities/A-1001/line-items/new';
 const CREATE = 'POST /api/v1/activities/A-1001/line-items';
 
-function renderPage(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
+function renderPage(answers: HttpHandler[] = []) {
+  const api = mockApi([
     ...formAnswers(),
-    'GET /api/v1/activities/A-1001/line-items/form-options': { body: formOptions() },
+    reply(
+      'GET /api/v1/activities/{activityId}/line-items/form-options',
+      { body: formOptions() },
+      { activityId: 'A-1001' },
+    ),
     ...answers,
-  });
+  ]);
   return {
     api,
     ...renderWithProviders(<LineItemCreatePage />, { route: ROUTE, path: PATH, user: testUser() }),
@@ -124,24 +129,28 @@ describe('LineItemCreatePage (US2)', () => {
 
   it('calculates in the plan currency of a GBP plan, with both rates and their date (016 FR-009, FR-015)', async () => {
     const gbp = (amount: string) => ({ amount, currency: 'GBP' });
-    const { user } = renderPage({
-      'GET /api/v1/activities/A-1001/line-items/form-options': {
-        body: formOptions({
-          balance: {
-            plannedCost: gbp('40000.00'),
-            assigned: gbp('15000.00'),
-            balance: gbp('25000.00'),
-            state: 'left',
-            roundingHint: false,
-          },
-          defaults: {
-            ...formOptions().defaults,
-            currency: 'GBP',
-            plannedCost: gbp('25000.00'),
-          },
-        }),
-      },
-    });
+    const { user } = renderPage([
+      reply(
+        'GET /api/v1/activities/{activityId}/line-items/form-options',
+        {
+          body: formOptions({
+            balance: {
+              plannedCost: gbp('40000.00'),
+              assigned: gbp('15000.00'),
+              balance: gbp('25000.00'),
+              state: 'left',
+              roundingHint: false,
+            },
+            defaults: {
+              ...formOptions().defaults,
+              currency: 'GBP',
+              plannedCost: gbp('25000.00'),
+            },
+          }),
+        },
+        { activityId: 'A-1001' },
+      ),
+    ]);
     await findForm();
 
     // The pre-filled balance keeps its plan-currency value in another currency.
@@ -161,7 +170,13 @@ describe('LineItemCreatePage (US2)', () => {
   });
 
   it('makes the GL code depend on the spend type (scenarios 3 and 4, FR-014)', async () => {
-    const { user, api } = renderPage({ [CREATE]: { status: 201, body: lineItem() } });
+    const { user, api } = renderPage([
+      reply(
+        'POST /api/v1/activities/{activityId}/line-items',
+        { status: 201, body: lineItem() },
+        { activityId: 'A-1001' },
+      ),
+    ]);
     await findForm();
 
     const glCode = screen.getByLabelText('GL code');
@@ -193,16 +208,20 @@ describe('LineItemCreatePage (US2)', () => {
   });
 
   it('shows every problem at once and saves nothing (scenario 5, FR-009)', async () => {
-    const { user, router } = renderPage({
-      [CREATE]: validationError([
-        { field: 'name', message: 'Enter a name for the line item.' },
-        {
-          field: 'plannedCost',
-          message: "Planned cost can't be negative.",
-        },
-        { field: 'spread.months[0].amount', message: "Month amounts can't be negative." },
-      ]),
-    });
+    const { user, router } = renderPage([
+      reply(
+        'POST /api/v1/activities/{activityId}/line-items',
+        validationError([
+          { field: 'name', message: 'Enter a name for the line item.' },
+          {
+            field: 'plannedCost',
+            message: "Planned cost can't be negative.",
+          },
+          { field: 'spread.months[0].amount', message: "Month amounts can't be negative." },
+        ]),
+        { activityId: 'A-1001' },
+      ),
+    ]);
     const name = await findForm();
 
     await user.clear(name);
@@ -215,9 +234,13 @@ describe('LineItemCreatePage (US2)', () => {
   });
 
   it('creates the line item, says so and returns to the activity with the row highlighted (scenario 6, FR-010, FR-023)', async () => {
-    const { user, api, router, queryClient } = renderPage({
-      [CREATE]: { status: 201, body: lineItem({ id: 'L-2001', name: 'Agency fee' }) },
-    });
+    const { user, api, router, queryClient } = renderPage([
+      reply(
+        'POST /api/v1/activities/{activityId}/line-items',
+        { status: 201, body: lineItem({ id: 'L-2001', name: 'Agency fee' }) },
+        { activityId: 'A-1001' },
+      ),
+    ]);
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     const name = await findForm();
 
@@ -261,12 +284,20 @@ describe('LineItemCreatePage (US2)', () => {
       plannedCostSource: 'nothingLeftToAssign',
     };
     nothingLeft.balance = { ...nothingLeft.balance, balance: usd('0.00'), state: 'allAssigned' };
-    const { user, router } = renderPage({
-      'GET /api/v1/activities/A-1001/line-items/form-options': () => ({
-        body: round++ === 0 ? formOptions() : nothingLeft,
-      }),
-      [CREATE]: { status: 201, body: lineItem({ name: 'Launch film – line item' }) },
-    });
+    const { user, router } = renderPage([
+      reply(
+        'GET /api/v1/activities/{activityId}/line-items/form-options',
+        () => ({
+          body: round++ === 0 ? formOptions() : nothingLeft,
+        }),
+        { activityId: 'A-1001' },
+      ),
+      reply(
+        'POST /api/v1/activities/{activityId}/line-items',
+        { status: 201, body: lineItem({ name: 'Launch film – line item' }) },
+        { activityId: 'A-1001' },
+      ),
+    ]);
     await findForm();
 
     await user.click(button('Save and add another'));
@@ -284,10 +315,18 @@ describe('LineItemCreatePage (US2)', () => {
 
   it('asks before adding to an approved activity and confirms the restart (FR-031)', async () => {
     const options = formOptions({ activity: approvedActivity() });
-    const { user, api } = renderPage({
-      'GET /api/v1/activities/A-1001/line-items/form-options': { body: options },
-      [CREATE]: { status: 201, body: lineItem() },
-    });
+    const { user, api } = renderPage([
+      reply(
+        'GET /api/v1/activities/{activityId}/line-items/form-options',
+        { body: options },
+        { activityId: 'A-1001' },
+      ),
+      reply(
+        'POST /api/v1/activities/{activityId}/line-items',
+        { status: 201, body: lineItem() },
+        { activityId: 'A-1001' },
+      ),
+    ]);
     await findForm();
 
     await user.click(button('Save'));
@@ -307,7 +346,11 @@ describe('LineItemCreatePage (US2)', () => {
   });
 
   it('asks for the restart when the activity was submitted meanwhile (D-146)', async () => {
-    const { user } = renderPage({ [CREATE]: restartRefusal() });
+    const { user } = renderPage([
+      reply('POST /api/v1/activities/{activityId}/line-items', restartRefusal(), {
+        activityId: 'A-1001',
+      }),
+    ]);
     await findForm();
 
     await user.click(button('Save'));
@@ -320,7 +363,11 @@ describe('LineItemCreatePage (US2)', () => {
   it('says when the activity was deleted (edge case)', async () => {
     const message =
       'This activity was deleted — restore it from the recycle bin to keep working on its line items.';
-    renderPage({ 'GET /api/v1/activities/A-1001/line-items/form-options': notFound(message) });
+    renderPage([
+      reply('GET /api/v1/activities/{activityId}/line-items/form-options', notFound(message), {
+        activityId: 'A-1001',
+      }),
+    ]);
 
     expect(await screen.findByText(message)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Go to the recycle bin' })).toHaveAttribute(
@@ -330,18 +377,22 @@ describe('LineItemCreatePage (US2)', () => {
   });
 
   it('shows a load failure with Try again', async () => {
-    renderPage({
-      'GET /api/v1/activities/A-1001/line-items/form-options': {
-        status: 500,
-        body: {
-          error: {
-            code: 'internal_error',
-            message: 'Something went wrong. Please try again.',
-            fields: [],
+    renderPage([
+      reply(
+        'GET /api/v1/activities/{activityId}/line-items/form-options',
+        {
+          status: 500,
+          body: {
+            error: {
+              code: 'internal_error',
+              message: 'Something went wrong. Please try again.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1001' },
+      ),
+    ]);
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
@@ -376,7 +427,13 @@ describe('LineItemCreatePage (US2)', () => {
       plannedCost: null,
       plannedCostSource: 'noActivityPlannedCost',
     };
-    renderPage({ 'GET /api/v1/activities/A-1001/line-items/form-options': { body: options } });
+    renderPage([
+      reply(
+        'GET /api/v1/activities/{activityId}/line-items/form-options',
+        { body: options },
+        { activityId: 'A-1001' },
+      ),
+    ]);
 
     await findForm();
     expect(
@@ -404,19 +461,25 @@ describe('LineItemCreatePage (US2)', () => {
   }
 
   it('hides a line-item attribute of another business unit than the plan has (002 FR-023, D-212)', async () => {
-    renderPage({ 'GET /api/v1/shell-attribute-forms/lineItem': mobilityOnlyForm() });
+    renderPage([
+      reply('GET /api/v1/shell-attribute-forms/{level}', mobilityOnlyForm(), { level: 'lineItem' }),
+    ]);
 
     await findForm();
     expect(screen.queryByLabelText('Mobility channel')).not.toBeInTheDocument();
   });
 
   it("shows it from the activity's Business unit options alone, without asking for the plan (D-212)", async () => {
-    const { api } = renderPage({
-      'GET /api/v1/shell-attribute-forms/lineItem': mobilityOnlyForm(),
-      'GET /api/v1/activities/A-1001/line-items/form-options': {
-        body: formOptions({ activity: activity({ businessUnitOptionIds: ['SO-BU-MOB'] }) }),
-      },
-    });
+    const { api } = renderPage([
+      reply('GET /api/v1/shell-attribute-forms/{level}', mobilityOnlyForm(), { level: 'lineItem' }),
+      reply(
+        'GET /api/v1/activities/{activityId}/line-items/form-options',
+        {
+          body: formOptions({ activity: activity({ businessUnitOptionIds: ['SO-BU-MOB'] }) }),
+        },
+        { activityId: 'A-1001' },
+      ),
+    ]);
 
     await findForm();
     expect(screen.getByLabelText('Mobility channel')).toBeInTheDocument();

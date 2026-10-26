@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from '@/testing/fixtures/approvals';
+import { looseReply } from '@/testing/replies';
 import type { ActivityApproval } from './api';
 import { DecisionDialog } from './DecisionDialog';
 import type { DecisionDialogProps } from './DecisionDialog';
@@ -27,7 +28,7 @@ const AT_LEVEL_2 = approvalOf({
 
 function renderDialog(
   props: Partial<DecisionDialogProps> & Pick<DecisionDialogProps, 'mode'>,
-  answers: Record<string, MockHandler> = {},
+  answers: HttpHandler[] = [],
 ) {
   const api = mockApi(answers);
   const onClose = vi.fn();
@@ -71,10 +72,13 @@ describe('DecisionDialog (feature 008, US2)', () => {
   });
 
   it('approves the level the person saw and names the next approvers (FR-015)', async () => {
-    const { user, api, onClose, onDecided } = renderDialog(
-      { mode: 'approve' },
-      { [APPROVE]: { body: AT_LEVEL_2 } },
-    );
+    const { user, api, onClose, onDecided } = renderDialog({ mode: 'approve' }, [
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/approve',
+        { body: AT_LEVEL_2 },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Approve' }));
 
@@ -94,10 +98,13 @@ describe('DecisionDialog (feature 008, US2)', () => {
       status: 'approved',
       rounds: [roundOf({ outcome: 'approved', currentLevel: 2 })],
     };
-    const { user } = renderDialog(
-      { mode: 'approve', approval: AT_LEVEL_2 },
-      { [APPROVE]: { body: approved } },
-    );
+    const { user } = renderDialog({ mode: 'approve', approval: AT_LEVEL_2 }, [
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/approve',
+        { body: approved },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.type(screen.getByRole('textbox', { name: 'Comment (optional)' }), 'Fine');
     await user.click(screen.getByRole('button', { name: 'Approve' }));
@@ -122,10 +129,13 @@ describe('DecisionDialog (feature 008, US2)', () => {
   });
 
   it('declines with the comment', async () => {
-    const { user, api } = renderDialog(
-      { mode: 'decline' },
-      { [DECLINE]: { body: approvalOf({ status: 'declined' }) } },
-    );
+    const { user, api } = renderDialog({ mode: 'decline' }, [
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/decline',
+        { body: approvalOf({ status: 'declined' }) },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.type(
       screen.getByRole('textbox', { name: /Why are you declining it\?/ }),
@@ -172,10 +182,10 @@ describe('DecisionDialog (feature 008, US2)', () => {
 
   it('explains a decision someone else made first, with its time (FR-018)', async () => {
     const changedAt = new Date().toISOString();
-    const { user, onClose } = renderDialog(
-      { mode: 'approve' },
-      {
-        [APPROVE]: {
+    const { user, onClose } = renderDialog({ mode: 'approve' }, [
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/approve',
+        {
           status: 409,
           body: {
             error: {
@@ -186,8 +196,9 @@ describe('DecisionDialog (feature 008, US2)', () => {
             },
           },
         },
-      },
-    );
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Approve' }));
 
@@ -252,7 +263,7 @@ function allLevel(viewer: Partial<ActivityApproval['viewer']>): ActivityApproval
 
 describe('DecisionDialog rules (feature 017, US2 and US3)', () => {
   it('on a level where all must approve, says who still waits after this approval (FR-015)', () => {
-    renderDialog({ mode: 'approve', approval: allLevel({ capacity: 'approver' }) }, {});
+    renderDialog({ mode: 'approve', approval: allLevel({ capacity: 'approver' }) }, []);
 
     const dialog = screen.getByRole('alertdialog');
     // The signed-in test user approves for themself; Carlos and Alex still wait after it.

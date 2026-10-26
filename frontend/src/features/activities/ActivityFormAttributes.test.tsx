@@ -1,8 +1,8 @@
 import { configure, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { launchFilmSection } from '@/testing/fixtures/line-items';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -12,20 +12,33 @@ import {
   newForm,
   PEOPLE,
 } from '@/testing/fixtures/activities';
+import { reply } from '@/testing/replies';
 import type { Activity } from './api';
 import { ActivityFormPage } from './ActivityFormPage';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
 configure({ asyncUtilTimeout: 10_000 });
 
-function openNewForm(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
-    'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm() },
-    'GET /api/v1/people': { body: PEOPLE },
-    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'POST /api/v1/initiatives/I-1001/activities': { status: 201, body: launchFilm() },
+function openNewForm(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    reply(
+      'GET /api/v1/initiatives/{initiativeId}/activity-form',
+      { body: newForm() },
+      { initiativeId: 'I-1001' },
+    ),
+    reply('GET /api/v1/people', { body: PEOPLE }),
+    reply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: activityAttributeForm() },
+      { level: 'activity' },
+    ),
+    reply(
+      'POST /api/v1/initiatives/{initiativeId}/activities',
+      { status: 201, body: launchFilm() },
+      { initiativeId: 'I-1001' },
+    ),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(<ActivityFormPage mode="new" />, {
     route: '/plans/P-1001/initiatives/I-1001/activities/new',
     path: '/plans/:planId/initiatives/:initiativeId/activities/new',
@@ -36,19 +49,31 @@ function openNewForm(answers: Record<string, MockHandler> = {}) {
 
 // The edit form's dates say what a change does to the line items' spreads (feature 007's
 // SpreadEffectNote), which reads the activity's line items: here it has none.
-const NO_LINE_ITEMS = {
-  'GET /api/v1/activities/A-1042/line-items': { body: launchFilmSection({ items: [] }) },
-};
+const NO_LINE_ITEMS = [
+  reply(
+    'GET /api/v1/activities/{activityId}/line-items',
+    { body: launchFilmSection({ items: [] }) },
+    { activityId: 'A-1042' },
+  ),
+];
 
 function openEditForm(activity: Activity) {
-  const api = mockApi({
-    'GET /api/v1/activities/A-1042': { body: activity },
-    'GET /api/v1/activities/A-1042/form': { body: editForm() },
-    'GET /api/v1/people': { body: PEOPLE },
-    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'PATCH /api/v1/activities/A-1042': { body: activity },
+  const api = mockApi([
+    reply('GET /api/v1/activities/{activityId}', { body: activity }, { activityId: 'A-1042' }),
+    reply(
+      'GET /api/v1/activities/{activityId}/form',
+      { body: editForm() },
+      { activityId: 'A-1042' },
+    ),
+    reply('GET /api/v1/people', { body: PEOPLE }),
+    reply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: activityAttributeForm() },
+      { level: 'activity' },
+    ),
+    reply('PATCH /api/v1/activities/{activityId}', { body: activity }, { activityId: 'A-1042' }),
     ...NO_LINE_ITEMS,
-  });
+  ]);
   const rendered = renderWithProviders(<ActivityFormPage mode="edit" />, {
     route: '/plans/P-1001/activities/A-1042/edit',
     path: '/plans/:planId/activities/:activityId/edit',
@@ -73,13 +98,17 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
   });
 
   it('says that more attributes appear once the plan has a business unit, with a link to the plan (FR-014)', async () => {
-    openNewForm({
-      'GET /api/v1/initiatives/I-1001/activity-form': {
-        body: newForm({
-          context: { ...newForm().context, businessUnits: [] },
-        }),
-      },
-    });
+    openNewForm([
+      reply(
+        'GET /api/v1/initiatives/{initiativeId}/activity-form',
+        {
+          body: newForm({
+            context: { ...newForm().context, businessUnits: [] },
+          }),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText(/More Shell attributes appear once the plan's business unit/),

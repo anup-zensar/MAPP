@@ -1,11 +1,12 @@
 import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { launchFilmSection } from '@/testing/fixtures/line-items';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { activityAttributeForm, editForm, launchFilm, PEOPLE } from '@/testing/fixtures/activities';
+import { looseReply } from '@/testing/replies';
 import type { Activity } from './api';
 import { ActivityFormPage } from './ActivityFormPage';
 
@@ -29,24 +30,36 @@ const CONFLICT = {
 
 // The edit form's dates say what a change does to the line items' spreads (feature 007's
 // SpreadEffectNote), which reads the activity's line items: here it has none.
-const NO_LINE_ITEMS = {
-  'GET /api/v1/activities/A-1042/line-items': { body: launchFilmSection({ items: [] }) },
-};
+const NO_LINE_ITEMS = [
+  looseReply(
+    'GET /api/v1/activities/{activityId}/line-items',
+    { body: launchFilmSection({ items: [] }) },
+    { activityId: 'A-1042' },
+  ),
+];
 
-function openEditForm(
-  activity: Activity,
-  answers: Record<string, MockHandler> = {},
-  route = EDIT_ROUTE,
-) {
-  const api = mockApi({
-    'GET /api/v1/activities/A-1042': { body: activity },
-    'GET /api/v1/activities/A-1042/form': { body: editForm() },
-    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'GET /api/v1/people': { body: PEOPLE },
-    'PATCH /api/v1/activities/A-1042': { body: activity },
+function openEditForm(activity: Activity, answers: HttpHandler[] = [], route = EDIT_ROUTE) {
+  const api = mockApi([
+    looseReply('GET /api/v1/activities/{activityId}', { body: activity }, { activityId: 'A-1042' }),
+    looseReply(
+      'GET /api/v1/activities/{activityId}/form',
+      { body: editForm() },
+      { activityId: 'A-1042' },
+    ),
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: activityAttributeForm() },
+      { level: 'activity' },
+    ),
+    looseReply('GET /api/v1/people', { body: PEOPLE }),
+    looseReply(
+      'PATCH /api/v1/activities/{activityId}',
+      { body: activity },
+      { activityId: 'A-1042' },
+    ),
     ...NO_LINE_ITEMS,
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(<ActivityFormPage mode="edit" />, {
     route,
     path: EDIT_PATH,
@@ -58,12 +71,16 @@ function openEditForm(
 describe('ActivityFormPage, edit (feature 006, US4)', () => {
   it('opens with the activity and saves it with the version it opened with (FR-026)', async () => {
     let reads = 0;
-    const { user, api, router, queryClient } = openEditForm(launchFilm(), {
-      'GET /api/v1/activities/A-1042': () => {
-        reads += 1;
-        return { body: launchFilm({ version: reads === 1 ? 3 : 4 }) };
-      },
-    });
+    const { user, api, router, queryClient } = openEditForm(launchFilm(), [
+      looseReply(
+        'GET /api/v1/activities/{activityId}',
+        () => {
+          reads += 1;
+          return { body: launchFilm({ version: reads === 1 ? 3 : 4 }) };
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const description = await screen.findByLabelText('Description');
     expect(screen.getByRole('heading', { level: 1, name: 'Edit activity' })).toBeVisible();
@@ -98,15 +115,23 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
   it('keeps the typed values after a conflict and saves over it with the newer version (FR-026)', async () => {
     let saves = 0;
-    const { user, api } = openEditForm(launchFilm(), {
-      'GET /api/v1/activities/A-1042': () => ({
-        body: launchFilm({ version: saves === 0 ? 3 : 4 }),
-      }),
-      'PATCH /api/v1/activities/A-1042': () => {
-        saves += 1;
-        return saves === 1 ? CONFLICT : { body: launchFilm({ description: 'Mine', version: 5 }) };
-      },
-    });
+    const { user, api } = openEditForm(launchFilm(), [
+      looseReply(
+        'GET /api/v1/activities/{activityId}',
+        () => ({
+          body: launchFilm({ version: saves === 0 ? 3 : 4 }),
+        }),
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'PATCH /api/v1/activities/{activityId}',
+        () => {
+          saves += 1;
+          return saves === 1 ? CONFLICT : { body: launchFilm({ description: 'Mine', version: 5 }) };
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.type(await screen.findByLabelText('Description'), 'Mine');
     await user.click(screen.getByRole('button', { name: 'Save' }));
@@ -159,9 +184,13 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
   });
 
   it('says in the re-approval question what new dates do to the line-item spreads (007 FR-022, D-150)', async () => {
-    const { user } = openEditForm(launchFilm({ status: 'approved', displayStatus: 'approved' }), {
-      'GET /api/v1/activities/A-1042/line-items': { body: launchFilmSection() },
-    });
+    const { user } = openEditForm(launchFilm({ status: 'approved', displayStatus: 'approved' }), [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/line-items',
+        { body: launchFilmSection() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const end = await screen.findByLabelText('End date');
     await user.clear(end);
@@ -241,19 +270,23 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
   });
 
   it('focuses the field named in the address (?field=ownerId)', async () => {
-    openEditForm(launchFilm(), {}, `${EDIT_ROUTE}?field=ownerId`);
+    openEditForm(launchFilm(), [], `${EDIT_ROUTE}?field=ownerId`);
 
     const owner = await screen.findByLabelText('Owner');
     await waitFor(() => expect(owner).toHaveFocus());
   });
 
   it('says when the activity no longer exists', async () => {
-    openEditForm(launchFilm(), {
-      'GET /api/v1/activities/A-1042': {
-        status: 404,
-        body: { error: { code: 'not_found', message: 'Gone', fields: [] } },
-      },
-    });
+    openEditForm(launchFilm(), [
+      looseReply(
+        'GET /api/v1/activities/{activityId}',
+        {
+          status: 404,
+          body: { error: { code: 'not_found', message: 'Gone', fields: [] } },
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     expect(
       await screen.findByText('This activity no longer exists — someone may have deleted it.'),

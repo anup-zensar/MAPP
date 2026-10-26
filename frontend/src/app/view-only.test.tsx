@@ -6,6 +6,7 @@ import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ModelsPage, SettingsPage } from '@/features/settings';
 import { ACTIVITY_TYPES, MODELS } from '@/testing/fixtures/settings';
+import { reply } from '@/testing/replies';
 import { Sidebar } from './Sidebar';
 import { SETTINGS_SECTIONS } from './settings-sections';
 
@@ -58,13 +59,13 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
   it('leaves out the Roles and access card for people who may not give roles', async () => {
     // The counts never answer here: only the cards matter.
     const never = () => new Promise<never>(() => {});
-    mockApi({
-      'GET /api/v1/settings/overview': never,
-      'GET /api/v1/field-help': never,
-      'GET /api/v1/people': never,
-      'GET /api/v1/teams': never,
-      'GET /api/v1/approval-workflows': never,
-    });
+    mockApi([
+      reply('GET /api/v1/settings/overview', never),
+      reply('GET /api/v1/field-help', never),
+      reply('GET /api/v1/people', never),
+      reply('GET /api/v1/teams', never),
+      reply('GET /api/v1/approval-workflows', never),
+    ]);
     renderWithProviders(<SettingsPage sections={SETTINGS_SECTIONS} />, { user: SARA });
 
     expect(await screen.findByRole('link', { name: 'Models' })).toBeInTheDocument();
@@ -72,10 +73,10 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
   });
 
   it('shows a Settings list read-only, with one View only note and no change actions', async () => {
-    mockApi({
-      'GET /api/v1/models': { body: MODELS },
-      'GET /api/v1/activity-types': { body: ACTIVITY_TYPES },
-    });
+    mockApi([
+      reply('GET /api/v1/models', { body: MODELS }),
+      reply('GET /api/v1/activity-types', { body: ACTIVITY_TYPES }),
+    ]);
     const { user } = renderWithProviders(<ModelsPage />, {
       route: '/settings/models',
       path: '/settings/models',
@@ -93,10 +94,10 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
   });
 
   it('keeps every change action for people who may change Settings', async () => {
-    mockApi({
-      'GET /api/v1/models': { body: MODELS },
-      'GET /api/v1/activity-types': { body: ACTIVITY_TYPES },
-    });
+    mockApi([
+      reply('GET /api/v1/models', { body: MODELS }),
+      reply('GET /api/v1/activity-types', { body: ACTIVITY_TYPES }),
+    ]);
     renderWithProviders(<ModelsPage />, {
       route: '/settings/models',
       path: '/settings/models',

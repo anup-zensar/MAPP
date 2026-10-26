@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -17,19 +17,26 @@ import {
   spreadMonth,
   usd,
 } from '@/testing/fixtures/line-items';
+import { looseReply } from '@/testing/replies';
 import { LineItemEditPage } from './LineItemEditPage';
 
-const GET = 'GET /api/v1/line-items/L-1001';
 const PATCH = 'PATCH /api/v1/line-items/L-1001';
-const OPTIONS = 'GET /api/v1/activities/A-1001/line-items/form-options';
 
-function renderPage(answers: Record<string, MockHandler> = {}, route = '/line-items/L-1001/edit') {
-  const api = mockApi({
+function renderPage(answers: HttpHandler[] = [], route = '/line-items/L-1001/edit') {
+  const api = mockApi([
     ...formAnswers(),
-    [GET]: { body: details() },
-    [OPTIONS]: { body: formOptions() },
+    looseReply(
+      'GET /api/v1/line-items/{lineItemId}',
+      { body: details() },
+      { lineItemId: 'L-1001' },
+    ),
+    looseReply(
+      'GET /api/v1/activities/{activityId}/line-items/form-options',
+      { body: formOptions() },
+      { activityId: 'A-1001' },
+    ),
     ...answers,
-  });
+  ]);
   return {
     api,
     ...renderWithProviders(<LineItemEditPage />, {
@@ -40,11 +47,19 @@ function renderPage(answers: Record<string, MockHandler> = {}, route = '/line-it
   };
 }
 
-function approved(): Record<string, MockHandler> {
-  return {
-    [GET]: { body: details({ activity: approvedActivity() }) },
-    [OPTIONS]: { body: formOptions({ activity: approvedActivity() }) },
-  };
+function approved(): HttpHandler[] {
+  return [
+    looseReply(
+      'GET /api/v1/line-items/{lineItemId}',
+      { body: details({ activity: approvedActivity() }) },
+      { lineItemId: 'L-1001' },
+    ),
+    looseReply(
+      'GET /api/v1/activities/{activityId}/line-items/form-options',
+      { body: formOptions({ activity: approvedActivity() }) },
+      { activityId: 'A-1001' },
+    ),
+  ];
 }
 
 function button(name: string) {
@@ -66,10 +81,14 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   });
 
   it('saves coding changes of an approved activity without a dialog (scenario 2, FR-032)', async () => {
-    const { user, api, router } = renderPage({
+    const { user, api, router } = renderPage([
       ...approved(),
-      [PATCH]: { body: lineItem({ financeBudgetItem: DIGITAL }) },
-    });
+      looseReply(
+        'PATCH /api/v1/line-items/{lineItemId}',
+        { body: lineItem({ financeBudgetItem: DIGITAL }) },
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
     await screen.findByLabelText('Line item name');
 
     await user.selectOptions(
@@ -91,7 +110,14 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   });
 
   it('asks before a cost change restarts approval (scenario 3, FR-031)', async () => {
-    const { user, api } = renderPage({ ...approved(), [PATCH]: { body: lineItem() } });
+    const { user, api } = renderPage([
+      ...approved(),
+      looseReply(
+        'PATCH /api/v1/line-items/{lineItemId}',
+        { body: lineItem() },
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
     const cost = await screen.findByLabelText('Planned cost');
 
     await user.clear(cost);
@@ -137,23 +163,31 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   it('keeps the values after a conflict and saves with the new version next', async () => {
     let gets = 0;
     let patches = 0;
-    const { user, api } = renderPage({
-      [GET]: () => ({ body: details({ lineItem: lineItem({ version: gets++ === 0 ? 1 : 2 }) }) }),
-      [PATCH]: () =>
-        patches++ === 0
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Someone else changed this line item.',
-                  fields: [],
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:30:00Z' },
+    const { user, api } = renderPage([
+      looseReply(
+        'GET /api/v1/line-items/{lineItemId}',
+        () => ({ body: details({ lineItem: lineItem({ version: gets++ === 0 ? 1 : 2 }) }) }),
+        { lineItemId: 'L-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/line-items/{lineItemId}',
+        () =>
+          patches++ === 0
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Someone else changed this line item.',
+                    fields: [],
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:30:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: lineItem({ name: 'Agency fees' }) },
-    });
+              }
+            : { body: lineItem({ name: 'Agency fees' }) },
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
     const name = await screen.findByLabelText('Line item name');
 
     await user.type(name, 's');
@@ -173,7 +207,11 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   it('says when the activity was deleted while editing (edge case, D-154)', async () => {
     const message =
       'This activity was deleted — restore it from the recycle bin to keep working on its line items.';
-    const { user } = renderPage({ [PATCH]: notFound(message) });
+    const { user } = renderPage([
+      looseReply('PATCH /api/v1/line-items/{lineItemId}', notFound(message), {
+        lineItemId: 'L-1001',
+      }),
+    ]);
     await screen.findByLabelText('Line item name');
 
     await user.click(button('Save'));
@@ -183,9 +221,13 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   });
 
   it('says when the line item is gone on opening', async () => {
-    renderPage({
-      [GET]: notFound('This line item no longer exists — someone may have deleted it.'),
-    });
+    renderPage([
+      looseReply(
+        'GET /api/v1/line-items/{lineItemId}',
+        notFound('This line item no longer exists — someone may have deleted it.'),
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText('This line item no longer exists — someone may have deleted it.'),
@@ -194,7 +236,7 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   });
 
   it('focuses the field of a completeness link (?field=)', async () => {
-    renderPage({}, '/line-items/L-1001/edit?field=financeBudgetItemId');
+    renderPage([], '/line-items/L-1001/edit?field=financeBudgetItemId');
 
     await waitFor(() => expect(screen.getByLabelText('Finance budget item')).toHaveFocus());
   });
@@ -218,10 +260,18 @@ describe('LineItemEditPage (US4, FR-027)', () => {
       },
       missing: [{ field: 'spread', label: "Spread doesn't add up to the planned cost" }],
     });
-    const { user, api } = renderPage({
-      [GET]: { body: details({ lineItem: custom }) },
-      [PATCH]: { body: custom },
-    });
+    const { user, api } = renderPage([
+      looseReply(
+        'GET /api/v1/line-items/{lineItemId}',
+        { body: details({ lineItem: custom }) },
+        { lineItemId: 'L-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/line-items/{lineItemId}',
+        { body: custom },
+        { lineItemId: 'L-1001' },
+      ),
+    ]);
     await screen.findByLabelText('Line item name');
 
     expect(screen.getByRole('radio', { name: 'Custom' })).toBeChecked();

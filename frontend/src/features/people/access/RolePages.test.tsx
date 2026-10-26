@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -11,19 +11,20 @@ import {
   PLANNER,
   VIEWER,
 } from '@/testing/fixtures/access';
+import { reply } from '@/testing/replies';
 import { RoleFormPage } from './RoleFormPage';
 import { RolePage } from './RolePage';
 
-const ANSWERS: Record<string, MockHandler> = {
-  'GET /api/v1/me': { body: testUser() },
-  'GET /api/v1/access/permissions': { body: CATALOGUE },
-  [`GET /api/v1/roles/${ADMINISTRATOR.id}`]: { body: ADMINISTRATOR },
-  [`GET /api/v1/roles/${PLANNER.id}`]: { body: PLANNER },
-  [`GET /api/v1/roles/${VIEWER.id}`]: { body: VIEWER },
-};
+const ANSWERS: HttpHandler[] = [
+  reply('GET /api/v1/me', { body: testUser() }),
+  reply('GET /api/v1/access/permissions', { body: CATALOGUE }),
+  reply('GET /api/v1/roles/{roleId}', { body: ADMINISTRATOR }, { roleId: ADMINISTRATOR.id }),
+  reply('GET /api/v1/roles/{roleId}', { body: PLANNER }, { roleId: PLANNER.id }),
+  reply('GET /api/v1/roles/{roleId}', { body: VIEWER }, { roleId: VIEWER.id }),
+];
 
-function renderRole(route: string, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ ...ANSWERS, ...answers });
+function renderRole(route: string, answers: HttpHandler[] = []) {
+  const api = mockApi([...ANSWERS, ...answers]);
   return {
     api,
     ...renderWithProviders(<RolePage />, {
@@ -34,8 +35,8 @@ function renderRole(route: string, answers: Record<string, MockHandler> = {}) {
   };
 }
 
-function renderForm(route: string, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ ...ANSWERS, ...answers });
+function renderForm(route: string, answers: HttpHandler[] = []) {
+  const api = mockApi([...ANSWERS, ...answers]);
   const path = route.includes('/edit')
     ? '/settings/access/roles/:roleId/edit'
     : '/settings/access/roles/new';
@@ -78,12 +79,16 @@ describe('RolePage (feature 014, US4)', () => {
   });
 
   it('says when the role does not exist', async () => {
-    renderRole('/settings/access/roles/RL-1999', {
-      'GET /api/v1/roles/RL-1999': {
-        status: 404,
-        body: { error: { code: 'not_found', message: "This role doesn't exist.", fields: [] } },
-      },
-    });
+    renderRole('/settings/access/roles/RL-1999', [
+      reply(
+        'GET /api/v1/roles/{roleId}',
+        {
+          status: 404,
+          body: { error: { code: 'not_found', message: "This role doesn't exist.", fields: [] } },
+        },
+        { roleId: 'RL-1999' },
+      ),
+    ]);
 
     expect(await screen.findByText("This role doesn't exist.")).toBeInTheDocument();
   });
@@ -91,9 +96,9 @@ describe('RolePage (feature 014, US4)', () => {
 
 describe('RoleFormPage (feature 014, US4)', () => {
   it('creates a role as a copy of Viewer, named and ready to give (US4-2)', async () => {
-    const { api, user, router } = renderForm(`/settings/access/roles/new?copyOf=${VIEWER.id}`, {
-      'POST /api/v1/roles': { status: 201, body: FINANCE_REVIEWER },
-    });
+    const { api, user, router } = renderForm(`/settings/access/roles/new?copyOf=${VIEWER.id}`, [
+      reply('POST /api/v1/roles', { status: 201, body: FINANCE_REVIEWER }),
+    ]);
 
     expect(await screen.findByRole('heading', { level: 1, name: 'New role' })).toBeInTheDocument();
     const name = await screen.findByRole('textbox', { name: /^Name/ });
@@ -118,8 +123,8 @@ describe('RoleFormPage (feature 014, US4)', () => {
   });
 
   it('shows every problem at once', async () => {
-    const { user } = renderForm('/settings/access/roles/new', {
-      'POST /api/v1/roles': {
+    const { user } = renderForm('/settings/access/roles/new', [
+      reply('POST /api/v1/roles', {
         status: 400,
         body: {
           error: {
@@ -131,8 +136,8 @@ describe('RoleFormPage (feature 014, US4)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
 
     await user.type(await screen.findByRole('textbox', { name: /^Name/ }), 'Planner');
     await user.click(screen.getByRole('button', { name: 'Create role' }));
@@ -142,15 +147,19 @@ describe('RoleFormPage (feature 014, US4)', () => {
   });
 
   it('saves only what changed with the version (US4-1)', async () => {
-    const { api, user } = renderForm(`/settings/access/roles/${PLANNER.id}/edit`, {
-      [`PATCH /api/v1/roles/${PLANNER.id}`]: {
-        body: {
-          ...PLANNER,
-          permissions: PLANNER.permissions.filter((key) => key !== 'plans.publish'),
-          version: 2,
+    const { api, user } = renderForm(`/settings/access/roles/${PLANNER.id}/edit`, [
+      reply(
+        'PATCH /api/v1/roles/{roleId}',
+        {
+          body: {
+            ...PLANNER,
+            permissions: PLANNER.permissions.filter((key) => key !== 'plans.publish'),
+            version: 2,
+          },
         },
-      },
-    });
+        { roleId: PLANNER.id },
+      ),
+    ]);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: "Edit role 'Planner'" }),

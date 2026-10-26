@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useNavigate } from 'react-router';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import { mockApi } from '@/testing/mock-api';
@@ -8,6 +9,7 @@ import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { activityRecord } from '@/testing/fixtures/line-items';
 import { destinations, launchFilm, launchFilmRow } from '@/testing/fixtures/activities';
+import { looseReply } from '@/testing/replies';
 import { activityActionsForInitiative, useActivityRows } from './activity-tree-rows';
 
 const DELETED = {
@@ -57,29 +59,36 @@ function ActivityRows() {
   );
 }
 
-function openRows(answers: Parameters<typeof mockApi>[0] = {}) {
-  const api = mockApi({
-    'GET /api/v1/plans/P-1001/activities': {
-      body: {
-        items: [
-          launchFilmRow({
-            completeness: { missingFields: 3, lineItemsNeedingAttention: 1 },
-            unassignedPlannedCost: { amount: '-500.00', currency: 'USD' },
-          }),
-          launchFilmRow({ id: 'A-1050', name: 'Print ads', initiativeId: 'I-1002' }),
-        ],
-        total: 2,
+function openRows(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply(
+      'GET /api/v1/plans/{planId}/activities',
+      {
+        body: {
+          items: [
+            launchFilmRow({
+              completeness: { missingFields: 3, lineItemsNeedingAttention: 1 },
+              unassignedPlannedCost: { amount: '-500.00', currency: 'USD' },
+            }),
+            launchFilmRow({ id: 'A-1050', name: 'Print ads', initiativeId: 'I-1002' }),
+          ],
+          total: 2,
+        },
       },
-    },
-    // No GSAP data yet: a delete question says nothing of transactions (015 FR-029).
-    'GET /api/v1/financials/records/A-1042': {
-      status: 404,
-      body: {
-        error: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+      { planId: 'P-1001' },
+    ),
+    looseReply(
+      'GET /api/v1/financials/records/{recordId}',
+      {
+        status: 404,
+        body: {
+          error: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+        },
       },
-    },
+      { recordId: 'A-1042' },
+    ),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(<ActivityRows />, {
     route: '/plans/P-1001',
     user: testUser(),
@@ -109,24 +118,28 @@ describe('activityTreeRows (feature 006)', () => {
   });
 
   it('shows the planned cost in the plan currency with the display currency under it (016 FR-013)', async () => {
-    openRows({
-      'GET /api/v1/plans/P-1001/activities': {
-        body: {
-          items: [
-            launchFilmRow({
-              plannedCost: { amount: '3950.00', currency: 'GBP' },
-              unassignedPlannedCost: { amount: '0.00', currency: 'GBP' },
-              display: {
-                plannedCost: { amount: '5000.00', currency: 'USD' },
-                unassignedPlannedCost: { amount: '0.00', currency: 'USD' },
-                revenue: null,
-              },
-            }),
-          ],
-          total: 1,
+    openRows([
+      looseReply(
+        'GET /api/v1/plans/{planId}/activities',
+        {
+          body: {
+            items: [
+              launchFilmRow({
+                plannedCost: { amount: '3950.00', currency: 'GBP' },
+                unassignedPlannedCost: { amount: '0.00', currency: 'GBP' },
+                display: {
+                  plannedCost: { amount: '5000.00', currency: 'USD' },
+                  unassignedPlannedCost: { amount: '0.00', currency: 'USD' },
+                  revenue: null,
+                },
+              }),
+            ],
+            total: 1,
+          },
         },
-      },
-    });
+        { planId: 'P-1001' },
+      ),
+    ]);
 
     const row = (await screen.findByRole('link', { name: 'Launch film' })).closest(
       'tr',
@@ -161,16 +174,28 @@ describe('activityTreeRows (feature 006)', () => {
   });
 
   it('deletes an activity from its row after asking, by keyboard, and offers Undo (FR-031)', async () => {
-    const { user, router, api } = openRows({
-      'GET /api/v1/activities/A-1042': {
-        body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
-      },
-      'DELETE /api/v1/activities/A-1042': { body: DELETED },
-      'POST /api/v1/recycle-bin/BIN-1001/undo': { body: {} },
-      'GET /api/v1/financials/records/A-1042': {
-        body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
-      },
-    });
+    const { user, router, api } = openRows([
+      looseReply(
+        'GET /api/v1/activities/{activityId}',
+        {
+          body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
+        },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'DELETE /api/v1/activities/{activityId}',
+        { body: DELETED },
+        { activityId: 'A-1042' },
+      ),
+      looseReply('POST /api/v1/recycle-bin/{entryId}/undo', { body: {} }, { entryId: 'BIN-1001' }),
+      looseReply(
+        'GET /api/v1/financials/records/{recordId}',
+        {
+          body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
+        },
+        { recordId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
@@ -204,16 +229,28 @@ describe('activityTreeRows (feature 006)', () => {
   });
 
   it('copies an activity from its row with the activity as stored now (FR-030)', async () => {
-    const { user, router, api } = openRows({
-      'GET /api/v1/activities/A-1042': {
-        body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
-      },
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/copy': {
-        status: 201,
-        body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
-      },
-    });
+    const { user, router, api } = openRows([
+      looseReply(
+        'GET /api/v1/activities/{activityId}',
+        {
+          body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
+        },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/copy',
+        {
+          status: 201,
+          body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Copy' }));
@@ -232,16 +269,28 @@ describe('activityTreeRows (feature 006)', () => {
   });
 
   it('moves an activity from its row with the version stored now (FR-029)', async () => {
-    const { user, api } = openRows({
-      'GET /api/v1/activities/A-1042': { body: launchFilm({ version: 7 }) },
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/move': {
-        body: launchFilm({
-          initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
-          version: 8,
-        }),
-      },
-    });
+    const { user, api } = openRows([
+      looseReply(
+        'GET /api/v1/activities/{activityId}',
+        { body: launchFilm({ version: 7 }) },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/move',
+        {
+          body: launchFilm({
+            initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
+            version: 8,
+          }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Move' }));
@@ -259,7 +308,13 @@ describe('activityTreeRows (feature 006)', () => {
   });
 
   it('closes the question of a row on Cancel, deleting nothing', async () => {
-    const { user, api } = openRows({ 'GET /api/v1/activities/A-1042': { body: launchFilm() } });
+    const { user, api } = openRows([
+      looseReply(
+        'GET /api/v1/activities/{activityId}',
+        { body: launchFilm() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));

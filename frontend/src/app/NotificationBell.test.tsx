@@ -4,6 +4,7 @@ import { notificationOf, pageOf } from '@/testing/fixtures/notifications';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { NotificationBell } from './NotificationBell';
 
 describe('NotificationBell', () => {
@@ -46,7 +47,7 @@ describe('NotificationBell with notifications (feature 008, US6)', () => {
     const twelve = Array.from({ length: 12 }, (_, index) =>
       notificationOf({ id: `NT-${1001 + index}` }),
     );
-    mockApi({ 'GET /api/v1/notifications': { body: pageOf(twelve) } });
+    mockApi([reply('GET /api/v1/notifications', { body: pageOf(twelve) })]);
     renderWithProviders(<NotificationBell />, { user: testUser() });
 
     expect(
@@ -57,13 +58,17 @@ describe('NotificationBell with notifications (feature 008, US6)', () => {
 
   it('lists the notifications, closes after a choice and counts one less (FR-033, FR-034)', async () => {
     let read = false;
-    mockApi({
-      'GET /api/v1/notifications': () => ({ body: pageOf([notificationOf({ read })]) }),
-      'POST /api/v1/notifications/NT-1003/read': () => {
-        read = true;
-        return { body: notificationOf({ read: true }) };
-      },
-    });
+    mockApi([
+      reply('GET /api/v1/notifications', () => ({ body: pageOf([notificationOf({ read })]) })),
+      reply(
+        'POST /api/v1/notifications/{notificationId}/read',
+        () => {
+          read = true;
+          return { body: notificationOf({ read: true }) };
+        },
+        { notificationId: 'NT-1003' },
+      ),
+    ]);
     const { user, router } = renderWithProviders(<NotificationBell />, { user: testUser() });
 
     await user.click(await screen.findByRole('button', { name: 'Notifications, 1 unread' }));
@@ -80,12 +85,12 @@ describe('NotificationBell with notifications (feature 008, US6)', () => {
   it('asks again every 30 seconds, so a new one shows within a minute (FR-036)', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     let calls = 0;
-    mockApi({
-      'GET /api/v1/notifications': () => {
+    mockApi([
+      reply('GET /api/v1/notifications', () => {
         calls += 1;
         return { body: pageOf(calls === 1 ? [] : [notificationOf()]) };
-      },
-    });
+      }),
+    ]);
     renderWithProviders(<NotificationBell />, { user: testUser() });
     await waitFor(() => expect(calls).toBe(1));
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();

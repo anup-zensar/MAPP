@@ -1,12 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { planForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { financialsNotServed, plan } from '@/testing/fixtures/plans';
+import { looseReply } from '@/testing/replies';
 import { PlanPage } from './PlanPage';
 import type { Plan } from './api';
 
@@ -26,17 +28,21 @@ vi.mock('./campaigns/useCampaignTreeContent', () => ({
 }));
 
 function renderPage(
-  answer: MockHandler = { body: plan() },
-  more: Record<string, MockHandler> = {},
+  answer: LooseAnswer = { body: plan() },
+  more: HttpHandler[] = [],
   route = '/plans/P-1001',
 ) {
-  const api = mockApi({
+  const api = mockApi([
     ...HISTORY_ANSWERS,
     ...financialsNotServed('P-1001', 'P-1004'),
-    'GET /api/v1/plans/P-1001': answer,
-    'GET /api/v1/shell-attribute-forms/plan': { body: planForm() },
+    looseReply('GET /api/v1/plans/{planId}', answer, { planId: 'P-1001' }),
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: planForm() },
+      { level: 'plan' },
+    ),
     ...more,
-  });
+  ]);
   const result = renderWithProviders(<PlanPage />, {
     user: testUser(),
     route,
@@ -226,7 +232,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
           },
         }),
       },
-      {},
+      [],
       '/plans/P-1001?tab=details',
     );
 
@@ -258,7 +264,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
           },
         }),
       },
-      {},
+      [],
       '/plans/P-1001?tab=details',
     );
 
@@ -270,7 +276,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
   it('shows every detail read-only, with "—" and "(inactive)" (FR-015)', async () => {
     renderPage(
       { body: plan({ description: '', model: { ...plan().model, active: false } }) },
-      {},
+      [],
       '/plans/P-1001?tab=details',
     );
 
@@ -292,12 +298,16 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     let published = false;
     const { user } = renderPage(
       () => ({ body: plan({ status: published ? 'published' : 'draft' }) }),
-      {
-        'POST /api/v1/plans/P-1001/publish': () => {
-          published = true;
-          return { body: plan({ status: 'published' }) };
-        },
-      },
+      [
+        looseReply(
+          'POST /api/v1/plans/{planId}/publish',
+          () => {
+            published = true;
+            return { body: plan({ status: 'published' }) };
+          },
+          { planId: 'P-1001' },
+        ),
+      ],
     );
 
     await user.click(await screen.findByRole('button', { name: 'Publish' }));
@@ -310,10 +320,10 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
   });
 
   it('goes to the Plans list after a delete, with Undo (US6#4, FR-030)', async () => {
-    const { user, router } = renderPage(
-      { body: plan() },
-      {
-        'DELETE /api/v1/plans/P-1001': {
+    const { user, router } = renderPage({ body: plan() }, [
+      looseReply(
+        'DELETE /api/v1/plans/{planId}',
+        {
           body: {
             recycleBinEntry: {
               id: 'RB-1001',
@@ -329,8 +339,9 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
             },
           },
         },
-      },
-    );
+        { planId: 'P-1001' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'More' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
@@ -344,10 +355,10 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
 
   it('copies the plan from More and opens the copy (US6#1–2, FR-026, FR-027)', async () => {
     const copy = plan({ id: 'P-1004', name: 'FY2026 Lubricants Europe (copy)', version: 1 });
-    const { user, router } = renderPage(
-      { body: plan() },
-      {
-        'GET /api/v1/plans/P-1001/copy-options': {
+    const { user, router } = renderPage({ body: plan() }, [
+      looseReply(
+        'GET /api/v1/plans/{planId}/copy-options',
+        {
           body: {
             name: 'FY2026 Lubricants Europe (copy)',
             sameYear: 2026,
@@ -361,10 +372,15 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
             },
           },
         },
-        'POST /api/v1/plans/P-1001/copy': { status: 201, body: { plan: copy, notes: [] } },
-        'GET /api/v1/plans/P-1004': { body: copy },
-      },
-    );
+        { planId: 'P-1001' },
+      ),
+      looseReply(
+        'POST /api/v1/plans/{planId}/copy',
+        { status: 201, body: { plan: copy, notes: [] } },
+        { planId: 'P-1001' },
+      ),
+      looseReply('GET /api/v1/plans/{planId}', { body: copy }, { planId: 'P-1004' }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'More' }));
     expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
@@ -401,7 +417,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
   });
 
   it('shows the plan’s History in its tab, with Include items inside (011 FR-011 – FR-013)', async () => {
-    const { api } = renderPage({ body: plan() }, {}, '/plans/P-1001?tab=history');
+    const { api } = renderPage({ body: plan() }, [], '/plans/P-1001?tab=history');
 
     const history = await screen.findByRole('region', { name: 'History' });
     expect(within(history).getByText('Every change to this plan, newest first')).toBeVisible();

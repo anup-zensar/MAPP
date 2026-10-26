@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { SettingsPage } from './SettingsPage';
 import { SETTINGS_OWN_SECTIONS } from './sections';
 import type { SettingsSection } from './sections';
@@ -45,7 +46,7 @@ function card(title: string): HTMLElement {
 
 describe('SettingsPage (FR-001)', () => {
   it('shows the page title, its promise and one card per section with its active count', async () => {
-    mockApi({ 'GET /api/v1/settings/overview': { body: OVERVIEW } });
+    mockApi([reply('GET /api/v1/settings/overview', { body: OVERVIEW })]);
     renderSettings();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
@@ -69,7 +70,7 @@ describe('SettingsPage (FR-001)', () => {
   });
 
   it('opens each section from its card: the link is named by the section', async () => {
-    mockApi({ 'GET /api/v1/settings/overview': { body: OVERVIEW } });
+    mockApi([reply('GET /api/v1/settings/overview', { body: OVERVIEW })]);
     const { user, router } = renderSettings();
 
     expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute(
@@ -82,7 +83,7 @@ describe('SettingsPage (FR-001)', () => {
   });
 
   it('shows a section without a page as Coming soon, not as a link', async () => {
-    mockApi({ 'GET /api/v1/settings/overview': { body: OVERVIEW } });
+    mockApi([reply('GET /api/v1/settings/overview', { body: OVERVIEW })]);
     renderSettings();
 
     const later = card('Later section');
@@ -93,8 +94,8 @@ describe('SettingsPage (FR-001)', () => {
 
   it('keeps the cards usable when the counts cannot be loaded, and tries again', async () => {
     let calls = 0;
-    mockApi({
-      'GET /api/v1/settings/overview': () => {
+    mockApi([
+      reply('GET /api/v1/settings/overview', () => {
         calls += 1;
         return calls === 1
           ? {
@@ -102,8 +103,8 @@ describe('SettingsPage (FR-001)', () => {
               body: { error: { code: 'internal_error', message: 'Boom', fields: [] } },
             }
           : { body: OVERVIEW };
-      },
-    });
+      }),
+    ]);
     const { user } = renderSettings();
 
     expect(await screen.findByRole('alert')).toHaveTextContent("Counts couldn't be loaded.");

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { detailsOf } from '@/testing/fixtures/approval-workflows';
 import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
 import { expectCurrentSection, renderApp } from '@/testing/app';
+import { reply } from '@/testing/replies';
 
 const NO_ROWS = { body: { items: [], total: 0 } };
 
@@ -10,10 +11,10 @@ const NO_ROWS = { body: { items: [], total: 0 } };
 // the stub pages (their own requests go into renderApp's answers).
 describe('Approvals routes (feature 008)', () => {
   it('opens /approvals, with Approvals current in the sidebar', async () => {
-    renderApp('/approvals', {
-      'GET /api/v1/approvals': NO_ROWS,
-      'GET /api/v1/approval-delegations': NO_DELEGATIONS,
-    });
+    renderApp('/approvals', [
+      reply('GET /api/v1/approvals', NO_ROWS),
+      reply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
+    ]);
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Approvals' })).toBeInTheDocument();
     expect(document.title).toBe('Approvals · MAPP');
@@ -21,7 +22,7 @@ describe('Approvals routes (feature 008)', () => {
   });
 
   it('opens /settings/approval-workflows, with Settings current in the sidebar', async () => {
-    renderApp('/settings/approval-workflows', { 'GET /api/v1/approval-workflows': NO_ROWS });
+    renderApp('/settings/approval-workflows', [reply('GET /api/v1/approval-workflows', NO_ROWS)]);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Approval workflows' }),
@@ -31,10 +32,14 @@ describe('Approvals routes (feature 008)', () => {
   });
 
   it('opens /settings/approval-workflows/WF-1001 with the details panel over the list', async () => {
-    renderApp('/settings/approval-workflows/WF-1001', {
-      'GET /api/v1/approval-workflows': NO_ROWS,
-      'GET /api/v1/approval-workflows/WF-1001': { body: detailsOf() },
-    });
+    renderApp('/settings/approval-workflows/WF-1001', [
+      reply('GET /api/v1/approval-workflows', NO_ROWS),
+      reply(
+        'GET /api/v1/approval-workflows/{workflowId}',
+        { body: detailsOf() },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByRole('dialog', { name: 'Lubricants EU approval' }),

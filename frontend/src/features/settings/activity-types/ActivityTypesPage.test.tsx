@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -16,6 +16,7 @@ import {
   validationFailed,
   versionConflict,
 } from '@/testing/fixtures/settings';
+import { looseReply } from '@/testing/replies';
 import { ActivityTypesPage } from './ActivityTypesPage';
 
 type ActivityType = components['schemas']['ActivityType'];
@@ -59,15 +60,12 @@ const PRINT: ActivityType = { ...PODCAST, id: 'AT-1007', name: 'Print advert', a
 
 const TYPES = { items: [EVENT, PODCAST, PRINT], total: 3 };
 
-function renderTypes(
-  answers: Record<string, MockHandler> = {},
-  route = '/settings/activity-types',
-) {
-  const api = mockApi({
-    'GET /api/v1/activity-types': { body: TYPES },
-    'GET /api/v1/models': { body: MODELS },
+function renderTypes(answers: HttpHandler[] = [], route = '/settings/activity-types') {
+  const api = mockApi([
+    looseReply('GET /api/v1/activity-types', { body: TYPES }),
+    looseReply('GET /api/v1/models', { body: MODELS }),
     ...answers,
-  });
+  ]);
   return {
     ...renderWithProviders(<ActivityTypesPage />, {
       route,
@@ -133,7 +131,7 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
   });
 
   it('says when nothing matches the filters, and clears them', async () => {
-    const { user } = renderTypes({}, '/settings/activity-types?q=zzz');
+    const { user } = renderTypes([], '/settings/activity-types?q=zzz');
 
     expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
@@ -142,7 +140,7 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
   });
 
   it('invites to create the first activity type when there are none', async () => {
-    renderTypes({ 'GET /api/v1/activity-types': { body: { items: [], total: 0 } } });
+    renderTypes([looseReply('GET /api/v1/activity-types', { body: { items: [], total: 0 } })]);
 
     expect(
       await screen.findByText('No activity types yet — create your first activity type'),
@@ -152,8 +150,8 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
 
   it('says when the activity types cannot be loaded, and tries again', async () => {
     let calls = 0;
-    const { user } = renderTypes({
-      'GET /api/v1/activity-types': () => {
+    const { user } = renderTypes([
+      looseReply('GET /api/v1/activity-types', () => {
         calls += 1;
         return calls === 1
           ? {
@@ -166,8 +164,8 @@ describe('ActivityTypesPage: the list (FR-002)', () => {
               },
             }
           : { body: TYPES };
-      },
-    });
+      }),
+    ]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong.');
     await user.click(screen.getByRole('button', { name: 'Try again' }));
@@ -195,7 +193,7 @@ describe('ActivityTypesPage: details (US5 scenario 2)', () => {
   });
 
   it('says when the activity type of the address no longer exists', async () => {
-    renderTypes({}, '/settings/activity-types?id=AT-9999');
+    renderTypes([], '/settings/activity-types?id=AT-9999');
 
     const panel = await screen.findByRole('dialog', { name: 'Activity type' });
     expect(panel).toHaveTextContent(
@@ -208,9 +206,9 @@ describe('ActivityTypesPage: details (US5 scenario 2)', () => {
 describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', () => {
   it('creates "Webinar" with a default cost, allowed in a model (scenario 1)', async () => {
     const webinar = { ...PODCAST, id: 'AT-1008', name: 'Webinar' };
-    const { user, api } = renderTypes({
-      'POST /api/v1/activity-types': { status: 201, body: webinar },
-    });
+    const { user, api } = renderTypes([
+      looseReply('POST /api/v1/activity-types', { status: 201, body: webinar }),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'New activity type' }));
     const form = await screen.findByRole('dialog', { name: 'New activity type' });
@@ -237,8 +235,8 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
   });
 
   it('shows every problem at once and saves nothing (FR-005)', async () => {
-    const { user } = renderTypes({
-      'POST /api/v1/activity-types': {
+    const { user } = renderTypes([
+      looseReply('POST /api/v1/activity-types', {
         status: 400,
         body: validationFailed([
           { field: 'name', message: "An activity type called 'Event' already exists." },
@@ -247,8 +245,8 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
             message: 'Enter an amount of 0 or more, with at most two decimals.',
           },
         ]),
-      },
-    });
+      }),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'New activity type' }));
     const form = await screen.findByRole('dialog', { name: 'New activity type' });
@@ -266,11 +264,15 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
   });
 
   it('says a changed default cost applies from now on, and saves only that (scenario 2)', async () => {
-    const { user, api } = renderTypes({
-      'PATCH /api/v1/activity-types/AT-1002': {
-        body: { ...EVENT, defaultPlannedCost: { amount: '7500.00', currency: 'USD' } },
-      },
-    });
+    const { user, api } = renderTypes([
+      looseReply(
+        'PATCH /api/v1/activity-types/{activityTypeId}',
+        {
+          body: { ...EVENT, defaultPlannedCost: { amount: '7500.00', currency: 'USD' } },
+        },
+        { activityTypeId: 'AT-1002' },
+      ),
+    ]);
 
     await chooseAction('Event', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit activity type' });
@@ -289,9 +291,13 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
   });
 
   it('removes the default cost with null', async () => {
-    const { user, api } = renderTypes({
-      'PATCH /api/v1/activity-types/AT-1002': { body: { ...EVENT, defaultPlannedCost: null } },
-    });
+    const { user, api } = renderTypes([
+      looseReply(
+        'PATCH /api/v1/activity-types/{activityTypeId}',
+        { body: { ...EVENT, defaultPlannedCost: null } },
+        { activityTypeId: 'AT-1002' },
+      ),
+    ]);
 
     await chooseAction('Event', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit activity type' });
@@ -307,12 +313,20 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
   it('warns before a model stops allowing the type, then saves the new list (FR-012)', async () => {
     const warning =
       "In plans using 'Lubricants 1.0', 4 activities use 'Event'. They keep it; new activities can't choose it.";
-    const { user, api } = renderTypes({
-      'POST /api/v1/activity-types/AT-1002/impact': {
-        body: { warnings: [{ kind: 'activityTypeRemoved', message: warning, count: 4 }] },
-      },
-      'PATCH /api/v1/activity-types/AT-1002': { body: { ...EVENT, models: [] } },
-    });
+    const { user, api } = renderTypes([
+      looseReply(
+        'POST /api/v1/activity-types/{activityTypeId}/impact',
+        {
+          body: { warnings: [{ kind: 'activityTypeRemoved', message: warning, count: 4 }] },
+        },
+        { activityTypeId: 'AT-1002' },
+      ),
+      looseReply(
+        'PATCH /api/v1/activity-types/{activityTypeId}',
+        { body: { ...EVENT, models: [] } },
+        { activityTypeId: 'AT-1002' },
+      ),
+    ]);
 
     await chooseAction('Event', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit activity type' });
@@ -337,9 +351,13 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
   });
 
   it('adds a model without an impact check', async () => {
-    const { user, api } = renderTypes({
-      'PATCH /api/v1/activity-types/AT-1006': { body: PODCAST },
-    });
+    const { user, api } = renderTypes([
+      looseReply(
+        'PATCH /api/v1/activity-types/{activityTypeId}',
+        { body: PODCAST },
+        { activityTypeId: 'AT-1006' },
+      ),
+    ]);
 
     await chooseAction('Podcast', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit activity type' });
@@ -355,15 +373,23 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
 
   it('keeps the typed values after a conflict and saves again over it (FR-007)', async () => {
     let patches = 0;
-    const { user, api } = renderTypes({
-      'PATCH /api/v1/activity-types/AT-1006': () => {
-        patches += 1;
-        return patches === 1
-          ? { status: 409, body: versionConflict() }
-          : { body: { ...PODCAST, name: 'Podcast series' } };
-      },
-      'GET /api/v1/activity-types/AT-1006': { body: { ...PODCAST, version: 4 } },
-    });
+    const { user, api } = renderTypes([
+      looseReply(
+        'PATCH /api/v1/activity-types/{activityTypeId}',
+        () => {
+          patches += 1;
+          return patches === 1
+            ? { status: 409, body: versionConflict() }
+            : { body: { ...PODCAST, name: 'Podcast series' } };
+        },
+        { activityTypeId: 'AT-1006' },
+      ),
+      looseReply(
+        'GET /api/v1/activity-types/{activityTypeId}',
+        { body: { ...PODCAST, version: 4 } },
+        { activityTypeId: 'AT-1006' },
+      ),
+    ]);
 
     await chooseAction('Podcast', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit activity type' });
@@ -393,11 +419,15 @@ describe('ActivityTypesPage: create and edit (US5 scenarios 1 and 2, FR-013)', (
 
 describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => {
   it('moves an unused type to the recycle bin and offers Undo', async () => {
-    const { user } = renderTypes({
-      'DELETE /api/v1/activity-types/AT-1006': {
-        body: deleted('activity type', 'AT-1006', 'Podcast'),
-      },
-    });
+    const { user } = renderTypes([
+      looseReply(
+        'DELETE /api/v1/activity-types/{activityTypeId}',
+        {
+          body: deleted('activity type', 'AT-1006', 'Podcast'),
+        },
+        { activityTypeId: 'AT-1006' },
+      ),
+    ]);
 
     await screen.findByRole('table');
     await chooseAction('Podcast', 'Delete', user);
@@ -413,9 +443,13 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
   });
 
   it('offers Set inactive instead of deleting a type in use', async () => {
-    const { user, api } = renderTypes({
-      'POST /api/v1/activity-types/AT-1002/status': { body: { ...EVENT, active: false } },
-    });
+    const { user, api } = renderTypes([
+      looseReply(
+        'POST /api/v1/activity-types/{activityTypeId}/status',
+        { body: { ...EVENT, active: false } },
+        { activityTypeId: 'AT-1002' },
+      ),
+    ]);
 
     await screen.findByRole('table');
     await chooseAction('Event', 'Delete', user);
@@ -435,9 +469,13 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
 
   it('switches to the in-use dialog when the API finds the type in use', async () => {
     const message = "'Podcast' is in use (used by 1 activity) — set it inactive instead.";
-    const { user } = renderTypes({
-      'DELETE /api/v1/activity-types/AT-1006': { status: 409, body: inUse(message) },
-    });
+    const { user } = renderTypes([
+      looseReply(
+        'DELETE /api/v1/activity-types/{activityTypeId}',
+        { status: 409, body: inUse(message) },
+        { activityTypeId: 'AT-1006' },
+      ),
+    ]);
 
     await screen.findByRole('table');
     await chooseAction('Podcast', 'Delete', user);
@@ -449,7 +487,13 @@ describe('ActivityTypesPage: status and delete (US5 scenario 5, FR-004)', () => 
 
   it('reactivates an inactive type', async () => {
     const { user, api } = renderTypes(
-      { 'POST /api/v1/activity-types/AT-1007/status': { body: { ...PRINT, active: true } } },
+      [
+        looseReply(
+          'POST /api/v1/activity-types/{activityTypeId}/status',
+          { body: { ...PRINT, active: true } },
+          { activityTypeId: 'AT-1007' },
+        ),
+      ],
       '/settings/activity-types?status=inactive',
     );
 

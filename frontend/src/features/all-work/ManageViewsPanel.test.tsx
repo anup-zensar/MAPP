@@ -1,21 +1,22 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { savedView } from '@/testing/fixtures/all-work';
+import { looseReply } from '@/testing/replies';
 import { ManageViewsPanel } from './ManageViewsPanel';
 
 const DECLINED = savedView();
 const BY_MONTH = savedView({ id: 'SV-1002', name: 'Lubricants by month', isDefault: true });
 const VIEWS = [DECLINED, BY_MONTH];
 
-function renderPanel(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
-    'GET /api/v1/saved-views': { body: { items: VIEWS, total: 2 } },
+function renderPanel(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply('GET /api/v1/saved-views', { body: { items: VIEWS, total: 2 } }),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(
     <ManageViewsPanel open onOpenChange={() => {}} views={VIEWS} />,
     { user: testUser() },
@@ -51,10 +52,18 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
   });
 
   it('sets and removes the default view (FR-031)', async () => {
-    const { api, user } = renderPanel({
-      'PATCH /api/v1/saved-views/SV-1001': { body: { ...DECLINED, isDefault: true } },
-      'PATCH /api/v1/saved-views/SV-1002': { body: { ...BY_MONTH, isDefault: false } },
-    });
+    const { api, user } = renderPanel([
+      looseReply(
+        'PATCH /api/v1/saved-views/{viewId}',
+        { body: { ...DECLINED, isDefault: true } },
+        { viewId: 'SV-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/saved-views/{viewId}',
+        { body: { ...BY_MONTH, isDefault: false } },
+        { viewId: 'SV-1002' },
+      ),
+    ]);
 
     await user.click(
       within(panel()).getByRole('button', { name: 'Set as default Declined activities' }),
@@ -74,9 +83,13 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
   });
 
   it('renames a view, refusing a name the person already uses (FR-029, FR-031)', async () => {
-    const { api, user } = renderPanel({
-      'PATCH /api/v1/saved-views/SV-1001': { body: { ...DECLINED, name: 'Declined in Europe' } },
-    });
+    const { api, user } = renderPanel([
+      looseReply(
+        'PATCH /api/v1/saved-views/{viewId}',
+        { body: { ...DECLINED, name: 'Declined in Europe' } },
+        { viewId: 'SV-1001' },
+      ),
+    ]);
 
     await user.click(within(panel()).getByRole('button', { name: 'Rename Declined activities' }));
     const dialog = await screen.findByRole('dialog', { name: 'Rename view' });
@@ -101,10 +114,10 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
 
   it('deletes a view after asking, and Undo saves it again (FR-031)', async () => {
     const restored = { ...DECLINED, id: 'SV-1003' };
-    const { api, user } = renderPanel({
-      'DELETE /api/v1/saved-views/SV-1001': { body: DECLINED },
-      'POST /api/v1/saved-views': { status: 201, body: restored },
-    });
+    const { api, user } = renderPanel([
+      looseReply('DELETE /api/v1/saved-views/{viewId}', { body: DECLINED }, { viewId: 'SV-1001' }),
+      looseReply('POST /api/v1/saved-views', { status: 201, body: restored }),
+    ]);
 
     await user.click(within(panel()).getByRole('button', { name: 'Delete Declined activities' }));
     const question = await screen.findByRole('alertdialog', {
@@ -126,12 +139,16 @@ describe('ManageViewsPanel (US6, FR-031)', () => {
   });
 
   it('says when a view was deleted in another tab (plan "States")', async () => {
-    const { user } = renderPanel({
-      'PATCH /api/v1/saved-views/SV-1001': {
-        status: 404,
-        body: { error: { code: 'not_found', message: 'Not found' } },
-      },
-    });
+    const { user } = renderPanel([
+      looseReply(
+        'PATCH /api/v1/saved-views/{viewId}',
+        {
+          status: 404,
+          body: { error: { code: 'not_found', message: 'Not found' } },
+        },
+        { viewId: 'SV-1001' },
+      ),
+    ]);
 
     await user.click(
       within(panel()).getByRole('button', { name: 'Set as default Declined activities' }),

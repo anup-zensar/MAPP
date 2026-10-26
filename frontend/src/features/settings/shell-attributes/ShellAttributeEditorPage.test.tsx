@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { SessionProvider } from '@/session/SessionProvider';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -17,16 +17,19 @@ import {
   page,
   PIR,
 } from '@/testing/fixtures/shell-attributes';
+import { looseReply } from '@/testing/replies';
 import { ShellAttributeEditorPage } from './ShellAttributeEditorPage';
 
-const LIST = {
-  'GET /api/v1/shell-attributes': { body: page([BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES]) },
+const LIST = [
+  looseReply('GET /api/v1/shell-attributes', {
+    body: page([BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES]),
+  }),
   ...FORM_ANSWERS,
-};
+];
 
 /** The editor at `route`, with the attribute page and the list as stand-ins to land on. */
-function renderEditor(route: string, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ ...LIST, ...answers });
+function renderEditor(route: string, answers: HttpHandler[] = []) {
+  const api = mockApi([...LIST, ...answers]);
   const rendered = renderRoutes(
     [
       {
@@ -65,9 +68,12 @@ function offered(name: RegExp): string[] {
 
 describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
   it('creates "Media channel" with four options and opens it (US2-1)', async () => {
-    const { user, api, router } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/v1/shell-attributes': { status: 201, body: { ...MEDIA_CHANNEL, id: 'SA-1020' } },
-    });
+    const { user, api, router } = renderEditor('/settings/shell-attributes/new?level=activity', [
+      looseReply('POST /api/v1/shell-attributes', {
+        status: 201,
+        body: { ...MEDIA_CHANNEL, id: 'SA-1020' },
+      }),
+    ]);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'New Shell attribute' }),
@@ -159,8 +165,8 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
   });
 
   it("shows the API's problems together, at the fields (US2-2)", async () => {
-    const { user } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/v1/shell-attributes': {
+    const { user } = renderEditor('/settings/shell-attributes/new?level=activity', [
+      looseReply('POST /api/v1/shell-attributes', {
         status: 400,
         body: {
           error: {
@@ -175,8 +181,8 @@ describe('ShellAttributeEditorPage: create (FR-016 – FR-019)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
 
     await user.type(await screen.findByRole('textbox', { name: /^Label/ }), 'PIR');
     await user.selectOptions(screen.getByRole('combobox', { name: /Type/ }), 'singleChoice');
@@ -223,9 +229,13 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
         },
       ],
     };
-    renderEditor('/settings/shell-attributes/SA-1010/edit', {
-      'GET /api/v1/shell-attributes/SA-1010': { body: locked },
-    });
+    renderEditor('/settings/shell-attributes/SA-1010/edit', [
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: locked },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     expect(
       await screen.findByRole('heading', {
@@ -247,9 +257,13 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
   });
 
   it('shows the Business unit lock on its section (FR-023)', async () => {
-    renderEditor('/settings/shell-attributes/SA-1001/edit', {
-      'GET /api/v1/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
-    });
+    renderEditor('/settings/shell-attributes/SA-1001/edit', [
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: BUSINESS_UNIT },
+        { attributeId: 'SA-1001' },
+      ),
+    ]);
 
     await screen.findByRole('heading', { level: 1, name: "Edit Shell attribute 'Business unit'" });
     expect(screen.queryByRole('combobox', { name: /Section/ })).not.toBeInTheDocument();
@@ -262,22 +276,34 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
   });
 
   it('warns how many records become incomplete before saving a new marking (US2-5)', async () => {
-    const { user, api, router } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/v1/shell-attributes/SA-1011': { body: PIR },
-      'POST /api/v1/shell-attributes/SA-1011/impact': {
-        body: {
-          warnings: [
-            {
-              kind: 'becomesIncomplete',
-              count: 7,
-              message:
-                '7 activities have no value yet and will show as incomplete. Submitted and approved activities keep their status.',
-            },
-          ],
+    const { user, api, router } = renderEditor('/settings/shell-attributes/SA-1011/edit', [
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: PIR },
+        { attributeId: 'SA-1011' },
+      ),
+      looseReply(
+        'POST /api/v1/shell-attributes/{attributeId}/impact',
+        {
+          body: {
+            warnings: [
+              {
+                kind: 'becomesIncomplete',
+                count: 7,
+                message:
+                  '7 activities have no value yet and will show as incomplete. Submitted and approved activities keep their status.',
+              },
+            ],
+          },
         },
-      },
-      'PATCH /api/v1/shell-attributes/SA-1011': { body: { ...PIR, marking: 'neededToSubmit' } },
-    });
+        { attributeId: 'SA-1011' },
+      ),
+      looseReply(
+        'PATCH /api/v1/shell-attributes/{attributeId}',
+        { body: { ...PIR, marking: 'neededToSubmit' } },
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     await user.selectOptions(
       await screen.findByRole('combobox', { name: /Marking/ }),
@@ -307,27 +333,35 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
   it('keeps the typed values after a conflict and saves over it on purpose (FR-007)', async () => {
     let gets = 0;
     let patches = 0;
-    const { user, api } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/v1/shell-attributes/SA-1011': () => {
-        gets += 1;
-        return { body: gets === 1 ? PIR : { ...PIR, label: 'PIR code', version: 3 } };
-      },
-      'PATCH /api/v1/shell-attributes/SA-1011': () => {
-        patches += 1;
-        return patches === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Someone else changed this Shell attribute.',
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+    const { user, api } = renderEditor('/settings/shell-attributes/SA-1011/edit', [
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        () => {
+          gets += 1;
+          return { body: gets === 1 ? PIR : { ...PIR, label: 'PIR code', version: 3 } };
+        },
+        { attributeId: 'SA-1011' },
+      ),
+      looseReply(
+        'PATCH /api/v1/shell-attributes/{attributeId}',
+        () => {
+          patches += 1;
+          return patches === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Someone else changed this Shell attribute.',
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: { ...PIR, label: 'PIR number', version: 4 } };
-      },
-    });
+              }
+            : { body: { ...PIR, label: 'PIR number', version: 4 } };
+        },
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     const label = await screen.findByRole('textbox', { name: /^Label/ });
     await user.clear(label);
@@ -348,12 +382,16 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
   });
 
   it('says when the attribute no longer exists', async () => {
-    renderEditor('/settings/shell-attributes/SA-9999/edit', {
-      'GET /api/v1/shell-attributes/SA-9999': {
-        status: 404,
-        body: { error: { code: 'not_found', message: 'This Shell attribute no longer exists.' } },
-      },
-    });
+    renderEditor('/settings/shell-attributes/SA-9999/edit', [
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        {
+          status: 404,
+          body: { error: { code: 'not_found', message: 'This Shell attribute no longer exists.' } },
+        },
+        { attributeId: 'SA-9999' },
+      ),
+    ]);
 
     expect(
       await screen.findByText(
@@ -366,12 +404,12 @@ describe('ShellAttributeEditorPage: edit (FR-021)', () => {
 
 describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-023)', () => {
   it('links each option of a dependent attribute, listing every unlinked one at once (US3-2)', async () => {
-    const { user, api, router } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/v1/shell-attributes': {
+    const { user, api, router } = renderEditor('/settings/shell-attributes/new?level=activity', [
+      looseReply('POST /api/v1/shell-attributes', {
         status: 201,
         body: { ...MEDIA_CHANNEL, id: 'SA-1020', label: 'Spot type' },
-      },
-    });
+      }),
+    ]);
 
     await user.type(await screen.findByRole('textbox', { name: /^Label/ }), 'Spot type');
     await user.selectOptions(screen.getByRole('combobox', { name: /Type/ }), 'singleChoice');
@@ -433,9 +471,9 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
   });
 
   it('shows an attribute only for chosen business units (FR-023)', async () => {
-    const { user, api } = renderEditor('/settings/shell-attributes/new?level=activity', {
-      'POST /api/v1/shell-attributes': { status: 201, body: { ...PIR, id: 'SA-1021' } },
-    });
+    const { user, api } = renderEditor('/settings/shell-attributes/new?level=activity', [
+      looseReply('POST /api/v1/shell-attributes', { status: 201, body: { ...PIR, id: 'SA-1021' } }),
+    ]);
 
     await user.type(await screen.findByRole('textbox', { name: /^Label/ }), 'Lubricants code');
     await user.selectOptions(screen.getByRole('combobox', { name: /Type/ }), 'text');
@@ -458,11 +496,15 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
   });
 
   it('says why no condition can be set while there is no Business unit attribute', async () => {
-    renderEditor('/settings/shell-attributes/new?level=plan', {
-      'GET /api/v1/shell-attribute-forms/plan': {
-        body: { ...emptyForm('plan'), businessUnitAttributeId: null, businessUnitOptions: [] },
-      },
-    });
+    renderEditor('/settings/shell-attributes/new?level=plan', [
+      looseReply(
+        'GET /api/v1/shell-attribute-forms/{level}',
+        {
+          body: { ...emptyForm('plan'), businessUnitAttributeId: null, businessUnitOptions: [] },
+        },
+        { level: 'plan' },
+      ),
+    ]);
 
     expect(
       await screen.findByText(
@@ -475,12 +517,20 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
   });
 
   it('links every active option when an attribute starts depending on another (FR-022)', async () => {
-    const { user, api, router } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/v1/shell-attributes/SA-1011': { body: PIR },
-      'PATCH /api/v1/shell-attributes/SA-1011': {
-        body: { ...PIR, parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true } },
-      },
-    });
+    const { user, api, router } = renderEditor('/settings/shell-attributes/SA-1011/edit', [
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: PIR },
+        { attributeId: 'SA-1011' },
+      ),
+      looseReply(
+        'PATCH /api/v1/shell-attributes/{attributeId}',
+        {
+          body: { ...PIR, parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true } },
+        },
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     const dependsOn = await screen.findByRole('combobox', { name: /Depends on/ });
     // PIR keeps its place, after Media channel only.
@@ -519,10 +569,18 @@ describe('ShellAttributeEditorPage: depends on and condition (US3, FR-022, FR-02
       parentAttribute: { id: 'SA-1010', name: 'Media channel', active: true },
       condition: [{ id: LUBRICANTS, name: 'Lubricants', active: true }],
     };
-    const { user, api } = renderEditor('/settings/shell-attributes/SA-1011/edit', {
-      'GET /api/v1/shell-attributes/SA-1011': { body: region },
-      'PATCH /api/v1/shell-attributes/SA-1011': { body: PIR },
-    });
+    const { user, api } = renderEditor('/settings/shell-attributes/SA-1011/edit', [
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}',
+        { body: region },
+        { attributeId: 'SA-1011' },
+      ),
+      looseReply(
+        'PATCH /api/v1/shell-attributes/{attributeId}',
+        { body: PIR },
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     const dependsOn = await screen.findByRole('combobox', { name: /Depends on/ });
     expect(dependsOn).toHaveValue('SA-1010');

@@ -1,16 +1,20 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { expectNoAxeViolations } from '@/testing/axe';
 import { validationFailed, versionConflict } from '@/testing/fixtures/settings';
 import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
+import { looseReply } from '@/testing/replies';
 import { FieldHelpPage } from './FieldHelpPage';
 
-function renderHelp(answers: Record<string, MockHandler> = {}, route = '/settings/field-help') {
-  const api = mockApi({ 'GET /api/v1/field-help': { body: FIELD_HELP_PAGE }, ...answers });
+function renderHelp(answers: HttpHandler[] = [], route = '/settings/field-help') {
+  const api = mockApi([
+    looseReply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE }),
+    ...answers,
+  ]);
   const rendered = renderWithProviders(<FieldHelpPage />, {
     route,
     path: '/settings/field-help',
@@ -87,7 +91,9 @@ describe('FieldHelpPage: the list (016 FR-045, FR-048)', () => {
   });
 
   it('says when the help texts cannot be loaded', async () => {
-    renderHelp({ 'GET /api/v1/field-help': () => Promise.reject(new TypeError('offline')) });
+    renderHelp([
+      looseReply('GET /api/v1/field-help', () => Promise.reject(new TypeError('offline'))),
+    ]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent("can't reach its server");
   });
@@ -96,11 +102,15 @@ describe('FieldHelpPage: the list (016 FR-045, FR-048)', () => {
 describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   it('edits a text in a side panel and saves it with its version (US7-2)', async () => {
     const newText = 'What the plan may spend in its year.';
-    const { user, api, router } = renderHelp({
-      'PATCH /api/v1/field-help/plan.budget': {
-        body: { ...PLAN_BUDGET, text: newText, isDefault: false, version: 1 },
-      },
-    });
+    const { user, api, router } = renderHelp([
+      looseReply(
+        'PATCH /api/v1/field-help/{helpKey}',
+        {
+          body: { ...PLAN_BUDGET, text: newText, isDefault: false, version: 1 },
+        },
+        { helpKey: 'plan.budget' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Plan budget' }));
@@ -123,11 +133,15 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   });
 
   it('refuses a text over 300 characters; an empty text is allowed (US7-4)', async () => {
-    const { user, api } = renderHelp({
-      'PATCH /api/v1/field-help/plan.budget': {
-        body: { ...PLAN_BUDGET, text: '', isDefault: false, version: 1 },
-      },
-    });
+    const { user, api } = renderHelp([
+      looseReply(
+        'PATCH /api/v1/field-help/{helpKey}',
+        {
+          body: { ...PLAN_BUDGET, text: '', isDefault: false, version: 1 },
+        },
+        { helpKey: 'plan.budget' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Plan budget' }));
@@ -153,9 +167,13 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   });
 
   it('names who saved first and keeps the typed text (001 FR-029)', async () => {
-    const { user } = renderHelp({
-      'PATCH /api/v1/field-help/plan.plannedCost': { status: 409, body: versionConflict() },
-    });
+    const { user } = renderHelp([
+      looseReply(
+        'PATCH /api/v1/field-help/{helpKey}',
+        { status: 409, body: versionConflict() },
+        { helpKey: 'plan.plannedCost' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Planned cost' }));
@@ -171,12 +189,16 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   });
 
   it('shows the problem the API finds under the text', async () => {
-    const { user } = renderHelp({
-      'PATCH /api/v1/field-help/plan.budget': {
-        status: 400,
-        body: validationFailed([{ field: 'text', message: 'Use plain text without links.' }]),
-      },
-    });
+    const { user } = renderHelp([
+      looseReply(
+        'PATCH /api/v1/field-help/{helpKey}',
+        {
+          status: 400,
+          body: validationFailed([{ field: 'text', message: 'Use plain text without links.' }]),
+        },
+        { helpKey: 'plan.budget' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await user.click(screen.getByRole('button', { name: 'Plan budget' }));
@@ -188,11 +210,15 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   });
 
   it('resets an edited text to the default after asking (US7-3)', async () => {
-    const { user, api } = renderHelp({
-      'PATCH /api/v1/field-help/plan.plannedCost': {
-        body: { ...PLAN_PLANNED_COST, text: PLAN_PLANNED_COST.defaultText, isDefault: true },
-      },
-    });
+    const { user, api } = renderHelp([
+      looseReply(
+        'PATCH /api/v1/field-help/{helpKey}',
+        {
+          body: { ...PLAN_PLANNED_COST, text: PLAN_PLANNED_COST.defaultText, isDefault: true },
+        },
+        { helpKey: 'plan.plannedCost' },
+      ),
+    ]);
     await screen.findByRole('table');
 
     await chooseAction('Planned cost', 'Reset to default', user);
@@ -212,7 +238,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   });
 
   it('offers Reset to default from the panel of an edited text', async () => {
-    const { user } = renderHelp({}, '/settings/field-help?key=plan.plannedCost');
+    const { user } = renderHelp([], '/settings/field-help?key=plan.plannedCost');
 
     const panel = await screen.findByRole('dialog', { name: 'Edit field help' });
     expect(panel).toHaveTextContent(PLAN_PLANNED_COST.defaultText);
@@ -243,7 +269,7 @@ describe('FieldHelpPage: no axe violations (WCAG 2.2 AA)', () => {
     ['the list', '/settings/field-help', 'table'],
     ['the edit panel', '/settings/field-help?key=plan.plannedCost', 'dialog'],
   ])('%s', async (_state, route, role) => {
-    renderHelp({}, route);
+    renderHelp([], route);
     await screen.findByRole(role);
 
     await expectNoAxeViolations();

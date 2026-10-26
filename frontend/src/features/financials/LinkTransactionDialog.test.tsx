@@ -1,8 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import {
   FT_1004,
@@ -10,17 +10,26 @@ import {
   STATION_SIGNAGE,
   transactionOf,
 } from '@/testing/fixtures/financials';
+import { looseReply } from '@/testing/replies';
 import { LinkTransactionDialog } from './LinkTransactionDialog';
 
 const LINK = 'POST /api/v1/financials/transactions/FT-1004/link';
 
-function renderDialog(answers: Record<string, MockHandler> = {}) {
+function renderDialog(answers: HttpHandler[] = []) {
   const onClose = vi.fn();
-  const api = mockApi({
-    'GET /api/v1/line-items/L-1007': { body: STATION_SIGNAGE },
-    [LINK]: { body: manuallyLinked() },
+  const api = mockApi([
+    looseReply(
+      'GET /api/v1/line-items/{lineItemId}',
+      { body: STATION_SIGNAGE },
+      { lineItemId: 'L-1007' },
+    ),
+    looseReply(
+      'POST /api/v1/financials/transactions/{transactionId}/link',
+      { body: manuallyLinked() },
+      { transactionId: 'FT-1004' },
+    ),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(
     <LinkTransactionDialog transaction={transactionOf(FT_1004)} onClose={onClose} />,
     { user: testUser() },
@@ -54,12 +63,16 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
   });
 
   it('says when no line item has the ID, and checks the ID before asking', async () => {
-    const { api, user } = renderDialog({
-      'GET /api/v1/line-items/L-9999': {
-        status: 404,
-        body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
-      },
-    });
+    const { api, user } = renderDialog([
+      looseReply(
+        'GET /api/v1/line-items/{lineItemId}',
+        {
+          status: 404,
+          body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
+        },
+        { lineItemId: 'L-9999' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('dialog');
     const field = within(dialog).getByRole('textbox', { name: /Line item ID/ });
@@ -74,27 +87,35 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
   });
 
   it("shows the API's refusal at the field (US7 scenario 4)", async () => {
-    const { user, onClose } = renderDialog({
-      'GET /api/v1/line-items/L-1005': {
-        status: 404,
-        body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
-      },
-      [LINK]: {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Check the line item.',
-            fields: [
-              {
-                field: 'lineItemId',
-                message: 'Line item L-1005 is in the recycle bin — restore it first.',
-              },
-            ],
+    const { user, onClose } = renderDialog([
+      looseReply(
+        'GET /api/v1/line-items/{lineItemId}',
+        {
+          status: 404,
+          body: { error: { code: 'not_found', message: 'This line item no longer exists.' } },
+        },
+        { lineItemId: 'L-1005' },
+      ),
+      looseReply(
+        'POST /api/v1/financials/transactions/{transactionId}/link',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Check the line item.',
+              fields: [
+                {
+                  field: 'lineItemId',
+                  message: 'Line item L-1005 is in the recycle bin — restore it first.',
+                },
+              ],
+            },
           },
         },
-      },
-    });
+        { transactionId: 'FT-1004' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByRole('textbox', { name: /Line item ID/ }), 'L-1005');
@@ -107,18 +128,22 @@ describe('LinkTransactionDialog (015 US7, FR-026)', () => {
   });
 
   it('names who changed the transaction meanwhile (D-030)', async () => {
-    const { user } = renderDialog({
-      [LINK]: {
-        status: 409,
-        body: {
-          error: {
-            code: 'version_conflict',
-            message: 'Someone else changed this GSAP transaction.',
-            conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-10-20T09:30:00Z' },
+    const { user } = renderDialog([
+      looseReply(
+        'POST /api/v1/financials/transactions/{transactionId}/link',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'version_conflict',
+              message: 'Someone else changed this GSAP transaction.',
+              conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-10-20T09:30:00Z' },
+            },
           },
         },
-      },
-    });
+        { transactionId: 'FT-1004' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByRole('textbox', { name: /Line item ID/ }), 'L-1007');

@@ -1,8 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Outlet } from 'react-router';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import {
   FT_1003,
   FT_1004,
@@ -15,17 +16,18 @@ import {
 import { SessionProvider } from '@/session/SessionProvider';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { FinancialsPage } from './FinancialsPage';
 import { TransactionPanel } from './TransactionPanel';
 
-const LIST = 'GET /api/v1/financials/transactions';
-
-function renderPanel(id: string, answer: MockHandler, more: Record<string, MockHandler> = {}) {
-  const api = mockApi({
-    [LIST]: { body: transactionPage() },
-    [`GET /api/v1/financials/transactions/${id}`]: answer,
+function renderPanel(id: string, answer: LooseAnswer, more: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply('GET /api/v1/financials/transactions', { body: transactionPage() }),
+    looseReply('GET /api/v1/financials/transactions/{transactionId}', answer, {
+      transactionId: id,
+    }),
     ...more,
-  });
+  ]);
   return { ...renderFinancials(`/financials/transactions/${id}?q=helix`), api };
 }
 
@@ -114,11 +116,13 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
   });
 
   it('shows a not-linked transaction with its reason and Link to a line item (US3 scenario 4)', async () => {
-    const { user } = renderPanel(
-      'FT-1004',
-      { body: transactionOf(FT_1004) },
-      { 'GET /api/v1/line-items/L-1007': { body: STATION_SIGNAGE } },
-    );
+    const { user } = renderPanel('FT-1004', { body: transactionOf(FT_1004) }, [
+      looseReply(
+        'GET /api/v1/line-items/{lineItemId}',
+        { body: STATION_SIGNAGE },
+        { lineItemId: 'L-1007' },
+      ),
+    ]);
 
     const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
     const field = (label: string) =>
@@ -135,15 +139,15 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
   });
 
   it('unlinks a manual link after asking (US7 scenario 2)', async () => {
-    const { api, user } = renderPanel(
-      'FT-1004',
-      { body: manuallyLinked() },
-      {
-        'POST /api/v1/financials/transactions/FT-1004/unlink': {
+    const { api, user } = renderPanel('FT-1004', { body: manuallyLinked() }, [
+      looseReply(
+        'POST /api/v1/financials/transactions/{transactionId}/unlink',
+        {
           body: transactionOf(FT_1004, { version: 3 }),
         },
-      },
-    );
+        { transactionId: 'FT-1004' },
+      ),
+    ]);
 
     const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
     const field = (label: string) =>
@@ -173,12 +177,16 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
     const { user } = renderPanel(
       'FT-1004',
       () => ({ body: unlinked ? transactionOf(FT_1004, { version: 3 }) : manuallyLinked() }),
-      {
-        'POST /api/v1/financials/transactions/FT-1004/unlink': () => {
-          unlinked = true;
-          return { body: transactionOf(FT_1004, { version: 3 }) };
-        },
-      },
+      [
+        looseReply(
+          'POST /api/v1/financials/transactions/{transactionId}/unlink',
+          () => {
+            unlinked = true;
+            return { body: transactionOf(FT_1004, { version: 3 }) };
+          },
+          { transactionId: 'FT-1004' },
+        ),
+      ],
     );
 
     const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });
@@ -196,13 +204,21 @@ describe('TransactionPanel (015 US3 scenarios 3–4, FR-022)', () => {
     const { user } = renderPanel(
       'FT-1004',
       () => ({ body: linked ? manuallyLinked() : transactionOf(FT_1004) }),
-      {
-        'GET /api/v1/line-items/L-1007': { body: STATION_SIGNAGE },
-        'POST /api/v1/financials/transactions/FT-1004/link': () => {
-          linked = true;
-          return { body: manuallyLinked() };
-        },
-      },
+      [
+        looseReply(
+          'GET /api/v1/line-items/{lineItemId}',
+          { body: STATION_SIGNAGE },
+          { lineItemId: 'L-1007' },
+        ),
+        looseReply(
+          'POST /api/v1/financials/transactions/{transactionId}/link',
+          () => {
+            linked = true;
+            return { body: manuallyLinked() };
+          },
+          { transactionId: 'FT-1004' },
+        ),
+      ],
     );
 
     const panel = await screen.findByRole('dialog', { name: 'PO 4500001004 / 10' });

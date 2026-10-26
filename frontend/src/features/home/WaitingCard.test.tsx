@@ -1,10 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { waitingItemOf } from '@/testing/fixtures/home';
+import { looseReply } from '@/testing/replies';
 import type { WaitingItem } from './api';
 import { WaitingCard } from './WaitingCard';
 
@@ -12,8 +13,8 @@ const daysAgo = (days: number) => new Date(Date.now() - (days * 24 + 1) * 3_600_
 
 const page = (items: WaitingItem[], total = items.length) => ({ body: { items, total } });
 
-function renderCard(answer: MockHandler = page([waitingItemOf({ waitingSince: daysAgo(3) })])) {
-  mockApi({ 'GET /api/v1/home/waiting': answer });
+function renderCard(answer: LooseAnswer = page([waitingItemOf({ waitingSince: daysAgo(3) })])) {
+  mockApi([looseReply('GET /api/v1/home/waiting', answer)]);
   return renderWithProviders(<WaitingCard />, { user: testUser(), path: '/' });
 }
 

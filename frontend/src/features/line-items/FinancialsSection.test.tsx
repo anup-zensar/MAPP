@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -12,21 +12,24 @@ import {
   transactionPage,
   usd,
 } from '@/testing/fixtures/line-items';
+import { looseReply } from '@/testing/replies';
 import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 
-function renderActivity(answer: MockHandler) {
-  mockApi({ 'GET /api/v1/financials/records/A-1001': answer });
+function renderActivity(answer: LooseAnswer) {
+  mockApi([
+    looseReply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'A-1001' }),
+  ]);
   return renderWithProviders(<ActivityFinancials activityId="A-1001" />, { user: testUser() });
 }
 
 function renderLineItem(
-  answer: MockHandler,
-  transactions: MockHandler = { body: transactionPage([transaction()]) },
+  answer: LooseAnswer,
+  transactions: LooseAnswer = { body: transactionPage([transaction()]) },
 ) {
-  mockApi({
-    'GET /api/v1/financials/records/L-1001': answer,
-    'GET /api/v1/financials/transactions': transactions,
-  });
+  mockApi([
+    looseReply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'L-1001' }),
+    looseReply('GET /api/v1/financials/transactions', transactions),
+  ]);
   return renderWithProviders(<LineItemFinancials lineItemId="L-1001" />, { user: testUser() });
 }
 

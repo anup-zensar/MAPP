@@ -6,6 +6,7 @@ import { renderRoutes } from '@/testing/render';
 import type { CurrentUser } from '@/session/useSession';
 import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { routes } from './router';
 
 const PRIYA: CurrentUser = testUser();
@@ -23,8 +24,8 @@ const SIGN_IN_REQUIRED = {
 const BANNER = 'Demo environment — sign-in and data are for demonstration only';
 
 /** The Plans page's request, answered with no plans: these tests use /plans as a signed-in page. */
-const NO_PLANS = {
-  'GET /api/v1/plans': {
+const NO_PLANS = [
+  looseReply('GET /api/v1/plans', {
     body: {
       items: [],
       total: 0,
@@ -37,15 +38,14 @@ const NO_PLANS = {
       },
       years: [],
     },
-  },
-};
+  }),
+];
 
 /** The Approvals page's request, answered with no rows. */
-const NO_APPROVALS = {
-  'GET /api/v1/approvals': { body: { items: [], total: 0 } },
-  // The Approvals page lists the person's delegations too (feature 017).
-  'GET /api/v1/approval-delegations': NO_DELEGATIONS,
-};
+const NO_APPROVALS = [
+  looseReply('GET /api/v1/approvals', { body: { items: [], total: 0 } }),
+  looseReply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
+];
 
 afterEach(() => {
   localStorage.clear();
@@ -55,7 +55,7 @@ afterEach(() => {
 describe('RequireSignIn', () => {
   it('shows a loading placeholder, with the banner and no sidebar, while the session is checked (plan "Session")', async () => {
     // The check never answers in this test.
-    mockApi({ 'GET /api/v1/me': () => new Promise<never>(() => {}) });
+    mockApi([looseReply('GET /api/v1/me', () => new Promise<never>(() => {}))]);
     renderRoutes(routes, { route: '/plans' });
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
@@ -65,7 +65,7 @@ describe('RequireSignIn', () => {
   });
 
   it('shows a full-page error when the API cannot be reached, without leaving the page (edge case, FR-020)', async () => {
-    mockApi({ 'GET /api/v1/me': () => Promise.reject(new TypeError('Failed to fetch')) });
+    mockApi([looseReply('GET /api/v1/me', () => Promise.reject(new TypeError('Failed to fetch')))]);
     const { router } = renderRoutes(routes, { route: '/approvals' });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -79,11 +79,12 @@ describe('RequireSignIn', () => {
 
   it('checks the session again on Try again, and shows the page once the API answers (edge case)', async () => {
     let checks = 0;
-    mockApi({
-      'GET /api/v1/me': () =>
+    mockApi([
+      looseReply('GET /api/v1/me', () =>
         ++checks === 1 ? Promise.reject(new TypeError('Failed to fetch')) : { body: PRIYA },
+      ),
       ...NO_APPROVALS,
-    });
+    ]);
     const { user } = renderRoutes(routes, { route: '/approvals' });
     await screen.findByRole('alert');
 
@@ -93,10 +94,10 @@ describe('RequireSignIn', () => {
   });
 
   it('sends a visitor who is not signed in to the sign-in page, with the address to return to (FR-005, US1 scenario 1)', async () => {
-    mockApi({
-      'GET /api/v1/me': { status: 401, body: SIGN_IN_REQUIRED },
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-    });
+    mockApi([
+      looseReply('GET /api/v1/me', { status: 401, body: SIGN_IN_REQUIRED }),
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+    ]);
     const { router } = renderRoutes(routes, { route: '/plans?status=draft&year=2026' });
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
@@ -109,7 +110,7 @@ describe('RequireSignIn', () => {
   });
 
   it('shows the page inside the app layout to a signed-in person (FR-010)', async () => {
-    mockApi({ 'GET /api/v1/me': { body: PRIYA }, ...NO_PLANS });
+    mockApi([looseReply('GET /api/v1/me', { body: PRIYA }), ...NO_PLANS]);
     renderRoutes(routes, { route: '/plans' });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Plans' })).toBeInTheDocument();
@@ -118,7 +119,11 @@ describe('RequireSignIn', () => {
   });
 
   it('checks the session again on every navigation (research R15)', async () => {
-    const api = mockApi({ 'GET /api/v1/me': { body: PRIYA }, ...NO_PLANS, ...HOME_ANSWERS });
+    const api = mockApi([
+      looseReply('GET /api/v1/me', { body: PRIYA }),
+      ...NO_PLANS,
+      ...HOME_ANSWERS,
+    ]);
     const sessionChecks = () => api.requests.filter((r) => r.path === '/api/v1/me').length;
     const { user } = renderRoutes(routes, { route: '/' });
     await screen.findByRole('heading', { level: 1, name: 'Welcome back, Priya.' });

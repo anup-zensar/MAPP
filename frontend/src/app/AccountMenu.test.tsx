@@ -4,6 +4,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { AccountMenu } from './AccountMenu';
 
 const PRIYA: CurrentUser = testUser();
@@ -81,7 +82,7 @@ describe('AccountMenu', () => {
   });
 
   it('signs out and opens the sign-in page with the notice (US4 scenario 1)', async () => {
-    mockApi({ 'POST /api/v1/auth/sign-out': { status: 204 } });
+    mockApi([reply('POST /api/v1/auth/sign-out', { status: 204 })]);
     const { user, router } = renderWithProviders(<AccountMenu />, {
       user: PRIYA,
       route: '/plans',
@@ -96,9 +97,9 @@ describe('AccountMenu', () => {
   });
 
   it('keeps the person signed in and says why when signing out fails (FR-020)', async () => {
-    const api = mockApi({
-      'POST /api/v1/auth/sign-out': () => Promise.reject(new TypeError('Failed to fetch')),
-    });
+    const api = mockApi([
+      reply('POST /api/v1/auth/sign-out', () => Promise.reject(new TypeError('Failed to fetch'))),
+    ]);
     const { user, router } = renderWithProviders(<AccountMenu />, {
       user: PRIYA,
       route: '/plans',

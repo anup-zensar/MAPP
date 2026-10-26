@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import type { RecordTarget } from './campaign-rows';
 import {
   campaign,
@@ -47,7 +48,7 @@ function Harness({ target }: { target: RecordTarget }) {
   return shown ? <MoveDialog target={shown} onClose={() => setShown(null)} /> : <p>Closed</p>;
 }
 
-function renderDialog(target: RecordTarget, answers: Record<string, MockHandler>) {
+function renderDialog(target: RecordTarget, answers: HttpHandler[]) {
   const api = mockApi(answers);
   const result = renderWithProviders(<Harness target={target} />, {
     user: testUser(),
@@ -73,12 +74,18 @@ const INITIATIVE_DESTINATIONS = {
 
 describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   it('moves an initiative to another campaign and opens the plan with it highlighted (US6#1, FR-025)', async () => {
-    const { user, api, router } = renderDialog(DIGITAL, {
-      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
-      'POST /api/v1/initiatives/I-1001/move': {
-        body: initiative({ campaignId: 'C-1002', version: 4 }),
-      },
-    });
+    const { user, api, router } = renderDialog(DIGITAL, [
+      reply('GET /api/v1/initiatives/{initiativeId}/destinations', INITIATIVE_DESTINATIONS, {
+        initiativeId: 'I-1001',
+      }),
+      reply(
+        'POST /api/v1/initiatives/{initiativeId}/move',
+        {
+          body: initiative({ campaignId: 'C-1002', version: 4 }),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     const dialog = screen.getByRole('dialog', { name: "Move initiative 'Digital & social'" });
     expect(dialog).toHaveAccessibleDescription(
@@ -107,9 +114,11 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   });
 
   it('lists a destination that can’t take it, with the reason and the fix (US6#2, FR-023)', async () => {
-    const { user, api } = renderDialog(DIGITAL, {
-      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
-    });
+    const { user, api } = renderDialog(DIGITAL, [
+      reply('GET /api/v1/initiatives/{initiativeId}/destinations', INITIATIVE_DESTINATIONS, {
+        initiativeId: 'I-1001',
+      }),
+    ]);
 
     const helix2 = await screen.findByRole('radio', { name: 'Helix 2' });
     expect(helix2).toBeDisabled();
@@ -124,28 +133,36 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   });
 
   it('offers a campaign only plans of its year, with the consequences and the budget warning (US6#3, FR-024)', async () => {
-    const { user, api, router } = renderDialog(HELIX, {
-      'GET /api/v1/campaigns/C-1001/destinations': {
-        body: destinationList(
-          [
-            planDestination({
-              overAllocatedBy: usd('50000.00'),
-              consequences: {
-                modelName: 'Mobility 1.0',
-                modelChanges: true,
-                businessUnitChanges: true,
-                typesNotAllowed: [{ id: 'A-1042', name: 'Launch film', typeName: 'Event' }],
-                groupsHidden: ['Lubricants attributes (activities)'],
-                groupsShown: ['Mobility attributes (activities)'],
-              },
-            }),
-            planDestination({ id: 'P-1004', name: 'FY2026 Retail', planStatus: 'published' }),
-          ],
-          CAMPAIGN_RULE,
-        ),
-      },
-      'POST /api/v1/campaigns/C-1001/move': { body: campaign({ planId: 'P-1002', version: 4 }) },
-    });
+    const { user, api, router } = renderDialog(HELIX, [
+      reply(
+        'GET /api/v1/campaigns/{campaignId}/destinations',
+        {
+          body: destinationList(
+            [
+              planDestination({
+                overAllocatedBy: usd('50000.00'),
+                consequences: {
+                  modelName: 'Mobility 1.0',
+                  modelChanges: true,
+                  businessUnitChanges: true,
+                  typesNotAllowed: [{ id: 'A-1042', name: 'Launch film', typeName: 'Event' }],
+                  groupsHidden: ['Lubricants attributes (activities)'],
+                  groupsShown: ['Mobility attributes (activities)'],
+                },
+              }),
+              planDestination({ id: 'P-1004', name: 'FY2026 Retail', planStatus: 'published' }),
+            ],
+            CAMPAIGN_RULE,
+          ),
+        },
+        { campaignId: 'C-1001' },
+      ),
+      reply(
+        'POST /api/v1/campaigns/{campaignId}/move',
+        { body: campaign({ planId: 'P-1002', version: 4 }) },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('dialog', { name: "Move campaign 'Helix launch'" });
     expect(await within(dialog).findByText(CAMPAIGN_RULE)).toBeInTheDocument();
@@ -186,9 +203,13 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   });
 
   it('says when there is nowhere to move it (edge case)', async () => {
-    renderDialog(HELIX, {
-      'GET /api/v1/campaigns/C-1001/destinations': { body: destinationList([], CAMPAIGN_RULE) },
-    });
+    renderDialog(HELIX, [
+      reply(
+        'GET /api/v1/campaigns/{campaignId}/destinations',
+        { body: destinationList([], CAMPAIGN_RULE) },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText("There's no other plan in 2026 to move this campaign to."),
@@ -198,24 +219,30 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   });
 
   it('shows a refusal in the dialog and asks for the destinations again', async () => {
-    const { user, api } = renderDialog(DIGITAL, {
-      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
-      'POST /api/v1/initiatives/I-1001/move': {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Some fields need your attention.',
-            fields: [
-              {
-                field: 'campaignId',
-                message: "Already has an initiative called 'Digital & social' — rename it first",
-              },
-            ],
+    const { user, api } = renderDialog(DIGITAL, [
+      reply('GET /api/v1/initiatives/{initiativeId}/destinations', INITIATIVE_DESTINATIONS, {
+        initiativeId: 'I-1001',
+      }),
+      reply(
+        'POST /api/v1/initiatives/{initiativeId}/move',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [
+                {
+                  field: 'campaignId',
+                  message: "Already has an initiative called 'Digital & social' — rename it first",
+                },
+              ],
+            },
           },
         },
-      },
-    });
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('radio', { name: 'Rimula fleet' }));
     await user.click(screen.getByRole('button', { name: 'Move initiative' }));
@@ -234,20 +261,26 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   });
 
   it('says who changed the record meanwhile (409)', async () => {
-    const { user } = renderDialog(DIGITAL, {
-      'GET /api/v1/initiatives/I-1001/destinations': INITIATIVE_DESTINATIONS,
-      'POST /api/v1/initiatives/I-1001/move': {
-        status: 409,
-        body: {
-          error: {
-            code: 'version_conflict',
-            message: 'Not saved — Daniel Okoro changed this initiative',
-            fields: [],
-            conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+    const { user } = renderDialog(DIGITAL, [
+      reply('GET /api/v1/initiatives/{initiativeId}/destinations', INITIATIVE_DESTINATIONS, {
+        initiativeId: 'I-1001',
+      }),
+      reply(
+        'POST /api/v1/initiatives/{initiativeId}/move',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'version_conflict',
+              message: 'Not saved — Daniel Okoro changed this initiative',
+              fields: [],
+              conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+            },
           },
         },
-      },
-    });
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('radio', { name: 'Rimula fleet' }));
     await user.click(screen.getByRole('button', { name: 'Move initiative' }));
@@ -259,10 +292,13 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
 
   it('shows grey lines while loading, then the error with Try again', async () => {
     let calls = 0;
-    const { user } = renderDialog(DIGITAL, {
-      'GET /api/v1/initiatives/I-1001/destinations': () =>
-        ++calls === 1 ? { status: 500 } : INITIATIVE_DESTINATIONS,
-    });
+    const { user } = renderDialog(DIGITAL, [
+      reply(
+        'GET /api/v1/initiatives/{initiativeId}/destinations',
+        () => (++calls === 1 ? { status: 500 } : INITIATIVE_DESTINATIONS),
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
@@ -271,18 +307,22 @@ describe('MoveDialog (feature 005, US6#1–3, FR-023 – FR-025)', () => {
   });
 
   it('says when the record is gone, and Cancel closes', async () => {
-    const { user } = renderDialog(DIGITAL, {
-      'GET /api/v1/initiatives/I-1001/destinations': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This initiative no longer exists — someone may have deleted it.',
-            fields: [],
+    const { user } = renderDialog(DIGITAL, [
+      reply(
+        'GET /api/v1/initiatives/{initiativeId}/destinations',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This initiative no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'This initiative no longer exists — someone may have deleted it.',

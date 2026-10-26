@@ -1,7 +1,7 @@
 import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -11,6 +11,7 @@ import {
   PEOPLE,
   validationFailed,
 } from '@/testing/fixtures/activities';
+import { looseReply } from '@/testing/replies';
 import { ActivityFormPage } from './ActivityFormPage';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
@@ -19,13 +20,21 @@ configure({ asyncUtilTimeout: 10_000 });
 const NEW_PATH = '/plans/:planId/initiatives/:initiativeId/activities/new';
 const NEW_ROUTE = '/plans/P-1001/initiatives/I-1001/activities/new';
 
-function openNewForm(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
-    'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm() },
-    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'GET /api/v1/people': { body: PEOPLE },
+function openNewForm(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply(
+      'GET /api/v1/initiatives/{initiativeId}/activity-form',
+      { body: newForm() },
+      { initiativeId: 'I-1001' },
+    ),
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: activityAttributeForm() },
+      { level: 'activity' },
+    ),
+    looseReply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(<ActivityFormPage mode="new" />, {
     route: NEW_ROUTE,
     path: NEW_PATH,
@@ -98,12 +107,16 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   });
 
   it('creates the activity, says so and opens its page (FR-003, FR-004)', async () => {
-    const { user, api, router } = openNewForm({
-      'POST /api/v1/initiatives/I-1001/activities': {
-        status: 201,
-        body: launchFilm({ id: 'A-1043', name: 'Trade show' }),
-      },
-    });
+    const { user, api, router } = openNewForm([
+      looseReply(
+        'POST /api/v1/initiatives/{initiativeId}/activities',
+        {
+          status: 201,
+          body: launchFilm({ id: 'A-1043', name: 'Trade show' }),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     await user.type(await nameField(), 'Trade show');
     await user.selectOptions(screen.getByLabelText('Activity type'), 'AT-1001');
@@ -166,11 +179,13 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   });
 
   it('shows the problems the API finds under the fields', async () => {
-    const { user } = openNewForm({
-      'POST /api/v1/initiatives/I-1001/activities': validationFailed([
-        { field: 'ownerId', message: 'Choose an active person.' },
-      ]),
-    });
+    const { user } = openNewForm([
+      looseReply(
+        'POST /api/v1/initiatives/{initiativeId}/activities',
+        validationFailed([{ field: 'ownerId', message: 'Choose an active person.' }]),
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     await user.type(await nameField(), 'Trade show');
     await user.selectOptions(screen.getByLabelText('Activity type'), 'AT-1003');
@@ -198,12 +213,16 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   });
 
   it('opens a fresh form after Save and add another, with View in the message', async () => {
-    const { user, router } = openNewForm({
-      'POST /api/v1/initiatives/I-1001/activities': {
-        status: 201,
-        body: launchFilm({ id: 'A-1043', name: 'Trade show' }),
-      },
-    });
+    const { user, router } = openNewForm([
+      looseReply(
+        'POST /api/v1/initiatives/{initiativeId}/activities',
+        {
+          status: 201,
+          body: launchFilm({ id: 'A-1043', name: 'Trade show' }),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     await user.type(await nameField(), 'Trade show');
     await user.selectOptions(screen.getByLabelText('Activity type'), 'AT-1003');
@@ -236,9 +255,13 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   });
 
   it('says when the model has no activity types (edge case)', async () => {
-    openNewForm({
-      'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm({ activityTypes: [] }) },
-    });
+    openNewForm([
+      looseReply(
+        'GET /api/v1/initiatives/{initiativeId}/activity-form',
+        { body: newForm({ activityTypes: [] }) },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     const notice = await screen.findByRole('note');
     expect(notice).toHaveTextContent(
@@ -251,18 +274,22 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
   });
 
   it('says when the initiative no longer exists', async () => {
-    openNewForm({
-      'GET /api/v1/initiatives/I-1001/activity-form': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This initiative no longer exists — someone may have deleted it.',
-            fields: [],
+    openNewForm([
+      looseReply(
+        'GET /api/v1/initiatives/{initiativeId}/activity-form',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This initiative no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText('This initiative no longer exists — someone may have deleted it.'),
@@ -272,17 +299,21 @@ describe('ActivityFormPage, new activity (feature 006, US1)', () => {
 
   it('offers Try again when the form cannot be loaded', async () => {
     let calls = 0;
-    openNewForm({
-      'GET /api/v1/initiatives/I-1001/activity-form': () => {
-        calls += 1;
-        return calls === 1
-          ? {
-              status: 500,
-              body: { error: { code: 'internal_error', message: 'Broken', fields: [] } },
-            }
-          : { body: newForm() };
-      },
-    });
+    openNewForm([
+      looseReply(
+        'GET /api/v1/initiatives/{initiativeId}/activity-form',
+        () => {
+          calls += 1;
+          return calls === 1
+            ? {
+                status: 500,
+                body: { error: { code: 'internal_error', message: 'Broken', fields: [] } },
+              }
+            : { body: newForm() };
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     const retry = await screen.findByRole('button', { name: 'Try again' });
     fireEvent.click(retry);

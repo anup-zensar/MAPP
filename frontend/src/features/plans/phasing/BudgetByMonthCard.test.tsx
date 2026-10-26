@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { budgetByMonth, gbp, periods, phasing, twelve } from '@/testing/fixtures/phasing';
+import { looseReply } from '@/testing/replies';
 import { BudgetByMonthCard } from './BudgetByMonthCard';
 import type { BudgetPhasing } from './api';
 
@@ -17,13 +18,17 @@ const PLAN = {
 
 function renderCard(
   record: typeof PLAN & { budgetPhasing?: BudgetPhasing } = { ...PLAN, budgetPhasing: phasing() },
-  answers: Record<string, MockHandler> = {},
+  answers: HttpHandler[] = [],
   level: 'plan' | 'campaign' = 'plan',
 ) {
-  const api = mockApi({
-    'GET /api/v1/plans/P-1004/budget-by-month': { body: budgetByMonth() },
+  const api = mockApi([
+    looseReply(
+      'GET /api/v1/plans/{planId}/budget-by-month',
+      { body: budgetByMonth() },
+      { planId: 'P-1004' },
+    ),
     ...answers,
-  });
+  ]);
   const result = renderWithProviders(
     <BudgetByMonthCard
       level={level}
@@ -40,7 +45,7 @@ function renderCard(
 
 describe('BudgetByMonthCard (016 FR-024)', () => {
   it('shows nothing while the API does not phase budgets yet', () => {
-    const api = mockApi({});
+    const api = mockApi([]);
     renderWithProviders(
       <BudgetByMonthCard level="plan" planId="P-1004" record={PLAN} year={2027} currency="GBP" />,
       { user: testUser() },
@@ -104,19 +109,23 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
     over[2] = true;
     const plannedCost = twelve('40000.00') as { amount: string; currency: string }[];
     plannedCost[2] = gbp('65000.00');
-    renderCard(undefined, {
-      'GET /api/v1/plans/P-1004/budget-by-month': {
-        body: budgetByMonth({
-          rows: [
-            {
-              ...budgetByMonth().rows[0],
-              months: periods({ plannedCost, over }),
-              otherYears: gbp('5000.00'),
-            },
-          ],
-        }),
-      },
-    });
+    renderCard(undefined, [
+      looseReply(
+        'GET /api/v1/plans/{planId}/budget-by-month',
+        {
+          body: budgetByMonth({
+            rows: [
+              {
+                ...budgetByMonth().rows[0],
+                months: periods({ plannedCost, over }),
+                otherYears: gbp('5000.00'),
+              },
+            ],
+          }),
+        },
+        { planId: 'P-1004' },
+      ),
+    ]);
 
     const cell = await screen.findByText('Over by 15,000.00');
     expect(cell.className).toMatch(/over/);
@@ -134,7 +143,7 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
           problem: 'Adds up to 590,000.00 GBP, not the budget 600,000.00 GBP',
         }),
       },
-      {},
+      [],
       'campaign',
     );
 
@@ -149,9 +158,7 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
   it('saves a custom phasing typed by quarter through the level’s PUT (FR-020, FR-021, FR-023)', async () => {
     const { user, api } = renderCard(
       { ...PLAN, budgetPhasing: phasing({ method: 'none', monthly: [], total: null }) },
-      {
-        'PUT /api/v1/plans/P-1004/budget-phasing': { body: {} },
-      },
+      [looseReply('PUT /api/v1/plans/{planId}/budget-phasing', { body: {} }, { planId: 'P-1004' })],
     );
 
     await screen.findByRole('table');
@@ -196,7 +203,7 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
   it('copies the planned cost by month and names what it leaves out (FR-021)', async () => {
     const { user } = renderCard(
       { ...PLAN, id: 'C-1005', name: 'Helix UK', budgetPhasing: phasing({ method: 'none' }) },
-      {},
+      [],
       'campaign',
     );
 
@@ -211,7 +218,13 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
   });
 
   it('comes into view with the focus when a completeness link leads to it (T053)', async () => {
-    mockApi({ 'GET /api/v1/plans/P-1004/budget-by-month': { body: budgetByMonth() } });
+    mockApi([
+      looseReply(
+        'GET /api/v1/plans/{planId}/budget-by-month',
+        { body: budgetByMonth() },
+        { planId: 'P-1004' },
+      ),
+    ]);
     renderWithProviders(
       <BudgetByMonthCard
         level="plan"

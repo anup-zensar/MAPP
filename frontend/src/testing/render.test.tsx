@@ -11,6 +11,7 @@ import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { mockApi } from './mock-api';
 import { findMessages, renderRoutes, renderWithProviders } from './render';
 import { testUser } from './fixtures/users';
+import { reply } from './replies';
 
 const PRIYA: CurrentUser = testUser();
 
@@ -105,7 +106,7 @@ describe('renderWithProviders', () => {
   });
 
   it('gives the page the session, without asking the API', () => {
-    const api = mockApi({});
+    const api = mockApi([]);
 
     renderWithProviders(<SessionName />, { user: PRIYA });
 
@@ -137,7 +138,7 @@ describe('renderWithProviders', () => {
 
 describe('renderRoutes', () => {
   it('renders the given routes, which ask GET /api/v1/me when no person is given', async () => {
-    const api = mockApi({ 'GET /api/v1/me': { body: PRIYA } });
+    const api = mockApi([reply('GET /api/v1/me', { body: PRIYA })]);
 
     renderRoutes([
       {

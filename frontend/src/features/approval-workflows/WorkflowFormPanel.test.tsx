@@ -1,10 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { detailsOf, PEOPLE, workflowOf } from '@/testing/fixtures/approval-workflows';
+import { reply } from '@/testing/replies';
 import { WorkflowFormPanel } from './WorkflowFormPanel';
 import type { ApprovalWorkflow } from './api';
 
@@ -22,8 +23,8 @@ const sentLevel = (name: string, approverIds: string[]) => ({
 });
 const UPDATE = 'PATCH /api/v1/approval-workflows/WF-1001';
 
-function renderPanel(workflow?: ApprovalWorkflow, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'GET /api/v1/people': PEOPLE, ...answers });
+function renderPanel(workflow?: ApprovalWorkflow, answers: HttpHandler[] = []) {
+  const api = mockApi([reply('GET /api/v1/people', PEOPLE), ...answers]);
   const onClose = vi.fn();
   const rendered = renderWithProviders(
     <WorkflowFormPanel workflow={workflow} onClose={onClose} />,
@@ -36,9 +37,12 @@ function renderPanel(workflow?: ApprovalWorkflow, answers: Record<string, MockHa
 
 describe('WorkflowFormPanel (feature 008, US4)', () => {
   it('creates a workflow with its levels and names it in the message (FR-002)', async () => {
-    const { user, api, onClose } = renderPanel(undefined, {
-      [CREATE]: { status: 201, body: workflowOf({ id: 'WF-1003', name: 'Lubricants Asia' }) },
-    });
+    const { user, api, onClose } = renderPanel(undefined, [
+      reply('POST /api/v1/approval-workflows', {
+        status: 201,
+        body: workflowOf({ id: 'WF-1003', name: 'Lubricants Asia' }),
+      }),
+    ]);
     const panel = screen.getByRole('dialog', { name: 'New approval workflow' });
 
     await user.type(within(panel).getByRole('textbox', { name: /^Name/ }), 'Lubricants Asia');
@@ -64,8 +68,8 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
   });
 
   it('shows every problem at once, in the summary and at each field (FR-003)', async () => {
-    const { user } = renderPanel(undefined, {
-      [CREATE]: {
+    const { user } = renderPanel(undefined, [
+      reply('POST /api/v1/approval-workflows', {
         status: 400,
         body: {
           error: {
@@ -77,8 +81,8 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
     await screen.findByRole('combobox', { name: /Approvers/ });
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
@@ -99,9 +103,13 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
   });
 
   it('says that open rounds keep their levels, and sends only what changed (FR-006)', async () => {
-    const { user, api } = renderPanel(workflowOf(), {
-      [UPDATE]: { body: workflowOf({ name: 'Lubricants EU approvals' }) },
-    });
+    const { user, api } = renderPanel(workflowOf(), [
+      reply(
+        'PATCH /api/v1/approval-workflows/{workflowId}',
+        { body: workflowOf({ name: 'Lubricants EU approvals' }) },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
 
     const panel = screen.getByRole('dialog', { name: 'Edit approval workflow' });
     expect(panel).toHaveTextContent(
@@ -125,9 +133,13 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
   });
 
   it('sends the new levels when they changed', async () => {
-    const { user, api } = renderPanel(workflowOf({ waitingCount: 0 }), {
-      [UPDATE]: { body: workflowOf() },
-    });
+    const { user, api } = renderPanel(workflowOf({ waitingCount: 0 }), [
+      reply(
+        'PATCH /api/v1/approval-workflows/{workflowId}',
+        { body: workflowOf() },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
     await screen.findAllByRole('combobox', { name: /Approvers/ });
 
     await user.click(screen.getByRole('button', { name: 'Move level 2 up' }));
@@ -144,25 +156,33 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
 
   it('says who saved first, and takes their version for the next Save (FR-003)', async () => {
     let saves = 0;
-    const { user, api } = renderPanel(workflowOf(), {
-      [UPDATE]: () => {
-        saves += 1;
-        return saves === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Someone else saved first.',
-                  fields: [],
-                  conflict: { changedBy: 'Alex Morgan', changedAt: new Date().toISOString() },
+    const { user, api } = renderPanel(workflowOf(), [
+      reply(
+        'PATCH /api/v1/approval-workflows/{workflowId}',
+        () => {
+          saves += 1;
+          return saves === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Someone else saved first.',
+                    fields: [],
+                    conflict: { changedBy: 'Alex Morgan', changedAt: new Date().toISOString() },
+                  },
                 },
-              },
-            }
-          : { body: workflowOf() };
-      },
-      'GET /api/v1/approval-workflows/WF-1001': { body: detailsOf(workflowOf({ version: 5 })) },
-    });
+              }
+            : { body: workflowOf() };
+        },
+        { workflowId: 'WF-1001' },
+      ),
+      reply(
+        'GET /api/v1/approval-workflows/{workflowId}',
+        { body: detailsOf(workflowOf({ version: 5 })) },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
 
     await user.type(screen.getByRole('textbox', { name: /^Description/ }), ' More.');
     await user.click(screen.getByRole('button', { name: 'Save' }));
@@ -207,9 +227,13 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
   });
 
   it('turns reminders on for a workflow without them and sends only that (017 FR-007)', async () => {
-    const { user, api } = renderPanel(workflowOf({ reminderDays: null, escalationDays: null }), {
-      [UPDATE]: { body: workflowOf() },
-    });
+    const { user, api } = renderPanel(workflowOf({ reminderDays: null, escalationDays: null }), [
+      reply(
+        'PATCH /api/v1/approval-workflows/{workflowId}',
+        { body: workflowOf() },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
     const reminder = screen.getByRole('checkbox', { name: 'Send a reminder' });
     expect(reminder).not.toBeChecked();
     expect(screen.queryByRole('textbox', { name: /Remind after/ })).not.toBeInTheDocument();
@@ -241,8 +265,8 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
   });
 
   it('links every rules problem of the API to its field (017 FR-008)', async () => {
-    const { user } = renderPanel(undefined, {
-      [CREATE]: {
+    const { user } = renderPanel(undefined, [
+      reply('POST /api/v1/approval-workflows', {
         status: 400,
         body: {
           error: {
@@ -261,8 +285,8 @@ describe('WorkflowFormPanel (feature 008, US4)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
     await screen.findByRole('combobox', { name: /Approvers/ });
 
     await user.click(screen.getByRole('button', { name: 'Save' }));

@@ -2,11 +2,12 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import type { RecordTarget } from './campaign-rows';
 import { DeleteRecordDialog } from './DeleteRecordDialog';
 
@@ -60,11 +61,7 @@ function Harness({
   );
 }
 
-function renderDialog(
-  target: RecordTarget,
-  answers: Record<string, MockHandler> = {},
-  onDeleted = vi.fn(),
-) {
+function renderDialog(target: RecordTarget, answers: HttpHandler[] = [], onDeleted = vi.fn()) {
   const onClose = vi.fn();
   const api = mockApi(answers);
   const rendered = renderWithProviders(
@@ -128,10 +125,14 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
   it('deletes, closes the panel and offers Undo for 10 seconds, which restores it (US5#2, FR-029)', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const { api, onClose, onDeleted } = renderDialog(HELIX, {
-      'DELETE /api/v1/campaigns/C-1001': { body: HELIX_DELETED },
-      'POST /api/v1/recycle-bin/BIN-1001/undo': { body: {} },
-    });
+    const { api, onClose, onDeleted } = renderDialog(HELIX, [
+      looseReply(
+        'DELETE /api/v1/campaigns/{campaignId}',
+        { body: HELIX_DELETED },
+        { campaignId: 'C-1001' },
+      ),
+      looseReply('POST /api/v1/recycle-bin/{entryId}/undo', { body: {} }, { entryId: 'BIN-1001' }),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Delete campaign' }));
 
@@ -151,17 +152,21 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
   });
 
   it('says so when the campaign is already gone (404)', async () => {
-    const { user, onClose, onDeleted } = renderDialog(HELIX, {
-      'DELETE /api/v1/campaigns/C-1001': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This campaign no longer exists — someone may have deleted it.',
+    const { user, onClose, onDeleted } = renderDialog(HELIX, [
+      looseReply(
+        'DELETE /api/v1/campaigns/{campaignId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This campaign no longer exists — someone may have deleted it.',
+            },
           },
         },
-      },
-    });
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Delete campaign' }));
 

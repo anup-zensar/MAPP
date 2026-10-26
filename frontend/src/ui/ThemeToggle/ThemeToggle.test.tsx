@@ -4,6 +4,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { ThemeToggle } from './ThemeToggle';
 
 const PRIYA: CurrentUser = testUser();
@@ -32,9 +33,11 @@ describe('ThemeToggle', () => {
   });
 
   it('turns the whole app dark at once and saves the choice for the person (FR-014, US2 scenario 5)', async () => {
-    const api = mockApi({
-      'PATCH /api/v1/me/preferences': { body: { theme: 'dark', sidebarCollapsed: false } },
-    });
+    const api = mockApi([
+      looseReply('PATCH /api/v1/me/preferences', {
+        body: { theme: 'dark', sidebarCollapsed: false },
+      }),
+    ]);
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA });
 
     await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
@@ -46,9 +49,11 @@ describe('ThemeToggle', () => {
   });
 
   it('switches a person in dark mode back to light (FR-014)', async () => {
-    const api = mockApi({
-      'PATCH /api/v1/me/preferences': { body: { theme: 'light', sidebarCollapsed: false } },
-    });
+    const api = mockApi([
+      looseReply('PATCH /api/v1/me/preferences', {
+        body: { theme: 'light', sidebarCollapsed: false },
+      }),
+    ]);
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA_IN_DARK });
 
     await user.click(screen.getByRole('button', { name: 'Switch to light mode' }));
@@ -58,7 +63,7 @@ describe('ThemeToggle', () => {
   });
 
   it('changes only this browser’s choice when nobody is signed in (research R16)', async () => {
-    const api = mockApi({});
+    const api = mockApi([]);
     const { user } = renderWithProviders(<ThemeToggle />, { user: null });
 
     await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
@@ -70,8 +75,8 @@ describe('ThemeToggle', () => {
 
   it('keeps the new choice and offers Try again when it cannot be saved (plan "Preferences and theme")', async () => {
     let saves = 0;
-    const api = mockApi({
-      'PATCH /api/v1/me/preferences': () =>
+    const api = mockApi([
+      looseReply('PATCH /api/v1/me/preferences', () =>
         ++saves === 1
           ? {
               status: 500,
@@ -84,7 +89,8 @@ describe('ThemeToggle', () => {
               },
             }
           : { body: { theme: 'dark', sidebarCollapsed: false } },
-    });
+      ),
+    ]);
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA });
 
     await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
@@ -104,12 +110,12 @@ describe('ThemeToggle', () => {
   });
 
   it('leaves a lost session to the sign-in page, without a message (US4 scenario 2)', async () => {
-    mockApi({
-      'PATCH /api/v1/me/preferences': {
+    mockApi([
+      looseReply('PATCH /api/v1/me/preferences', {
         status: 401,
         body: { error: { code: 'session_expired', message: 'Please sign in again', fields: [] } },
-      },
-    });
+      }),
+    ]);
     const { user, router } = renderWithProviders(<ThemeToggle />, {
       user: PRIYA,
       route: '/plans',

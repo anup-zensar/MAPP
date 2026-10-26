@@ -4,10 +4,11 @@
  * production" (46,000.00 EUR = 50,000.00 USD), its form options, the line-item Shell attributes
  * (Spend type → GL code) and the answers every form asks for.
  */
+import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import { attribute, option } from './attribute-forms';
-import type { MockHandler } from '../mock-api';
 import { nth } from '../dom';
+import { reply } from '../replies';
 
 type LineItem = components['schemas']['LineItem'];
 type LineItemActivity = components['schemas']['LineItemActivity'];
@@ -327,13 +328,16 @@ const PRIYA: Person = {
  * What every line-item form asks besides its own data: people and attributes. The plan's Business
  * unit options come with the activity (D-212), so no plan is asked for.
  */
-export function formAnswers(): Record<string, MockHandler> {
-  return {
-    'GET /api/v1/people': { body: { items: [PRIYA], total: 1 } },
-    'GET /api/v1/shell-attribute-forms/lineItem': { body: lineItemForm() },
-    // The rates' dates of the conversion line (016 FR-009).
-    'GET /api/v1/exchange-rates/current': { body: currentRates() },
-  };
+export function formAnswers(): HttpHandler[] {
+  return [
+    reply('GET /api/v1/people', { body: { items: [PRIYA], total: 1 } }),
+    reply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: lineItemForm() },
+      { level: 'lineItem' },
+    ),
+    reply('GET /api/v1/exchange-rates/current', { body: currentRates() }),
+  ];
 }
 
 /** A 400 answer with these field problems. */

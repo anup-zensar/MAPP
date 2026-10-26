@@ -2,10 +2,11 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { formatDateTime } from '@/format/intl';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { LUBRICANTS_PLAN, logEntryOf } from '@/testing/fixtures/home';
+import { looseReply } from '@/testing/replies';
 import type { ActivityLogEntry, HomeScope } from './api';
 import { RecentChangesCard } from './RecentChangesCard';
 
@@ -13,8 +14,8 @@ const page = (items: ActivityLogEntry[]) => ({ body: { items, total: items.lengt
 
 const secondsAgo = (seconds: number) => new Date(Date.now() - seconds * 1000).toISOString();
 
-function renderCard(scope: HomeScope = 'myTeams', answer: MockHandler = page([])) {
-  const api = mockApi({ 'GET /api/v1/home/recent-changes': answer });
+function renderCard(scope: HomeScope = 'myTeams', answer: LooseAnswer = page([])) {
+  const api = mockApi([looseReply('GET /api/v1/home/recent-changes', answer)]);
   const rendered = renderWithProviders(<RecentChangesCard scope={scope} />, {
     user: testUser(),
     path: '/',

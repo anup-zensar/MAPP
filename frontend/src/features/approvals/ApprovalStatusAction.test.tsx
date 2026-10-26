@@ -1,14 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { approvalOf, submissionOf } from '@/testing/fixtures/approvals';
+import { looseReply } from '@/testing/replies';
 import { ApprovalStatusAction } from './ApprovalStatusAction';
 import type { ApprovalActivity } from './approval-types';
 
-const SUBMISSION = 'GET /api/v1/activities/A-1042/approval/submission';
 const SUBMIT = 'POST /api/v1/activities/A-1042/approval/submit';
 
 const CREATED: ApprovalActivity = {
@@ -18,7 +18,7 @@ const CREATED: ApprovalActivity = {
   version: 3,
 };
 
-function renderAction(activity: ApprovalActivity, answers: Record<string, MockHandler> = {}) {
+function renderAction(activity: ApprovalActivity, answers: HttpHandler[] = []) {
   const api = mockApi(answers);
   const onShowProblems = vi.fn();
   const rendered = renderWithProviders(
@@ -48,10 +48,13 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
     const approver = approvalOf({
       viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] },
     });
-    const { user } = renderAction(
-      { ...CREATED, status: 'submitted' },
-      { 'GET /api/v1/activities/A-1042/approval': { body: approver } },
-    );
+    const { user } = renderAction({ ...CREATED, status: 'submitted' }, [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval',
+        { body: approver },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     const approve = await screen.findByRole('button', { name: 'Approve' });
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
@@ -66,11 +69,15 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
   });
 
   it('makes Approve the primary action when the page asks for it (design system §6.3)', async () => {
-    mockApi({
-      'GET /api/v1/activities/A-1042/approval': {
-        body: approvalOf({ viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] } }),
-      },
-    });
+    mockApi([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval',
+        {
+          body: approvalOf({ viewer: { isOwner: false, isCurrentApprover: true, onBehalfOf: [] } }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
     renderWithProviders(
       <ApprovalStatusAction
         activity={{ ...CREATED, status: 'submitted' }}
@@ -84,10 +91,13 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
   });
 
   it('never offers the owner Approve as a button (functional review A-01)', async () => {
-    const { api } = renderAction(
-      { ...CREATED, status: 'submitted' },
-      { 'GET /api/v1/activities/A-1042/approval': { body: approvalOf() } },
-    );
+    const { api } = renderAction({ ...CREATED, status: 'submitted' }, [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval',
+        { body: approvalOf() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await waitFor(() =>
       expect(api.requests.some((request) => request.path.endsWith('/approval'))).toBe(true),
@@ -106,9 +116,13 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
         message: 'Approval workflow — needed to submit',
       },
     ] as const;
-    const { user, api, onShowProblems } = renderAction(CREATED, {
-      [SUBMISSION]: { body: submissionOf({ ready: false, problems: [...problems] }) },
-    });
+    const { user, api, onShowProblems } = renderAction(CREATED, [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval/submission',
+        { body: submissionOf({ ready: false, problems: [...problems] }) },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Submit for approval' }));
 
@@ -118,10 +132,18 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
   });
 
   it('when ready, confirms, submits with the version and says so (FR-011)', async () => {
-    const { user, api } = renderAction(CREATED, {
-      [SUBMISSION]: { body: submissionOf() },
-      [SUBMIT]: { body: approvalOf() },
-    });
+    const { user, api } = renderAction(CREATED, [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval/submission',
+        { body: submissionOf() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/submit',
+        { body: approvalOf() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Submit for approval' }));
     const dialog = await screen.findByRole('alertdialog', {
@@ -138,13 +160,18 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
   });
 
   it('says re-submitted after a re-submit', async () => {
-    const { user } = renderAction(
-      { ...CREATED, status: 'declined' },
-      {
-        [SUBMISSION]: { body: submissionOf({ kind: 'resubmit', roundNumber: 2 }) },
-        [SUBMIT]: { body: approvalOf() },
-      },
-    );
+    const { user } = renderAction({ ...CREATED, status: 'declined' }, [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval/submission',
+        { body: submissionOf({ kind: 'resubmit', roundNumber: 2 }) },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/submit',
+        { body: approvalOf() },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Re-submit for approval' }));
     const dialog = await screen.findByRole('alertdialog');
@@ -156,19 +183,27 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
   });
 
   it('a refused submit with problems opens 006 list with their number (FR-010)', async () => {
-    const { user, onShowProblems } = renderAction(CREATED, {
-      [SUBMISSION]: { body: submissionOf() },
-      [SUBMIT]: {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Fix the problems.',
-            fields: [{ field: 'ownerId', message: 'Owner — needed to submit' }],
+    const { user, onShowProblems } = renderAction(CREATED, [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval/submission',
+        { body: submissionOf() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/submit',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Fix the problems.',
+              fields: [{ field: 'ownerId', message: 'Owner — needed to submit' }],
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Submit for approval' }));
     const dialog = await screen.findByRole('alertdialog');
@@ -180,20 +215,28 @@ describe('ApprovalStatusAction (feature 008, US1)', () => {
 
   it('says who changed the activity when the version is old (D-030)', async () => {
     const changedAt = new Date().toISOString();
-    const { user } = renderAction(CREATED, {
-      [SUBMISSION]: { body: submissionOf() },
-      [SUBMIT]: {
-        status: 409,
-        body: {
-          error: {
-            code: 'version_conflict',
-            message: 'Someone changed it.',
-            fields: [],
-            conflict: { changedBy: 'Daniel Okoro', changedAt },
+    const { user } = renderAction(CREATED, [
+      looseReply(
+        'GET /api/v1/activities/{activityId}/approval/submission',
+        { body: submissionOf() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/approval/submit',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'version_conflict',
+              message: 'Someone changed it.',
+              fields: [],
+              conflict: { changedBy: 'Daniel Okoro', changedAt },
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Submit for approval' }));
     const dialog = await screen.findByRole('alertdialog');

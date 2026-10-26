@@ -7,6 +7,7 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import { useUnsavedChanges } from './useUnsavedChanges';
 
 const PRIYA: CurrentUser = testUser();
@@ -174,12 +175,12 @@ describe('useUnsavedChanges', () => {
   });
 
   it('lets the sign-in page open when the session has ended, as nothing can be saved without one (US4 scenario 2)', async () => {
-    mockApi({
-      'POST /api/v1/sample-folders': {
+    mockApi([
+      reply('POST /api/v1/sample-folders', {
         status: 401,
         body: { error: { code: 'session_expired', message: 'Please sign in again', fields: [] } },
-      },
-    });
+      }),
+    ]);
     const { user, router } = renderForm();
     await user.type(screen.getByLabelText('Name'), 'Ideas');
 
@@ -192,7 +193,7 @@ describe('useUnsavedChanges', () => {
   });
 
   it('lets Home open when another person signed in in another tab, so nothing is saved in their name (spec edge case)', async () => {
-    mockApi({ 'GET /api/v1/me': { body: DANIEL } });
+    mockApi([reply('GET /api/v1/me', { body: DANIEL })]);
     const { user, router, queryClient } = renderForm();
     await user.type(screen.getByLabelText('Name'), 'Ideas');
 

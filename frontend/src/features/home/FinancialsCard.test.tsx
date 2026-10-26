@@ -1,15 +1,16 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { emptyOverview, overviewOf, usd } from '@/testing/fixtures/home';
+import { looseReply } from '@/testing/replies';
 import { FinancialsCard } from './FinancialsCard';
 import type { FinancialOverview, HomeScope } from './api';
 
-function renderCard(answer: MockHandler = { body: overviewOf() }, scope: HomeScope = 'myTeams') {
-  const api = mockApi({ 'GET /api/v1/financials/overview': answer });
+function renderCard(answer: LooseAnswer = { body: overviewOf() }, scope: HomeScope = 'myTeams') {
+  const api = mockApi([looseReply('GET /api/v1/financials/overview', answer)]);
   const rendered = renderWithProviders(<FinancialsCard scope={scope} />, {
     user: testUser(),
     path: '/',

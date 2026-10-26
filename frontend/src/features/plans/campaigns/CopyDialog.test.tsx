@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { reply } from '@/testing/replies';
 import type { RecordTarget } from './campaign-rows';
 import { CopyDialog } from './CopyDialog';
 import {
@@ -61,7 +62,7 @@ function Harness({ target }: { target: RecordTarget }) {
   return shown ? <CopyDialog target={shown} onClose={() => setShown(null)} /> : <p>Closed</p>;
 }
 
-function renderDialog(target: RecordTarget, answers: Record<string, MockHandler>) {
+function renderDialog(target: RecordTarget, answers: HttpHandler[]) {
   const api = mockApi(answers);
   const result = renderWithProviders(<Harness target={target} />, {
     user: testUser(),
@@ -72,7 +73,11 @@ function renderDialog(target: RecordTarget, answers: Record<string, MockHandler>
 
 describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
   it('suggests the name in this plan, with the counts, R13 and the budget warning (US6#4)', async () => {
-    renderDialog(HELIX, { 'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS });
+    renderDialog(HELIX, [
+      reply('GET /api/v1/campaigns/{campaignId}/destinations', CAMPAIGN_DESTINATIONS, {
+        campaignId: 'C-1001',
+      }),
+    ]);
 
     const dialog = screen.getByRole('dialog', { name: "Copy campaign 'Helix launch'" });
     const name = await within(dialog).findByRole('textbox', { name: /Name of the copy/ });
@@ -92,9 +97,11 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
   });
 
   it('follows the chosen plan’s suggestion until the name is typed (FR-026)', async () => {
-    const { user } = renderDialog(HELIX, {
-      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
-    });
+    const { user } = renderDialog(HELIX, [
+      reply('GET /api/v1/campaigns/{campaignId}/destinations', CAMPAIGN_DESTINATIONS, {
+        campaignId: 'C-1001',
+      }),
+    ]);
 
     const name = await screen.findByRole('textbox', { name: /Name of the copy/ });
     await user.click(screen.getByRole('radio', { name: 'FY2026 Mobility China' }));
@@ -108,13 +115,19 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
   });
 
   it('copies and opens the plan with the copy highlighted and a message with View (US6#5, FR-027)', async () => {
-    const { user, api, router } = renderDialog(HELIX, {
-      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
-      'POST /api/v1/campaigns/C-1001/copy': {
-        status: 201,
-        body: campaign({ id: 'C-1009', planId: 'P-1002', name: 'Helix launch (copy)' }),
-      },
-    });
+    const { user, api, router } = renderDialog(HELIX, [
+      reply('GET /api/v1/campaigns/{campaignId}/destinations', CAMPAIGN_DESTINATIONS, {
+        campaignId: 'C-1001',
+      }),
+      reply(
+        'POST /api/v1/campaigns/{campaignId}/copy',
+        {
+          status: 201,
+          body: campaign({ id: 'C-1009', planId: 'P-1002', name: 'Helix launch (copy)' }),
+        },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     await screen.findByRole('textbox', { name: /Name of the copy/ });
     await user.click(screen.getByRole('radio', { name: 'FY2026 Mobility China' }));
@@ -136,29 +149,35 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
   });
 
   it('shows the API’s problems under the name and the destinations', async () => {
-    const { user } = renderDialog(HELIX, {
-      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
-      'POST /api/v1/campaigns/C-1001/copy': {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Some fields need your attention.',
-            fields: [
-              {
-                field: 'name',
-                message:
-                  "'FY2026 Lubricants Europe' already has a campaign called 'Helix launch (copy 2)'.",
-              },
-              {
-                field: 'planId',
-                message: 'This plan no longer exists — someone may have deleted it.',
-              },
-            ],
+    const { user } = renderDialog(HELIX, [
+      reply('GET /api/v1/campaigns/{campaignId}/destinations', CAMPAIGN_DESTINATIONS, {
+        campaignId: 'C-1001',
+      }),
+      reply(
+        'POST /api/v1/campaigns/{campaignId}/copy',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [
+                {
+                  field: 'name',
+                  message:
+                    "'FY2026 Lubricants Europe' already has a campaign called 'Helix launch (copy 2)'.",
+                },
+                {
+                  field: 'planId',
+                  message: 'This plan no longer exists — someone may have deleted it.',
+                },
+              ],
+            },
           },
         },
-      },
-    });
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     await screen.findByRole('textbox', { name: /Name of the copy/ });
     await user.click(screen.getByRole('button', { name: 'Copy campaign' }));
@@ -175,25 +194,33 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
   });
 
   it('copies an initiative with nothing below it into its campaign', async () => {
-    const { user, api, router } = renderDialog(DIGITAL, {
-      'GET /api/v1/initiatives/I-1001/destinations': {
-        body: destinationList(
-          [
-            destination({
-              id: 'C-1001',
-              name: 'Helix launch',
-              current: true,
-              suggestedName: 'Digital & social (copy)',
-            }),
-          ],
-          'A copy can go into this campaign or another campaign of the same plan',
-        ),
-      },
-      'POST /api/v1/initiatives/I-1001/copy': {
-        status: 201,
-        body: initiative({ id: 'I-1009', name: 'Digital & social (copy)' }),
-      },
-    });
+    const { user, api, router } = renderDialog(DIGITAL, [
+      reply(
+        'GET /api/v1/initiatives/{initiativeId}/destinations',
+        {
+          body: destinationList(
+            [
+              destination({
+                id: 'C-1001',
+                name: 'Helix launch',
+                current: true,
+                suggestedName: 'Digital & social (copy)',
+              }),
+            ],
+            'A copy can go into this campaign or another campaign of the same plan',
+          ),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+      reply(
+        'POST /api/v1/initiatives/{initiativeId}/copy',
+        {
+          status: 201,
+          body: initiative({ id: 'I-1009', name: 'Digital & social (copy)' }),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     const dialog = await screen.findByRole('dialog', {
       name: "Copy initiative 'Digital & social'",
@@ -211,19 +238,25 @@ describe('CopyDialog (feature 005, US6#4–5, FR-026, FR-027)', () => {
   });
 
   it('shows a failure that is not about a field in the dialog', async () => {
-    const { user } = renderDialog(HELIX, {
-      'GET /api/v1/campaigns/C-1001/destinations': CAMPAIGN_DESTINATIONS,
-      'POST /api/v1/campaigns/C-1001/copy': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This campaign no longer exists — someone may have deleted it.',
-            fields: [],
+    const { user } = renderDialog(HELIX, [
+      reply('GET /api/v1/campaigns/{campaignId}/destinations', CAMPAIGN_DESTINATIONS, {
+        campaignId: 'C-1001',
+      }),
+      reply(
+        'POST /api/v1/campaigns/{campaignId}/copy',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This campaign no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     await screen.findByRole('textbox', { name: /Name of the copy/ });
     await user.click(screen.getByRole('button', { name: 'Copy campaign' }));

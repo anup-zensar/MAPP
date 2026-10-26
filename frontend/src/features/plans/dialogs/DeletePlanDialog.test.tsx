@@ -3,11 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { plan } from '@/testing/fixtures/plans';
+import { reply } from '@/testing/replies';
 import type { Plan } from '../api';
 import { DeletePlanDialog } from './DeletePlanDialog';
 
 function renderDialog(target: Plan) {
-  mockApi({ 'GET /api/v1/plans/P-1001': { body: target } });
+  mockApi([reply('GET /api/v1/plans/{planId}', { body: target }, { planId: 'P-1001' })]);
   const onDelete = vi.fn();
   const result = renderWithProviders(
     <DeletePlanDialog

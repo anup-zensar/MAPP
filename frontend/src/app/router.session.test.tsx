@@ -8,6 +8,7 @@ import { useSession } from '@/session/useSession';
 import type { CurrentUser } from '@/session/useSession';
 import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { routes } from './router';
 
 const PRIYA: CurrentUser = testUser();
@@ -46,8 +47,8 @@ const SESSION_EXPIRED = {
 };
 
 /** The Plans page's request, answered with no plans: these tests use /plans as a signed-in page. */
-const NO_PLANS = {
-  'GET /api/v1/plans': {
+const NO_PLANS = [
+  looseReply('GET /api/v1/plans', {
     body: {
       items: [],
       total: 0,
@@ -60,15 +61,14 @@ const NO_PLANS = {
       },
       years: [],
     },
-  },
-};
+  }),
+];
 
 /** The Approvals page's request, answered with no rows. */
-const NO_APPROVALS = {
-  'GET /api/v1/approvals': { body: { items: [], total: 0 } },
-  // The Approvals page lists the person's delegations too (feature 017).
-  'GET /api/v1/approval-delegations': NO_DELEGATIONS,
-};
+const NO_APPROVALS = [
+  looseReply('GET /api/v1/approvals', { body: { items: [], total: 0 } }),
+  looseReply('GET /api/v1/approval-delegations', NO_DELEGATIONS),
+];
 
 /** Shows what useSession() says, with a button that checks the session again. */
 function SessionProbe() {
@@ -114,7 +114,7 @@ afterEach(() => {
 
 describe('SessionProvider: who is signed in (research R15)', () => {
   it('is loading until GET /api/v1/me answers, then knows the signed-in person (FR-006)', async () => {
-    mockApi({ 'GET /api/v1/me': { body: PRIYA } });
+    mockApi([looseReply('GET /api/v1/me', { body: PRIYA })]);
     renderProbe();
 
     expect(screen.getByText('Status: loading')).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
   });
 
   it('treats a 401 answer as signed out (FR-005)', async () => {
-    mockApi({ 'GET /api/v1/me': { status: 401, body: SIGN_IN_REQUIRED } });
+    mockApi([looseReply('GET /api/v1/me', { status: 401, body: SIGN_IN_REQUIRED })]);
     renderProbe();
 
     expect(await screen.findByText('Status: signedOut')).toBeInTheDocument();
@@ -136,7 +136,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
   ])(
     'is unreachable when nobody is known and the API cannot be asked: %s (edge case)',
     async (_case, answer) => {
-      mockApi({ 'GET /api/v1/me': answer });
+      mockApi([looseReply('GET /api/v1/me', answer)]);
       renderProbe();
 
       expect(await screen.findByText('Status: unreachable')).toBeInTheDocument();
@@ -145,10 +145,11 @@ describe('SessionProvider: who is signed in (research R15)', () => {
 
   it('keeps the person signed in when a later check cannot reach the API (FR-006)', async () => {
     let calls = 0;
-    mockApi({
-      'GET /api/v1/me': () =>
+    mockApi([
+      looseReply('GET /api/v1/me', () =>
         ++calls === 1 ? { body: PRIYA } : Promise.reject(new TypeError('Failed to fetch')),
-    });
+      ),
+    ]);
     const { user, queryClient } = renderProbe();
     await screen.findByText('Status: signedIn');
 
@@ -161,11 +162,11 @@ describe('SessionProvider: who is signed in (research R15)', () => {
 
   it('shows the signed-in person’s light or dark mode, whatever this browser chose (FR-014)', async () => {
     localStorage.setItem('mapp.theme', 'light');
-    mockApi({
-      'GET /api/v1/me': {
+    mockApi([
+      looseReply('GET /api/v1/me', {
         body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
-      },
-    });
+      }),
+    ]);
     renderProbe();
 
     await screen.findByText('Status: signedIn');
@@ -177,12 +178,12 @@ describe('SessionProvider: who is signed in (research R15)', () => {
 
 describe('SessionProvider: ending a session (US4)', () => {
   it('signs out to the sign-in page with "You have been signed out." only (US4 scenario 1)', async () => {
-    mockApi({
-      'GET /api/v1/me': { body: PRIYA },
-      'POST /api/v1/auth/sign-out': { status: 204 },
+    mockApi([
+      looseReply('GET /api/v1/me', { body: PRIYA }),
+      looseReply('POST /api/v1/auth/sign-out', { status: 204 }),
       ...HOME_ANSWERS,
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-    });
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+    ]);
     const { user, router } = renderRoutes(routes, { route: '/' });
 
     await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
@@ -195,12 +196,12 @@ describe('SessionProvider: ending a session (US4)', () => {
   });
 
   it('forgets the person and their data when the session ends (US4 scenario 1)', async () => {
-    mockApi({
-      'GET /api/v1/me': { body: PRIYA },
-      'POST /api/v1/auth/sign-out': { status: 204 },
+    mockApi([
+      looseReply('GET /api/v1/me', { body: PRIYA }),
+      looseReply('POST /api/v1/auth/sign-out', { status: 204 }),
       ...HOME_ANSWERS,
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-    });
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+    ]);
     const { user, router, queryClient } = renderRoutes(routes, { route: '/' });
     await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
     queryClient.setQueryData(['sample-folders'], { items: [], total: 0 });
@@ -213,10 +214,10 @@ describe('SessionProvider: ending a session (US4)', () => {
   });
 
   it('says "Please sign in again" after a reload once the session has expired (FR-006)', async () => {
-    mockApi({
-      'GET /api/v1/me': { status: 401, body: SESSION_EXPIRED },
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-    });
+    mockApi([
+      looseReply('GET /api/v1/me', { status: 401, body: SESSION_EXPIRED }),
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+    ]);
     const { router } = renderRoutes(routes, { route: '/plans' });
 
     expect(await screen.findByText('Please sign in again')).toBeInTheDocument();
@@ -225,10 +226,10 @@ describe('SessionProvider: ending a session (US4)', () => {
   });
 
   it('keeps the sign-in page’s own way back when the expired session is found there (FR-005, FR-006)', async () => {
-    mockApi({
-      'GET /api/v1/me': { status: 401, body: SESSION_EXPIRED },
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-    });
+    mockApi([
+      looseReply('GET /api/v1/me', { status: 401, body: SESSION_EXPIRED }),
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+    ]);
     const { router } = renderRoutes(routes, { route: '/sign-in?next=%2Fplans' });
 
     expect(await screen.findByText('Please sign in again')).toBeInTheDocument();
@@ -239,14 +240,14 @@ describe('SessionProvider: ending a session (US4)', () => {
   it('keeps the person’s light or dark mode on the sign-in page after signing out (FR-014, research R16)', async () => {
     // This browser was light when the page opened; the person chose dark.
     localStorage.setItem('mapp.theme', 'light');
-    mockApi({
-      'GET /api/v1/me': {
+    mockApi([
+      looseReply('GET /api/v1/me', {
         body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
-      },
-      'POST /api/v1/auth/sign-out': { status: 204 },
+      }),
+      looseReply('POST /api/v1/auth/sign-out', { status: 204 }),
       ...HOME_ANSWERS,
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-    });
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+    ]);
     const { user, router } = renderRoutes(routes, { route: '/' });
 
     await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
@@ -262,17 +263,18 @@ describe('SessionProvider: ending a session (US4)', () => {
   it('lets the person’s saved theme take over from a visitor’s choice at sign-in (FR-014, research R16)', async () => {
     const priyaInLight = { ...PRIYA, preferences: { theme: 'light', sidebarCollapsed: false } };
     let signedIn = false;
-    const api = mockApi({
-      'GET /api/v1/me': () =>
+    const api = mockApi([
+      looseReply('GET /api/v1/me', () =>
         signedIn ? { body: priyaInLight } : { status: 401, body: SIGN_IN_REQUIRED },
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': () => {
+      ),
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', () => {
         signedIn = true;
         return { body: priyaInLight };
-      },
-      'POST /api/v1/auth/sign-out': { status: 204 },
+      }),
+      looseReply('POST /api/v1/auth/sign-out', { status: 204 }),
       ...HOME_ANSWERS,
-    });
+    ]);
     const { user, router } = renderRoutes(routes, { route: '/sign-in' });
 
     // A visitor switches the sign-in page to dark, then signs in as Priya, who chose light.
@@ -295,13 +297,14 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('brings the person back to where they were after signing in again (US4 scenario 2)', async () => {
     let checks = 0;
-    const api = mockApi({
-      'GET /api/v1/me': () =>
+    const api = mockApi([
+      looseReply('GET /api/v1/me', () =>
         ++checks === 1 ? { status: 401, body: SESSION_EXPIRED } : { body: PRIYA },
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': { body: PRIYA },
+      ),
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', { body: PRIYA }),
       ...NO_PLANS,
-    });
+    ]);
     const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
     await screen.findByText('Please sign in again');
 
@@ -317,15 +320,15 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('ends a lost session once, however many answers say so at the same time (US4 scenario 2)', async () => {
     const answers = gate();
-    const api = mockApi({
-      'GET /api/v1/me': { body: PRIYA },
-      'PATCH /api/v1/me/preferences': async () => {
+    const api = mockApi([
+      looseReply('GET /api/v1/me', { body: PRIYA }),
+      looseReply('PATCH /api/v1/me/preferences', async () => {
         await answers.opened;
         return { status: 401, body: SESSION_EXPIRED };
-      },
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
+      }),
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
       ...NO_PLANS,
-    });
+    ]);
     const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
     await screen.findByRole('heading', { level: 1, name: 'Plans' });
     const signInPages = new Set<string>();
@@ -352,21 +355,21 @@ describe('SessionProvider: ending a session (US4)', () => {
   it('stays signed out when a session check that was on its way answers after signing out (US4 scenario 1)', async () => {
     const lateAnswer = gate();
     let checks = 0;
-    mockApi({
-      'GET /api/v1/me': async () => {
+    mockApi([
+      looseReply('GET /api/v1/me', async () => {
         checks += 1;
         if (checks === 2) {
           // The check of the next navigation: the API answers it only after the sign-out.
           await lateAnswer.opened;
         }
         return checks <= 2 ? { body: PRIYA } : { status: 401, body: SIGN_IN_REQUIRED };
-      },
-      'POST /api/v1/auth/sign-out': { status: 204 },
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
+      }),
+      looseReply('POST /api/v1/auth/sign-out', { status: 204 }),
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
       ...NO_PLANS,
       ...NO_APPROVALS,
       ...HOME_ANSWERS,
-    });
+    ]);
     const { user, router, queryClient } = renderRoutes(routes, { route: '/plans' });
     await screen.findByRole('heading', { level: 1, name: 'Plans' });
     await user.click(screen.getByRole('link', { name: 'Approvals' }));
@@ -387,12 +390,12 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('notices another person signing in in another tab, and starts again on Home (edge case)', async () => {
     let checks = 0;
-    mockApi({
-      'GET /api/v1/me': () => ({ body: ++checks === 1 ? PRIYA : DANIEL }),
+    mockApi([
+      looseReply('GET /api/v1/me', () => ({ body: ++checks === 1 ? PRIYA : DANIEL })),
       ...NO_PLANS,
       ...NO_APPROVALS,
       ...HOME_ANSWERS,
-    });
+    ]);
     const { user, router, queryClient } = renderRoutes(routes, { route: '/plans' });
     await screen.findByRole('heading', { level: 1, name: 'Plans' });
     queryClient.setQueryData(['sample-folders'], { items: [], total: 0 });

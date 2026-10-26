@@ -1,9 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { PeoplePage } from './PeoplePage';
 
 const META = {
@@ -57,22 +58,19 @@ const ROLES_FORBIDDEN = {
   status: 403,
   body: { error: { code: 'forbidden', message: "You don't have access to this.", fields: [] } },
 };
-const ROLES_OF_EVERYONE = Object.fromEntries(
-  ['U-1001', 'U-1002', 'U-1004', 'U-1006', 'U-1007'].map((id) => [
-    `GET /api/v1/people/${id}/roles`,
-    ROLES_FORBIDDEN,
-  ]),
+const ROLES_OF_EVERYONE = ['U-1001', 'U-1002', 'U-1004', 'U-1006', 'U-1007'].map((personId) =>
+  looseReply('GET /api/v1/people/{personId}/roles', ROLES_FORBIDDEN, { personId }),
 );
 
 /** The page at /settings/people (or one person's address) with the answers every test needs. */
-function renderPeople(answers: Record<string, MockHandler> = {}, route = '/settings/people') {
-  const api = mockApi({
-    'GET /api/v1/me': { body: testUser() },
-    'GET /api/v1/people': { body: PEOPLE },
-    'GET /api/v1/teams': { body: TEAMS },
+function renderPeople(answers: HttpHandler[] = [], route = '/settings/people') {
+  const api = mockApi([
+    looseReply('GET /api/v1/me', { body: testUser() }),
+    looseReply('GET /api/v1/people', { body: PEOPLE }),
+    looseReply('GET /api/v1/teams', { body: TEAMS }),
     ...ROLES_OF_EVERYONE,
     ...answers,
-  });
+  ]);
   return {
     api,
     ...renderWithProviders(<PeoplePage />, {
@@ -172,7 +170,7 @@ describe('PeoplePage (feature 003, US1)', () => {
   });
 
   it('shows how to add the first person when there is none', async () => {
-    renderPeople({ 'GET /api/v1/people': { body: { items: [], total: 0 } } });
+    renderPeople([looseReply('GET /api/v1/people', { body: { items: [], total: 0 } })]);
 
     expect(await screen.findByText('No people yet — add the first person')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'New person' })).toHaveLength(2);
@@ -180,12 +178,12 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('says when the people could not be loaded, with Try again', async () => {
     let calls = 0;
-    const { user } = renderPeople({
-      'GET /api/v1/people': () => {
+    const { user } = renderPeople([
+      looseReply('GET /api/v1/people', () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: PEOPLE };
-      },
-    });
+      }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
@@ -195,8 +193,8 @@ describe('PeoplePage (feature 003, US1)', () => {
   it('shows every problem at once, then creates the person with View (US1-1, US1-2)', async () => {
     let posts = 0;
     const created = { ...person('U-1007', 'Jane Smith', 'Marketer', [EUROPE]), usage: [] };
-    const { api, user, router } = renderPeople({
-      'POST /api/v1/people': () => {
+    const { api, user, router } = renderPeople([
+      looseReply('POST /api/v1/people', () => {
         posts += 1;
         if (posts === 1) {
           return VALIDATION([
@@ -214,9 +212,9 @@ describe('PeoplePage (feature 003, US1)', () => {
           ]);
         }
         return { status: 201, body: created };
-      },
-      'GET /api/v1/people/U-1007': { body: created },
-    });
+      }),
+      looseReply('GET /api/v1/people/{personId}', { body: created }, { personId: 'U-1007' }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'New person' }));
     const panel = await screen.findByRole('dialog', { name: 'New person' });
@@ -263,25 +261,29 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('shows a person with their teams, what they own and approve, and the record line (US1-3)', async () => {
     const { user, router } = renderPeople(
-      {
-        'GET /api/v1/people/U-1001': { body: ALEX_DETAILS },
-        'GET /api/v1/people/U-1001/roles': {
-          body: {
-            person: { id: 'U-1001', name: 'Alex Morgan', active: true },
-            teams: [EUROPE],
-            roles: [
-              {
-                id: 'RA-1001',
-                role: { id: 'RL-1003', name: 'Planner', builtIn: 'planner' },
-                scope: { type: 'myTeams', teams: [EUROPE], text: 'My teams' },
-                scopeEmpty: false,
-              },
-            ],
-            permissions: [],
-            version: 1,
+      [
+        looseReply('GET /api/v1/people/{personId}', { body: ALEX_DETAILS }, { personId: 'U-1001' }),
+        looseReply(
+          'GET /api/v1/people/{personId}/roles',
+          {
+            body: {
+              person: { id: 'U-1001', name: 'Alex Morgan', active: true },
+              teams: [EUROPE],
+              roles: [
+                {
+                  id: 'RA-1001',
+                  role: { id: 'RL-1003', name: 'Planner', builtIn: 'planner' },
+                  scope: { type: 'myTeams', teams: [EUROPE], text: 'My teams' },
+                  scopeEmpty: false,
+                },
+              ],
+              permissions: [],
+              version: 1,
+            },
           },
-        },
-      },
+          { personId: 'U-1001' },
+        ),
+      ],
       '/settings/people/U-1001',
     );
 
@@ -317,12 +319,18 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('says in the panel when the person does not exist', async () => {
     renderPeople(
-      {
-        'GET /api/v1/people/U-1999': {
-          status: 404,
-          body: { error: { code: 'not_found', message: "This person doesn't exist.", fields: [] } },
-        },
-      },
+      [
+        looseReply(
+          'GET /api/v1/people/{personId}',
+          {
+            status: 404,
+            body: {
+              error: { code: 'not_found', message: "This person doesn't exist.", fields: [] },
+            },
+          },
+          { personId: 'U-1999' },
+        ),
+      ],
       '/settings/people/U-1999',
     );
 
@@ -332,25 +340,33 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('edits a person and says who saved first after a conflict (US1-4)', async () => {
     let patches = 0;
-    const { api, user } = renderPeople({
-      'PATCH /api/v1/people/U-1001': () => {
-        patches += 1;
-        return patches === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Not saved — Daniel Okoro changed this person.',
-                  fields: [],
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-10T14:32:00Z' },
+    const { api, user } = renderPeople([
+      looseReply(
+        'PATCH /api/v1/people/{personId}',
+        () => {
+          patches += 1;
+          return patches === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Not saved — Daniel Okoro changed this person.',
+                    fields: [],
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-10T14:32:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: { ...ALEX_DETAILS, jobTitle: 'Marketing director', version: 3 } };
-      },
-      'GET /api/v1/people/U-1001': { body: { ...ALEX_DETAILS, version: 2 } },
-    });
+              }
+            : { body: { ...ALEX_DETAILS, jobTitle: 'Marketing director', version: 3 } };
+        },
+        { personId: 'U-1001' },
+      ),
+      looseReply(
+        'GET /api/v1/people/{personId}',
+        { body: { ...ALEX_DETAILS, version: 2 } },
+        { personId: 'U-1001' },
+      ),
+    ]);
 
     await chooseAction(user, 'Alex Morgan', 'Edit');
     const panel = await screen.findByRole('dialog', { name: 'Edit person' });
@@ -384,12 +400,20 @@ describe('PeoplePage (feature 003, US1)', () => {
   it('checks the impact of removing a team; Keep editing sends nothing, Save changes saves', async () => {
     const warning =
       'Alex Morgan owns 1 plan that uses Lubricants Europe: FY2026 Lubricants Europe. Alex will no longer belong to its teams, so its owner will need attention.';
-    const { api, user } = renderPeople({
-      'POST /api/v1/people/U-1001/impact': {
-        body: { warnings: [{ kind: 'ownerNeedsAttention', message: warning, count: 1 }] },
-      },
-      'PATCH /api/v1/people/U-1001': { body: { ...ALEX_DETAILS, teams: [], version: 2 } },
-    });
+    const { api, user } = renderPeople([
+      looseReply(
+        'POST /api/v1/people/{personId}/impact',
+        {
+          body: { warnings: [{ kind: 'ownerNeedsAttention', message: warning, count: 1 }] },
+        },
+        { personId: 'U-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/people/{personId}',
+        { body: { ...ALEX_DETAILS, teams: [], version: 2 } },
+        { personId: 'U-1001' },
+      ),
+    ]);
 
     await chooseAction(user, 'Alex Morgan', 'Edit');
     const panel = await screen.findByRole('dialog', { name: 'Edit person' });
@@ -419,11 +443,13 @@ describe('PeoplePage (feature 003, US1)', () => {
   });
 
   it('shows the impact check problems at the fields', async () => {
-    const { api, user } = renderPeople({
-      'POST /api/v1/people/U-1001/impact': VALIDATION([
-        { field: 'name', message: 'Enter a name.' },
-      ]),
-    });
+    const { api, user } = renderPeople([
+      looseReply(
+        'POST /api/v1/people/{personId}/impact',
+        VALIDATION([{ field: 'name', message: 'Enter a name.' }]),
+        { personId: 'U-1001' },
+      ),
+    ]);
 
     await chooseAction(user, 'Alex Morgan', 'Edit');
     const panel = await screen.findByRole('dialog', { name: 'Edit person' });
@@ -438,10 +464,14 @@ describe('PeoplePage (feature 003, US1)', () => {
   });
 
   it('asks before deactivating, with what the person owns and Cancel focused (US1-5)', async () => {
-    const { api, user } = renderPeople({
-      'GET /api/v1/people/U-1001': { body: ALEX_DETAILS },
-      'POST /api/v1/people/U-1001/status': { body: { ...ALEX_DETAILS, active: false, version: 2 } },
-    });
+    const { api, user } = renderPeople([
+      looseReply('GET /api/v1/people/{personId}', { body: ALEX_DETAILS }, { personId: 'U-1001' }),
+      looseReply(
+        'POST /api/v1/people/{personId}/status',
+        { body: { ...ALEX_DETAILS, active: false, version: 2 } },
+        { personId: 'U-1001' },
+      ),
+    ]);
 
     await chooseAction(user, 'Alex Morgan', 'Deactivate');
     const dialog = await screen.findByRole('alertdialog', { name: 'Deactivate Alex Morgan?' });
@@ -463,7 +493,9 @@ describe('PeoplePage (feature 003, US1)', () => {
   });
 
   it('sends nothing when the deactivation is cancelled', async () => {
-    const { api, user } = renderPeople({ 'GET /api/v1/people/U-1001': { body: ALEX_DETAILS } });
+    const { api, user } = renderPeople([
+      looseReply('GET /api/v1/people/{personId}', { body: ALEX_DETAILS }, { personId: 'U-1001' }),
+    ]);
 
     await chooseAction(user, 'Alex Morgan', 'Deactivate');
     const dialog = await screen.findByRole('alertdialog', { name: 'Deactivate Alex Morgan?' });
@@ -492,7 +524,13 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('keeps Deactivate in the details for yourself, saying why it does nothing (FR-006)', async () => {
     const { api, user } = renderPeople(
-      { 'GET /api/v1/people/U-1002': { body: { ...PRIYA, usage: [] } } },
+      [
+        looseReply(
+          'GET /api/v1/people/{personId}',
+          { body: { ...PRIYA, usage: [] } },
+          { personId: 'U-1002' },
+        ),
+      ],
       '/settings/people/U-1002',
     );
 
@@ -518,15 +556,19 @@ describe('PeoplePage (feature 003, US1)', () => {
   it('deactivates someone who owns nothing at once, with Undo (design system §6.7)', async () => {
     const saraDetails = { ...SARA, usage: [] };
     let posts = 0;
-    const { api, user } = renderPeople({
-      'GET /api/v1/people/U-1004': { body: saraDetails },
-      'POST /api/v1/people/U-1004/status': () => {
-        posts += 1;
-        return posts === 1
-          ? { body: { ...saraDetails, active: false, version: 2 } }
-          : { body: { ...saraDetails, active: true, version: 3 } };
-      },
-    });
+    const { api, user } = renderPeople([
+      looseReply('GET /api/v1/people/{personId}', { body: saraDetails }, { personId: 'U-1004' }),
+      looseReply(
+        'POST /api/v1/people/{personId}/status',
+        () => {
+          posts += 1;
+          return posts === 1
+            ? { body: { ...saraDetails, active: false, version: 2 } }
+            : { body: { ...saraDetails, active: true, version: 3 } };
+        },
+        { personId: 'U-1004' },
+      ),
+    ]);
 
     await chooseAction(user, 'Sara Novak', 'Deactivate');
 
@@ -546,11 +588,15 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('reactivates an inactive person (US1-7)', async () => {
     const { api, user } = renderPeople(
-      {
-        'POST /api/v1/people/U-1006/status': {
-          body: { ...JANE, active: true, version: 2, usage: [] },
-        },
-      },
+      [
+        looseReply(
+          'POST /api/v1/people/{personId}/status',
+          {
+            body: { ...JANE, active: true, version: 2, usage: [] },
+          },
+          { personId: 'U-1006' },
+        ),
+      ],
       '/settings/people?status=inactive',
     );
 
@@ -564,12 +610,18 @@ describe('PeoplePage (feature 003, US1)', () => {
 
   it('says why a status change was refused', async () => {
     const { user } = renderPeople(
-      {
-        'POST /api/v1/people/U-1006/status': {
-          status: 404,
-          body: { error: { code: 'not_found', message: "This person doesn't exist.", fields: [] } },
-        },
-      },
+      [
+        looseReply(
+          'POST /api/v1/people/{personId}/status',
+          {
+            status: 404,
+            body: {
+              error: { code: 'not_found', message: "This person doesn't exist.", fields: [] },
+            },
+          },
+          { personId: 'U-1006' },
+        ),
+      ],
       '/settings/people?status=inactive',
     );
 

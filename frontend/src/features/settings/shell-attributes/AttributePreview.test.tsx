@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { shellAttribute } from '@/testing/fixtures/shell-attributes';
+import { looseReply } from '@/testing/replies';
 import { AttributePreview } from './AttributePreview';
 
 /** Region, which depends on Cluster on the campaign form (campaignForm()). */
@@ -28,12 +29,20 @@ const FLEET_SIZE = shellAttribute({
 
 const CHECK = 'POST /api/v1/shell-attribute-forms/campaign/check';
 
-function renderPreview(answers: Record<string, MockHandler>, attribute = REGION) {
-  const api = mockApi({
-    'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
-    'GET /api/v1/shell-attribute-forms/plan': { body: planForm() },
+function renderPreview(answers: HttpHandler[], attribute = REGION) {
+  const api = mockApi([
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: campaignForm() },
+      { level: 'campaign' },
+    ),
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: planForm() },
+      { level: 'plan' },
+    ),
     ...answers,
-  });
+  ]);
   return {
     ...renderWithProviders(<AttributePreview attribute={attribute} />, { user: testUser() }),
     api,
@@ -53,7 +62,7 @@ function businessUnits() {
 
 describe('AttributePreview (FR-020, US3)', () => {
   it("shows the level's form as a plan with every business unit, and what it still needs", async () => {
-    renderPreview({});
+    renderPreview([]);
 
     const card = await previewCard();
     expect(card).toHaveTextContent('Behaves like the real form. Nothing you type here is saved.');
@@ -68,7 +77,7 @@ describe('AttributePreview (FR-020, US3)', () => {
   });
 
   it('offers only the regions of the chosen cluster and fills in the only one (US3-1)', async () => {
-    const { user } = renderPreview({});
+    const { user } = renderPreview([]);
 
     const card = await previewCard();
     const region = await within(card).findByRole('group', { name: /^Region/ });
@@ -89,7 +98,7 @@ describe('AttributePreview (FR-020, US3)', () => {
   });
 
   it("hides attributes the plan's business unit doesn't include, keeping their values (US3-3)", async () => {
-    const { user } = renderPreview({});
+    const { user } = renderPreview([]);
 
     const card = await previewCard();
     await user.click(await within(card).findByRole('checkbox', { name: 'Shell Helix' }));
@@ -104,7 +113,7 @@ describe('AttributePreview (FR-020, US3)', () => {
   });
 
   it('says a plan without a business unit shows more attributes once it is chosen', async () => {
-    const { user } = renderPreview({});
+    const { user } = renderPreview([]);
 
     await previewCard();
     await user.click(within(businessUnits()).getByRole('checkbox', { name: 'Lubricants' }));
@@ -116,23 +125,27 @@ describe('AttributePreview (FR-020, US3)', () => {
   });
 
   it('Try saving: says saving would work, what it would clear and what is still needed', async () => {
-    const { user, api } = renderPreview({
-      [CHECK]: {
-        body: {
-          problems: [],
-          missing: [{ field: 'attributes.SA-CLUSTER', label: 'Cluster' }],
-          cleared: [
-            {
-              attributeId: 'SA-REGION',
-              label: 'Region',
-              optionIds: ['SO-CHINA'],
-              optionLabels: ['RETAIL – CHINA'],
-            },
-          ],
-          values: {},
+    const { user, api } = renderPreview([
+      looseReply(
+        'POST /api/v1/shell-attribute-forms/{level}/check',
+        {
+          body: {
+            problems: [],
+            missing: [{ field: 'attributes.SA-CLUSTER', label: 'Cluster' }],
+            cleared: [
+              {
+                attributeId: 'SA-REGION',
+                label: 'Region',
+                optionIds: ['SO-CHINA'],
+                optionLabels: ['RETAIL – CHINA'],
+              },
+            ],
+            values: {},
+          },
         },
-      },
-    });
+        { level: 'campaign' },
+      ),
+    ]);
 
     const card = await previewCard();
     await user.click(await within(card).findByRole('checkbox', { name: 'Retail' }));
@@ -155,21 +168,25 @@ describe('AttributePreview (FR-020, US3)', () => {
   });
 
   it('Try saving: shows every problem at once, at the fields', async () => {
-    const { user } = renderPreview({
-      [CHECK]: {
-        body: {
-          problems: [
-            {
-              field: 'attributes.SA-CLUSTER',
-              message: 'Choose one of the options of Cluster.',
-            },
-          ],
-          missing: [],
-          cleared: [],
-          values: {},
+    const { user } = renderPreview([
+      looseReply(
+        'POST /api/v1/shell-attribute-forms/{level}/check',
+        {
+          body: {
+            problems: [
+              {
+                field: 'attributes.SA-CLUSTER',
+                message: 'Choose one of the options of Cluster.',
+              },
+            ],
+            missing: [],
+            cleared: [],
+            values: {},
+          },
         },
-      },
-    });
+        { level: 'campaign' },
+      ),
+    ]);
 
     const card = await previewCard();
     await within(card).findByRole('group', { name: /^Cluster/ });
@@ -181,14 +198,18 @@ describe('AttributePreview (FR-020, US3)', () => {
   });
 
   it('Try saving: says when the check could not be made', async () => {
-    const { user } = renderPreview({
-      [CHECK]: {
-        status: 500,
-        body: {
-          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+    const { user } = renderPreview([
+      looseReply(
+        'POST /api/v1/shell-attribute-forms/{level}/check',
+        {
+          status: 500,
+          body: {
+            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+          },
         },
-      },
-    });
+        { level: 'campaign' },
+      ),
+    ]);
 
     const card = await previewCard();
     await within(card).findByRole('group', { name: /^Cluster/ });
@@ -199,11 +220,15 @@ describe('AttributePreview (FR-020, US3)', () => {
 
   it('previews the plan form with its own Business unit deciding what is shown (FR-026)', async () => {
     const { user, api } = renderPreview(
-      {
-        'POST /api/v1/shell-attribute-forms/plan/check': {
-          body: { problems: [], missing: [], cleared: [], values: {} },
-        },
-      },
+      [
+        looseReply(
+          'POST /api/v1/shell-attribute-forms/{level}/check',
+          {
+            body: { problems: [], missing: [], cleared: [], values: {} },
+          },
+          { level: 'plan' },
+        ),
+      ],
       FLEET_SIZE,
     );
 
@@ -226,14 +251,18 @@ describe('AttributePreview (FR-020, US3)', () => {
   });
 
   it('says when the form cannot be loaded, with Try again', async () => {
-    renderPreview({
-      'GET /api/v1/shell-attribute-forms/campaign': {
-        status: 500,
-        body: {
-          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+    renderPreview([
+      looseReply(
+        'GET /api/v1/shell-attribute-forms/{level}',
+        {
+          status: 500,
+          body: {
+            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+          },
         },
-      },
-    });
+        { level: 'campaign' },
+      ),
+    ]);
 
     const card = await screen.findByRole('region', { name: 'Preview — Campaign form' });
     expect(await within(card).findByRole('button', { name: 'Try again' })).toBeInTheDocument();

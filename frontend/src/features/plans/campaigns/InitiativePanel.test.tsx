@@ -1,14 +1,15 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { SessionProvider } from '@/session/SessionProvider';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { financialsNotServed } from '@/testing/fixtures/plans';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { initiative, PEOPLE, planAnswer, usd } from './fixtures';
 import { InitiativePanel } from './InitiativePanel';
 
@@ -30,18 +31,26 @@ vi.mock('@/features/activities/InitiativeActivities', () => ({
 
 const DETAILS = '/plans/P-1001/initiatives/I-1001';
 
-function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
+function renderPanel(route: string, answers: HttpHandler[] = []) {
+  const api = mockApi([
     ...HISTORY_ANSWERS,
     ...financialsNotServed('I-1001'),
-    'GET /api/v1/initiatives/I-1001': { body: initiative() },
-    'GET /api/v1/plans/P-1001': { body: planAnswer() },
-    'GET /api/v1/shell-attribute-forms/initiative': {
-      body: { ...campaignForm(), level: 'initiative' },
-    },
-    'GET /api/v1/people': { body: PEOPLE },
+    looseReply(
+      'GET /api/v1/initiatives/{initiativeId}',
+      { body: initiative() },
+      { initiativeId: 'I-1001' },
+    ),
+    looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      {
+        body: { ...campaignForm(), level: 'initiative' },
+      },
+      { level: 'initiative' },
+    ),
+    looseReply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
-  });
+  ]);
   const rendered = renderRoutes(
     [
       {
@@ -78,14 +87,18 @@ async function findForm() {
 
 describe('InitiativePanel (feature 005, US3)', () => {
   it('shows its campaign, the remaining campaign budget and what is below it (FR-016)', async () => {
-    renderPanel(DETAILS, {
-      'GET /api/v1/initiatives/I-1001': {
-        body: initiative({
-          counts: { activities: 3, approvedActivities: 1, lineItems: 5 },
-          parentRemainingBudget: usd('-50000.00'),
-        }),
-      },
-    });
+    renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/initiatives/{initiativeId}',
+        {
+          body: initiative({
+            counts: { activities: 3, approvedActivities: 1, lineItems: 5 },
+            parentRemainingBudget: usd('-50000.00'),
+          }),
+        },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
     const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
 
     expect(within(panel).getByText('INITIATIVE')).toBeInTheDocument();
@@ -154,9 +167,13 @@ describe('InitiativePanel (feature 005, US3)', () => {
   });
 
   it('edits with the campaign read-only and its dates as the allowed range (FR-006, FR-018)', async () => {
-    const { user, api, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/v1/initiatives/I-1001': { body: initiative({ version: 4 }) },
-    });
+    const { user, api, router } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'PATCH /api/v1/initiatives/{initiativeId}',
+        { body: initiative({ version: 4 }) },
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
     const form = await findForm();
 
     expect(within(form).getByLabelText('Campaign')).toHaveValue('Helix launch');
@@ -178,21 +195,25 @@ describe('InitiativePanel (feature 005, US3)', () => {
     const r3 = "Dates must be inside the campaign's dates (01 Jan 2026 – 31 Dec 2026).";
     const fr007 =
       'Launch webinar (01 Mar – 31 Mar 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
-    const { user } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/v1/initiatives/I-1001': {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Some fields need your attention.',
-            fields: [
-              { field: 'startDate', message: fr007 },
-              { field: 'endDate', message: r3 },
-            ],
+    const { user } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'PATCH /api/v1/initiatives/{initiativeId}',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [
+                { field: 'startDate', message: fr007 },
+                { field: 'endDate', message: r3 },
+              ],
+            },
           },
         },
-      },
-    });
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
     const form = await findForm();
 
     fireEvent.change(within(form).getByLabelText('Start date'), {
@@ -206,17 +227,21 @@ describe('InitiativePanel (feature 005, US3)', () => {
   });
 
   it('says when the initiative no longer exists', async () => {
-    renderPanel(DETAILS, {
-      'GET /api/v1/initiatives/I-1001': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This initiative no longer exists — someone may have deleted it.',
+    renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/initiatives/{initiativeId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This initiative no longer exists — someone may have deleted it.',
+            },
           },
         },
-      },
-    });
+        { initiativeId: 'I-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText('This initiative no longer exists — someone may have deleted it.'),

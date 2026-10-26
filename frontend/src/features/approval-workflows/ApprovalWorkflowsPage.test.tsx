@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import {
   CHINA_WORKFLOW,
@@ -10,9 +10,9 @@ import {
   PEOPLE,
   workflowOf,
 } from '@/testing/fixtures/approval-workflows';
+import { looseReply } from '@/testing/replies';
 import { ApprovalWorkflowsPage } from './ApprovalWorkflowsPage';
 
-const LIST = 'GET /api/v1/approval-workflows';
 const ITEMS = [CHINA_WORKFLOW, workflowOf()];
 const list = (items = ITEMS) => ({ body: { items, total: items.length } });
 
@@ -29,11 +29,12 @@ const BIN_ENTRY = {
   deletedBy: { id: 'U-1002', name: 'Priya Raman' },
 };
 
-function renderPage(
-  route = '/settings/approval-workflows',
-  answers: Record<string, MockHandler> = {},
-) {
-  const api = mockApi({ [LIST]: list(), 'GET /api/v1/people': PEOPLE, ...answers });
+function renderPage(route = '/settings/approval-workflows', answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply('GET /api/v1/approval-workflows', list()),
+    looseReply('GET /api/v1/people', PEOPLE),
+    ...answers,
+  ]);
   const rendered = renderWithProviders(<ApprovalWorkflowsPage />, {
     route,
     path: '/settings/approval-workflows/:workflowId?',
@@ -92,9 +93,12 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   });
 
   it('shows a warning icon for a workflow with warnings', async () => {
-    renderPage('/settings/approval-workflows', {
-      [LIST]: list([workflowOf({ warnings: ['Level 2 has no active approver'] })]),
-    });
+    renderPage('/settings/approval-workflows', [
+      looseReply(
+        'GET /api/v1/approval-workflows',
+        list([workflowOf({ warnings: ['Level 2 has no active approver'] })]),
+      ),
+    ]);
 
     expect(
       await screen.findByRole('button', { name: 'Warnings: Level 2 has no active approver' }),
@@ -102,7 +106,9 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   });
 
   it('invites to create the first workflow when there is none', async () => {
-    const { user } = renderPage('/settings/approval-workflows', { [LIST]: list([]) });
+    const { user } = renderPage('/settings/approval-workflows', [
+      looseReply('GET /api/v1/approval-workflows', list([])),
+    ]);
 
     expect(
       await screen.findByText('No approval workflows yet — create your first approval workflow'),
@@ -112,9 +118,13 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   });
 
   it('sets a workflow inactive after saying what changes (FR-007)', async () => {
-    const { user, api } = renderPage('/settings/approval-workflows', {
-      'POST /api/v1/approval-workflows/WF-1001/deactivate': { body: workflowOf({ active: false }) },
-    });
+    const { user, api } = renderPage('/settings/approval-workflows', [
+      looseReply(
+        'POST /api/v1/approval-workflows/{workflowId}/deactivate',
+        { body: workflowOf({ active: false }) },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
     await screen.findByRole('row', { name: /Lubricants EU approval/ });
 
     await user.click(screen.getByRole('button', { name: 'Actions for Lubricants EU approval' }));
@@ -141,15 +151,23 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
 
   it('sets an unused workflow inactive at once, with Undo (design system §6.7)', async () => {
     const unused = workflowOf({ usedByCount: 0, waitingCount: 0 });
-    const { user, api } = renderPage('/settings/approval-workflows', {
-      [LIST]: list([unused]),
-      'POST /api/v1/approval-workflows/WF-1001/deactivate': {
-        body: { ...unused, active: false, version: 5 },
-      },
-      'POST /api/v1/approval-workflows/WF-1001/activate': {
-        body: { ...unused, active: true, version: 6 },
-      },
-    });
+    const { user, api } = renderPage('/settings/approval-workflows', [
+      looseReply('GET /api/v1/approval-workflows', list([unused])),
+      looseReply(
+        'POST /api/v1/approval-workflows/{workflowId}/deactivate',
+        {
+          body: { ...unused, active: false, version: 5 },
+        },
+        { workflowId: 'WF-1001' },
+      ),
+      looseReply(
+        'POST /api/v1/approval-workflows/{workflowId}/activate',
+        {
+          body: { ...unused, active: true, version: 6 },
+        },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
     await screen.findByRole('row', { name: /Lubricants EU approval/ });
 
     await user.click(screen.getByRole('button', { name: 'Actions for Lubricants EU approval' }));
@@ -173,9 +191,13 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   });
 
   it('reactivates an inactive workflow at once (FR-007)', async () => {
-    const { user, api } = renderPage('/settings/approval-workflows?status=inactive', {
-      'POST /api/v1/approval-workflows/WF-1002/activate': { body: CHINA_WORKFLOW },
-    });
+    const { user, api } = renderPage('/settings/approval-workflows?status=inactive', [
+      looseReply(
+        'POST /api/v1/approval-workflows/{workflowId}/activate',
+        { body: CHINA_WORKFLOW },
+        { workflowId: 'WF-1002' },
+      ),
+    ]);
     await user.click(await screen.findByRole('button', { name: /^All/ }));
     await screen.findByRole('row', { name: /China BC/ });
 
@@ -208,18 +230,26 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   });
 
   it('deletes an unused workflow with Undo (FR-008)', async () => {
-    const { user } = renderPage('/settings/approval-workflows?status=all', {
-      'DELETE /api/v1/approval-workflows/WF-1002': { body: { recycleBinEntry: BIN_ENTRY } },
-      'POST /api/v1/recycle-bin/RB-1001/undo': {
-        body: {
-          recordType: 'approvalWorkflow',
-          recordTypeLabel: 'approval workflow',
-          recordId: 'WF-1002',
-          recordName: 'China BC approval workflow',
-          details: '',
+    const { user } = renderPage('/settings/approval-workflows?status=all', [
+      looseReply(
+        'DELETE /api/v1/approval-workflows/{workflowId}',
+        { body: { recycleBinEntry: BIN_ENTRY } },
+        { workflowId: 'WF-1002' },
+      ),
+      looseReply(
+        'POST /api/v1/recycle-bin/{entryId}/undo',
+        {
+          body: {
+            recordType: 'approvalWorkflow',
+            recordTypeLabel: 'approval workflow',
+            recordId: 'WF-1002',
+            recordName: 'China BC approval workflow',
+            details: '',
+          },
         },
-      },
-    });
+        { entryId: 'RB-1001' },
+      ),
+    ]);
     await user.click(await screen.findByRole('button', { name: /^All/ }));
     await screen.findByRole('row', { name: /China BC/ });
 
@@ -246,18 +276,22 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   });
 
   it('shows the used dialog when the API answers in_use (FR-008)', async () => {
-    const { user } = renderPage('/settings/approval-workflows?status=all', {
-      'DELETE /api/v1/approval-workflows/WF-1002': {
-        status: 409,
-        body: {
-          error: {
-            code: 'in_use',
-            message: 'Used by 1 activity — set it inactive instead.',
-            fields: [],
+    const { user } = renderPage('/settings/approval-workflows?status=all', [
+      looseReply(
+        'DELETE /api/v1/approval-workflows/{workflowId}',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'in_use',
+              message: 'Used by 1 activity — set it inactive instead.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { workflowId: 'WF-1002' },
+      ),
+    ]);
     await user.click(await screen.findByRole('button', { name: /^All/ }));
     await screen.findByRole('row', { name: /China BC/ });
 
@@ -277,9 +311,13 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
   });
 
   it('opens the details at their address and goes back to the list on close (FR-005)', async () => {
-    const { user, router } = renderPage('/settings/approval-workflows/WF-1001', {
-      'GET /api/v1/approval-workflows/WF-1001': { body: detailsOf() },
-    });
+    const { user, router } = renderPage('/settings/approval-workflows/WF-1001', [
+      looseReply(
+        'GET /api/v1/approval-workflows/{workflowId}',
+        { body: detailsOf() },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
 
     const panel = await screen.findByRole('dialog', { name: 'Lubricants EU approval' });
     await user.click(within(panel).getAllByRole('button', { name: 'Close' })[0]);
@@ -304,13 +342,21 @@ describe('ApprovalWorkflowsPage (feature 008, US4)', () => {
 
   it('sets an unused workflow inactive at once, with Undo (design system §6.7)', async () => {
     const unused = workflowOf({ usedByCount: 0, waitingCount: 0 });
-    const { user, api } = renderPage('/settings/approval-workflows', {
-      [LIST]: list([unused]),
-      'POST /api/v1/approval-workflows/WF-1001/deactivate': {
-        body: workflowOf({ active: false, usedByCount: 0, waitingCount: 0, version: 5 }),
-      },
-      'POST /api/v1/approval-workflows/WF-1001/activate': { body: unused },
-    });
+    const { user, api } = renderPage('/settings/approval-workflows', [
+      looseReply('GET /api/v1/approval-workflows', list([unused])),
+      looseReply(
+        'POST /api/v1/approval-workflows/{workflowId}/deactivate',
+        {
+          body: workflowOf({ active: false, usedByCount: 0, waitingCount: 0, version: 5 }),
+        },
+        { workflowId: 'WF-1001' },
+      ),
+      looseReply(
+        'POST /api/v1/approval-workflows/{workflowId}/activate',
+        { body: unused },
+        { workflowId: 'WF-1001' },
+      ),
+    ]);
     await screen.findByRole('row', { name: /Lubricants EU approval/ });
 
     await user.click(screen.getByRole('button', { name: 'Actions for Lubricants EU approval' }));

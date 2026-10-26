@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import type { PageHandle } from '@/session/page-handle';
+import { looseReply } from '@/testing/replies';
 import { DevOnly } from './DevOnly';
 
 const ENVIRONMENT_LOCAL = { environment: 'local', demoSignIn: true };
@@ -31,7 +32,7 @@ function renderDeveloperPage() {
 
 describe('DevOnly', () => {
   it('shows the developer page where demo sign-in is on: local and development (research R23)', async () => {
-    mockApi({ 'GET /api/v1/environment': { body: ENVIRONMENT_LOCAL } });
+    mockApi([looseReply('GET /api/v1/environment', { body: ENVIRONMENT_LOCAL })]);
     renderDeveloperPage();
 
     expect(
@@ -40,7 +41,7 @@ describe('DevOnly', () => {
   });
 
   it('shows "Page not found" where demo sign-in is off (FR-009, D-036)', async () => {
-    mockApi({ 'GET /api/v1/environment': { body: ENVIRONMENT_PRODUCTION } });
+    mockApi([looseReply('GET /api/v1/environment', { body: ENVIRONMENT_PRODUCTION })]);
     renderDeveloperPage();
 
     expect(
@@ -51,7 +52,7 @@ describe('DevOnly', () => {
   });
 
   it('shows a loading placeholder, with the page’s name in the tab, while it asks the API (FR-017)', async () => {
-    mockApi({ 'GET /api/v1/environment': () => new Promise<never>(() => {}) });
+    mockApi([looseReply('GET /api/v1/environment', () => new Promise<never>(() => {}))]);
     renderDeveloperPage();
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
@@ -60,12 +61,13 @@ describe('DevOnly', () => {
 
   it('says when the API cannot be reached, and shows the page after Try again (FR-020)', async () => {
     let checks = 0;
-    mockApi({
-      'GET /api/v1/environment': () =>
+    mockApi([
+      looseReply('GET /api/v1/environment', () =>
         ++checks === 1
           ? Promise.reject(new TypeError('Failed to fetch'))
           : { body: ENVIRONMENT_LOCAL },
-    });
+      ),
+    ]);
     const { user } = renderDeveloperPage();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(UNREACHABLE);

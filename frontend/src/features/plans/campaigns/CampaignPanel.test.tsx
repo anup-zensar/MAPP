@@ -1,15 +1,16 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { SessionProvider } from '@/session/SessionProvider';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { budgetByMonth } from '@/testing/fixtures/phasing';
 import { financialsNotServed } from '@/testing/fixtures/plans';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { CampaignPanel } from './CampaignPanel';
 import {
   budgetAndCost,
@@ -23,16 +24,24 @@ import {
 
 const DETAILS = '/plans/P-1001/campaigns/C-1001';
 
-function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
+function renderPanel(route: string, answers: HttpHandler[] = []) {
+  const api = mockApi([
     ...HISTORY_ANSWERS,
     ...financialsNotServed('C-1001'),
-    'GET /api/v1/campaigns/C-1001': { body: campaign() },
-    'GET /api/v1/plans/P-1001': { body: planAnswer() },
-    'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
-    'GET /api/v1/people': { body: PEOPLE },
+    looseReply(
+      'GET /api/v1/campaigns/{campaignId}',
+      { body: campaign() },
+      { campaignId: 'C-1001' },
+    ),
+    looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: campaignForm() },
+      { level: 'campaign' },
+    ),
+    looseReply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
-  });
+  ]);
   const rendered = renderRoutes(
     [
       {
@@ -126,31 +135,35 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('shows planned cost, budget used in red and over-allocation (FR-010, FR-011)', async () => {
-    const { user } = renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001': {
-        body: campaign({
-          budget: usd('120000.00'),
-          outsidePlanYear: true,
-          budgetAndCost: budgetAndCost({
-            allocatedToChildren: usd('150000.00'),
-            remainingForChildren: usd('-30000.00'),
-            overAllocatedBy: usd('30000.00'),
-            plannedCost: usd('150000.00'),
-            budgetUsedPercent: 125,
-            overBudget: true,
-            leftToPlan: usd('-30000.00'),
+    const { user } = renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        {
+          body: campaign({
+            budget: usd('120000.00'),
+            outsidePlanYear: true,
+            budgetAndCost: budgetAndCost({
+              allocatedToChildren: usd('150000.00'),
+              remainingForChildren: usd('-30000.00'),
+              overAllocatedBy: usd('30000.00'),
+              plannedCost: usd('150000.00'),
+              budgetUsedPercent: 125,
+              overBudget: true,
+              leftToPlan: usd('-30000.00'),
+            }),
+            approvalProgress: { state: 'inProgress', approved: 3, total: 5 },
+            completeness: {
+              missing: [
+                { field: 'attributes.SA-CLUSTER', label: 'Cluster' },
+                { field: 'attributes.SA-REGION', label: 'Region' },
+              ],
+              itemsBelowNeedingAttention: 1,
+            },
           }),
-          approvalProgress: { state: 'inProgress', approved: 3, total: 5 },
-          completeness: {
-            missing: [
-              { field: 'attributes.SA-CLUSTER', label: 'Cluster' },
-              { field: 'attributes.SA-REGION', label: 'Region' },
-            ],
-            itemsBelowNeedingAttention: 1,
-          },
-        }),
-      },
-    });
+        },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const panel = await findDetails();
 
     expect(within(panel).getByText('Over-allocated by $30,000.00')).toBeInTheDocument();
@@ -171,16 +184,20 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('links a needed field to the edit form with that field focused (FR-014)', async () => {
-    const { user, router } = renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001': {
-        body: campaign({
-          completeness: {
-            missing: [{ field: 'startDate', label: 'Dates' }],
-            itemsBelowNeedingAttention: 0,
-          },
-        }),
-      },
-    });
+    const { user, router } = renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        {
+          body: campaign({
+            completeness: {
+              missing: [{ field: 'startDate', label: 'Dates' }],
+              itemsBelowNeedingAttention: 0,
+            },
+          }),
+        },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const panel = await findDetails();
 
     await user.click(within(panel).getByRole('button', { name: /1 field needed/ }));
@@ -193,14 +210,18 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('says when the campaign has no initiatives and offers Add initiative (FR-016)', async () => {
-    renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001': {
-        body: campaign({
-          initiatives: [],
-          counts: { initiatives: 0, activities: 0, approvedActivities: 0, lineItems: 0 },
-        }),
-      },
-    });
+    renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        {
+          body: campaign({
+            initiatives: [],
+            counts: { initiatives: 0, activities: 0, approvedActivities: 0, lineItems: 0 },
+          }),
+        },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const panel = await findDetails();
 
     const initiatives = within(panel).getByRole('region', { name: 'Initiatives (0)' });
@@ -256,24 +277,28 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('deletes from More, closes the panel and offers Undo (US5, FR-028, FR-029)', async () => {
-    const { user, router, api } = renderPanel(DETAILS, {
-      'DELETE /api/v1/campaigns/C-1001': {
-        body: {
-          recycleBinEntry: {
-            id: 'BIN-1001',
-            recordType: 'campaign',
-            recordTypeLabel: 'campaign',
-            recordId: 'C-1001',
-            recordName: 'Helix launch',
-            path: [],
-            parent: null,
-            deletedAt: '2026-03-12T09:00:00Z',
-            deletedBy: { id: 'U-1002', name: 'Priya Raman' },
-            contents: [],
+    const { user, router, api } = renderPanel(DETAILS, [
+      looseReply(
+        'DELETE /api/v1/campaigns/{campaignId}',
+        {
+          body: {
+            recycleBinEntry: {
+              id: 'BIN-1001',
+              recordType: 'campaign',
+              recordTypeLabel: 'campaign',
+              recordId: 'C-1001',
+              recordName: 'Helix launch',
+              path: [],
+              parent: null,
+              deletedAt: '2026-03-12T09:00:00Z',
+              deletedBy: { id: 'U-1002', name: 'Priya Raman' },
+              contents: [],
+            },
           },
         },
-      },
-    });
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const panel = await findDetails();
 
     await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
@@ -292,15 +317,23 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('moves from More and opens the plan it moved to, with the campaign highlighted (US6, FR-025)', async () => {
-    const { user, router, api } = renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001/destinations': {
-        body: destinationList(
-          [planDestination()],
-          'Campaigns move only between plans of the same year',
-        ),
-      },
-      'POST /api/v1/campaigns/C-1001/move': { body: campaign({ planId: 'P-1002', version: 4 }) },
-    });
+    const { user, router, api } = renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}/destinations',
+        {
+          body: destinationList(
+            [planDestination()],
+            'Campaigns move only between plans of the same year',
+          ),
+        },
+        { campaignId: 'C-1001' },
+      ),
+      looseReply(
+        'POST /api/v1/campaigns/{campaignId}/move',
+        { body: campaign({ planId: 'P-1002', version: 4 }) },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const panel = await findDetails();
 
     await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
@@ -320,21 +353,25 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('copies from More (US6, FR-026)', async () => {
-    const { user } = renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001/destinations': {
-        body: destinationList(
-          [
-            planDestination({
-              id: 'P-1001',
-              name: 'FY2026 Lubricants Europe',
-              current: true,
-              suggestedName: 'Helix launch (copy)',
-            }),
-          ],
-          'A copy can go into this plan or another plan of the same year',
-        ),
-      },
-    });
+    const { user } = renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}/destinations',
+        {
+          body: destinationList(
+            [
+              planDestination({
+                id: 'P-1001',
+                name: 'FY2026 Lubricants Europe',
+                current: true,
+                suggestedName: 'Helix launch (copy)',
+              }),
+            ],
+            'A copy can go into this plan or another plan of the same year',
+          ),
+        },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const panel = await findDetails();
 
     await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
@@ -348,11 +385,18 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('opens under the right plan when the campaign has moved (FR-017)', async () => {
-    const { router } = renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001': { body: campaign({ planId: 'P-1002' }) },
-      // The panel at its new address may ask for its plan before the test ends.
-      'GET /api/v1/plans/P-1002': { body: { ...planAnswer(), id: 'P-1002' } },
-    });
+    const { router } = renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        { body: campaign({ planId: 'P-1002' }) },
+        { campaignId: 'C-1001' },
+      ),
+      looseReply(
+        'GET /api/v1/plans/{planId}',
+        { body: { ...planAnswer(), id: 'P-1002' } },
+        { planId: 'P-1002' },
+      ),
+    ]);
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1002/campaigns/C-1001'),
@@ -360,17 +404,21 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   });
 
   it('says when the campaign no longer exists, with Back to the plan', async () => {
-    const { user, router } = renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This campaign no longer exists — someone may have deleted it.',
+    const { user, router } = renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This campaign no longer exists — someone may have deleted it.',
+            },
           },
         },
-      },
-    });
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText('This campaign no longer exists — someone may have deleted it.'),
@@ -381,12 +429,16 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('shows a loading state, then a failure with Try again', async () => {
     let calls = 0;
-    const { user } = renderPanel(DETAILS, {
-      'GET /api/v1/campaigns/C-1001': () =>
-        ++calls === 1
-          ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
-          : { body: campaign() },
-    });
+    const { user } = renderPanel(DETAILS, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        () =>
+          ++calls === 1
+            ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
+            : { body: campaign() },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
 
     expect(screen.getByRole('dialog', { name: 'Campaign' })).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
@@ -397,11 +449,15 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
 describe('CampaignPanel — edit (feature 005, US3)', () => {
   it('saves the form with the version it started from and goes back to the details (US3#2, FR-018)', async () => {
-    const { user, api, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/v1/campaigns/C-1001': {
-        body: campaign({ budget: usd('450000.00'), version: 4 }),
-      },
-    });
+    const { user, api, router } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'PATCH /api/v1/campaigns/{campaignId}',
+        {
+          body: campaign({ budget: usd('450000.00'), version: 4 }),
+        },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const form = await findForm();
     expect(within(form).getByLabelText('Campaign name')).toHaveValue('Helix launch');
     expect(within(form).getByLabelText('Campaign budget')).toHaveValue('400,000.00');
@@ -438,24 +494,40 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
 
   it('types the budget in the plan currency and says clearing it removes Budget by month (016 FR-011, FR-022)', async () => {
     const gbp = (amount: string) => ({ amount, currency: 'GBP' });
-    const { user, api } = renderPanel(`${DETAILS}/edit`, {
-      'GET /api/v1/plans/P-1001': { body: { ...planAnswer(), currency: 'GBP' } },
-      'GET /api/v1/campaigns/C-1001': {
-        body: campaign({
-          budget: gbp('120000.00'),
-          parentRemainingBudget: gbp('80000.00'),
-          budgetPhasing: {
-            method: 'evenly',
-            months: [],
-            monthly: Array.from({ length: 12 }, () => gbp('10000.00')),
-            total: gbp('120000.00'),
-            problem: null,
-          },
-        }),
-      },
-      'PATCH /api/v1/campaigns/C-1001': { body: campaign() },
-      'GET /api/v1/plans/P-1001/budget-by-month': { body: budgetByMonth() },
-    });
+    const { user, api } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'GET /api/v1/plans/{planId}',
+        { body: { ...planAnswer(), currency: 'GBP' } },
+        { planId: 'P-1001' },
+      ),
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        {
+          body: campaign({
+            budget: gbp('120000.00'),
+            parentRemainingBudget: gbp('80000.00'),
+            budgetPhasing: {
+              method: 'evenly',
+              months: [],
+              monthly: Array.from({ length: 12 }, () => gbp('10000.00')),
+              total: gbp('120000.00'),
+              problem: null,
+            },
+          }),
+        },
+        { campaignId: 'C-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/campaigns/{campaignId}',
+        { body: campaign() },
+        { campaignId: 'C-1001' },
+      ),
+      looseReply(
+        'GET /api/v1/plans/{planId}/budget-by-month',
+        { body: budgetByMonth() },
+        { planId: 'P-1001' },
+      ),
+    ]);
     const form = await findForm();
     const budget = within(form).getByLabelText('Campaign budget');
     expect(within(form).queryByText('Budget by month will be removed when you save.')).toBeNull();
@@ -477,18 +549,22 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
   it('shows the FR-007 problem under the dates and saves nothing (US3#3, FR-007)', async () => {
     const problem =
       'Digital & social (01 Feb – 30 Nov 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
-    const { user, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/v1/campaigns/C-1001': {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Some fields need your attention.',
-            fields: [{ field: 'startDate', message: problem }],
+    const { user, router } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'PATCH /api/v1/campaigns/{campaignId}',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Some fields need your attention.',
+              fields: [{ field: 'startDate', message: problem }],
+            },
           },
         },
-      },
-    });
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const form = await findForm();
 
     fireEvent.change(within(form).getByLabelText('Start date'), {
@@ -504,22 +580,30 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
   it('keeps the typed values after a conflict and saves again with the new version (FR-018)', async () => {
     let saves = 0;
     let reads = 0;
-    const { user, api } = renderPanel(`${DETAILS}/edit`, {
-      'GET /api/v1/campaigns/C-1001': () => ({ body: campaign({ version: ++reads > 1 ? 4 : 3 }) }),
-      'PATCH /api/v1/campaigns/C-1001': () =>
-        ++saves === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Not saved — Daniel Okoro changed this campaign',
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+    const { user, api } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        () => ({ body: campaign({ version: ++reads > 1 ? 4 : 3 }) }),
+        { campaignId: 'C-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/campaigns/{campaignId}',
+        () =>
+          ++saves === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Not saved — Daniel Okoro changed this campaign',
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: campaign({ name: 'Helix relaunch', version: 5 }) },
-    });
+              }
+            : { body: campaign({ name: 'Helix relaunch', version: 5 }) },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const form = await findForm();
 
     const name = within(form).getByLabelText('Campaign name');
@@ -542,14 +626,25 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
   });
 
   it('lists the values a removed cluster clears, before saving, and guards unsaved changes (US3#4, FR-009, FR-018)', async () => {
-    const { user, api } = renderPanel(`${DETAILS}/edit`, {
-      'GET /api/v1/campaigns/C-1001': {
-        body: campaign({
-          attributes: { 'SA-CLUSTER': ['SO-RETAIL', 'SO-B2B'], 'SA-REGION': ['SO-CHINA', 'SO-EU'] },
-        }),
-      },
-      'PATCH /api/v1/campaigns/C-1001': { body: campaign() },
-    });
+    const { user, api } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'GET /api/v1/campaigns/{campaignId}',
+        {
+          body: campaign({
+            attributes: {
+              'SA-CLUSTER': ['SO-RETAIL', 'SO-B2B'],
+              'SA-REGION': ['SO-CHINA', 'SO-EU'],
+            },
+          }),
+        },
+        { campaignId: 'C-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/campaigns/{campaignId}',
+        { body: campaign() },
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const form = await findForm();
 
     await user.click(within(form).getByRole('checkbox', { name: 'B2B' }));
@@ -581,14 +676,18 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
   });
 
   it('shows a failed save that is not about a field as a message and keeps the values', async () => {
-    const { user, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/v1/campaigns/C-1001': {
-        status: 500,
-        body: {
-          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+    const { user, router } = renderPanel(`${DETAILS}/edit`, [
+      looseReply(
+        'PATCH /api/v1/campaigns/{campaignId}',
+        {
+          status: 500,
+          body: {
+            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+          },
         },
-      },
-    });
+        { campaignId: 'C-1001' },
+      ),
+    ]);
     const form = await findForm();
 
     await user.type(within(form).getByLabelText('Campaign name'), ' 2');

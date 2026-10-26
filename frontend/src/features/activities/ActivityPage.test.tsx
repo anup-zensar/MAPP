@@ -5,7 +5,7 @@ import { approvalOf } from '@/testing/fixtures/approvals';
 import { activityRecord } from '@/testing/fixtures/line-items';
 import type { ShowSubmitProblems } from '@/features/approvals';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -14,6 +14,7 @@ import {
   incompleteLaunchFilm,
   launchFilm,
 } from '@/testing/fixtures/activities';
+import { looseReply } from '@/testing/replies';
 import { ActivityPage } from './ActivityPage';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
@@ -76,21 +77,33 @@ const RATES = {
 };
 
 function openPage(
-  answer: MockHandler,
+  answer: LooseAnswer,
   route = '/plans/P-1001/activities/A-1042',
-  approval: MockHandler = { body: NOT_SUBMITTED },
+  approval: LooseAnswer = { body: NOT_SUBMITTED },
 ) {
-  const api = mockApi({
+  const api = mockApi([
     ...HISTORY_ANSWERS,
-    'GET /api/v1/activities/A-1042': answer,
-    'GET /api/v1/activities/A-1042/approval': approval,
-    'GET /api/v1/exchange-rates/current': { body: RATES },
-    'GET /api/v1/financials/records/A-1042': {
-      body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
-    },
-    'GET /api/v1/activities/A-1042/form': { body: editForm() },
-    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
-  });
+    looseReply('GET /api/v1/activities/{activityId}', answer, { activityId: 'A-1042' }),
+    looseReply('GET /api/v1/activities/{activityId}/approval', approval, { activityId: 'A-1042' }),
+    looseReply('GET /api/v1/exchange-rates/current', { body: RATES }),
+    looseReply(
+      'GET /api/v1/financials/records/{recordId}',
+      {
+        body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
+      },
+      { recordId: 'A-1042' },
+    ),
+    looseReply(
+      'GET /api/v1/activities/{activityId}/form',
+      { body: editForm() },
+      { activityId: 'A-1042' },
+    ),
+    looseReply(
+      'GET /api/v1/shell-attribute-forms/{level}',
+      { body: activityAttributeForm() },
+      { level: 'activity' },
+    ),
+  ]);
   return { ...renderWithProviders(<ActivityPage />, { route, path: PATH, user: testUser() }), api };
 }
 

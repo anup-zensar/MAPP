@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -10,6 +10,7 @@ import {
   gridResult,
   standard2026,
 } from '@/testing/fixtures/all-work';
+import { looseReply } from '@/testing/replies';
 import type { AllWorkResult, ViewState } from './all-work-types';
 import { ExportMenu } from './ExportMenu';
 
@@ -44,9 +45,9 @@ afterEach(() => vi.restoreAllMocks());
 function renderExport(
   state: ViewState,
   result: AllWorkResult | undefined,
-  answer: MockHandler = () => fileAnswer(XLSX_NAME, 'application/octet-stream'),
+  answer: LooseAnswer = () => fileAnswer(XLSX_NAME, 'application/octet-stream'),
 ) {
-  const api = mockApi({ 'GET /api/v1/all-work/export': answer });
+  const api = mockApi([looseReply('GET /api/v1/all-work/export', answer)]);
   const rendered = renderWithProviders(<ExportMenu state={state} result={result} />, {
     user: testUser(),
   });

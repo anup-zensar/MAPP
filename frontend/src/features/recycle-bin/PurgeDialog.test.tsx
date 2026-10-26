@@ -1,15 +1,14 @@
 import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
+import { looseReply } from '@/testing/replies';
 import type { BinItem } from './bin-text';
 import { PurgeDialog } from './PurgeDialog';
-
-const PURGE = 'DELETE /api/v1/recycle-bin/BIN-1001';
 
 /** The dialog as the page shows it: gone once it closes. */
 function Harness({ item, onClose }: { item: BinItem; onClose: () => void }) {
@@ -28,7 +27,7 @@ function Harness({ item, onClose }: { item: BinItem; onClose: () => void }) {
   );
 }
 
-function renderDialog(answers: Record<string, MockHandler>, item: BinItem = binItem()) {
+function renderDialog(answers: HttpHandler[], item: BinItem = binItem()) {
   const api = mockApi(answers);
   const onClose = vi.fn();
   const rendered = renderWithProviders(<Harness item={item} onClose={onClose} />, {
@@ -39,7 +38,7 @@ function renderDialog(answers: Record<string, MockHandler>, item: BinItem = binI
 
 describe('PurgeDialog', () => {
   it('says what goes with it and that it cannot be undone, with Cancel focused (FR-028)', () => {
-    renderDialog({});
+    renderDialog([]);
 
     const dialog = screen.getByRole('alertdialog', { name: "Delete 'Trade shows' permanently?" });
     expect(dialog).toHaveTextContent('This also deletes 1 activity and 1 line item.');
@@ -59,28 +58,32 @@ describe('PurgeDialog', () => {
       '2 other items in the recycle bin belong inside it and can no longer be restored.',
     ],
   ])('warns about the entries inside it (%j) (FR-028)', (insideEntryIds, warning) => {
-    renderDialog({}, binItem({ insideEntryIds }));
+    renderDialog([], binItem({ insideEntryIds }));
 
     expect(screen.getByRole('alertdialog')).toHaveTextContent(warning);
   });
 
   it('leaves out the contents sentence when nothing was inside (FR-028)', () => {
-    renderDialog({}, lineItemEntry({ id: 'BIN-1001' }));
+    renderDialog([], lineItemEntry({ id: 'BIN-1001' }));
 
     expect(screen.getByRole('alertdialog')).not.toHaveTextContent('This also deletes');
   });
 
   it('deletes it permanently and says so (FR-030)', async () => {
-    const { user, api, onClose } = renderDialog({
-      [PURGE]: {
-        body: {
-          recordType: 'initiative',
-          recordTypeLabel: 'initiative',
-          recordId: 'I-1009',
-          recordName: 'Trade shows',
+    const { user, api, onClose } = renderDialog([
+      looseReply(
+        'DELETE /api/v1/recycle-bin/{entryId}',
+        {
+          body: {
+            recordType: 'initiative',
+            recordTypeLabel: 'initiative',
+            recordId: 'I-1009',
+            recordName: 'Trade shows',
+          },
         },
-      },
-    });
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Delete permanently' }));
 
@@ -91,22 +94,26 @@ describe('PurgeDialog', () => {
   });
 
   it('says who already restored it, and closes (FR-032)', async () => {
-    const { user } = renderDialog({
-      [PURGE]: {
-        status: 409,
-        body: {
-          error: {
-            code: 'already_resolved',
-            message: 'This item is no longer in the recycle bin.',
-            resolution: {
-              how: 'restored',
-              by: { id: 'U-1003', name: 'Daniel Okoro' },
-              at: '2026-03-12T14:05:00Z',
+    const { user } = renderDialog([
+      looseReply(
+        'DELETE /api/v1/recycle-bin/{entryId}',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'already_resolved',
+              message: 'This item is no longer in the recycle bin.',
+              resolution: {
+                how: 'restored',
+                by: { id: 'U-1003', name: 'Daniel Okoro' },
+                at: '2026-03-12T14:05:00Z',
+              },
             },
           },
         },
-      },
-    });
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Delete permanently' }));
 
@@ -117,7 +124,9 @@ describe('PurgeDialog', () => {
   });
 
   it('shows any other failure in the dialog and stays open', async () => {
-    const { user, onClose } = renderDialog({ [PURGE]: { status: 500 } });
+    const { user, onClose } = renderDialog([
+      looseReply('DELETE /api/v1/recycle-bin/{entryId}', { status: 500 }, { entryId: 'BIN-1001' }),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Delete permanently' }));
 

@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import {
   BRAND_OPTION,
@@ -10,12 +10,20 @@ import {
   LUBRICANTS,
   MOBILITY,
 } from '@/testing/fixtures/global-budgets';
+import { looseReply } from '@/testing/replies';
 import { GlobalBudgetPage } from './GlobalBudgetPage';
 
 const ONE = 'GET /api/v1/global-budgets/GB-1001';
 
-function renderPage(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ [ONE]: { body: globalBudget() }, ...answers });
+function renderPage(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply(
+      'GET /api/v1/global-budgets/{globalBudgetId}',
+      { body: globalBudget() },
+      { globalBudgetId: 'GB-1001' },
+    ),
+    ...answers,
+  ]);
   return {
     ...renderWithProviders(<GlobalBudgetPage />, {
       route: '/budgets/GB-1001',
@@ -70,18 +78,22 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('adds up the plans the person can not see in "Other markets" (FR-033)', async () => {
-    renderPage({
-      [ONE]: {
-        body: globalBudget({
-          allocations: [LUBRICANTS],
-          otherMarkets: {
-            planCount: 1,
-            amount: { amount: '800000.00', currency: 'USD' },
-            plannedCost: { amount: '210000.00', currency: 'USD' },
-          },
-        }),
-      },
-    });
+    renderPage([
+      looseReply(
+        'GET /api/v1/global-budgets/{globalBudgetId}',
+        {
+          body: globalBudget({
+            allocations: [LUBRICANTS],
+            otherMarkets: {
+              planCount: 1,
+              amount: { amount: '800000.00', currency: 'USD' },
+              plannedCost: { amount: '210000.00', currency: 'USD' },
+            },
+          }),
+        },
+        { globalBudgetId: 'GB-1001' },
+      ),
+    ]);
 
     const other = await screen.findByRole('row', { name: /Other markets \(1 plan\)/ });
     expect(other).toHaveTextContent('$800,000.00');
@@ -90,26 +102,34 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('shows Unallocated in red with words when over-allocated (US6 scenario 5)', async () => {
-    renderPage({
-      [ONE]: {
-        body: globalBudget({
-          figures: {
-            ...globalBudget().figures,
-            allocated: { amount: '2600000.00', currency: 'USD' },
-            unallocated: { amount: '-100000.00', currency: 'USD' },
-            overAllocated: true,
-          },
-        }),
-      },
-    });
+    renderPage([
+      looseReply(
+        'GET /api/v1/global-budgets/{globalBudgetId}',
+        {
+          body: globalBudget({
+            figures: {
+              ...globalBudget().figures,
+              allocated: { amount: '2600000.00', currency: 'USD' },
+              unallocated: { amount: '-100000.00', currency: 'USD' },
+              overAllocated: true,
+            },
+          }),
+        },
+        { globalBudgetId: 'GB-1001' },
+      ),
+    ]);
 
     expect(await screen.findByText('Over-allocated by $100,000.00')).toBeInTheDocument();
   });
 
   it('changes an allocation with the allocation and plan versions (US6 scenario 2)', async () => {
-    const { api, user } = renderPage({
-      'PATCH /api/v1/budget-allocations/BA-1001': { body: globalBudget() },
-    });
+    const { api, user } = renderPage([
+      looseReply(
+        'PATCH /api/v1/budget-allocations/{allocationId}',
+        { body: globalBudget() },
+        { allocationId: 'BA-1001' },
+      ),
+    ]);
     await screen.findByRole('table', { name: 'Allocations' });
 
     await user.click(
@@ -136,9 +156,13 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('allocates to a plan without an allocation', async () => {
-    const { api, user } = renderPage({
-      'POST /api/v1/global-budgets/GB-1001/allocations': { status: 201, body: globalBudget() },
-    });
+    const { api, user } = renderPage([
+      looseReply(
+        'POST /api/v1/global-budgets/{globalBudgetId}/allocations',
+        { status: 201, body: globalBudget() },
+        { globalBudgetId: 'GB-1001' },
+      ),
+    ]);
     await screen.findByRole('table', { name: 'Allocations' });
 
     await user.click(screen.getByRole('button', { name: 'Allocate to FY2026 Brand Europe' }));
@@ -156,21 +180,29 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('chooses the plan from the allocation options and shows refusals at the fields', async () => {
-    const { user } = renderPage({
-      'GET /api/v1/global-budgets/GB-1001/allocation-options': {
-        body: { items: [BRAND_OPTION], total: 1 },
-      },
-      'POST /api/v1/global-budgets/GB-1001/allocations': {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Check the highlighted fields.',
-            fields: [{ field: 'planId', message: 'Choose a plan of 2026.' }],
+    const { user } = renderPage([
+      looseReply(
+        'GET /api/v1/global-budgets/{globalBudgetId}/allocation-options',
+        {
+          body: { items: [BRAND_OPTION], total: 1 },
+        },
+        { globalBudgetId: 'GB-1001' },
+      ),
+      looseReply(
+        'POST /api/v1/global-budgets/{globalBudgetId}/allocations',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Check the highlighted fields.',
+              fields: [{ field: 'planId', message: 'Choose a plan of 2026.' }],
+            },
           },
         },
-      },
-    });
+        { globalBudgetId: 'GB-1001' },
+      ),
+    ]);
     await screen.findByRole('table', { name: 'Allocations' });
 
     await user.click(screen.getByRole('button', { name: 'Allocate to a plan' }));
@@ -190,11 +222,15 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('removes an allocation after asking; the plan keeps its budget (US6 scenario 6)', async () => {
-    const { api, user } = renderPage({
-      'DELETE /api/v1/budget-allocations/BA-1002': {
-        body: globalBudget({ allocations: [LUBRICANTS] }),
-      },
-    });
+    const { api, user } = renderPage([
+      looseReply(
+        'DELETE /api/v1/budget-allocations/{allocationId}',
+        {
+          body: globalBudget({ allocations: [LUBRICANTS] }),
+        },
+        { allocationId: 'BA-1002' },
+      ),
+    ]);
     await screen.findByRole('table', { name: 'Allocations' });
 
     await user.click(
@@ -221,17 +257,21 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   it("says why a global budget with allocations can't be deleted (FR-035)", async () => {
     const reason =
       "'FY2026 Global marketing budget' has allocations to 2 plans. Remove them first.";
-    const { user } = renderPage({
-      [ONE]: {
-        body: globalBudget({
-          access: {
-            edit: { available: true, reason: '' },
-            delete: { available: false, reason },
-            allocate: { available: true, reason: '' },
-          },
-        }),
-      },
-    });
+    const { user } = renderPage([
+      looseReply(
+        'GET /api/v1/global-budgets/{globalBudgetId}',
+        {
+          body: globalBudget({
+            access: {
+              edit: { available: true, reason: '' },
+              delete: { available: false, reason },
+              allocate: { available: true, reason: '' },
+            },
+          }),
+        },
+        { globalBudgetId: 'GB-1001' },
+      ),
+    ]);
     await screen.findByRole('table', { name: 'Allocations' });
 
     await user.click(screen.getByRole('button', { name: 'More' }));
@@ -243,25 +283,33 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('deletes a global budget without allocations and goes back to the list', async () => {
-    const { api, router, user } = renderPage({
-      [ONE]: { body: globalBudget({ allocations: [], plansWithoutAllocation: [] }) },
-      'DELETE /api/v1/global-budgets/GB-1001': {
-        body: {
-          recycleBinEntry: {
-            id: 'RB-1009',
-            recordType: 'globalBudget',
-            recordTypeLabel: 'global budget',
-            recordId: 'GB-1001',
-            recordName: 'FY2026 Global marketing budget',
-            path: [],
-            parent: null,
-            contents: [],
-            deletedAt: '2026-10-20T09:00:00Z',
-            deletedBy: { id: 'U-1005', name: 'Carlos Mendes' },
+    const { api, router, user } = renderPage([
+      looseReply(
+        'GET /api/v1/global-budgets/{globalBudgetId}',
+        { body: globalBudget({ allocations: [], plansWithoutAllocation: [] }) },
+        { globalBudgetId: 'GB-1001' },
+      ),
+      looseReply(
+        'DELETE /api/v1/global-budgets/{globalBudgetId}',
+        {
+          body: {
+            recycleBinEntry: {
+              id: 'RB-1009',
+              recordType: 'globalBudget',
+              recordTypeLabel: 'global budget',
+              recordId: 'GB-1001',
+              recordName: 'FY2026 Global marketing budget',
+              path: [],
+              parent: null,
+              contents: [],
+              deletedAt: '2026-10-20T09:00:00Z',
+              deletedBy: { id: 'U-1005', name: 'Carlos Mendes' },
+            },
           },
         },
-      },
-    });
+        { globalBudgetId: 'GB-1001' },
+      ),
+    ]);
     expect(await screen.findByText('No plan has an allocation yet')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'More' }));
@@ -278,12 +326,16 @@ describe('GlobalBudgetPage (014 US6, FR-032 – FR-035)', () => {
   });
 
   it('says when the global budget no longer exists', async () => {
-    renderPage({
-      [ONE]: {
-        status: 404,
-        body: { error: { code: 'not_found', message: 'This global budget no longer exists.' } },
-      },
-    });
+    renderPage([
+      looseReply(
+        'GET /api/v1/global-budgets/{globalBudgetId}',
+        {
+          status: 404,
+          body: { error: { code: 'not_found', message: 'This global budget no longer exists.' } },
+        },
+        { globalBudgetId: 'GB-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText('This global budget no longer exists — someone may have deleted it.'),

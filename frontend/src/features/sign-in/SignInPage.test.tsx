@@ -6,6 +6,7 @@ import { renderAppRoutes } from '@/testing/app';
 import { renderWithProviders } from '@/testing/render';
 import type { RenderOptions } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { SignInPage } from './SignInPage';
 
 const PRIYA: CurrentUser = testUser();
@@ -69,7 +70,7 @@ afterEach(() => {
 
 describe('SignInPage', () => {
   it('welcomes people and says plainly that this is a demo sign-in with the shared password (FR-001, FR-002)', async () => {
-    mockApi({ 'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE } });
+    mockApi([looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     renderSignInPage();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sign in to MAPP' })).toBeInTheDocument();
@@ -91,7 +92,7 @@ describe('SignInPage', () => {
   });
 
   it('lists every demo person with their job title under "Explore as a demo person" (FR-001)', async () => {
-    mockApi({ 'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE } });
+    mockApi([looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     renderSignInPage();
 
     const section = screen.getByRole('region', { name: 'Explore as a demo person' });
@@ -109,8 +110,8 @@ describe('SignInPage', () => {
   });
 
   it('names a demo person without a job title by their name alone (FR-001)', async () => {
-    mockApi({
-      'GET /api/v1/auth/demo-people': {
+    mockApi([
+      looseReply('GET /api/v1/auth/demo-people', {
         body: {
           password: 'mapp',
           people: [
@@ -123,8 +124,8 @@ describe('SignInPage', () => {
             },
           ],
         },
-      },
-    });
+      }),
+    ]);
     renderSignInPage();
 
     expect(await screen.findByRole('button', { name: 'Sign in as Sara Novak' })).toHaveTextContent(
@@ -133,7 +134,7 @@ describe('SignInPage', () => {
   });
 
   it('shows loading rows while the demo people are on their way (plan "Sign-in page")', () => {
-    mockApi({ 'GET /api/v1/auth/demo-people': () => new Promise<never>(() => {}) });
+    mockApi([looseReply('GET /api/v1/auth/demo-people', () => new Promise<never>(() => {}))]);
     renderSignInPage();
 
     const section = screen.getByRole('region', { name: 'Explore as a demo person' });
@@ -141,10 +142,10 @@ describe('SignInPage', () => {
   });
 
   it('signs in as a demo person with one click and goes to the page asked for (FR-003, US1 scenario 3)', async () => {
-    const api = mockApi({
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': { body: PRIYA },
-    });
+    const api = mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', { body: PRIYA }),
+    ]);
     const { user, router } = renderSignInPage();
 
     await user.click(
@@ -159,10 +160,10 @@ describe('SignInPage', () => {
   });
 
   it('signs in with a typed e-mail and the password (FR-003, US1 scenario 2)', async () => {
-    const api = mockApi({
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': { body: PRIYA },
-    });
+    const api = mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', { body: PRIYA }),
+    ]);
     const { user, router } = renderSignInPage();
 
     // The browser drops the spaces around an e-mail, and the API ignores its letter case.
@@ -177,10 +178,10 @@ describe('SignInPage', () => {
   });
 
   it('says "Incorrect e-mail or password.", keeps the e-mail and clears the password (FR-004, US1 scenario 4)', async () => {
-    mockApi({
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': { status: 401, body: INCORRECT },
-    });
+    mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', { status: 401, body: INCORRECT }),
+    ]);
     const { user, router } = renderSignInPage();
 
     await user.type(emailField(), 'priya.raman@shell.com');
@@ -194,10 +195,12 @@ describe('SignInPage', () => {
   });
 
   it('says in plain words when the API cannot be reached while signing in, keeping what was typed (FR-020)', async () => {
-    mockApi({
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': () => Promise.reject(new TypeError('Failed to fetch')),
-    });
+    mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', () =>
+        Promise.reject(new TypeError('Failed to fetch')),
+      ),
+    ]);
     const { user, router } = renderSignInPage();
 
     await user.type(emailField(), 'priya.raman@shell.com');
@@ -211,7 +214,7 @@ describe('SignInPage', () => {
   });
 
   it('reports every empty field at once, before asking the API, and moves the focus to the summary (FR-004, US1 scenario 5)', async () => {
-    const api = mockApi({ 'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE } });
+    const api = mockApi([looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     const { user } = renderSignInPage();
     await screen.findByRole('button', { name: 'Sign in as Priya Raman, Marketer' });
 
@@ -228,9 +231,9 @@ describe('SignInPage', () => {
   });
 
   it('shows the field problems the API reports, at the fields and in the summary (FR-020)', async () => {
-    const api = mockApi({
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': {
+    const api = mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', {
         status: 400,
         body: {
           error: {
@@ -239,8 +242,8 @@ describe('SignInPage', () => {
             fields: [{ field: 'password', message: 'Enter the password' }],
           },
         },
-      },
-    });
+      }),
+    ]);
     const { user } = renderSignInPage();
 
     // Only spaces: not empty for the page, but the API may still refuse it.
@@ -258,13 +261,13 @@ describe('SignInPage', () => {
     const answered = new Promise<void>((resolve) => {
       answer = resolve;
     });
-    const api = mockApi({
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': async () => {
+    const api = mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', async () => {
         await answered;
         return { body: PRIYA };
-      },
-    });
+      }),
+    ]);
     const { user, router } = renderSignInPage();
     const priya = await screen.findByRole('button', { name: 'Sign in as Priya Raman, Marketer' });
 
@@ -285,7 +288,9 @@ describe('SignInPage', () => {
   });
 
   it('explains what to do when no demo people exist, and keeps the form (FR-028)', async () => {
-    mockApi({ 'GET /api/v1/auth/demo-people': { body: { password: 'mapp', people: [] } } });
+    mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: { password: 'mapp', people: [] } }),
+    ]);
     renderSignInPage();
 
     expect(
@@ -303,14 +308,14 @@ describe('SignInPage', () => {
   });
 
   it('says that demo sign-in is off, and hides the form and the people (FR-009)', async () => {
-    mockApi({
-      'GET /api/v1/auth/demo-people': {
+    mockApi([
+      looseReply('GET /api/v1/auth/demo-people', {
         status: 404,
         body: {
           error: { code: 'not_found', message: "This page or record doesn't exist.", fields: [] },
         },
-      },
-    });
+      }),
+    ]);
     renderSignInPage();
 
     expect(
@@ -328,10 +333,11 @@ describe('SignInPage', () => {
 
   it('offers Try again when the demo people cannot be loaded (FR-020, edge case)', async () => {
     let calls = 0;
-    mockApi({
-      'GET /api/v1/auth/demo-people': () =>
+    mockApi([
+      looseReply('GET /api/v1/auth/demo-people', () =>
         ++calls === 1 ? Promise.reject(new TypeError('Failed to fetch')) : { body: DEMO_PEOPLE },
-    });
+      ),
+    ]);
     const { user } = renderSignInPage();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(UNREACHABLE);
@@ -346,7 +352,7 @@ describe('SignInPage', () => {
     ['signedOut', 'You have been signed out.'],
     ['sessionLost', 'Please sign in again'],
   ])('announces the notice the page was opened with: %s (US4)', async (notice, text) => {
-    mockApi({ 'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE } });
+    mockApi([looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     renderSignInPage({ route: { pathname: '/sign-in', state: { notice } } });
 
     // The status region is there at once, and empty, so screen readers announce the notice.
@@ -362,10 +368,10 @@ describe('SignInPage', () => {
   });
 
   it('never sends anyone to another site after signing in (FR-005)', async () => {
-    mockApi({
-      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/v1/auth/sign-in': { body: PRIYA },
-    });
+    mockApi([
+      looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE }),
+      looseReply('POST /api/v1/auth/sign-in', { body: PRIYA }),
+    ]);
     const { user, router } = renderSignInPage({ route: '/sign-in?next=https%3A%2F%2Fevil.com' });
 
     await user.click(
@@ -376,7 +382,7 @@ describe('SignInPage', () => {
   });
 
   it('names the page "Sign in · MAPP" in the browser tab (FR-017)', () => {
-    mockApi({ 'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE } });
+    mockApi([looseReply('GET /api/v1/auth/demo-people', { body: DEMO_PEOPLE })]);
     renderSignInPage();
 
     expect(document.title).toBe('Sign in · MAPP');
@@ -385,7 +391,7 @@ describe('SignInPage', () => {
 
 describe('SignInPage while the session is checked (plan "Session")', () => {
   it('shows the full-page loading placeholder until the session is known', async () => {
-    mockApi({ 'GET /api/v1/me': () => new Promise<never>(() => {}) });
+    mockApi([looseReply('GET /api/v1/me', () => new Promise<never>(() => {}))]);
     renderAppRoutes({ route: '/sign-in' });
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
@@ -394,7 +400,7 @@ describe('SignInPage while the session is checked (plan "Session")', () => {
   });
 
   it('shows the full-page error when the API cannot be reached (edge case)', async () => {
-    mockApi({ 'GET /api/v1/me': () => Promise.reject(new TypeError('Failed to fetch')) });
+    mockApi([looseReply('GET /api/v1/me', () => Promise.reject(new TypeError('Failed to fetch')))]);
     renderAppRoutes({ route: '/sign-in' });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(UNREACHABLE);

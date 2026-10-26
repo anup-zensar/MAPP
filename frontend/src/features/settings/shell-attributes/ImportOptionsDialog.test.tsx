@@ -1,11 +1,12 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { shellAttribute } from '@/testing/fixtures/shell-attributes';
+import { reply } from '@/testing/replies';
 import { ImportOptionsDialog } from './ImportOptionsDialog';
 
 type ImportRow = components['schemas']['ImportRow'];
@@ -34,7 +35,7 @@ const CHECKED = {
   ],
 };
 
-function renderDialog(answers: Record<string, MockHandler> = {}, attribute = COST_CENTRE) {
+function renderDialog(answers: HttpHandler[] = [], attribute = COST_CENTRE) {
   const onClose = vi.fn();
   const api = mockApi(answers);
   const rendered = renderWithProviders(
@@ -69,10 +70,18 @@ describe('ImportOptionsDialog (US6, FR-031)', () => {
   });
 
   it('lists every row by outcome with its row number, then adds the new ones (US6-1, US6-2)', async () => {
-    const { user, api, onClose } = renderDialog({
-      [CHECK]: { body: CHECKED },
-      [IMPORT]: { body: { added: 1214, alreadyPresent: 1, problems: 3 } },
-    });
+    const { user, api, onClose } = renderDialog([
+      reply(
+        'POST /api/v1/shell-attributes/{attributeId}/options/import-check',
+        { body: CHECKED },
+        { attributeId: 'SA-1030' },
+      ),
+      reply(
+        'POST /api/v1/shell-attributes/{attributeId}/options/import',
+        { body: { added: 1214, alreadyPresent: 1, problems: 3 } },
+        { attributeId: 'SA-1030' },
+      ),
+    ]);
 
     await chooseFile(new File([FILE_TEXT], 'cost-centres.csv', { type: 'text/csv' }));
 
@@ -105,7 +114,13 @@ describe('ImportOptionsDialog (US6, FR-031)', () => {
   });
 
   it('adds nothing on Cancel', async () => {
-    const { user, api, onClose } = renderDialog({ [CHECK]: { body: CHECKED } });
+    const { user, api, onClose } = renderDialog([
+      reply(
+        'POST /api/v1/shell-attributes/{attributeId}/options/import-check',
+        { body: CHECKED },
+        { attributeId: 'SA-1030' },
+      ),
+    ]);
 
     await chooseFile(new File([FILE_TEXT], 'cost-centres.csv'));
     await screen.findByText('1,214 options to add');
@@ -116,9 +131,13 @@ describe('ImportOptionsDialog (US6, FR-031)', () => {
   });
 
   it('says when there is nothing to add, offering Cancel only', async () => {
-    renderDialog({
-      [CHECK]: { body: { ...CHECKED, toAdd: [], totalRows: 4 } },
-    });
+    renderDialog([
+      reply(
+        'POST /api/v1/shell-attributes/{attributeId}/options/import-check',
+        { body: { ...CHECKED, toAdd: [], totalRows: 4 } },
+        { attributeId: 'SA-1030' },
+      ),
+    ]);
 
     await chooseFile(new File([FILE_TEXT], 'cost-centres.csv'));
 
@@ -155,23 +174,27 @@ describe('ImportOptionsDialog (US6, FR-031)', () => {
   });
 
   it("shows the API's problem with the file under the field", async () => {
-    renderDialog({
-      [CHECK]: {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Check the highlighted fields.',
-            fields: [
-              {
-                field: 'content',
-                message: 'The file has 6,000 rows — import at most 5,000 rows at a time.',
-              },
-            ],
+    renderDialog([
+      reply(
+        'POST /api/v1/shell-attributes/{attributeId}/options/import-check',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Check the highlighted fields.',
+              fields: [
+                {
+                  field: 'content',
+                  message: 'The file has 6,000 rows — import at most 5,000 rows at a time.',
+                },
+              ],
+            },
           },
         },
-      },
-    });
+        { attributeId: 'SA-1030' },
+      ),
+    ]);
 
     await chooseFile(new File([FILE_TEXT], 'cost-centres.xlsx'));
 
@@ -188,18 +211,22 @@ describe('ImportOptionsDialog (US6, FR-031)', () => {
       parentAttribute: { id: 'SA-1003', name: 'Cluster', active: true },
     });
     renderDialog(
-      {
-        [CHECK]: {
-          body: {
-            totalRows: 2,
-            toAdd: [row(2, 'RETAIL – JAPAN', '', 'Retail')],
-            alreadyPresent: [],
-            problems: [
-              row(3, 'B2B – MARS', "Parent option 'Space' not found in cluster.", 'Space'),
-            ],
+      [
+        reply(
+          'POST /api/v1/shell-attributes/{attributeId}/options/import-check',
+          {
+            body: {
+              totalRows: 2,
+              toAdd: [row(2, 'RETAIL – JAPAN', '', 'Retail')],
+              alreadyPresent: [],
+              problems: [
+                row(3, 'B2B – MARS', "Parent option 'Space' not found in cluster.", 'Space'),
+              ],
+            },
           },
-        },
-      },
+          { attributeId: 'SA-1030' },
+        ),
+      ],
       region,
     );
 

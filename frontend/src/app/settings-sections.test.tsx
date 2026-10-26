@@ -7,6 +7,7 @@ import { FIELD_HELP_PAGE } from '@/testing/fixtures/field-help';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { SettingsPage } from '@/features/settings';
+import { looseReply } from '@/testing/replies';
 import { SETTINGS_SECTIONS } from './settings-sections';
 
 // The real list of cards: 002's five and Field help (016), then People and Teams (003), Approval
@@ -47,19 +48,19 @@ function card(title: string): HTMLElement {
 
 describe('SettingsPage, the cards of other features (FR-001)', () => {
   it('shows the People, Teams and Approval workflows cards with their texts and active counts, like the others', async () => {
-    mockApi({
-      'GET /api/v1/settings/overview': { body: OVERVIEW },
-      'GET /api/v1/people': listOf([true, true, true, true, true, true, false]),
-      'GET /api/v1/teams': listOf([true, true, true]),
-      'GET /api/v1/approval-workflows': {
+    mockApi([
+      looseReply('GET /api/v1/settings/overview', { body: OVERVIEW }),
+      looseReply('GET /api/v1/people', listOf([true, true, true, true, true, true, false])),
+      looseReply('GET /api/v1/teams', listOf([true, true, true])),
+      looseReply('GET /api/v1/approval-workflows', {
         body: {
           items: [workflowOf(), workflowOf({ id: 'WF-1003' }), CHINA_WORKFLOW], // CHINA_WORKFLOW is inactive
           total: 3,
         },
-      },
-      'GET /api/v1/roles': { body: { items: ROLES, total: ROLES.length } },
-      'GET /api/v1/field-help': { body: FIELD_HELP_PAGE },
-    });
+      }),
+      looseReply('GET /api/v1/roles', { body: { items: ROLES, total: ROLES.length } }),
+      looseReply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE }),
+    ]);
     renderWithProviders(<SettingsPage sections={SETTINGS_SECTIONS} />, {
       route: '/settings',
       user: testUser(),

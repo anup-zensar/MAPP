@@ -1,10 +1,11 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { FORM_ANSWERS, plan } from '@/testing/fixtures/plans';
+import { looseReply } from '@/testing/replies';
 import { PlanEditPage } from './PlanEditPage';
 
 const NO_EFFECTS = {
@@ -14,14 +15,18 @@ const NO_EFFECTS = {
   shownGroups: [],
 };
 
-function renderPage(answers: Record<string, MockHandler> = {}, route = '/plans/P-1001/edit') {
-  const api = mockApi({
+function renderPage(answers: HttpHandler[] = [], route = '/plans/P-1001/edit') {
+  const api = mockApi([
     ...FORM_ANSWERS,
-    'GET /api/v1/plans/P-1001': { body: plan() },
-    'PATCH /api/v1/plans/P-1001': { body: plan() },
-    'POST /api/v1/plans/P-1001/change-effects': { body: NO_EFFECTS },
+    looseReply('GET /api/v1/plans/{planId}', { body: plan() }, { planId: 'P-1001' }),
+    looseReply('PATCH /api/v1/plans/{planId}', { body: plan() }, { planId: 'P-1001' }),
+    looseReply(
+      'POST /api/v1/plans/{planId}/change-effects',
+      { body: NO_EFFECTS },
+      { planId: 'P-1001' },
+    ),
     ...answers,
-  });
+  ]);
   const result = renderWithProviders(<PlanEditPage />, {
     user: testUser(),
     route,
@@ -72,18 +77,22 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
   });
 
   it('lists the activities a new model does not allow before saving (US4#2, FR-019)', async () => {
-    const { api, user, router } = renderPage({
-      'POST /api/v1/plans/P-1001/change-effects': {
-        body: {
-          ...NO_EFFECTS,
-          modelChanged: true,
-          disallowedActivities: [
-            { type: 'activity', id: 'A-1003', name: 'Fleet webinar' },
-            { type: 'activity', id: 'A-1004', name: 'Trade show' },
-          ],
+    const { api, user, router } = renderPage([
+      looseReply(
+        'POST /api/v1/plans/{planId}/change-effects',
+        {
+          body: {
+            ...NO_EFFECTS,
+            modelChanged: true,
+            disallowedActivities: [
+              { type: 'activity', id: 'A-1003', name: 'Fleet webinar' },
+              { type: 'activity', id: 'A-1004', name: 'Trade show' },
+            ],
+          },
         },
-      },
-    });
+        { planId: 'P-1001' },
+      ),
+    ]);
 
     await user.selectOptions(await screen.findByRole('combobox', { name: /Model/ }), 'MOD-1002');
     await user.click(screen.getByRole('button', { name: 'Save' }));
@@ -111,16 +120,20 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
   });
 
   it('says which attribute groups a business-unit change hides (US4#3, FR-020)', async () => {
-    const { user } = renderPage({
-      'POST /api/v1/plans/P-1001/change-effects': {
-        body: {
-          ...NO_EFFECTS,
-          hiddenGroups: [
-            { unit: 'Lubricants', levels: ['plan', 'activity'], attributes: ['Lubricant type'] },
-          ],
+    const { user } = renderPage([
+      looseReply(
+        'POST /api/v1/plans/{planId}/change-effects',
+        {
+          body: {
+            ...NO_EFFECTS,
+            hiddenGroups: [
+              { unit: 'Lubricants', levels: ['plan', 'activity'], attributes: ['Lubricant type'] },
+            ],
+          },
         },
-      },
-    });
+        { planId: 'P-1001' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('checkbox', { name: 'Lubricants' }));
     await user.click(screen.getByRole('button', { name: 'Save' }));
@@ -147,9 +160,13 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
   });
 
   it('says a published plan stays published and when changed defaults apply (US4#5, FR-022)', async () => {
-    const { user } = renderPage({
-      'GET /api/v1/plans/P-1001': { body: plan({ status: 'published' }) },
-    });
+    const { user } = renderPage([
+      looseReply(
+        'GET /api/v1/plans/{planId}',
+        { body: plan({ status: 'published' }) },
+        { planId: 'P-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByText(
@@ -166,28 +183,36 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
   it('refuses a save after someone else’s, keeping the typed values (FR-023)', async () => {
     let reads = 0;
     let saves = 0;
-    const { api, user } = renderPage({
-      'GET /api/v1/plans/P-1001': () => {
-        reads += 1;
-        return { body: plan({ version: reads === 1 ? 1 : 2 }) };
-      },
-      'PATCH /api/v1/plans/P-1001': () => {
-        saves += 1;
-        return saves === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Not saved — Daniel Okoro changed this plan',
-                  fields: [],
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:05:00Z' },
+    const { api, user } = renderPage([
+      looseReply(
+        'GET /api/v1/plans/{planId}',
+        () => {
+          reads += 1;
+          return { body: plan({ version: reads === 1 ? 1 : 2 }) };
+        },
+        { planId: 'P-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/plans/{planId}',
+        () => {
+          saves += 1;
+          return saves === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Not saved — Daniel Okoro changed this plan',
+                    fields: [],
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:05:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: plan({ name: 'FY2026 Lubricants Europe (new)', version: 3 }) };
-      },
-    });
+              }
+            : { body: plan({ name: 'FY2026 Lubricants Europe (new)', version: 3 }) };
+        },
+        { planId: 'P-1001' },
+      ),
+    ]);
 
     const name = await screen.findByRole('textbox', { name: /Plan name/ });
     await user.clear(name);
@@ -211,7 +236,7 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
   });
 
   it('focuses the field named in the address once the form is drawn', async () => {
-    renderPage({}, '/plans/P-1001/edit?focus=description');
+    renderPage([], '/plans/P-1001/edit?focus=description');
 
     const description = await screen.findByRole('textbox', { name: /Description/ });
     await waitFor(() => expect(description).toHaveFocus());
@@ -229,18 +254,22 @@ describe('PlanEditPage (US4, FR-018 – FR-023)', () => {
   });
 
   it('says when the plan does not exist', async () => {
-    renderPage({
-      'GET /api/v1/plans/P-1001': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This plan no longer exists — someone may have deleted it.',
-            fields: [],
+    renderPage([
+      looseReply(
+        'GET /api/v1/plans/{planId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This plan no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { planId: 'P-1001' },
+      ),
+    ]);
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Plan not found' }),

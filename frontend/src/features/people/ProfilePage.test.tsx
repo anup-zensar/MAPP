@@ -1,12 +1,13 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { useSession } from '@/session/useSession';
 import type { CurrentUser } from '@/session/useSession';
 import { useFormatters } from '@/format/useFormatters';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { ProfilePage } from './ProfilePage';
 
 const USD = { code: 'USD', name: 'US dollar', active: true };
@@ -45,12 +46,12 @@ function ElsewhereInTheApp() {
  * My profile at /profile as `person`, with the answers every test needs (GET /api/v1/me: the
  * session is asked again after every change).
  */
-function renderProfile(answers: Record<string, MockHandler> = {}, person = testUser()) {
-  const api = mockApi({
-    'GET /api/v1/me': { body: person },
-    'GET /api/v1/me/display-currencies': { body: CURRENCIES },
+function renderProfile(answers: HttpHandler[] = [], person = testUser()) {
+  const api = mockApi([
+    looseReply('GET /api/v1/me', { body: person }),
+    looseReply('GET /api/v1/me/display-currencies', { body: CURRENCIES }),
     ...answers,
-  });
+  ]);
   return {
     api,
     ...renderWithProviders(
@@ -114,10 +115,10 @@ describe('ProfilePage (feature 003, US4)', () => {
       jobTitle: 'Senior marketer',
       version: 2,
     });
-    const { api, user } = renderProfile({
-      'PATCH /api/v1/me': { body: renamed },
-      'GET /api/v1/me': { body: renamed },
-    });
+    const { api, user } = renderProfile([
+      looseReply('PATCH /api/v1/me', { body: renamed }),
+      looseReply('GET /api/v1/me', { body: renamed }),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Edit details' }));
     const panel = await screen.findByRole('dialog', { name: 'Edit your details' });
@@ -140,9 +141,9 @@ describe('ProfilePage (feature 003, US4)', () => {
   });
 
   it('shows "Enter a name" at the field and in the summary when the name is empty (US4-2, SC-007)', async () => {
-    const { user } = renderProfile({
-      'PATCH /api/v1/me': VALIDATION([{ field: 'name', message: 'Enter a name.' }]),
-    });
+    const { user } = renderProfile([
+      looseReply('PATCH /api/v1/me', VALIDATION([{ field: 'name', message: 'Enter a name.' }])),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Edit details' }));
     const panel = await screen.findByRole('dialog', { name: 'Edit your details' });
@@ -157,8 +158,8 @@ describe('ProfilePage (feature 003, US4)', () => {
   it('keeps typed values after a conflict and saves over it with the newer version (FR-022)', async () => {
     let patches = 0;
     const saved = testUser({ jobTitle: 'Brand lead', version: 3 });
-    const { api, user } = renderProfile({
-      'PATCH /api/v1/me': () => {
+    const { api, user } = renderProfile([
+      looseReply('PATCH /api/v1/me', () => {
         patches += 1;
         return patches === 1
           ? {
@@ -173,10 +174,16 @@ describe('ProfilePage (feature 003, US4)', () => {
               },
             }
           : { body: saved };
-      },
-      'GET /api/v1/me': () => ({ body: patches === 1 ? testUser({ version: 2 }) : saved }),
-      'GET /api/v1/people/U-1002': { body: PRIYA_AS_PERSON },
-    });
+      }),
+      looseReply('GET /api/v1/me', () => ({
+        body: patches === 1 ? testUser({ version: 2 }) : saved,
+      })),
+      looseReply(
+        'GET /api/v1/people/{personId}',
+        { body: PRIYA_AS_PERSON },
+        { personId: 'U-1002' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Edit details' }));
     const panel = await screen.findByRole('dialog', { name: 'Edit your details' });
@@ -206,10 +213,10 @@ describe('ProfilePage (feature 003, US4)', () => {
       dateFormat: 'DD/MM/YYYY',
       pinnedPlanIds: [] as string[],
     } as const;
-    const { api, user, queryClient } = renderProfile({
-      'PATCH /api/v1/me/preferences': { body: preferences },
-      'GET /api/v1/me': { body: testUser({ preferences }) },
-    });
+    const { api, user, queryClient } = renderProfile([
+      looseReply('PATCH /api/v1/me/preferences', { body: preferences }),
+      looseReply('GET /api/v1/me', { body: testUser({ preferences }) }),
+    ]);
     // A list of another page, kept in the cache: its amounts must come again, converted.
     queryClient.setQueryData(['plans'], { items: [], total: 0 });
     await within(card('Display preferences')).findByText('USD — US dollar');
@@ -250,12 +257,15 @@ describe('ProfilePage (feature 003, US4)', () => {
   });
 
   it('shows every problem of the preferences at its field at once (SC-007)', async () => {
-    const { user } = renderProfile({
-      'PATCH /api/v1/me/preferences': VALIDATION([
-        { field: 'displayCurrency', message: 'Choose one of the active currencies.' },
-        { field: 'dateFormat', message: 'Choose one of the date formats.' },
-      ]),
-    });
+    const { user } = renderProfile([
+      looseReply(
+        'PATCH /api/v1/me/preferences',
+        VALIDATION([
+          { field: 'displayCurrency', message: 'Choose one of the active currencies.' },
+          { field: 'dateFormat', message: 'Choose one of the date formats.' },
+        ]),
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Edit preferences' }));
     const panel = await screen.findByRole('dialog', { name: 'Edit display preferences' });
@@ -270,8 +280,8 @@ describe('ProfilePage (feature 003, US4)', () => {
 
   it('shows a grey field while the currencies load, and Try again when they fail (plan "States")', async () => {
     let failing = true;
-    const { user } = renderProfile({
-      'GET /api/v1/me/display-currencies': () =>
+    const { user } = renderProfile([
+      looseReply('GET /api/v1/me/display-currencies', () =>
         failing
           ? {
               status: 500,
@@ -283,7 +293,8 @@ describe('ProfilePage (feature 003, US4)', () => {
               },
             }
           : { body: CURRENCIES },
-    });
+      ),
+    ]);
     // Without the currencies' names, the card shows the code from the session.
     expect(card('Display preferences')).toHaveTextContent('USD');
 
@@ -303,11 +314,11 @@ describe('ProfilePage (feature 003, US4)', () => {
 
   it('keeps a display currency that was set inactive, labelled "(inactive)" (edge case, D-063)', async () => {
     renderProfile(
-      {
-        'GET /api/v1/me/display-currencies': {
+      [
+        looseReply('GET /api/v1/me/display-currencies', {
           body: { items: [EUR, { code: 'GBP', name: 'Pound sterling', active: false }, USD] },
-        },
-      },
+        }),
+      ],
       testUser({ preferences: { ...testUser().preferences, displayCurrency: 'GBP' } }),
     );
 
@@ -317,7 +328,7 @@ describe('ProfilePage (feature 003, US4)', () => {
   });
 
   it('says how to join a team when the person is in none (US4-5)', () => {
-    renderProfile({}, testUser({ teams: [] }));
+    renderProfile([], testUser({ teams: [] }));
 
     const teams = card('My teams');
     expect(teams).toHaveTextContent(
@@ -331,7 +342,7 @@ describe('ProfilePage (feature 003, US4)', () => {
 
   it('uses USD, 12 Mar 2026 and no teams when an older answer leaves them out (D-191)', async () => {
     renderProfile(
-      {},
+      [],
       testUser({
         version: undefined,
         teams: undefined,

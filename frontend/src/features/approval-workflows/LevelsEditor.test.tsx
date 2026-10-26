@@ -6,6 +6,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { PEOPLE, RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
+import { reply } from '@/testing/replies';
 import { emptyLevel, toInputs } from './level-drafts';
 import type { LevelDraft } from './level-drafts';
 import { LevelsEditor } from './LevelsEditor';
@@ -28,10 +29,10 @@ const TWO: LevelDraft[] = [
 ];
 
 function renderEditor(start: LevelDraft[], problems?: FieldProblem[]) {
-  const api = mockApi({
-    'GET /api/v1/people': PEOPLE,
-    'GET /api/v1/approval-rule-options': RULE_OPTIONS,
-  });
+  const api = mockApi([
+    reply('GET /api/v1/people', PEOPLE),
+    reply('GET /api/v1/approval-rule-options', RULE_OPTIONS),
+  ]);
   return {
     ...renderWithProviders(<Harness start={start} problems={problems} />, { user: testUser() }),
     api,

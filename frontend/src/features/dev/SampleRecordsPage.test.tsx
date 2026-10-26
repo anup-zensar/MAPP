@@ -1,12 +1,14 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { SampleRecordsPage } from './SampleRecordsPage';
 
 type SampleFolder = components['schemas']['SampleFolder'];
@@ -161,9 +163,9 @@ function listOf<T>(items: T[]) {
 }
 
 interface PageAnswers {
-  folders?: MockHandler;
-  bin?: MockHandler;
-  log?: MockHandler;
+  folders?: LooseAnswer;
+  bin?: LooseAnswer;
+  log?: LooseAnswer;
 }
 
 /**
@@ -176,14 +178,14 @@ function mockPage(
     bin = { body: listOf([]) },
     log = { body: listOf([]) },
   }: PageAnswers = {},
-  otherAnswers: Record<string, MockHandler> = {},
+  otherAnswers: HttpHandler[] = [],
 ) {
-  return mockApi({
-    'GET /api/v1/sample-folders': folders,
-    'GET /api/v1/recycle-bin': bin,
-    'GET /api/v1/activity-log': log,
+  return mockApi([
+    looseReply('GET /api/v1/sample-folders', folders),
+    looseReply('GET /api/v1/recycle-bin', bin),
+    looseReply('GET /api/v1/activity-log', log),
     ...otherAnswers,
-  });
+  ]);
 }
 
 /** The page at its own address, for Priya, before its lists have arrived. */
@@ -335,10 +337,12 @@ describe('SampleRecordsPage: the page', () => {
 
 describe('SampleRecordsPage: create and edit', () => {
   it('creates a folder in a side panel and says so (US5, plan "User-visible messages")', async () => {
-    const api = mockPage(
-      {},
-      { 'POST /api/v1/sample-folders': { status: 201, body: { ...PLANS, name: 'Ideas 3' } } },
-    );
+    const api = mockPage({}, [
+      looseReply('POST /api/v1/sample-folders', {
+        status: 201,
+        body: { ...PLANS, name: 'Ideas 3' },
+      }),
+    ]);
     const { user } = await renderPage();
 
     await user.click(screen.getByRole('button', { name: 'New sample folder' }));
@@ -353,26 +357,23 @@ describe('SampleRecordsPage: create and edit', () => {
   });
 
   it('shows the API’s problem with a new name at the field and in the summary (FR-020)', async () => {
-    mockPage(
-      {},
-      {
-        'POST /api/v1/sample-folders': {
-          status: 400,
-          body: {
-            error: {
-              code: 'validation_failed',
-              message: 'Some fields need your attention.',
-              fields: [
-                {
-                  field: 'name',
-                  message: "There is already a sample folder called 'Ideas'. Choose another name.",
-                },
-              ],
-            },
+    mockPage({}, [
+      looseReply('POST /api/v1/sample-folders', {
+        status: 400,
+        body: {
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [
+              {
+                field: 'name',
+                message: "There is already a sample folder called 'Ideas'. Choose another name.",
+              },
+            ],
           },
         },
-      },
-    );
+      }),
+    ]);
     const { user } = await renderPage();
 
     await user.click(screen.getByRole('button', { name: 'New sample folder' }));
@@ -389,12 +390,13 @@ describe('SampleRecordsPage: create and edit', () => {
   });
 
   it('opens Edit from the actions menu with the folder’s name, and saves the new name (US5)', async () => {
-    const api = mockPage(
-      {},
-      {
-        'PATCH /api/v1/sample-folders/SF-1001': { body: { ...IDEAS, name: 'Ideas 2', version: 2 } },
-      },
-    );
+    const api = mockPage({}, [
+      looseReply(
+        'PATCH /api/v1/sample-folders/{folderId}',
+        { body: { ...IDEAS, name: 'Ideas 2', version: 2 } },
+        { folderId: 'SF-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
 
     await chooseAction(user, 'Ideas', 'Edit');
@@ -412,10 +414,10 @@ describe('SampleRecordsPage: create and edit', () => {
   });
 
   it('shows every problem at once, at the field and in the summary (FR-020, design system §6.4)', async () => {
-    mockPage(
-      {},
-      {
-        'PATCH /api/v1/sample-folders/SF-1001': {
+    mockPage({}, [
+      looseReply(
+        'PATCH /api/v1/sample-folders/{folderId}',
+        {
           status: 400,
           body: {
             error: {
@@ -428,8 +430,9 @@ describe('SampleRecordsPage: create and edit', () => {
             },
           },
         },
-      },
-    );
+        { folderId: 'SF-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
     await chooseAction(user, 'Ideas', 'Edit');
     const panel = await screen.findByRole('dialog', { name: 'Edit sample folder' });
@@ -456,9 +459,13 @@ describe('SampleRecordsPage: create and edit', () => {
           ]),
         }),
       },
-      {
-        'PATCH /api/v1/sample-folders/SF-1001': { body: { ...IDEAS, name: 'Ideas 2', version: 3 } },
-      },
+      [
+        looseReply(
+          'PATCH /api/v1/sample-folders/{folderId}',
+          { body: { ...IDEAS, name: 'Ideas 2', version: 3 } },
+          { folderId: 'SF-1001' },
+        ),
+      ],
     );
     const { user, queryClient } = await renderPage();
     await chooseAction(user, 'Ideas', 'Edit');
@@ -487,22 +494,26 @@ describe('SampleRecordsPage: create and edit', () => {
       {
         folders: () => ({ body: listOf([++folderReads === 1 ? IDEAS : IDEAS_RENAMED_BY_DANIEL]) }),
       },
-      {
-        'PATCH /api/v1/sample-folders/SF-1001': () =>
-          ++saves === 1
-            ? {
-                status: 409,
-                body: {
-                  error: {
-                    code: 'version_conflict',
-                    message: 'Not saved — Daniel Okoro changed this sample folder',
-                    fields: [],
-                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T14:32:00Z' },
+      [
+        looseReply(
+          'PATCH /api/v1/sample-folders/{folderId}',
+          () =>
+            ++saves === 1
+              ? {
+                  status: 409,
+                  body: {
+                    error: {
+                      code: 'version_conflict',
+                      message: 'Not saved — Daniel Okoro changed this sample folder',
+                      fields: [],
+                      conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T14:32:00Z' },
+                    },
                   },
-                },
-              }
-            : { body: { ...IDEAS_RENAMED_BY_DANIEL, name: 'My ideas', version: 3 } },
-      },
+                }
+              : { body: { ...IDEAS_RENAMED_BY_DANIEL, name: 'My ideas', version: 3 } },
+          { folderId: 'SF-1001' },
+        ),
+      ],
     );
     const { user } = await renderPage();
     const panel = await renameIn(user, 'Ideas', 'My ideas');
@@ -528,10 +539,10 @@ describe('SampleRecordsPage: create and edit', () => {
   });
 
   it('says when the folder no longer exists (plan "User-visible messages")', async () => {
-    mockPage(
-      {},
-      {
-        'PATCH /api/v1/sample-folders/SF-1001': {
+    mockPage({}, [
+      looseReply(
+        'PATCH /api/v1/sample-folders/{folderId}',
+        {
           status: 404,
           body: {
             error: {
@@ -541,8 +552,9 @@ describe('SampleRecordsPage: create and edit', () => {
             },
           },
         },
-      },
-    );
+        { folderId: 'SF-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
     const panel = await renameIn(user, 'Ideas', 'Ideas 2');
 
@@ -589,15 +601,16 @@ describe('SampleRecordsPage: create and edit', () => {
 
 describe('SampleRecordsPage: notes', () => {
   it('adds a note to a folder from the actions menu and says so (US5)', async () => {
-    const api = mockPage(
-      {},
-      {
-        'POST /api/v1/sample-folders/SF-1001/notes': {
+    const api = mockPage({}, [
+      looseReply(
+        'POST /api/v1/sample-folders/{folderId}/notes',
+        {
           status: 201,
           body: { ...AGENDA, id: 'SN-1005', title: 'Budget' },
         },
-      },
-    );
+        { folderId: 'SF-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
 
     await chooseAction(user, 'Ideas', 'Add note');
@@ -613,10 +626,10 @@ describe('SampleRecordsPage: notes', () => {
   });
 
   it('shows the API’s problem with a note title at the field (FR-020)', async () => {
-    mockPage(
-      {},
-      {
-        'POST /api/v1/sample-folders/SF-1001/notes': {
+    mockPage({}, [
+      looseReply(
+        'POST /api/v1/sample-folders/{folderId}/notes',
+        {
           status: 400,
           body: {
             error: {
@@ -626,8 +639,9 @@ describe('SampleRecordsPage: notes', () => {
             },
           },
         },
-      },
-    );
+        { folderId: 'SF-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
     await chooseAction(user, 'Ideas', 'Add note');
     const panel = await screen.findByRole('dialog', { name: 'Add note' });
@@ -641,10 +655,13 @@ describe('SampleRecordsPage: notes', () => {
   });
 
   it('deletes a note after asking, and offers Undo (FR-024, FR-026)', async () => {
-    const api = mockPage(
-      {},
-      { 'DELETE /api/v1/sample-notes/SN-1003': { body: { recycleBinEntry: AGENDA_IN_BIN } } },
-    );
+    const api = mockPage({}, [
+      looseReply(
+        'DELETE /api/v1/sample-notes/{noteId}',
+        { body: { recycleBinEntry: AGENDA_IN_BIN } },
+        { noteId: 'SN-1003' },
+      ),
+    ]);
     const { user } = await renderPage();
 
     await user.click(screen.getByRole('button', { name: "Delete note 'Agenda'" }));
@@ -669,10 +686,13 @@ describe('SampleRecordsPage: notes', () => {
 
 describe('SampleRecordsPage: delete, Undo and restore', () => {
   it('deletes a folder with its notes after asking, and offers Undo (FR-024, FR-026, US5)', async () => {
-    const api = mockPage(
-      {},
-      { 'DELETE /api/v1/sample-folders/SF-1001': { body: { recycleBinEntry: IDEAS_IN_BIN } } },
-    );
+    const api = mockPage({}, [
+      looseReply(
+        'DELETE /api/v1/sample-folders/{folderId}',
+        { body: { recycleBinEntry: IDEAS_IN_BIN } },
+        { folderId: 'SF-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
 
     await chooseAction(user, 'Ideas', 'Delete');
@@ -735,15 +755,16 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
 
   it('says when a delete cannot reach the server, and tries again (FR-020)', async () => {
     let attempts = 0;
-    mockPage(
-      {},
-      {
-        'DELETE /api/v1/sample-folders/SF-1001': () =>
+    mockPage({}, [
+      looseReply(
+        'DELETE /api/v1/sample-folders/{folderId}',
+        () =>
           ++attempts === 1
             ? Promise.reject(new TypeError('Failed to fetch'))
             : { body: { recycleBinEntry: IDEAS_IN_BIN } },
-      },
-    );
+        { folderId: 'SF-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
     await chooseAction(user, 'Ideas', 'Delete');
     await user.click(await screen.findByRole('button', { name: 'Delete sample folder' }));
@@ -778,10 +799,10 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
   });
 
   it('restores from Recently deleted and says what the restore changed (FR-025)', async () => {
-    const api = mockPage(
-      { bin: { body: listOf([IDEAS_IN_BIN]) } },
-      {
-        'POST /api/v1/recycle-bin/BIN-1001/restore': {
+    const api = mockPage({ bin: { body: listOf([IDEAS_IN_BIN]) } }, [
+      looseReply(
+        'POST /api/v1/recycle-bin/{entryId}/restore',
+        {
           body: {
             recordType: 'sampleFolder',
             recordTypeLabel: 'sample folder',
@@ -790,8 +811,9 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
             details: "Renamed to 'Ideas (restored)' because the name was taken.",
           },
         },
-      },
-    );
+        { entryId: 'BIN-1001' },
+      ),
+    ]);
     const { user } = await renderPage();
 
     await user.click(screen.getByRole('button', { name: 'Restore sample folder Ideas' }));
@@ -803,10 +825,10 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
   });
 
   it('says why a restore was refused (FR-025, US5 scenario 4)', async () => {
-    mockPage(
-      { bin: { body: listOf([AGENDA_IN_BIN]) } },
-      {
-        'POST /api/v1/recycle-bin/BIN-1002/restore': {
+    mockPage({ bin: { body: listOf([AGENDA_IN_BIN]) } }, [
+      looseReply(
+        'POST /api/v1/recycle-bin/{entryId}/restore',
+        {
           status: 409,
           body: {
             error: {
@@ -817,8 +839,9 @@ describe('SampleRecordsPage: delete, Undo and restore', () => {
             },
           },
         },
-      },
-    );
+        { entryId: 'BIN-1002' },
+      ),
+    ]);
     const { user } = await renderPage();
 
     await user.click(screen.getByRole('button', { name: 'Restore sample note Agenda' }));

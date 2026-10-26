@@ -1,9 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { TeamsPage } from './TeamsPage';
 
 const META = {
@@ -88,13 +89,13 @@ const PEOPLE = {
 };
 
 /** The page at /settings/teams (or one team's address) with the answers every test needs. */
-function renderTeams(answers: Record<string, MockHandler> = {}, route = '/settings/teams') {
-  const api = mockApi({
-    'GET /api/v1/me': { body: testUser() },
-    'GET /api/v1/teams': { body: TEAMS },
-    'GET /api/v1/people': { body: PEOPLE },
+function renderTeams(answers: HttpHandler[] = [], route = '/settings/teams') {
+  const api = mockApi([
+    looseReply('GET /api/v1/me', { body: testUser() }),
+    looseReply('GET /api/v1/teams', { body: TEAMS }),
+    looseReply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
-  });
+  ]);
   return {
     api,
     ...renderWithProviders(<TeamsPage />, {
@@ -120,7 +121,7 @@ function rowOf(name: string) {
 
 describe('TeamsPage (feature 003, US2)', () => {
   it('lists every team with members, plans and status (FR-010)', async () => {
-    renderTeams({}, '/settings/teams?status=all');
+    renderTeams([], '/settings/teams?status=all');
 
     expect(await screen.findByText('3 of 3 teams')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'All 3' })).toHaveAttribute('aria-pressed', 'true');
@@ -177,7 +178,9 @@ describe('TeamsPage (feature 003, US2)', () => {
   });
 
   it('shows how to create the first team when there is none', async () => {
-    const { user } = renderTeams({ 'GET /api/v1/teams': { body: { items: [], total: 0 } } });
+    const { user } = renderTeams([
+      looseReply('GET /api/v1/teams', { body: { items: [], total: 0 } }),
+    ]);
 
     expect(await screen.findByText('No teams yet — create your first team')).toBeInTheDocument();
     const buttons = screen.getAllByRole('button', { name: 'New team' });
@@ -188,12 +191,12 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('says when the teams could not be loaded, with Try again', async () => {
     let calls = 0;
-    const { user } = renderTeams({
-      'GET /api/v1/teams': () => {
+    const { user } = renderTeams([
+      looseReply('GET /api/v1/teams', () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: TEAMS };
-      },
-    });
+      }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
@@ -202,10 +205,10 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('creates a team with two members picked with the person picker (US2-1)', async () => {
     const created = { ...CHINA, id: 'T-1004', name: 'Lubricants Asia', members: [ALEX, SARA] };
-    const { api, user, router } = renderTeams({
-      'POST /api/v1/teams': { status: 201, body: created },
-      'GET /api/v1/teams/T-1004': { body: created },
-    });
+    const { api, user, router } = renderTeams([
+      looseReply('POST /api/v1/teams', { status: 201, body: created }),
+      looseReply('GET /api/v1/teams/{teamId}', { body: created }, { teamId: 'T-1004' }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'New team' }));
     const panel = await screen.findByRole('dialog', { name: 'New team' });
@@ -238,7 +241,7 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('shows a team with its members and the plans using it (US2-3)', async () => {
     const { user, router } = renderTeams(
-      { 'GET /api/v1/teams/T-1001': { body: EUROPE } },
+      [looseReply('GET /api/v1/teams/{teamId}', { body: EUROPE }, { teamId: 'T-1001' })],
       '/settings/teams/T-1001',
     );
 
@@ -265,18 +268,22 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('says in the panel when the team no longer exists', async () => {
     renderTeams(
-      {
-        'GET /api/v1/teams/T-1009': {
-          status: 404,
-          body: {
-            error: {
-              code: 'not_found',
-              message: 'This team no longer exists — someone may have deleted it.',
-              fields: [],
+      [
+        looseReply(
+          'GET /api/v1/teams/{teamId}',
+          {
+            status: 404,
+            body: {
+              error: {
+                code: 'not_found',
+                message: 'This team no longer exists — someone may have deleted it.',
+                fields: [],
+              },
             },
           },
-        },
-      },
+          { teamId: 'T-1009' },
+        ),
+      ],
       '/settings/teams/T-1009',
     );
 
@@ -287,20 +294,24 @@ describe('TeamsPage (feature 003, US2)', () => {
   });
 
   it('shows a taken name at the field and in the summary (US2-4)', async () => {
-    const { api, user } = renderTeams({
-      'PATCH /api/v1/teams/T-1002': {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Check the highlighted fields.',
-            fields: [
-              { field: 'name', message: "A team called 'Lubricants Europe' already exists." },
-            ],
+    const { api, user } = renderTeams([
+      looseReply(
+        'PATCH /api/v1/teams/{teamId}',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Check the highlighted fields.',
+              fields: [
+                { field: 'name', message: "A team called 'Lubricants Europe' already exists." },
+              ],
+            },
           },
         },
-      },
-    });
+        { teamId: 'T-1002' },
+      ),
+    ]);
 
     await chooseAction(user, 'Mobility China', 'Edit');
     const panel = await screen.findByRole('dialog', { name: 'Edit team' });
@@ -321,25 +332,33 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('says who saved first after a conflict and saves with their version next time', async () => {
     let patches = 0;
-    const { api, user } = renderTeams({
-      'PATCH /api/v1/teams/T-1002': () => {
-        patches += 1;
-        return patches === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Not saved — Daniel Okoro changed this team.',
-                  fields: [],
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-10T14:32:00Z' },
+    const { api, user } = renderTeams([
+      looseReply(
+        'PATCH /api/v1/teams/{teamId}',
+        () => {
+          patches += 1;
+          return patches === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Not saved — Daniel Okoro changed this team.',
+                    fields: [],
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-10T14:32:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: { ...CHINA, version: 3 } };
-      },
-      'GET /api/v1/teams/T-1002': { body: { ...CHINA, version: 2 } },
-    });
+              }
+            : { body: { ...CHINA, version: 3 } };
+        },
+        { teamId: 'T-1002' },
+      ),
+      looseReply(
+        'GET /api/v1/teams/{teamId}',
+        { body: { ...CHINA, version: 2 } },
+        { teamId: 'T-1002' },
+      ),
+    ]);
 
     await chooseAction(user, 'Mobility China', 'Edit');
     const panel = await screen.findByRole('dialog', { name: 'Edit team' });
@@ -373,12 +392,20 @@ describe('TeamsPage (feature 003, US2)', () => {
   it('asks before removing a member who owns a plan; Keep editing sends nothing (US2-5)', async () => {
     const warning =
       'Priya Raman owns 1 plan that uses this team: FY2026 Lubricants Europe. Priya will no longer belong to its teams, so its owner will need attention.';
-    const { api, user } = renderTeams({
-      'POST /api/v1/teams/T-1001/impact': {
-        body: { warnings: [{ kind: 'ownerNeedsAttention', message: warning, count: 1 }] },
-      },
-      'PATCH /api/v1/teams/T-1001': { body: { ...EUROPE, members: [ALEX, OLD], version: 2 } },
-    });
+    const { api, user } = renderTeams([
+      looseReply(
+        'POST /api/v1/teams/{teamId}/impact',
+        {
+          body: { warnings: [{ kind: 'ownerNeedsAttention', message: warning, count: 1 }] },
+        },
+        { teamId: 'T-1001' },
+      ),
+      looseReply(
+        'PATCH /api/v1/teams/{teamId}',
+        { body: { ...EUROPE, members: [ALEX, OLD], version: 2 } },
+        { teamId: 'T-1001' },
+      ),
+    ]);
 
     await chooseAction(user, 'Lubricants Europe', 'Edit');
     const panel = await screen.findByRole('dialog', { name: 'Edit team' });
@@ -406,9 +433,13 @@ describe('TeamsPage (feature 003, US2)', () => {
   });
 
   it('refuses to delete a used team and offers Set team inactive (US2-6)', async () => {
-    const { api, user } = renderTeams({
-      'POST /api/v1/teams/T-1001/status': { body: { ...EUROPE, active: false, version: 2 } },
-    });
+    const { api, user } = renderTeams([
+      looseReply(
+        'POST /api/v1/teams/{teamId}/status',
+        { body: { ...EUROPE, active: false, version: 2 } },
+        { teamId: 'T-1001' },
+      ),
+    ]);
 
     await chooseAction(user, 'Lubricants Europe', 'Delete');
     const dialog = await screen.findByRole('alertdialog', {
@@ -428,14 +459,22 @@ describe('TeamsPage (feature 003, US2)', () => {
   });
 
   it('deletes an unused team, and Undo brings it back (US2-7)', async () => {
-    const { api, user } = renderTeams({
-      'DELETE /api/v1/teams/T-1002': {
-        body: {
-          recycleBinEntry: { id: 'RB-1001', recordTypeLabel: 'team', recordName: 'Mobility China' },
+    const { api, user } = renderTeams([
+      looseReply(
+        'DELETE /api/v1/teams/{teamId}',
+        {
+          body: {
+            recycleBinEntry: {
+              id: 'RB-1001',
+              recordTypeLabel: 'team',
+              recordName: 'Mobility China',
+            },
+          },
         },
-      },
-      'POST /api/v1/recycle-bin/RB-1001/undo': { body: {} },
-    });
+        { teamId: 'T-1002' },
+      ),
+      looseReply('POST /api/v1/recycle-bin/{entryId}/undo', { body: {} }, { entryId: 'RB-1001' }),
+    ]);
 
     await chooseAction(user, 'Mobility China', 'Delete');
     const dialog = await screen.findByRole('alertdialog', {
@@ -463,20 +502,24 @@ describe('TeamsPage (feature 003, US2)', () => {
       ...CHINA,
       plans: [{ id: 'P-1002', name: 'FY2026 Mobility China', inRecycleBin: false }],
     };
-    const { user } = renderTeams({
-      'DELETE /api/v1/teams/T-1002': {
-        status: 409,
-        body: {
-          error: {
-            code: 'in_use',
-            message:
-              "Mobility China is used by 1 plan, so it can't be deleted. Set it inactive instead.",
-            fields: [],
+    const { user } = renderTeams([
+      looseReply(
+        'DELETE /api/v1/teams/{teamId}',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'in_use',
+              message:
+                "Mobility China is used by 1 plan, so it can't be deleted. Set it inactive instead.",
+              fields: [],
+            },
           },
         },
-      },
-      'GET /api/v1/teams/T-1002': { body: used },
-    });
+        { teamId: 'T-1002' },
+      ),
+      looseReply('GET /api/v1/teams/{teamId}', { body: used }, { teamId: 'T-1002' }),
+    ]);
 
     await chooseAction(user, 'Mobility China', 'Delete');
     await user.click(await screen.findByRole('button', { name: 'Delete team' }));
@@ -489,12 +532,16 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('sets an unused team inactive at once, with Undo (design system §6.7)', async () => {
     let posts = 0;
-    const { api, user } = renderTeams({
-      'POST /api/v1/teams/T-1002/status': () => {
-        posts += 1;
-        return { body: { ...CHINA, active: posts !== 1, version: posts + 1 } };
-      },
-    });
+    const { api, user } = renderTeams([
+      looseReply(
+        'POST /api/v1/teams/{teamId}/status',
+        () => {
+          posts += 1;
+          return { body: { ...CHINA, active: posts !== 1, version: posts + 1 } };
+        },
+        { teamId: 'T-1002' },
+      ),
+    ]);
 
     await chooseAction(user, 'Mobility China', 'Set team inactive');
 
@@ -513,9 +560,13 @@ describe('TeamsPage (feature 003, US2)', () => {
   });
 
   it('asks before setting a team that plans use inactive, naming the plans', async () => {
-    const { api, user } = renderTeams({
-      'POST /api/v1/teams/T-1001/status': { body: { ...EUROPE, active: false, version: 2 } },
-    });
+    const { api, user } = renderTeams([
+      looseReply(
+        'POST /api/v1/teams/{teamId}/status',
+        { body: { ...EUROPE, active: false, version: 2 } },
+        { teamId: 'T-1001' },
+      ),
+    ]);
 
     await chooseAction(user, 'Lubricants Europe', 'Set team inactive');
     const dialog = await screen.findByRole('alertdialog', {
@@ -535,9 +586,13 @@ describe('TeamsPage (feature 003, US2)', () => {
 
   it('reactivates an inactive team', async () => {
     const { api, user } = renderTeams(
-      {
-        'POST /api/v1/teams/T-1003/status': { body: { ...OLD_MARKETS, active: true, version: 2 } },
-      },
+      [
+        looseReply(
+          'POST /api/v1/teams/{teamId}/status',
+          { body: { ...OLD_MARKETS, active: true, version: 2 } },
+          { teamId: 'T-1003' },
+        ),
+      ],
       '/settings/teams?status=inactive',
     );
 

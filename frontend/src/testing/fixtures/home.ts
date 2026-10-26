@@ -2,6 +2,7 @@
  * Answers of the Home endpoints for tests (feature 009). `HOME_ANSWERS` answers every request Home
  * makes with an empty dashboard, for tests of other parts of the app that land on Home.
  */
+import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import type {
   ActivityLogEntry,
@@ -15,7 +16,7 @@ import type {
   MyActivityRow,
   WaitingItem,
 } from '@/features/home';
-import type { MockAnswer } from '../mock-api';
+import { reply } from '../replies';
 
 type DisplayCurrencyOption = components['schemas']['DisplayCurrencyOption'];
 
@@ -249,29 +250,32 @@ export function emptyOverview(): FinancialOverview {
   };
 }
 
+/** The summary of a person who has nothing yet. */
+export const EMPTY_SUMMARY = summaryOf({
+  plans: { count: 0, published: 0, draft: 0 },
+  activitiesOwned: { count: 0, declined: 0, submitted: 0 },
+  plannedCost: {
+    planCount: 0,
+    plannedCost: usd('0.00'),
+    planBudget: null,
+    budgetUsedPercent: null,
+    overBudget: false,
+    plansWithoutBudget: 0,
+  },
+});
+
 /** Every request of Home, answered with a dashboard that has nothing in it yet. */
-export const HOME_ANSWERS: Record<string, MockAnswer> = {
-  'GET /api/v1/home/summary': {
-    body: summaryOf({
-      plans: { count: 0, published: 0, draft: 0 },
-      activitiesOwned: { count: 0, declined: 0, submitted: 0 },
-      plannedCost: {
-        planCount: 0,
-        plannedCost: usd('0.00'),
-        planBudget: null,
-        budgetUsedPercent: null,
-        overBudget: false,
-        plansWithoutBudget: 0,
-      },
-    }),
-  },
-  'GET /api/v1/home/plans': { body: EMPTY_PAGE },
-  'GET /api/v1/home/attention': { body: EMPTY_PAGE },
-  'GET /api/v1/home/waiting': { body: EMPTY_PAGE },
-  'GET /api/v1/home/my-activities': { body: { groups: [], total: 0 } },
-  'GET /api/v1/home/recent-changes': { body: EMPTY_PAGE },
-  'GET /api/v1/financials/overview': { body: emptyOverview() },
-  'GET /api/v1/me/display-currencies': {
+export const HOME_ANSWERS: HttpHandler[] = [
+  reply('GET /api/v1/home/summary', {
+    body: EMPTY_SUMMARY,
+  }),
+  reply('GET /api/v1/home/plans', { body: EMPTY_PAGE }),
+  reply('GET /api/v1/home/attention', { body: EMPTY_PAGE }),
+  reply('GET /api/v1/home/waiting', { body: EMPTY_PAGE }),
+  reply('GET /api/v1/home/my-activities', { body: { groups: [], total: 0 } }),
+  reply('GET /api/v1/home/recent-changes', { body: EMPTY_PAGE }),
+  reply('GET /api/v1/financials/overview', { body: emptyOverview() }),
+  reply('GET /api/v1/me/display-currencies', {
     body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length },
-  },
-};
+  }),
+];

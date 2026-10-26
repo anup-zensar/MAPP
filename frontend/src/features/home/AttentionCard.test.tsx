@@ -1,17 +1,18 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from '@/testing/fixtures/home';
+import { looseReply } from '@/testing/replies';
 import { AttentionCard } from './AttentionCard';
 import type { HomeAttentionItem } from './api';
 
 const page = (items: HomeAttentionItem[]) => ({ body: { items, total: items.length } });
 
-function renderCard(answer: MockHandler = page([attentionItemOf()])) {
-  mockApi({ 'GET /api/v1/home/attention': answer });
+function renderCard(answer: LooseAnswer = page([attentionItemOf()])) {
+  mockApi([looseReply('GET /api/v1/home/attention', answer)]);
   return renderWithProviders(<AttentionCard />, { user: testUser(), path: '/' });
 }
 

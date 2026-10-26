@@ -1,10 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { seedList } from '@/testing/fixtures/plans';
+import { looseReply } from '@/testing/replies';
 import { remember, DEFAULT_FILTERS } from './list-preferences';
 import { PlansPage } from './PlansPage';
 
@@ -12,10 +14,10 @@ afterEach(() => window.localStorage.clear());
 
 function renderPage(
   route = '/plans',
-  list: MockHandler = { body: seedList() },
-  { user = testUser(), handlers = {} as Record<string, MockHandler> } = {},
+  list: LooseAnswer = { body: seedList() },
+  { user = testUser(), handlers = [] as HttpHandler[] } = {},
 ) {
-  const api = mockApi({ 'GET /api/v1/plans': list, ...handlers });
+  const api = mockApi([looseReply('GET /api/v1/plans', list), ...handlers]);
   const result = renderWithProviders(<PlansPage />, { user, route, path: '/plans' });
   return { ...result, api };
 }
@@ -29,7 +31,7 @@ function renderWithPins(...pinned: string[]) {
       user: testUser({
         preferences: { ...testUser().preferences, pinnedPlanIds: pinned },
       }),
-      handlers: { 'PATCH /api/v1/me/preferences': { body: {} } },
+      handlers: [looseReply('PATCH /api/v1/me/preferences', { body: {} })],
     },
   );
 }

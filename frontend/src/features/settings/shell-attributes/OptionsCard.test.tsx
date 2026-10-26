@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -14,9 +14,8 @@ import {
   shellOption,
   usedBy,
 } from '@/testing/fixtures/shell-attributes';
+import { looseReply } from '@/testing/replies';
 import { OptionsCard } from './OptionsCard';
-
-const OPTIONS_PATH = 'GET /api/v1/shell-attributes/SA-1010/options';
 
 const TV = shellOption({
   id: 'SO-1101',
@@ -33,7 +32,7 @@ const PRINT = shellOption({
   active: false,
 });
 
-function renderCard(answers: Record<string, MockHandler>, attribute = MEDIA_CHANNEL) {
+function renderCard(answers: HttpHandler[], attribute = MEDIA_CHANNEL) {
   const api = mockApi(answers);
   const rendered = renderWithProviders(<OptionsCard attribute={attribute} />, {
     user: testUser(),
@@ -50,7 +49,13 @@ function optionQueries(api: ReturnType<typeof mockApi>) {
 
 describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   it('lists the options with their own Used by and status', async () => {
-    renderCard({ [OPTIONS_PATH]: { body: page([TV, RADIO, PRINT]) } });
+    renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV, RADIO, PRINT]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     const tv = await screen.findByRole('row', { name: /TV/ });
     expect(within(tv).getByText('Used by 7 activities')).toBeInTheDocument();
@@ -70,12 +75,16 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
         attributeId: 'SA-1010',
       }),
     );
-    const { user, api } = renderCard({
-      [OPTIONS_PATH]: (request) =>
-        new URL(request.url).searchParams.get('q') === '0220'
-          ? { body: page([match]) }
-          : { body: page(many, 1217) },
-    });
+    const { user, api } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        (request) =>
+          new URL(request.url).searchParams.get('q') === '0220'
+            ? { body: page([match]) }
+            : { body: page(many, 1217) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     expect(
       await screen.findByText('Showing 100 of 1,217 — search to find the others.'),
@@ -105,12 +114,16 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
         attributeId: 'SA-1010',
       }),
     );
-    const { user, api } = renderCard({
-      [OPTIONS_PATH]: (request) =>
-        new URL(request.url).searchParams.get('offset') === '100'
-          ? { body: page(second, 1217) }
-          : { body: page(first, 1217) },
-    });
+    const { user, api } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        (request) =>
+          new URL(request.url).searchParams.get('offset') === '100'
+            ? { body: page(second, 1217) }
+            : { body: page(first, 1217) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Show more' }));
 
@@ -122,12 +135,16 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   });
 
   it('filters by status and clears the filters when nothing matches', async () => {
-    const { user, api } = renderCard({
-      [OPTIONS_PATH]: (request) =>
-        new URL(request.url).searchParams.get('status') === 'inactive'
-          ? { body: page([]) }
-          : { body: page([TV, RADIO, PRINT]) },
-    });
+    const { user, api } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        (request) =>
+          new URL(request.url).searchParams.get('status') === 'inactive'
+            ? { body: page([]) }
+            : { body: page([TV, RADIO, PRINT]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await screen.findByRole('rowheader', { name: 'TV' });
     await user.click(screen.getByRole('button', { name: 'Inactive' }));
@@ -143,26 +160,34 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
 
   it('adds an option, and shows the API problem under the label', async () => {
     let attempts = 0;
-    const { user, api } = renderCard({
-      [OPTIONS_PATH]: { body: page([TV]) },
-      'POST /api/v1/shell-attributes/SA-1010/options': () => {
-        attempts += 1;
-        return attempts === 1
-          ? {
-              status: 400,
-              body: {
-                error: {
-                  code: 'validation_failed',
-                  message: 'Check the highlighted fields.',
-                  fields: [
-                    { field: 'label', message: "'tv' is already an option of Media channel." },
-                  ],
+    const { user, api } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV]) },
+        { attributeId: 'SA-1010' },
+      ),
+      looseReply(
+        'POST /api/v1/shell-attributes/{attributeId}/options',
+        () => {
+          attempts += 1;
+          return attempts === 1
+            ? {
+                status: 400,
+                body: {
+                  error: {
+                    code: 'validation_failed',
+                    message: 'Check the highlighted fields.',
+                    fields: [
+                      { field: 'label', message: "'tv' is already an option of Media channel." },
+                    ],
+                  },
                 },
-              },
-            }
-          : { status: 201, body: RADIO };
-      },
-    });
+              }
+            : { status: 201, body: RADIO };
+        },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Add option' }));
     const panel = await screen.findByRole('dialog', { name: 'Add option' });
@@ -189,25 +214,37 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
 
   it('renames an option, and says who changed it first on a conflict (the latest version from GET, D-211)', async () => {
     let attempts = 0;
-    const { user, api } = renderCard({
-      [OPTIONS_PATH]: { body: page([TV, RADIO]) },
-      'GET /api/v1/shell-attribute-options/SO-1102': { body: { ...RADIO, version: 4 } },
-      'PATCH /api/v1/shell-attribute-options/SO-1102': () => {
-        attempts += 1;
-        return attempts === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Someone else changed this option.',
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+    const { user, api } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV, RADIO]) },
+        { attributeId: 'SA-1010' },
+      ),
+      looseReply(
+        'GET /api/v1/shell-attribute-options/{optionId}',
+        { body: { ...RADIO, version: 4 } },
+        { optionId: 'SO-1102' },
+      ),
+      looseReply(
+        'PATCH /api/v1/shell-attribute-options/{optionId}',
+        () => {
+          attempts += 1;
+          return attempts === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Someone else changed this option.',
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: { ...RADIO, label: 'Radio ads', version: 5 } };
-      },
-    });
+              }
+            : { body: { ...RADIO, label: 'Radio ads', version: 5 } };
+        },
+        { optionId: 'SO-1102' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Radio' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Edit' }));
@@ -229,11 +266,23 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   });
 
   it('moves an option and sets it inactive', async () => {
-    const { user, api } = renderCard({
-      [OPTIONS_PATH]: { body: page([TV, RADIO]) },
-      'POST /api/v1/shell-attribute-options/SO-1101/move': { body: { ...TV, position: 2 } },
-      'POST /api/v1/shell-attribute-options/SO-1102/status': { body: { ...RADIO, active: false } },
-    });
+    const { user, api } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV, RADIO]) },
+        { attributeId: 'SA-1010' },
+      ),
+      looseReply(
+        'POST /api/v1/shell-attribute-options/{optionId}/move',
+        { body: { ...TV, position: 2 } },
+        { optionId: 'SO-1101' },
+      ),
+      looseReply(
+        'POST /api/v1/shell-attribute-options/{optionId}/status',
+        { body: { ...RADIO, active: false } },
+        { optionId: 'SO-1102' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for TV' }));
     expect(screen.queryByRole('menuitem', { name: 'Move up' })).not.toBeInTheDocument();
@@ -251,7 +300,13 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   });
 
   it('offers Set inactive instead of deleting an option in use (FR-004)', async () => {
-    const { user } = renderCard({ [OPTIONS_PATH]: { body: page([TV, RADIO]) } });
+    const { user } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV, RADIO]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for TV' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
@@ -264,9 +319,13 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   });
 
   it('says an inactive option in use is already inactive', async () => {
-    const { user } = renderCard({
-      [OPTIONS_PATH]: { body: page([{ ...TV, active: false }]) },
-    });
+    const { user } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([{ ...TV, active: false }]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for TV' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
@@ -290,7 +349,13 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
         },
       ],
     };
-    const { user, api } = renderCard({ [OPTIONS_PATH]: { body: page([only]) } });
+    const { user, api } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([only]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Radio' }));
     const remove = await screen.findByRole('menuitem', { name: /Delete/ });
@@ -305,25 +370,33 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   });
 
   it('deletes an unused option and offers Undo', async () => {
-    const { user } = renderCard({
-      [OPTIONS_PATH]: { body: page([TV, RADIO]) },
-      'DELETE /api/v1/shell-attribute-options/SO-1102': {
-        body: {
-          recycleBinEntry: {
-            id: 'BIN-1003',
-            recordType: 'shellAttributeOption',
-            recordTypeLabel: 'option',
-            recordId: 'SO-1102',
-            recordName: 'Radio',
-            path: [{ id: 'SA-1010', name: 'Media channel', type: 'shellAttribute' }],
-            parent: { id: 'SA-1010', name: 'Media channel', type: 'shellAttribute' },
-            deletedAt: '2026-03-14T10:00:00Z',
-            deletedBy: { id: 'U-1002', name: 'Priya Raman' },
-            contents: [],
+    const { user } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV, RADIO]) },
+        { attributeId: 'SA-1010' },
+      ),
+      looseReply(
+        'DELETE /api/v1/shell-attribute-options/{optionId}',
+        {
+          body: {
+            recycleBinEntry: {
+              id: 'BIN-1003',
+              recordType: 'shellAttributeOption',
+              recordTypeLabel: 'option',
+              recordId: 'SO-1102',
+              recordName: 'Radio',
+              path: [{ id: 'SA-1010', name: 'Media channel', type: 'shellAttribute' }],
+              parent: { id: 'SA-1010', name: 'Media channel', type: 'shellAttribute' },
+              deletedAt: '2026-03-14T10:00:00Z',
+              deletedBy: { id: 'U-1002', name: 'Priya Raman' },
+              contents: [],
+            },
           },
         },
-      },
-    });
+        { optionId: 'SO-1102' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Radio' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
@@ -342,20 +415,24 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
       parentAttribute: { id: 'SA-1009', name: 'Cluster', active: true },
     });
     renderCard(
-      {
-        [OPTIONS_PATH]: {
-          body: page([
-            {
-              ...TV,
-              label: 'Retail – China',
-              parentOptions: [
-                { id: 'SO-1', name: 'Asia', active: true },
-                { id: 'SO-2', name: 'Pacific', active: false },
-              ],
-            },
-          ]),
-        },
-      },
+      [
+        looseReply(
+          'GET /api/v1/shell-attributes/{attributeId}/options',
+          {
+            body: page([
+              {
+                ...TV,
+                label: 'Retail – China',
+                parentOptions: [
+                  { id: 'SO-1', name: 'Asia', active: true },
+                  { id: 'SO-2', name: 'Pacific', active: false },
+                ],
+              },
+            ]),
+          },
+          { attributeId: 'SA-1010' },
+        ),
+      ],
       region,
     );
 
@@ -366,7 +443,13 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
 
 describe('OptionsCard: options from a spreadsheet (FR-031)', () => {
   it('opens the import of the attribute', async () => {
-    const { user } = renderCard({ [OPTIONS_PATH]: { body: page([TV]) } });
+    const { user } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Import from a spreadsheet' }));
 
@@ -387,7 +470,13 @@ describe('OptionsCard: options from a spreadsheet (FR-031)', () => {
     ) {
       names.push(this.download);
     });
-    const { user } = renderCard({ [OPTIONS_PATH]: { body: page([TV]) } });
+    const { user } = renderCard([
+      looseReply(
+        'GET /api/v1/shell-attributes/{attributeId}/options',
+        { body: page([TV]) },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Download template' }));
 
@@ -443,14 +532,26 @@ describe('OptionsCard: options of a dependent attribute (FR-022)', () => {
 
   it("adds an option linked to the parent's active options", async () => {
     const { user, api } = renderCard(
-      {
-        [OPTIONS_PATH]: { body: page([CHINA]) },
-        'GET /api/v1/shell-attribute-forms/activity': { body: FORM },
-        'POST /api/v1/shell-attributes/SA-1010/options': {
-          status: 201,
-          body: { ...CHINA, id: 'SO-1102', label: 'Retail – Japan' },
-        },
-      },
+      [
+        looseReply(
+          'GET /api/v1/shell-attributes/{attributeId}/options',
+          { body: page([CHINA]) },
+          { attributeId: 'SA-1010' },
+        ),
+        looseReply(
+          'GET /api/v1/shell-attribute-forms/{level}',
+          { body: FORM },
+          { level: 'activity' },
+        ),
+        looseReply(
+          'POST /api/v1/shell-attributes/{attributeId}/options',
+          {
+            status: 201,
+            body: { ...CHINA, id: 'SO-1102', label: 'Retail – Japan' },
+          },
+          { attributeId: 'SA-1010' },
+        ),
+      ],
       REGION,
     );
 
@@ -477,13 +578,25 @@ describe('OptionsCard: options of a dependent attribute (FR-022)', () => {
 
   it('changes only the links of an option, keeping an inactive link until it is unticked', async () => {
     const { user, api } = renderCard(
-      {
-        [OPTIONS_PATH]: { body: page([CHINA]) },
-        'GET /api/v1/shell-attribute-forms/activity': { body: FORM },
-        'PATCH /api/v1/shell-attribute-options/SO-1101': {
-          body: { ...CHINA, parentOptions: [{ id: 'SO-1', name: 'Asia', active: true }] },
-        },
-      },
+      [
+        looseReply(
+          'GET /api/v1/shell-attributes/{attributeId}/options',
+          { body: page([CHINA]) },
+          { attributeId: 'SA-1010' },
+        ),
+        looseReply(
+          'GET /api/v1/shell-attribute-forms/{level}',
+          { body: FORM },
+          { level: 'activity' },
+        ),
+        looseReply(
+          'PATCH /api/v1/shell-attribute-options/{optionId}',
+          {
+            body: { ...CHINA, parentOptions: [{ id: 'SO-1', name: 'Asia', active: true }] },
+          },
+          { optionId: 'SO-1101' },
+        ),
+      ],
       REGION,
     );
 

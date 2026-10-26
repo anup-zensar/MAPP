@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Outlet } from 'react-router';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import {
   ALL_ROWS,
   FT_1006,
@@ -13,14 +13,16 @@ import {
 import { SessionProvider } from '@/session/SessionProvider';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { FinancialsPage } from './FinancialsPage';
 import { TransactionPanel } from './TransactionPanel';
 
-const LIST = 'GET /api/v1/financials/transactions';
-
-function renderPage(route = '/financials', list: MockHandler = { body: transactionPage() }) {
+function renderPage(route = '/financials', list: LooseAnswer = { body: transactionPage() }) {
   // A 403 makes the session provider reload the person's access (014 FR-020).
-  const api = mockApi({ [LIST]: list, 'GET /api/v1/me': { body: testUser() } });
+  const api = mockApi([
+    looseReply('GET /api/v1/financials/transactions', list),
+    looseReply('GET /api/v1/me', { body: testUser() }),
+  ]);
   return { ...renderFinancials(route), api };
 }
 

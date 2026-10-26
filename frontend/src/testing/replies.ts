@@ -61,6 +61,23 @@ export function reply<K extends ApiKey>(
   answer: Answer<K>,
   params?: Record<string, string>,
 ): HttpHandler {
+  return looseReply(key, answer, params);
+}
+
+/** An answer whose body is not checked against the contract. */
+export type LooseAnswer =
+  | { status?: number; body?: unknown }
+  | ((request: Request) => LooseAnswer | Response | Promise<LooseAnswer | Response>);
+
+/**
+ * `reply` without the contract check of the body: only for tests of a feature that is not aligned
+ * yet (026); every feature moves to `reply` as it is aligned.
+ */
+export function looseReply(
+  key: ApiKey,
+  answer: LooseAnswer,
+  params?: Record<string, string>,
+): HttpHandler {
   const [method, path] = parseKey(key);
   return HANDLERS[method](
     ORIGIN + path.replace(/\{(\w+)\}/g, ':$1'),
@@ -76,8 +93,8 @@ export function pending(): Promise<never> {
   return new Promise<never>(() => {});
 }
 
-async function respond<K extends ApiKey>(answer: Answer<K>, request: Request): Promise<Response> {
-  let result: Reply<K> | Response;
+async function respond(answer: LooseAnswer, request: Request): Promise<Response> {
+  let result: LooseAnswer | Response;
   try {
     result = typeof answer === 'function' ? await answer(request) : answer;
   } catch {
@@ -85,6 +102,9 @@ async function respond<K extends ApiKey>(answer: Answer<K>, request: Request): P
   }
   if (result instanceof Response) {
     return result;
+  }
+  if (typeof result === 'function') {
+    return respond(result, request);
   }
   const { status = 200, body } = result;
   return body === undefined

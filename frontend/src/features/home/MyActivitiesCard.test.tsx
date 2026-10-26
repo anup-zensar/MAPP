@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { groupOf, myActivityOf, usd } from '@/testing/fixtures/home';
+import { looseReply } from '@/testing/replies';
 import type { MyActivityGroup } from './api';
 import { MyActivitiesCard } from './MyActivitiesCard';
 
@@ -24,8 +25,8 @@ const page = (groups: MyActivityGroup[]) => ({
   body: { groups, total: groups.reduce((sum, group) => sum + group.count, 0) },
 });
 
-function renderCard(answer: MockHandler = page(GROUPS)) {
-  mockApi({ 'GET /api/v1/home/my-activities': answer });
+function renderCard(answer: LooseAnswer = page(GROUPS)) {
+  mockApi([looseReply('GET /api/v1/home/my-activities', answer)]);
   return renderWithProviders(<MyActivitiesCard />, { user: testUser(), path: '/' });
 }
 

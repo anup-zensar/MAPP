@@ -17,6 +17,7 @@ import type {
   ViewState,
 } from '@/features/all-work';
 import { standardState } from '@/features/all-work';
+import { reply } from '../replies';
 
 export function usd(amount: string): Money {
   return { amount, currency: 'USD' };
@@ -556,11 +557,11 @@ export function savedView(overrides: Partial<SavedView> = {}): SavedView {
 }
 
 /** The first-visit answers of the page (no saved views, the default preferences). */
-export const PAGE_ANSWERS = {
-  'GET /api/v1/all-work/preferences': { body: defaultPreferences() },
-  'GET /api/v1/all-work/options': { body: allWorkOptions() },
-  'GET /api/v1/saved-views': { body: { items: [], total: 0 } },
-};
+export const PAGE_ANSWERS = [
+  reply('GET /api/v1/all-work/preferences', { body: defaultPreferences() }),
+  reply('GET /api/v1/all-work/options', { body: allWorkOptions() }),
+  reply('GET /api/v1/saved-views', { body: { items: [], total: 0 } }),
+];
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

@@ -1,7 +1,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { expectNoAxeViolations } from '@/testing/axe';
@@ -13,6 +14,7 @@ import {
   REVIEW,
   REVIEW_NOTHING_NEW,
 } from '@/testing/fixtures/rates';
+import { looseReply } from '@/testing/replies';
 import { ImportRatesPage } from './ImportRatesPage';
 import { RecentImports } from './RecentImports';
 
@@ -22,8 +24,11 @@ function rateFile(name = 'gsap_rates_2026-10-20.csv', content = CSV): File {
   return new File([content], name, { type: 'text/csv' });
 }
 
-function renderImport(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'POST /api/v1/exchange-rates/import-check': { body: REVIEW }, ...answers });
+function renderImport(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply('POST /api/v1/exchange-rates/import-check', { body: REVIEW }),
+    ...answers,
+  ]);
   const rendered = renderWithProviders(<ImportRatesPage />, {
     route: '/settings/currencies/import',
     path: '/settings/currencies/import',
@@ -72,9 +77,9 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
   });
 
   it('imports the rows to add and replace in one step, then goes back to Currencies (FR-007)', async () => {
-    const { user, api, router } = renderImport({
-      'POST /api/v1/exchange-rates/import': { body: IMPORTED },
-    });
+    const { user, api, router } = renderImport([
+      looseReply('POST /api/v1/exchange-rates/import', { body: IMPORTED }),
+    ]);
     await user.upload(fileField(), rateFile());
 
     await user.click(await screen.findByRole('button', { name: 'Import 5 rates' }));
@@ -103,9 +108,9 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
   });
 
   it('says when nothing in the file would change a rate', async () => {
-    const { user } = renderImport({
-      'POST /api/v1/exchange-rates/import-check': { body: REVIEW_NOTHING_NEW },
-    });
+    const { user } = renderImport([
+      looseReply('POST /api/v1/exchange-rates/import-check', { body: REVIEW_NOTHING_NEW }),
+    ]);
     await user.upload(fileField(), rateFile('gsap_rates_2026-10-19.csv'));
 
     expect(
@@ -133,14 +138,14 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
   });
 
   it("shows the API's message for a file it can't read", async () => {
-    const { user } = renderImport({
-      'POST /api/v1/exchange-rates/import-check': {
+    const { user } = renderImport([
+      looseReply('POST /api/v1/exchange-rates/import-check', {
         status: 400,
         body: validationFailed([
           { field: 'content', message: 'The file has no column "valid_from".' },
         ]),
-      },
-    });
+      }),
+    ]);
 
     await user.upload(fileField(), rateFile());
 
@@ -167,15 +172,18 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
     afterEach(() => vi.restoreAllMocks());
 
     it('downloads a file of today’s rates', async () => {
-      const { user } = renderImport({
-        'GET /api/v1/exchange-rates/import-sample': () =>
-          new Response('rate_type,from_currency\n', {
-            headers: {
-              'Content-Type': 'text/csv',
-              'Content-Disposition': 'attachment; filename="gsap_rates_sample.csv"',
-            },
-          }),
-      });
+      const { user } = renderImport([
+        looseReply(
+          'GET /api/v1/exchange-rates/import-sample',
+          () =>
+            new Response('rate_type,from_currency\n', {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': 'attachment; filename="gsap_rates_sample.csv"',
+              },
+            }),
+        ),
+      ]);
 
       await user.click(screen.getByRole('button', { name: 'Download a sample file' }));
 
@@ -193,8 +201,8 @@ describe('ImportRatesPage (016 FR-006, US1-2)', () => {
 });
 
 describe('RecentImports (016 FR-007, US1-3)', () => {
-  function renderRecent(answer: MockHandler) {
-    mockApi({ 'GET /api/v1/exchange-rates/imports': answer });
+  function renderRecent(answer: LooseAnswer) {
+    mockApi([looseReply('GET /api/v1/exchange-rates/imports', answer)]);
     return renderWithProviders(<RecentImports />, { user: testUser() });
   }
 

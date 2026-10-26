@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -13,14 +13,15 @@ import {
   MODELS,
   RETAIL,
 } from '@/testing/fixtures/settings';
+import { looseReply } from '@/testing/replies';
 import { ModelsPage } from './ModelsPage';
 
-function renderModels(answers: Record<string, MockHandler> = {}, route = '/settings/models') {
-  const api = mockApi({
-    'GET /api/v1/models': { body: MODELS },
-    'GET /api/v1/activity-types': { body: ACTIVITY_TYPES },
+function renderModels(answers: HttpHandler[] = [], route = '/settings/models') {
+  const api = mockApi([
+    looseReply('GET /api/v1/models', { body: MODELS }),
+    looseReply('GET /api/v1/activity-types', { body: ACTIVITY_TYPES }),
     ...answers,
-  });
+  ]);
   return {
     ...renderWithProviders(<ModelsPage />, { route, user: testUser(), path: '/settings/models' }),
     api,
@@ -87,7 +88,7 @@ describe('ModelsPage: the list (FR-002)', () => {
   });
 
   it('says when nothing matches the filters, and clears them', async () => {
-    const { user } = renderModels({}, '/settings/models?q=zzz');
+    const { user } = renderModels([], '/settings/models?q=zzz');
 
     expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
@@ -96,7 +97,7 @@ describe('ModelsPage: the list (FR-002)', () => {
   });
 
   it('invites to create the first model when there are none', async () => {
-    renderModels({ 'GET /api/v1/models': { body: { items: [], total: 0 } } });
+    renderModels([looseReply('GET /api/v1/models', { body: { items: [], total: 0 } })]);
 
     expect(await screen.findByText('No models yet — create your first model')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'New model' })).toHaveLength(2);
@@ -104,8 +105,8 @@ describe('ModelsPage: the list (FR-002)', () => {
 
   it('says when the models cannot be loaded, and tries again', async () => {
     let calls = 0;
-    const { user } = renderModels({
-      'GET /api/v1/models': () => {
+    const { user } = renderModels([
+      looseReply('GET /api/v1/models', () => {
         calls += 1;
         return calls === 1
           ? {
@@ -119,8 +120,8 @@ describe('ModelsPage: the list (FR-002)', () => {
               },
             }
           : { body: MODELS };
-      },
-    });
+      }),
+    ]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong.');
     await user.click(screen.getByRole('button', { name: 'Try again' }));
@@ -160,14 +161,14 @@ describe('ModelsPage: details (US1 scenario 3)', () => {
   });
 
   it('shows an inactive allowed type as "(inactive)"', async () => {
-    renderModels({}, '/settings/models?id=MOD-1003');
+    renderModels([], '/settings/models?id=MOD-1003');
 
     const panel = await screen.findByRole('dialog', { name: 'Retail 0.9' });
     expect(within(panel).getByText('Print advert (inactive)')).toBeInTheDocument();
   });
 
   it('says when the model of the address no longer exists, with Back to Models', async () => {
-    const { user, router } = renderModels({}, '/settings/models?id=MOD-9999');
+    const { user, router } = renderModels([], '/settings/models?id=MOD-9999');
 
     const panel = await screen.findByRole('dialog');
     expect(panel).toHaveTextContent('This model no longer exists — someone may have deleted it.');
@@ -178,7 +179,7 @@ describe('ModelsPage: details (US1 scenario 3)', () => {
   });
 
   it('Duplicate opens an unsaved new model named "<name> (copy)" (FR-009)', async () => {
-    const { user } = renderModels({}, '/settings/models?id=MOD-1001');
+    const { user } = renderModels([], '/settings/models?id=MOD-1001');
 
     await screen.findByRole('dialog', { name: 'Lubricants 1.0' });
     await chooseAction('Lubricants 1.0', 'Duplicate', user);
@@ -195,9 +196,9 @@ describe('ModelsPage: details (US1 scenario 3)', () => {
 describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
   it('creates a model and offers View in the message (scenario 1)', async () => {
     const created = { ...MOBILITY, id: 'MOD-1004', name: 'Fuels 1.0', usage: LUBRICANTS.usage };
-    const { user, api, router } = renderModels({
-      'POST /api/v1/models': { status: 201, body: created },
-    });
+    const { user, api, router } = renderModels([
+      looseReply('POST /api/v1/models', { status: 201, body: created }),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'New model' }));
     const form = await screen.findByRole('dialog', { name: 'New model' });
@@ -230,8 +231,8 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
   });
 
   it('shows every problem at once and saves nothing (scenario 5)', async () => {
-    const { user } = renderModels({
-      'POST /api/v1/models': {
+    const { user } = renderModels([
+      looseReply('POST /api/v1/models', {
         status: 400,
         body: {
           error: {
@@ -247,8 +248,8 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'New model' }));
     const form = await screen.findByRole('dialog', { name: 'New model' });
@@ -270,14 +271,22 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
     const warning =
       "Used by 2 plans (31 activities). Their calculated MQL and revenue goals will be recalculated; typed goals ('Set later stages myself') are kept.";
     const { user, api } = renderModels(
-      {
-        'POST /api/v1/models/MOD-1001/impact': {
-          body: { warnings: [{ kind: 'goalsRecalculated', message: warning, count: 2 }] },
-        },
-        'PATCH /api/v1/models/MOD-1001': {
-          body: { ...LUBRICANTS, inqToMqlRate: '2.50', version: 4 },
-        },
-      },
+      [
+        looseReply(
+          'POST /api/v1/models/{modelId}/impact',
+          {
+            body: { warnings: [{ kind: 'goalsRecalculated', message: warning, count: 2 }] },
+          },
+          { modelId: 'MOD-1001' },
+        ),
+        looseReply(
+          'PATCH /api/v1/models/{modelId}',
+          {
+            body: { ...LUBRICANTS, inqToMqlRate: '2.50', version: 4 },
+          },
+          { modelId: 'MOD-1001' },
+        ),
+      ],
       '/settings/models?id=MOD-1001',
     );
 
@@ -312,11 +321,15 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
 
   it('warns before an allowed activity type is removed; Keep editing saves nothing (scenario 6)', async () => {
     const warning = "5 activities use 'Event'. They keep it; new activities can't choose it.";
-    const { user, api } = renderModels({
-      'POST /api/v1/models/MOD-1001/impact': {
-        body: { warnings: [{ kind: 'activityTypeRemoved', message: warning, count: 5 }] },
-      },
-    });
+    const { user, api } = renderModels([
+      looseReply(
+        'POST /api/v1/models/{modelId}/impact',
+        {
+          body: { warnings: [{ kind: 'activityTypeRemoved', message: warning, count: 5 }] },
+        },
+        { modelId: 'MOD-1001' },
+      ),
+    ]);
 
     await chooseAction('Lubricants 1.0', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit model' });
@@ -336,11 +349,15 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
   });
 
   it('renames without an impact check', async () => {
-    const { user, api } = renderModels({
-      'PATCH /api/v1/models/MOD-1001': {
-        body: { ...LUBRICANTS, name: 'Lubricants 2.0', version: 4 },
-      },
-    });
+    const { user, api } = renderModels([
+      looseReply(
+        'PATCH /api/v1/models/{modelId}',
+        {
+          body: { ...LUBRICANTS, name: 'Lubricants 2.0', version: 4 },
+        },
+        { modelId: 'MOD-1001' },
+      ),
+    ]);
 
     await chooseAction('Lubricants 1.0', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit model' });
@@ -357,25 +374,33 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
 
   it('keeps the typed values after a conflict, names who saved first and saves again over it (FR-007)', async () => {
     let patches = 0;
-    const { user, api } = renderModels({
-      'PATCH /api/v1/models/MOD-1001': () => {
-        patches += 1;
-        return patches === 1
-          ? {
-              status: 409,
-              body: {
-                error: {
-                  code: 'version_conflict',
-                  message: 'Someone else changed this model.',
-                  fields: [],
-                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:42:00Z' },
+    const { user, api } = renderModels([
+      looseReply(
+        'PATCH /api/v1/models/{modelId}',
+        () => {
+          patches += 1;
+          return patches === 1
+            ? {
+                status: 409,
+                body: {
+                  error: {
+                    code: 'version_conflict',
+                    message: 'Someone else changed this model.',
+                    fields: [],
+                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:42:00Z' },
+                  },
                 },
-              },
-            }
-          : { body: { ...LUBRICANTS, name: 'Lubricants X', version: 6 } };
-      },
-      'GET /api/v1/models/MOD-1001': { body: { ...LUBRICANTS, version: 5 } },
-    });
+              }
+            : { body: { ...LUBRICANTS, name: 'Lubricants X', version: 6 } };
+        },
+        { modelId: 'MOD-1001' },
+      ),
+      looseReply(
+        'GET /api/v1/models/{modelId}',
+        { body: { ...LUBRICANTS, version: 5 } },
+        { modelId: 'MOD-1001' },
+      ),
+    ]);
 
     await chooseAction('Lubricants 1.0', 'Edit', user);
     const form = await screen.findByRole('dialog', { name: 'Edit model' });
@@ -419,9 +444,13 @@ describe('ModelsPage: create and edit (US1 scenarios 1, 4, 5, 6)', () => {
 
 describe('ModelsPage: status and delete (US1 scenario 7, FR-004)', () => {
   it('moves an unused model to the recycle bin and offers Undo', async () => {
-    const { user, api } = renderModels({
-      'DELETE /api/v1/models/MOD-1002': { body: deleted('model', 'MOD-1002', 'Mobility 1.0') },
-    });
+    const { user, api } = renderModels([
+      looseReply(
+        'DELETE /api/v1/models/{modelId}',
+        { body: deleted('model', 'MOD-1002', 'Mobility 1.0') },
+        { modelId: 'MOD-1002' },
+      ),
+    ]);
 
     await screen.findByRole('table');
     await chooseAction('Mobility 1.0', 'Delete', user);
@@ -438,9 +467,13 @@ describe('ModelsPage: status and delete (US1 scenario 7, FR-004)', () => {
   });
 
   it('offers Set inactive instead of deleting a model in use', async () => {
-    const { user, api } = renderModels({
-      'POST /api/v1/models/MOD-1001/status': { body: { ...LUBRICANTS, active: false, version: 4 } },
-    });
+    const { user, api } = renderModels([
+      looseReply(
+        'POST /api/v1/models/{modelId}/status',
+        { body: { ...LUBRICANTS, active: false, version: 4 } },
+        { modelId: 'MOD-1001' },
+      ),
+    ]);
 
     await screen.findByRole('table');
     await chooseAction('Lubricants 1.0', 'Delete', user);
@@ -461,9 +494,13 @@ describe('ModelsPage: status and delete (US1 scenario 7, FR-004)', () => {
 
   it('switches to the in-use dialog when the API finds the model in use', async () => {
     const message = "'Mobility 1.0' is in use (used by 1 plan) — set it inactive instead.";
-    const { user } = renderModels({
-      'DELETE /api/v1/models/MOD-1002': { status: 409, body: inUse(message) },
-    });
+    const { user } = renderModels([
+      looseReply(
+        'DELETE /api/v1/models/{modelId}',
+        { status: 409, body: inUse(message) },
+        { modelId: 'MOD-1002' },
+      ),
+    ]);
 
     await screen.findByRole('table');
     await chooseAction('Mobility 1.0', 'Delete', user);
@@ -477,7 +514,7 @@ describe('ModelsPage: status and delete (US1 scenario 7, FR-004)', () => {
   it('says an inactive model in use is already inactive, with Close only', async () => {
     const inactiveInUse = { ...LUBRICANTS, active: false };
     const { user } = renderModels(
-      { 'GET /api/v1/models': { body: { items: [inactiveInUse], total: 1 } } },
+      [looseReply('GET /api/v1/models', { body: { items: [inactiveInUse], total: 1 } })],
       '/settings/models?status=inactive',
     );
 
@@ -497,7 +534,13 @@ describe('ModelsPage: status and delete (US1 scenario 7, FR-004)', () => {
 
   it('reactivates an inactive model', async () => {
     const { user, api } = renderModels(
-      { 'POST /api/v1/models/MOD-1003/status': { body: { ...RETAIL, active: true, version: 2 } } },
+      [
+        looseReply(
+          'POST /api/v1/models/{modelId}/status',
+          { body: { ...RETAIL, active: true, version: 2 } },
+          { modelId: 'MOD-1003' },
+        ),
+      ],
       '/settings/models?status=inactive',
     );
 

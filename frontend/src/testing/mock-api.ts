@@ -28,15 +28,6 @@ export interface MockedApi {
   bodiesOf(key: string): unknown[];
 }
 
-/** A canned answer of the untyped form, until every test answers through `reply`. */
-export interface MockAnswer {
-  status?: number;
-  body?: unknown;
-}
-
-export type MockHandler =
-  MockAnswer | ((request: Request) => MockAnswer | Response | Promise<MockAnswer | Response>);
-
 /**
  * The app frame's background requests (feature 008: the sidebar's Approvals count and the bell's
  * notifications, asked on every signed-in page), answered "nothing waiting" unless a test answers.
@@ -85,14 +76,13 @@ export function markRequests(): void {
 }
 
 /** Answers this test's requests with `handlers` (a later one wins) and records every request. */
-export function mockApi(handlers: HttpHandler[] | Record<string, MockHandler>): MockedApi {
-  const list = Array.isArray(handlers) ? handlers : Object.entries(handlers).map(untyped);
+export function mockApi(handlers: HttpHandler[]): MockedApi {
   run += 1;
   recorded = [];
   const requests = recorded;
   server.resetHandlers();
   server.use(...FRAME_ANSWERS);
-  server.use(...list.toReversed());
+  server.use(...handlers.toReversed());
   server.use(leftover, recorder);
   return {
     requests,
@@ -103,31 +93,6 @@ export function mockApi(handlers: HttpHandler[] | Record<string, MockHandler>): 
 /** Returns the requests that had no answer since the last call, and forgets them. */
 export function takeUnmockedRequests(): string[] {
   return unanswered.splice(0);
-}
-
-function untyped([key, handler]: [string, MockHandler]): HttpHandler {
-  const [method = '', path = ''] = key.split(' ');
-  return msw.all(`${ORIGIN}${path}`, async ({ request }) => {
-    if (request.method !== method) {
-      return undefined;
-    }
-    try {
-      const answer = typeof handler === 'function' ? await handler(request) : handler;
-      return answer instanceof Response ? answer : jsonResponse(answer);
-    } catch {
-      return HttpResponse.error();
-    }
-  });
-}
-
-function jsonResponse({ status = 200, body }: MockAnswer): Response {
-  if (body === undefined) {
-    return new Response(null, { status });
-  }
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
 }
 
 async function describe(request: Request): Promise<RecordedRequest> {

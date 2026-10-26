@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
 import { checkResult } from '@/testing/fixtures/financials';
+import { reply } from '@/testing/replies';
 import { ImportDialog } from './ImportDialog';
 
 const CHECK = 'POST /api/v1/financials/imports/check';
@@ -12,9 +13,12 @@ const IMPORT = 'POST /api/v1/financials/imports';
 const CSV =
   'type,document_number,posting_date,amount,currency\nPO,4500001009,2026-10-01,100.00,USD\n';
 
-function renderDialog(answers: Record<string, MockHandler> = {}) {
+function renderDialog(answers: HttpHandler[] = []) {
   const onClose = vi.fn();
-  const api = mockApi({ [CHECK]: { body: checkResult() }, ...answers });
+  const api = mockApi([
+    reply('POST /api/v1/financials/imports/check', { body: checkResult() }),
+    ...answers,
+  ]);
   const rendered = renderWithProviders(<ImportDialog onClose={onClose} />, { user: testUser() });
   return { ...rendered, api, onClose };
 }
@@ -24,8 +28,8 @@ const csvFile = (name = 'gsap-2026-10-19.csv', content = CSV) =>
 
 describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
   it('explains the format, checks the chosen file and imports it (US4 scenarios 1, 2, 7)', async () => {
-    const { api, user, queryClient, onClose } = renderDialog({
-      [IMPORT]: {
+    const { api, user, queryClient, onClose } = renderDialog([
+      reply('POST /api/v1/financials/imports', {
         status: 201,
         body: {
           import: {
@@ -50,8 +54,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
           notLinked: [],
           notLinkedTotal: 0,
         },
-      },
-    });
+      }),
+    ]);
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
 
     const dialog = await screen.findByRole('dialog', { name: 'Import GSAP extract' });
@@ -97,8 +101,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
   });
 
   it('lists every row problem at once and imports the other rows (US4 scenario 3)', async () => {
-    const { user } = renderDialog({
-      [CHECK]: {
+    const { user } = renderDialog([
+      reply('POST /api/v1/financials/imports/check', {
         body: checkResult({
           counts: {
             rows: 4,
@@ -127,8 +131,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
           notLinkedTotal: 0,
           unusedColumns: ['cost_centre'],
         }),
-      },
-    });
+      }),
+    ]);
 
     const dialog = await screen.findByRole('dialog');
     await user.upload(within(dialog).getByLabelText(/GSAP extract file/), csvFile());
@@ -147,8 +151,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
   });
 
   it('offers nothing to import when every row is refused', async () => {
-    const { api, user } = renderDialog({
-      [CHECK]: {
+    const { api, user } = renderDialog([
+      reply('POST /api/v1/financials/imports/check', {
         body: checkResult({
           counts: {
             rows: 1,
@@ -166,8 +170,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
           notLinked: [],
           notLinkedTotal: 0,
         }),
-      },
-    });
+      }),
+    ]);
 
     const dialog = await screen.findByRole('dialog');
     await user.upload(within(dialog).getByLabelText(/GSAP extract file/), csvFile());
@@ -182,8 +186,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
   });
 
   it('shows a whole-file refusal at the file field', async () => {
-    const { user } = renderDialog({
-      [CHECK]: {
+    const { user } = renderDialog([
+      reply('POST /api/v1/financials/imports/check', {
         status: 400,
         body: {
           error: {
@@ -197,8 +201,8 @@ describe('ImportDialog (015 US4, FR-004 – FR-009)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
 
     const dialog = await screen.findByRole('dialog');
     const input = within(dialog).getByLabelText(/GSAP extract file/);

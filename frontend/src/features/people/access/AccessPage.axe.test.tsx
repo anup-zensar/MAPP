@@ -5,6 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ACCESS_ANSWERS, ALEX, PLANNER, SARA_ROLES } from '@/testing/fixtures/access';
+import { reply } from '@/testing/replies';
 import { AccessPage } from './AccessPage';
 import { RoleFormPage } from './RoleFormPage';
 import { RolePage } from './RolePage';
@@ -12,12 +13,12 @@ import { RolePage } from './RolePage';
 const ALEX_USER = testUser({ id: ALEX.id, name: ALEX.name, firstName: 'Alex', initials: 'AM' });
 
 function answers() {
-  return mockApi({
-    'GET /api/v1/me': { body: ALEX_USER },
+  return mockApi([
+    reply('GET /api/v1/me', { body: ALEX_USER }),
     ...ACCESS_ANSWERS,
-    'GET /api/v1/people/U-1006/roles': { body: SARA_ROLES },
-    [`GET /api/v1/roles/${PLANNER.id}`]: { body: PLANNER },
-  });
+    reply('GET /api/v1/people/{personId}/roles', { body: SARA_ROLES }, { personId: 'U-1006' }),
+    reply('GET /api/v1/roles/{roleId}', { body: PLANNER }, { roleId: PLANNER.id }),
+  ]);
 }
 
 // The screens of feature 014 whose API is not served on this branch yet: WCAG 2.2 A and AA.

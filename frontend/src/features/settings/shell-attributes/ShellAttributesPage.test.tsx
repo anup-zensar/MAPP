@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -14,13 +14,16 @@ import {
   page,
   PIR,
 } from '@/testing/fixtures/shell-attributes';
+import { looseReply } from '@/testing/replies';
 import { ShellAttributesPage } from './ShellAttributesPage';
 
 const ALL = [BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES];
-const LIST = 'GET /api/v1/shell-attributes';
 
-function renderPage(route: string, answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ [LIST]: { body: page(ALL) }, ...answers });
+function renderPage(route: string, answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply('GET /api/v1/shell-attributes', { body: page(ALL) }),
+    ...answers,
+  ]);
   const rendered = renderWithProviders(<ShellAttributesPage />, {
     route,
     user: testUser(),
@@ -138,8 +141,8 @@ describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
 
   it('shows loading, then a failure with Try again', async () => {
     let calls = 0;
-    const { user } = renderPage('/settings/shell-attributes', {
-      [LIST]: () => {
+    const { user } = renderPage('/settings/shell-attributes', [
+      looseReply('GET /api/v1/shell-attributes', () => {
         calls += 1;
         return calls === 1
           ? {
@@ -147,8 +150,8 @@ describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
               body: { error: { code: 'internal_error', message: 'Something went wrong.' } },
             }
           : { body: page(ALL) };
-      },
-    });
+      }),
+    ]);
 
     expect(screen.getByText('Loading…')).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
@@ -167,9 +170,13 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
   ]);
 
   it('moves an attribute with the keyboard, keeps the focus on its button and says so', async () => {
-    const { user, api } = renderPage('/settings/shell-attributes?level=activity&status=all', {
-      'POST /api/v1/shell-attributes/SA-1011/move': { body: PIR_FIRST },
-    });
+    const { user, api } = renderPage('/settings/shell-attributes?level=activity&status=all', [
+      looseReply(
+        'POST /api/v1/shell-attributes/{attributeId}/move',
+        { body: PIR_FIRST },
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     const up = await screen.findByRole('button', { name: "Move 'PIR' up" });
     up.focus();
@@ -231,11 +238,15 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
   });
 
   it('moves a whole section', async () => {
-    const { user, api } = renderPage('/settings/shell-attributes?level=activity&status=all', {
-      'POST /api/v1/shell-attributes/SA-1012/move': {
-        body: page([BRANDS, OLD_NOTES, MEDIA_CHANNEL, PIR]),
-      },
-    });
+    const { user, api } = renderPage('/settings/shell-attributes?level=activity&status=all', [
+      looseReply(
+        'POST /api/v1/shell-attributes/{attributeId}/move',
+        {
+          body: page([BRANDS, OLD_NOTES, MEDIA_CHANNEL, PIR]),
+        },
+        { attributeId: 'SA-1012' },
+      ),
+    ]);
 
     await user.click(
       await screen.findByRole('button', { name: "Move section 'Lubricants attributes' up" }),
@@ -249,18 +260,22 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
   });
 
   it('shows why the API refused a move', async () => {
-    const { user } = renderPage('/settings/shell-attributes?level=activity&status=all', {
-      'POST /api/v1/shell-attributes/SA-1013/move': {
-        status: 400,
-        body: {
-          error: {
-            code: 'validation_failed',
-            message: 'Check the move.',
-            fields: [{ field: 'direction', message: 'Old notes must stay below Brands.' }],
+    const { user } = renderPage('/settings/shell-attributes?level=activity&status=all', [
+      looseReply(
+        'POST /api/v1/shell-attributes/{attributeId}/move',
+        {
+          status: 400,
+          body: {
+            error: {
+              code: 'validation_failed',
+              message: 'Check the move.',
+              fields: [{ field: 'direction', message: 'Old notes must stay below Brands.' }],
+            },
           },
         },
-      },
-    });
+        { attributeId: 'SA-1013' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: "Move 'Old notes' up" }));
 
@@ -301,24 +316,28 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
   });
 
   it('deletes an unused attribute with its options after asking, and offers Undo', async () => {
-    const { user, api } = renderPage('/settings/shell-attributes?level=activity', {
-      'DELETE /api/v1/shell-attributes/SA-1011': {
-        body: {
-          recycleBinEntry: {
-            id: 'BIN-1001',
-            recordType: 'shellAttribute',
-            recordTypeLabel: 'Shell attribute',
-            recordId: 'SA-1011',
-            recordName: 'PIR',
-            path: [],
-            parent: null,
-            deletedAt: '2026-03-14T10:00:00Z',
-            deletedBy: { id: 'U-1002', name: 'Priya Raman' },
-            contents: [{ recordType: 'shellAttributeOption', label: 'options', count: 2 }],
+    const { user, api } = renderPage('/settings/shell-attributes?level=activity', [
+      looseReply(
+        'DELETE /api/v1/shell-attributes/{attributeId}',
+        {
+          body: {
+            recycleBinEntry: {
+              id: 'BIN-1001',
+              recordType: 'shellAttribute',
+              recordTypeLabel: 'Shell attribute',
+              recordId: 'SA-1011',
+              recordName: 'PIR',
+              path: [],
+              parent: null,
+              deletedAt: '2026-03-14T10:00:00Z',
+              deletedBy: { id: 'U-1002', name: 'Priya Raman' },
+              contents: [{ recordType: 'shellAttributeOption', label: 'options', count: 2 }],
+            },
           },
         },
-      },
-    });
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     await choose(user, 'PIR', 'Delete');
     const dialog = await screen.findByRole('alertdialog', {
@@ -336,9 +355,13 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
   });
 
   it('offers Set inactive instead of deleting an attribute in use (SC-004)', async () => {
-    const { user, api } = renderPage('/settings/shell-attributes?level=activity', {
-      'POST /api/v1/shell-attributes/SA-1010/status': { body: { ...MEDIA_CHANNEL, active: false } },
-    });
+    const { user, api } = renderPage('/settings/shell-attributes?level=activity', [
+      looseReply(
+        'POST /api/v1/shell-attributes/{attributeId}/status',
+        { body: { ...MEDIA_CHANNEL, active: false } },
+        { attributeId: 'SA-1010' },
+      ),
+    ]);
 
     await choose(user, 'Media channel', 'Delete');
     const dialog = await screen.findByRole('alertdialog', { name: "'Media channel' is in use" });
@@ -358,17 +381,21 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
   });
 
   it('switches to the in-use question when someone started using it meanwhile', async () => {
-    const { user } = renderPage('/settings/shell-attributes?level=activity', {
-      'DELETE /api/v1/shell-attributes/SA-1011': {
-        status: 409,
-        body: {
-          error: {
-            code: 'in_use',
-            message: "'PIR' is in use (used by 1 activity) — set it inactive instead.",
+    const { user } = renderPage('/settings/shell-attributes?level=activity', [
+      looseReply(
+        'DELETE /api/v1/shell-attributes/{attributeId}',
+        {
+          status: 409,
+          body: {
+            error: {
+              code: 'in_use',
+              message: "'PIR' is in use (used by 1 activity) — set it inactive instead.",
+            },
           },
         },
-      },
-    });
+        { attributeId: 'SA-1011' },
+      ),
+    ]);
 
     await choose(user, 'PIR', 'Delete');
     await user.click(await screen.findByRole('button', { name: 'Delete Shell attribute' }));
@@ -380,9 +407,13 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
   });
 
   it('reactivates an inactive attribute', async () => {
-    const { user } = renderPage('/settings/shell-attributes?level=activity&status=inactive', {
-      'POST /api/v1/shell-attributes/SA-1013/status': { body: { ...OLD_NOTES, active: true } },
-    });
+    const { user } = renderPage('/settings/shell-attributes?level=activity&status=inactive', [
+      looseReply(
+        'POST /api/v1/shell-attributes/{attributeId}/status',
+        { body: { ...OLD_NOTES, active: true } },
+        { attributeId: 'SA-1013' },
+      ),
+    ]);
 
     await choose(user, 'Old notes', 'Reactivate');
 
@@ -411,7 +442,9 @@ describe('ShellAttributesPage: attributes without help (016 FR-048)', () => {
   ];
 
   it('marks each attribute without help with "No help yet"', async () => {
-    renderPage('/settings/shell-attributes?level=activity', { [LIST]: { body: page(WITH_HELP) } });
+    renderPage('/settings/shell-attributes?level=activity', [
+      looseReply('GET /api/v1/shell-attributes', { body: page(WITH_HELP) }),
+    ]);
     await screen.findByRole('table');
 
     const pir = screen.getByRole('rowheader', { name: /^PIR/ });
@@ -421,9 +454,9 @@ describe('ShellAttributesPage: attributes without help (016 FR-048)', () => {
   });
 
   it('lists only them from the Field help link, on the first level that has any', async () => {
-    const { user, router } = renderPage('/settings/shell-attributes?help=missing', {
-      [LIST]: { body: page(WITH_HELP) },
-    });
+    const { user, router } = renderPage('/settings/shell-attributes?help=missing', [
+      looseReply('GET /api/v1/shell-attributes', { body: page(WITH_HELP) }),
+    ]);
     await screen.findByRole('table');
 
     // The plan level has none: the activity level opens, with PIR only (Old notes is inactive).

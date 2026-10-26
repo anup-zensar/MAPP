@@ -1,18 +1,19 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { FORM_ANSWERS, plan, planDefaults } from '@/testing/fixtures/plans';
+import { reply } from '@/testing/replies';
 import { PlanCreatePage } from './PlanCreatePage';
 
-function renderPage(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({
+function renderPage(answers: HttpHandler[] = []) {
+  const api = mockApi([
     ...FORM_ANSWERS,
-    'GET /api/v1/plan-defaults': { body: planDefaults() },
+    reply('GET /api/v1/plan-defaults', { body: planDefaults() }),
     ...answers,
-  });
+  ]);
   const result = renderWithProviders(<PlanCreatePage />, {
     user: testUser(),
     route: '/plans/new',
@@ -32,12 +33,12 @@ describe('PlanCreatePage (US1)', () => {
   });
 
   it('creates the plan, opens its page and says what to do next (US1#2)', async () => {
-    const { api, user, router } = renderPage({
-      'POST /api/v1/plans': {
+    const { api, user, router } = renderPage([
+      reply('POST /api/v1/plans', {
         status: 201,
         body: plan({ id: 'P-1004', name: 'FY2026 Lubricants Test' }),
-      },
-    });
+      }),
+    ]);
 
     await user.type(
       await screen.findByRole('textbox', { name: /Plan name/ }),
@@ -72,8 +73,8 @@ describe('PlanCreatePage (US1)', () => {
   });
 
   it('shows every problem of the API at once and stays (US1#3, FR-010)', async () => {
-    const { user, router } = renderPage({
-      'POST /api/v1/plans': {
+    const { user, router } = renderPage([
+      reply('POST /api/v1/plans', {
         status: 400,
         body: {
           error: {
@@ -85,8 +86,8 @@ describe('PlanCreatePage (US1)', () => {
             ],
           },
         },
-      },
-    });
+      }),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Save' }));
 
@@ -110,7 +111,7 @@ describe('PlanCreatePage (US1)', () => {
   });
 
   it('says when the defaults could not be loaded, with Try again', async () => {
-    renderPage({ 'GET /api/v1/plan-defaults': { status: 500 } });
+    renderPage([reply('GET /api/v1/plan-defaults', { status: 500 })]);
 
     expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent("MAPP can't reach its server");

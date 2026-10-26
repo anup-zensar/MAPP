@@ -6,6 +6,7 @@ import { ApiError } from '@/api/errors';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { looseReply } from '@/testing/replies';
 import { useAccess } from './access';
 import type { CurrentUser } from './useSession';
 
@@ -66,10 +67,14 @@ function ChangePage() {
 
 describe('SessionProvider after a 403', () => {
   it('reloads the person’s access when a call is refused by their roles (feature 014, FR-020)', async () => {
-    const mocked = mockApi({
-      'DELETE /api/v1/activities/A-1001': { status: 403, body: FORBIDDEN },
-      'GET /api/v1/me': { body: PLANNER },
-    });
+    const mocked = mockApi([
+      looseReply(
+        'DELETE /api/v1/activities/{activityId}',
+        { status: 403, body: FORBIDDEN },
+        { activityId: 'A-1001' },
+      ),
+      looseReply('GET /api/v1/me', { body: PLANNER }),
+    ]);
     const { user } = renderWithProviders(<ChangePage />, { user: VIEWER });
     expect(screen.getByText('View only')).toBeInTheDocument();
 

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -15,6 +15,7 @@ import {
   row,
   savedView,
 } from '@/testing/fixtures/all-work';
+import { looseReply } from '@/testing/replies';
 import { AllWorkPage } from './AllWorkPage';
 import { resetAllWorkStore } from './all-work-store';
 import type {
@@ -32,14 +33,14 @@ afterEach(() => {
 });
 
 function renderPage(
-  answers: Record<string, MockHandler> = {},
+  answers: HttpHandler[] = [],
   route = '/all-work',
 ): ReturnType<typeof renderWithProviders> & { api: ReturnType<typeof mockApi> } {
-  const api = mockApi({
+  const api = mockApi([
     ...PAGE_ANSWERS,
-    'GET /api/v1/all-work': { body: gridResult() },
+    looseReply('GET /api/v1/all-work', { body: gridResult() }),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(<AllWorkPage />, {
     user: testUser(),
     route,
@@ -100,12 +101,14 @@ describe('AllWorkPage (US1)', () => {
   });
 
   it('starts from the year the API calls current and the person’s remembered columns (FR-009, FR-019)', async () => {
-    const { api } = renderPage({
-      'GET /api/v1/all-work/options': { body: allWorkOptions({ year: 2027, currentYear: 2027 }) },
-      'GET /api/v1/all-work/preferences': {
+    const { api } = renderPage([
+      looseReply('GET /api/v1/all-work/options', {
+        body: allWorkOptions({ year: 2027, currentYear: 2027 }),
+      }),
+      looseReply('GET /api/v1/all-work/preferences', {
         body: { columns: ['plannedCost', 'id'], sort: null },
-      },
-    });
+      }),
+    ]);
 
     await waitFor(() => expect(viewQueries(api)).toHaveLength(1));
     const [query] = viewQueries(api);
@@ -115,12 +118,12 @@ describe('AllWorkPage (US1)', () => {
 
   it('shows grey shapes while loading, then the error with Try again', async () => {
     let calls = 0;
-    const { user } = renderPage({
-      'GET /api/v1/all-work': () => {
+    const { user } = renderPage([
+      looseReply('GET /api/v1/all-work', () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: gridResult() };
-      },
-    });
+      }),
+    ]);
 
     expect(screen.getAllByText('Loading…').length).toBeGreaterThan(0);
     expect(await screen.findByRole('alert')).toHaveTextContent("MAPP can't reach its server");
@@ -130,12 +133,12 @@ describe('AllWorkPage (US1)', () => {
   });
 
   it('says that the year has no plans yet, with the way to the Plans page', async () => {
-    renderPage({
-      'GET /api/v1/all-work/options': { body: allWorkOptions({ plans: [] }) },
-      'GET /api/v1/all-work': {
+    renderPage([
+      looseReply('GET /api/v1/all-work/options', { body: allWorkOptions({ plans: [] }) }),
+      looseReply('GET /api/v1/all-work', {
         body: emptyResult({ count: { shown: 0, total: 0, noun: 'activities' } }),
-      },
-    });
+      }),
+    ]);
 
     expect(await screen.findByText('No plans in 2026 yet')).toBeInTheDocument();
     expect(screen.getByText("Plans of 2026 appear here once they're created.")).toBeInTheDocument();
@@ -144,12 +147,13 @@ describe('AllWorkPage (US1)', () => {
 
   it('applies the filters of the address once, and offers Clear filters when nothing matches (D-122)', async () => {
     const { api, user, router } = renderPage(
-      {
-        'GET /api/v1/all-work': (request) =>
+      [
+        looseReply('GET /api/v1/all-work', (request) =>
           new URL(request.url).searchParams.has('activityStatus')
             ? { body: emptyResult() }
             : { body: gridResult() },
-      },
+        ),
+      ],
       '/all-work?activityStatus=complete&owner=U-1003',
     );
 
@@ -202,11 +206,20 @@ describe('AllWorkPage (US1)', () => {
   });
 
   it('opens a row’s record after checking that it still exists (FR-016, D-123)', async () => {
-    const { api, user, router } = renderPage({
-      'GET /api/v1/all-work/records/I-1001': {
-        body: { recordId: 'I-1001', level: 'initiative', name: 'Helix digital', planId: 'P-1001' },
-      },
-    });
+    const { api, user, router } = renderPage([
+      looseReply(
+        'GET /api/v1/all-work/records/{recordId}',
+        {
+          body: {
+            recordId: 'I-1001',
+            level: 'initiative',
+            name: 'Helix digital',
+            planId: 'P-1001',
+          },
+        },
+        { recordId: 'I-1001' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('link', { name: 'Helix digital' }));
 
@@ -219,17 +232,21 @@ describe('AllWorkPage (US1)', () => {
   });
 
   it('says that a record was deleted and refreshes the view (edge case, D-123)', async () => {
-    const { api, user, router } = renderPage({
-      'GET /api/v1/all-work/records/A-1002': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This activity was deleted — it is in the recycle bin',
+    const { api, user, router } = renderPage([
+      looseReply(
+        'GET /api/v1/all-work/records/{recordId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This activity was deleted — it is in the recycle bin',
+            },
           },
         },
-      },
-    });
+        { recordId: 'A-1002' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('link', { name: 'Helix social ads' }));
 
@@ -243,17 +260,21 @@ describe('AllWorkPage (US1)', () => {
 
   it('keeps the view, the expansion and the scroll position when coming back (FR-009, FR-016)', async () => {
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
-    const { api, user, router } = renderPage({
-      'GET /api/v1/all-work/records/L-1001': {
-        body: {
-          recordId: 'L-1001',
-          level: 'lineItem',
-          name: 'Venue hire',
-          planId: 'P-1001',
-          activityId: 'A-1001',
+    const { api, user, router } = renderPage([
+      looseReply(
+        'GET /api/v1/all-work/records/{recordId}',
+        {
+          body: {
+            recordId: 'L-1001',
+            level: 'lineItem',
+            name: 'Venue hire',
+            planId: 'P-1001',
+            activityId: 'A-1001',
+          },
         },
-      },
-    });
+        { recordId: 'L-1001' },
+      ),
+    ]);
     await user.click(await screen.findByRole('button', { name: 'Expand Helix launch event' }));
     Object.defineProperty(window, 'scrollY', { value: 640, configurable: true });
 
@@ -270,7 +291,7 @@ describe('AllWorkPage (US1)', () => {
 
   it('shows the rows 50 to a page, with the totals row on every page (D-115)', async () => {
     const result = manyActivities(60);
-    const { user } = renderPage({ 'GET /api/v1/all-work': { body: result } });
+    const { user } = renderPage([looseReply('GET /api/v1/all-work', { body: result })]);
 
     expect(await screen.findByText('Rows 1–50 of 63')).toBeInTheDocument();
     expect(rowNames()).toHaveLength(51);
@@ -289,8 +310,8 @@ describe('AllWorkPage (US1)', () => {
 
   it('names a refused filter in a message and sets it back (plan "States")', async () => {
     const { api } = renderPage(
-      {
-        'GET /api/v1/all-work': (request) =>
+      [
+        looseReply('GET /api/v1/all-work', (request) =>
           new URL(request.url).searchParams.has('search')
             ? {
                 status: 400,
@@ -303,7 +324,8 @@ describe('AllWorkPage (US1)', () => {
                 },
               }
             : { body: gridResult() },
-      },
+        ),
+      ],
       '/all-work?search=helix',
     );
 
@@ -332,12 +354,13 @@ describe('AllWorkPage filters and search (US2)', () => {
   }
 
   it('applies a filter at once: the rows, the chip, the count and the cards follow (US2 scenario 2, FR-004, FR-005)', async () => {
-    const { api, user } = renderPage({
-      'GET /api/v1/all-work': (request) =>
+    const { api, user } = renderPage([
+      looseReply('GET /api/v1/all-work', (request) =>
         new URL(request.url).searchParams.get('activityStatus') === 'declined'
           ? { body: declinedOnly() }
           : { body: gridResult() },
-    });
+      ),
+    ]);
     expect(await screen.findByText('3 of 3 activities')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Activity status' }));
@@ -374,12 +397,13 @@ describe('AllWorkPage filters and search (US2)', () => {
       ),
       count: { shown: 1, total: 3, noun: 'activities' },
     });
-    const { api, user } = renderPage({
-      'GET /api/v1/all-work': (request) =>
+    const { api, user } = renderPage([
+      looseReply('GET /api/v1/all-work', (request) =>
         new URL(request.url).searchParams.get('search') === 'A-1002'
           ? { body: found }
           : { body: gridResult() },
-    });
+      ),
+    ]);
     await screen.findByText('3 of 3 activities');
 
     await user.type(screen.getByRole('searchbox', { name: 'Search' }), 'A-1002');
@@ -403,12 +427,13 @@ describe('AllWorkPage filters and search (US2)', () => {
   });
 
   it('keeps the filters and the search while the person moves around MAPP (FR-009)', async () => {
-    const { api, user, router } = renderPage({
-      'GET /api/v1/all-work': (request) =>
+    const { api, user, router } = renderPage([
+      looseReply('GET /api/v1/all-work', (request) =>
         new URL(request.url).searchParams.has('activityStatus')
           ? { body: declinedOnly() }
           : { body: gridResult() },
-    });
+      ),
+    ]);
     await screen.findByText('3 of 3 activities');
     await user.click(screen.getByRole('button', { name: 'Activity status' }));
     await user.click(
@@ -433,7 +458,7 @@ describe('AllWorkPage filters and search (US2)', () => {
       count: { shown: 1, total: 2, noun: 'initiatives' },
     });
     renderPage(
-      { 'GET /api/v1/all-work': { body: result } },
+      [looseReply('GET /api/v1/all-work', { body: result })],
       '/all-work?showLevels=initiativesWithoutActivities',
     );
 
@@ -448,10 +473,11 @@ describe('AllWorkPage filters and search (US2)', () => {
 
 describe('AllWorkPage columns and sort (US3)', () => {
   it('shows a column ticked in the chooser and remembers the choice for the person (US3 scenario 1, FR-021)', async () => {
-    const { api, user } = renderPage({
-      'PUT /api/v1/all-work/preferences': (request) =>
+    const { api, user } = renderPage([
+      looseReply('PUT /api/v1/all-work/preferences', (request) =>
         request.json().then((body: unknown) => ({ body })),
-    });
+      ),
+    ]);
     await screen.findByRole('link', { name: 'Helix launch' });
 
     await user.click(screen.getByRole('button', { name: 'Columns' }));
@@ -472,10 +498,11 @@ describe('AllWorkPage columns and sort (US3)', () => {
   });
 
   it('asks for the rows sorted by a heading, and remembers the sort (US3 scenario 2, FR-015)', async () => {
-    const { api, user } = renderPage({
-      'PUT /api/v1/all-work/preferences': (request) =>
+    const { api, user } = renderPage([
+      looseReply('PUT /api/v1/all-work/preferences', (request) =>
         request.json().then((body: unknown) => ({ body })),
-    });
+      ),
+    ]);
     await screen.findByRole('link', { name: 'Helix launch' });
 
     await user.click(screen.getByRole('button', { name: 'Planned cost' }));
@@ -503,7 +530,7 @@ describe('AllWorkPage Budget & cost (US4)', () => {
   }
 
   it('switches views keeping the filters, the search and the expansion (FR-001)', async () => {
-    const { api, user } = renderPage({ 'GET /api/v1/all-work': byView });
+    const { api, user } = renderPage([looseReply('GET /api/v1/all-work', byView)]);
     await user.click(await screen.findByRole('button', { name: 'Expand Helix launch event' }));
     await user.click(screen.getByRole('button', { name: 'Plan status' }));
     await user.click(
@@ -533,7 +560,7 @@ describe('AllWorkPage Budget & cost (US4)', () => {
   });
 
   it('shows quarters with the Monthly · Quarterly switch (US4 scenario 3, FR-022)', async () => {
-    const { api, user } = renderPage({ 'GET /api/v1/all-work': byView });
+    const { api, user } = renderPage([looseReply('GET /api/v1/all-work', byView)]);
     await screen.findByRole('link', { name: 'Helix launch' });
     await user.click(screen.getByRole('tab', { name: 'Budget & cost' }));
     await screen.findByRole('columnheader', { name: 'Mar' });
@@ -557,12 +584,13 @@ describe('AllWorkPage Budget & cost (US4)', () => {
 
 describe('AllWorkPage Calendar (US5)', () => {
   it('shows the Calendar timeline, and the Month layout with the switch (FR-025, FR-028)', async () => {
-    const { api, user } = renderPage({
-      'GET /api/v1/all-work': (request) =>
+    const { api, user } = renderPage([
+      looseReply('GET /api/v1/all-work', (request) =>
         new URL(request.url).searchParams.get('view') === 'calendar'
           ? { body: calendarResult() }
           : { body: gridResult() },
-    });
+      ),
+    ]);
     await screen.findByRole('link', { name: 'Helix launch' });
 
     await user.click(screen.getByRole('tab', { name: 'Calendar' }));
@@ -596,11 +624,11 @@ describe('AllWorkPage saved views (US6)', () => {
    * The saved-view answers of a small in-memory server: the list answers what was saved and
    * changed, as the API does.
    */
-  function viewAnswers(initial = [declined]): Record<string, MockHandler> {
+  function viewAnswers(initial = [declined]): HttpHandler[] {
     let items: SavedView[] = [...initial];
-    return {
-      'GET /api/v1/saved-views': () => ({ body: { items, total: items.length } }),
-      'POST /api/v1/saved-views': async (request) => {
+    return [
+      looseReply('GET /api/v1/saved-views', () => ({ body: { items, total: items.length } })),
+      looseReply('POST /api/v1/saved-views', async (request) => {
         const body = (await request.json()) as SavedViewCreate;
         const view = savedView({
           id: 'SV-1009',
@@ -610,13 +638,17 @@ describe('AllWorkPage saved views (US6)', () => {
         });
         items = [...items, view];
         return { status: 201, body: view };
-      },
-      'PATCH /api/v1/saved-views/SV-1001': async (request) => {
-        const body = (await request.json()) as SavedViewUpdate;
-        items = items.map((view) => (view.id === 'SV-1001' ? { ...view, ...body } : view));
-        return { body: items.find((view) => view.id === 'SV-1001') };
-      },
-    };
+      }),
+      looseReply(
+        'PATCH /api/v1/saved-views/{viewId}',
+        async (request) => {
+          const body = (await request.json()) as SavedViewUpdate;
+          items = items.map((view) => (view.id === 'SV-1001' ? { ...view, ...body } : view));
+          return { body: items.find((view) => view.id === 'SV-1001') };
+        },
+        { viewId: 'SV-1001' },
+      ),
+    ];
   }
 
   async function chooseView(user: ReturnType<typeof renderPage>['user'], name: string) {
@@ -652,13 +684,14 @@ describe('AllWorkPage saved views (US6)', () => {
   });
 
   it('saves what is shown under a name and marks it as the active view (US6 scenario 1, FR-029)', async () => {
-    const { api, user } = renderPage({
+    const { api, user } = renderPage([
       ...viewAnswers([]),
-      'GET /api/v1/all-work': (request) =>
+      looseReply('GET /api/v1/all-work', (request) =>
         new URL(request.url).searchParams.get('view') === 'budget'
           ? { body: budgetResult() }
           : { body: gridResult() },
-    });
+      ),
+    ]);
     await screen.findByRole('link', { name: 'Helix launch' });
     await user.click(screen.getByRole('tab', { name: 'Budget & cost' }));
     await screen.findByRole('table', { name: 'Budget & cost' });

@@ -9,6 +9,7 @@ import {
   planDefaults,
   seedList,
 } from '@/testing/fixtures/plans';
+import { reply } from '@/testing/replies';
 
 // Feature 005 fills the plan tree; its own tests cover that, so it never breaks these.
 vi.mock('./campaigns/useCampaignTreeContent', () => ({
@@ -26,14 +27,14 @@ vi.mock('./campaigns/useCampaignTreeContent', () => ({
 }));
 
 /** What the four pages ask the API. */
-const ANSWERS = {
+const ANSWERS = [
   ...FORM_ANSWERS,
   ...HISTORY_ANSWERS,
   ...financialsNotServed('P-1001'),
-  'GET /api/v1/plans': { body: seedList() },
-  'GET /api/v1/plan-defaults': { body: planDefaults() },
-  'GET /api/v1/plans/P-1001': { body: plan() },
-};
+  reply('GET /api/v1/plans', { body: seedList() }),
+  reply('GET /api/v1/plan-defaults', { body: planDefaults() }),
+  reply('GET /api/v1/plans/{planId}', { body: plan() }, { planId: 'P-1001' }),
+];
 
 // Feature 004's addresses (build guide §5).
 describe('Plans routes (feature 004)', () => {

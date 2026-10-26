@@ -1,16 +1,17 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { ACTIVITY_TYPES, LUBRICANTS, PRINT, ref, RETAIL } from '@/testing/fixtures/settings';
+import { reply } from '@/testing/replies';
 import { ModelForm } from './ModelForm';
 import type { ModelFormMode } from './ModelForm';
 
-function renderForm(mode: ModelFormMode, answers: Record<string, MockHandler> = {}) {
+function renderForm(mode: ModelFormMode, answers: HttpHandler[] = []) {
   const onClose = vi.fn();
-  const api = mockApi({ 'GET /api/v1/activity-types': { body: ACTIVITY_TYPES }, ...answers });
+  const api = mockApi([reply('GET /api/v1/activity-types', { body: ACTIVITY_TYPES }), ...answers]);
   const rendered = renderWithProviders(
     <ModelForm mode={mode} onView={vi.fn()} onClose={onClose} />,
     { user: testUser() },
@@ -88,15 +89,12 @@ describe('ModelForm (FR-009, FR-010)', () => {
 
   it('says when the activity types cannot be loaded, and tries again', async () => {
     let calls = 0;
-    const { user } = renderForm(
-      { kind: 'new' },
-      {
-        'GET /api/v1/activity-types': () => {
-          calls += 1;
-          return calls === 1 ? Promise.reject(new TypeError('offline')) : { body: ACTIVITY_TYPES };
-        },
-      },
-    );
+    const { user } = renderForm({ kind: 'new' }, [
+      reply('GET /api/v1/activity-types', () => {
+        calls += 1;
+        return calls === 1 ? Promise.reject(new TypeError('offline')) : { body: ACTIVITY_TYPES };
+      }),
+    ]);
 
     expect(await screen.findByText(/can't reach its server/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Try again' }));

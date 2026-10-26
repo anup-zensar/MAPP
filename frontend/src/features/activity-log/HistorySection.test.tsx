@@ -1,19 +1,19 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { logEntry, logPage } from '@/testing/fixtures/activity-log';
+import { looseReply } from '@/testing/replies';
 import { HistorySection } from './HistorySection';
 import { showHistory } from './show-history';
 
-const LOG = 'GET /api/v1/activity-log';
 const PREFERENCES = 'PATCH /api/v1/me/preferences';
 
 function renderSection(
-  answers: Record<string, MockHandler>,
+  answers: HttpHandler[],
   { level = 'activity', include = false }: { level?: PlanningLevel; include?: boolean } = {},
 ) {
   const api = mockApi(answers);
@@ -36,12 +36,13 @@ describe('HistorySection', () => {
     const first = Array.from({ length: 20 }, (_, index) =>
       logEntry({ id: `LOG-${100 - index}`, seq: 100 - index }),
     );
-    const { user, api } = renderSection({
-      [LOG]: (request) =>
+    const { user, api } = renderSection([
+      looseReply('GET /api/v1/activity-log', (request) =>
         new URL(request.url).searchParams.get('beforeSeq')
           ? { body: logPage([logEntry({ id: 'LOG-50', seq: 50 })], { total: 21 }) }
           : { body: logPage(first, { total: 21 }) },
-    });
+      ),
+    ]);
 
     expect(screen.getByRole('heading', { level: 2, name: 'History' })).toBeInTheDocument();
     expect(screen.getByText('Every change to this activity, newest first')).toBeInTheDocument();
@@ -64,23 +65,25 @@ describe('HistorySection', () => {
     ['initiative', 'Include items inside'],
     ['activity', 'Include line items'],
   ] as const)('offers %s pages "%s" (FR-012)', (level, label) => {
-    renderSection({ [LOG]: { body: logPage([]) } }, { level });
+    renderSection([looseReply('GET /api/v1/activity-log', { body: logPage([]) })], { level });
 
     expect(screen.getByRole('checkbox', { name: label })).not.toBeChecked();
   });
 
   it('offers no include option on a line item (FR-012)', () => {
-    renderSection({ [LOG]: { body: logPage([]) } }, { level: 'lineItem' });
+    renderSection([looseReply('GET /api/v1/activity-log', { body: logPage([]) })], {
+      level: 'lineItem',
+    });
 
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(screen.getByText('Every change to this line item, newest first')).toBeInTheDocument();
   });
 
   it('includes the line items at once and remembers the choice for the person (FR-012, FR-013)', async () => {
-    const { user, api } = renderSection({
-      [LOG]: { body: logPage([logEntry()]) },
-      [PREFERENCES]: { status: 204 },
-    });
+    const { user, api } = renderSection([
+      looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
+      looseReply('PATCH /api/v1/me/preferences', { status: 204 }),
+    ]);
     expect(screen.getByRole('link', { name: 'Open in activity log' })).toHaveAttribute(
       'href',
       '/activity-log?record=A-1042',
@@ -101,17 +104,20 @@ describe('HistorySection', () => {
   });
 
   it('starts with the person’s remembered choice (FR-012)', async () => {
-    const { api } = renderSection({ [LOG]: { body: logPage([logEntry()]) } }, { include: true });
+    const { api } = renderSection(
+      [looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) })],
+      { include: true },
+    );
 
     expect(screen.getByRole('checkbox', { name: 'Include line items' })).toBeChecked();
     await waitFor(() => expect(logSearches(api)[0].get('includeInside')).toBe('true'));
   });
 
   it('says when the choice could not be saved, with Try again (FR-012)', async () => {
-    const { user } = renderSection({
-      [LOG]: { body: logPage([logEntry()]) },
-      [PREFERENCES]: { status: 500 },
-    });
+    const { user } = renderSection([
+      looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) }),
+      looseReply('PATCH /api/v1/me/preferences', { status: 500 }),
+    ]);
 
     await user.click(screen.getByRole('checkbox', { name: 'Include line items' }));
 
@@ -121,13 +127,13 @@ describe('HistorySection', () => {
   });
 
   it('says when nothing was recorded yet', async () => {
-    renderSection({ [LOG]: { body: logPage([]) } });
+    renderSection([looseReply('GET /api/v1/activity-log', { body: logPage([]) })]);
 
     expect(await screen.findByText('No changes recorded yet.')).toBeInTheDocument();
   });
 
   it('says why the history could not be loaded, with Try again', async () => {
-    renderSection({ [LOG]: { status: 500 } });
+    renderSection([looseReply('GET /api/v1/activity-log', { status: 500 })]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "MAPP can't reach its server right now.",
@@ -136,7 +142,7 @@ describe('HistorySection', () => {
   });
 
   it('is where View history takes people: its heading gets the focus (FR-011)', async () => {
-    renderSection({ [LOG]: { body: logPage([]) } });
+    renderSection([looseReply('GET /api/v1/activity-log', { body: logPage([]) })]);
 
     showHistory();
 
@@ -146,7 +152,7 @@ describe('HistorySection', () => {
   });
 
   it('draws as a part of a side panel, with an h3 and its own id (FR-011)', async () => {
-    mockApi({ [LOG]: { body: logPage([logEntry()]) } });
+    mockApi([looseReply('GET /api/v1/activity-log', { body: logPage([logEntry()]) })]);
     renderWithProviders(
       <HistorySection
         recordType="campaign"

@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { financialsNotServed } from '@/testing/fixtures/plans';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { renderApp } from '@/testing/app';
-import type { MockHandler } from '@/testing/mock-api';
+import { looseReply } from '@/testing/replies';
 import { campaign, initiative, PEOPLE, planAnswer, planCampaigns } from './fixtures';
 
 // The plan page (004) and an initiative's activities (006) are tested by their features; here
@@ -24,19 +25,35 @@ vi.mock('@/features/activities/InitiativeActivities', () => ({
   ),
 }));
 
-const ANSWERS: Record<string, MockHandler> = {
+const ANSWERS: HttpHandler[] = [
   ...HISTORY_ANSWERS,
   ...financialsNotServed('P-1001', 'C-1001', 'I-1001'),
-  'GET /api/v1/plans/P-1001/campaigns': { body: planCampaigns() },
-  'GET /api/v1/plans/P-1001': { body: planAnswer() },
-  'GET /api/v1/campaigns/C-1001': { body: campaign() },
-  'GET /api/v1/initiatives/I-1001': { body: initiative() },
-  'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
-  'GET /api/v1/shell-attribute-forms/initiative': {
-    body: { ...campaignForm(), level: 'initiative' },
-  },
-  'GET /api/v1/people': { body: PEOPLE },
-};
+  looseReply(
+    'GET /api/v1/plans/{planId}/campaigns',
+    { body: planCampaigns() },
+    { planId: 'P-1001' },
+  ),
+  looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+  looseReply('GET /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
+  looseReply(
+    'GET /api/v1/initiatives/{initiativeId}',
+    { body: initiative() },
+    { initiativeId: 'I-1001' },
+  ),
+  looseReply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    { body: campaignForm() },
+    { level: 'campaign' },
+  ),
+  looseReply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    {
+      body: { ...campaignForm(), level: 'initiative' },
+    },
+    { level: 'initiative' },
+  ),
+  looseReply('GET /api/v1/people', { body: PEOPLE }),
+];
 
 // Feature 005's addresses: side panels over the plan page (build guide §5).
 describe('Campaign and initiative routes (feature 005)', () => {

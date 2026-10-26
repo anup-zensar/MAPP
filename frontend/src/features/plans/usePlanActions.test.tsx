@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { plan } from '@/testing/fixtures/plans';
+import { looseReply } from '@/testing/replies';
 import { usePlanActions } from './usePlanActions';
 import type { ActionPlan } from './usePlanActions';
 
@@ -26,7 +27,7 @@ function Harness({ target }: { target: ActionPlan }) {
   );
 }
 
-function renderActions(target: ActionPlan, answers: Record<string, MockHandler>) {
+function renderActions(target: ActionPlan, answers: HttpHandler[]) {
   const api = mockApi(answers);
   const result = renderWithProviders(<Harness target={target} />, {
     user: testUser(),
@@ -84,7 +85,7 @@ function reasonProblem(message: string) {
 
 describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
   it('offers Publish on a Draft plan and Unpublish on a Published one', async () => {
-    const { user } = renderActions(PUBLISHED, {});
+    const { user } = renderActions(PUBLISHED, []);
 
     await user.click(screen.getByRole('button', { name: `Actions for ${PUBLISHED.name}` }));
     expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
@@ -97,11 +98,15 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
   });
 
   it('publishes a complete Draft plan (US5#1)', async () => {
-    const { user, api } = renderActions(CHINA, {
-      'POST /api/v1/plans/P-1002/publish': {
-        body: plan({ id: 'P-1002', name: 'FY2026 Mobility China', status: 'published' }),
-      },
-    });
+    const { user, api } = renderActions(CHINA, [
+      looseReply(
+        'POST /api/v1/plans/{planId}/publish',
+        {
+          body: plan({ id: 'P-1002', name: 'FY2026 Mobility China', status: 'published' }),
+        },
+        { planId: 'P-1002' },
+      ),
+    ]);
 
     await choose(user, CHINA.name, 'Publish');
 
@@ -110,9 +115,9 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
   });
 
   it('lists every missing field, grouped by record, with links (US5#2, FR-024)', async () => {
-    const { user, router } = renderActions(CHINA, {
-      'POST /api/v1/plans/P-1002/publish': NOT_READY,
-    });
+    const { user, router } = renderActions(CHINA, [
+      looseReply('POST /api/v1/plans/{planId}/publish', NOT_READY, { planId: 'P-1002' }),
+    ]);
 
     await choose(user, CHINA.name, 'Publish');
 
@@ -135,7 +140,9 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
   });
 
   it('closes the blocked dialog with Close', async () => {
-    const { user } = renderActions(CHINA, { 'POST /api/v1/plans/P-1002/publish': NOT_READY });
+    const { user } = renderActions(CHINA, [
+      looseReply('POST /api/v1/plans/{planId}/publish', NOT_READY, { planId: 'P-1002' }),
+    ]);
 
     await choose(user, CHINA.name, 'Publish');
     await user.click(await screen.findByRole('button', { name: 'Close' }));
@@ -145,14 +152,18 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
 
   it('asks why before unpublishing and shows the API’s problems with the reason (US5#3, FR-025)', async () => {
     let calls = 0;
-    const { user, api } = renderActions(PUBLISHED, {
-      'POST /api/v1/plans/P-1003/unpublish': () => {
-        calls += 1;
-        if (calls === 1) return reasonProblem('Enter a reason.');
-        if (calls === 2) return reasonProblem('Use 500 characters or fewer.');
-        return { body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'draft' }) };
-      },
-    });
+    const { user, api } = renderActions(PUBLISHED, [
+      looseReply(
+        'POST /api/v1/plans/{planId}/unpublish',
+        () => {
+          calls += 1;
+          if (calls === 1) return reasonProblem('Enter a reason.');
+          if (calls === 2) return reasonProblem('Use 500 characters or fewer.');
+          return { body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'draft' }) };
+        },
+        { planId: 'P-1003' },
+      ),
+    ]);
 
     await choose(user, PUBLISHED.name, 'Unpublish');
     const dialog = await screen.findByRole('dialog', {
@@ -199,16 +210,24 @@ const COPY_OPTIONS = {
 
 describe('usePlanActions: copy (US6#1–2, FR-026 – FR-028)', () => {
   it('copies into the next year and opens the copy with its messages and notes (US6#2)', async () => {
-    const { user, api, router } = renderActions(PUBLISHED, {
-      'GET /api/v1/plans/P-1003/copy-options': { body: COPY_OPTIONS },
-      'POST /api/v1/plans/P-1003/copy': {
-        status: 201,
-        body: {
-          plan: plan({ id: 'P-1004', name: 'FY2026 Lubricants Europe', year: 2026 }),
-          notes: ['Default finance budget cleared — it belonged to 2025.'],
+    const { user, api, router } = renderActions(PUBLISHED, [
+      looseReply(
+        'GET /api/v1/plans/{planId}/copy-options',
+        { body: COPY_OPTIONS },
+        { planId: 'P-1003' },
+      ),
+      looseReply(
+        'POST /api/v1/plans/{planId}/copy',
+        {
+          status: 201,
+          body: {
+            plan: plan({ id: 'P-1004', name: 'FY2026 Lubricants Europe', year: 2026 }),
+            notes: ['Default finance budget cleared — it belonged to 2025.'],
+          },
         },
-      },
-    });
+        { planId: 'P-1003' },
+      ),
+    ]);
 
     await choose(user, PUBLISHED.name, 'Copy');
     const dialog = await screen.findByRole('dialog', {
@@ -246,10 +265,14 @@ describe('usePlanActions: copy (US6#1–2, FR-026 – FR-028)', () => {
         },
       },
     };
-    const { user, router } = renderActions(PUBLISHED, {
-      'GET /api/v1/plans/P-1003/copy-options': { body: COPY_OPTIONS },
-      'POST /api/v1/plans/P-1003/copy': gone,
-    });
+    const { user, router } = renderActions(PUBLISHED, [
+      looseReply(
+        'GET /api/v1/plans/{planId}/copy-options',
+        { body: COPY_OPTIONS },
+        { planId: 'P-1003' },
+      ),
+      looseReply('POST /api/v1/plans/{planId}/copy', gone, { planId: 'P-1003' }),
+    ]);
 
     await choose(user, PUBLISHED.name, 'Copy');
     await user.click(await screen.findByRole('button', { name: 'Copy plan' }));
@@ -262,11 +285,15 @@ describe('usePlanActions: copy (US6#1–2, FR-026 – FR-028)', () => {
   });
 
   it('starts from the suggestion again each time it opens', async () => {
-    const { user } = renderActions(CHINA, {
-      'GET /api/v1/plans/P-1002/copy-options': {
-        body: { ...COPY_OPTIONS, name: 'FY2026 Mobility China (copy)', sameYear: 2026 },
-      },
-    });
+    const { user } = renderActions(CHINA, [
+      looseReply(
+        'GET /api/v1/plans/{planId}/copy-options',
+        {
+          body: { ...COPY_OPTIONS, name: 'FY2026 Mobility China (copy)', sameYear: 2026 },
+        },
+        { planId: 'P-1002' },
+      ),
+    ]);
 
     await choose(user, CHINA.name, 'Copy');
     const name = await screen.findByRole('textbox', { name: /Name of the copy/ });
@@ -298,15 +325,23 @@ const DELETED = {
 
 describe('usePlanActions: delete with Undo (US6, FR-029, FR-030)', () => {
   it('deletes after the question, offers Undo, and Undo brings the plan back (US6#4)', async () => {
-    const { user, api, router } = renderActions(PUBLISHED, {
-      'GET /api/v1/plans/P-1003': {
-        body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
-      },
-      'DELETE /api/v1/plans/P-1003': { body: DELETED },
-      'POST /api/v1/recycle-bin/RB-1001/undo': {
-        body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
-      },
-    });
+    const { user, api, router } = renderActions(PUBLISHED, [
+      looseReply(
+        'GET /api/v1/plans/{planId}',
+        {
+          body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
+        },
+        { planId: 'P-1003' },
+      ),
+      looseReply('DELETE /api/v1/plans/{planId}', { body: DELETED }, { planId: 'P-1003' }),
+      looseReply(
+        'POST /api/v1/recycle-bin/{entryId}/undo',
+        {
+          body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
+        },
+        { entryId: 'RB-1001' },
+      ),
+    ]);
 
     await choose(user, PUBLISHED.name, 'Delete');
     const dialog = await screen.findByRole('alertdialog', {
@@ -331,21 +366,29 @@ describe('usePlanActions: delete with Undo (US6, FR-029, FR-030)', () => {
   });
 
   it('says so when the plan is already gone', async () => {
-    const { user } = renderActions(PUBLISHED, {
-      'GET /api/v1/plans/P-1003': {
-        body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
-      },
-      'DELETE /api/v1/plans/P-1003': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This plan no longer exists — someone may have deleted it.',
-            fields: [],
+    const { user } = renderActions(PUBLISHED, [
+      looseReply(
+        'GET /api/v1/plans/{planId}',
+        {
+          body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
+        },
+        { planId: 'P-1003' },
+      ),
+      looseReply(
+        'DELETE /api/v1/plans/{planId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This plan no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { planId: 'P-1003' },
+      ),
+    ]);
 
     await choose(user, PUBLISHED.name, 'Delete');
     await user.click(await screen.findByRole('button', { name: 'Delete plan' }));

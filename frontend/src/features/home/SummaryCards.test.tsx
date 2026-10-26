@@ -1,18 +1,19 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
+import type { LooseAnswer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { summaryOf, usd } from '@/testing/fixtures/home';
+import { looseReply } from '@/testing/replies';
 import type { HomeScope, HomeSummary } from './api';
 import { SummaryCards } from './SummaryCards';
 
 function renderCards(
   scope: HomeScope = 'myTeams',
-  answer: MockHandler = { body: summaryOf({ scope }) },
+  answer: LooseAnswer = { body: summaryOf({ scope }) },
 ) {
-  const api = mockApi({ 'GET /api/v1/home/summary': answer });
+  const api = mockApi([looseReply('GET /api/v1/home/summary', answer)]);
   const rendered = renderWithProviders(<SummaryCards scope={scope} />, {
     user: testUser(),
     path: '/',

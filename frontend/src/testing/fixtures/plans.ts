@@ -2,10 +2,11 @@
  * Plans, people, teams and Settings for the plans tests, shaped like the API's answers and the demo
  * data (FY2026 Lubricants Europe, FY2026 Mobility China, FY2025 Lubricants Europe).
  */
+import type { HttpHandler } from 'msw';
 import type { components } from '@/api/generated/schema';
 import type { Plan, PlanDefaults, PlanList, PlanSummary } from '@/features/plans';
 import { LUBRICANTS, MOBILITY, planForm } from './attribute-forms';
-import type { MockHandler } from '../mock-api';
+import { reply } from '../replies';
 
 type Model = components['schemas']['Model'];
 type Person = components['schemas']['Person'];
@@ -267,24 +268,25 @@ export function seedList(overrides: Partial<PlanList> = {}): PlanList {
 }
 
 /** What the plan form asks besides the plan: models, the attribute form, people, teams, budgets. */
-export const FORM_ANSWERS: Record<string, MockHandler> = {
-  'GET /api/v1/models': { body: MODELS },
-  'GET /api/v1/shell-attribute-forms/plan': { body: planForm() },
-  'GET /api/v1/people': { body: PEOPLE },
-  'GET /api/v1/teams': { body: TEAMS },
-  'GET /api/v1/finance-budgets': { body: FINANCE_BUDGETS },
-};
+export const FORM_ANSWERS: HttpHandler[] = [
+  reply('GET /api/v1/models', { body: MODELS }),
+  reply('GET /api/v1/shell-attribute-forms/{level}', { body: planForm() }, { level: 'plan' }),
+  reply('GET /api/v1/people', { body: PEOPLE }),
+  reply('GET /api/v1/teams', { body: TEAMS }),
+  reply('GET /api/v1/finance-budgets', { body: FINANCE_BUDGETS }),
+];
 
 /**
  * 015's Financials of these records as an API that does not serve 015 yet answers them (404), so
  * the Financials section shows nothing and tests of the other sections need not mock it.
  */
-export function financialsNotServed(...recordIds: string[]): Record<string, MockHandler> {
-  return Object.fromEntries(
-    recordIds.map((id) => [
-      `GET /api/v1/financials/records/${id}`,
+export function financialsNotServed(...recordIds: string[]): HttpHandler[] {
+  return recordIds.map((recordId) =>
+    reply(
+      'GET /api/v1/financials/records/{recordId}',
       { status: 404, body: { error: { code: 'not_found', message: 'Not found', fields: [] } } },
-    ]),
+      { recordId },
+    ),
   );
 }
 

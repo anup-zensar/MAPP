@@ -1,10 +1,10 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { approvalOf } from '@/testing/fixtures/approvals';
 import { activityRecord } from '@/testing/fixtures/line-items';
 import { expectCurrentSection, renderApp } from '@/testing/app';
-import type { MockHandler } from '@/testing/mock-api';
 import {
   activityAttributeForm,
   editForm,
@@ -12,6 +12,7 @@ import {
   newForm,
   PEOPLE,
 } from '@/testing/fixtures/activities';
+import { reply } from '@/testing/replies';
 
 // The parts features 007 and 008 show on the activity pages are tested by those features; here
 // they stand in, so those features never break these tests.
@@ -39,23 +40,43 @@ vi.mock('@/features/approvals/SubmitButton', () => ({
 }));
 
 /** The requests of each page. */
-const ANSWERS: Record<string, MockHandler> = {
+const ANSWERS: HttpHandler[] = [
   ...HISTORY_ANSWERS,
-  'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm() },
-  'GET /api/v1/people': { body: PEOPLE },
-  'GET /api/v1/activities/A-1001': { body: launchFilm({ id: 'A-1001' }) },
-  'GET /api/v1/activities/A-1001/form': { body: editForm() },
-  'GET /api/v1/activities/A-1001/approval': {
-    body: approvalOf({
-      activityId: 'A-1001',
-      status: 'created',
-      displayStatus: 'created',
-      rounds: [],
-    }),
-  },
-  'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
-  'GET /api/v1/financials/records/A-1001': { body: activityRecord() },
-};
+  reply(
+    'GET /api/v1/initiatives/{initiativeId}/activity-form',
+    { body: newForm() },
+    { initiativeId: 'I-1001' },
+  ),
+  reply('GET /api/v1/people', { body: PEOPLE }),
+  reply(
+    'GET /api/v1/activities/{activityId}',
+    { body: launchFilm({ id: 'A-1001' }) },
+    { activityId: 'A-1001' },
+  ),
+  reply('GET /api/v1/activities/{activityId}/form', { body: editForm() }, { activityId: 'A-1001' }),
+  reply(
+    'GET /api/v1/activities/{activityId}/approval',
+    {
+      body: approvalOf({
+        activityId: 'A-1001',
+        status: 'created',
+        displayStatus: 'created',
+        rounds: [],
+      }),
+    },
+    { activityId: 'A-1001' },
+  ),
+  reply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    { body: activityAttributeForm() },
+    { level: 'activity' },
+  ),
+  reply(
+    'GET /api/v1/financials/records/{recordId}',
+    { body: activityRecord() },
+    { recordId: 'A-1001' },
+  ),
+];
 
 // Feature 006's addresses (build guide §5, D-194). Feature 006 keeps this file up to date as it
 // replaces the stub pages (their own requests go into renderApp's answers).

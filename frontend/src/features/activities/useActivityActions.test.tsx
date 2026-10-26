@@ -1,10 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { destinations, launchFilm } from '@/testing/fixtures/activities';
+import { looseReply } from '@/testing/replies';
 import type { Activity } from './api';
 import { useActivityActions } from './useActivityActions';
 
@@ -37,19 +39,26 @@ function More({ activity }: { activity: Activity }) {
   );
 }
 
-function openMenu(answers: Parameters<typeof mockApi>[0] = {}) {
-  const api = mockApi({
-    'DELETE /api/v1/activities/A-1042': { body: DELETED },
-    'POST /api/v1/recycle-bin/BIN-1001/undo': { body: {} },
-    // No GSAP data for it yet: the delete question says nothing of transactions (015 FR-029).
-    'GET /api/v1/financials/records/A-1042': {
-      status: 404,
-      body: {
-        error: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+function openMenu(answers: HttpHandler[] = []) {
+  const api = mockApi([
+    looseReply(
+      'DELETE /api/v1/activities/{activityId}',
+      { body: DELETED },
+      { activityId: 'A-1042' },
+    ),
+    looseReply('POST /api/v1/recycle-bin/{entryId}/undo', { body: {} }, { entryId: 'BIN-1001' }),
+    looseReply(
+      'GET /api/v1/financials/records/{recordId}',
+      {
+        status: 404,
+        body: {
+          error: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+        },
       },
-    },
+      { recordId: 'A-1042' },
+    ),
     ...answers,
-  });
+  ]);
   const rendered = renderWithProviders(<More activity={launchFilm()} />, {
     route: '/plans/P-1001/activities/A-1042',
     user: testUser(),
@@ -72,13 +81,21 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
   });
 
   it('copies from More and opens the copy (US5#2, FR-030)', async () => {
-    const { user, router } = openMenu({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/copy': {
-        status: 201,
-        body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
-      },
-    });
+    const { user, router } = openMenu([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/copy',
+        {
+          status: 201,
+          body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Copy' }));
@@ -94,14 +111,22 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
   });
 
   it('moves from More (US5#1, FR-029)', async () => {
-    const { user, api } = openMenu({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/move': {
-        body: launchFilm({
-          initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
-        }),
-      },
-    });
+    const { user, api } = openMenu([
+      looseReply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      looseReply(
+        'POST /api/v1/activities/{activityId}/move',
+        {
+          body: launchFilm({
+            initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
+          }),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Move' }));
@@ -144,18 +169,22 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
   });
 
   it('says why a delete did not work', async () => {
-    const { user, router } = openMenu({
-      'DELETE /api/v1/activities/A-1042': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This activity no longer exists — someone may have deleted it.',
-            fields: [],
+    const { user, router } = openMenu([
+      looseReply(
+        'DELETE /api/v1/activities/{activityId}',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This activity no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(screen.getByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));

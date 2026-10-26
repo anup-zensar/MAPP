@@ -3,6 +3,7 @@
  * (backend/api/openapi.yaml). Only the tests use them.
  */
 import type { components } from '@/api/generated/schema';
+import { reply } from '../replies';
 
 type ShellAttribute = components['schemas']['ShellAttribute'];
 type ShellAttributeOption = components['schemas']['ShellAttributeOption'];
@@ -242,10 +243,30 @@ export function activityForm(): AttributeForm {
 }
 
 /** The forms of every level: the activity form above, the others empty. */
-export const FORM_ANSWERS = {
-  'GET /api/v1/shell-attribute-forms/plan': { body: emptyForm('plan') },
-  'GET /api/v1/shell-attribute-forms/campaign': { body: emptyForm('campaign') },
-  'GET /api/v1/shell-attribute-forms/initiative': { body: emptyForm('initiative') },
-  'GET /api/v1/shell-attribute-forms/activity': { body: activityForm() },
-  'GET /api/v1/shell-attribute-forms/lineItem': { body: emptyForm('lineItem') },
-};
+export const FORM_ANSWERS = [
+  reply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    { body: emptyForm('plan') },
+    { level: 'plan' },
+  ),
+  reply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    { body: emptyForm('campaign') },
+    { level: 'campaign' },
+  ),
+  reply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    { body: emptyForm('initiative') },
+    { level: 'initiative' },
+  ),
+  reply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    { body: activityForm() },
+    { level: 'activity' },
+  ),
+  reply(
+    'GET /api/v1/shell-attribute-forms/{level}',
+    { body: emptyForm('lineItem') },
+    { level: 'lineItem' },
+  ),
+];

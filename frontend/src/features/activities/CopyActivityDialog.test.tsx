@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
@@ -11,6 +11,7 @@ import {
   OWN_INITIATIVE,
   RETAIL_EVENTS,
 } from '@/testing/fixtures/activities';
+import { reply } from '@/testing/replies';
 import type { Activity } from './api';
 import { CopyActivityDialog } from './CopyActivityDialog';
 
@@ -24,7 +25,7 @@ function Harness({ activity }: { activity: Activity }) {
   );
 }
 
-function renderDialog(answers: Record<string, MockHandler>, activity = launchFilm()) {
+function renderDialog(answers: HttpHandler[], activity = launchFilm()) {
   const api = mockApi(answers);
   const rendered = renderWithProviders(<Harness activity={activity} />, {
     user: testUser(),
@@ -42,7 +43,13 @@ const APPROVED_WITH_LINE_ITEMS = launchFilm({
 describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
   it('chooses the activity’s own initiative and says what the copy keeps (US5#2)', async () => {
     renderDialog(
-      { 'GET /api/v1/activities/A-1042/destinations': { body: destinations() } },
+      [
+        reply(
+          'GET /api/v1/activities/{activityId}/destinations',
+          { body: destinations() },
+          { activityId: 'A-1042' },
+        ),
+      ],
       APPROVED_WITH_LINE_ITEMS,
     );
 
@@ -62,17 +69,25 @@ describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
 
   it('copies into the chosen initiative and opens the copy (US5#2)', async () => {
     const { user, api, router } = renderDialog(
-      {
-        'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-        'POST /api/v1/activities/A-1042/copy': {
-          status: 201,
-          body: launchFilm({
-            id: 'A-1043',
-            name: 'Launch film (copy)',
-            initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
-          }),
-        },
-      },
+      [
+        reply(
+          'GET /api/v1/activities/{activityId}/destinations',
+          { body: destinations() },
+          { activityId: 'A-1042' },
+        ),
+        reply(
+          'POST /api/v1/activities/{activityId}/copy',
+          {
+            status: 201,
+            body: launchFilm({
+              id: 'A-1043',
+              name: 'Launch film (copy)',
+              initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
+            }),
+          },
+          { activityId: 'A-1042' },
+        ),
+      ],
       APPROVED_WITH_LINE_ITEMS,
     );
 
@@ -90,14 +105,18 @@ describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
   });
 
   it('asks for an initiative when its own can’t take the copy', async () => {
-    const { user, api } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': {
-        body: destinations([
-          { ...OWN_INITIATIVE, copyProblem: RETAIL_EVENTS.copyProblem },
-          RETAIL_EVENTS,
-        ]),
-      },
-    });
+    const { user, api } = renderDialog([
+      reply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        {
+          body: destinations([
+            { ...OWN_INITIATIVE, copyProblem: RETAIL_EVENTS.copyProblem },
+            RETAIL_EVENTS,
+          ]),
+        },
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await user.click(await screen.findByRole('button', { name: 'Copy activity' }));
 
@@ -106,19 +125,27 @@ describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
   });
 
   it('shows the API’s refusal in the dialog', async () => {
-    const { user } = renderDialog({
-      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/v1/activities/A-1042/copy': {
-        status: 404,
-        body: {
-          error: {
-            code: 'not_found',
-            message: 'This activity no longer exists — someone may have deleted it.',
-            fields: [],
+    const { user } = renderDialog([
+      reply(
+        'GET /api/v1/activities/{activityId}/destinations',
+        { body: destinations() },
+        { activityId: 'A-1042' },
+      ),
+      reply(
+        'POST /api/v1/activities/{activityId}/copy',
+        {
+          status: 404,
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This activity no longer exists — someone may have deleted it.',
+              fields: [],
+            },
           },
         },
-      },
-    });
+        { activityId: 'A-1042' },
+      ),
+    ]);
 
     await screen.findByRole('group', { name: 'Copy to' });
     await user.click(screen.getByRole('button', { name: 'Copy activity' }));

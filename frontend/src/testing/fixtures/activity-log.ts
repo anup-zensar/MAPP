@@ -4,6 +4,7 @@
  * at TODAY_NOON.
  */
 import type { components } from '@/api/generated/schema';
+import { reply } from '../replies';
 
 type ActivityLogEntry = components['schemas']['ActivityLogEntry'];
 type ActivityLogPage = components['schemas']['ActivityLogPage'];
@@ -82,6 +83,4 @@ export function logSummary(overrides: Partial<ActivityLogSummary> = {}): Activit
  * The History section's request with an empty log (feature 011, FR-011): for the tests of the plan,
  * campaign, initiative, activity and line item pages, which all show the section.
  */
-export const HISTORY_ANSWERS = {
-  'GET /api/v1/activity-log': { body: logPage([]) },
-};
+export const HISTORY_ANSWERS = [reply('GET /api/v1/activity-log', { body: logPage([]) })];
