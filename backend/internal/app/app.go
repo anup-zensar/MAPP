@@ -168,7 +168,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 	campaigns.NewHandler(campaignsService).RegisterRoutes(signedIn)
-	activities.NewHandler(activitiesService).Routes(router, unwrapped)
+	activities.NewHandler(activitiesService).RegisterRoutes(signedIn)
 	lineitems.NewHandler(lineItemsService).RegisterRoutes(signedIn)
 
 	// Global budgets (014, BUS.BUD.040): global budgets and their allocations to plans, which set the plans'
@@ -224,7 +224,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	approvalsService.UseApprovers(accessService) // who may be named and flagged as an approver (014 FR-028)
 	accessService.UseTargets(planningTargets{db: db, plans: plansRepo, campaigns: campaignsRepo, activities: activitiesRepo,
 		lineItems: lineItemsRepo, approvals: approvalsRepo}.finders())
-	approvals.NewHandler(approvalsService).Routes(router, unwrapped)
+	approvals.NewHandler(approvalsService).RegisterRoutes(signedIn)
 
 	// Financial transactions (015): GSAP's POs, invoices, payments and accruals, read-only, from the
 	// simulated GSAP extract and the demo data, with figures over the planning tree (financials.go). Its two
