@@ -4,7 +4,8 @@ import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { budgetByMonth, gbp, periods, phasing, twelve } from '@/testing/fixtures/phasing';
+import { nth } from '@/testing/dom';
+import { budgetByMonth, gbp, periods, phasing, twelveAmounts } from '@/testing/fixtures/phasing';
 import { plan } from '@/testing/fixtures/plans';
 import { reply } from '@/testing/replies';
 import { BudgetByMonthCard } from './BudgetByMonthCard';
@@ -115,9 +116,9 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
   });
 
   it('marks a period over its budget in red with words, and shows Other years (FR-024)', async () => {
-    const over = Array(12).fill(false);
+    const over = Array<boolean>(12).fill(false);
     over[2] = true;
-    const plannedCost = twelve('40000.00') as { amount: string; currency: string }[];
+    const plannedCost = twelveAmounts('40000.00');
     plannedCost[2] = gbp('65000.00');
     renderCard(undefined, [
       reply(
@@ -126,7 +127,7 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
           body: budgetByMonth({
             rows: [
               {
-                ...budgetByMonth().rows[0],
+                ...nth(budgetByMonth().rows, 0),
                 months: periods({ plannedCost, over }),
                 otherYears: gbp('5000.00'),
               },
@@ -194,19 +195,22 @@ describe('BudgetByMonthCard (016 FR-024)', () => {
     await waitFor(() =>
       expect(api.bodiesOf('PUT /api/v1/plans/P-1004/budget-phasing')).toHaveLength(1),
     );
-    const [body] = api.bodiesOf('PUT /api/v1/plans/P-1004/budget-phasing') as {
-      method: string;
-      months: { month: string; amount: string }[];
-      version: number;
-    }[];
-    expect(body.method).toBe('custom');
-    expect(body.version).toBe(4);
-    expect(body.months.slice(0, 3)).toEqual([
-      { month: '2027-01', amount: '46666.66' },
-      { month: '2027-02', amount: '46666.66' },
-      { month: '2027-03', amount: '46666.68' },
+    const evenly = ['04', '05', '06', '07', '08', '09', '10', '11', '12'].map((month) => ({
+      month: `2027-${month}`,
+      amount: '50000.00',
+    }));
+    expect(api.bodiesOf('PUT /api/v1/plans/P-1004/budget-phasing')).toEqual([
+      expect.objectContaining({
+        method: 'custom',
+        version: 4,
+        months: [
+          { month: '2027-01', amount: '46666.66' },
+          { month: '2027-02', amount: '46666.66' },
+          { month: '2027-03', amount: '46666.68' },
+          ...evenly,
+        ],
+      }),
     ]);
-    expect(body.months).toHaveLength(12);
     expect(await screen.findByText(/Budget by month of .* saved/)).toBeInTheDocument();
   });
 
