@@ -1130,4 +1130,4 @@ amended to match.
 | 4.2.0 | 2026-10-26 | VIII, Governance: the comment budget is aligned file by file — a change that touches a file brings the whole file's comments within the budget, except in features 025, 027 and 028; feature 021 (a dedicated comment pass) is dropped | Product owner instruction of 2026-10-26 |
 | 4.3.0 | 2026-10-27 | F1 and VII: pnpm replaces npm as the web app's package manager (pinned through Corepack, `pnpm-lock.yaml`, `pnpm install --frozen-lockfile`); the 24-hour release age is pnpm's `minimumReleaseAge`, and dependency install scripts run only when allowed (ADR-0015) | Product owner instruction of 2026-10-27 |
 
-**Version**: 4.3.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 4.3.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-27
