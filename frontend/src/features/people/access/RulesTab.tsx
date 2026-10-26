@@ -1,28 +1,15 @@
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
-import { ApiError, conflictMessage } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
-import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
-import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
-import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problem-of';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import list from '@/ui/settings-table.module.css';
 import { useFormatters } from '@/format/useFormatters';
-import { useAccessRules, useRoles, useUpdateAccessRules } from './api';
-import type { AccessRules, AccessRulesUpdate, Role } from './api';
-import { SCOPE_WORDS } from './access-words';
+import { useAccessRules, useRoles } from './api';
+import { NO_SELF_APPROVAL, SCOPE_WORDS } from './access-words';
+import { RulesPanel } from './RulesPanel';
 import styles from './access.module.css';
-
-/** The rule of FR-026, as the card and the form say it. */
-const NO_SELF_APPROVAL = 'Nobody approves an activity they own or submitted';
-/** The "no role" choice of the role for new people. */
-const NO_ROLE = 'none';
 
 /**
  * The Rules tab (FR-019, FR-026): whether people may approve what they own or submitted, and the
@@ -90,98 +77,5 @@ export function RulesTab() {
         />
       )}
     </Card>
-  );
-}
-
-interface RulesPanelProps {
-  rules: AccessRules;
-  roles: Role[];
-  onClose: () => void;
-}
-
-function RulesPanel({ rules, roles, onClose }: RulesPanelProps) {
-  const { show } = useToast();
-  const { dateFormat } = useFormatters();
-  const update = useUpdateAccessRules();
-  const [start] = useState(() => ({
-    noSelfApproval: rules.noSelfApproval,
-    roleId: rules.newPersonRole?.id ?? NO_ROLE,
-  }));
-  const [noSelfApproval, setNoSelfApproval] = useState(start.noSelfApproval);
-  const [roleId, setRoleId] = useState(start.roleId);
-  const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
-  const [failure, setFailure] = useState<SaveFailure | null>(null);
-  const isDirty = noSelfApproval !== start.noSelfApproval || roleId !== start.roleId;
-  // Administrators are never made automatically (text 17): the role isn't offered.
-  const options = [
-    { id: NO_ROLE, label: 'No role', active: true },
-    ...roles
-      .filter((role) => role.builtIn !== 'administrator')
-      .map((role) => ({ id: role.id, label: role.name, active: true })),
-  ];
-
-  async function save() {
-    if (!isDirty) {
-      onClose();
-      return;
-    }
-    const body: AccessRulesUpdate = {
-      ...(noSelfApproval !== start.noSelfApproval ? { noSelfApproval } : {}),
-      ...(roleId !== start.roleId ? { newPersonRoleId: roleId === NO_ROLE ? '' : roleId } : {}),
-      version: rules.version,
-    };
-    setSaving(true);
-    try {
-      await update.mutateAsync(body);
-      show({ message: 'Access rules saved' });
-      onClose();
-    } catch (error) {
-      const apiError = error instanceof ApiError ? error : new ApiError('other');
-      if (apiError.kind === 'validation') {
-        setProblems(apiError.fields);
-        setFailure(null);
-      } else {
-        setProblems([]);
-        setFailure({
-          message:
-            apiError.kind === 'conflict'
-              ? conflictMessage(apiError, 'set of access rules', dateFormat)
-              : apiError.message,
-        });
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <FormPanel
-      title="Edit access rules"
-      isDirty={isDirty}
-      saving={saving}
-      problems={problems}
-      failure={failure}
-      onSave={() => void save()}
-      onClose={onClose}
-    >
-      <CheckboxField
-        label={NO_SELF_APPROVAL}
-        name="noSelfApproval"
-        hint="Segregation of duties: an administrator decides on their behalf when they are a level's only approver."
-        checked={noSelfApproval}
-        onChange={setNoSelfApproval}
-        error={problemOf(problems, 'noSelfApproval')}
-      />
-      <ChoiceField
-        label="Role for new people"
-        name="newPersonRoleId"
-        hint="Given with scope My teams to each person added in Settings › People."
-        options={options}
-        value={roleId}
-        onChange={(value) => setRoleId(value || NO_ROLE)}
-        error={problemOf(problems, 'newPersonRoleId')}
-      />
-    </FormPanel>
   );
 }

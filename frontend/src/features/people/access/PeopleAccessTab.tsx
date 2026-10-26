@@ -17,6 +17,7 @@ import { usePeopleAccess, useRoles } from './api';
 import type { PersonRoles } from './api';
 import { assignmentText, SCOPE_EMPTY } from './access-words';
 import { PersonRolesPanel } from './PersonRolesPanel';
+import { openPersonOf, withOpenPerson } from './schemas';
 import styles from './access.module.css';
 
 /** The role filter: every person, one role's holders, or the people without a role. */
@@ -35,18 +36,10 @@ export function PeopleAccessTab() {
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [role, setRole] = useState(ALL);
-  const openId = params.get('person') ?? '';
+  const openId = openPersonOf(params);
 
   function open(personId: string) {
-    setParams((previous) => {
-      const next = new URLSearchParams(previous);
-      if (personId) {
-        next.set('person', personId);
-      } else {
-        next.delete('person');
-      }
-      return next;
-    });
+    setParams((previous) => withOpenPerson(previous, personId));
   }
 
   if (!people.data) {
