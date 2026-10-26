@@ -52,7 +52,7 @@ every scoped read (FR-008, FR-009). No test of generated code.
 Each task: the migration, `queries/<area>.sql`, `store_postgres.go` implementing the area's existing
 interface, and its store tests. No service, handler or wiring changes.
 
-- [ ] T011 [US1] ids counters: `00002`, `internal/platform/ids/store_postgres.go` (`Increment` in one statement); test that concurrent increments never give a number twice
+- [X] T011 [US1] ids counters: `00002`, `internal/platform/ids/store_postgres.go` (`Increment` in one statement); test that concurrent increments never give a number twice
 - [ ] T012 [US2] history: `activity_log` with its append-only trigger and `recycle_bin` (`00002`); tests for order by `seq`, bin entries resolved and not, refused `UPDATE`/`DELETE` of the log
 - [ ] T013 [P] [US1] people and teams: `00003` people, teams, memberships, preferences, pinned plans (depends on T011)
 - [ ] T014 [US1] auth sessions: rest of `00003` (depends on T013)
@@ -75,7 +75,7 @@ interface, and its store tests. No service, handler or wiring changes.
 - [ ] T026 [US1] `internal/app`: `DATABASE_URL` in the configuration (replaces `DATA_DIR`), pool opened once and closed on shutdown, start refused when migrations are pending (`HasPending`), every PostgreSQL store and `database.DB` wired as the `Transactor`; `/readyz` pings the pool — **waits for 022 and 024**
 - [ ] T027 [US1] `cmd/seed`: open, `Migrate`, load the demo data; `-reset` empties the tables; seed idempotent (FR-002, spec US1-1) — depends on T026
 - [ ] T028 [US1] End-to-end tests start the API on a PostgreSQL database seeded per run (`frontend/e2e` setup, `DATABASE_URL`) — depends on T027
-- [ ] T029 [US1] CI (`.github/workflows/ci.yml`): PostgreSQL 18 service for `backend` and `e2e`, `TEST_DATABASE_URL`, a `sqlc generate` no-diff step and `sqlc vet` (FR-012, quality gates 3–4) — must land before the pull request is opened, because store tests fail without `TEST_DATABASE_URL`
+- [X] T029 [US1] CI (`.github/workflows/ci.yml`): PostgreSQL 18 service for `backend` (trust authentication, bound to `127.0.0.1`, health check), `TEST_DATABASE_URL` for the Test step, a "Generated queries" step (`sqlc generate` leaves no change, `sqlc vet`) (FR-012, quality gates 3–4); the dbtest template build applies every migration to an empty database (gate 4). The `e2e` job gains PostgreSQL with the switch (T028)
 - [ ] T030 [P] Documentation: ADR superseding ADR-0004; `backend/README.md` and root `README.md` (PostgreSQL set-up, `DATABASE_URL`, `TEST_DATABASE_URL`, `CREATEDB` for tests); `GO_STANDARDS.md` §6 corrected to the one-at-a-time `Write` and the UTC codec (R2, R3); `CLAUDE.md` "Current code" storage lines; feature map row 023
 
 ---

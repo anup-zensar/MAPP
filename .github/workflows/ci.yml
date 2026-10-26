@@ -24,6 +24,22 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # Store tests run on PostgreSQL 18 (constitution B9). Trust authentication is safe here: the service is
+    # reachable only from this job, on the runner's loopback address, and holds nothing but test databases.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: mapp
+          POSTGRES_DB: mapp
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mapp"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -52,7 +68,19 @@ jobs:
             ${{ github.event_name == 'pull_request'
                 && format('--new-from-merge-base=origin/{0}', github.base_ref)
                 || format('--new-from-rev={0}', github.event.before) }}
+      - name: Generated queries
+        run: |
+          go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate
+          go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 vet
+          stale="$(git status --porcelain -- internal/platform/database/sqlcdb)"
+          if [ -n "$stale" ]; then
+            echo "Generated queries are out of date — run: go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate"
+            echo "$stale"
+            exit 1
+          fi
       - name: Test
+        env:
+          TEST_DATABASE_URL: postgres://mapp@127.0.0.1:5432/postgres?sslmode=disable
         run: |
           set -o pipefail
           go test -race -covermode=atomic -coverprofile=coverage.out ./... | tee go-test.txt
