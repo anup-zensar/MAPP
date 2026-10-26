@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { LineItemsSection } from './LineItemsSection';
 import {
   activity,
   activityRecord,
@@ -14,6 +13,7 @@ import {
   lineItemRecord,
   usd,
 } from '@/testing/fixtures/line-items';
+import { LineItemsSection } from './LineItemsSection';
 
 const SECTION = 'GET /api/v1/activities/A-1001/line-items';
 const FINANCIALS = 'GET /api/v1/financials/records/A-1001';

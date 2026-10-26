@@ -4,10 +4,10 @@ import { ApiError, conflictMessage } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
 import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
-import { SETTING_NOUNS } from './settings-nouns';
-import type { SettingKind } from './settings-nouns';
 import { useStatusFlow } from '@/ui/useStatusFlow';
 import type { StatusFlow } from '@/ui/useStatusFlow';
+import { SETTING_NOUNS } from './settings-nouns';
+import type { SettingKind } from './settings-nouns';
 
 type Usage = components['schemas']['Usage'];
 

@@ -6,8 +6,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { CurrencyPicker } from './CurrencyPicker';
 import { DISPLAY_CURRENCIES } from '@/testing/fixtures/home';
+import { CurrencyPicker } from './CurrencyPicker';
 
 const CURRENCY_LIST = { body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length } };
 

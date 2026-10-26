@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ShellAttributesPage } from './ShellAttributesPage';
 import {
   ACTIVITY_ATTRIBUTES,
   BRANDS,
@@ -15,6 +14,7 @@ import {
   page,
   PIR,
 } from '@/testing/fixtures/shell-attributes';
+import { ShellAttributesPage } from './ShellAttributesPage';
 
 const ALL = [BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES];
 const LIST = 'GET /api/v1/shell-attributes';

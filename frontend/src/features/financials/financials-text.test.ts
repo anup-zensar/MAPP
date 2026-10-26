@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FT_1003,
+  FT_1004,
+  FT_1009,
+  manuallyLinked,
+  transactionOf,
+} from '@/testing/fixtures/financials';
+import {
   accruedLabel,
   countLine,
   importButtonLabel,
@@ -17,13 +24,6 @@ import {
   tabLabel,
   unlinkQuestion,
 } from './financials-text';
-import {
-  FT_1003,
-  FT_1004,
-  FT_1009,
-  manuallyLinked,
-  transactionOf,
-} from '@/testing/fixtures/financials';
 
 const day = (timestamp: string) => `day(${timestamp.slice(0, 10)})`;
 const counts = { rows: 4, new: 2, updated: 1, unchanged: 1, refused: 0, notLinked: 1, relinked: 0 };

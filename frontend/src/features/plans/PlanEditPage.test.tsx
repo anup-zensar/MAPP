@@ -4,8 +4,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { PlanEditPage } from './PlanEditPage';
 import { FORM_ANSWERS, plan } from '@/testing/fixtures/plans';
+import { PlanEditPage } from './PlanEditPage';
 
 const NO_EFFECTS = {
   modelChanged: false,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatDate } from '@/format/intl';
+import { logSummary } from '@/testing/fixtures/activity-log';
 import {
   CUSTOM_RANGE_ERROR,
   NO_FILTERS,
@@ -15,7 +16,6 @@ import {
   weekStart,
 } from './log-filters';
 import type { LogFilterState } from './log-filters';
-import { logSummary } from '@/testing/fixtures/activity-log';
 
 /** Runs `check` with the computer's clock in another time zone (the tests run in UTC). */
 function inTimeZone(timeZone: string, check: () => void): void {

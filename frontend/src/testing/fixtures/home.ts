@@ -3,7 +3,6 @@
  * makes with an empty dashboard, for tests of other parts of the app that land on Home.
  */
 import type { components } from '@/api/generated/schema';
-import type { MockAnswer } from '../mock-api';
 import type {
   ActivityLogEntry,
   FinancialOverview,
@@ -16,6 +15,7 @@ import type {
   MyActivityRow,
   WaitingItem,
 } from '@/features/home';
+import type { MockAnswer } from '../mock-api';
 
 type DisplayCurrencyOption = components['schemas']['DisplayCurrencyOption'];
 

@@ -6,8 +6,8 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { SampleRecordsPage } from './SampleRecordsPage';
 import { testUser } from '@/testing/fixtures/users';
+import { SampleRecordsPage } from './SampleRecordsPage';
 
 type SampleFolder = components['schemas']['SampleFolder'];
 type SampleNote = components['schemas']['SampleNote'];

@@ -21,12 +21,12 @@ import { SpreadEffectNote } from '@/features/line-items';
 import { formatAmount, formatMoneyText } from '@/format/decimal';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
+import { FormCard, FormCardFrame } from '@/ui/FormRail/FormRail';
 import type { ActivityFormData, ActivityTypeOption, Money } from './api';
 import { fieldId, usdOf } from './activity-form-state';
 import type { FormState } from './activity-form-state';
 import styles from './ActivityForm.module.css';
 import { ACTIVITY_SECTION } from './activity-form-progress';
-import { FormCard, FormCardFrame } from '@/ui/FormRail/FormRail';
 import { GoalsFields } from './GoalsFields';
 
 type ActivityStatus = components['schemas']['ActivityStatus'];

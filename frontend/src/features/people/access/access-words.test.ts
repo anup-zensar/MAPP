@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { andList, orList, peopleText, rolesText, summariseAccess } from './access-words';
-import { draftsDiffer, needsImpactCheck, previewPermissions, rolesBody } from './role-drafts';
 import {
   ADMINISTRATOR,
   APPROVER,
@@ -13,6 +11,8 @@ import {
   TEAMS,
   VIEWER,
 } from '@/testing/fixtures/access';
+import { andList, orList, peopleText, rolesText, summariseAccess } from './access-words';
+import { draftsDiffer, needsImpactCheck, previewPermissions, rolesBody } from './role-drafts';
 
 describe('feature 014 words', () => {
   it('joins names with "and" and "or"', () => {

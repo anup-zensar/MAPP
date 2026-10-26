@@ -1,9 +1,9 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { NavDrawer } from './NavDrawer';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
+import { NavDrawer } from './NavDrawer';
 
 const PRIYA: CurrentUser = testUser({
   preferences: { ...testUser().preferences, sidebarCollapsed: true },

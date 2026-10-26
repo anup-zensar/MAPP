@@ -4,10 +4,10 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from '@/testing/fixtures/approvals';
 import type { ActivityApproval } from './api';
 import { DecisionDialog } from './DecisionDialog';
 import type { DecisionDialogProps } from './DecisionDialog';
-import { ALEX, approvalOf, CARLOS, DANIEL, PRIYA, roundOf } from '@/testing/fixtures/approvals';
 
 const APPROVE = 'POST /api/v1/activities/A-1042/approval/approve';
 const DECLINE = 'POST /api/v1/activities/A-1042/approval/decline';

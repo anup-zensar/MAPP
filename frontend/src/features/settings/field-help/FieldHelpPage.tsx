@@ -18,6 +18,7 @@ import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
 import settingsStyles from '@/ui/settings-table.module.css';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import { useFieldHelpEntries } from './api';
 import type { FieldHelpEntry, FieldHelpLevel } from './api';
 import { FieldHelpPanel } from './FieldHelpPanel';
@@ -30,7 +31,6 @@ import {
 } from './field-help-words';
 import { ResetHelpDialog } from './ResetHelpDialog';
 import styles from './field-help.module.css';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 
 const FIELD_NOUN = { one: 'field', many: 'fields' };
 

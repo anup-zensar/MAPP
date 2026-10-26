@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { LineItemCreatePage } from './LineItemCreatePage';
 import { attribute, option } from '@/testing/fixtures/attribute-forms';
 import {
   activity,
@@ -18,6 +17,7 @@ import {
   usd,
   validationError,
 } from '@/testing/fixtures/line-items';
+import { LineItemCreatePage } from './LineItemCreatePage';
 
 const PATH = '/activities/:activityId/line-items/new';
 const ROUTE = '/activities/A-1001/line-items/new';

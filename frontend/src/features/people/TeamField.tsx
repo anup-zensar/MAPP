@@ -1,5 +1,5 @@
-import { TeamPicker } from '@/ui/TeamPicker/TeamPicker';
 import type { ComponentProps } from 'react';
+import { TeamPicker } from '@/ui/TeamPicker/TeamPicker';
 import { FieldLoadFailed, FieldLoading } from './FieldLoadStates';
 import { useTeams } from './api';
 

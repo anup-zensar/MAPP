@@ -2,8 +2,8 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import { InitiativeActivities } from './InitiativeActivities';
 import { launchFilmRow } from '@/testing/fixtures/activities';
+import { InitiativeActivities } from './InitiativeActivities';
 
 describe('InitiativeActivities (feature 006, FR-001)', () => {
   it("lists the initiative's activities with their status, and offers Add activity", async () => {

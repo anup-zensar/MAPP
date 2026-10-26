@@ -5,16 +5,16 @@ import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import { MetaLine } from '../MetaLine';
 import { SETTING_NOUNS } from '../settings-nouns';
-import styles from '@/ui/settings-table.module.css';
 import { UsageLine } from '../UsageLine';
 import type { Currency } from './api';
 import { inverseLine, lockOf, moreActions, rateLine } from './currency-actions';
 import type { CurrencyActions } from './currency-actions';
 import { RateHistorySection } from './RateHistorySection';
 import { rateSourceLine } from './rate-words';
-import { CanChange } from '@/ui/CanChange/CanChange';
 
 /** MAPP's base currency: always 1, without a rate history. */
 const BASE_CURRENCY = 'USD';

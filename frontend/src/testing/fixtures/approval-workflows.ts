@@ -2,8 +2,8 @@
  * Approval workflows and people for feature 008's Settings tests, shaped as the contract answers
  * them (the seeded "Lubricants EU approval" and "China BC approval workflow").
  */
-import { ALEX, CARLOS, DANIEL } from './approvals';
 import type { ApprovalWorkflow, ApprovalWorkflowDetails } from '@/features/approval-workflows';
+import { ALEX, CARLOS, DANIEL } from './approvals';
 
 const META = {
   version: 4,

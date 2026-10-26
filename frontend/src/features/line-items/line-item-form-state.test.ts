@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/api/errors';
 import {
+  activity,
+  approvedActivity,
+  DIGITAL,
+  DIGITAL_2027,
+  EUR,
+  formOptions,
+  GBP,
+  lineItem,
+  PRIYA_REF,
+  USD,
+} from '@/testing/fixtures/line-items';
+import {
   changeBudgetYear,
   changeCurrency,
   changeCustomMonth,
@@ -16,18 +28,6 @@ import {
   toUpdateBody,
   withField,
 } from './line-item-form-state';
-import {
-  activity,
-  approvedActivity,
-  DIGITAL,
-  DIGITAL_2027,
-  EUR,
-  formOptions,
-  GBP,
-  lineItem,
-  PRIYA_REF,
-  USD,
-} from '@/testing/fixtures/line-items';
 
 const CURRENCIES = [USD, EUR, GBP];
 const MAR_MAY = { startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false };

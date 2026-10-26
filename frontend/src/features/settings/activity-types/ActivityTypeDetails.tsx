@@ -4,14 +4,14 @@ import { Button } from '@/ui/Button/Button';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import { MetaLine } from '../MetaLine';
 import { SETTING_NOUNS } from '../settings-nouns';
-import styles from '@/ui/settings-table.module.css';
 import { UsageLine } from '../UsageLine';
 import { moreActions } from './activity-type-actions';
 import type { ActivityTypeActions } from './activity-type-actions';
 import type { ActivityType } from './api';
-import { CanChange } from '@/ui/CanChange/CanChange';
 
 export interface ActivityTypeDetailsProps {
   /** The activity type; null when it no longer exists. */

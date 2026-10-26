@@ -12,8 +12,8 @@ import {
   validationFailed,
   versionConflict,
 } from '@/testing/fixtures/settings';
-import { CurrenciesPage } from './CurrenciesPage';
 import { EUR_RATES, NO_IMPORTS, NO_RATES, RECENT_IMPORTS_PAGE } from '@/testing/fixtures/rates';
+import { CurrenciesPage } from './CurrenciesPage';
 
 const USD_LOCK = "USD is MAPP's base currency; its rate is always 1.";
 

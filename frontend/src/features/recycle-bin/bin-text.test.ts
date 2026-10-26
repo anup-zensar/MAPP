@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/api/errors';
+import { PLAN_REF, binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 import {
   alreadyResolvedText,
   blockedText,
@@ -26,7 +27,6 @@ import {
   wasInText,
 } from './bin-text';
 import type { RestorePreviewChange } from './bin-text';
-import { PLAN_REF, binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 
 const PARENT = { type: 'initiative', typeLabel: 'initiative', id: 'I-1009', name: 'Trade shows' };
 

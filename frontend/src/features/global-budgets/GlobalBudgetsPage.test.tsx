@@ -5,8 +5,8 @@ import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
-import { GlobalBudgetsPage } from './GlobalBudgetsPage';
 import { budgetSummary, globalBudget } from '@/testing/fixtures/global-budgets';
+import { GlobalBudgetsPage } from './GlobalBudgetsPage';
 
 const LIST = 'GET /api/v1/global-budgets';
 const CURRENT_YEAR = new Date().getFullYear();

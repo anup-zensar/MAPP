@@ -13,6 +13,7 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 import {
   conditionText,
   isChoiceType,
@@ -26,7 +27,6 @@ import { useShellAttribute } from './api';
 import type { ShellAttribute } from './api';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
 
 const NOT_FOUND = 'This Shell attribute no longer exists — someone may have deleted it.';
 

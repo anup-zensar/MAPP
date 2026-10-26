@@ -1,9 +1,9 @@
 import { Link } from 'react-router';
 import { Logo } from '@/ui/Logo/Logo';
+import { ThemeToggle } from '@/ui/ThemeToggle/ThemeToggle';
 import { AccountMenu } from './AccountMenu';
 import { NavDrawer } from './NavDrawer';
 import { NotificationBell } from './NotificationBell';
-import { ThemeToggle } from '@/ui/ThemeToggle/ThemeToggle';
 import styles from './TopBar.module.css';
 
 /**

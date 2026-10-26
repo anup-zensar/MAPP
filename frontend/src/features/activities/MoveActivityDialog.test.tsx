@@ -5,7 +5,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { MoveActivityDialog } from './MoveActivityDialog';
 import {
   destination,
   destinations,
@@ -14,6 +13,7 @@ import {
   RETAIL_EVENTS,
   validationFailed,
 } from '@/testing/fixtures/activities';
+import { MoveActivityDialog } from './MoveActivityDialog';
 
 const DATES_DONT_FIT = RETAIL_EVENTS.moveProblem ?? '';
 

@@ -4,8 +4,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ActivityLogPage } from './ActivityLogPage';
 import { TODAY_NOON, logEntry, logPage, logSummary } from '@/testing/fixtures/activity-log';
+import { ActivityLogPage } from './ActivityLogPage';
 
 const LOG = 'GET /api/v1/activity-log';
 const SUMMARY = 'GET /api/v1/activity-log/summary';

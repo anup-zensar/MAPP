@@ -1,5 +1,5 @@
-import { Skeleton } from '../Skeleton/Skeleton';
 import { formatWhole } from '@/format/decimal';
+import { Skeleton } from '../Skeleton/Skeleton';
 import styles from './SettingsCount.module.css';
 
 export interface SettingsCountProps {

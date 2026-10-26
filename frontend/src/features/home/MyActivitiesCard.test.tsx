@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { groupOf, myActivityOf, usd } from '@/testing/fixtures/home';
 import type { MyActivityGroup } from './api';
 import { MyActivitiesCard } from './MyActivitiesCard';
-import { groupOf, myActivityOf, usd } from '@/testing/fixtures/home';
 
 const GROUPS: MyActivityGroup[] = [
   groupOf('declined', [myActivityOf({ id: 'A-1043', name: 'Trade show' })]),

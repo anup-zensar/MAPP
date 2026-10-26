@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatDate } from '@/format/intl';
+import { editForm, launchFilm, newForm } from '@/testing/fixtures/activities';
 import {
   fromActivity,
   fromDefaults,
@@ -10,7 +11,6 @@ import {
   validate,
 } from './activity-form-state';
 import type { FormState } from './activity-form-state';
-import { editForm, launchFilm, newForm } from '@/testing/fixtures/activities';
 
 function newState(overrides: Partial<FormState> = {}): FormState {
   return {

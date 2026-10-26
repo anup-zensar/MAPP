@@ -4,13 +4,13 @@
  * and the activity "Launch film" (A-1042).
  */
 import type { components } from '@/api/generated/schema';
-import { attribute, LUBRICANTS, MOBILITY, option } from './attribute-forms';
 import type {
   Activity,
   ActivityDestination,
   ActivityFormData,
   ActivitySummary,
 } from '@/features/activities';
+import { attribute, LUBRICANTS, MOBILITY, option } from './attribute-forms';
 
 type Person = components['schemas']['Person'];
 type AttributeForm = components['schemas']['AttributeForm'];

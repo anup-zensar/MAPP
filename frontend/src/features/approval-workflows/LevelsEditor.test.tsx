@@ -5,10 +5,10 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { PEOPLE, RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
 import { emptyLevel, toInputs } from './level-drafts';
 import type { LevelDraft } from './level-drafts';
 import { LevelsEditor } from './LevelsEditor';
-import { PEOPLE, RULE_OPTIONS } from '@/testing/fixtures/approval-workflows';
 
 function Harness({ start, problems = [] }: { start: LevelDraft[]; problems?: FieldProblem[] }) {
   const [levels, setLevels] = useState(start);

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { cx } from '../cx';
 import { formatWhole } from '@/format/decimal';
 import { plural } from '@/format/text';
+import { cx } from '../cx';
 import { Combobox } from '../Combobox/Combobox';
 import { FieldShell } from '../FieldShell/FieldShell';
 import type { FieldFrameProps } from '../FieldShell/FieldShell';

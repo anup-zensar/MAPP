@@ -22,6 +22,8 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
+import list from '@/ui/settings-table.module.css';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import { formFailure, useShowFailure } from './feedback';
 import { OwnerImpactDialog } from './OwnerImpactDialog';
 import { PersonField } from './PersonField';
@@ -39,9 +41,7 @@ import { teamMoreItems } from './team-actions';
 import type { TeamActions } from './team-actions';
 import { removedIds } from './removed-ids';
 import { deleteTeamText, teamInUseText, usedByText } from './texts';
-import list from '@/ui/settings-table.module.css';
 import styles from './panels.module.css';
-import { CanChange } from '@/ui/CanChange/CanChange';
 
 /** The team palette (D-025), in the order of the Colour field. */
 const COLOURS: { id: TeamColour; label: string }[] = [

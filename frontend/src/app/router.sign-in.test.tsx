@@ -3,10 +3,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { HOME_ANSWERS } from '@/testing/fixtures/home';
 import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
-import { routes } from './router';
 import type { CurrentUser } from '@/session/useSession';
 import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
 import { testUser } from '@/testing/fixtures/users';
+import { routes } from './router';
 
 const PRIYA: CurrentUser = testUser();
 

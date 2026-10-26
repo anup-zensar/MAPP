@@ -11,8 +11,8 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { inverseRate, parseDecimalInput } from '@/format/decimal';
 import { localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
-import { CONFLICT_NEXT_STEP } from '../save-failure';
 import settingsStyles from '@/ui/settings-table.module.css';
+import { CONFLICT_NEXT_STEP } from '../save-failure';
 import { inverseLine, rateLine } from './currency-actions';
 import {
   checkAddRateImpact,

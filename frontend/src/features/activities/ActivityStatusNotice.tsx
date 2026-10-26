@@ -2,8 +2,8 @@ import type { ActivityApproval } from '@/features/approvals';
 import { declineBoxText, levelOf, names } from '@/features/approvals';
 import { Notice } from '@/features/line-items';
 import { useFormatters } from '@/format/useFormatters';
-import type { Activity } from './api';
 import { activityBannerText } from '@/ui/ActivityStatusChip/activity-status';
+import type { Activity } from './api';
 
 export interface ActivityStatusNoticeProps {
   activity: Activity;

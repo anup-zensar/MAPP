@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
-import { TopBar } from './TopBar';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
+import { TopBar } from './TopBar';
 
 const PRIYA: CurrentUser = testUser();
 

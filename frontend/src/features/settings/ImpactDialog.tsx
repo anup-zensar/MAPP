@@ -1,8 +1,8 @@
 import type { components } from '@/api/generated/schema';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
+import styles from '@/ui/settings-table.module.css';
 import { SETTING_NOUNS } from './settings-nouns';
 import type { SettingKind } from './settings-nouns';
-import styles from '@/ui/settings-table.module.css';
 
 type ImpactWarning = components['schemas']['ImpactWarning'];
 

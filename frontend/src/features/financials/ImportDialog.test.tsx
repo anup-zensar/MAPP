@@ -4,8 +4,8 @@ import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
-import { ImportDialog } from './ImportDialog';
 import { checkResult } from '@/testing/fixtures/financials';
+import { ImportDialog } from './ImportDialog';
 
 const CHECK = 'POST /api/v1/financials/imports/check';
 const IMPORT = 'POST /api/v1/financials/imports';

@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { planRowOf, usd } from '@/testing/fixtures/home';
 import type { HomePlanRow, HomeScope } from './api';
 import { PlansAtAGlanceCard } from './PlansAtAGlanceCard';
-import { planRowOf, usd } from '@/testing/fixtures/home';
 
 const LUBRICANTS = planRowOf();
 const CHINA = planRowOf({

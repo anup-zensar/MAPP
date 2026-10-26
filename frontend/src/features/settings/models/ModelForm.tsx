@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useActivityTypes } from '../api';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
@@ -20,9 +19,10 @@ import {
   toHundredths,
 } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
 import { ImpactDialog } from '../ImpactDialog';
 import { saveFailureOf } from '../save-failure';
-import styles from '@/ui/settings-table.module.css';
+import { useActivityTypes } from '../api';
 import { checkModelImpact, fetchModel, useCreateModel, useUpdateModel } from './api';
 import type { ChangeImpact, Model, ModelCreate, ModelUpdate } from './api';
 import { WaterfallExample } from './WaterfallExample';

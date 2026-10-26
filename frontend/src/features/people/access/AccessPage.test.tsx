@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { AccessPage } from './AccessPage';
 import {
   ACCESS_ANSWERS,
   ALEX,
@@ -16,6 +15,7 @@ import {
   SARA_ROLES,
   VIEWER,
 } from '@/testing/fixtures/access';
+import { AccessPage } from './AccessPage';
 
 const ALEX_USER = testUser({ id: ALEX.id, name: ALEX.name, firstName: 'Alex', initials: 'AM' });
 

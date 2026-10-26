@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { OptionsCard } from './OptionsCard';
 import {
   emptyForm,
   formAttribute,
@@ -15,6 +14,7 @@ import {
   shellOption,
   usedBy,
 } from '@/testing/fixtures/shell-attributes';
+import { OptionsCard } from './OptionsCard';
 
 const OPTIONS_PATH = 'GET /api/v1/shell-attributes/SA-1010/options';
 

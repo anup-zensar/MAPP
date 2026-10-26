@@ -5,9 +5,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { logEntry, logPage } from '@/testing/fixtures/activity-log';
 import { HistorySection } from './HistorySection';
 import { showHistory } from './show-history';
-import { logEntry, logPage } from '@/testing/fixtures/activity-log';
 
 const LOG = 'GET /api/v1/activity-log';
 const PREFERENCES = 'PATCH /api/v1/me/preferences';

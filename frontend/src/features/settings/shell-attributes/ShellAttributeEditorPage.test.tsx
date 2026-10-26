@@ -6,7 +6,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ShellAttributeEditorPage } from './ShellAttributeEditorPage';
 import {
   ACTIVITY_ATTRIBUTES,
   BUSINESS_UNIT,
@@ -18,6 +17,7 @@ import {
   page,
   PIR,
 } from '@/testing/fixtures/shell-attributes';
+import { ShellAttributeEditorPage } from './ShellAttributeEditorPage';
 
 const LIST = {
   'GET /api/v1/shell-attributes': { body: page([BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES]) },

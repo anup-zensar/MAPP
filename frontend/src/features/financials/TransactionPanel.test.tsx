@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { Outlet } from 'react-router';
 import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import {
@@ -11,7 +12,6 @@ import {
   transactionOf,
   transactionPage,
 } from '@/testing/fixtures/financials';
-import { Outlet } from 'react-router';
 import { SessionProvider } from '@/session/SessionProvider';
 import { renderRoutes } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';

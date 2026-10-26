@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useModels } from '../api';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
@@ -13,9 +12,10 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { formatAmount, parseMoneyInput, toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
 import { ImpactDialog } from '../ImpactDialog';
 import { saveFailureOf } from '../save-failure';
-import styles from '@/ui/settings-table.module.css';
+import { useModels } from '../api';
 import {
   checkActivityTypeImpact,
   fetchActivityType,

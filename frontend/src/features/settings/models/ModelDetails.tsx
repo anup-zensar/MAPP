@@ -5,15 +5,15 @@ import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { formatPercent } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import { MetaLine } from '../MetaLine';
 import { SETTING_NOUNS } from '../settings-nouns';
-import styles from '@/ui/settings-table.module.css';
 import { UsageLine } from '../UsageLine';
 import { moreActions } from './model-actions';
 import type { ModelActions } from './model-actions';
 import type { Model } from './api';
 import { WaterfallExample } from './WaterfallExample';
-import { CanChange } from '@/ui/CanChange/CanChange';
 
 export interface ModelDetailsProps {
   /** The model; null when it no longer exists. */

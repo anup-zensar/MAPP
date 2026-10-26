@@ -4,10 +4,10 @@ import { expectNoAxeViolations } from '@/testing/axe';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { ACCESS_ANSWERS, ALEX, PLANNER, SARA_ROLES } from '@/testing/fixtures/access';
 import { AccessPage } from './AccessPage';
 import { RoleFormPage } from './RoleFormPage';
 import { RolePage } from './RolePage';
-import { ACCESS_ANSWERS, ALEX, PLANNER, SARA_ROLES } from '@/testing/fixtures/access';
 
 const ALEX_USER = testUser({ id: ALEX.id, name: ALEX.name, firstName: 'Alex', initials: 'AM' });
 

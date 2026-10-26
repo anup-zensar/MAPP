@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { savedView, standard2026 } from '@/testing/fixtures/all-work';
 import type { SavedView, ViewState } from './all-work-types';
 import { SaveViewDialog } from './SaveViewDialog';
-import { savedView, standard2026 } from '@/testing/fixtures/all-work';
 
 const STATE: ViewState = {
   ...standard2026(),

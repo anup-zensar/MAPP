@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 import {
   activityRecord,
   figures,
@@ -13,6 +12,7 @@ import {
   transactionPage,
   usd,
 } from '@/testing/fixtures/line-items';
+import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 
 function renderActivity(answer: MockHandler) {
   mockApi({ 'GET /api/v1/financials/records/A-1001': answer });

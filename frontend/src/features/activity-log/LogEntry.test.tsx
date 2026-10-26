@@ -2,9 +2,9 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { logEntry } from '@/testing/fixtures/activity-log';
 import { LogEntry } from './LogEntry';
 import type { ActivityLogEntry } from './log-text';
-import { logEntry } from '@/testing/fixtures/activity-log';
 
 function renderEntry(entry: ActivityLogEntry) {
   return renderWithProviders(

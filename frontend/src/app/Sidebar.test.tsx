@@ -2,10 +2,10 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import { Sidebar } from './Sidebar';
-import styles from './Sidebar.module.css';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
+import { Sidebar } from './Sidebar';
+import styles from './Sidebar.module.css';
 
 const PRIYA: CurrentUser = testUser();
 

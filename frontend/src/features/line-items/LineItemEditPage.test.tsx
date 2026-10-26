@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { LineItemEditPage } from './LineItemEditPage';
 import {
   approvedActivity,
   details,
@@ -18,6 +17,7 @@ import {
   spreadMonth,
   usd,
 } from '@/testing/fixtures/line-items';
+import { LineItemEditPage } from './LineItemEditPage';
 
 const GET = 'GET /api/v1/line-items/L-1001';
 const PATCH = 'PATCH /api/v1/line-items/L-1001';

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
+import { formatWhole } from '@/format/decimal';
 import { SearchField } from '../SearchField/SearchField';
 import { SegmentedFilter } from '../SegmentedFilter/SegmentedFilter';
-import { formatWhole } from '@/format/decimal';
 import styles from '../settings-table.module.css';
 import type { StatusFilter } from '../useListFilters';
 

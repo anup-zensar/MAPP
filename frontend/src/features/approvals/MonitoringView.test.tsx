@@ -4,8 +4,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { MonitoringView } from './MonitoringView';
 import { ALEX, monitoringOf } from '@/testing/fixtures/approvals';
+import { MonitoringView } from './MonitoringView';
 
 const MONITORING = 'GET /api/v1/approvals/monitoring';
 const RUN = 'POST /api/v1/approvals/escalations/run';

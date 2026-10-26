@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { DANIEL, rowOf } from '@/testing/fixtures/approvals';
 import { NO_FILTERS, applyFilters, filterChips, filterOptions } from './approval-filters';
 import type { ApprovalFilterValues } from './approval-filters';
 import { ApprovalsFilters } from './ApprovalsFilters';
-import { DANIEL, rowOf } from '@/testing/fixtures/approvals';
 
 const ROWS = [
   rowOf(),

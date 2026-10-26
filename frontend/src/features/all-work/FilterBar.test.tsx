@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { allWorkOptions, standard2026 } from '@/testing/fixtures/all-work';
 import type { AllWorkOptions, AllWorkResult, ViewState } from './all-work-types';
 import { FilterBar } from './FilterBar';
-import { allWorkOptions, standard2026 } from '@/testing/fixtures/all-work';
 
 /** The filter bar with the state kept as the page keeps it; the state is shown as JSON. */
 function Harness({

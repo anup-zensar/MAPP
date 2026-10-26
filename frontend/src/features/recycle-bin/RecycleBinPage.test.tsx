@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 import type { BinItem } from './bin-text';
 import { RecycleBinPage } from './RecycleBinPage';
-import { binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
 
 const BIN = 'GET /api/v1/recycle-bin';
 const PARENT = { type: 'initiative', typeLabel: 'initiative', id: 'I-1009', name: 'Trade shows' };

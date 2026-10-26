@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatDate, formatDateRange, formatMoney } from '@/format/intl';
+import { logEntryOf, reasonOf, usd } from '@/testing/fixtures/home';
 import {
   activityCountsText,
   approvedPercent,
@@ -26,7 +27,6 @@ import {
   plansWithoutBudgetText,
   viewAllPlansText,
 } from './home-text';
-import { logEntryOf, reasonOf, usd } from '@/testing/fixtures/home';
 
 describe('homeText — the greeting (design system §2.3)', () => {
   it('greets the person by first name (FR-001)', () => {

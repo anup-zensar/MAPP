@@ -5,7 +5,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { HomePage } from './HomePage';
 import {
   HOME_ANSWERS,
   attentionItemOf,
@@ -16,6 +15,7 @@ import {
   summaryOf,
   waitingItemOf,
 } from '@/testing/fixtures/home';
+import { HomePage } from './HomePage';
 
 /** The summary of a person who has nothing yet, as HOME_ANSWERS gives it. */
 const HOME_EMPTY_SUMMARY = HOME_ANSWERS['GET /api/v1/home/summary'].body as object;

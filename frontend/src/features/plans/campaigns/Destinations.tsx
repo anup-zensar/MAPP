@@ -7,8 +7,8 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { STATUS } from '../plan-text';
 import { useFormatters } from '@/format/useFormatters';
+import { STATUS } from '../plan-text';
 import type { Destination, DestinationList, MoveConsequences } from './api';
 import styles from './Destinations.module.css';
 import {

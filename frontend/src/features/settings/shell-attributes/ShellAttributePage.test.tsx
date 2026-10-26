@@ -4,7 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ShellAttributePage } from './ShellAttributePage';
 import {
   BUSINESS_UNIT,
   BUSINESS_UNIT_LOCK,
@@ -15,6 +14,7 @@ import {
   PIR,
   shellOption,
 } from '@/testing/fixtures/shell-attributes';
+import { ShellAttributePage } from './ShellAttributePage';
 
 const TV = shellOption({ id: 'SO-1101', label: 'TV', attributeId: 'SA-1010' });
 

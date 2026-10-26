@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { logSummary } from '@/testing/fixtures/activity-log';
 import { LogFilterBar, SEARCH_DELAY_MS } from './LogFilterBar';
 import { NO_FILTERS } from './log-filters';
 import type { LogFilterState } from './log-filters';
-import { logSummary } from '@/testing/fixtures/activity-log';
 
 type OnChange = (filters: LogFilterState, typing?: boolean) => void;
 

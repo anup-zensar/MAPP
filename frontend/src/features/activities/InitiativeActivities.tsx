@@ -4,8 +4,8 @@ import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { usePlanActivities } from './api';
 import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
+import { usePlanActivities } from './api';
 import { activityHref, newActivityHref } from './activity-text';
 import styles from './InitiativeActivities.module.css';
 

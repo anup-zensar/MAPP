@@ -4,10 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ApprovalSection } from './ApprovalSection';
-import type { ActivityApproval } from './api';
-import type { ApprovalActivity } from './approval-types';
-import { APPROVED_NO_RECALL } from './messages';
 import {
   ALEX,
   approvalOf,
@@ -18,6 +14,10 @@ import {
   roundOf,
   SUBMITTED,
 } from '@/testing/fixtures/approvals';
+import { ApprovalSection } from './ApprovalSection';
+import type { ActivityApproval } from './api';
+import type { ApprovalActivity } from './approval-types';
+import { APPROVED_NO_RECALL } from './messages';
 
 const APPROVAL = 'GET /api/v1/activities/A-1042/approval';
 

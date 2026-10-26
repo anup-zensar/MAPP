@@ -2,7 +2,6 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { YourAccessCard } from './YourAccessCard';
 import {
   ALEX,
   assignment,
@@ -12,6 +11,7 @@ import {
   PRIYA,
   SARA,
 } from '@/testing/fixtures/access';
+import { YourAccessCard } from './YourAccessCard';
 
 const PRIYA_ACCESS = {
   roles: [assignment('RA-1004', PLANNER, MY_TEAMS_EUROPE)],

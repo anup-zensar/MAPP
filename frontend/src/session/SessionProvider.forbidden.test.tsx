@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { api, call } from '@/api/client';
 import { ApiError } from '@/api/errors';
-import { useAccess } from './access';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { useAccess } from './access';
 import type { CurrentUser } from './useSession';
 
 const FORBIDDEN = {

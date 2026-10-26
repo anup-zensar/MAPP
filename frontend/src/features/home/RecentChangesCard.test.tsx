@@ -5,9 +5,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { LUBRICANTS_PLAN, logEntryOf } from '@/testing/fixtures/home';
 import type { ActivityLogEntry, HomeScope } from './api';
 import { RecentChangesCard } from './RecentChangesCard';
-import { LUBRICANTS_PLAN, logEntryOf } from '@/testing/fixtures/home';
 
 const page = (items: ActivityLogEntry[]) => ({ body: { items, total: items.length } });
 

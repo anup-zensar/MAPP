@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import { useAttributeForm } from '../api';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
@@ -11,6 +10,7 @@ import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFi
 import { businessUnitOf, missingAttributes } from '@/ui/ShellAttributeFields/rules';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
+import { useAttributeForm } from '../api';
 import { LEVEL_WORDS } from './attribute-words';
 import { checkAttributeValues } from './api';
 import type { AttributeCheckResult, ShellAttribute } from './api';

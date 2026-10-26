@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { logEntry } from '@/testing/fixtures/activity-log';
 import {
   ACTION_CHIPS,
   countLine,
@@ -11,7 +12,6 @@ import {
   recordLink,
   sentenceLead,
 } from './log-text';
-import { logEntry } from '@/testing/fixtures/activity-log';
 
 describe('entry sentence (FR-005, FR-006)', () => {
   it('names the person, the verb, the record type and the record', () => {

@@ -4,13 +4,13 @@ import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
-import { GlobalBudgetPage } from './GlobalBudgetPage';
 import {
   BRAND_OPTION,
   globalBudget,
   LUBRICANTS,
   MOBILITY,
 } from '@/testing/fixtures/global-budgets';
+import { GlobalBudgetPage } from './GlobalBudgetPage';
 
 const ONE = 'GET /api/v1/global-budgets/GB-1001';
 

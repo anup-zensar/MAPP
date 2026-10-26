@@ -2,8 +2,8 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { SummaryCards } from './SummaryCards';
 import { gridResult } from '@/testing/fixtures/all-work';
+import { SummaryCards } from './SummaryCards';
 
 function card(label: string): HTMLElement {
   const summary = screen.getByRole('region', { name: 'Summary' });

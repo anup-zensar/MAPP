@@ -4,13 +4,13 @@ import { findMessages, renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
-import { ApprovalWorkflowsPage } from './ApprovalWorkflowsPage';
 import {
   CHINA_WORKFLOW,
   detailsOf,
   PEOPLE,
   workflowOf,
 } from '@/testing/fixtures/approval-workflows';
+import { ApprovalWorkflowsPage } from './ApprovalWorkflowsPage';
 
 const LIST = 'GET /api/v1/approval-workflows';
 const ITEMS = [CHINA_WORKFLOW, workflowOf()];

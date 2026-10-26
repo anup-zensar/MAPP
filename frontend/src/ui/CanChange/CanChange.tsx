@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { ViewOnlyNote } from '../ViewOnlyNote/ViewOnlyNote';
 import type { Permission } from '@/session/access';
+import { ViewOnlyNote } from '../ViewOnlyNote/ViewOnlyNote';
 import { useCanChange } from '../useCanChange';
 
 export interface CanChangeProps {

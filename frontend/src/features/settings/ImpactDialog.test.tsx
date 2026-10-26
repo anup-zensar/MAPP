@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
+import { NOT_USED, USED_BY_TWO_PLANS } from '@/testing/fixtures/settings';
 import { ImpactDialog } from './ImpactDialog';
 import { UsageLine } from './UsageLine';
-import { NOT_USED, USED_BY_TWO_PLANS } from '@/testing/fixtures/settings';
 
 const GOALS =
   "Used by 2 plans (31 activities). Their calculated MQL and revenue goals will be recalculated; typed goals ('Set later stages myself') are kept.";

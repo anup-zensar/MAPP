@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from '@/testing/fixtures/home';
 import { AttentionCard } from './AttentionCard';
 import type { HomeAttentionItem } from './api';
-import { LUBRICANTS_PLAN, attentionItemOf, reasonOf, usd } from '@/testing/fixtures/home';
 
 const page = (items: HomeAttentionItem[]) => ({ body: { items, total: items.length } });
 

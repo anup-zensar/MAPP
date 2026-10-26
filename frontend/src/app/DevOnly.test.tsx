@@ -2,8 +2,8 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
-import { DevOnly } from './DevOnly';
 import type { PageHandle } from '@/session/RequireSignIn';
+import { DevOnly } from './DevOnly';
 
 const ENVIRONMENT_LOCAL = { environment: 'local', demoSignIn: true };
 const ENVIRONMENT_PRODUCTION = { environment: 'production', demoSignIn: false };

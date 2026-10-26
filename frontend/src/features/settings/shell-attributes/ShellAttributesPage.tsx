@@ -14,6 +14,8 @@ import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { formatWhole } from '@/format/decimal';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 import {
   dependsOnText,
   isChoiceType,
@@ -32,8 +34,6 @@ import type { AttributeMove, ShellAttribute } from './api';
 import styles from './ShellAttributes.module.css';
 import { useAttributeActions } from './useAttributeActions';
 import { useFailureToast } from './useStatusChange';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
-import { useCanChange } from '@/ui/useCanChange';
 
 type StatusFilter = 'active' | 'inactive' | 'all';
 

@@ -5,9 +5,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
 import type { BinItem } from './bin-text';
 import { EmptyBinDialog } from './EmptyBinDialog';
-import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
 
 const EMPTY = 'POST /api/v1/recycle-bin/empty';
 

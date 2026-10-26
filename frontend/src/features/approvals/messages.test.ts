@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/api/errors';
+import { ALEX, CARLOS, DANIEL, roundOf } from '@/testing/fixtures/approvals';
 import {
   activitiesCount,
   alreadyDecidedMessage,
@@ -10,7 +11,6 @@ import {
   roundOutcomeText,
   submitConflictMessage,
 } from './messages';
-import { ALEX, CARLOS, DANIEL, roundOf } from '@/testing/fixtures/approvals';
 
 function conflict(message: string, changedAt: string) {
   return new ApiError('conflict', {

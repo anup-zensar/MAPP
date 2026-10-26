@@ -5,8 +5,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { Activity } from './api';
-import { ActivityFormPage } from './ActivityFormPage';
 import {
   activityAttributeForm,
   editForm,
@@ -14,6 +12,8 @@ import {
   newForm,
   PEOPLE,
 } from '@/testing/fixtures/activities';
+import type { Activity } from './api';
+import { ActivityFormPage } from './ActivityFormPage';
 
 // The whole form renders in each test: on a busy computer the first render can take a while.
 configure({ asyncUtilTimeout: 10_000 });

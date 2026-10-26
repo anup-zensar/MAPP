@@ -17,6 +17,8 @@ import { filterRecords, useListFilters } from '@/ui/useListFilters';
 import { useStatusFlow } from '@/ui/useStatusFlow';
 import { formatWhole } from '@/format/decimal';
 import { usePageTitle } from '@/ui/usePageTitle';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 import { useShowFailure } from './feedback';
 import { useSetTeamStatus, useTeams } from './api';
 import type { Team } from './api';
@@ -25,8 +27,6 @@ import type { TeamActions } from './team-actions';
 import { DeleteTeamDialog, TeamDetailsPanel, TeamFormPanel } from './TeamPanels';
 import { usedByText } from './texts';
 import page from './lists.module.css';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
-import { useCanChange } from '@/ui/useCanChange';
 
 const TEAM_NOUN = { one: 'team', many: 'teams' };
 

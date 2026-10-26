@@ -4,16 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { AllWorkPage } from './AllWorkPage';
-import { resetAllWorkStore } from './all-work-store';
-import type {
-  AllWorkResult,
-  AllWorkRow,
-  SavedView,
-  SavedViewCreate,
-  SavedViewUpdate,
-  ViewState,
-} from './all-work-types';
 import {
   allWorkOptions,
   budgetResult,
@@ -25,6 +15,16 @@ import {
   row,
   savedView,
 } from '@/testing/fixtures/all-work';
+import { AllWorkPage } from './AllWorkPage';
+import { resetAllWorkStore } from './all-work-store';
+import type {
+  AllWorkResult,
+  AllWorkRow,
+  SavedView,
+  SavedViewCreate,
+  SavedViewUpdate,
+  ViewState,
+} from './all-work-types';
 
 afterEach(() => {
   resetAllWorkStore();

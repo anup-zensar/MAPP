@@ -13,10 +13,12 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { plural } from '@/format/text';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
-import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import styles from '@/ui/settings-table.module.css';
 import { filterRecords, useListFilters } from '@/ui/useListFilters';
 import type { ListFilters } from '@/ui/useListFilters';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import { useSettingStatus } from '../useSettingStatus';
 import { FinanceBudgetItemDetails } from './FinanceBudgetItemDetails';
 import { FinanceBudgetItemForm } from './FinanceBudgetItemForm';
@@ -31,8 +33,6 @@ import type { FinanceBudget, FinanceBudgetItem, FinanceBudgetPage } from './api'
 import { moreActions } from './finance-item-actions';
 import type { FinanceItemActions } from './finance-item-actions';
 import { RenameBudgetDialog } from './RenameBudgetDialog';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
-import { useCanChange } from '@/ui/useCanChange';
 
 const ITEM_NOUN = { one: 'finance budget item', many: 'finance budget items' };
 

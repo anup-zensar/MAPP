@@ -1,6 +1,5 @@
 import { Calculator, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { useModels } from '../api';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -13,10 +12,12 @@ import { formatPercent } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
-import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import styles from '@/ui/settings-table.module.css';
 import { filterRecords, useListFilters } from '@/ui/useListFilters';
 import type { ListFilters } from '@/ui/useListFilters';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import { useSettingStatus } from '../useSettingStatus';
 import { moreActions } from './model-actions';
 import type { ModelActions } from './model-actions';
@@ -25,8 +26,7 @@ import { ModelForm } from './ModelForm';
 import type { ModelFormMode } from './ModelForm';
 import { MODEL_LISTS, setModelStatus, useDeleteModel } from './api';
 import type { Model } from './api';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
-import { useCanChange } from '@/ui/useCanChange';
+import { useModels } from '../api';
 
 const MODEL_NOUN = { one: 'model', many: 'models' };
 

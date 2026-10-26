@@ -4,8 +4,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { WaitingItem } from './api';
 import { waitingItemOf } from '@/testing/fixtures/home';
+import type { WaitingItem } from './api';
 import { WaitingCard } from './WaitingCard';
 
 const daysAgo = (days: number) => new Date(Date.now() - (days * 24 + 1) * 3_600_000).toISOString();

@@ -1,6 +1,5 @@
 import { Plus, Shapes } from 'lucide-react';
 import { useState } from 'react';
-import { useActivityTypes } from '../api';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -12,10 +11,12 @@ import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
-import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import styles from '@/ui/settings-table.module.css';
 import { filterRecords, useListFilters } from '@/ui/useListFilters';
 import type { ListFilters } from '@/ui/useListFilters';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import { useSettingStatus } from '../useSettingStatus';
 import { modelNames, moreActions } from './activity-type-actions';
 import type { ActivityTypeActions } from './activity-type-actions';
@@ -23,8 +24,7 @@ import { ActivityTypeDetails } from './ActivityTypeDetails';
 import { ActivityTypeForm } from './ActivityTypeForm';
 import { ACTIVITY_TYPE_LISTS, setActivityTypeStatus, useDeleteActivityType } from './api';
 import type { ActivityType } from './api';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
-import { useCanChange } from '@/ui/useCanChange';
+import { useActivityTypes } from '../api';
 
 const TYPE_NOUN = { one: 'activity type', many: 'activity types' };
 

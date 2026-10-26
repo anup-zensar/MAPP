@@ -4,8 +4,8 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { Activity } from './api';
 import { destinations, launchFilm } from '@/testing/fixtures/activities';
+import type { Activity } from './api';
 import { useActivityActions } from './useActivityActions';
 
 const DELETED = {

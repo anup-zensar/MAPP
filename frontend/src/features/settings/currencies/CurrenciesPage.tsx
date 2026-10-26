@@ -1,6 +1,5 @@
 import { Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
-import { useCurrencies } from '../api';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button, LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -12,10 +11,12 @@ import { useToast } from '@/ui/Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
-import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import styles from '@/ui/settings-table.module.css';
 import { filterRecords, useListFilters } from '@/ui/useListFilters';
 import type { ListFilters } from '@/ui/useListFilters';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
+import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import { useSettingStatus } from '../useSettingStatus';
 import { CURRENCY_LISTS, setCurrencyStatus, useDeleteCurrency } from './api';
 import type { Currency } from './api';
@@ -27,8 +28,7 @@ import { CURRENCY_IMPORT_PATH } from './currency-paths';
 import { rateDateOf, SOURCE_WORDS } from './rate-words';
 import styles016 from './rates.module.css';
 import { RecentImports } from './RecentImports';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
-import { useCanChange } from '@/ui/useCanChange';
+import { useCurrencies } from '../api';
 
 const CURRENCY_NOUN = { one: 'currency', many: 'currencies' };
 

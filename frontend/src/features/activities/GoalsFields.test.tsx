@@ -2,10 +2,10 @@ import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
+import { MODEL } from '@/testing/fixtures/activities';
 import { emptyGoals } from './activity-form-state';
 import type { GoalsState } from './activity-form-state';
 import { GoalsFields } from './GoalsFields';
-import { MODEL } from '@/testing/fixtures/activities';
 
 function Goals({ start = emptyGoals() }: { start?: GoalsState }) {
   const [goals, setGoals] = useState(start);

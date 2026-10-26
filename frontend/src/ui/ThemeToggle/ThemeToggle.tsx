@@ -1,7 +1,7 @@
 import { Moon, Sun } from 'lucide-react';
+import { useSession } from '@/session/useSession';
 import { Button } from '../Button/Button';
 import { Tooltip } from '../Tooltip/Tooltip';
-import { useSession } from '@/session/useSession';
 
 /**
  * The light/dark switch of the top bar (FR-014): it offers the other mode — a moon while the app

@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { approvalOf, DANIEL, roundOf } from '@/testing/fixtures/approvals';
 import { APPROVED_NO_RECALL } from './messages';
 import { RecallDialog } from './RecallDialog';
-import { approvalOf, DANIEL, roundOf } from '@/testing/fixtures/approvals';
 
 const RECALL = 'POST /api/v1/activities/A-1042/approval/recall';
 

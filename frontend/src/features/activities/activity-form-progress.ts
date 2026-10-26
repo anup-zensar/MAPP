@@ -1,8 +1,8 @@
 import { missingAttributes, visibleAttributes } from '@/ui/ShellAttributeFields/rules';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
-import type { FormState } from './activity-form-state';
 import { countFilled as count } from '@/ui/FormRail/form-progress';
 import type { RailSection } from '@/ui/FormRail/form-progress';
+import type { FormState } from './activity-form-state';
 
 /** The ids of the activity form's section cards, which the rail links to. */
 export const ACTIVITY_SECTION = {

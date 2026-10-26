@@ -5,10 +5,10 @@ import { Logo } from '@/ui/Logo/Logo';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import { itemsFor, useAccess } from '@/session/access';
 import { cx } from '@/ui/cx';
+import { useCurrentUser, useSession } from '@/session/useSession';
 import { MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import type { NavItem } from './navigation';
 import styles from './Sidebar.module.css';
-import { useCurrentUser, useSession } from '@/session/useSession';
 
 export interface SidebarProps {
   /**

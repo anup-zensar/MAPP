@@ -2,10 +2,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { FinanceBudgetFields } from './FinanceBudgetFields';
-import { changeBudgetYear, newFormState, withField } from './line-item-form-state';
-import type { LineItemFormState } from './line-item-form-state';
-import type { FinanceBudgetItemRef } from './api';
 import {
   activity,
   BRAND_INACTIVE,
@@ -15,6 +11,10 @@ import {
   formOptions,
   MOBILITY_RETAIL,
 } from '@/testing/fixtures/line-items';
+import { FinanceBudgetFields } from './FinanceBudgetFields';
+import { changeBudgetYear, newFormState, withField } from './line-item-form-state';
+import type { LineItemFormState } from './line-item-form-state';
+import type { FinanceBudgetItemRef } from './api';
 
 const ITEMS = [DIGITAL, EVENTS, MOBILITY_RETAIL, DIGITAL_2027];
 

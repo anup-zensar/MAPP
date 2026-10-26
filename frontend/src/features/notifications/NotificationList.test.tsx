@@ -5,8 +5,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { NotificationList } from './NotificationList';
 import { DECLINED, NOW, notificationOf, pageOf } from '@/testing/fixtures/notifications';
+import { NotificationList } from './NotificationList';
 
 const LIST = 'GET /api/v1/notifications';
 const READ = 'POST /api/v1/notifications/NT-1003/read';

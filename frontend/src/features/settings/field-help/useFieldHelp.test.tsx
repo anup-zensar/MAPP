@@ -5,9 +5,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
 import { FieldHelpTip } from './FieldHelpTip';
 import { useFieldHelp } from './useFieldHelp';
-import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
 
 /** Shows what help() answers for each key, as a page would pass it to a field's tip. */
 function Texts({ keys, fallback }: { keys: string[]; fallback?: string }) {

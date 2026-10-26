@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { seedList } from '@/testing/fixtures/plans';
 import { remember, DEFAULT_FILTERS } from './list-preferences';
 import { PlansPage } from './PlansPage';
-import { seedList } from '@/testing/fixtures/plans';
 
 afterEach(() => window.localStorage.clear());
 

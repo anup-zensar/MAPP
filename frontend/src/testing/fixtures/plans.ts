@@ -3,9 +3,9 @@
  * data (FY2026 Lubricants Europe, FY2026 Mobility China, FY2025 Lubricants Europe).
  */
 import type { components } from '@/api/generated/schema';
+import type { Plan, PlanDefaults, PlanList, PlanSummary } from '@/features/plans';
 import { LUBRICANTS, MOBILITY, planForm } from './attribute-forms';
 import type { MockHandler } from '../mock-api';
-import type { Plan, PlanDefaults, PlanList, PlanSummary } from '@/features/plans';
 
 type Model = components['schemas']['Model'];
 type Person = components['schemas']['Person'];

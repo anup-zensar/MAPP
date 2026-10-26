@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
-import { ApiError } from '@/api/errors';
 import { Pencil } from 'lucide-react';
+import { ApiError } from '@/api/errors';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button } from '@/ui/Button/Button';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
@@ -12,12 +12,12 @@ import { ActivityStatusChip } from '@/ui/ActivityStatusChip/ActivityStatusChip';
 import { localDate } from '@/format/intl';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import { workflowMoreItems } from './workflow-actions';
 import type { WorkflowActions } from './workflow-actions';
 import { usedByText, WORKFLOW_GONE } from './workflow-texts';
 import { useWorkflowDetails } from './api';
 import type { ApprovalWorkflowDetails } from './api';
-import { CanChange } from '@/ui/CanChange/CanChange';
 import styles from './WorkflowDetailsPanel.module.css';
 
 export interface WorkflowDetailsPanelProps {

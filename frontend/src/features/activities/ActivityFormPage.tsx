@@ -20,6 +20,7 @@ import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
+import { FormLayout } from '@/ui/FormRail/FormRail';
 import {
   fetchLatestActivity,
   useActivity,
@@ -46,7 +47,6 @@ import type { ReapprovalChange } from './activity-form-state';
 import styles from './ActivityFormPage.module.css';
 import { FormSkeleton, LoadFailed } from './ActivityLoadStates';
 import { activityHref } from './activity-text';
-import { FormLayout } from '@/ui/FormRail/FormRail';
 import { ReapprovalDialog } from './ReapprovalDialog';
 
 export interface ActivityFormPageProps {

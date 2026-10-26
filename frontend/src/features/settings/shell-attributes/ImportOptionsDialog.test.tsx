@@ -5,8 +5,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ImportOptionsDialog } from './ImportOptionsDialog';
 import { shellAttribute } from '@/testing/fixtures/shell-attributes';
+import { ImportOptionsDialog } from './ImportOptionsDialog';
 
 type ImportRow = components['schemas']['ImportRow'];
 

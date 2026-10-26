@@ -4,13 +4,13 @@ import { renderWithProviders } from '@/testing/render';
 import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { testUser } from '@/testing/fixtures/users';
-import { LinkTransactionDialog } from './LinkTransactionDialog';
 import {
   FT_1004,
   manuallyLinked,
   STATION_SIGNAGE,
   transactionOf,
 } from '@/testing/fixtures/financials';
+import { LinkTransactionDialog } from './LinkTransactionDialog';
 
 const LINK = 'POST /api/v1/financials/transactions/FT-1004/link';
 

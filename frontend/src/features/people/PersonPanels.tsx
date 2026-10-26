@@ -20,6 +20,8 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
+import styles from '@/ui/settings-table.module.css';
+import { CanChange } from '@/ui/CanChange/CanChange';
 import { formFailure } from './feedback';
 import { OwnerImpactDialog } from './OwnerImpactDialog';
 import {
@@ -34,12 +36,10 @@ import { RecordLine } from './RecordLine';
 import { removedIds } from './removed-ids';
 import { TeamField } from './TeamField';
 import { PersonRolesFact } from './access/PersonRolesFact';
-import styles from '@/ui/settings-table.module.css';
 import { personStatusItem } from './person-actions';
 import type { PersonActions } from './person-actions';
 import { approvesInText, ownsText } from './texts';
 import panel from './panels.module.css';
-import { CanChange } from '@/ui/CanChange/CanChange';
 
 /** Above this many teams, the details offer "Search teams". */
 const SEARCH_ABOVE = 10;

@@ -2,9 +2,9 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
-import { ThemeToggle } from './ThemeToggle';
 import type { CurrentUser } from '@/session/useSession';
 import { testUser } from '@/testing/fixtures/users';
+import { ThemeToggle } from './ThemeToggle';
 
 const PRIYA: CurrentUser = testUser();
 

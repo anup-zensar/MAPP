@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Tooltip } from 'radix-ui';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import { EUR, eur, formOptions, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
 import {
   addCustomMonth,
   changeCustomMonth,
@@ -14,7 +15,6 @@ import {
 import type { LineItemFormState } from './line-item-form-state';
 import type { ActivityDates } from './line-item-math';
 import { SpreadEditor } from './SpreadEditor';
-import { EUR, eur, formOptions, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
 
 const MAR_MAY: ActivityDates = { startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false };
 

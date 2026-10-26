@@ -6,7 +6,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { LineItemPage } from './LineItemPage';
 import {
   approvedActivity,
   currentRates,
@@ -21,6 +20,7 @@ import {
   transactionPage,
   usd,
 } from '@/testing/fixtures/line-items';
+import { LineItemPage } from './LineItemPage';
 
 const GET = 'GET /api/v1/line-items/L-1001';
 const DUPLICATE = 'POST /api/v1/line-items/L-1001/duplicate';

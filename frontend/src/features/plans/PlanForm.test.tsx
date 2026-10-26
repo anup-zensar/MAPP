@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { FINANCE_BUDGETS, FORM_ANSWERS, plan, planDefaults } from '@/testing/fixtures/plans';
 import { PlanForm } from './PlanForm';
 import type { PlanFormProps } from './PlanForm';
 import { valuesFromDefaults, valuesFromPlan } from './plan-form-values';
-import { FINANCE_BUDGETS, FORM_ANSWERS, plan, planDefaults } from '@/testing/fixtures/plans';
 
 function renderForm(props: Partial<PlanFormProps> = {}, answers = {}) {
   const api = mockApi({ ...FORM_ANSWERS, ...answers });

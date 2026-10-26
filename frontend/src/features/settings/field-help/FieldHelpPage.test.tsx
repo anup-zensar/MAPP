@@ -6,8 +6,8 @@ import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { expectNoAxeViolations } from '@/testing/axe';
 import { validationFailed, versionConflict } from '@/testing/fixtures/settings';
-import { FieldHelpPage } from './FieldHelpPage';
 import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from '@/testing/fixtures/field-help';
+import { FieldHelpPage } from './FieldHelpPage';
 
 function renderHelp(answers: Record<string, MockHandler> = {}, route = '/settings/field-help') {
   const api = mockApi({ 'GET /api/v1/field-help': { body: FIELD_HELP_PAGE }, ...answers });

@@ -6,9 +6,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { financialsNotServed, plan } from '@/testing/fixtures/plans';
 import { PlanPage } from './PlanPage';
 import type { Plan } from './api';
-import { financialsNotServed, plan } from '@/testing/fixtures/plans';
 
 // Feature 005 fills the plan tree; its own tests cover that.
 vi.mock('./campaigns/useCampaignTreeContent', () => ({

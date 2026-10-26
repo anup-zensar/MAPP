@@ -3,8 +3,8 @@ import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import { ApiError, resolvedMessage } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
-import { useToast } from './Toast/useToast';
 import { useFormatters } from '@/format/useFormatters';
+import { useToast } from './Toast/useToast';
 
 type DeleteResult = components['schemas']['DeleteResult'];
 type RecycleBinEntry = components['schemas']['RecycleBinEntry'];

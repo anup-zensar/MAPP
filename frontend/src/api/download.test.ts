@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockApi } from '@/testing/mock-api';
 import { api } from './client';
 import { ApiError } from './errors';
-import { mockApi } from '@/testing/mock-api';
 import { downloadFromApi, fileNameFromDisposition, saveBlob } from './download';
 
 const NAME = 'MAPP All work – Grid – 2026 – 18 Oct 2026.csv';

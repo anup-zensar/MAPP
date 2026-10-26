@@ -2,8 +2,8 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
-import type { Plan } from '../api';
 import { plan } from '@/testing/fixtures/plans';
+import type { Plan } from '../api';
 import { DeletePlanDialog } from './DeletePlanDialog';
 
 function renderDialog(target: Plan) {

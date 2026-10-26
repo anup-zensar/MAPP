@@ -22,6 +22,8 @@ import { useStatusFlow } from '@/ui/useStatusFlow';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
+import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
+import { useCanChange } from '@/ui/useCanChange';
 import { workflowMoreItems } from './workflow-actions';
 import type { WorkflowActions } from './workflow-actions';
 import { WorkflowDetailsPanel } from './WorkflowDetailsPanel';
@@ -30,8 +32,6 @@ import { cantDeleteText, setInactiveEffects, usedByText } from './workflow-texts
 import { WORKFLOWS_KEY, useDeleteWorkflow, useSetWorkflowActive, useWorkflows } from './api';
 import type { ApprovalWorkflow } from './api';
 import styles from './ApprovalWorkflowsPage.module.css';
-import { CanChange, SettingsViewOnlyNote } from '@/ui/CanChange/CanChange';
-import { useCanChange } from '@/ui/useCanChange';
 
 const WORKFLOW_NOUN = { one: 'approval workflow', many: 'approval workflows' };
 

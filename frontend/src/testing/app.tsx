@@ -23,6 +23,11 @@ export function renderApp(
   return { ...renderRoutes(routes, { route: path }), api };
 }
 
+/** Opens the whole app at `options.route` with the session as the test arranged it (no GET /me answer). */
+export function renderAppRoutes(options: Parameters<typeof renderRoutes>[1]) {
+  return renderRoutes(routes, options);
+}
+
 /** The sidebar item marked as the current section. */
 export function expectCurrentSection(label: string) {
   const navigation = screen.getByRole('navigation', { name: 'Main' });

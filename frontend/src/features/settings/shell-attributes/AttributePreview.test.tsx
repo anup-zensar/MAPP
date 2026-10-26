@@ -5,8 +5,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { AttributePreview } from './AttributePreview';
 import { shellAttribute } from '@/testing/fixtures/shell-attributes';
+import { AttributePreview } from './AttributePreview';
 
 /** Region, which depends on Cluster on the campaign form (campaignForm()). */
 const REGION = shellAttribute({

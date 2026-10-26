@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
+import { model } from '@/testing/fixtures/plans';
 import { GoalFields } from './GoalFields';
 import { goalRows } from './goal-waterfall';
-import { model } from '@/testing/fixtures/plans';
 
 const LUBRICANTS_1 = model();
 

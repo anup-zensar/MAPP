@@ -7,8 +7,8 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { activityRecord } from '@/testing/fixtures/line-items';
-import { activityActionsForInitiative, useActivityRows } from './activity-tree-rows';
 import { destinations, launchFilm, launchFilmRow } from '@/testing/fixtures/activities';
+import { activityActionsForInitiative, useActivityRows } from './activity-tree-rows';
 
 const DELETED = {
   recycleBinEntry: {

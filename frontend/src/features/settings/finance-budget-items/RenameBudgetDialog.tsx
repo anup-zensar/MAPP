@@ -9,8 +9,8 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { plural } from '@/format/text';
 import { useFormatters } from '@/format/useFormatters';
-import { CONFLICT_NEXT_STEP } from '../save-failure';
 import styles from '@/ui/settings-table.module.css';
+import { CONFLICT_NEXT_STEP } from '../save-failure';
 import { fetchFinanceBudget, useRenameFinanceBudget } from './api';
 import type { FinanceBudget } from './api';
 

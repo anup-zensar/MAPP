@@ -2,9 +2,9 @@ import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { ALEX, CARLOS, DANIEL, rowOf } from '@/testing/fixtures/approvals';
 import type { ApprovalTab } from './api';
 import { ApprovalsTable } from './ApprovalsTable';
-import { ALEX, CARLOS, DANIEL, rowOf } from '@/testing/fixtures/approvals';
 
 function renderTable(rows = [rowOf()], tab: ApprovalTab = 'waiting') {
   const onOpen = vi.fn();

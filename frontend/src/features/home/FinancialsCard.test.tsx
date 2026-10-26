@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { emptyOverview, overviewOf, usd } from '@/testing/fixtures/home';
 import { FinancialsCard } from './FinancialsCard';
 import type { FinancialOverview, HomeScope } from './api';
-import { emptyOverview, overviewOf, usd } from '@/testing/fixtures/home';
 
 function renderCard(answer: MockHandler = { body: overviewOf() }, scope: HomeScope = 'myTeams') {
   const api = mockApi({ 'GET /api/v1/financials/overview': answer });

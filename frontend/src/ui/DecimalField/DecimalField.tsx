@@ -1,5 +1,5 @@
-import { cx } from '../cx';
 import { formatAmount, formatWhole, parseDecimalInput } from '@/format/decimal';
+import { cx } from '../cx';
 import { FieldShell } from '../FieldShell/FieldShell';
 import type { FieldFrameProps } from '../FieldShell/FieldShell';
 import inputs from '../FieldShell/inputs.module.css';

@@ -4,8 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import type { ApprovalRow } from './api';
-import { ApprovalsPage } from './ApprovalsPage';
 import {
   CARLOS,
   DANIEL,
@@ -18,6 +16,8 @@ import {
   roundOf,
   rowOf,
 } from '@/testing/fixtures/approvals';
+import type { ApprovalRow } from './api';
+import { ApprovalsPage } from './ApprovalsPage';
 
 const SUMMARY = {
   body: { waitingForMe: 3, allOpen: 5, approvedThisMonth: 2, declinedThisMonth: 1 },

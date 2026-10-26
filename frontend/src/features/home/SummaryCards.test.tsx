@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { summaryOf, usd } from '@/testing/fixtures/home';
 import type { HomeScope, HomeSummary } from './api';
 import { SummaryCards } from './SummaryCards';
-import { summaryOf, usd } from '@/testing/fixtures/home';
 
 function renderCards(
   scope: HomeScope = 'myTeams',

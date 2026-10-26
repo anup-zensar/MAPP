@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { useAttributeForm } from '../api';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
@@ -24,6 +23,7 @@ import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
+import { useAttributeForm } from '../api';
 import { ImpactDialog } from '../ImpactDialog';
 import { saveFailureOf } from '../save-failure';
 import {

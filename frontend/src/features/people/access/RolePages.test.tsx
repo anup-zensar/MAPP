@@ -4,8 +4,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { RoleFormPage } from './RoleFormPage';
-import { RolePage } from './RolePage';
 import {
   ADMINISTRATOR,
   CATALOGUE,
@@ -13,6 +11,8 @@ import {
   PLANNER,
   VIEWER,
 } from '@/testing/fixtures/access';
+import { RoleFormPage } from './RoleFormPage';
+import { RolePage } from './RolePage';
 
 const ANSWERS: Record<string, MockHandler> = {
   'GET /api/v1/me': { body: testUser() },

@@ -5,7 +5,6 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { DelegationPanel } from './DelegationPanel';
 import {
   ALEX,
   CARLOS,
@@ -14,6 +13,7 @@ import {
   NO_DELEGATIONS,
   PRIYA,
 } from '@/testing/fixtures/approvals';
+import { DelegationPanel } from './DelegationPanel';
 
 const LIST = 'GET /api/v1/approval-delegations';
 const CREATE = 'POST /api/v1/approval-delegations';

@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { DelegationBanner } from './DelegationBanner';
 import { CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from '@/testing/fixtures/approvals';
+import { DelegationBanner } from './DelegationBanner';
 
 const LIST = 'GET /api/v1/approval-delegations';
 

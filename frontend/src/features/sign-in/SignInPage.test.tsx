@@ -1,12 +1,12 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { routes } from '@/app/router';
 import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
-import { renderRoutes, renderWithProviders } from '@/testing/render';
+import { renderAppRoutes } from '@/testing/app';
+import { renderWithProviders } from '@/testing/render';
 import type { RenderOptions } from '@/testing/render';
-import { SignInPage } from './SignInPage';
 import { testUser } from '@/testing/fixtures/users';
+import { SignInPage } from './SignInPage';
 
 const PRIYA: CurrentUser = testUser();
 
@@ -386,7 +386,7 @@ describe('SignInPage', () => {
 describe('SignInPage while the session is checked (plan "Session")', () => {
   it('shows the full-page loading placeholder until the session is known', async () => {
     mockApi({ 'GET /api/v1/me': () => new Promise<never>(() => {}) });
-    renderRoutes(routes, { route: '/sign-in' });
+    renderAppRoutes({ route: '/sign-in' });
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
     expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
@@ -395,7 +395,7 @@ describe('SignInPage while the session is checked (plan "Session")', () => {
 
   it('shows the full-page error when the API cannot be reached (edge case)', async () => {
     mockApi({ 'GET /api/v1/me': () => Promise.reject(new TypeError('Failed to fetch')) });
-    renderRoutes(routes, { route: '/sign-in' });
+    renderAppRoutes({ route: '/sign-in' });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(UNREACHABLE);
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();

@@ -3,9 +3,9 @@ import { DropdownMenu } from 'radix-ui';
 import { Link } from 'react-router';
 import { Avatar } from '@/ui/Avatar/Avatar';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
+import { useCurrentUser, useSession } from '@/session/useSession';
 import styles from './AccountMenu.module.css';
 import { MY_PROFILE } from './navigation';
-import { useCurrentUser, useSession } from '@/session/useSession';
 
 /**
  * The account button at the right of the top bar and its menu (FR-012): who is signed in —

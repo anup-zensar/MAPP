@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAttributeForm } from '../api';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
 import { problemOf } from '@/ui/FormPanel/problem-of';
@@ -9,6 +8,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
+import { useAttributeForm } from '../api';
 import { saveFailureOf } from '../save-failure';
 import { findFormAttribute, linkOptionText } from './attribute-words';
 import { LinkedToField } from './LinkedToField';

@@ -4,9 +4,9 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { destination, launchFilm, OWN_INITIATIVE } from '@/testing/fixtures/activities';
 import type { ActivitySplitOptions, ActivitySplitPreview, ActivitySplitSide } from './split-api';
 import { SplitActivityDialog } from './SplitActivityDialog';
-import { destination, launchFilm, OWN_INITIATIVE } from '@/testing/fixtures/activities';
 
 const OPTIONS = 'GET /api/v1/activities/A-1042/split-options';
 const PREVIEW = 'POST /api/v1/activities/A-1042/split-preview';

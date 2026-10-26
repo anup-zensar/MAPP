@@ -4,8 +4,8 @@ import { mockApi } from '@/testing/mock-api';
 import type { MockHandler } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { ManageViewsPanel } from './ManageViewsPanel';
 import { savedView } from '@/testing/fixtures/all-work';
+import { ManageViewsPanel } from './ManageViewsPanel';
 
 const DECLINED = savedView();
 const BY_MONTH = savedView({ id: 'SV-1002', name: 'Lubricants by month', isDefault: true });

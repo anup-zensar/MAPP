@@ -1,9 +1,8 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { COMING_SOON_SECTIONS } from '@/app/navigation';
 import { expectCurrentSection, renderApp } from '@/testing/app';
-import { resetAllWorkStore } from './all-work-store';
 import { gridResult, PAGE_ANSWERS } from '@/testing/fixtures/all-work';
+import { resetAllWorkStore } from './all-work-store';
 
 afterEach(() => resetAllWorkStore());
 
@@ -16,9 +15,5 @@ describe('All work route (feature 010)', () => {
     await vi.waitFor(() => expect(document.title).toBe('All work · MAPP'));
     expectCurrentSection('All work');
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
-  });
-
-  it('is no longer a Coming soon section', () => {
-    expect(COMING_SOON_SECTIONS.map((section) => section.path)).not.toContain('/all-work');
   });
 });
