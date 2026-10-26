@@ -36,6 +36,7 @@ func (f *fixture) inbox(t *testing.T, a actor.Actor, tab string) []Row {
 // Waiting for me lists the Submitted activities whose current level lists the person, oldest submission
 // first; a level already approved, a Created activity and another level's approvers do not count (FR-029).
 func TestInbox_Waiting_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet card launch", mei.ID, chinaFlow)
@@ -68,6 +69,7 @@ func TestInbox_Waiting_FR029(t *testing.T) {
 // All open lists every Submitted activity, at any level, oldest submission first, the same for everyone;
 // Created, Approved and Declined activities are not open (FR-029).
 func TestInbox_Open_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet roadshow", priya.ID, lubricantsFlow)
@@ -94,6 +96,7 @@ func TestInbox_Open_FR029(t *testing.T) {
 // decision first, with that decision, the activity's latest round and its status now; a decision made on
 // the person's behalf is not theirs (FR-029, FR-030).
 func TestInbox_Decided_FR029_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet roadshow", priya.ID, lubricantsFlow)
@@ -142,6 +145,7 @@ func TestInbox_Decided_FR029_FR030(t *testing.T) {
 // An activity in the recycle bin is in no tab and no count, although its open round stays stored for an
 // exact Undo (FR-023, 008-P3).
 func TestInbox_DeletedActivityAbsent_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet roadshow", priya.ID, lubricantsFlow)
@@ -170,6 +174,7 @@ func TestInbox_DeletedActivityAbsent_FR023(t *testing.T) {
 // approvers, when it was submitted and since when it waits at its level; the start date passing while it
 // waits is flagged (FR-030, edge case).
 func TestInbox_RowFacts_FR030_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	facts := f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.addActivity(t, "A-1010", "Lunar new year promo", "", chinaFlow)
@@ -216,6 +221,7 @@ func TestInbox_RowFacts_FR030_EdgeCase(t *testing.T) {
 // The summary counts equal the tabs' rows; Approved and Declined this month count the rounds that ended so
 // this calendar month (FR-028, SC-007).
 func TestSummary_MatchesTabs_FR028_SC007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for _, id := range []string{"A-1001", "A-1002", "A-1003", "A-1004"} {
 		f.addActivity(t, id, "Activity "+id, priya.ID, lubricantsFlow)
@@ -250,6 +256,7 @@ func TestSummary_MatchesTabs_FR028_SC007(t *testing.T) {
 // The month is the viewer's calendar month as two instants, end excluded; without them, the clock's UTC
 // month. Only one bound, or an end not after the start, is refused (FR-028).
 func TestSummary_MonthBounds_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Trade magazine ads", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet roadshow", priya.ID, lubricantsFlow)
@@ -301,6 +308,7 @@ func (r fakeRates) DisplayRateOf(_ context.Context, personID string) (people.Dis
 // and unassigned planned cost, and the submit dialog's unassigned planned cost are answered in EUR at 0.92;
 // Inbox, which Home adds up, stays in USD (008 FR-030, D-213).
 func TestDisplayCurrency_RowsPreviewSubmission_FR030_D213(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.service.UseDisplayRates(fakeRates{carlos.ID: {Code: "EUR", Rate: "0.92"}, mei.ID: {Code: "EUR", Rate: "0.92"}})
 	f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
@@ -340,6 +348,7 @@ func TestDisplayCurrency_RowsPreviewSubmission_FR030_D213(t *testing.T) {
 // The preview shows the activity's facts and completeness, its line items, its unassigned planned cost and
 // its Approval section; an activity that is gone answers not_found (FR-032).
 func TestPreview_FR032(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	facts := f.addActivity(t, "A-1009", "Fleet card launch", mei.ID, chinaFlow)
 	f.submit(t, mei, "A-1009", "")
@@ -384,6 +393,7 @@ func TestPreview_FR032(t *testing.T) {
 // The summary's Waiting for me equals the Waiting for me tab, delegated activities included (017 FR-031,
 // SC-007).
 func TestSummary_MatchesWaitingWithDelegates_SC007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
 	f.addActivity(t, "A-1002", "Fleet card launch", mei.ID, chinaFlow)

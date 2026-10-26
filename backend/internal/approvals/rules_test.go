@@ -43,6 +43,7 @@ var fixtureNames = namesOf(
 // below (<) in USD — an activity without planned cost matches neither —, one of the plan's business units
 // listed, the activity's type listed.
 func TestConditionMatches_Table_FR005(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		condition Condition
@@ -69,6 +70,7 @@ func TestConditionMatches_Table_FR005(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := tt.condition.Matches(tt.facts); got != tt.want {
 				t.Errorf("Matches = %v, want %v", got, tt.want)
 			}
@@ -79,6 +81,7 @@ func TestConditionMatches_Table_FR005(t *testing.T) {
 // A condition in words: its parts in order joined with " and ", amounts as "$10,000.00", lists of values
 // with "or" (017 data-model §2, FR-009).
 func TestConditionText_FR009(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		condition Condition
 		want      string
@@ -102,6 +105,7 @@ func TestConditionText_FR009(t *testing.T) {
 // The levels text summarises each level's rule (017 FR-009, data-model §2): label, source, "all must
 // approve", "automatic when …", "only when …", joined with " → ".
 func TestLevelsText_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	levels := []Level{
 		{Name: "Line manager", ApproverType: SourceManager, Mode: ModeAny, AutoApproveWhen: &Condition{PlannedCostBelow: amount(t, "10000.00")}},
@@ -131,6 +135,7 @@ func TestLevelsText_FR009(t *testing.T) {
 // approved automatically; otherwise its approvers decide. "Only needed when" is checked first when a level
 // has both.
 func TestEvaluate_Table_FR003_FR004_SC001(t *testing.T) {
+	t.Parallel()
 	below10k := &Condition{PlannedCostBelow: amount(t, "10000.00")}
 	from100k := &Condition{PlannedCostAtLeast: amount(t, "100000.00")}
 	mobility := &Condition{BusinessUnitIDs: []string{mobilityUnit}}
@@ -158,6 +163,7 @@ func TestEvaluate_Table_FR003_FR004_SC001(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%s %s", tt.cost, tt.unit), func(t *testing.T) {
+			t.Parallel()
 			plans := evaluate(levels, factsOf(t, tt.cost, eventType, tt.unit), fixtureNames)
 			var got [4]string
 			for i, p := range plans {

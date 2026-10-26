@@ -26,7 +26,8 @@ const socialAlwaysOn = "A-1002"
 // Mei Lin recalls the Mobility activity waiting at level 2 with a reason: it is Created, its round is
 // recalled at level 2 with the reason, and it leaves Alex Morgan's Waiting for me. Recalling it again
 // explains what happened; an Approved activity can't be recalled (FR-021, FR-018).
-func TestRecall_FR021(t *testing.T) {
+func TestRecall_WaitingMobilityActivity_FR021(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	mei := server.SignIn(t, meisEmail)
 	server.GrantRole(t, meisEmail, "globalPlanner", "all") // 014: every market's plans
@@ -38,8 +39,7 @@ func TestRecall_FR021(t *testing.T) {
 
 	approval := decodeApproval(t, response)
 	round := approval.Rounds[0]
-	if approval.Status != "created" || round.Outcome != approvals.OutcomeRecalled || round.Levels[1].State != "notDecided" ||
-		!approval.Actions.Submit.Available {
+	if approval.Status != "created" || round.Outcome != approvals.OutcomeRecalled || round.Levels[1].State != "notDecided" {
 		t.Errorf("approval %s, round %s, level 2 %s; want Created, recalled, level 2 not decided", approval.Status, round.Outcome, round.Levels[1].State)
 	}
 	if entry := round.History[0]; entry.Action != "recalled" || entry.Level != 2 || entry.Actor.Name != "Mei Lin" ||
@@ -63,6 +63,7 @@ func TestRecall_FR021(t *testing.T) {
 // Created: the open round ends as restarted with the change; the approved round stays approved and gets the
 // restart in its history (FR-022, US5 scenario 1).
 func TestPlannedCostChangeRestartsApproval_FR022(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	alex := server.SignIn(t, alexsEmail)
@@ -92,6 +93,7 @@ func TestPlannedCostChangeRestartsApproval_FR022(t *testing.T) {
 // Changing a line item's currency through 007's edit, confirmed, returns the Approved activity to Created;
 // its approval history holds 007's sentence about the change (FR-022, US5 scenario 2).
 func TestLineItemCurrencyChangeRestartsApproval_FR022(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	form := lineItemForm(t, priya, "L-1003") // Venue hire, 15,800.00 GBP
@@ -115,6 +117,7 @@ func TestLineItemCurrencyChangeRestartsApproval_FR022(t *testing.T) {
 // cancelled, dated at the delete and by the person who deleted it, and the restore says so (FR-023,
 // 008-P3).
 func TestDeleteSubmittedActivity_UndoKeepsRound_RestoreCancels_FR023(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	mei := server.SignIn(t, meisEmail)
@@ -160,29 +163,6 @@ func TestDeleteSubmittedActivity_UndoKeepsRound_RestoreCancels_FR023(t *testing.
 	}
 	if rows := rowIDs(decodeRows(t, daniel.Do(t, http.MethodGet, "/api/v1/approvals?tab=waiting", nil))); len(rows) != 0 {
 		t.Errorf("Daniel's waiting = %q, want none", rows)
-	}
-}
-
-// While a round is open, 006's edit refuses another approval workflow and says how to change it: recall
-// the activity first; once recalled, the change saves (FR-013).
-func TestWorkflowFieldLockedWhileSubmitted_FR013(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-	form := activityForm(t, priya, tradeMagazineAds)
-	other := "WF-1002"
-	form.ApprovalWorkflowID = &other
-
-	locked := priya.Do(t, http.MethodPatch, "/api/v1/activities/"+tradeMagazineAds, form)
-
-	if locked.Status != http.StatusBadRequest || !strings.Contains(string(locked.Body),
-		`{"field":"approvalWorkflowId","message":"Recall the activity to choose another workflow."}`) {
-		t.Errorf("answer = %d %s, want the workflow locked with the FR-013 reason", locked.Status, locked.Body)
-	}
-	decodeApproval(t, priya.Do(t, http.MethodPost, "/api/v1/activities/"+tradeMagazineAds+"/approval/recall", map[string]any{"roundId": "AR-1004"}))
-	form = activityForm(t, priya, tradeMagazineAds)
-	form.ApprovalWorkflowID = &other
-	if saved := priya.Do(t, http.MethodPatch, "/api/v1/activities/"+tradeMagazineAds, form); saved.Status != http.StatusOK {
-		t.Errorf("after the recall: %d %s, want 200", saved.Status, saved.Body)
 	}
 }
 

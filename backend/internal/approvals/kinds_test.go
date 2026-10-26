@@ -9,6 +9,7 @@ import (
 // Undo puts a deleted workflow back exactly; when another workflow has meanwhile taken its name, ignoring
 // letter case, Undo is refused with name_taken and the workflow stays in the recycle bin (FR-008).
 func TestWorkflowUndo_NameTaken_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.createWorkflow(t, alex, "Temp flow", []string{carlos.ID})
 	first, err := f.service.DeleteWorkflow(t.Context(), alex, created.ID)
@@ -36,6 +37,7 @@ func TestWorkflowUndo_NameTaken_FR008(t *testing.T) {
 // Restore from the recycle bin renames a workflow whose name was taken meanwhile, to "<name> (restored)",
 // with a new version and a note saying so (FR-008).
 func TestWorkflowRestore_RenamesWhenTaken_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	created := f.createWorkflow(t, alex, "Temp flow", []string{carlos.ID})
 	entry, err := f.service.DeleteWorkflow(t.Context(), alex, created.ID)

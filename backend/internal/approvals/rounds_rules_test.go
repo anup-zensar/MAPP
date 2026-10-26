@@ -61,6 +61,7 @@ func (f *fixture) today() date.Date {
 // The submit confirmation says what will happen to every level, and lists the problems of approver sources
 // with every other problem; asking changes nothing (017 FR-012, FR-013, FR-036).
 func TestSubmission_OutcomesAndProblems_FR012_FR013_FR036(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addStandardFlow(t)
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, standardFlow)
@@ -120,6 +121,7 @@ func TestSubmission_OutcomesAndProblems_FR012_FR013_FR036(t *testing.T) {
 // round waits at the first level that needs a decision, whose approvers and their current delegates are
 // told (FR-014, FR-032); after it, the round moves to the next level that needs a decision.
 func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addStandardFlow(t)
 	f.setManager(t, mei, carlos)
@@ -174,6 +176,7 @@ func TestSubmit_PartlyAutomatic_FR010_FR014(t *testing.T) {
 // submitter's "submitted" and MAPP's "approved automatically", and the owner is told only when someone
 // else submitted.
 func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addStandardFlow(t)
 	f.setManager(t, priya, daniel)
@@ -227,6 +230,7 @@ func TestSubmit_ApprovedAtSubmission_FR014_017P4(t *testing.T) {
 // approver is refused; a delegate's approval counts for the person they act for; an approval on behalf
 // completes the level; any decline declines the activity.
 func TestDecide_AllMustApprove_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.onBehalf = []string{alex.ID}
 	f.putWorkflow(t, "WF-1003", "Two must approve", nil, nil, Level{ApproverIDs: []string{daniel.ID, carlos.ID}, Mode: ModeAll})
@@ -277,6 +281,7 @@ func TestDecide_AllMustApprove_FR015(t *testing.T) {
 // approver after escalation; on behalf with the approvers still waiting — the "on behalf of" list only for
 // that capacity. The log details end with the capacity.
 func TestDecide_RecordsCapacity_FR019(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.onBehalf = []string{alex.ID}
 	f.putWorkflow(t, "WF-1003", "Backed up", days(1), days(2), Level{ApproverIDs: []string{daniel.ID}, BackupApproverID: carlos.ID})
@@ -324,6 +329,7 @@ func TestDecide_RecordsCapacity_FR019(t *testing.T) {
 // to an approver; unavailable with the reason to the owner or the submitter who could otherwise decide;
 // hidden (no reason) for anyone else; on behalf for someone allowed, with the approvers still waiting.
 func TestApproval_ViewerAuthority_FR017(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.access.onBehalf = []string{alex.ID, priya.ID, mei.ID}
 	f.addActivity(t, "A-1001", "Launch film", priya.ID, lubricantsFlow)
@@ -371,6 +377,7 @@ func TestApproval_ViewerAuthority_FR017(t *testing.T) {
 // reasons, the approver source, the people left out, "<a> of <b> approved", the backup approver, reminder
 // and escalation times, and "No approver" with its advice.
 func TestApproval_ChainRuleStates_FR033(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addStandardFlow(t)
 	f.setManager(t, mei, carlos)
@@ -421,6 +428,7 @@ func TestApproval_ChainRuleStates_FR033(t *testing.T) {
 // automatically by MAPP with their rule, Reminder sent and Escalated with the days waited and the
 // backup approver, each decision's capacity.
 func TestApproval_HistoryRuleEntries_FR034(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.addStandardFlow(t)
 	f.setManager(t, mei, carlos)
