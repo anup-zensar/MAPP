@@ -145,7 +145,7 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
   it('says when a year has no finance budgets yet', async () => {
     renderForm(
       {},
-      { 'GET /api/finance-budgets': { body: { ...FINANCE_BUDGETS, items: [], total: 0 } } },
+      { 'GET /api/v1/finance-budgets': { body: { ...FINANCE_BUDGETS, items: [], total: 0 } } },
     );
 
     expect(

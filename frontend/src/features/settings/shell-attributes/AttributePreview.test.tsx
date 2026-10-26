@@ -26,12 +26,12 @@ const FLEET_SIZE = shellAttribute({
   condition: [{ id: MOBILITY, name: 'Mobility', active: true }],
 });
 
-const CHECK = 'POST /api/shell-attribute-forms/campaign/check';
+const CHECK = 'POST /api/v1/shell-attribute-forms/campaign/check';
 
 function renderPreview(answers: Record<string, MockHandler>, attribute = REGION) {
   const api = mockApi({
-    'GET /api/shell-attribute-forms/campaign': { body: campaignForm() },
-    'GET /api/shell-attribute-forms/plan': { body: planForm() },
+    'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
+    'GET /api/v1/shell-attribute-forms/plan': { body: planForm() },
     ...answers,
   });
   return {
@@ -184,7 +184,9 @@ describe('AttributePreview (FR-020, US3)', () => {
     const { user } = renderPreview({
       [CHECK]: {
         status: 500,
-        body: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        body: {
+          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        },
       },
     });
 
@@ -198,7 +200,7 @@ describe('AttributePreview (FR-020, US3)', () => {
   it('previews the plan form with its own Business unit deciding what is shown (FR-026)', async () => {
     const { user, api } = renderPreview(
       {
-        'POST /api/shell-attribute-forms/plan/check': {
+        'POST /api/v1/shell-attribute-forms/plan/check': {
           body: { problems: [], missing: [], cleared: [], values: {} },
         },
       },
@@ -217,7 +219,7 @@ describe('AttributePreview (FR-020, US3)', () => {
     await user.click(within(card).getByRole('button', { name: 'Try saving' }));
 
     await waitFor(() =>
-      expect(api.bodiesOf('POST /api/shell-attribute-forms/plan/check')).toEqual([
+      expect(api.bodiesOf('POST /api/v1/shell-attribute-forms/plan/check')).toEqual([
         { values: { 'SA-BU': [MOBILITY] } },
       ]),
     );
@@ -225,9 +227,11 @@ describe('AttributePreview (FR-020, US3)', () => {
 
   it('says when the form cannot be loaded, with Try again', async () => {
     renderPreview({
-      'GET /api/shell-attribute-forms/campaign': {
+      'GET /api/v1/shell-attribute-forms/campaign': {
         status: 500,
-        body: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        body: {
+          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        },
       },
     });
 

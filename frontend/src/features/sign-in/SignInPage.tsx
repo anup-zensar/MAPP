@@ -103,7 +103,7 @@ function SignInChoices() {
   const { signIn } = useSession();
   const demoPeople = useQuery({
     queryKey: ['demo-people'],
-    queryFn: () => call(api.GET('/api/auth/demo-people')),
+    queryFn: () => call(api.GET('/api/v1/auth/demo-people')),
   });
   // While a sign-in is on its way, further clicks are ignored; nothing is greyed out.
   const [signingIn, setSigningIn] = useState(false);
@@ -245,7 +245,7 @@ function findEmptyFields(email: string, password: string): FieldProblem[] {
 }
 
 interface DemoPeopleSectionProps {
-  /** The answer of GET /api/auth/demo-people. */
+  /** The answer of GET /api/v1/auth/demo-people. */
   query: UseQueryResult<DemoPeople>;
   onChoose: (person: DemoPerson) => void;
 }

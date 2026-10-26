@@ -33,8 +33,8 @@ function renderPage(
   const api = mockApi({
     ...HISTORY_ANSWERS,
     ...financialsNotServed('P-1001', 'P-1004'),
-    'GET /api/plans/P-1001': answer,
-    'GET /api/shell-attribute-forms/plan': { body: planForm() },
+    'GET /api/v1/plans/P-1001': answer,
+    'GET /api/v1/shell-attribute-forms/plan': { body: planForm() },
     ...more,
   });
   const result = renderWithProviders(<PlanPage />, {
@@ -293,7 +293,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     const { user } = renderPage(
       () => ({ body: plan({ status: published ? 'published' : 'draft' }) }),
       {
-        'POST /api/plans/P-1001/publish': () => {
+        'POST /api/v1/plans/P-1001/publish': () => {
           published = true;
           return { body: plan({ status: 'published' }) };
         },
@@ -313,7 +313,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     const { user, router } = renderPage(
       { body: plan() },
       {
-        'DELETE /api/plans/P-1001': {
+        'DELETE /api/v1/plans/P-1001': {
           body: {
             recycleBinEntry: {
               id: 'RB-1001',
@@ -347,7 +347,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     const { user, router } = renderPage(
       { body: plan() },
       {
-        'GET /api/plans/P-1001/copy-options': {
+        'GET /api/v1/plans/P-1001/copy-options': {
           body: {
             name: 'FY2026 Lubricants Europe (copy)',
             sameYear: 2026,
@@ -361,8 +361,8 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
             },
           },
         },
-        'POST /api/plans/P-1001/copy': { status: 201, body: { plan: copy, notes: [] } },
-        'GET /api/plans/P-1004': { body: copy },
+        'POST /api/v1/plans/P-1001/copy': { status: 201, body: { plan: copy, notes: [] } },
+        'GET /api/v1/plans/P-1004': { body: copy },
       },
     );
 
@@ -411,7 +411,7 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
       '/activity-log?record=P-1001',
     );
     expect(await within(history).findByText('No changes recorded yet.')).toBeVisible();
-    const asked = api.requests.find((request) => request.path === '/api/activity-log');
+    const asked = api.requests.find((request) => request.path === '/api/v1/activity-log');
     expect(new URLSearchParams(asked?.search).get('recordId')).toBe('P-1001');
   });
 
@@ -426,9 +426,11 @@ describe('PlanPage (US3, FR-011 – FR-017)', () => {
     renderPage({
       status: 404,
       body: {
-        code: 'not_found',
-        message: 'This plan no longer exists — someone may have deleted it.',
-        fields: [],
+        error: {
+          code: 'not_found',
+          message: 'This plan no longer exists — someone may have deleted it.',
+          fields: [],
+        },
       },
     });
 

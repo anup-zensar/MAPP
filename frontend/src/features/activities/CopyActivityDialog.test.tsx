@@ -37,7 +37,7 @@ const APPROVED_WITH_LINE_ITEMS = launchFilm({
 describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
   it('chooses the activity’s own initiative and says what the copy keeps (US5#2)', async () => {
     renderDialog(
-      { 'GET /api/activities/A-1042/destinations': { body: destinations() } },
+      { 'GET /api/v1/activities/A-1042/destinations': { body: destinations() } },
       APPROVED_WITH_LINE_ITEMS,
     );
 
@@ -58,8 +58,8 @@ describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
   it('copies into the chosen initiative and opens the copy (US5#2)', async () => {
     const { user, api, router } = renderDialog(
       {
-        'GET /api/activities/A-1042/destinations': { body: destinations() },
-        'POST /api/activities/A-1042/copy': {
+        'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+        'POST /api/v1/activities/A-1042/copy': {
           status: 201,
           body: launchFilm({
             id: 'A-1043',
@@ -77,14 +77,16 @@ describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1043'),
     );
-    expect(api.bodiesOf('POST /api/activities/A-1042/copy')).toEqual([{ initiativeId: 'I-1002' }]);
+    expect(api.bodiesOf('POST /api/v1/activities/A-1042/copy')).toEqual([
+      { initiativeId: 'I-1002' },
+    ]);
     expect(await findMessages()).toHaveTextContent("Activity 'Launch film (copy)' created");
     expect(screen.getByText('Closed')).toBeInTheDocument();
   });
 
   it('asks for an initiative when its own can’t take the copy', async () => {
     const { user, api } = renderDialog({
-      'GET /api/activities/A-1042/destinations': {
+      'GET /api/v1/activities/A-1042/destinations': {
         body: destinations([
           { ...OWN_INITIATIVE, copyProblem: RETAIL_EVENTS.copyProblem },
           RETAIL_EVENTS,
@@ -95,18 +97,20 @@ describe('CopyActivityDialog (feature 006, US5#2, FR-030)', () => {
     await user.click(await screen.findByRole('button', { name: 'Copy activity' }));
 
     expect(await screen.findByText('Choose another initiative of this plan.')).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/activities/A-1042/copy')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/activities/A-1042/copy')).toEqual([]);
   });
 
   it('shows the API’s refusal in the dialog', async () => {
     const { user } = renderDialog({
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/copy': {
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/copy': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This activity no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This activity no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });

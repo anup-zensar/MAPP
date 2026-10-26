@@ -24,9 +24,9 @@ const ANSWERS = {
   ...FORM_ANSWERS,
   ...HISTORY_ANSWERS,
   ...financialsNotServed('P-1001'),
-  'GET /api/plans': { body: seedList() },
-  'GET /api/plan-defaults': { body: planDefaults() },
-  'GET /api/plans/P-1001': { body: plan() },
+  'GET /api/v1/plans': { body: seedList() },
+  'GET /api/v1/plan-defaults': { body: planDefaults() },
+  'GET /api/v1/plans/P-1001': { body: plan() },
 };
 
 // Feature 004's addresses (build guide §5).

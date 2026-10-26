@@ -58,11 +58,11 @@ const ELSEWHERE: QueryKey[] = [
 /** Everything a change to attributes or options can make out of date; an Undo brings it back. */
 export const CHANGED_BY_ANY_CHANGE: QueryKey[] = [LISTS, ATTRIBUTE_PAGES, ...ELSEWHERE];
 
-/** Every Shell attribute of every level, in display order (GET /api/shell-attributes). */
+/** Every Shell attribute of every level, in display order (GET /api/v1/shell-attributes). */
 export function useAllShellAttributes() {
   return useQuery({
     queryKey: ALL_ATTRIBUTES_KEY,
-    queryFn: () => call(api.GET('/api/shell-attributes')),
+    queryFn: () => call(api.GET('/api/v1/shell-attributes')),
   });
 }
 
@@ -77,7 +77,7 @@ export function useShellAttribute(id: string) {
 /** The attribute as it is stored now, never from the cache (after a conflict). */
 export function fetchAttribute(id: string) {
   return call(
-    api.GET('/api/shell-attributes/{attributeId}', { params: { path: { attributeId: id } } }),
+    api.GET('/api/v1/shell-attributes/{attributeId}', { params: { path: { attributeId: id } } }),
   );
 }
 
@@ -108,14 +108,14 @@ export function useShellAttributeOptions(id: string, filter: OptionFilter) {
 /** The option as it is stored now, never from the cache (after a conflict, D-211). */
 export function fetchOption(id: string) {
   return call(
-    api.GET('/api/shell-attribute-options/{optionId}', { params: { path: { optionId: id } } }),
+    api.GET('/api/v1/shell-attribute-options/{optionId}', { params: { path: { optionId: id } } }),
   );
 }
 
 /** One page of matching options from `offset` on. */
 export function fetchOptions(id: string, filter: OptionFilter, offset = 0) {
   return call(
-    api.GET('/api/shell-attributes/{attributeId}/options', {
+    api.GET('/api/v1/shell-attributes/{attributeId}/options', {
       params: {
         path: { attributeId: id },
         query: {
@@ -133,7 +133,8 @@ export function fetchOptions(id: string, filter: OptionFilter, offset = 0) {
 export function useCreateAttribute() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: (body: ShellAttributeCreate) => call(api.POST('/api/shell-attributes', { body })),
+    mutationFn: (body: ShellAttributeCreate) =>
+      call(api.POST('/api/v1/shell-attributes', { body })),
     onSettled: () => refresh(),
   });
 }
@@ -150,7 +151,7 @@ export function useUpdateAttribute() {
   return useMutation({
     mutationFn: ({ id, body }: AttributeChange) =>
       call(
-        api.PATCH('/api/shell-attributes/{attributeId}', {
+        api.PATCH('/api/v1/shell-attributes/{attributeId}', {
           params: { path: { attributeId: id } },
           body,
         }),
@@ -162,7 +163,7 @@ export function useUpdateAttribute() {
 /** What the change would affect, before saving (FR-021); saves nothing. */
 export function checkAttributeImpact({ id, body }: AttributeChange): Promise<ChangeImpact> {
   return call(
-    api.POST('/api/shell-attributes/{attributeId}/impact', {
+    api.POST('/api/v1/shell-attributes/{attributeId}/impact', {
       params: { path: { attributeId: id } },
       body,
     }),
@@ -182,7 +183,7 @@ export function useSetAttributeStatus() {
   return useMutation({
     mutationFn: ({ id, active, version }: StatusChange) =>
       call(
-        api.POST('/api/shell-attributes/{attributeId}/status', {
+        api.POST('/api/v1/shell-attributes/{attributeId}/status', {
           params: { path: { attributeId: id } },
           body: { active, version },
         }),
@@ -208,7 +209,7 @@ export function useMoveAttribute() {
   return useMutation({
     mutationFn: ({ attribute, what, direction }: AttributeMove) =>
       call(
-        api.POST('/api/shell-attributes/{attributeId}/move', {
+        api.POST('/api/v1/shell-attributes/{attributeId}/move', {
           params: { path: { attributeId: attribute.id } },
           body: { what, direction, version: attribute.version },
         }),
@@ -229,7 +230,7 @@ export function useDeleteAttribute() {
   return useMutation({
     mutationFn: (id: string) =>
       call(
-        api.DELETE('/api/shell-attributes/{attributeId}', {
+        api.DELETE('/api/v1/shell-attributes/{attributeId}', {
           params: { path: { attributeId: id } },
         }),
       ),
@@ -254,7 +255,7 @@ export function useCreateOption() {
   return useMutation({
     mutationFn: ({ attributeId, label, parentOptionIds }: NewOption) =>
       call(
-        api.POST('/api/shell-attributes/{attributeId}/options', {
+        api.POST('/api/v1/shell-attributes/{attributeId}/options', {
           params: { path: { attributeId } },
           body: { label, parentOptionIds },
         }),
@@ -280,7 +281,7 @@ export function useUpdateOption() {
   return useMutation({
     mutationFn: ({ id, label, parentOptionIds, version }: OptionChange) =>
       call(
-        api.PATCH('/api/shell-attribute-options/{optionId}', {
+        api.PATCH('/api/v1/shell-attribute-options/{optionId}', {
           params: { path: { optionId: id } },
           body: { label, parentOptionIds, version },
         }),
@@ -295,7 +296,7 @@ export function useSetOptionStatus() {
   return useMutation({
     mutationFn: ({ id, active, version }: StatusChange) =>
       call(
-        api.POST('/api/shell-attribute-options/{optionId}/status', {
+        api.POST('/api/v1/shell-attribute-options/{optionId}/status', {
           params: { path: { optionId: id } },
           body: { active, version },
         }),
@@ -316,7 +317,7 @@ export function useMoveOption() {
       direction: 'up' | 'down';
     }) =>
       call(
-        api.POST('/api/shell-attribute-options/{optionId}/move', {
+        api.POST('/api/v1/shell-attribute-options/{optionId}/move', {
           params: { path: { optionId: option.id } },
           body: { direction, version: option.version },
         }),
@@ -331,7 +332,7 @@ export function useDeleteOption() {
   return useMutation({
     mutationFn: (id: string) =>
       call(
-        api.DELETE('/api/shell-attribute-options/{optionId}', {
+        api.DELETE('/api/v1/shell-attribute-options/{optionId}', {
           params: { path: { optionId: id } },
         }),
       ),
@@ -345,7 +346,7 @@ export function checkOptionImport(
   body: OptionImportRequest,
 ): Promise<OptionImportCheck> {
   return call(
-    api.POST('/api/shell-attributes/{attributeId}/options/import-check', {
+    api.POST('/api/v1/shell-attributes/{attributeId}/options/import-check', {
       params: { path: { attributeId } },
       body,
     }),
@@ -361,7 +362,7 @@ export function useImportOptions() {
   return useMutation({
     mutationFn: ({ attributeId, file }: { attributeId: string; file: OptionImportRequest }) =>
       call(
-        api.POST('/api/shell-attributes/{attributeId}/options/import', {
+        api.POST('/api/v1/shell-attributes/{attributeId}/options/import', {
           params: { path: { attributeId } },
           body: file,
         }),
@@ -380,7 +381,7 @@ export function checkAttributeValues(
   body: AttributeCheckRequest,
 ): Promise<AttributeCheckResult> {
   return call(
-    api.POST('/api/shell-attribute-forms/{level}/check', { params: { path: { level } }, body }),
+    api.POST('/api/v1/shell-attribute-forms/{level}/check', { params: { path: { level } }, body }),
   );
 }
 

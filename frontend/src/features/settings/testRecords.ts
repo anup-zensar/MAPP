@@ -161,22 +161,24 @@ export const CURRENCIES = { items: [USD, EUR, JPY], total: 3 };
 
 /** The API's answer to a save with problems. */
 export function validationFailed(fields: { field: string; message: string }[]): ErrorBody {
-  return { code: 'validation_failed', message: 'Check the highlighted fields.', fields };
+  return { error: { code: 'validation_failed', message: 'Check the highlighted fields.', fields } };
 }
 
 /** The API's answer when someone else saved first. */
 export function versionConflict(): ErrorBody {
   return {
-    code: 'version_conflict',
-    message: 'Someone else changed this record.',
-    fields: [],
-    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:42:00Z' },
+    error: {
+      code: 'version_conflict',
+      message: 'Someone else changed this record.',
+      fields: [],
+      conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T10:42:00Z' },
+    },
   };
 }
 
 /** The API's answer to a delete of a record in use. */
 export function inUse(message: string): ErrorBody {
-  return { code: 'in_use', message, fields: [] };
+  return { error: { code: 'in_use', message, fields: [] } };
 }
 
 /** The API's answer to a delete: the record's recycle-bin entry, for Undo. */

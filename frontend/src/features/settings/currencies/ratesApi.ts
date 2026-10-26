@@ -4,7 +4,7 @@
  * simulated GSAP rate import (review, then import) with its recent imports and sample file.
  *
  * Every rate change refreshes everything under ['exchange-rates'] — the rate histories, the recent
- * imports and the current rates (`GET /api/exchange-rates/current`, which the tips beside converted
+ * imports and the current rates (`GET /api/v1/exchange-rates/current`, which the tips beside converted
  * amounts read under RATE_KEYS.current) — and the currencies list, whose current rates follow.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -48,7 +48,7 @@ export function useRateHistory(code: string) {
   return useQuery({
     queryKey: RATE_KEYS.history(code),
     queryFn: ({ signal }) =>
-      call(api.GET('/api/currencies/{code}/rates', { params: { path: { code } }, signal })),
+      call(api.GET('/api/v1/currencies/{code}/rates', { params: { path: { code } }, signal })),
   });
 }
 
@@ -58,7 +58,7 @@ export function useRateImports() {
     queryKey: RATE_KEYS.imports,
     queryFn: ({ signal }) =>
       call(
-        api.GET('/api/exchange-rates/imports', {
+        api.GET('/api/v1/exchange-rates/imports', {
           params: { query: { limit: RECENT_IMPORTS } },
           signal,
         }),
@@ -69,7 +69,7 @@ export function useRateImports() {
 /** What adding a rate would recalculate (FR-005). Saves nothing. */
 export function checkAddRateImpact(code: string, body: ExchangeRateCreate): Promise<ChangeImpact> {
   return call(
-    api.POST('/api/currencies/{code}/rates/impact', { params: { path: { code } }, body }),
+    api.POST('/api/v1/currencies/{code}/rates/impact', { params: { path: { code } }, body }),
   );
 }
 
@@ -79,13 +79,15 @@ export function checkUpdateRateImpact(
   body: ExchangeRateUpdate,
 ): Promise<ChangeImpact> {
   return call(
-    api.POST('/api/exchange-rates/{rateId}/impact', { params: { path: { rateId } }, body }),
+    api.POST('/api/v1/exchange-rates/{rateId}/impact', { params: { path: { rateId } }, body }),
   );
 }
 
 /** One rate as it is stored now, for its version after a conflict. */
 export async function fetchRate(code: string, rateId: string) {
-  const page = await call(api.GET('/api/currencies/{code}/rates', { params: { path: { code } } }));
+  const page = await call(
+    api.GET('/api/v1/currencies/{code}/rates', { params: { path: { code } } }),
+  );
   return page.items.find((rate) => rate.id === rateId);
 }
 
@@ -93,7 +95,7 @@ export function useAddRate() {
   const refresh = useRefreshRateLists();
   return useMutation({
     mutationFn: ({ code, body }: { code: string; body: ExchangeRateCreate }) =>
-      call(api.POST('/api/currencies/{code}/rates', { params: { path: { code } }, body })),
+      call(api.POST('/api/v1/currencies/{code}/rates', { params: { path: { code } }, body })),
     onSettled: refresh,
   });
 }
@@ -103,7 +105,7 @@ export function useUpdateRate() {
   const refresh = useRefreshRateLists();
   return useMutation({
     mutationFn: ({ rateId, body }: { rateId: string; body: ExchangeRateUpdate }) =>
-      call(api.PATCH('/api/exchange-rates/{rateId}', { params: { path: { rateId } }, body })),
+      call(api.PATCH('/api/v1/exchange-rates/{rateId}', { params: { path: { rateId } }, body })),
     onSettled: refresh,
   });
 }
@@ -113,21 +115,22 @@ export function useDeleteRate() {
   const refresh = useRefreshRateLists();
   return useMutation({
     mutationFn: (rateId: string) =>
-      call(api.DELETE('/api/exchange-rates/{rateId}', { params: { path: { rateId } } })),
+      call(api.DELETE('/api/v1/exchange-rates/{rateId}', { params: { path: { rateId } } })),
     onSettled: refresh,
   });
 }
 
 /** Reviews a rate file: every row's outcome, nothing saved (FR-006). */
 export function checkRateImport(body: RateImportUpload): Promise<RateImportCheck> {
-  return call(api.POST('/api/exchange-rates/import-check', { body }));
+  return call(api.POST('/api/v1/exchange-rates/import-check', { body }));
 }
 
 /** Imports the rows to add and replace of a rate file in one step (FR-006, FR-007). */
 export function useImportRates() {
   const refresh = useRefreshRateLists();
   return useMutation({
-    mutationFn: (body: RateImportUpload) => call(api.POST('/api/exchange-rates/import', { body })),
+    mutationFn: (body: RateImportUpload) =>
+      call(api.POST('/api/v1/exchange-rates/import', { body })),
     onSettled: refresh,
   });
 }
@@ -135,7 +138,7 @@ export function useImportRates() {
 /** Saves the sample file of today's rates; answers its name. */
 export function downloadRateSample(): Promise<string> {
   return downloadFromApi(
-    api.GET('/api/exchange-rates/import-sample', { parseAs: 'blob' }),
+    api.GET('/api/v1/exchange-rates/import-sample', { parseAs: 'blob' }),
     'gsap_rates_sample.csv',
   );
 }

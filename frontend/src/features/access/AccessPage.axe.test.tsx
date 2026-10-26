@@ -13,10 +13,10 @@ const ALEX_USER = testUser({ id: ALEX.id, name: ALEX.name, firstName: 'Alex', in
 
 function answers() {
   return mockApi({
-    'GET /api/me': { body: ALEX_USER },
+    'GET /api/v1/me': { body: ALEX_USER },
     ...ACCESS_ANSWERS,
-    'GET /api/people/U-1006/roles': { body: SARA_ROLES },
-    [`GET /api/roles/${PLANNER.id}`]: { body: PLANNER },
+    'GET /api/v1/people/U-1006/roles': { body: SARA_ROLES },
+    [`GET /api/v1/roles/${PLANNER.id}`]: { body: PLANNER },
   });
 }
 

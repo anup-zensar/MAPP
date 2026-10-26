@@ -15,8 +15,8 @@ func TestHomeSources_ConvertsPerPlan_FR014(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	plans := get[home.PlanPage](t, priya, "/api/home/plans?scope=myTeams")
-	mine := get[home.MyActivitiesView](t, priya, "/api/home/my-activities")
+	plans := get[home.PlanPage](t, priya, "/api/v1/home/plans?scope=myTeams")
+	mine := get[home.MyActivitiesView](t, priya, "/api/v1/home/my-activities")
 
 	var uk *home.PlanRow
 	for i := range plans.Items {

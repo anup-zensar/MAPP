@@ -274,7 +274,7 @@ type ListSummary struct {
 	Budget      *money.Money `json:"budget"`      // null when no plan has one
 }
 
-// PlanList is the answer of GET /api/plans (PlanList).
+// PlanList is the answer of GET /api/v1/plans (PlanList).
 type PlanList struct {
 	Items   []PlanSummary `json:"items"`
 	Total   int           `json:"total"` // every plan in the team scope
@@ -282,7 +282,7 @@ type PlanList struct {
 	Years   []int         `json:"years"` // years with a plan in the scope, newest first
 }
 
-// ListFilter is the query of GET /api/plans.
+// ListFilter is the query of GET /api/v1/plans.
 type ListFilter struct {
 	Scope  string // ScopeAll or ScopeMyTeams
 	Status string // "" (every status), "draft" or "published"
@@ -293,7 +293,7 @@ type ListFilter struct {
 	Types            []string
 }
 
-// Defaults are what a new plan starts with (PlanDefaults, GET /api/plan-defaults).
+// Defaults are what a new plan starts with (PlanDefaults, GET /api/v1/plan-defaults).
 type Defaults struct {
 	CurrentYear   int       `json:"currentYear"`
 	Years         []int     `json:"years"` // current − 1 … current + 5
@@ -309,7 +309,7 @@ type Defaults struct {
 	PlanType      PlanType  `json:"planType"` // 016: operational
 }
 
-// PlanInput is the body of POST /api/plans (PlanCreate): the whole form. The budget is a money input and
+// PlanInput is the body of POST /api/v1/plans (PlanCreate): the whole form. The budget is a money input and
 // the enums are texts, so that every problem becomes a field message.
 type PlanInput struct {
 	Name                   string                   `json:"name"`
@@ -330,7 +330,7 @@ type PlanInput struct {
 	PlanType               *string                  `json:"planType"` // 016: null or missing = operational
 }
 
-// PlanUpdate is the body of PATCH /api/plans/{planId} (PlanUpdate): the whole form without the year, and
+// PlanUpdate is the body of PATCH /api/v1/plans/{planId} (PlanUpdate): the whole form without the year, and
 // the version the person started from (D-203).
 type PlanUpdate struct {
 	Version                *int                     `json:"version"`
@@ -351,7 +351,7 @@ type PlanUpdate struct {
 	PlanType               *string                  `json:"planType"` // 016: null or missing keeps the plan type
 }
 
-// UnpublishRequest is the body of POST /api/plans/{planId}/unpublish (UnpublishRequest).
+// UnpublishRequest is the body of POST /api/v1/plans/{planId}/unpublish (UnpublishRequest).
 type UnpublishRequest struct {
 	Reason string `json:"reason"` // 1–500 characters after trimming
 }
@@ -363,7 +363,7 @@ type NextYearOption struct {
 	Reason    string `json:"reason"` // "" when available
 }
 
-// CopyOptions is the answer of GET /api/plans/{planId}/copy-options (PlanCopyOptions).
+// CopyOptions is the answer of GET /api/v1/plans/{planId}/copy-options (PlanCopyOptions).
 type CopyOptions struct {
 	Name     string         `json:"name"` // the suggested "<name> (copy)"
 	SameYear int            `json:"sameYear"`
@@ -371,7 +371,7 @@ type CopyOptions struct {
 	Contents Contents       `json:"contents"`
 }
 
-// CopyRequest is the body of POST /api/plans/{planId}/copy (PlanCopyRequest).
+// CopyRequest is the body of POST /api/v1/plans/{planId}/copy (PlanCopyRequest).
 type CopyRequest struct {
 	Name            string `json:"name"`
 	Year            *int   `json:"year"` // the source plan's year or the next one
@@ -384,7 +384,7 @@ type CopyResult struct {
 	Notes []string `json:"notes"` // what the copy changed on purpose
 }
 
-// ChangeEffectsRequest is the body of POST /api/plans/{planId}/change-effects (PlanChangeEffectsRequest).
+// ChangeEffectsRequest is the body of POST /api/v1/plans/{planId}/change-effects (PlanChangeEffectsRequest).
 type ChangeEffectsRequest struct {
 	ModelID    *string                  `json:"modelId"`
 	Attributes settings.AttributeValues `json:"attributes"`

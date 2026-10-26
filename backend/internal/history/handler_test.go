@@ -25,10 +25,10 @@ const (
 const (
 	emptyLogBody       = `{"items":[],"total":0,"unfilteredTotal":0,"record":null}`
 	emptyBinBody       = `{"items":[],"total":0}`
-	signInRequiredBody = `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`
-	unknownEntryBody   = `{"code":"not_found","message":"This item is not in the recycle bin.","fields":[]}`
-	invalidLimitBody   = `{"code":"validation_failed","message":"Some fields need your attention.",` +
-		`"fields":[{"field":"limit","message":"Choose a number from 1 to 200."}]}`
+	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
+	unknownEntryBody   = `{"error":{"code":"not_found","message":"This item is not in the recycle bin.","fields":[]}}`
+	invalidLimitBody   = `{"error":{"code":"validation_failed","message":"Some fields need your attention.",` +
+		`"fields":[{"field":"limit","message":"Choose a number from 1 to 200."}]}}`
 )
 
 // Before anything has changed, the activity log and the recycle bin answer empty lists, never null
@@ -37,8 +37,8 @@ func TestEmptyLogAndBin_AnswerEmptyLists_FR022_FR024(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	priya := server.SignIn(t, priyasEmail)
 
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/activity-log", nil), http.StatusOK, emptyLogBody)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin", nil), http.StatusOK, emptyBinBody)
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/activity-log", nil), http.StatusOK, emptyLogBody)
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK, emptyBinBody)
 }
 
 // An entry carries who did what to which record and when, where the record was and where it is now, and
@@ -50,7 +50,7 @@ func TestListActivityLog_EntriesAsTheContractSays_FR022(t *testing.T) {
 	renameFolder(t, priya, "SF-1001", "Ideas 2")
 	addNote(t, priya, "SF-1001", "First idea") // SN-1001
 
-	response := priya.Do(t, http.MethodGet, "/api/activity-log?limit=2", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/activity-log?limit=2", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"items":[`+
 		`{"id":"LOG-1003","seq":1003,"at":"2026-03-12T09:00:00Z","actor":{"id":"U-1002","name":"Priya Raman"},`+
@@ -89,7 +89,7 @@ func TestListActivityLog_FiltersNewestFirst_FR022(t *testing.T) {
 		page := getLog(t, priya, tt.query)
 
 		if got := entryIDs(page.Items); !slices.Equal(got, tt.want) || page.Total != tt.total {
-			t.Errorf("GET /api/activity-log%s = %v (total %d), want %v (total %d)", tt.query, got, page.Total, tt.want, tt.total)
+			t.Errorf("GET /api/v1/activity-log%s = %v (total %d), want %v (total %d)", tt.query, got, page.Total, tt.want, tt.total)
 		}
 	}
 }
@@ -105,7 +105,7 @@ func TestListActivityLog_DefaultLimitIs50_FR022(t *testing.T) {
 	page := getLog(t, priya, "")
 
 	if len(page.Items) != 50 || page.Total != 51 || page.Items[0].ID != "LOG-1051" || page.Items[49].ID != "LOG-1002" {
-		t.Errorf("GET /api/activity-log = %d entries from %s (total %d), want the 50 from LOG-1051 to LOG-1002 (total 51)",
+		t.Errorf("GET /api/v1/activity-log = %d entries from %s (total %d), want the 50 from LOG-1051 to LOG-1002 (total 51)",
 			len(page.Items), firstID(page.Items), page.Total)
 	}
 }
@@ -117,13 +117,13 @@ func TestListActivityLog_InvalidLimit_FR020(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 
 	for _, limit := range []string{"0", "201", "-5", "ten", "1.5", ""} {
-		response := priya.Do(t, http.MethodGet, "/api/activity-log?limit="+limit, nil,
+		response := priya.Do(t, http.MethodGet, "/api/v1/activity-log?limit="+limit, nil,
 			apitest.SkipRequestValidation()) // the contract itself allows only 1 to 200
 
 		assertAnswer(t, response, http.StatusBadRequest, invalidLimitBody)
 	}
 	for _, limit := range []string{"1", "200"} {
-		response := priya.Do(t, http.MethodGet, "/api/activity-log?limit="+limit, nil)
+		response := priya.Do(t, http.MethodGet, "/api/v1/activity-log?limit="+limit, nil)
 
 		assertAnswer(t, response, http.StatusOK, emptyLogBody)
 	}
@@ -168,7 +168,7 @@ func TestListActivityLog_Filters_Contract(t *testing.T) {
 		page := getLog(t, priya, tt.query)
 
 		if got := entryIDs(page.Items); !slices.Equal(got, tt.want) || page.Total != tt.total || page.UnfilteredTotal != 5 {
-			t.Errorf("GET /api/activity-log%s = %v (%d of %d), want %v (%d of 5)",
+			t.Errorf("GET /api/v1/activity-log%s = %v (%d of %d), want %v (%d of 5)",
 				tt.query, got, page.Total, page.UnfilteredTotal, tt.want, tt.total)
 		}
 	}
@@ -210,10 +210,10 @@ func TestListActivityLog_InvalidParams_400(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		response := priya.Do(t, http.MethodGet, "/api/activity-log"+tt.query, nil, apitest.SkipRequestValidation())
+		response := priya.Do(t, http.MethodGet, "/api/v1/activity-log"+tt.query, nil, apitest.SkipRequestValidation())
 
 		assertAnswer(t, response, http.StatusBadRequest,
-			`{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+tt.body+`]}`)
+			`{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+tt.body+`]}}`)
 	}
 }
 
@@ -230,7 +230,7 @@ func TestActivityLogSummary_Contract(t *testing.T) {
 	deleteNote(t, priya, "SN-1002")            // today
 
 	response := priya.Do(t, http.MethodGet,
-		"/api/activity-log/summary?todayStart=2026-03-13T00:00:00Z&weekStart=2026-03-09T00:00:00Z", nil)
+		"/api/v1/activity-log/summary?todayStart=2026-03-13T00:00:00Z&weekStart=2026-03-09T00:00:00Z", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"changesToday":2,"changesThisWeek":4,"peopleActiveThisWeek":2,`+
 		`"deletionsThisWeek":1,"total":4,`+
@@ -255,10 +255,10 @@ func TestActivityLogSummary_MissingParams_400(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		response := priya.Do(t, http.MethodGet, "/api/activity-log/summary"+tt.query, nil, apitest.SkipRequestValidation())
+		response := priya.Do(t, http.MethodGet, "/api/v1/activity-log/summary"+tt.query, nil, apitest.SkipRequestValidation())
 
 		assertAnswer(t, response, http.StatusBadRequest,
-			`{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+tt.fields+`]}`)
+			`{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[`+tt.fields+`]}}`)
 	}
 }
 
@@ -268,13 +268,13 @@ func TestUndoAndRestore_UnknownEntry_FR025(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 
 	for _, action := range []string{"undo", "restore"} {
-		response := priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-9999/"+action, nil)
+		response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-9999/"+action, nil)
 
 		assertAnswer(t, response, http.StatusNotFound, unknownEntryBody)
 	}
 }
 
-// The bin's two entries of binWithParent, as GET /api/recycle-bin answers them to Priya: the folder, which the
+// The bin's two entries of binWithParent, as GET /api/v1/recycle-bin answers them to Priya: the folder, which the
 // note's entry waits for, and the note, whose folder is in the bin (011 FR-015 – FR-017, FR-028), each with what
 // she may do with it — restore it, but not delete it permanently, which her Planner role does not include
 // (014 FR-011).
@@ -320,7 +320,7 @@ func TestListRecycleBin_Items_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
-	response := priya.Do(t, http.MethodGet, "/api/recycle-bin", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"items":[`+folderBinItem+`,`+noteBinItem+`],"total":2}`)
 }
@@ -334,7 +334,7 @@ func TestRestorePreview_Contract(t *testing.T) {
 	binWithParent(t, priya)
 	logBefore := getLog(t, priya, "")
 
-	response := priya.Do(t, http.MethodGet, "/api/recycle-bin/BIN-1001/restore-preview", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/recycle-bin/BIN-1001/restore-preview", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"entry":`+noteBinItem+`,`+
 		`"destination":[{"type":"sampleFolder","id":"SF-1001","name":"Ideas (restored)"}],`+
@@ -342,7 +342,7 @@ func TestRestorePreview_Contract(t *testing.T) {
 		`"changes":[{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas",`+
 		`"restored":true,"field":"name","label":"Name","oldText":"Ideas","newText":"Ideas (restored)"}],`+
 		`"notes":["Renamed to 'Ideas (restored)' because the name was taken."]}`)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin", nil), http.StatusOK,
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK,
 		`{"items":[`+folderBinItem+`,`+noteBinItem+`],"total":2}`)
 	if logAfter := getLog(t, priya, ""); logAfter.UnfilteredTotal != logBefore.UnfilteredTotal {
 		t.Errorf("the log holds %d entries after the preview, want still %d", logAfter.UnfilteredTotal, logBefore.UnfilteredTotal)
@@ -356,14 +356,14 @@ func TestRestorePreview_UnknownAndResolved_404_409(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")   // SF-1001
 	deleteFolder(t, priya, "SF-1001") // BIN-1001
-	if response := priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/restore", nil); response.Status != http.StatusOK {
+	if response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore", nil); response.Status != http.StatusOK {
 		t.Fatalf("restoring BIN-1001: %d %s", response.Status, response.Body)
 	}
 
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin/BIN-9999/restore-preview", nil), http.StatusNotFound, unknownEntryBody)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin/BIN-1001/restore-preview", nil), http.StatusConflict,
-		`{"code":"already_resolved","message":"'Ideas' is no longer in the recycle bin.","fields":[],`+
-			`"resolution":{"how":"restored","by":{"id":"U-1002","name":"Priya Raman"},"at":"2026-03-12T09:00:00Z"}}`)
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin/BIN-9999/restore-preview", nil), http.StatusNotFound, unknownEntryBody)
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin/BIN-1001/restore-preview", nil), http.StatusConflict,
+		`{"error":{"code":"already_resolved","message":"'Ideas' is no longer in the recycle bin.","fields":[],`+
+			`"resolution":{"how":"restored","by":{"id":"U-1002","name":"Priya Raman"},"at":"2026-03-12T09:00:00Z"}}}`)
 }
 
 // Restore with withParents=true brings back the folder's entry first, then the note's, in one step (011
@@ -373,14 +373,14 @@ func TestRestore_WithParents_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
-	invalid := priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/restore?withParents=yes", nil, apitest.SkipRequestValidation())
-	response := priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/restore?withParents=true", nil)
+	invalid := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore?withParents=yes", nil, apitest.SkipRequestValidation())
+	response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore?withParents=true", nil)
 
-	assertAnswer(t, invalid, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"withParents","message":"Reload the page and try again."}]}`)
+	assertAnswer(t, invalid, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"withParents","message":"Reload the page and try again."}]}}`)
 	assertAnswer(t, response, http.StatusOK, `{"recordType":"sampleNote","recordTypeLabel":"sample note",`+
 		`"recordId":"SN-1001","recordName":"First idea","details":""}`)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin", nil), http.StatusOK, emptyBinBody)
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK, emptyBinBody)
 	page := getLog(t, priya, "?action=restored")
 	if got := []string{page.Items[1].RecordName, page.Items[0].RecordName}; page.Total != 2 || !slices.Equal(got, []string{"Ideas (restored)", "First idea"}) {
 		t.Errorf("restored entries = %d %v, want the folder, then the note", page.Total, got)
@@ -397,15 +397,15 @@ func TestRestore_ParentCodes_409(t *testing.T) {
 	binWithParent(t, priya)
 	parent := `"parent":{"type":"sampleFolder","id":"SF-1001","name":"Ideas"}`
 
-	first := priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/restore", nil)
-	if purge := priya.Do(t, http.MethodDelete, "/api/recycle-bin/BIN-1002", nil); purge.Status != http.StatusOK {
+	first := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore", nil)
+	if purge := priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-1002", nil); purge.Status != http.StatusOK {
 		t.Fatalf("deleting BIN-1002 permanently: %d %s", purge.Status, purge.Body)
 	}
-	gone := priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/restore?withParents=true", nil)
+	gone := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore?withParents=true", nil)
 
-	assertAnswer(t, first, http.StatusConflict, `{"code":"restore_parent_first","message":"Restore 'Ideas' first","fields":[],`+parent+`}`)
-	assertAnswer(t, gone, http.StatusConflict, `{"code":"parent_deleted_permanently","message":"This sample note can't be restored `+
-		`because its sample folder 'Ideas' was permanently deleted.","fields":[],`+parent+`}`)
+	assertAnswer(t, first, http.StatusConflict, `{"error":{"code":"restore_parent_first","message":"Restore 'Ideas' first","fields":[],`+parent+`}}`)
+	assertAnswer(t, gone, http.StatusConflict, `{"error":{"code":"parent_deleted_permanently","message":"This sample note can't be restored `+
+		`because its sample folder 'Ideas' was permanently deleted.","fields":[],`+parent+`}}`)
 }
 
 // Delete permanently answers the record that was deleted for good, writes one "permanently deleted" entry
@@ -417,12 +417,12 @@ func TestPurge_Contract(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	binWithParent(t, priya)
 
-	response := priya.Do(t, http.MethodDelete, "/api/recycle-bin/BIN-1002", nil)
+	response := priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-1002", nil)
 
 	assertAnswer(t, response, http.StatusOK,
 		`{"recordType":"sampleFolder","recordTypeLabel":"sample folder","recordId":"SF-1001","recordName":"Ideas"}`)
 	var bin history.BinPage
-	priya.Do(t, http.MethodGet, "/api/recycle-bin", nil).Decode(t, &bin)
+	priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil).Decode(t, &bin)
 	if bin.Total != 1 || bin.Items[0].ID != "BIN-1001" || bin.Items[0].RestoreState != history.ParentDeletedPermanently {
 		t.Errorf("recycle bin = %+v, want only BIN-1001, which can no longer be restored", bin)
 	}
@@ -445,14 +445,14 @@ func TestPurge_404_409(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	createFolder(t, priya, "Ideas")   // SF-1001
 	deleteFolder(t, priya, "SF-1001") // BIN-1001
-	if response := priya.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/restore", nil); response.Status != http.StatusOK {
+	if response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore", nil); response.Status != http.StatusOK {
 		t.Fatalf("restoring BIN-1001: %d %s", response.Status, response.Body)
 	}
 
-	assertAnswer(t, priya.Do(t, http.MethodDelete, "/api/recycle-bin/BIN-9999", nil), http.StatusNotFound, unknownEntryBody)
-	assertAnswer(t, priya.Do(t, http.MethodDelete, "/api/recycle-bin/BIN-1001", nil), http.StatusConflict,
-		`{"code":"already_resolved","message":"'Ideas' is no longer in the recycle bin.","fields":[],`+
-			`"resolution":{"how":"restored","by":{"id":"U-1002","name":"Priya Raman"},"at":"2026-03-12T09:00:00Z"}}`)
+	assertAnswer(t, priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-9999", nil), http.StatusNotFound, unknownEntryBody)
+	assertAnswer(t, priya.Do(t, http.MethodDelete, "/api/v1/recycle-bin/BIN-1001", nil), http.StatusConflict,
+		`{"error":{"code":"already_resolved","message":"'Ideas' is no longer in the recycle bin.","fields":[],`+
+			`"resolution":{"how":"restored","by":{"id":"U-1002","name":"Priya Raman"},"at":"2026-03-12T09:00:00Z"}}}`)
 }
 
 // Empty recycle bin deletes permanently the listed entries that are still in the bin, answers how many,
@@ -465,12 +465,12 @@ func TestEmptyRecycleBin_Contract(t *testing.T) {
 	binWithParent(t, priya)
 	body := map[string][]string{"entryIds": {"BIN-1002", "BIN-1001"}}
 
-	response := priya.Do(t, http.MethodPost, "/api/recycle-bin/empty", body)
-	again := priya.Do(t, http.MethodPost, "/api/recycle-bin/empty", body)
+	response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/empty", body)
+	again := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/empty", body)
 
 	assertAnswer(t, response, http.StatusOK, `{"count":2}`)
 	assertAnswer(t, again, http.StatusOK, `{"count":0}`)
-	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/recycle-bin", nil), http.StatusOK, emptyBinBody)
+	assertAnswer(t, priya.Do(t, http.MethodGet, "/api/v1/recycle-bin", nil), http.StatusOK, emptyBinBody)
 	page := getLog(t, priya, "?action=deletedPermanently")
 	if page.Total != 1 {
 		t.Fatalf("%d permanently deleted entries, want 1 for the emptied bin", page.Total)
@@ -492,25 +492,25 @@ func TestEmptyRecycleBin_EmptyList_400(t *testing.T) {
 	server.GrantRole(t, priyasEmail, "administrator", "all") // 014: deleting permanently is an administrator's
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodPost, "/api/recycle-bin/empty", map[string][]string{"entryIds": {}},
+	response := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/empty", map[string][]string{"entryIds": {}},
 		apitest.SkipRequestValidation())
 
-	assertAnswer(t, response, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"entryIds","message":"Reload the page and try again."}]}`)
+	assertAnswer(t, response, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"entryIds","message":"Reload the page and try again."}]}}`)
 }
 
 // Every history operation needs a signed-in person (FR-005).
 func TestHistoryOperations_WithoutSession_FR005(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	calls := []struct{ method, path string }{
-		{http.MethodGet, "/api/activity-log"},
-		{http.MethodGet, "/api/activity-log/summary"},
-		{http.MethodGet, "/api/recycle-bin"},
-		{http.MethodGet, "/api/recycle-bin/BIN-1001/restore-preview"},
-		{http.MethodPost, "/api/recycle-bin/BIN-1001/undo"},
-		{http.MethodPost, "/api/recycle-bin/BIN-1001/restore"},
-		{http.MethodDelete, "/api/recycle-bin/BIN-1001"},
-		{http.MethodPost, "/api/recycle-bin/empty"},
+		{http.MethodGet, "/api/v1/activity-log"},
+		{http.MethodGet, "/api/v1/activity-log/summary"},
+		{http.MethodGet, "/api/v1/recycle-bin"},
+		{http.MethodGet, "/api/v1/recycle-bin/BIN-1001/restore-preview"},
+		{http.MethodPost, "/api/v1/recycle-bin/BIN-1001/undo"},
+		{http.MethodPost, "/api/v1/recycle-bin/BIN-1001/restore"},
+		{http.MethodDelete, "/api/v1/recycle-bin/BIN-1001"},
+		{http.MethodPost, "/api/v1/recycle-bin/empty"},
 	}
 
 	for _, call := range calls {
@@ -526,7 +526,7 @@ func TestHistoryOperations_WithoutSession_FR005(t *testing.T) {
 // createFolder creates a sample folder and stops the test when that fails.
 func createFolder(t *testing.T, c *apitest.Client, name string) {
 	t.Helper()
-	response := c.Do(t, http.MethodPost, "/api/sample-folders", map[string]string{"name": name})
+	response := c.Do(t, http.MethodPost, "/api/v1/sample-folders", map[string]string{"name": name})
 	if response.Status != http.StatusCreated {
 		t.Fatalf("creating the sample folder %q: %d %s", name, response.Status, response.Body)
 	}
@@ -535,7 +535,7 @@ func createFolder(t *testing.T, c *apitest.Client, name string) {
 // renameFolder renames a sample folder still at version 1, and stops the test when that fails.
 func renameFolder(t *testing.T, c *apitest.Client, id, name string) {
 	t.Helper()
-	response := c.Do(t, http.MethodPatch, "/api/sample-folders/"+id, map[string]any{"name": name, "version": 1})
+	response := c.Do(t, http.MethodPatch, "/api/v1/sample-folders/"+id, map[string]any{"name": name, "version": 1})
 	if response.Status != http.StatusOK {
 		t.Fatalf("renaming the sample folder %s: %d %s", id, response.Status, response.Body)
 	}
@@ -544,7 +544,7 @@ func renameFolder(t *testing.T, c *apitest.Client, id, name string) {
 // addNote adds a note to a sample folder and stops the test when that fails.
 func addNote(t *testing.T, c *apitest.Client, folderID, title string) {
 	t.Helper()
-	response := c.Do(t, http.MethodPost, "/api/sample-folders/"+folderID+"/notes", map[string]string{"title": title})
+	response := c.Do(t, http.MethodPost, "/api/v1/sample-folders/"+folderID+"/notes", map[string]string{"title": title})
 	if response.Status != http.StatusCreated {
 		t.Fatalf("adding the note %q: %d %s", title, response.Status, response.Body)
 	}
@@ -553,7 +553,7 @@ func addNote(t *testing.T, c *apitest.Client, folderID, title string) {
 // deleteNote deletes a sample note, which moves it to the recycle bin, and stops the test when that fails.
 func deleteNote(t *testing.T, c *apitest.Client, id string) {
 	t.Helper()
-	if response := c.Do(t, http.MethodDelete, "/api/sample-notes/"+id, nil); response.Status != http.StatusOK {
+	if response := c.Do(t, http.MethodDelete, "/api/v1/sample-notes/"+id, nil); response.Status != http.StatusOK {
 		t.Fatalf("deleting the note %s: %d %s", id, response.Status, response.Body)
 	}
 }
@@ -561,17 +561,17 @@ func deleteNote(t *testing.T, c *apitest.Client, id string) {
 // deleteFolder deletes a sample folder with its notes and stops the test when that fails.
 func deleteFolder(t *testing.T, c *apitest.Client, id string) {
 	t.Helper()
-	if response := c.Do(t, http.MethodDelete, "/api/sample-folders/"+id, nil); response.Status != http.StatusOK {
+	if response := c.Do(t, http.MethodDelete, "/api/v1/sample-folders/"+id, nil); response.Status != http.StatusOK {
 		t.Fatalf("deleting the folder %s: %d %s", id, response.Status, response.Body)
 	}
 }
 
-// getLog answers GET /api/activity-log with query, and stops the test when it is not 200.
+// getLog answers GET /api/v1/activity-log with query, and stops the test when it is not 200.
 func getLog(t *testing.T, c *apitest.Client, query string) history.LogPage {
 	t.Helper()
-	response := c.Do(t, http.MethodGet, "/api/activity-log"+query, nil)
+	response := c.Do(t, http.MethodGet, "/api/v1/activity-log"+query, nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/activity-log%s = %d %s", query, response.Status, response.Body)
+		t.Fatalf("GET /api/v1/activity-log%s = %d %s", query, response.Status, response.Body)
 	}
 	var page history.LogPage
 	response.Decode(t, &page)

@@ -10,8 +10,8 @@ import { RestoreDialog } from './RestoreDialog';
 import type { BinItem } from './binText';
 import { binItem, lineItemEntry, restorePreview } from './testData';
 
-const PREVIEW = 'GET /api/recycle-bin/BIN-1001/restore-preview';
-const RESTORE = 'POST /api/recycle-bin/BIN-1001/restore';
+const PREVIEW = 'GET /api/v1/recycle-bin/BIN-1001/restore-preview';
+const RESTORE = 'POST /api/v1/recycle-bin/BIN-1001/restore';
 
 const RESTORED = {
   recordType: 'initiative',
@@ -61,7 +61,7 @@ function renderDialog(answers: Record<string, MockHandler>, item: BinItem = binI
 }
 
 function errorBody(code: string, message: string, extra: object = {}) {
-  return { code, message, ...extra };
+  return { error: { code, message, fields: [], ...extra } };
 }
 
 describe('RestoreDialog', () => {

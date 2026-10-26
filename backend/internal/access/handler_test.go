@@ -56,6 +56,7 @@ type (
 		Code, Message string
 		Fields        []struct{ Field, Message string }
 	}
+	errorAnswer struct{ Error apiError }
 )
 
 // Every access operation needs "Give roles and change roles and access rules": Priya, a Planner, is refused
@@ -67,24 +68,25 @@ func TestAccessOperations_NeedAccessManage_FR009_FR017(t *testing.T) {
 		method, path string
 		body         any
 	}{
-		{http.MethodGet, "/api/access/permissions", nil},
-		{http.MethodGet, "/api/access/people", nil},
-		{http.MethodGet, "/api/access/changes", nil},
-		{http.MethodGet, "/api/roles", nil},
-		{http.MethodPost, "/api/roles", map[string]any{"name": "Analyst", "permissions": []string{"plans.view"}, "defaultScope": "all"}},
-		{http.MethodGet, "/api/roles/RL-1005", nil},
-		{http.MethodPatch, "/api/roles/RL-1005", map[string]any{"description": "Sees plans.", "version": 1}},
-		{http.MethodDelete, "/api/roles/RL-1006", nil},
-		{http.MethodGet, "/api/people/U-1006/roles", nil},
-		{http.MethodPost, "/api/people/U-1006/roles/impact", map[string]any{"roles": []any{}, "version": 1}},
-		{http.MethodPut, "/api/people/U-1006/roles", map[string]any{"roles": []any{}, "version": 1}},
-		{http.MethodGet, "/api/access-rules", nil},
-		{http.MethodPatch, "/api/access-rules", map[string]any{"noSelfApproval": false, "version": 1}},
+		{http.MethodGet, "/api/v1/access/permissions", nil},
+		{http.MethodGet, "/api/v1/access/people", nil},
+		{http.MethodGet, "/api/v1/access/changes", nil},
+		{http.MethodGet, "/api/v1/roles", nil},
+		{http.MethodPost, "/api/v1/roles", map[string]any{"name": "Analyst", "permissions": []string{"plans.view"}, "defaultScope": "all"}},
+		{http.MethodGet, "/api/v1/roles/RL-1005", nil},
+		{http.MethodPatch, "/api/v1/roles/RL-1005", map[string]any{"description": "Sees plans.", "version": 1}},
+		{http.MethodDelete, "/api/v1/roles/RL-1006", nil},
+		{http.MethodGet, "/api/v1/people/U-1006/roles", nil},
+		{http.MethodPost, "/api/v1/people/U-1006/roles/impact", map[string]any{"roles": []any{}, "version": 1}},
+		{http.MethodPut, "/api/v1/people/U-1006/roles", map[string]any{"roles": []any{}, "version": 1}},
+		{http.MethodGet, "/api/v1/access-rules", nil},
+		{http.MethodPatch, "/api/v1/access-rules", map[string]any{"noSelfApproval": false, "version": 1}},
 	}
 	for _, op := range operations {
 		refused := priya.Do(t, op.method, op.path, op.body)
-		var refusal apiError
-		refused.Decode(t, &refusal)
+		var answer errorAnswer
+		refused.Decode(t, &answer)
+		refusal := answer.Error
 		if refused.Status != http.StatusForbidden || refusal.Code != "forbidden" ||
 			refusal.Message != "Changing roles and access isn't part of your role (Planner). Ask an administrator if you need it." {
 			t.Errorf("Priya: %s %s = %d %s", op.method, op.path, refused.Status, refused.Body)
@@ -95,7 +97,7 @@ func TestAccessOperations_NeedAccessManage_FR009_FR017(t *testing.T) {
 	}
 }
 
-// GET /api/access/permissions answers Table A in its five groups (FR-001).
+// GET /api/v1/access/permissions answers Table A in its five groups (FR-001).
 func TestListPermissions_TableA_FR001(t *testing.T) {
 	server := apitest.New(t)
 	var catalogue struct {
@@ -108,7 +110,7 @@ func TestListPermissions_TableA_FR001(t *testing.T) {
 		}
 	}
 
-	server.SignIn(t, alexsEmail).Do(t, http.MethodGet, "/api/access/permissions", nil).Decode(t, &catalogue)
+	server.SignIn(t, alexsEmail).Do(t, http.MethodGet, "/api/v1/access/permissions", nil).Decode(t, &catalogue)
 
 	var groups []string
 	for _, g := range catalogue.Groups {
@@ -127,7 +129,7 @@ func TestListPeopleAccess_FR017(t *testing.T) {
 		Total int
 	}
 
-	server.SignIn(t, alexsEmail).Do(t, http.MethodGet, "/api/access/people", nil).Decode(t, &page)
+	server.SignIn(t, alexsEmail).Do(t, http.MethodGet, "/api/v1/access/people", nil).Decode(t, &page)
 
 	var rows []string
 	for _, p := range page.Items {
@@ -151,9 +153,9 @@ func TestListPeopleAccess_FR017(t *testing.T) {
 func TestSetPersonRoles_AppliesToTheNextRequest_FR017_FR020(t *testing.T) {
 	server := apitest.New(t)
 	alex, sara := server.SignIn(t, alexsEmail), server.SignIn(t, sarasEmail)
-	refusedBefore := sara.Do(t, http.MethodGet, "/api/activities/A-1001/form", nil)
+	refusedBefore := sara.Do(t, http.MethodGet, "/api/v1/activities/A-1001/form", nil)
 
-	saved := alex.Do(t, http.MethodPut, "/api/people/U-1006/roles", map[string]any{"version": 1, "roles": []map[string]any{
+	saved := alex.Do(t, http.MethodPut, "/api/v1/people/U-1006/roles", map[string]any{"version": 1, "roles": []map[string]any{
 		{"roleId": "RL-1005", "scope": map[string]any{"type": "myTeams"}},
 		{"roleId": "RL-1003", "scope": map[string]any{"type": "teams", "teamIds": []string{"T-1002"}}},
 	}})
@@ -167,7 +169,7 @@ func TestSetPersonRoles_AppliesToTheNextRequest_FR017_FR020(t *testing.T) {
 	var me struct {
 		Access struct{ Permissions []permission }
 	}
-	sara.Do(t, http.MethodGet, "/api/me", nil).Decode(t, &me)
+	sara.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
 	i := slices.IndexFunc(me.Access.Permissions, func(p permission) bool { return p.Key == "activities.edit" })
 	if i < 0 || me.Access.Permissions[i].All || len(me.Access.Permissions[i].Teams) != 1 || me.Access.Permissions[i].Teams[0].Name != "Mobility China" {
 		t.Errorf("Sara's activities.edit = %+v", me.Access.Permissions)
@@ -175,7 +177,7 @@ func TestSetPersonRoles_AppliesToTheNextRequest_FR017_FR020(t *testing.T) {
 	if refusedBefore.Status != http.StatusForbidden {
 		t.Errorf("before: Sara opening an activity form = %d, want 403", refusedBefore.Status)
 	}
-	if form := sara.Do(t, http.MethodGet, "/api/activities/A-1010/form", nil); form.Status != http.StatusOK {
+	if form := sara.Do(t, http.MethodGet, "/api/v1/activities/A-1010/form", nil); form.Status != http.StatusOK {
 		t.Errorf("after: Sara opening a Mobility activity's form = %d %s, want 200", form.Status, form.Body)
 	}
 
@@ -187,7 +189,7 @@ func TestSetPersonRoles_AppliesToTheNextRequest_FR017_FR020(t *testing.T) {
 		}
 		Total int
 	}
-	alex.Do(t, http.MethodGet, "/api/access/changes", nil).Decode(t, &changes)
+	alex.Do(t, http.MethodGet, "/api/v1/access/changes", nil).Decode(t, &changes)
 	if changes.Total != 1 || changes.Items[0].RecordType != "person" || changes.Items[0].RecordName != "Sara Novak" ||
 		changes.Items[0].Actor.Name != "Alex Morgan" || changes.Items[0].Changes[0].Label != "Roles" ||
 		changes.Items[0].Changes[0].OldText != "Viewer · My teams" ||
@@ -202,22 +204,23 @@ func TestSetPersonRoles_Refusals_FR017_FR021(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	invalid := alex.Do(t, http.MethodPut, "/api/people/U-1006/roles", map[string]any{"version": 1, "roles": []map[string]any{
+	invalid := alex.Do(t, http.MethodPut, "/api/v1/people/U-1006/roles", map[string]any{"version": 1, "roles": []map[string]any{
 		{"roleId": "RL-1001", "scope": map[string]any{"type": "myTeams"}},
 		{"roleId": "RL-1003", "scope": map[string]any{"type": "teams", "teamIds": []string{}}},
 	}})
-	stale := alex.Do(t, http.MethodPut, "/api/people/U-1006/roles", map[string]any{"version": 7, "roles": []any{}})
-	lastAdmin := alex.Do(t, http.MethodPut, "/api/people/U-1001/roles", map[string]any{"version": 1, "roles": []any{}})
-	alex.Do(t, http.MethodPost, "/api/roles", map[string]any{"name": "People manager", "permissions": []string{"people.manage"},
+	stale := alex.Do(t, http.MethodPut, "/api/v1/people/U-1006/roles", map[string]any{"version": 7, "roles": []any{}})
+	lastAdmin := alex.Do(t, http.MethodPut, "/api/v1/people/U-1001/roles", map[string]any{"version": 1, "roles": []any{}})
+	alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "People manager", "permissions": []string{"people.manage"},
 		"defaultScope": "all"}) // RL-1006, for Priya, who then tries to deactivate Alex
-	alex.Do(t, http.MethodPut, "/api/people/U-1002/roles", map[string]any{"version": 1, "roles": []map[string]any{
+	alex.Do(t, http.MethodPut, "/api/v1/people/U-1002/roles", map[string]any{"version": 1, "roles": []map[string]any{
 		{"roleId": "RL-1006", "scope": map[string]any{"type": "all"}}}})
-	deactivate := server.SignIn(t, priyasEmail).Do(t, http.MethodPost, "/api/people/U-1001/status", map[string]any{"active": false, "version": 1})
-	missing := alex.Do(t, http.MethodGet, "/api/people/U-9999/roles", nil)
+	deactivate := server.SignIn(t, priyasEmail).Do(t, http.MethodPost, "/api/v1/people/U-1001/status", map[string]any{"active": false, "version": 1})
+	missing := alex.Do(t, http.MethodGet, "/api/v1/people/U-9999/roles", nil)
 
 	assertError(t, invalid, http.StatusBadRequest, "validation_failed", "")
-	var problems apiError
-	invalid.Decode(t, &problems)
+	var answer errorAnswer
+	invalid.Decode(t, &answer)
+	problems := answer.Error
 	if len(problems.Fields) != 2 || problems.Fields[0].Message != "The Administrator role always applies to all markets." ||
 		problems.Fields[1].Field != "roles.1.teamIds" || problems.Fields[1].Message != "Choose at least one team." {
 		t.Errorf("problems = %+v", problems.Fields)
@@ -243,11 +246,11 @@ func TestCheckPersonRolesImpact_Warnings_FR022(t *testing.T) {
 	}
 
 	var daniels, alexs warnings
-	alex.Do(t, http.MethodPost, "/api/people/U-1003/roles/impact", plannerOnly).Decode(t, &daniels)
-	alex.Do(t, http.MethodPost, "/api/people/U-1001/roles/impact", map[string]any{"version": 1, "roles": []map[string]any{
+	alex.Do(t, http.MethodPost, "/api/v1/people/U-1003/roles/impact", plannerOnly).Decode(t, &daniels)
+	alex.Do(t, http.MethodPost, "/api/v1/people/U-1001/roles/impact", map[string]any{"version": 1, "roles": []map[string]any{
 		{"roleId": "RL-1001", "scope": map[string]any{"type": "all"}}}}).Decode(t, &alexs)
 	var after personRoles
-	alex.Do(t, http.MethodGet, "/api/people/U-1003/roles", nil).Decode(t, &after)
+	alex.Do(t, http.MethodGet, "/api/v1/people/U-1003/roles", nil).Decode(t, &after)
 
 	if len(daniels.Warnings) != 1 || daniels.Warnings[0].Kind != "approverCannotApprove" ||
 		!strings.HasPrefix(daniels.Warnings[0].Message, "Daniel Okoro is an approver in 2 approval workflows and has ") {
@@ -267,14 +270,14 @@ func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	created := alex.Do(t, http.MethodPost, "/api/roles", map[string]any{"name": "Analyst", "description": "Reads and exports.",
+	created := alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "Analyst", "description": "Reads and exports.",
 		"permissions": []string{"data.export", "plans.view"}, "defaultScope": "myTeams"})
-	taken := alex.Do(t, http.MethodPost, "/api/roles", map[string]any{"name": "analyst", "permissions": []string{"plans.view"}, "defaultScope": "all"})
-	changed := alex.Do(t, http.MethodPatch, "/api/roles/RL-1006", map[string]any{"permissions": []string{"plans.view", "finance.view"}, "version": 1})
-	adminChange := alex.Do(t, http.MethodPatch, "/api/roles/RL-1001", map[string]any{"name": "Boss", "version": 1})
-	inUse := alex.Do(t, http.MethodDelete, "/api/roles/RL-1003", nil)
-	deleted := alex.Do(t, http.MethodDelete, "/api/roles/RL-1006", nil)
-	gone := alex.Do(t, http.MethodGet, "/api/roles/RL-1006", nil)
+	taken := alex.Do(t, http.MethodPost, "/api/v1/roles", map[string]any{"name": "analyst", "permissions": []string{"plans.view"}, "defaultScope": "all"})
+	changed := alex.Do(t, http.MethodPatch, "/api/v1/roles/RL-1006", map[string]any{"permissions": []string{"plans.view", "finance.view"}, "version": 1})
+	adminChange := alex.Do(t, http.MethodPatch, "/api/v1/roles/RL-1001", map[string]any{"name": "Boss", "version": 1})
+	inUse := alex.Do(t, http.MethodDelete, "/api/v1/roles/RL-1003", nil)
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/roles/RL-1006", nil)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/roles/RL-1006", nil)
 
 	var r role
 	created.Decode(t, &r)
@@ -297,8 +300,8 @@ func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
 	}
 	assertError(t, gone, http.StatusNotFound, "not_found", "This role no longer exists — someone may have deleted it.")
 
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
-	back := alex.Do(t, http.MethodGet, "/api/roles/RL-1006", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
+	back := alex.Do(t, http.MethodGet, "/api/v1/roles/RL-1006", nil)
 	if undone.Status != http.StatusOK || back.Status != http.StatusOK {
 		t.Errorf("Undo = %d %s; GET after = %d", undone.Status, undone.Body, back.Status)
 	}
@@ -307,7 +310,7 @@ func TestRoles_CreateChangeDelete_FR018(t *testing.T) {
 		Items []role
 		Total int
 	}
-	alex.Do(t, http.MethodGet, "/api/roles", nil).Decode(t, &page)
+	alex.Do(t, http.MethodGet, "/api/v1/roles", nil).Decode(t, &page)
 	if page.Total != 6 || page.Items[0].Name != "Administrator" || len(page.Items[0].Locks) != 5 || len(page.Items[0].Permissions) != 25 {
 		t.Errorf("roles = %d, first %+v", page.Total, page.Items[0])
 	}
@@ -325,10 +328,10 @@ func TestAccessRules_ChangeAndNewPeople_FR019_FR023(t *testing.T) {
 	}
 
 	var before rules
-	alex.Do(t, http.MethodGet, "/api/access-rules", nil).Decode(t, &before)
-	admin := alex.Do(t, http.MethodPatch, "/api/access-rules", map[string]any{"newPersonRoleId": "RL-1001", "version": 1})
-	changed := alex.Do(t, http.MethodPatch, "/api/access-rules", map[string]any{"newPersonRoleId": "RL-1004", "version": 1})
-	created := alex.Do(t, http.MethodPost, "/api/people", map[string]any{"name": "Jane Doe", "email": "jane.doe@shell.com",
+	alex.Do(t, http.MethodGet, "/api/v1/access-rules", nil).Decode(t, &before)
+	admin := alex.Do(t, http.MethodPatch, "/api/v1/access-rules", map[string]any{"newPersonRoleId": "RL-1001", "version": 1})
+	changed := alex.Do(t, http.MethodPatch, "/api/v1/access-rules", map[string]any{"newPersonRoleId": "RL-1004", "version": 1})
+	created := alex.Do(t, http.MethodPost, "/api/v1/people", map[string]any{"name": "Jane Doe", "email": "jane.doe@shell.com",
 		"teamIds": []string{"T-1002"}})
 
 	if !before.NoSelfApproval || before.NewPersonRole == nil || before.NewPersonRole.Name != "Viewer" || before.Version != 1 {
@@ -346,7 +349,7 @@ func TestAccessRules_ChangeAndNewPeople_FR019_FR023(t *testing.T) {
 	}
 	created.Decode(t, &jane)
 	var janes personRoles
-	alex.Do(t, http.MethodGet, "/api/people/"+jane.ID+"/roles", nil).Decode(t, &janes)
+	alex.Do(t, http.MethodGet, "/api/v1/people/"+jane.ID+"/roles", nil).Decode(t, &janes)
 	if jane.Version != 1 || len(janes.Roles) != 1 || janes.Roles[0].Role.Name != "Approver" || janes.Roles[0].Scope.Text != "My teams" ||
 		janes.Roles[0].Scope.Teams[0].Name != "Mobility China" {
 		t.Errorf("Jane (version %d) has roles %+v, want Approver · My teams", jane.Version, janes.Roles)
@@ -358,16 +361,16 @@ func TestTeamDelete_LeavesChosenScopes_FR004(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var team struct{ ID string }
-	alex.Do(t, http.MethodPost, "/api/teams", map[string]any{"name": "Lubricants Asia"}).Decode(t, &team)
-	if saved := alex.Do(t, http.MethodPut, "/api/people/U-1006/roles", map[string]any{"version": 1, "roles": []map[string]any{
+	alex.Do(t, http.MethodPost, "/api/v1/teams", map[string]any{"name": "Lubricants Asia"}).Decode(t, &team)
+	if saved := alex.Do(t, http.MethodPut, "/api/v1/people/U-1006/roles", map[string]any{"version": 1, "roles": []map[string]any{
 		{"roleId": "RL-1003", "scope": map[string]any{"type": "teams", "teamIds": []string{team.ID}}}}}); saved.Status != http.StatusOK {
 		t.Fatalf("PUT = %d %s", saved.Status, saved.Body)
 	}
 
-	deleted := alex.Do(t, http.MethodDelete, "/api/teams/"+team.ID, nil)
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/teams/"+team.ID, nil)
 
 	var saras personRoles
-	alex.Do(t, http.MethodGet, "/api/people/U-1006/roles", nil).Decode(t, &saras)
+	alex.Do(t, http.MethodGet, "/api/v1/people/U-1006/roles", nil).Decode(t, &saras)
 	if deleted.Status != http.StatusOK || len(saras.Roles) != 1 || !saras.Roles[0].ScopeEmpty || len(saras.Roles[0].Scope.Teams) != 0 {
 		t.Errorf("team delete %d; Sara's roles %+v", deleted.Status, saras.Roles)
 	}
@@ -376,8 +379,9 @@ func TestTeamDelete_LeavesChosenScopes_FR004(t *testing.T) {
 // assertError checks an error answer's status, code and, when not empty, message.
 func assertError(t *testing.T, r *apitest.Response, status int, code, message string) {
 	t.Helper()
-	var e apiError
-	r.Decode(t, &e)
+	var answer errorAnswer
+	r.Decode(t, &answer)
+	e := answer.Error
 	if r.Status != status || e.Code != code || (message != "" && e.Message != message) {
 		t.Errorf("answer = %d %s\nwant %d %s %q", r.Status, r.Body, status, code, message)
 	}

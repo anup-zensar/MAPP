@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"mapp/internal/platform/actor"
-	"mapp/internal/platform/authz"
 	"mapp/internal/platform/errs"
 )
 
@@ -213,14 +212,15 @@ func itemOf(items []BinListItem, id string) BinListItem {
 }
 
 // unresolvedEntry reads the recycle-bin entry entryID for an action on it and refuses what the action
-// cannot work on (FR-032): an entry the bin never had, one holding a kind this API does not know, and one
-// that already left the bin, with how, by whom and when. Call it inside a transaction.
+// cannot work on (FR-032): an entry the bin never had or the person cannot see, one holding a kind this API
+// does not know, and one that already left the bin, with how, by whom and when. Call it inside a
+// transaction.
 func (s *Service) unresolvedEntry(ctx context.Context, entryID string) (BinEntry, error) {
 	entry, found, err := s.repo.GetBinEntry(ctx, entryID)
 	if err != nil {
 		return BinEntry{}, err
 	}
-	if !found {
+	if !found || !s.canSeeBinEntry(ctx, entry) {
 		return BinEntry{}, errs.NotFound(entryUnknownMessage)
 	}
 	if !s.knowsKindsOf(entry) {
@@ -413,9 +413,6 @@ func (s *Service) Purge(ctx context.Context, a actor.Actor, entryID string) (Pur
 		entry, err := s.unresolvedEntry(ctx, entryID)
 		if err != nil {
 			return err
-		}
-		if !s.canSeeBinEntry(ctx, entry) { // 014 D-238: an entry the person cannot see names nothing of it
-			return errs.Forbidden(authz.NoAccessMessage(entry.RecordTypeLabel))
 		}
 		if err := s.purge(ctx, a, entry, s.now()); err != nil {
 			return err

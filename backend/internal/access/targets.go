@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"mapp/internal/platform/authz"
+	"mapp/internal/platform/errs"
 )
 
-// The record types of the planning records whose path parameter the middleware resolves, as the no-access
-// message names them mid-sentence (message 4).
+// The record types of the planning records whose path parameter the middleware resolves, as the not-found
+// message names them mid-sentence.
 const (
 	RecordPlan       = "plan"
 	RecordCampaign   = "campaign"
@@ -22,7 +23,7 @@ const (
 // decision needs it: its plan, and for an activity and the records under it, who else sees it — its owner
 // and the people named to approve it (data model §2.2).
 type Target struct {
-	RecordType string               // mid-sentence, such as "campaign": what the no-access message names
+	RecordType string               // mid-sentence, such as "campaign": what the not-found message names
 	Plan       authz.PlanFacts      // the record's plan
 	Activity   *authz.ActivityFacts // set for an activity, its line items and its approval
 }
@@ -65,7 +66,7 @@ func (s *Service) targetOf(r *http.Request) (Target, bool, error) {
 }
 
 // pathParameters returns the names of the path parameters of a ServeMux pattern, in order:
-// "GET /api/campaigns/{campaignId}/move" gives ["campaignId"].
+// "GET /api/v1/campaigns/{campaignId}/move" gives ["campaignId"].
 func pathParameters(pattern string) []string {
 	var names []string
 	for rest := pattern; ; {
@@ -83,15 +84,15 @@ func pathParameters(pattern string) []string {
 }
 
 // checkTarget applies the rule to the record the path names (plan "Authorization model"): a record the
-// person cannot see is refused with message 4, which names nothing of it (FR-008); for an InPlan rule, a
-// permission the person holds but not in the record's plan is refused with message 3 (FR-009). It returns
-// the refusal, or "" when the request may go on; the service checks everything else.
-func checkTarget(g authz.Grants, rule Rule, t Target) string {
+// person cannot see answers 404 like a missing one (constitution VII); for an InPlan rule, a permission the
+// person holds but not in the record's plan is refused with 403 and message 3 (FR-009). It returns nil when
+// the request may go on; the service checks everything else.
+func checkTarget(g authz.Grants, rule Rule, t Target) *errs.Error {
 	if !t.visibleTo(g) {
-		return authz.NoAccessMessage(t.RecordType)
+		return errs.NotFound(authz.NotFoundMessage(t.RecordType))
 	}
 	if rule.Kind == InPlan && !g.InScope(rule.Permission, t.Plan) {
-		return g.Refusal(rule.Permission, &t.Plan)
+		return errs.Forbidden(g.Refusal(rule.Permission, &t.Plan))
 	}
-	return ""
+	return nil
 }

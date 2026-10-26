@@ -38,7 +38,7 @@ function renderDialog(answers: Record<string, MockHandler>) {
 
 describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   it('offers the plan’s initiatives grouped by campaign, the unavailable ones with their reason', async () => {
-    renderDialog({ 'GET /api/activities/A-1042/destinations': { body: destinations() } });
+    renderDialog({ 'GET /api/v1/activities/A-1042/destinations': { body: destinations() } });
 
     const dialog = screen.getByRole('dialog', { name: "Move activity 'Launch film'" });
     expect(dialog).toHaveAccessibleDescription(
@@ -63,7 +63,7 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
 
   it('finds initiatives by their name or their campaign’s name', async () => {
     const { user } = renderDialog({
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
     });
 
     const search = await screen.findByRole('searchbox', { name: 'Search initiatives' });
@@ -83,8 +83,8 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
 
   it('moves the activity with its version and says so (US5#1)', async () => {
     const { user, api, router } = renderDialog({
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/move': {
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/move': {
         body: launchFilm({
           initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
           version: 4,
@@ -94,7 +94,7 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Move activity' }));
     expect(await screen.findByText('Choose another initiative of this plan.')).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/activities/A-1042/move')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/activities/A-1042/move')).toEqual([]);
 
     await user.click(screen.getByRole('radio', { name: 'Print & outdoor' }));
     expect(screen.queryByText('Choose another initiative of this plan.')).not.toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
     expect(await findMessages()).toHaveTextContent(
       "Activity 'Launch film' moved to 'Print & outdoor'",
     );
-    expect(api.bodiesOf('POST /api/activities/A-1042/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/activities/A-1042/move')).toEqual([
       { initiativeId: 'I-1002', version: 3 },
     ]);
     expect(await screen.findByText('Closed')).toBeInTheDocument();
@@ -114,8 +114,8 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
     const refusal =
       "'Print & outdoor' already has an activity called 'Launch film'. Rename the activity first, or pick another initiative.";
     const { user, api } = renderDialog({
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/move': validationFailed([
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/move': validationFailed([
         { field: 'initiativeId', message: refusal },
       ]),
     });
@@ -126,7 +126,7 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(refusal);
     await waitFor(() =>
       expect(
-        api.requests.filter((request) => request.path === '/api/activities/A-1042/destinations'),
+        api.requests.filter((request) => request.path === '/api/v1/activities/A-1042/destinations'),
       ).toHaveLength(2),
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -134,14 +134,16 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
 
   it('says who changed the activity meanwhile (409)', async () => {
     const { user } = renderDialog({
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/move': {
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/move': {
         status: 409,
         body: {
-          code: 'version_conflict',
-          message: 'Not saved — Daniel Okoro changed this activity',
-          fields: [],
-          conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+          error: {
+            code: 'version_conflict',
+            message: 'Not saved — Daniel Okoro changed this activity',
+            fields: [],
+            conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+          },
         },
       },
     });
@@ -156,7 +158,7 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
 
   it('says when there is no other initiative to move it to', async () => {
     renderDialog({
-      'GET /api/activities/A-1042/destinations': { body: destinations([OWN_INITIATIVE]) },
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations([OWN_INITIATIVE]) },
     });
 
     expect(
@@ -168,7 +170,7 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
   it('shows grey lines while loading, then the error with Try again', async () => {
     let calls = 0;
     const { user } = renderDialog({
-      'GET /api/activities/A-1042/destinations': () =>
+      'GET /api/v1/activities/A-1042/destinations': () =>
         ++calls === 1 ? { status: 500 } : { body: destinations([destination()]) },
     });
 
@@ -180,12 +182,14 @@ describe('MoveActivityDialog (feature 006, US5#1, FR-029)', () => {
 
   it('says when the activity is gone, and Cancel closes', async () => {
     const { user } = renderDialog({
-      'GET /api/activities/A-1042/destinations': {
+      'GET /api/v1/activities/A-1042/destinations': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This activity no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This activity no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });

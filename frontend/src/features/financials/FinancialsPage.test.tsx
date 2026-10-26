@@ -10,18 +10,18 @@ import { testUser } from '@/test/users';
 import { FinancialsPage } from './FinancialsPage';
 import { TransactionPanel } from './TransactionPanel';
 
-const LIST = 'GET /api/financials/transactions';
+const LIST = 'GET /api/v1/financials/transactions';
 
 function renderPage(route = '/financials', list: MockHandler = { body: transactionPage() }) {
   // A 403 makes the session provider reload the person's access (014 FR-020).
-  const api = mockApi({ [LIST]: list, 'GET /api/me': { body: testUser() } });
+  const api = mockApi({ [LIST]: list, 'GET /api/v1/me': { body: testUser() } });
   return { ...renderFinancials(route), api };
 }
 
 /** The query strings the page asked the list with, in order. */
 function listQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
   return api.requests
-    .filter((request) => request.path === '/api/financials/transactions')
+    .filter((request) => request.path === '/api/v1/financials/transactions')
     .map((request) => new URLSearchParams(request.search));
 }
 
@@ -315,8 +315,10 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
     renderPage('/financials', {
       status: 403,
       body: {
-        code: 'forbidden',
-        message: "Seeing financial data isn't part of your role (Viewer).",
+        error: {
+          code: 'forbidden',
+          message: "Seeing financial data isn't part of your role (Viewer).",
+        },
       },
     });
 
@@ -331,7 +333,7 @@ describe('FinancialsPage (015 US3, FR-020 – FR-021)', () => {
     const { user } = renderPage('/financials', () => {
       calls += 1;
       return calls === 1
-        ? { status: 500, body: { code: 'internal_error', message: 'Boom' } }
+        ? { status: 500, body: { error: { code: 'internal_error', message: 'Boom' } } }
         : { body: transactionPage() };
     });
 

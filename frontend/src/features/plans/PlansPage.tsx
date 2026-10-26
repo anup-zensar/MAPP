@@ -90,7 +90,7 @@ export function PlansPage() {
 
   /**
    * Pins or unpins one plan (018 FR-001, FR-004): the full new list goes to the session, which
-   * updates the signed-in person in the query cache at once and PATCHes /api/me/preferences in
+   * updates the signed-in person in the query cache at once and PATCHes /api/v1/me/preferences in
    * the background — the same way the theme is saved. A new pin goes last: the stored order only
    * says what is pinned; the list's own sort orders the pinned group (D-317).
    */

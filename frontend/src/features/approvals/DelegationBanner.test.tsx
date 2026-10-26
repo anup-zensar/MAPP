@@ -6,7 +6,7 @@ import { testUser } from '@/test/users';
 import { DelegationBanner } from './DelegationBanner';
 import { CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from './testData';
 
-const LIST = 'GET /api/approval-delegations';
+const LIST = 'GET /api/v1/approval-delegations';
 
 describe('DelegationBanner (feature 017, US4)', () => {
   it('names each current delegation that concerns the person, one line each (FR-024)', async () => {

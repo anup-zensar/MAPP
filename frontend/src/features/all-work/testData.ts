@@ -393,7 +393,7 @@ export function seedRows(columns: string[] = DEFAULT_COLUMNS): AllWorkRow[] {
   return specs.map((spec) => row(spec, columns));
 }
 
-/** GET /api/all-work for the Grid on the seed story; `overrides` replace whole parts. */
+/** GET /api/v1/all-work for the Grid on the seed story; `overrides` replace whole parts. */
 export function gridResult(overrides: Partial<AllWorkResult> = {}): AllWorkResult {
   const columns = DEFAULT_COLUMNS;
   return {
@@ -436,7 +436,7 @@ export function gridResult(overrides: Partial<AllWorkResult> = {}): AllWorkResul
   };
 }
 
-/** GET /api/all-work answering nothing for the filters. */
+/** GET /api/v1/all-work answering nothing for the filters. */
 export function emptyResult(overrides: Partial<AllWorkResult> = {}): AllWorkResult {
   return gridResult({
     rows: [],
@@ -460,7 +460,7 @@ export function emptyResult(overrides: Partial<AllWorkResult> = {}): AllWorkResu
   });
 }
 
-/** GET /api/all-work/options for 2026. */
+/** GET /api/v1/all-work/options for 2026. */
 export function allWorkOptions(overrides: Partial<AllWorkOptions> = {}): AllWorkOptions {
   return {
     year: 2026,
@@ -529,7 +529,7 @@ export function allWorkOptions(overrides: Partial<AllWorkOptions> = {}): AllWork
   };
 }
 
-/** GET /api/all-work/preferences of someone who never changed the columns. */
+/** GET /api/v1/all-work/preferences of someone who never changed the columns. */
 export function defaultPreferences(): AllWorkPreferences {
   return { columns: [...DEFAULT_COLUMNS], sort: null };
 }
@@ -557,9 +557,9 @@ export function savedView(overrides: Partial<SavedView> = {}): SavedView {
 
 /** The first-visit answers of the page (no saved views, the default preferences). */
 export const PAGE_ANSWERS = {
-  'GET /api/all-work/preferences': { body: defaultPreferences() },
-  'GET /api/all-work/options': { body: allWorkOptions() },
-  'GET /api/saved-views': { body: { items: [], total: 0 } },
+  'GET /api/v1/all-work/preferences': { body: defaultPreferences() },
+  'GET /api/v1/all-work/options': { body: allWorkOptions() },
+  'GET /api/v1/saved-views': { body: { items: [], total: 0 } },
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -592,7 +592,7 @@ function totalOf(byMonth: ByMonth): Money | null {
 }
 
 /**
- * GET /api/all-work for Budget & cost on the seed story (FR-022 – FR-024): Helix launch event runs
+ * GET /api/v1/all-work for Budget & cost on the seed story (FR-022 – FR-024): Helix launch event runs
  * March to May with Venue hire spread evenly and 3,000.00 unassigned; Helix social ads runs April
  * to June with line items 1,000.00 above its planned cost, which is not spread.
  */
@@ -643,7 +643,7 @@ export function budgetResult(period: 'month' | 'quarter' = 'month'): AllWorkResu
 }
 
 /**
- * GET /api/all-work for the Calendar on the seed story (FR-025): the Grid's rows without line
+ * GET /api/v1/all-work for the Calendar on the seed story (FR-025): the Grid's rows without line
  * items and unassigned rows, dated 18 Oct 2026.
  */
 export function calendarResult(overrides: Partial<AllWorkResult> = {}): AllWorkResult {

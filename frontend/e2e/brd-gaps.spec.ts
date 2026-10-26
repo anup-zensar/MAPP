@@ -34,7 +34,7 @@ async function lubricantsAttributes(page: Page): Promise<Record<string, unknown>
   const form = await callApi<{ sections: { attributes: FormAttribute[] }[] }>(
     page,
     'GET',
-    '/api/shell-attribute-forms/activity',
+    '/api/v1/shell-attribute-forms/activity',
   );
   const all = form.sections.flatMap((section) => section.attributes);
   const attribute = (label: string) => {
@@ -90,19 +90,19 @@ async function lubricantsActivity(
 ): Promise<LubricantsActivity> {
   const year = new Date().getUTCFullYear() + 1;
   const [modelId, teamId, ownerId, planForm] = await Promise.all([
-    idOf(page, '/api/models', 'Lubricants 1.0'),
-    idOf(page, '/api/teams', 'Lubricants Europe'),
-    idOf(page, '/api/people', 'Priya Raman'),
+    idOf(page, '/api/v1/models', 'Lubricants 1.0'),
+    idOf(page, '/api/v1/teams', 'Lubricants Europe'),
+    idOf(page, '/api/v1/people', 'Priya Raman'),
     callApi<{
       businessUnitAttributeId: string;
       businessUnitOptions: { id: string; label: string }[];
-    }>(page, 'GET', '/api/shell-attribute-forms/plan'),
+    }>(page, 'GET', '/api/v1/shell-attribute-forms/plan'),
   ]);
   const lubricants = planForm.businessUnitOptions.find((o) => o.label === 'Lubricants');
   if (!lubricants) {
     throw new Error('The plan form has no business unit Lubricants');
   }
-  const plan = await callApi<Named>(page, 'POST', '/api/plans', {
+  const plan = await callApi<Named>(page, 'POST', '/api/v1/plans', {
     name: uniqueName(`${label} plan`),
     year,
     modelId,
@@ -119,7 +119,7 @@ async function lubricantsActivity(
     attributes: { [planForm.businessUnitAttributeId]: [lubricants.id] },
   });
   const wholeYear = { ownerId, startDate: `${year}-01-01`, endDate: `${year}-12-31` };
-  const campaign = await callApi<Named>(page, 'POST', `/api/plans/${plan.id}/campaigns`, {
+  const campaign = await callApi<Named>(page, 'POST', `/api/v1/plans/${plan.id}/campaigns`, {
     name: uniqueName(`${label} campaign`),
     description: '',
     ...wholeYear,
@@ -129,7 +129,7 @@ async function lubricantsActivity(
   const initiative = await callApi<Named>(
     page,
     'POST',
-    `/api/campaigns/${campaign.id}/initiatives`,
+    `/api/v1/campaigns/${campaign.id}/initiatives`,
     {
       name: uniqueName(`${label} initiative`),
       description: '',
@@ -141,7 +141,7 @@ async function lubricantsActivity(
   const form = await callApi<{ activityTypes: Named[]; approvalWorkflows: Named[] }>(
     page,
     'GET',
-    `/api/initiatives/${initiative.id}/activity-form`,
+    `/api/v1/initiatives/${initiative.id}/activity-form`,
   );
   const type = form.activityTypes.find((t) => t.name === 'Content production');
   const workflow = form.approvalWorkflows.find((w) => w.name === STANDARD_WORKFLOW);
@@ -151,7 +151,7 @@ async function lubricantsActivity(
   const activity = await callApi<Named & { version: number }>(
     page,
     'POST',
-    `/api/initiatives/${initiative.id}/activities`,
+    `/api/v1/initiatives/${initiative.id}/activities`,
     {
       name: uniqueName(`${label} activity`),
       externalName: '',
@@ -179,8 +179,8 @@ test('014: an administrator gives a person a role in Settings › Roles and acce
   await signInAs(page, ALEX);
   const name = uniqueName('Access Person');
   const email = `access.${Date.now().toString(36)}@shell.com`;
-  const teamId = await idOf(page, '/api/teams', 'Lubricants Europe');
-  await callApi(page, 'POST', '/api/people', {
+  const teamId = await idOf(page, '/api/v1/teams', 'Lubricants Europe');
+  await callApi(page, 'POST', '/api/v1/people', {
     name,
     email,
     jobTitle: 'Marketer',
@@ -216,7 +216,7 @@ test('014: an administrator gives a person a role in Settings › Roles and acce
 
 test('014: a viewer sees a plan read-only', async ({ page }) => {
   await signInAs(page, SARA);
-  const planId = await idOf(page, '/api/plans', LUBRICANTS_PLAN);
+  const planId = await idOf(page, '/api/v1/plans', LUBRICANTS_PLAN);
 
   await page.goto(`/plans/${planId}`);
   await expect(page.getByRole('heading', { name: LUBRICANTS_PLAN, level: 1 })).toBeVisible();
@@ -233,7 +233,7 @@ test('015: a planner sees an activity’s GSAP financials and the Financials pag
   page,
 }) => {
   await signInAs(page, PRIYA);
-  const planId = await idOf(page, '/api/plans', LUBRICANTS_PLAN);
+  const planId = await idOf(page, '/api/v1/plans', LUBRICANTS_PLAN);
 
   await page.goto(`/plans/${planId}/activities/${SOCIAL_ACTIVITY}`);
   const financials = page.getByRole('region', { name: 'Financials', exact: true });
@@ -269,12 +269,12 @@ test('017: a delegate approves for the approver who is away', async ({ page }) =
   test.slow();
   // Daniel Okoro (Priya's line manager) delegates his approvals to Carlos Mendes for today.
   await signInAs(page, DANIEL);
-  const carlosId = await idOf(page, '/api/people', 'Carlos Mendes');
+  const carlosId = await idOf(page, '/api/v1/people', 'Carlos Mendes');
   const today = new Date().toISOString().slice(0, 10);
   const delegation = await callApi<{ id: string; version: number }>(
     page,
     'POST',
-    '/api/approval-delegations',
+    '/api/v1/approval-delegations',
     { delegateId: carlosId, startDate: today, endDate: today, note: 'End-to-end test' },
   );
 
@@ -282,7 +282,7 @@ test('017: a delegate approves for the approver who is away', async ({ page }) =
     // Priya submits a $30,000.00 activity: it waits for Daniel at level 1.
     await signInAs(page, PRIYA);
     const activity = await lubricantsActivity(page, 'Delegate', '30000.00');
-    await callApi(page, 'POST', `/api/activities/${activity.id}/approval/submit`, {
+    await callApi(page, 'POST', `/api/v1/activities/${activity.id}/approval/submit`, {
       version: activity.version,
       comment: '',
     });
@@ -313,7 +313,7 @@ test('017: a delegate approves for the approver who is away', async ({ page }) =
     ).toBeVisible();
   } finally {
     await signInAs(page, DANIEL);
-    await callApi(page, 'POST', `/api/approval-delegations/${delegation.id}/cancel`, {
+    await callApi(page, 'POST', `/api/v1/approval-delegations/${delegation.id}/cancel`, {
       version: delegation.version,
     });
   }
@@ -348,7 +348,7 @@ test('016: a planner splits an activity in two', async ({ page }) => {
   const activities = await callApi<ListOf<Named & { plannedCost: { amount: string } }>>(
     page,
     'GET',
-    `/api/plans/${records.planId}/activities`,
+    `/api/v1/plans/${records.planId}/activities`,
   );
   const costs = Object.fromEntries(
     activities.items.map((item) => [item.name, item.plannedCost.amount]),
@@ -359,7 +359,11 @@ test('016: a planner splits an activity in two', async ({ page }) => {
 test('016: a global planner allocates part of the global budget to a plan', async ({ page }) => {
   // The demo global budget (Carlos Mendes owns it) and a new plan of Mei's of the same year.
   await signInAs(page, CARLOS);
-  const list = await callApi<ListOf<Named & { year: number }>>(page, 'GET', '/api/global-budgets');
+  const list = await callApi<ListOf<Named & { year: number }>>(
+    page,
+    'GET',
+    '/api/v1/global-budgets',
+  );
   const budget = list.items[0];
   await signInAs(page, MEI);
   const plan = await createPlan(page, 'Allocation', budget.year);
@@ -378,7 +382,7 @@ test('016: a global planner allocates part of the global budget to a plan', asyn
   const saved = await callApi<{ budget: { amount: string; currency: string } | null }>(
     page,
     'GET',
-    `/api/plans/${plan.id}`,
+    `/api/v1/plans/${plan.id}`,
   );
   expect(saved.budget).toEqual({ amount: '25000.00', currency: 'USD' });
 });

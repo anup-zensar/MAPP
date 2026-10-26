@@ -22,7 +22,7 @@ function renderDialog(
   views: SavedView[] = [savedView()],
 ) {
   const api = mockApi({
-    'GET /api/saved-views': { body: { items: views, total: views.length } },
+    'GET /api/v1/saved-views': { body: { items: views, total: views.length } },
     ...answers,
   });
   const onSaved = vi.fn();
@@ -43,7 +43,7 @@ describe('SaveViewDialog (US6)', () => {
       isDefault: true,
     });
     const { api, user, onSaved, onOpenChange } = renderDialog({
-      'POST /api/saved-views': { status: 201, body: saved },
+      'POST /api/v1/saved-views': { status: 201, body: saved },
     });
 
     const dialog = screen.getByRole('dialog', { name: 'Save current view' });
@@ -55,7 +55,7 @@ describe('SaveViewDialog (US6)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save view' }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(saved));
-    expect(api.bodiesOf('POST /api/saved-views')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/saved-views')).toEqual([
       { name: 'Lubricants by month', state: STATE, isDefault: true },
     ]);
     // The dialog stays on screen here (onOpenChange is a stand-in), so the message is found by text.
@@ -77,13 +77,13 @@ describe('SaveViewDialog (US6)', () => {
     expect(name).toHaveAccessibleDescription(
       expect.stringContaining('Use 60 characters or fewer.'),
     );
-    expect(api.bodiesOf('POST /api/saved-views')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/saved-views')).toEqual([]);
   });
 
   it('asks before replacing a view with the same name, ignoring letter case (FR-029)', async () => {
     const existing = savedView();
     const { api, user, onSaved } = renderDialog({
-      'PATCH /api/saved-views/SV-1001': { body: { ...existing, state: STATE } },
+      'PATCH /api/v1/saved-views/SV-1001': { body: { ...existing, state: STATE } },
     });
 
     const dialog = screen.getByRole('dialog', { name: 'Save current view' });
@@ -97,8 +97,8 @@ describe('SaveViewDialog (US6)', () => {
     await user.click(within(question).getByRole('button', { name: 'Replace view' }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
-    expect(api.bodiesOf('PATCH /api/saved-views/SV-1001')).toEqual([{ state: STATE }]);
-    expect(api.bodiesOf('POST /api/saved-views')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/saved-views/SV-1001')).toEqual([{ state: STATE }]);
+    expect(api.bodiesOf('POST /api/v1/saved-views')).toEqual([]);
     expect(await screen.findByText("View 'Declined activities' updated")).toBeInTheDocument();
   });
 
@@ -118,12 +118,14 @@ describe('SaveViewDialog (US6)', () => {
 
   it('shows the API’s refusal at the field (FR-029)', async () => {
     const { user } = renderDialog({
-      'POST /api/saved-views': {
+      'POST /api/v1/saved-views': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: "You already have a view called 'Q4 review'.",
-          fields: [{ field: 'name', message: "You already have a view called 'Q4 review'." }],
+          error: {
+            code: 'validation_failed',
+            message: "You already have a view called 'Q4 review'.",
+            fields: [{ field: 'name', message: "You already have a view called 'Q4 review'." }],
+          },
         },
       },
     });

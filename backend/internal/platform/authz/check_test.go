@@ -48,17 +48,17 @@ func TestRequireIn_Refuses403_FR010(t *testing.T) {
 	}
 }
 
-// Opening a record outside the person's access answers message 4, which names nothing of the record (FR-008).
-func TestRequireView_NoAccessMessage_FR008(t *testing.T) {
+// Opening a record outside the person's access answers 404 like a missing record (022 FR-005).
+func TestRequireView_OutOfScopeIsNotFound_022_FR005(t *testing.T) {
 	ctx := authz.With(context.Background(), grants("U-1004", []string{mobility}, planner))
 
 	err := authz.RequireView(ctx, plan(lubricants), "plan")
 	errActivity := authz.RequireViewActivity(ctx, authz.ActivityFacts{Plan: plan(lubricants)}, "activity")
 
-	if err == nil || err.Error() != "forbidden: You don't have access to this plan. Ask an administrator if you need it." {
+	if err == nil || err.Error() != "not_found: This plan no longer exists — someone may have deleted it." {
 		t.Errorf("RequireView = %v", err)
 	}
-	if errActivity == nil || errActivity.Error() != "forbidden: You don't have access to this activity. Ask an administrator if you need it." {
+	if errActivity == nil || errActivity.Error() != "not_found: This activity no longer exists — someone may have deleted it." {
 		t.Errorf("RequireViewActivity = %v", errActivity)
 	}
 	if err := authz.RequireView(ctx, plan(mobility), "plan"); err != nil {

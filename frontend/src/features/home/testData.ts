@@ -46,7 +46,7 @@ export function summaryOf(overrides: Partial<HomeSummary> = {}): HomeSummary {
 }
 
 /**
- * GET /api/me/display-currencies for a person who shows USD: the active currencies, by code (003
+ * GET /api/v1/me/display-currencies for a person who shows USD: the active currencies, by code (003
  * FR-023). A person whose display currency was set inactive also gets theirs, marked inactive.
  */
 export const DISPLAY_CURRENCIES: DisplayCurrencyOption[] = [
@@ -251,7 +251,7 @@ export function emptyOverview(): FinancialOverview {
 
 /** Every request of Home, answered with a dashboard that has nothing in it yet. */
 export const HOME_ANSWERS: Record<string, MockAnswer> = {
-  'GET /api/home/summary': {
+  'GET /api/v1/home/summary': {
     body: summaryOf({
       plans: { count: 0, published: 0, draft: 0 },
       activitiesOwned: { count: 0, declined: 0, submitted: 0 },
@@ -265,13 +265,13 @@ export const HOME_ANSWERS: Record<string, MockAnswer> = {
       },
     }),
   },
-  'GET /api/home/plans': { body: EMPTY_PAGE },
-  'GET /api/home/attention': { body: EMPTY_PAGE },
-  'GET /api/home/waiting': { body: EMPTY_PAGE },
-  'GET /api/home/my-activities': { body: { groups: [], total: 0 } },
-  'GET /api/home/recent-changes': { body: EMPTY_PAGE },
-  'GET /api/financials/overview': { body: emptyOverview() },
-  'GET /api/me/display-currencies': {
+  'GET /api/v1/home/plans': { body: EMPTY_PAGE },
+  'GET /api/v1/home/attention': { body: EMPTY_PAGE },
+  'GET /api/v1/home/waiting': { body: EMPTY_PAGE },
+  'GET /api/v1/home/my-activities': { body: { groups: [], total: 0 } },
+  'GET /api/v1/home/recent-changes': { body: EMPTY_PAGE },
+  'GET /api/v1/financials/overview': { body: emptyOverview() },
+  'GET /api/v1/me/display-currencies': {
     body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length },
   },
 };

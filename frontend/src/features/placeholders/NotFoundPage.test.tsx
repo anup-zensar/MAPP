@@ -31,7 +31,7 @@ describe('NotFoundPage', () => {
   });
 
   it('is shown inside the app layout to a signed-in person (US2 scenario 6)', async () => {
-    mockApi({ 'GET /api/me': { body: PRIYA } });
+    mockApi({ 'GET /api/v1/me': { body: PRIYA } });
     const { router } = renderRoutes(routes, { route: '/nowhere' });
 
     expect(
@@ -44,9 +44,11 @@ describe('NotFoundPage', () => {
 
   it('is shown in the public layout to a visitor who is not signed in, without a redirect (US2 scenario 6)', async () => {
     mockApi({
-      'GET /api/me': {
+      'GET /api/v1/me': {
         status: 401,
-        body: { code: 'sign_in_required', message: 'Please sign in to continue.', fields: [] },
+        body: {
+          error: { code: 'sign_in_required', message: 'Please sign in to continue.', fields: [] },
+        },
       },
     });
     const { router } = renderRoutes(routes, { route: '/nowhere' });
@@ -61,7 +63,7 @@ describe('NotFoundPage', () => {
   });
 
   it('shows the full-page loading placeholder while the session is checked (plan "Session")', async () => {
-    mockApi({ 'GET /api/me': () => new Promise<never>(() => {}) });
+    mockApi({ 'GET /api/v1/me': () => new Promise<never>(() => {}) });
     renderRoutes(routes, { route: '/nowhere' });
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');

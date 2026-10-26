@@ -37,7 +37,7 @@ export interface CampaignTreeContent {
 
 /**
  * The campaigns and initiatives of a plan for feature 004's plan page (FR-001, FR-012, FR-019 –
- * FR-022): GET /api/plans/{planId}/campaigns as tree rows with feature 006's activity rows under
+ * FR-022): GET /api/v1/plans/{planId}/campaigns as tree rows with feature 006's activity rows under
  * the initiatives, **Add campaign** for the toolbar, the plan row and the empty tree, and the
  * totals row. Every change refreshes the list (refreshPlanning), so the rows follow at once.
  */

@@ -23,7 +23,7 @@ export interface FieldHelp {
  *   const { help } = useFieldHelp();
  *   <MoneyField label="Plan budget" tip={help('plan.budget')} … />
  *
- * All the texts come in one request per page load (GET /api/field-help, asked again when a page
+ * All the texts come in one request per page load (GET /api/v1/field-help, asked again when a page
  * opens), so a text edited in Settings shows on the next form anyone opens (SC-008).
  */
 export function useFieldHelp(): FieldHelp {

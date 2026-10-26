@@ -78,7 +78,7 @@ export const NO_FILTERS: LogFilterState = {
   q: '',
 };
 
-/** What GET /api/activity-log is asked, without paging. */
+/** What GET /api/v1/activity-log is asked, without paging. */
 export type LogApiQuery = Omit<
   NonNullable<operations['listActivityLog']['parameters']['query']>,
   'beforeSeq' | 'limit'
@@ -238,7 +238,7 @@ export interface ChipNames {
   people: ActorRef[];
   recordTypes: RecordTypeCount[];
   plans: RecordRef[];
-  /** The record of the Record filter, as GET /api/activity-log answered it. */
+  /** The record of the Record filter, as GET /api/v1/activity-log answered it. */
   record: RecordRef | null;
   /** Shows a calendar date in the person's format. */
   formatDate: (date: string) => string;

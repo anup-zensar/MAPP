@@ -27,7 +27,7 @@ export interface RenderOptions {
 /**
  * Renders a page or component the way the app does: with the session, server data (TanStack
  * Query), tooltips, messages and a router. The session is known from the start (`user`), so no
- * GET /api/me is needed. `ui` is shown at `path`; the other addresses show stand-in pages, so a
+ * GET /api/v1/me is needed. `ui` is shown at `path`; the other addresses show stand-in pages, so a
  * test can follow a redirect to the sign-in page ("Sign-in page") or to another page ("Another
  * page").
  *
@@ -62,7 +62,7 @@ export function renderWithProviders(
 
 /**
  * Renders the given routes — usually the app's own, `routes` from '@/app/router' — with the same
- * providers as the app. Without `user`, the app asks GET /api/me as on a real page load, so the
+ * providers as the app. Without `user`, the app asks GET /api/v1/me as on a real page load, so the
  * test answers it with mockApi.
  */
 export function renderRoutes(

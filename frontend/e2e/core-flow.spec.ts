@@ -347,7 +347,7 @@ test('B: a declined activity shows the approver and the reason to the planner', 
   });
   const name = records.activityName;
   // Mei submits it (prepared through the API; the screen journey of submitting is test B above).
-  await callApi(page, 'POST', `/api/activities/${records.activityId}/approval/submit`, {
+  await callApi(page, 'POST', `/api/v1/activities/${records.activityId}/approval/submit`, {
     version: records.activityVersion,
     comment: '',
   });
@@ -462,8 +462,8 @@ test('C: Settings — an administrator edits a model, a Shell attribute and a cu
   await expectToast(page, "Currency 'Indian rupee' saved");
   await expect(inrRow).toContainText('1 USD = 84.00 INR');
 
-  const inr = await callApi<{ version: number }>(page, 'GET', '/api/currencies/INR');
-  await callApi(page, 'PATCH', '/api/currencies/INR', { rate: '83.5', version: inr.version });
+  const inr = await callApi<{ version: number }>(page, 'GET', '/api/v1/currencies/INR');
+  await callApi(page, 'PATCH', '/api/v1/currencies/INR', { rate: '83.5', version: inr.version });
 });
 
 test('D: the plan form offers only members of the chosen teams as owner and refuses an owner outside them', async ({

@@ -6,7 +6,8 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// The refusal messages 1–4 of the plan, word for word (FR-010).
+// The refusal messages 1–3 and 22 of the plan and the not-found answer for a record outside the person's
+// access, word for word (FR-010, 022 FR-005).
 func TestRefusal_MessagesWordForWord_FR010(t *testing.T) {
 	sara := grants("U-1006", []string{lubricants, mobility}, viewer)
 	priya := grants("U-1002", []string{lubricants}, planner)
@@ -32,8 +33,8 @@ func TestRefusal_MessagesWordForWord_FR010(t *testing.T) {
 			"Editing plans is allowed for you only in plans of Lubricants Europe, Mobility China. Ask an administrator if you need it here."},
 		{"22 no team", newcomer.Refusal(authz.PlansCreate, &mobilityPlan),
 			"Plans belong to teams, and you are not in a team yet. Ask an administrator to add you to one."},
-		{"4 no access", authz.NoAccessMessage("line item"),
-			"You don't have access to this line item. Ask an administrator if you need it."},
+		{"not found", authz.NotFoundMessage("line item"),
+			"This line item no longer exists — someone may have deleted it."},
 	}
 	for _, tt := range tests {
 		if tt.got != tt.want {

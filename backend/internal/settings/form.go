@@ -91,7 +91,7 @@ func (s *Service) loadForm(ctx context.Context, level Level) (formData, error) {
 }
 
 // Form returns everything a level's form needs to show its Shell attributes (FR-024, GET
-// /api/shell-attribute-forms/{level}): its sections in display order with every attribute, active and
+// /api/v1/shell-attribute-forms/{level}): its sections in display order with every attribute, active and
 // inactive, and every option; and the Business unit attribute's options for condition notes. Every
 // signed-in person may read it (FR-008), so a is not used yet.
 func (s *Service) Form(ctx context.Context, a actor.Actor, level Level) (FormView, error) {
@@ -175,7 +175,7 @@ func (s *Service) CheckAttributes(ctx context.Context, level Level, in Attribute
 	return result, err
 }
 
-// CheckValues answers POST /api/shell-attribute-forms/{level}/check: CheckAttributes for the preview's Try
+// CheckValues answers POST /api/v1/shell-attribute-forms/{level}/check: CheckAttributes for the preview's Try
 // saving, which saves nothing (FR-020). Every signed-in person may use it (FR-008).
 func (s *Service) CheckValues(ctx context.Context, a actor.Actor, level Level, request CheckRequest) (CheckResult, error) {
 	result, err := s.CheckAttributes(ctx, level, AttributeInput{

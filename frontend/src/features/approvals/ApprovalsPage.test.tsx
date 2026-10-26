@@ -53,9 +53,9 @@ const page = (items: ApprovalRow[]) => ({ body: { items, total: items.length } }
 
 function renderPage(route = '/approvals', answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
-    'GET /api/approvals/summary': SUMMARY,
-    'GET /api/approvals': page(ROWS),
-    'GET /api/approval-delegations': NO_DELEGATIONS,
+    'GET /api/v1/approvals/summary': SUMMARY,
+    'GET /api/v1/approvals': page(ROWS),
+    'GET /api/v1/approval-delegations': NO_DELEGATIONS,
     ...answers,
   });
   const rendered = renderWithProviders(<ApprovalsPage />, {
@@ -93,14 +93,14 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
     expect(await screen.findByRole('button', { name: 'Launch film' })).toBeInTheDocument();
     expect(screen.getByText('3 of 3 activities')).toBeInTheDocument();
-    expect(api.requests.find((request) => request.path === '/api/approvals')?.search).toBe(
+    expect(api.requests.find((request) => request.path === '/api/v1/approvals')?.search).toBe(
       '?tab=waiting',
     );
   });
 
   it('switches tabs through the address, keeping the search (FR-029)', async () => {
     const { user, router, api } = renderPage('/approvals', {
-      'GET /api/approvals': (request) =>
+      'GET /api/v1/approvals': (request) =>
         new URL(request.url).searchParams.get('tab') === 'open' ? page(ROWS) : page([ROWS[0]]),
     });
 
@@ -121,7 +121,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
     ['open', 'No activities are waiting for approval.'],
     ['decided', "You haven't approved or declined any activities yet."],
   ])('says when the %s tab is empty', async (tab, text) => {
-    renderPage(`/approvals?tab=${tab}`, { 'GET /api/approvals': page([]) });
+    renderPage(`/approvals?tab=${tab}`, { 'GET /api/v1/approvals': page([]) });
 
     expect(await screen.findByText(text)).toBeInTheDocument();
   });
@@ -175,7 +175,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
   it('opens the preview from a row, through the address (FR-032)', async () => {
     const { user, router } = renderPage('/approvals', {
-      'GET /api/approvals/activities/A-1042': { body: previewOf() },
+      'GET /api/v1/approvals/activities/A-1042': { body: previewOf() },
     });
 
     await user.click(await screen.findByRole('button', { name: 'Launch film' }));
@@ -186,7 +186,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
   it('?activity= opens the preview at once', async () => {
     renderPage('/approvals?tab=waiting&activity=A-1042', {
-      'GET /api/approvals/activities/A-1042': { body: previewOf() },
+      'GET /api/v1/approvals/activities/A-1042': { body: previewOf() },
     });
 
     const preview = await screen.findByRole('dialog', { name: 'Launch film' });
@@ -198,9 +198,9 @@ describe('ApprovalsPage (feature 008, US3)', () => {
       activity: { ...previewOf().activity, id: 'A-1043', name: 'Spring radio' },
     });
     const { user, router } = renderPage('/approvals?activity=A-1042', {
-      'GET /api/approvals/activities/A-1042': { body: previewOf() },
-      'GET /api/approvals/activities/A-1043': { body: next },
-      'POST /api/activities/A-1042/approval/approve': {
+      'GET /api/v1/approvals/activities/A-1042': { body: previewOf() },
+      'GET /api/v1/approvals/activities/A-1043': { body: next },
+      'POST /api/v1/activities/A-1042/approval/approve': {
         body: approvalOf({ status: 'approved', rounds: [roundOf({ outcome: 'approved' })] }),
       },
     });
@@ -219,7 +219,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
   it('says when the rows could not be loaded, with Try again', async () => {
     let calls = 0;
     const { user } = renderPage('/approvals', {
-      'GET /api/approvals': () => {
+      'GET /api/v1/approvals': () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : page(ROWS);
       },
@@ -232,7 +232,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 
   it('opens All open when nothing waits for the person (UI audit AP-03)', async () => {
     const { api } = renderPage('/approvals', {
-      'GET /api/approvals/summary': {
+      'GET /api/v1/approvals/summary': {
         body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
       },
     });
@@ -242,17 +242,17 @@ describe('ApprovalsPage (feature 008, US3)', () => {
       'true',
     );
     await screen.findByRole('button', { name: 'Launch film' });
-    expect(api.requests.filter((request) => request.path === '/api/approvals')).toEqual([
+    expect(api.requests.filter((request) => request.path === '/api/v1/approvals')).toEqual([
       expect.objectContaining({ search: '?tab=open' }),
     ]);
   });
 
   it('keeps the tab the address names, even when nothing waits (UI audit AP-03)', async () => {
     renderPage('/approvals?tab=waiting', {
-      'GET /api/approvals/summary': {
+      'GET /api/v1/approvals/summary': {
         body: { waitingForMe: 0, allOpen: 3, approvedThisMonth: 0, declinedThisMonth: 0 },
       },
-      'GET /api/approvals': page([]),
+      'GET /api/v1/approvals': page([]),
     });
 
     expect(
@@ -268,7 +268,7 @@ describe('ApprovalsPage (feature 008, US3)', () => {
 describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
   it('opens Monitoring as the fourth tab, without search or filters (FR-030)', async () => {
     const { user, api } = renderPage('/approvals?tab=waiting', {
-      'GET /api/approvals/monitoring': { body: monitoringOf() },
+      'GET /api/v1/approvals/monitoring': { body: monitoringOf() },
     });
     await screen.findByRole('row', { name: /Launch film/ });
 
@@ -277,7 +277,7 @@ describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
     expect(await screen.findByText('Average time to decision')).toBeInTheDocument();
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Filters/ })).not.toBeInTheDocument();
-    expect(api.requests.some((r) => r.path === '/api/approvals/monitoring')).toBe(true);
+    expect(api.requests.some((r) => r.path === '/api/v1/approvals/monitoring')).toBe(true);
   });
 
   it('opens the delegation panel from Delegate my approvals, through the address (FR-024)', async () => {
@@ -295,7 +295,7 @@ describe('ApprovalsPage rules (feature 017, US4 and US6)', () => {
 
   it('says above the cards who approves for whom today (FR-024)', async () => {
     renderPage('/approvals', {
-      'GET /api/approval-delegations': {
+      'GET /api/v1/approval-delegations': {
         body: {
           items: [
             delegationOf({ person: PRIYA, delegate: CARLOS, state: 'current' }),

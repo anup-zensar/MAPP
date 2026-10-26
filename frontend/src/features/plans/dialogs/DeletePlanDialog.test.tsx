@@ -7,7 +7,7 @@ import { plan } from '../testData';
 import { DeletePlanDialog } from './DeletePlanDialog';
 
 function renderDialog(target: Plan) {
-  mockApi({ 'GET /api/plans/P-1001': { body: target } });
+  mockApi({ 'GET /api/v1/plans/P-1001': { body: target } });
   const onDelete = vi.fn();
   const result = renderWithProviders(
     <DeletePlanDialog

@@ -12,11 +12,11 @@ import { formatRate } from '@/lib/decimal';
 export type RateUsed = components['schemas']['RateUsed'];
 type RateSource = components['schemas']['RateSource'];
 
-/** The current rate of every currency, with its date and source (GET /api/exchange-rates/current). */
+/** The current rate of every currency, with its date and source (GET /api/v1/exchange-rates/current). */
 export function useCurrentRates(enabled = true) {
   return useQuery({
     queryKey: ['exchange-rates', 'current'],
-    queryFn: () => call(api.GET('/api/exchange-rates/current')),
+    queryFn: () => call(api.GET('/api/v1/exchange-rates/current')),
     // Rates change at most once a day; a rate save or import asks again (016 plan).
     staleTime: 5 * 60_000,
     enabled,
@@ -53,7 +53,7 @@ export function rateText(rate: RateFacts, date: (day: string) => string): string
   return `${head} · today's rate in Settings`;
 }
 
-/** The current rate of a currency from GET /api/exchange-rates/current, as RateFacts. */
+/** The current rate of a currency from GET /api/v1/exchange-rates/current, as RateFacts. */
 export function factsOf(rate: RateUsed): RateFacts {
   return {
     code: rate.currency,

@@ -14,7 +14,7 @@ export function useApprovalSummary() {
   return useQuery({
     queryKey: ['approvals-summary', monthStart],
     queryFn: () =>
-      call(api.GET('/api/approvals/summary', { params: { query: { monthStart, monthEnd } } })),
+      call(api.GET('/api/v1/approvals/summary', { params: { query: { monthStart, monthEnd } } })),
     refetchInterval: POLL_MS,
   });
 }

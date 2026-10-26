@@ -14,10 +14,10 @@ configure({ asyncUtilTimeout: 10_000 });
 
 function openNewForm(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
-    'GET /api/initiatives/I-1001/activity-form': { body: newForm() },
-    'GET /api/people': { body: PEOPLE },
-    'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'POST /api/initiatives/I-1001/activities': { status: 201, body: launchFilm() },
+    'GET /api/v1/initiatives/I-1001/activity-form': { body: newForm() },
+    'GET /api/v1/people': { body: PEOPLE },
+    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
+    'POST /api/v1/initiatives/I-1001/activities': { status: 201, body: launchFilm() },
     ...answers,
   });
   const rendered = renderWithProviders(<ActivityFormPage mode="new" />, {
@@ -31,16 +31,16 @@ function openNewForm(answers: Record<string, MockHandler> = {}) {
 // The edit form's dates say what a change does to the line items' spreads (feature 007's
 // SpreadEffectNote), which reads the activity's line items: here it has none.
 const NO_LINE_ITEMS = {
-  'GET /api/activities/A-1042/line-items': { body: launchFilmSection({ items: [] }) },
+  'GET /api/v1/activities/A-1042/line-items': { body: launchFilmSection({ items: [] }) },
 };
 
 function openEditForm(activity: Activity) {
   const api = mockApi({
-    'GET /api/activities/A-1042': { body: activity },
-    'GET /api/activities/A-1042/form': { body: editForm() },
-    'GET /api/people': { body: PEOPLE },
-    'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'PATCH /api/activities/A-1042': { body: activity },
+    'GET /api/v1/activities/A-1042': { body: activity },
+    'GET /api/v1/activities/A-1042/form': { body: editForm() },
+    'GET /api/v1/people': { body: PEOPLE },
+    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
+    'PATCH /api/v1/activities/A-1042': { body: activity },
     ...NO_LINE_ITEMS,
   });
   const rendered = renderWithProviders(<ActivityFormPage mode="edit" />, {
@@ -68,7 +68,7 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
 
   it('says that more attributes appear once the plan has a business unit, with a link to the plan (FR-014)', async () => {
     openNewForm({
-      'GET /api/initiatives/I-1001/activity-form': {
+      'GET /api/v1/initiatives/I-1001/activity-form': {
         body: newForm({
           context: { ...newForm().context, businessUnits: [] },
         }),
@@ -107,7 +107,7 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText("Activity 'Launch film' created")).toBeVisible();
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/activities')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/activities')).toEqual([
       expect.objectContaining({
         attributes: {
           'SA-1013': [
@@ -139,11 +139,11 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
       name: 'Clear values that no longer fit?',
     });
     expect(question).toHaveTextContent('Region: RETAIL – CHINA');
-    expect(api.bodiesOf('PATCH /api/activities/A-1042')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([]);
     await user.click(within(question).getByRole('button', { name: 'Clear and save' }));
 
     expect(await screen.findByText("Activity 'Launch film' saved")).toBeVisible();
-    expect(api.bodiesOf('PATCH /api/activities/A-1042')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([
       expect.objectContaining({
         attributes: { 'SA-CLUSTER': 'SO-B2B', 'SA-REGION': 'SO-CHINA' },
       }),
@@ -158,7 +158,7 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText("Activity 'Launch film' saved")).toBeVisible();
-    expect(api.bodiesOf('PATCH /api/activities/A-1042')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([
       expect.objectContaining({ attributes: { 'SA-FLEET': 'FC-2207' } }),
     ]);
   });
@@ -172,7 +172,7 @@ describe('ActivityFormPage, Shell attributes and goals (feature 006, US3)', () =
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText("Activity 'Launch film' created")).toBeVisible();
-    expect(api.bodiesOf('POST /api/initiatives/I-1001/activities')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/initiatives/I-1001/activities')).toEqual([
       expect.objectContaining({
         goals: { inq: 250000, setLaterStagesMyself: false, mql: null, revenue: null },
       }),

@@ -119,12 +119,11 @@ func TestRun_RefusesInProduction_FR028(t *testing.T) {
 // running API would overwrite the new files from its memory (FR-028, research R22).
 func TestRun_RefusesWhileTheAPIIsRunning_FR028(t *testing.T) {
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/health" {
+		if r.URL.Path != "/healthz" {
 			http.NotFound(w, r)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","environment":"local","demoSignIn":true}`))
+		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer api.Close()
 	port := strconv.Itoa(api.Listener.Addr().(*net.TCPAddr).Port)
@@ -142,7 +141,7 @@ func TestRun_RefusesWhileTheAPIIsRunning_FR028(t *testing.T) {
 	}
 }
 
-// Another program on APP_PORT that answers /api/health with a web page and 200 OK, as a single-page app
+// Another program on APP_PORT that answers /healthz with a web page and 200 OK, as a single-page app
 // does for every path, is not a MAPP API: the seed goes on (FR-028).
 func TestRun_IgnoresAnotherProgramOnThePort_FR028(t *testing.T) {
 	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

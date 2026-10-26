@@ -10,10 +10,12 @@ import { testUser } from '@/test/users';
 import type { CurrentUser } from './useSession';
 
 const FORBIDDEN = {
-  code: 'forbidden',
-  message:
-    "Changing activities and line items isn't part of your role (Viewer). Ask an administrator if you need it.",
-  fields: [],
+  error: {
+    code: 'forbidden',
+    message:
+      "Changing activities and line items isn't part of your role (Viewer). Ask an administrator if you need it.",
+    fields: [],
+  },
 };
 
 /** Sara Novak while she is a Viewer, and after an administrator made her a Planner. */
@@ -45,7 +47,9 @@ function ChangePage() {
   async function change() {
     try {
       await call(
-        api.DELETE('/api/activities/{activityId}', { params: { path: { activityId: 'A-1001' } } }),
+        api.DELETE('/api/v1/activities/{activityId}', {
+          params: { path: { activityId: 'A-1001' } },
+        }),
       );
     } catch (error) {
       setFailure(error instanceof ApiError ? `${error.kind}: ${error.message}` : 'other');
@@ -65,18 +69,20 @@ function ChangePage() {
 describe('SessionProvider after a 403', () => {
   it('reloads the person’s access when a call is refused by their roles (feature 014, FR-020)', async () => {
     const mocked = mockApi({
-      'DELETE /api/activities/A-1001': { status: 403, body: FORBIDDEN },
-      'GET /api/me': { body: PLANNER },
+      'DELETE /api/v1/activities/A-1001': { status: 403, body: FORBIDDEN },
+      'GET /api/v1/me': { body: PLANNER },
     });
     const { user } = renderWithProviders(<ChangePage />, { user: VIEWER });
     expect(screen.getByText('View only')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent(`forbidden: ${FORBIDDEN.message}`);
-    await waitFor(() => expect(screen.getByText('May change activities')).toBeInTheDocument());
-    expect(mocked.requests.filter((r) => r.method === 'GET' && r.path === '/api/me')).toHaveLength(
-      1,
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      `forbidden: ${FORBIDDEN.error.message}`,
     );
+    await waitFor(() => expect(screen.getByText('May change activities')).toBeInTheDocument());
+    expect(
+      mocked.requests.filter((r) => r.method === 'GET' && r.path === '/api/v1/me'),
+    ).toHaveLength(1);
   });
 });

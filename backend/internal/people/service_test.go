@@ -474,7 +474,7 @@ func TestUpdatePreferences_HomeScope_FR003(t *testing.T) {
 	}
 	user, _ := service.CurrentUser(t.Context(), priya.Actor())
 	if user.Preferences.HomeScope != "everything" {
-		t.Errorf("GET /api/me home scope = %q, want everything (remembered)", user.Preferences.HomeScope)
+		t.Errorf("GET /api/v1/me home scope = %q, want everything (remembered)", user.Preferences.HomeScope)
 	}
 
 	back, err := service.UpdatePreferences(t.Context(), priya.Actor(), PreferencesUpdate{HomeScope: &myTeams})
@@ -522,7 +522,7 @@ func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) {
 	}
 	user, _ = service.CurrentUser(t.Context(), priya.Actor())
 	if !user.Preferences.HistoryIncludeInside {
-		t.Error("GET /api/me historyIncludeInside = false, want true (remembered)")
+		t.Error("GET /api/v1/me historyIncludeInside = false, want true (remembered)")
 	}
 	if stored, _ := storedPreferences(t, db, priya.ID); !stored.HistoryIncludeInside || stored.Theme != "system" {
 		t.Errorf("stored preferences = %+v, want historyIncludeInside true and the other defaults", stored)
@@ -531,7 +531,7 @@ func TestUpdatePreferences_HistoryIncludeInside_FR012(t *testing.T) {
 
 // Pinned plans are a display preference like the theme (018 FR-004, D-038, D-317): empty — never null —
 // until the person pins, kept per person in the order pinned (unknown ids included: a deleted plan's id is
-// harmless, 018 FR-007), shown by GET /api/me from any browser, and never written to the activity log.
+// harmless, 018 FR-007), shown by GET /api/v1/me from any browser, and never written to the activity log.
 func TestUpdatePreferences_PinnedPlans_RoundTrip_FR004(t *testing.T) {
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -553,7 +553,7 @@ func TestUpdatePreferences_PinnedPlans_RoundTrip_FR004(t *testing.T) {
 	}
 	user, _ = f.service.CurrentUser(t.Context(), priya.Actor())
 	if !slices.Equal(user.Preferences.PinnedPlanIDs, want) {
-		t.Errorf("GET /api/me pinned plans = %q, want %q (remembered)", user.Preferences.PinnedPlanIDs, want)
+		t.Errorf("GET /api/v1/me pinned plans = %q, want %q (remembered)", user.Preferences.PinnedPlanIDs, want)
 	}
 	if daniels, _ := f.service.CurrentUser(t.Context(), daniel.Actor()); len(daniels.Preferences.PinnedPlanIDs) != 0 {
 		t.Errorf("Daniel's pinned plans = %q after Priya pinned, want none", daniels.Preferences.PinnedPlanIDs)

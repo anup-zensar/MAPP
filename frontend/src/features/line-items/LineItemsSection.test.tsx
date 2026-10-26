@@ -15,8 +15,8 @@ import {
   usd,
 } from './testData';
 
-const SECTION = 'GET /api/activities/A-1001/line-items';
-const FINANCIALS = 'GET /api/financials/records/A-1001';
+const SECTION = 'GET /api/v1/activities/A-1001/line-items';
+const FINANCIALS = 'GET /api/v1/financials/records/A-1001';
 
 function renderSection(
   answer: MockHandler,
@@ -85,7 +85,7 @@ describe('LineItemsSection (US1)', () => {
   it('shows "—" in the GSAP columns when the figures cannot be read', async () => {
     renderSection({ body: launchFilmSection() }, undefined, {
       status: 409,
-      body: { code: 'not_allowed', message: 'Not allowed', fields: [] },
+      body: { error: { code: 'not_allowed', message: 'Not allowed', fields: [] } },
     });
 
     const table = await screen.findByRole('table', { name: 'Line items' });
@@ -277,8 +277,8 @@ describe('LineItemsSection (US1)', () => {
     mockApi({
       [SECTION]: { body: launchFilmSection() },
       [FINANCIALS]: { body: activityRecord() },
-      'GET /api/financials/records/L-1001': { body: lineItemRecord() },
-      'DELETE /api/line-items/L-1001': { body: deleteResult() },
+      'GET /api/v1/financials/records/L-1001': { body: lineItemRecord() },
+      'DELETE /api/v1/line-items/L-1001': { body: deleteResult() },
     });
     const { user, router } = renderWithProviders(<LineItemsSection activityId="A-1001" />, {
       route: '/plans/P-1001/activities/A-1001',
@@ -319,9 +319,11 @@ describe('LineItemsSection (US1)', () => {
         ? {
             status: 500,
             body: {
-              code: 'internal_error',
-              message: 'Something went wrong. Please try again.',
-              fields: [],
+              error: {
+                code: 'internal_error',
+                message: 'Something went wrong. Please try again.',
+                fields: [],
+              },
             },
           }
         : { body: launchFilmSection() },

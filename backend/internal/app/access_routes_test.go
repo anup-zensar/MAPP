@@ -34,8 +34,8 @@ func TestEveryOperationHasAnAccessRule_SC001(t *testing.T) {
 	}
 }
 
-// The public operations are exactly the four the contract serves without a session, and only they (FR-010).
-func TestPublicRules_OnlyTheFourWithoutSession_FR010(t *testing.T) {
+// The public operations are exactly the six the contract serves without a session, and only they (FR-010).
+func TestPublicRules_OnlyTheSixWithoutSession_FR010(t *testing.T) {
 	var public []string
 	for _, op := range contractOperations(t) {
 		rule, _ := access.RuleFor(op.route)
@@ -49,7 +49,8 @@ func TestPublicRules_OnlyTheFourWithoutSession_FR010(t *testing.T) {
 			t.Errorf("%s: a %s rule without a permission", op.route, rule.Kind)
 		}
 	}
-	want := []string{"GET /api/health", "GET /api/auth/demo-people", "POST /api/auth/sign-in", "POST /api/auth/sign-out"}
+	want := []string{"GET /healthz", "GET /readyz", "GET /api/v1/environment", "GET /api/v1/auth/demo-people",
+		"POST /api/v1/auth/sign-in", "POST /api/v1/auth/sign-out"}
 	if !slices.Equal(public, want) {
 		t.Errorf("public operations = %q, want %q", public, want)
 	}

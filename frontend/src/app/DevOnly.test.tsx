@@ -5,8 +5,8 @@ import { renderRoutes } from '@/test/render';
 import { DevOnly } from './DevOnly';
 import type { PageHandle } from './RequireSignIn';
 
-const HEALTH_LOCAL = { status: 'ok', environment: 'local', demoSignIn: true };
-const HEALTH_PRODUCTION = { status: 'ok', environment: 'production', demoSignIn: false };
+const ENVIRONMENT_LOCAL = { environment: 'local', demoSignIn: true };
+const ENVIRONMENT_PRODUCTION = { environment: 'production', demoSignIn: false };
 
 const UNREACHABLE =
   "MAPP can't reach its server right now. Check that it is running and try again.";
@@ -31,7 +31,7 @@ function renderDeveloperPage() {
 
 describe('DevOnly', () => {
   it('shows the developer page where demo sign-in is on: local and development (research R23)', async () => {
-    mockApi({ 'GET /api/health': { body: HEALTH_LOCAL } });
+    mockApi({ 'GET /api/v1/environment': { body: ENVIRONMENT_LOCAL } });
     renderDeveloperPage();
 
     expect(
@@ -40,7 +40,7 @@ describe('DevOnly', () => {
   });
 
   it('shows "Page not found" where demo sign-in is off (FR-009, D-036)', async () => {
-    mockApi({ 'GET /api/health': { body: HEALTH_PRODUCTION } });
+    mockApi({ 'GET /api/v1/environment': { body: ENVIRONMENT_PRODUCTION } });
     renderDeveloperPage();
 
     expect(
@@ -51,7 +51,7 @@ describe('DevOnly', () => {
   });
 
   it('shows a loading placeholder, with the page’s name in the tab, while it asks the API (FR-017)', async () => {
-    mockApi({ 'GET /api/health': () => new Promise<never>(() => {}) });
+    mockApi({ 'GET /api/v1/environment': () => new Promise<never>(() => {}) });
     renderDeveloperPage();
 
     expect(await screen.findByRole('status')).toHaveTextContent('Loading…');
@@ -61,8 +61,10 @@ describe('DevOnly', () => {
   it('says when the API cannot be reached, and shows the page after Try again (FR-020)', async () => {
     let checks = 0;
     mockApi({
-      'GET /api/health': () =>
-        ++checks === 1 ? Promise.reject(new TypeError('Failed to fetch')) : { body: HEALTH_LOCAL },
+      'GET /api/v1/environment': () =>
+        ++checks === 1
+          ? Promise.reject(new TypeError('Failed to fetch'))
+          : { body: ENVIRONMENT_LOCAL },
     });
     const { user } = renderDeveloperPage();
 

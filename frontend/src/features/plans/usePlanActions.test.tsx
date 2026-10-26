@@ -48,22 +48,24 @@ async function choose(
 const NOT_READY = {
   status: 409,
   body: {
-    code: 'not_ready',
-    message: 'Publish needs 3 fields',
-    fields: [],
-    missing: [
-      {
-        record: { type: 'plan', id: 'P-1002', name: 'FY2026 Mobility China' },
-        fields: [{ field: 'attributes.SA-BU', label: 'Business unit' }],
-      },
-      {
-        record: { type: 'campaign', id: 'C-1001', name: 'Retail growth' },
-        fields: [
-          { field: 'attributes.SA-CLUSTER', label: 'Cluster' },
-          { field: 'attributes.SA-REGION', label: 'Region' },
-        ],
-      },
-    ],
+    error: {
+      code: 'not_ready',
+      message: 'Publish needs 3 fields',
+      fields: [],
+      missing: [
+        {
+          record: { type: 'plan', id: 'P-1002', name: 'FY2026 Mobility China' },
+          fields: [{ field: 'attributes.SA-BU', label: 'Business unit' }],
+        },
+        {
+          record: { type: 'campaign', id: 'C-1001', name: 'Retail growth' },
+          fields: [
+            { field: 'attributes.SA-CLUSTER', label: 'Cluster' },
+            { field: 'attributes.SA-REGION', label: 'Region' },
+          ],
+        },
+      ],
+    },
   },
 };
 
@@ -71,9 +73,11 @@ function reasonProblem(message: string) {
   return {
     status: 400,
     body: {
-      code: 'validation_failed',
-      message: 'Some fields need your attention.',
-      fields: [{ field: 'reason', message }],
+      error: {
+        code: 'validation_failed',
+        message: 'Some fields need your attention.',
+        fields: [{ field: 'reason', message }],
+      },
     },
   };
 }
@@ -94,7 +98,7 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
 
   it('publishes a complete Draft plan (US5#1)', async () => {
     const { user, api } = renderActions(CHINA, {
-      'POST /api/plans/P-1002/publish': {
+      'POST /api/v1/plans/P-1002/publish': {
         body: plan({ id: 'P-1002', name: 'FY2026 Mobility China', status: 'published' }),
       },
     });
@@ -102,11 +106,13 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
     await choose(user, CHINA.name, 'Publish');
 
     expect(await screen.findByText("Plan 'FY2026 Mobility China' published")).toBeInTheDocument();
-    expect(api.requests.filter((r) => r.path === '/api/plans/P-1002/publish')).toHaveLength(1);
+    expect(api.requests.filter((r) => r.path === '/api/v1/plans/P-1002/publish')).toHaveLength(1);
   });
 
   it('lists every missing field, grouped by record, with links (US5#2, FR-024)', async () => {
-    const { user, router } = renderActions(CHINA, { 'POST /api/plans/P-1002/publish': NOT_READY });
+    const { user, router } = renderActions(CHINA, {
+      'POST /api/v1/plans/P-1002/publish': NOT_READY,
+    });
 
     await choose(user, CHINA.name, 'Publish');
 
@@ -129,7 +135,7 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
   });
 
   it('closes the blocked dialog with Close', async () => {
-    const { user } = renderActions(CHINA, { 'POST /api/plans/P-1002/publish': NOT_READY });
+    const { user } = renderActions(CHINA, { 'POST /api/v1/plans/P-1002/publish': NOT_READY });
 
     await choose(user, CHINA.name, 'Publish');
     await user.click(await screen.findByRole('button', { name: 'Close' }));
@@ -140,7 +146,7 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
   it('asks why before unpublishing and shows the API’s problems with the reason (US5#3, FR-025)', async () => {
     let calls = 0;
     const { user, api } = renderActions(PUBLISHED, {
-      'POST /api/plans/P-1003/unpublish': () => {
+      'POST /api/v1/plans/P-1003/unpublish': () => {
         calls += 1;
         if (calls === 1) return reasonProblem('Enter a reason.');
         if (calls === 2) return reasonProblem('Use 500 characters or fewer.');
@@ -175,7 +181,7 @@ describe('usePlanActions: publish and unpublish (US5, FR-024, FR-025)', () => {
     expect(
       await screen.findByText("Plan 'FY2025 Lubricants Europe' unpublished — it's a Draft again"),
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/plans/P-1003/unpublish')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/plans/P-1003/unpublish')).toEqual([
       { reason: '' },
       { reason: 'x'.repeat(501) },
       { reason: 'Budget is being reworked.' },
@@ -194,8 +200,8 @@ const COPY_OPTIONS = {
 describe('usePlanActions: copy (US6#1–2, FR-026 – FR-028)', () => {
   it('copies into the next year and opens the copy with its messages and notes (US6#2)', async () => {
     const { user, api, router } = renderActions(PUBLISHED, {
-      'GET /api/plans/P-1003/copy-options': { body: COPY_OPTIONS },
-      'POST /api/plans/P-1003/copy': {
+      'GET /api/v1/plans/P-1003/copy-options': { body: COPY_OPTIONS },
+      'POST /api/v1/plans/P-1003/copy': {
         status: 201,
         body: {
           plan: plan({ id: 'P-1004', name: 'FY2026 Lubricants Europe', year: 2026 }),
@@ -223,7 +229,7 @@ describe('usePlanActions: copy (US6#1–2, FR-026 – FR-028)', () => {
     expect(
       screen.getByText('Default finance budget cleared — it belonged to 2025.'),
     ).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/plans/P-1003/copy')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/plans/P-1003/copy')).toEqual([
       { name: 'FY2026 Lubricants Europe', year: 2026, includeContents: true },
     ]);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -233,14 +239,16 @@ describe('usePlanActions: copy (US6#1–2, FR-026 – FR-028)', () => {
     const gone = {
       status: 404,
       body: {
-        code: 'not_found',
-        message: 'This plan no longer exists — someone may have deleted it.',
-        fields: [],
+        error: {
+          code: 'not_found',
+          message: 'This plan no longer exists — someone may have deleted it.',
+          fields: [],
+        },
       },
     };
     const { user, router } = renderActions(PUBLISHED, {
-      'GET /api/plans/P-1003/copy-options': { body: COPY_OPTIONS },
-      'POST /api/plans/P-1003/copy': gone,
+      'GET /api/v1/plans/P-1003/copy-options': { body: COPY_OPTIONS },
+      'POST /api/v1/plans/P-1003/copy': gone,
     });
 
     await choose(user, PUBLISHED.name, 'Copy');
@@ -255,7 +263,7 @@ describe('usePlanActions: copy (US6#1–2, FR-026 – FR-028)', () => {
 
   it('starts from the suggestion again each time it opens', async () => {
     const { user } = renderActions(CHINA, {
-      'GET /api/plans/P-1002/copy-options': {
+      'GET /api/v1/plans/P-1002/copy-options': {
         body: { ...COPY_OPTIONS, name: 'FY2026 Mobility China (copy)', sameYear: 2026 },
       },
     });
@@ -291,11 +299,11 @@ const DELETED = {
 describe('usePlanActions: delete with Undo (US6, FR-029, FR-030)', () => {
   it('deletes after the question, offers Undo, and Undo brings the plan back (US6#4)', async () => {
     const { user, api, router } = renderActions(PUBLISHED, {
-      'GET /api/plans/P-1003': {
+      'GET /api/v1/plans/P-1003': {
         body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
       },
-      'DELETE /api/plans/P-1003': { body: DELETED },
-      'POST /api/recycle-bin/RB-1001/undo': {
+      'DELETE /api/v1/plans/P-1003': { body: DELETED },
+      'POST /api/v1/recycle-bin/RB-1001/undo': {
         body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
       },
     });
@@ -318,21 +326,23 @@ describe('usePlanActions: delete with Undo (US6, FR-029, FR-030)', () => {
 
     expect(await screen.findByText("Plan 'FY2025 Lubricants Europe' restored")).toBeInTheDocument();
     expect(api.requests.map((request) => `${request.method} ${request.path}`)).toContain(
-      'POST /api/recycle-bin/RB-1001/undo',
+      'POST /api/v1/recycle-bin/RB-1001/undo',
     );
   });
 
   it('says so when the plan is already gone', async () => {
     const { user } = renderActions(PUBLISHED, {
-      'GET /api/plans/P-1003': {
+      'GET /api/v1/plans/P-1003': {
         body: plan({ id: 'P-1003', name: PUBLISHED.name, status: 'published' }),
       },
-      'DELETE /api/plans/P-1003': {
+      'DELETE /api/v1/plans/P-1003': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This plan no longer exists — someone may have deleted it.',
-          fields: [],
+          error: {
+            code: 'not_found',
+            message: 'This plan no longer exists — someone may have deleted it.',
+            fields: [],
+          },
         },
       },
     });

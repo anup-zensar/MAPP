@@ -19,30 +19,30 @@ func NewHandler(s *Service) *Handler {
 
 // Routes registers the people and team routes on r. All of them need a signed-in person, so all are
 // wrapped in signedIn. The handlers of people are in people_handler.go, those of teams in teams_handler.go.
-// There is no DELETE /api/people/{personId}: people are never deleted (FR-008).
+// There is no DELETE /api/v1/people/{personId}: people are never deleted (FR-008).
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/me", signedIn(h.currentUser))
-	r.Handle("PATCH /api/me", signedIn(h.updateProfile))
-	r.Handle("PATCH /api/me/preferences", signedIn(h.updatePreferences))
-	r.Handle("GET /api/me/display-currencies", signedIn(h.listDisplayCurrencies))
+	r.Handle("GET /api/v1/me", signedIn(h.currentUser))
+	r.Handle("PATCH /api/v1/me", signedIn(h.updateProfile))
+	r.Handle("PATCH /api/v1/me/preferences", signedIn(h.updatePreferences))
+	r.Handle("GET /api/v1/me/display-currencies", signedIn(h.listDisplayCurrencies))
 
-	r.Handle("GET /api/people", signedIn(h.listPeople))
-	r.Handle("POST /api/people", signedIn(h.createPerson))
-	r.Handle("GET /api/people/{personId}", signedIn(h.getPerson))
-	r.Handle("PATCH /api/people/{personId}", signedIn(h.updatePerson))
-	r.Handle("POST /api/people/{personId}/impact", signedIn(h.checkPersonImpact))
-	r.Handle("POST /api/people/{personId}/status", signedIn(h.setPersonStatus))
+	r.Handle("GET /api/v1/people", signedIn(h.listPeople))
+	r.Handle("POST /api/v1/people", signedIn(h.createPerson))
+	r.Handle("GET /api/v1/people/{personId}", signedIn(h.getPerson))
+	r.Handle("PATCH /api/v1/people/{personId}", signedIn(h.updatePerson))
+	r.Handle("POST /api/v1/people/{personId}/impact", signedIn(h.checkPersonImpact))
+	r.Handle("POST /api/v1/people/{personId}/status", signedIn(h.setPersonStatus))
 
-	r.Handle("GET /api/teams", signedIn(h.listTeams))
-	r.Handle("POST /api/teams", signedIn(h.createTeam))
-	r.Handle("GET /api/teams/{teamId}", signedIn(h.getTeam))
-	r.Handle("PATCH /api/teams/{teamId}", signedIn(h.updateTeam))
-	r.Handle("DELETE /api/teams/{teamId}", signedIn(h.deleteTeam))
-	r.Handle("POST /api/teams/{teamId}/impact", signedIn(h.checkTeamImpact))
-	r.Handle("POST /api/teams/{teamId}/status", signedIn(h.setTeamStatus))
+	r.Handle("GET /api/v1/teams", signedIn(h.listTeams))
+	r.Handle("POST /api/v1/teams", signedIn(h.createTeam))
+	r.Handle("GET /api/v1/teams/{teamId}", signedIn(h.getTeam))
+	r.Handle("PATCH /api/v1/teams/{teamId}", signedIn(h.updateTeam))
+	r.Handle("DELETE /api/v1/teams/{teamId}", signedIn(h.deleteTeam))
+	r.Handle("POST /api/v1/teams/{teamId}/impact", signedIn(h.checkTeamImpact))
+	r.Handle("POST /api/v1/teams/{teamId}/status", signedIn(h.setTeamStatus))
 }
 
-// currentUser answers GET /api/me: who is signed in, with their preferences.
+// currentUser answers GET /api/v1/me: who is signed in, with their preferences.
 func (h *Handler) currentUser(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	user, err := h.service.CurrentUser(r.Context(), a)
@@ -53,7 +53,7 @@ func (h *Handler) currentUser(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, user)
 }
 
-// updateProfile answers PATCH /api/me: My profile changes the signed-in person's name and job title, and the
+// updateProfile answers PATCH /api/v1/me: My profile changes the signed-in person's name and job title, and the
 // answer is the signed-in person after the change.
 func (h *Handler) updateProfile(w http.ResponseWriter, r *http.Request) {
 	var update ProfileUpdate
@@ -70,7 +70,7 @@ func (h *Handler) updateProfile(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, user)
 }
 
-// listDisplayCurrencies answers GET /api/me/display-currencies: the currencies the signed-in person can
+// listDisplayCurrencies answers GET /api/v1/me/display-currencies: the currencies the signed-in person can
 // choose to show amounts in.
 func (h *Handler) listDisplayCurrencies(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
@@ -82,7 +82,7 @@ func (h *Handler) listDisplayCurrencies(w http.ResponseWriter, r *http.Request) 
 	web.WriteJSON(w, http.StatusOK, DisplayCurrencyPage{Items: options, Total: len(options)})
 }
 
-// updatePreferences answers PATCH /api/me/preferences: it changes the preferences that were sent and
+// updatePreferences answers PATCH /api/v1/me/preferences: it changes the preferences that were sent and
 // answers all of them.
 func (h *Handler) updatePreferences(w http.ResponseWriter, r *http.Request) {
 	var update PreferencesUpdate

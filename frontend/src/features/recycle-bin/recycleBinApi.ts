@@ -15,7 +15,7 @@ const BIN_KEY = ['recycle-bin'];
 export function useRecycleBin() {
   return useQuery({
     queryKey: BIN_KEY,
-    queryFn: () => call(api.GET('/api/recycle-bin')),
+    queryFn: () => call(api.GET('/api/v1/recycle-bin')),
   });
 }
 
@@ -25,7 +25,7 @@ export function useRestorePreview(entryId: string, enabled = true) {
     queryKey: ['recycle-bin', 'preview', entryId],
     queryFn: () =>
       call(
-        api.GET('/api/recycle-bin/{entryId}/restore-preview', { params: { path: { entryId } } }),
+        api.GET('/api/v1/recycle-bin/{entryId}/restore-preview', { params: { path: { entryId } } }),
       ),
     enabled,
     staleTime: 0,
@@ -39,7 +39,7 @@ export function useRestore() {
   return useMutation({
     mutationFn: ({ entryId, withParents }: { entryId: string; withParents: boolean }) =>
       call(
-        api.POST('/api/recycle-bin/{entryId}/restore', {
+        api.POST('/api/v1/recycle-bin/{entryId}/restore', {
           params: { path: { entryId }, query: { withParents } },
         }),
       ),
@@ -52,7 +52,7 @@ export function usePurge() {
   const refreshAll = useRefreshAll();
   return useMutation({
     mutationFn: (entryId: string) =>
-      call(api.DELETE('/api/recycle-bin/{entryId}', { params: { path: { entryId } } })),
+      call(api.DELETE('/api/v1/recycle-bin/{entryId}', { params: { path: { entryId } } })),
     onSettled: refreshAll,
   });
 }
@@ -62,7 +62,7 @@ export function useEmptyBin() {
   const refreshAll = useRefreshAll();
   return useMutation({
     mutationFn: (entryIds: string[]) =>
-      call(api.POST('/api/recycle-bin/empty', { body: { entryIds } })),
+      call(api.POST('/api/v1/recycle-bin/empty', { body: { entryIds } })),
     onSettled: refreshAll,
   });
 }

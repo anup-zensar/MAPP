@@ -10,7 +10,7 @@ import type { ModelFormMode } from './ModelForm';
 
 function renderForm(mode: ModelFormMode, answers: Record<string, MockHandler> = {}) {
   const onClose = vi.fn();
-  const api = mockApi({ 'GET /api/activity-types': { body: ACTIVITY_TYPES }, ...answers });
+  const api = mockApi({ 'GET /api/v1/activity-types': { body: ACTIVITY_TYPES }, ...answers });
   const rendered = renderWithProviders(
     <ModelForm mode={mode} onView={vi.fn()} onClose={onClose} />,
     { user: testUser() },
@@ -91,7 +91,7 @@ describe('ModelForm (FR-009, FR-010)', () => {
     const { user } = renderForm(
       { kind: 'new' },
       {
-        'GET /api/activity-types': () => {
+        'GET /api/v1/activity-types': () => {
           calls += 1;
           return calls === 1 ? Promise.reject(new TypeError('offline')) : { body: ACTIVITY_TYPES };
         },

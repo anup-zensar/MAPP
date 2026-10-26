@@ -33,9 +33,9 @@ func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	r := allWorkOf(t, priya, "/api/all-work?yearFrom=2026&yearTo=2027&view=budget&period=year&comparePhased=true")
-	gbp := allWorkOf(t, priya, "/api/all-work?yearFrom=2026&yearTo=2027&planCurrency=GBP&planType=crossMarket")
-	tooLong := priya.Do(t, http.MethodGet, "/api/all-work?yearFrom=2026&yearTo=2031", nil)
+	r := allWorkOf(t, priya, "/api/v1/all-work?yearFrom=2026&yearTo=2027&view=budget&period=year&comparePhased=true")
+	gbp := allWorkOf(t, priya, "/api/v1/all-work?yearFrom=2026&yearTo=2027&planCurrency=GBP&planType=crossMarket")
+	tooLong := priya.Do(t, http.MethodGet, "/api/v1/all-work?yearFrom=2026&yearTo=2031", nil)
 
 	years := map[string]int{}
 	var uk allwork.Row
@@ -70,8 +70,8 @@ func TestGetAllWork_RangeYearlyCompare_Contract_FR034(t *testing.T) {
 	if !slices.Equal(gbpPlans, []string{"P-1004"}) || gbp.Summary.PlannedCost == nil || gbp.Summary.PlannedCost.Format() != "82,278.48 USD" {
 		t.Errorf("GBP Cross-market plans %v, planned %v", gbpPlans, gbp.Summary.PlannedCost)
 	}
-	assertAnswer(t, tooLong, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"yearTo","message":"Choose at most 5 years."}]}`)
+	assertAnswer(t, tooLong, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"yearTo","message":"Choose at most 5 years."}]}}`)
 }
 
 // The Breakdown of a filter set: its groups, its totals equal to the Planned cost card, the plan's own currency
@@ -80,11 +80,11 @@ func TestGetBreakdown_Contract_FR040(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	byYear := priya.Do(t, http.MethodGet, "/api/all-work/breakdown?yearFrom=2026&yearTo=2027&by=year&thenBy=planCurrency", nil)
-	card := allWorkOf(t, priya, "/api/all-work?yearFrom=2026&yearTo=2027")
-	inGBP := priya.Do(t, http.MethodGet, "/api/all-work/breakdown?year=2027&plan=P-1004&by=planType&amountsIn=plan", nil)
-	noGrouping := priya.Do(t, http.MethodGet, "/api/all-work/breakdown?yearFrom=2026", nil)
-	several := priya.Do(t, http.MethodGet, "/api/all-work/breakdown?yearFrom=2026&yearTo=2027&by=plan&amountsIn=plan", nil)
+	byYear := priya.Do(t, http.MethodGet, "/api/v1/all-work/breakdown?yearFrom=2026&yearTo=2027&by=year&thenBy=planCurrency", nil)
+	card := allWorkOf(t, priya, "/api/v1/all-work?yearFrom=2026&yearTo=2027")
+	inGBP := priya.Do(t, http.MethodGet, "/api/v1/all-work/breakdown?year=2027&plan=P-1004&by=planType&amountsIn=plan", nil)
+	noGrouping := priya.Do(t, http.MethodGet, "/api/v1/all-work/breakdown?yearFrom=2026", nil)
+	several := priya.Do(t, http.MethodGet, "/api/v1/all-work/breakdown?yearFrom=2026&yearTo=2027&by=plan&amountsIn=plan", nil)
 
 	if byYear.Status != http.StatusOK {
 		t.Fatalf("breakdown by year = %d %s", byYear.Status, byYear.Body)
@@ -107,10 +107,10 @@ func TestGetBreakdown_Contract_FR040(t *testing.T) {
 		plan.Groups[0].PlannedCost.Format() != "65,000.00 GBP" || plan.Groups[0].Budget == nil || plan.Groups[0].Budget.Format() != "600,000.00 GBP" {
 		t.Errorf("P-1004 in GBP = %d %s", inGBP.Status, inGBP.Body)
 	}
-	assertAnswer(t, noGrouping, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"by","message":"Choose what to break down by."}]}`)
-	assertAnswer(t, several, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"amountsIn","message":"Choose one plan to show amounts in its currency."}]}`)
+	assertAnswer(t, noGrouping, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"by","message":"Choose what to break down by."}]}}`)
+	assertAnswer(t, several, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"amountsIn","message":"Choose one plan to show amounts in its currency."}]}}`)
 }
 
 // The export of the Breakdown view holds its group table, and "About this export" states the range and the
@@ -119,8 +119,8 @@ func TestExport_Breakdown_FR043(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	csv := priya.Do(t, http.MethodGet, "/api/all-work/export?format=csv&view=breakdown&by=plan&yearFrom=2026&yearTo=2027", nil)
-	noGrouping := priya.Do(t, http.MethodGet, "/api/all-work/export?format=csv&view=breakdown", nil)
+	csv := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=csv&view=breakdown&by=plan&yearFrom=2026&yearTo=2027", nil)
+	noGrouping := priya.Do(t, http.MethodGet, "/api/v1/all-work/export?format=csv&view=breakdown", nil)
 
 	body := string(csv.Body)
 	if csv.Status != http.StatusOK ||
@@ -143,9 +143,9 @@ func TestGetOptions_RangeTypesCurrenciesAttributes_Contract_FR037_FR039(t *testi
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/all-work/options?yearFrom=2026&yearTo=2027", nil)
-	oneYear := priya.Do(t, http.MethodGet, "/api/all-work/options?year=2026", nil)
-	tooLong := priya.Do(t, http.MethodGet, "/api/all-work/options?yearFrom=2026&yearTo=2031", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/all-work/options?yearFrom=2026&yearTo=2027", nil)
+	oneYear := priya.Do(t, http.MethodGet, "/api/v1/all-work/options?year=2026", nil)
+	tooLong := priya.Do(t, http.MethodGet, "/api/v1/all-work/options?yearFrom=2026&yearTo=2031", nil)
 
 	if response.Status != http.StatusOK {
 		t.Fatalf("GET options = %d %s", response.Status, response.Body)
@@ -187,6 +187,6 @@ func TestGetOptions_RangeTypesCurrenciesAttributes_Contract_FR037_FR039(t *testi
 	if yesNo == nil || len(yesNo.Values) != 2 || yesNo.Values[0].Label != "Yes" || yesNo.Values[1].Label != "No" {
 		t.Errorf("yes/no attribute = %+v", yesNo)
 	}
-	assertAnswer(t, tooLong, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"yearTo","message":"Choose at most 5 years."}]}`)
+	assertAnswer(t, tooLong, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"yearTo","message":"Choose at most 5 years."}]}}`)
 }

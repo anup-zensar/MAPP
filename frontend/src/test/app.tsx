@@ -8,18 +8,18 @@ import { renderRoutes } from './render';
 import { testUser } from './users';
 
 /**
- * Opens the whole app at `path` as a signed-in person, as a page load does: GET /api/me answers
+ * Opens the whole app at `path` as a signed-in person, as a page load does: GET /api/v1/me answers
  * `user` (testUser() by default), and `answers` are the page's own requests. Returns what
  * renderRoutes returns, plus the fake API.
  *
- *   const { api } = renderApp('/plans', { 'GET /api/plans': { body: plans } });
+ *   const { api } = renderApp('/plans', { 'GET /api/v1/plans': { body: plans } });
  */
 export function renderApp(
   path: string,
   answers: Record<string, MockHandler> = {},
   user: CurrentUser = testUser(),
 ) {
-  const api = mockApi({ 'GET /api/me': { body: user }, ...answers });
+  const api = mockApi({ 'GET /api/v1/me': { body: user }, ...answers });
   return { ...renderRoutes(routes, { route: path }), api };
 }
 

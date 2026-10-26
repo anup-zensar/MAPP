@@ -11,8 +11,8 @@ const NO_ROWS = { body: { items: [], total: 0 } };
 describe('Approvals routes (feature 008)', () => {
   it('opens /approvals, with Approvals current in the sidebar', async () => {
     renderApp('/approvals', {
-      'GET /api/approvals': NO_ROWS,
-      'GET /api/approval-delegations': NO_DELEGATIONS,
+      'GET /api/v1/approvals': NO_ROWS,
+      'GET /api/v1/approval-delegations': NO_DELEGATIONS,
     });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Approvals' })).toBeInTheDocument();
@@ -21,7 +21,7 @@ describe('Approvals routes (feature 008)', () => {
   });
 
   it('opens /settings/approval-workflows, with Settings current in the sidebar', async () => {
-    renderApp('/settings/approval-workflows', { 'GET /api/approval-workflows': NO_ROWS });
+    renderApp('/settings/approval-workflows', { 'GET /api/v1/approval-workflows': NO_ROWS });
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Approval workflows' }),
@@ -32,8 +32,8 @@ describe('Approvals routes (feature 008)', () => {
 
   it('opens /settings/approval-workflows/WF-1001 with the details panel over the list', async () => {
     renderApp('/settings/approval-workflows/WF-1001', {
-      'GET /api/approval-workflows': NO_ROWS,
-      'GET /api/approval-workflows/WF-1001': { body: detailsOf() },
+      'GET /api/v1/approval-workflows': NO_ROWS,
+      'GET /api/v1/approval-workflows/WF-1001': { body: detailsOf() },
     });
 
     expect(

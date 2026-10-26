@@ -26,7 +26,7 @@ export const WORKFLOWS_KEY = ['approval-workflows'];
 export function useWorkflows() {
   return useQuery({
     queryKey: WORKFLOWS_KEY,
-    queryFn: () => call(api.GET('/api/approval-workflows')),
+    queryFn: () => call(api.GET('/api/v1/approval-workflows')),
   });
 }
 
@@ -46,7 +46,7 @@ export function useWorkflowDetails(workflowId: string) {
 export function useRuleOptions(enabled = true) {
   return useQuery({
     queryKey: ['approval-rule-options'],
-    queryFn: () => call(api.GET('/api/approval-rule-options')),
+    queryFn: () => call(api.GET('/api/v1/approval-rule-options')),
     staleTime: 5 * 60_000,
     enabled,
   });
@@ -68,7 +68,7 @@ export async function fetchLatestWorkflow(
 export function useCreateWorkflow() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: (body: WorkflowCreate) => call(api.POST('/api/approval-workflows', { body })),
+    mutationFn: (body: WorkflowCreate) => call(api.POST('/api/v1/approval-workflows', { body })),
     onSettled: refresh,
   });
 }
@@ -79,7 +79,7 @@ export function useUpdateWorkflow() {
   return useMutation({
     mutationFn: ({ id, changes }: { id: string; changes: WorkflowUpdate }) =>
       call(
-        api.PATCH('/api/approval-workflows/{workflowId}', {
+        api.PATCH('/api/v1/approval-workflows/{workflowId}', {
           params: { path: { workflowId: id } },
           body: changes,
         }),
@@ -96,8 +96,8 @@ export function useSetWorkflowActive() {
       const request = { params: { path: { workflowId: id } }, body: { version } };
       return call(
         active
-          ? api.POST('/api/approval-workflows/{workflowId}/activate', request)
-          : api.POST('/api/approval-workflows/{workflowId}/deactivate', request),
+          ? api.POST('/api/v1/approval-workflows/{workflowId}/activate', request)
+          : api.POST('/api/v1/approval-workflows/{workflowId}/deactivate', request),
       );
     },
     onSettled: refresh,
@@ -110,7 +110,7 @@ export function useDeleteWorkflow() {
   return useMutation({
     mutationFn: (id: string) =>
       call(
-        api.DELETE('/api/approval-workflows/{workflowId}', {
+        api.DELETE('/api/v1/approval-workflows/{workflowId}', {
           params: { path: { workflowId: id } },
         }),
       ),
@@ -120,7 +120,7 @@ export function useDeleteWorkflow() {
 
 function fetchDetails(workflowId: string) {
   return call(
-    api.GET('/api/approval-workflows/{workflowId}', { params: { path: { workflowId } } }),
+    api.GET('/api/v1/approval-workflows/{workflowId}', { params: { path: { workflowId } } }),
   );
 }
 

@@ -33,7 +33,7 @@ describe('ThemeToggle', () => {
 
   it('turns the whole app dark at once and saves the choice for the person (FR-014, US2 scenario 5)', async () => {
     const api = mockApi({
-      'PATCH /api/me/preferences': { body: { theme: 'dark', sidebarCollapsed: false } },
+      'PATCH /api/v1/me/preferences': { body: { theme: 'dark', sidebarCollapsed: false } },
     });
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA });
 
@@ -42,19 +42,19 @@ describe('ThemeToggle', () => {
     await waitFor(() => expect(shownTheme()).toBe('dark'));
     expect(screen.getByRole('button', { name: 'Switch to light mode' })).toBeInTheDocument();
     // Only the changed preference is sent.
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ theme: 'dark' }]);
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ theme: 'dark' }]);
   });
 
   it('switches a person in dark mode back to light (FR-014)', async () => {
     const api = mockApi({
-      'PATCH /api/me/preferences': { body: { theme: 'light', sidebarCollapsed: false } },
+      'PATCH /api/v1/me/preferences': { body: { theme: 'light', sidebarCollapsed: false } },
     });
     const { user } = renderWithProviders(<ThemeToggle />, { user: PRIYA_IN_DARK });
 
     await user.click(screen.getByRole('button', { name: 'Switch to light mode' }));
 
     await waitFor(() => expect(shownTheme()).toBe('light'));
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ theme: 'light' }]);
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ theme: 'light' }]);
   });
 
   it('changes only this browser’s choice when nobody is signed in (research R16)', async () => {
@@ -71,14 +71,16 @@ describe('ThemeToggle', () => {
   it('keeps the new choice and offers Try again when it cannot be saved (plan "Preferences and theme")', async () => {
     let saves = 0;
     const api = mockApi({
-      'PATCH /api/me/preferences': () =>
+      'PATCH /api/v1/me/preferences': () =>
         ++saves === 1
           ? {
               status: 500,
               body: {
-                code: 'internal_error',
-                message: 'Something went wrong on our side. Please try again.',
-                fields: [],
+                error: {
+                  code: 'internal_error',
+                  message: 'Something went wrong on our side. Please try again.',
+                  fields: [],
+                },
               },
             }
           : { body: { theme: 'dark', sidebarCollapsed: false } },
@@ -94,7 +96,7 @@ describe('ThemeToggle', () => {
     await user.click(within(messages).getByRole('button', { name: 'Try again' }));
 
     await waitFor(() =>
-      expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([
+      expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([
         { theme: 'dark' },
         { theme: 'dark' },
       ]),
@@ -103,9 +105,9 @@ describe('ThemeToggle', () => {
 
   it('leaves a lost session to the sign-in page, without a message (US4 scenario 2)', async () => {
     mockApi({
-      'PATCH /api/me/preferences': {
+      'PATCH /api/v1/me/preferences': {
         status: 401,
-        body: { code: 'session_expired', message: 'Please sign in again', fields: [] },
+        body: { error: { code: 'session_expired', message: 'Please sign in again', fields: [] } },
       },
     });
     const { user, router } = renderWithProviders(<ThemeToggle />, {

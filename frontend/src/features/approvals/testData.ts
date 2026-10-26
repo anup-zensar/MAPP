@@ -242,7 +242,7 @@ export function delegationOf(overrides: Partial<Delegation> = {}): Delegation {
   };
 }
 
-/** GET /api/approval-delegations without any delegation. */
+/** GET /api/v1/approval-delegations without any delegation. */
 export const NO_DELEGATIONS = { body: { items: [], total: 0, canManageOthers: false } };
 
 /** The monitoring figures: one overdue approval of "Launch film", waiting 6 days at level 1. */

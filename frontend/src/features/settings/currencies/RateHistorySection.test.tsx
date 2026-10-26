@@ -13,7 +13,7 @@ import { EUR_CURRENT, EUR_FUTURE, EUR_ONLY_CURRENT, EUR_RATES } from './rateTest
 const NO_IMPACT = { body: { warnings: [] } };
 
 function renderHistory(answers: Record<string, MockHandler> = {}) {
-  const api = mockApi({ 'GET /api/currencies/EUR/rates': { body: EUR_RATES }, ...answers });
+  const api = mockApi({ 'GET /api/v1/currencies/EUR/rates': { body: EUR_RATES }, ...answers });
   const rendered = renderWithProviders(<RateHistorySection code="EUR" />, { user: testUser() });
   return { ...rendered, api };
 }
@@ -56,7 +56,7 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
 
   it('moves a rate to the recycle bin with Undo', async () => {
     const { user, api } = renderHistory({
-      'DELETE /api/exchange-rates/XR-1101': {
+      'DELETE /api/v1/exchange-rates/XR-1101': {
         body: deleted('Exchange rate', 'XR-1101', 'EUR, 18 Oct 2026'),
       },
     });
@@ -76,7 +76,7 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
 
   it('refuses to delete the last rate dated today or earlier, and says why (US1-5)', async () => {
     const { user, api } = renderHistory({
-      'GET /api/currencies/EUR/rates': { body: EUR_ONLY_CURRENT },
+      'GET /api/v1/currencies/EUR/rates': { body: EUR_ONLY_CURRENT },
     });
     await screen.findByRole('table');
 
@@ -102,8 +102,8 @@ describe('RateHistorySection (016 FR-001, FR-003)', () => {
 describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
   it('adds a rate dated today, with the rate both ways while it is typed', async () => {
     const { user, api } = renderHistory({
-      'POST /api/currencies/EUR/rates/impact': NO_IMPACT,
-      'POST /api/currencies/EUR/rates': {
+      'POST /api/v1/currencies/EUR/rates/impact': NO_IMPACT,
+      'POST /api/v1/currencies/EUR/rates': {
         status: 201,
         body: { ...EUR_CURRENT, id: 'XR-1104', date: localDate(new Date()), rate: '0.93' },
       },
@@ -118,7 +118,7 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save rate' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(api.bodiesOf('POST /api/currencies/EUR/rates')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/currencies/EUR/rates')).toEqual([
       { date: localDate(new Date()), rate: '0.93' },
     ]);
     expect(await within(await findMessages()).findByText(/^Rate of EUR on .* saved$/)).toBeTruthy();
@@ -140,7 +140,7 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
     const plans =
       '2 plans are planned in EUR. Their EUR amounts stay the same; their USD values change (1,304,347.83 → 1,263,157.89 USD).';
     const { user, api } = renderHistory({
-      'POST /api/currencies/EUR/rates/impact': {
+      'POST /api/v1/currencies/EUR/rates/impact': {
         body: {
           warnings: [
             { kind: 'amountsRecalculated', message: impact, count: 14 },
@@ -148,7 +148,7 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
           ],
         },
       },
-      'POST /api/currencies/EUR/rates': { status: 201, body: { ...EUR_CURRENT, rate: '0.95' } },
+      'POST /api/v1/currencies/EUR/rates': { status: 201, body: { ...EUR_CURRENT, rate: '0.95' } },
     });
     await screen.findByRole('table');
 
@@ -162,18 +162,18 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
     expect(question).toHaveTextContent(plans);
     await user.click(within(question).getByRole('button', { name: 'Keep editing' }));
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/currencies/EUR/rates')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/currencies/EUR/rates')).toEqual([]);
 
     await user.click(within(dialog).getByRole('button', { name: 'Save rate' }));
     await user.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Save rate' }),
     );
-    await waitFor(() => expect(api.bodiesOf('POST /api/currencies/EUR/rates')).toHaveLength(1));
+    await waitFor(() => expect(api.bodiesOf('POST /api/v1/currencies/EUR/rates')).toHaveLength(1));
   });
 
   it('shows the problems the API finds under their fields', async () => {
     const { user } = renderHistory({
-      'POST /api/currencies/EUR/rates/impact': {
+      'POST /api/v1/currencies/EUR/rates/impact': {
         status: 400,
         body: validationFailed([
           { field: 'date', message: 'EUR already has a rate on 19 Oct 2026. Edit that one.' },
@@ -197,8 +197,8 @@ describe('RateDialog: Add rate (016 FR-003, FR-005)', () => {
 describe('RateDialog: Edit (016 FR-003)', () => {
   it("keeps the rate's date and saves the rate with its version", async () => {
     const { user, api } = renderHistory({
-      'POST /api/exchange-rates/XR-1103/impact': NO_IMPACT,
-      'PATCH /api/exchange-rates/XR-1103': { body: { ...EUR_FUTURE, rate: '0.96', version: 2 } },
+      'POST /api/v1/exchange-rates/XR-1103/impact': NO_IMPACT,
+      'PATCH /api/v1/exchange-rates/XR-1103': { body: { ...EUR_FUTURE, rate: '0.96', version: 2 } },
     });
     await screen.findByRole('table');
 
@@ -212,7 +212,7 @@ describe('RateDialog: Edit (016 FR-003)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save rate' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(api.bodiesOf('PATCH /api/exchange-rates/XR-1103')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/exchange-rates/XR-1103')).toEqual([
       { rate: '0.96', version: 1 },
     ]);
   });
@@ -222,13 +222,13 @@ describe('RateDialog: Edit (016 FR-003)', () => {
     const savedByDaniel = { ...EUR_FUTURE, version: 2 };
     const { user, api } = renderHistory({
       // Once Daniel has saved, the stored rate is at version 2.
-      'GET /api/currencies/EUR/rates': () => ({
+      'GET /api/v1/currencies/EUR/rates': () => ({
         body: conflicted
           ? { ...EUR_RATES, items: [savedByDaniel, ...EUR_RATES.items.slice(1)] }
           : EUR_RATES,
       }),
-      'POST /api/exchange-rates/XR-1103/impact': NO_IMPACT,
-      'PATCH /api/exchange-rates/XR-1103': () => {
+      'POST /api/v1/exchange-rates/XR-1103/impact': NO_IMPACT,
+      'PATCH /api/v1/exchange-rates/XR-1103': () => {
         if (!conflicted) {
           conflicted = true;
           return { status: 409, body: versionConflict() };
@@ -253,7 +253,7 @@ describe('RateDialog: Edit (016 FR-003)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save rate' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(api.bodiesOf('PATCH /api/exchange-rates/XR-1103')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/exchange-rates/XR-1103')).toEqual([
       { rate: '0.97', version: 1 },
       { rate: '0.97', version: 2 },
     ]);

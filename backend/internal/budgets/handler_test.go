@@ -28,8 +28,8 @@ const (
 )
 
 const (
-	budgetGoneBody     = `{"code":"not_found","message":"This global budget no longer exists — someone may have deleted it.","fields":[]}`
-	allocationGoneBody = `{"code":"not_found","message":"This allocation no longer exists — someone may have removed it.","fields":[]}`
+	budgetGoneBody     = `{"error":{"code":"not_found","message":"This global budget no longer exists — someone may have deleted it.","fields":[]}}`
+	allocationGoneBody = `{"error":{"code":"not_found","message":"This allocation no longer exists — someone may have removed it.","fields":[]}}`
 )
 
 // The Global budgets list of 2026 has the demo global budget with its four totals; 2027 has none; the years
@@ -38,10 +38,10 @@ func TestListGlobalBudgets_200_FR036(t *testing.T) {
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 
-	of2026 := carlos.Do(t, http.MethodGet, "/api/global-budgets?year=2026", nil)
-	of2027 := carlos.Do(t, http.MethodGet, "/api/global-budgets?year=2027", nil)
-	every := carlos.Do(t, http.MethodGet, "/api/global-budgets", nil)
-	refused := carlos.Do(t, http.MethodGet, "/api/global-budgets?year=next", nil, apitest.SkipRequestValidation())
+	of2026 := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets?year=2026", nil)
+	of2027 := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets?year=2027", nil)
+	every := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets", nil)
+	refused := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets?year=next", nil, apitest.SkipRequestValidation())
 
 	var page budgets.Page
 	decode(t, of2026, http.StatusOK, &page)
@@ -59,8 +59,8 @@ func TestListGlobalBudgets_200_FR036(t *testing.T) {
 	if page.Total != 1 {
 		t.Errorf("every year = %s", every.Body)
 	}
-	assertAnswer(t, refused, http.StatusBadRequest, `{"code":"validation_failed","message":"Some fields need your attention.",`+
-		`"fields":[{"field":"year","message":"Choose a year such as 2026."}]}`)
+	assertAnswer(t, refused, http.StatusBadRequest, `{"error":{"code":"validation_failed","message":"Some fields need your attention.",`+
+		`"fields":[{"field":"year","message":"Choose a year such as 2026."}]}}`)
 }
 
 // The global budget page (US6 scenario 1): Global budget 2,500,000.00 USD, Allocated 2,000,000.00,
@@ -71,8 +71,8 @@ func TestGetGlobalBudget_200_404_FR032(t *testing.T) {
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 
-	found := carlos.Do(t, http.MethodGet, "/api/global-budgets/GB-1001", nil)
-	gone := carlos.Do(t, http.MethodGet, "/api/global-budgets/GB-9999", nil)
+	found := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets/GB-1001", nil)
+	gone := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets/GB-9999", nil)
 
 	var view budgets.GlobalBudgetView
 	decode(t, found, http.StatusOK, &view)
@@ -120,8 +120,8 @@ func TestCreateGlobalBudget_201_400_FR029(t *testing.T) {
 	body := map[string]any{"name": "FY2027 Global brand budget", "year": 2027, "amount": usd("900000.00"), "ownerId": "U-1005",
 		"description": "For the global brand plan."}
 
-	created := carlos.Do(t, http.MethodPost, "/api/global-budgets", body)
-	refused := carlos.Do(t, http.MethodPost, "/api/global-budgets", map[string]any{
+	created := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets", body)
+	refused := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets", map[string]any{
 		"name": "fy2026 global marketing budget", "year": 2033, "amount": usd("-5.00"), "ownerId": "",
 	})
 
@@ -152,18 +152,18 @@ func TestUpdateGlobalBudget_200_409_404_FR029(t *testing.T) {
 	carlos := server.SignIn(t, carlosEmail)
 	server.Advance(90 * time.Minute)
 
-	saved := carlos.Do(t, http.MethodPatch, "/api/global-budgets/GB-1001", map[string]any{"amount": usd("2600000.00"), "version": 1})
-	stale := carlos.Do(t, http.MethodPatch, "/api/global-budgets/GB-1001", map[string]any{"name": "Old", "version": 1})
-	gone := carlos.Do(t, http.MethodPatch, "/api/global-budgets/GB-9999", map[string]any{"version": 1})
+	saved := carlos.Do(t, http.MethodPatch, "/api/v1/global-budgets/GB-1001", map[string]any{"amount": usd("2600000.00"), "version": 1})
+	stale := carlos.Do(t, http.MethodPatch, "/api/v1/global-budgets/GB-1001", map[string]any{"name": "Old", "version": 1})
+	gone := carlos.Do(t, http.MethodPatch, "/api/v1/global-budgets/GB-9999", map[string]any{"version": 1})
 
 	assertFields(t, saved, http.StatusOK, map[string]any{
 		"amount": usd("2600000.00"), "version": 2, "updatedAt": "2026-03-12T10:30:00Z",
 		"updatedBy": map[string]any{"id": "U-1005", "name": "Carlos Mendes"},
 	})
-	assertAnswer(t, stale, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Carlos Mendes changed this global budget",`+
-		`"fields":[],"conflict":{"changedBy":"Carlos Mendes","changedAt":"2026-03-12T10:30:00Z"}}`)
+	assertAnswer(t, stale, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Carlos Mendes changed this global budget",`+
+		`"fields":[],"conflict":{"changedBy":"Carlos Mendes","changedAt":"2026-03-12T10:30:00Z"}}}`)
 	assertAnswer(t, gone, http.StatusNotFound, budgetGoneBody)
-	log := carlos.Do(t, http.MethodGet, "/api/activity-log?recordType=globalBudget&recordId=GB-1001", nil)
+	log := carlos.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=globalBudget&recordId=GB-1001", nil)
 	var page history.LogPage
 	decode(t, log, http.StatusOK, &page)
 	if page.Total != 1 || changesText(page.Items[0].Changes) != "Amount: 2,500,000.00 USD → 2,600,000.00 USD" {
@@ -176,25 +176,25 @@ func TestUpdateGlobalBudget_200_409_404_FR029(t *testing.T) {
 func TestDeleteGlobalBudget_409_200_404_FR035(t *testing.T) {
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
-	created := carlos.Do(t, http.MethodPost, "/api/global-budgets", map[string]any{
+	created := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets", map[string]any{
 		"name": "Spare", "year": 2026, "amount": usd("1.00"), "ownerId": "U-1005",
 	})
 	if created.Status != http.StatusCreated {
 		t.Fatalf("create = %d %s", created.Status, created.Body)
 	}
 
-	inUse := carlos.Do(t, http.MethodDelete, "/api/global-budgets/GB-1001", nil)
-	deleted := carlos.Do(t, http.MethodDelete, "/api/global-budgets/GB-1002", nil)
-	gone := carlos.Do(t, http.MethodGet, "/api/global-budgets/GB-1002", nil)
+	inUse := carlos.Do(t, http.MethodDelete, "/api/v1/global-budgets/GB-1001", nil)
+	deleted := carlos.Do(t, http.MethodDelete, "/api/v1/global-budgets/GB-1002", nil)
+	gone := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets/GB-1002", nil)
 
-	assertAnswer(t, inUse, http.StatusConflict, `{"code":"in_use","message":"'FY2026 Global marketing budget' has allocations to 2 plans. Remove them first.","fields":[]}`)
+	assertAnswer(t, inUse, http.StatusConflict, `{"error":{"code":"in_use","message":"'FY2026 Global marketing budget' has allocations to 2 plans. Remove them first.","fields":[]}}`)
 	var result history.DeleteResult
 	decode(t, deleted, http.StatusOK, &result)
 	if result.RecycleBinEntry.RecordType != "globalBudget" || result.RecycleBinEntry.RecordName != "Spare" {
 		t.Errorf("delete = %s", deleted.Body)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, budgetGoneBody)
-	assertAnswer(t, carlos.Do(t, http.MethodDelete, "/api/global-budgets/GB-1002", nil), http.StatusNotFound, budgetGoneBody)
+	assertAnswer(t, carlos.Do(t, http.MethodDelete, "/api/v1/global-budgets/GB-1002", nil), http.StatusNotFound, budgetGoneBody)
 }
 
 // The Allocate dialog offers the plans of 2026 without an allocation: none while both are allocated, Mobility
@@ -203,10 +203,10 @@ func TestListAllocationOptions_200_404_FR030(t *testing.T) {
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
 
-	none := carlos.Do(t, http.MethodGet, "/api/global-budgets/GB-1001/allocation-options", nil)
-	carlos.Do(t, http.MethodDelete, "/api/budget-allocations/BA-1002", nil)
-	one := carlos.Do(t, http.MethodGet, "/api/global-budgets/GB-1001/allocation-options", nil)
-	gone := carlos.Do(t, http.MethodGet, "/api/global-budgets/GB-9999/allocation-options", nil)
+	none := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets/GB-1001/allocation-options", nil)
+	carlos.Do(t, http.MethodDelete, "/api/v1/budget-allocations/BA-1002", nil)
+	one := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets/GB-1001/allocation-options", nil)
+	gone := carlos.Do(t, http.MethodGet, "/api/v1/global-budgets/GB-9999/allocation-options", nil)
 
 	assertJSON(t, none, http.StatusOK, map[string]any{"items": []any{}, "total": 0})
 	var page budgets.AllocationOptionPage
@@ -224,21 +224,21 @@ func TestListAllocationOptions_200_404_FR030(t *testing.T) {
 func TestCreateBudgetAllocation_201_400_409_FR030(t *testing.T) {
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
-	carlos.Do(t, http.MethodDelete, "/api/budget-allocations/BA-1002", nil)
+	carlos.Do(t, http.MethodDelete, "/api/v1/budget-allocations/BA-1002", nil)
 
-	stale := carlos.Do(t, http.MethodPost, "/api/global-budgets/GB-1001/allocations", map[string]any{
+	stale := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets/GB-1001/allocations", map[string]any{
 		"planId": "P-1002", "amount": usd("900000.00"), "planVersion": 9,
 	})
-	created := carlos.Do(t, http.MethodPost, "/api/global-budgets/GB-1001/allocations", map[string]any{
+	created := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets/GB-1001/allocations", map[string]any{
 		"planId": "P-1002", "amount": usd("900000.00"), "planVersion": 1,
 	})
-	refused := carlos.Do(t, http.MethodPost, "/api/global-budgets/GB-1001/allocations", map[string]any{
+	refused := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets/GB-1001/allocations", map[string]any{
 		"planId": "P-1003", "amount": usd("1.00"), "planVersion": 1,
 	})
-	taken := carlos.Do(t, http.MethodPost, "/api/global-budgets/GB-1001/allocations", map[string]any{
+	taken := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets/GB-1001/allocations", map[string]any{
 		"planId": "P-1001", "amount": map[string]any{"amount": "1.00", "currency": "EUR"}, "planVersion": 1,
 	})
-	gone := carlos.Do(t, http.MethodPost, "/api/global-budgets/GB-9999/allocations", map[string]any{
+	gone := carlos.Do(t, http.MethodPost, "/api/v1/global-budgets/GB-9999/allocations", map[string]any{
 		"planId": "P-1001", "amount": usd("1.00"), "planVersion": 1,
 	})
 
@@ -251,7 +251,7 @@ func TestCreateBudgetAllocation_201_400_409_FR030(t *testing.T) {
 		view.Allocations[1].Plan.Version != 2 || view.Figures.Allocated.Format() != "2,100,000.00 USD" {
 		t.Errorf("created = %s", created.Body)
 	}
-	assertFields(t, carlos.Do(t, http.MethodGet, "/api/plans/P-1002", nil), http.StatusOK, map[string]any{
+	assertFields(t, carlos.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil), http.StatusOK, map[string]any{
 		"budget": usd("900000.00"), "version": 2,
 		"allocation": map[string]any{"allocationId": "BA-1003", "globalBudget": map[string]any{"id": "GB-1001", "name": "FY2026 Global marketing budget"},
 			"amount": usd("900000.00"), "owner": map[string]any{"id": "U-1005", "name": "Carlos Mendes", "initials": "CM",
@@ -273,16 +273,16 @@ func TestUpdateBudgetAllocation_200_409_404_FR030_FR037(t *testing.T) {
 	carlos := server.SignIn(t, carlosEmail)
 	server.Advance(time.Hour)
 
-	saved := carlos.Do(t, http.MethodPatch, "/api/budget-allocations/BA-1001", map[string]any{
+	saved := carlos.Do(t, http.MethodPatch, "/api/v1/budget-allocations/BA-1001", map[string]any{
 		"amount": usd("1300000.00"), "version": 1, "planVersion": 1,
 	})
-	stale := carlos.Do(t, http.MethodPatch, "/api/budget-allocations/BA-1001", map[string]any{
+	stale := carlos.Do(t, http.MethodPatch, "/api/v1/budget-allocations/BA-1001", map[string]any{
 		"amount": usd("1400000.00"), "version": 1, "planVersion": 2,
 	})
-	stalePlan := carlos.Do(t, http.MethodPatch, "/api/budget-allocations/BA-1001", map[string]any{
+	stalePlan := carlos.Do(t, http.MethodPatch, "/api/v1/budget-allocations/BA-1001", map[string]any{
 		"amount": usd("1400000.00"), "version": 2, "planVersion": 1,
 	})
-	gone := carlos.Do(t, http.MethodPatch, "/api/budget-allocations/BA-9999", map[string]any{
+	gone := carlos.Do(t, http.MethodPatch, "/api/v1/budget-allocations/BA-9999", map[string]any{
 		"amount": usd("1.00"), "version": 1, "planVersion": 1,
 	})
 
@@ -291,17 +291,17 @@ func TestUpdateBudgetAllocation_200_409_404_FR030_FR037(t *testing.T) {
 	if view.Allocations[0].Amount.Format() != "1,300,000.00 USD" || view.Allocations[0].Version != 2 || view.Figures.Allocated.Format() != "2,100,000.00 USD" {
 		t.Errorf("saved = %s", saved.Body)
 	}
-	conflict := `"fields":[],"conflict":{"changedBy":"Carlos Mendes","changedAt":"2026-03-12T10:00:00Z"}}`
-	assertAnswer(t, stale, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Carlos Mendes changed this budget allocation",`+conflict)
-	assertAnswer(t, stalePlan, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Carlos Mendes changed this plan",`+conflict)
+	conflict := `"fields":[],"conflict":{"changedBy":"Carlos Mendes","changedAt":"2026-03-12T10:00:00Z"}}}`
+	assertAnswer(t, stale, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Carlos Mendes changed this budget allocation",`+conflict)
+	assertAnswer(t, stalePlan, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Carlos Mendes changed this plan",`+conflict)
 	assertAnswer(t, gone, http.StatusNotFound, allocationGoneBody)
-	assertFields(t, carlos.Do(t, http.MethodGet, "/api/plans/P-1001", nil), http.StatusOK, map[string]any{
+	assertFields(t, carlos.Do(t, http.MethodGet, "/api/v1/plans/P-1001", nil), http.StatusOK, map[string]any{
 		"budget": usd("1300000.00"), "version": 2, "updatedBy": map[string]any{"id": "U-1005", "name": "Carlos Mendes"},
 	})
 
 	var planLog, budgetLog history.LogPage
-	decode(t, carlos.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1001", nil), http.StatusOK, &planLog)
-	decode(t, carlos.Do(t, http.MethodGet, "/api/activity-log?recordType=globalBudget&recordId=GB-1001", nil), http.StatusOK, &budgetLog)
+	decode(t, carlos.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=plan&recordId=P-1001", nil), http.StatusOK, &planLog)
+	decode(t, carlos.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=globalBudget&recordId=GB-1001", nil), http.StatusOK, &budgetLog)
 	if planLog.Total < 1 || changesText(planLog.Items[0].Changes) != "Plan budget: 1,200,000.00 USD → 1,300,000.00 USD" || // newest first, after the seeded log (011)
 		planLog.Items[0].Comment != "Allocated from 'FY2026 Global marketing budget'" || planLog.Items[0].Actor.Name != "Carlos Mendes" {
 		t.Errorf("plan log = %+v", planLog.Items)
@@ -322,15 +322,15 @@ func TestRemoveBudgetAllocation_200_404_AndThePlanBudgetLock_FR031_FR034(t *test
 	europe := planForm(t, priya, "P-1001")
 	europe["budget"] = usd("1300000.00")
 
-	locked := priya.Do(t, http.MethodPatch, "/api/plans/P-1001", europe)
-	removed := carlos.Do(t, http.MethodDelete, "/api/budget-allocations/BA-1002", nil)
-	gone := carlos.Do(t, http.MethodDelete, "/api/budget-allocations/BA-1002", nil)
+	locked := priya.Do(t, http.MethodPatch, "/api/v1/plans/P-1001", europe)
+	removed := carlos.Do(t, http.MethodDelete, "/api/v1/budget-allocations/BA-1002", nil)
+	gone := carlos.Do(t, http.MethodDelete, "/api/v1/budget-allocations/BA-1002", nil)
 	china := planForm(t, mei, "P-1002")
 	kept := china["budget"]
 	china["budget"] = usd("850000.00")
-	saved := mei.Do(t, http.MethodPatch, "/api/plans/P-1002", china)
+	saved := mei.Do(t, http.MethodPatch, "/api/v1/plans/P-1002", china)
 
-	assertAnswer(t, locked, http.StatusConflict, `{"code":"not_allowed","message":"Allocated from 'FY2026 Global marketing budget' — ask Carlos Mendes to change it.","fields":[]}`)
+	assertAnswer(t, locked, http.StatusConflict, `{"error":{"code":"not_allowed","message":"Allocated from 'FY2026 Global marketing budget' — ask Carlos Mendes to change it.","fields":[]}}`)
 	var view budgets.GlobalBudgetView
 	decode(t, removed, http.StatusOK, &view)
 	if len(view.Allocations) != 1 || view.Figures.Allocated.Format() != "1,200,000.00 USD" || len(view.PlansWithoutAllocation) != 1 {
@@ -342,7 +342,7 @@ func TestRemoveBudgetAllocation_200_404_AndThePlanBudgetLock_FR031_FR034(t *test
 	}
 	assertFields(t, saved, http.StatusOK, map[string]any{"budget": usd("850000.00"), "allocation": nil})
 	var planLog history.LogPage
-	decode(t, carlos.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1002", nil), http.StatusOK, &planLog)
+	decode(t, carlos.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=plan&recordId=P-1002", nil), http.StatusOK, &planLog)
 	if planLog.Total < 2 || planLog.Items[1].Comment != "Allocation from 'FY2026 Global marketing budget' removed" || len(planLog.Items[1].Changes) != 0 {
 		t.Errorf("plan log = %+v", planLog.Items)
 	}
@@ -353,13 +353,13 @@ func TestRemoveBudgetAllocation_200_404_AndThePlanBudgetLock_FR031_FR034(t *test
 func TestPlanDeleteAndRestore_TheAllocation_FR035(t *testing.T) {
 	server := apitest.New(t)
 	carlos := server.SignIn(t, carlosEmail)
-	carlos.Do(t, http.MethodDelete, "/api/budget-allocations/BA-1001", nil) // GB-1001 keeps one allocation only
+	carlos.Do(t, http.MethodDelete, "/api/v1/budget-allocations/BA-1001", nil) // GB-1001 keeps one allocation only
 
-	deleted := carlos.Do(t, http.MethodDelete, "/api/plans/P-1002", nil)
+	deleted := carlos.Do(t, http.MethodDelete, "/api/v1/plans/P-1002", nil)
 	var result history.DeleteResult
 	decode(t, deleted, http.StatusOK, &result)
-	emptied := carlos.Do(t, http.MethodDelete, "/api/global-budgets/GB-1001", nil)
-	restored := carlos.Do(t, http.MethodPost, "/api/recycle-bin/"+result.RecycleBinEntry.ID+"/restore", nil)
+	emptied := carlos.Do(t, http.MethodDelete, "/api/v1/global-budgets/GB-1001", nil)
+	restored := carlos.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/restore", nil)
 
 	if emptied.Status != http.StatusOK {
 		t.Fatalf("delete of the global budget whose plan is in the bin = %d %s", emptied.Status, emptied.Body)
@@ -369,7 +369,7 @@ func TestPlanDeleteAndRestore_TheAllocation_FR035(t *testing.T) {
 	if !strings.HasSuffix(restore.Details, " The allocation was not restored because its global budget was deleted.") {
 		t.Errorf("restore = %s", restored.Body)
 	}
-	assertFields(t, carlos.Do(t, http.MethodGet, "/api/plans/P-1002", nil), http.StatusOK, map[string]any{
+	assertFields(t, carlos.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil), http.StatusOK, map[string]any{
 		"budget": usd("800000.00"), "allocation": nil,
 	})
 }
@@ -380,7 +380,7 @@ func demoFigures(t *testing.T, server *apitest.Server) string {
 	t.Helper()
 	carlos := server.SignIn(t, carlosEmail)
 	var view budgets.GlobalBudgetView
-	decode(t, carlos.Do(t, http.MethodGet, "/api/global-budgets/GB-1001", nil), http.StatusOK, &view)
+	decode(t, carlos.Do(t, http.MethodGet, "/api/v1/global-budgets/GB-1001", nil), http.StatusOK, &view)
 	return figuresText(view.Figures)
 }
 
@@ -388,7 +388,7 @@ func demoFigures(t *testing.T, server *apitest.Server) string {
 func planForm(t *testing.T, c *apitest.Client, id string) map[string]any {
 	t.Helper()
 	var plan map[string]any
-	if err := json.Unmarshal(c.Do(t, http.MethodGet, "/api/plans/"+id, nil).Body, &plan); err != nil {
+	if err := json.Unmarshal(c.Do(t, http.MethodGet, "/api/v1/plans/"+id, nil).Body, &plan); err != nil {
 		t.Fatalf("plan %s: %v", id, err)
 	}
 	form := map[string]any{}
@@ -430,7 +430,7 @@ func mustAmount(t *testing.T, text string) money.Amount {
 
 // validation is the answer of a form with the field problems fields (a JSON list without brackets).
 func validation(fields string) string {
-	return `{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}`
+	return `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}}`
 }
 
 // figuresText writes figures as "<amount> allocated <a> unallocated <u> planned <p>".

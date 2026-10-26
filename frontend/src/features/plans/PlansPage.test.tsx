@@ -15,12 +15,12 @@ function renderPage(
   list: MockHandler = { body: seedList() },
   { user = testUser(), handlers = {} as Record<string, MockHandler> } = {},
 ) {
-  const api = mockApi({ 'GET /api/plans': list, ...handlers });
+  const api = mockApi({ 'GET /api/v1/plans': list, ...handlers });
   const result = renderWithProviders(<PlansPage />, { user, route, path: '/plans' });
   return { ...result, api };
 }
 
-/** The page with `pinned` already pinned and PATCH /api/me/preferences answered (018). */
+/** The page with `pinned` already pinned and PATCH /api/v1/me/preferences answered (018). */
 function renderWithPins(...pinned: string[]) {
   return renderPage(
     '/plans',
@@ -29,14 +29,14 @@ function renderWithPins(...pinned: string[]) {
       user: testUser({
         preferences: { ...testUser().preferences, pinnedPlanIds: pinned },
       }),
-      handlers: { 'PATCH /api/me/preferences': { body: {} } },
+      handlers: { 'PATCH /api/v1/me/preferences': { body: {} } },
     },
   );
 }
 
-/** The query strings sent to GET /api/plans, in order. */
+/** The query strings sent to GET /api/v1/plans, in order. */
 function listQueries(api: ReturnType<typeof mockApi>) {
-  return api.requests.filter((request) => request.path === '/api/plans').map((r) => r.search);
+  return api.requests.filter((request) => request.path === '/api/v1/plans').map((r) => r.search);
 }
 
 function cardNames() {
@@ -272,7 +272,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     );
     // The full new list is saved for the person, like every display preference (FR-004).
     await waitFor(() =>
-      expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ pinnedPlanIds: ['P-1003'] }]),
+      expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ pinnedPlanIds: ['P-1003'] }]),
     );
     // The star reads back from the saved preferences: filled and renamed (FR-003).
     const star = screen.getByRole('button', { name: "Unpin plan 'FY2025 Lubricants Europe'" });
@@ -293,7 +293,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
         'FY2025 Lubricants Europe',
       ]),
     );
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ pinnedPlanIds: [] }]);
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ pinnedPlanIds: [] }]);
     expect(
       screen.getByRole('button', { name: "Pin plan 'FY2025 Lubricants Europe'" }).className,
     ).not.toMatch(/pinned/);

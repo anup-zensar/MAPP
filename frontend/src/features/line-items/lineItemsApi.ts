@@ -45,7 +45,7 @@ export function useLineItemSection(activityId: string, enabled = true) {
     queryKey: ['line-items', 'activity', activityId],
     queryFn: () =>
       call(
-        api.GET('/api/activities/{activityId}/line-items', { params: { path: { activityId } } }),
+        api.GET('/api/v1/activities/{activityId}/line-items', { params: { path: { activityId } } }),
       ),
     enabled,
   });
@@ -57,7 +57,7 @@ export function useLineItemFormOptions(activityId: string, enabled = true) {
     queryKey: ['line-items', 'form-options', activityId],
     queryFn: () =>
       call(
-        api.GET('/api/activities/{activityId}/line-items/form-options', {
+        api.GET('/api/v1/activities/{activityId}/line-items/form-options', {
           params: { path: { activityId } },
         }),
       ),
@@ -73,7 +73,7 @@ export function useLineItem(lineItemId: string) {
   return useQuery({
     queryKey: ['line-items', 'item', lineItemId],
     queryFn: () =>
-      call(api.GET('/api/line-items/{lineItemId}', { params: { path: { lineItemId } } })),
+      call(api.GET('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } })),
   });
 }
 
@@ -83,7 +83,7 @@ export function useCreateLineItem(activityId: string) {
   return useMutation({
     mutationFn: (body: LineItemCreate) =>
       call(
-        api.POST('/api/activities/{activityId}/line-items', {
+        api.POST('/api/v1/activities/{activityId}/line-items', {
           params: { path: { activityId } },
           body,
         }),
@@ -97,7 +97,9 @@ export function useUpdateLineItem(lineItemId: string) {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: (body: LineItemUpdate) =>
-      call(api.PATCH('/api/line-items/{lineItemId}', { params: { path: { lineItemId } }, body })),
+      call(
+        api.PATCH('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } }, body }),
+      ),
     onSettled: refresh,
   });
 }
@@ -114,7 +116,7 @@ export function useDuplicateLineItem() {
       restartApproval: boolean;
     }) =>
       call(
-        api.POST('/api/line-items/{lineItemId}/duplicate', {
+        api.POST('/api/v1/line-items/{lineItemId}/duplicate', {
           params: { path: { lineItemId } },
           body: { restartApproval },
         }),
@@ -135,7 +137,7 @@ export function useDeleteLineItem() {
       restartApproval: boolean;
     }) =>
       call(
-        api.DELETE('/api/line-items/{lineItemId}', {
+        api.DELETE('/api/v1/line-items/{lineItemId}', {
           params: {
             path: { lineItemId },
             query: restartApproval ? { restartApproval: true } : undefined,

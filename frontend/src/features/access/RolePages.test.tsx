@@ -9,11 +9,11 @@ import { RolePage } from './RolePage';
 import { ADMINISTRATOR, CATALOGUE, FINANCE_REVIEWER, PLANNER, VIEWER } from './testData';
 
 const ANSWERS: Record<string, MockHandler> = {
-  'GET /api/me': { body: testUser() },
-  'GET /api/access/permissions': { body: CATALOGUE },
-  [`GET /api/roles/${ADMINISTRATOR.id}`]: { body: ADMINISTRATOR },
-  [`GET /api/roles/${PLANNER.id}`]: { body: PLANNER },
-  [`GET /api/roles/${VIEWER.id}`]: { body: VIEWER },
+  'GET /api/v1/me': { body: testUser() },
+  'GET /api/v1/access/permissions': { body: CATALOGUE },
+  [`GET /api/v1/roles/${ADMINISTRATOR.id}`]: { body: ADMINISTRATOR },
+  [`GET /api/v1/roles/${PLANNER.id}`]: { body: PLANNER },
+  [`GET /api/v1/roles/${VIEWER.id}`]: { body: VIEWER },
 };
 
 function renderRole(route: string, answers: Record<string, MockHandler> = {}) {
@@ -73,9 +73,9 @@ describe('RolePage (feature 014, US4)', () => {
 
   it('says when the role does not exist', async () => {
     renderRole('/settings/access/roles/RL-1999', {
-      'GET /api/roles/RL-1999': {
+      'GET /api/v1/roles/RL-1999': {
         status: 404,
-        body: { code: 'not_found', message: "This role doesn't exist.", fields: [] },
+        body: { error: { code: 'not_found', message: "This role doesn't exist.", fields: [] } },
       },
     });
 
@@ -86,7 +86,7 @@ describe('RolePage (feature 014, US4)', () => {
 describe('RoleFormPage (feature 014, US4)', () => {
   it('creates a role as a copy of Viewer, named and ready to give (US4-2)', async () => {
     const { api, user, router } = renderForm(`/settings/access/roles/new?copyOf=${VIEWER.id}`, {
-      'POST /api/roles': { status: 201, body: FINANCE_REVIEWER },
+      'POST /api/v1/roles': { status: 201, body: FINANCE_REVIEWER },
     });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'New role' })).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe('RoleFormPage (feature 014, US4)', () => {
     await user.click(screen.getByRole('button', { name: 'Create role' }));
 
     expect(await screen.findByText("Role 'Finance reviewer' created")).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/roles')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/roles')).toEqual([
       {
         name: 'Finance reviewer',
         description: VIEWER.description,
@@ -113,15 +113,17 @@ describe('RoleFormPage (feature 014, US4)', () => {
 
   it('shows every problem at once', async () => {
     const { user } = renderForm('/settings/access/roles/new', {
-      'POST /api/roles': {
+      'POST /api/v1/roles': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the highlighted fields.',
-          fields: [
-            { field: 'name', message: "A role called 'Planner' already exists." },
-            { field: 'permissions', message: 'Choose at least one permission.' },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the highlighted fields.',
+            fields: [
+              { field: 'name', message: "A role called 'Planner' already exists." },
+              { field: 'permissions', message: 'Choose at least one permission.' },
+            ],
+          },
         },
       },
     });
@@ -135,7 +137,7 @@ describe('RoleFormPage (feature 014, US4)', () => {
 
   it('saves only what changed with the version (US4-1)', async () => {
     const { api, user } = renderForm(`/settings/access/roles/${PLANNER.id}/edit`, {
-      [`PATCH /api/roles/${PLANNER.id}`]: {
+      [`PATCH /api/v1/roles/${PLANNER.id}`]: {
         body: {
           ...PLANNER,
           permissions: PLANNER.permissions.filter((key) => key !== 'plans.publish'),
@@ -151,7 +153,7 @@ describe('RoleFormPage (feature 014, US4)', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText("Role 'Planner' saved")).toBeInTheDocument();
-    expect(api.bodiesOf(`PATCH /api/roles/${PLANNER.id}`)).toEqual([
+    expect(api.bodiesOf(`PATCH /api/v1/roles/${PLANNER.id}`)).toEqual([
       {
         permissions: PLANNER.permissions.filter((key) => key !== 'plans.publish'),
         version: 1,

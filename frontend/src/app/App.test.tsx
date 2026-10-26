@@ -12,11 +12,13 @@ describe('App', () => {
   it('opens the page of the current address, with the demo banner (FR-016)', async () => {
     // A first visit: nobody is signed in yet, so Home sends the visitor to the sign-in page.
     mockApi({
-      'GET /api/me': {
+      'GET /api/v1/me': {
         status: 401,
-        body: { code: 'sign_in_required', message: 'Please sign in to continue.', fields: [] },
+        body: {
+          error: { code: 'sign_in_required', message: 'Please sign in to continue.', fields: [] },
+        },
       },
-      'GET /api/auth/demo-people': { body: { password: 'mapp', people: [] } },
+      'GET /api/v1/auth/demo-people': { body: { password: 'mapp', people: [] } },
     });
 
     render(<App />);

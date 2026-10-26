@@ -5,7 +5,7 @@ type FormAttribute = components['schemas']['FormAttribute'];
 type FormOption = components['schemas']['FormOption'];
 
 /**
- * Shell attribute forms for tests (contract AttributeForm, as GET /api/shell-attribute-forms/{level}
+ * Shell attribute forms for tests (contract AttributeForm, as GET /api/v1/shell-attribute-forms/{level}
  * answers), shaped like the demo Settings: Business unit (Lubricants, Mobility), Cluster → Region,
  * and a Lubricants-only section.
  */

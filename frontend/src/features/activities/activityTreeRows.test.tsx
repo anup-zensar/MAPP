@@ -58,7 +58,7 @@ function ActivityRows() {
 
 function openRows(answers: Parameters<typeof mockApi>[0] = {}) {
   const api = mockApi({
-    'GET /api/plans/P-1001/activities': {
+    'GET /api/v1/plans/P-1001/activities': {
       body: {
         items: [
           launchFilmRow({
@@ -71,9 +71,11 @@ function openRows(answers: Parameters<typeof mockApi>[0] = {}) {
       },
     },
     // No GSAP data yet: a delete question says nothing of transactions (015 FR-029).
-    'GET /api/financials/records/A-1042': {
+    'GET /api/v1/financials/records/A-1042': {
       status: 404,
-      body: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+      body: {
+        error: { code: 'not_found', message: 'No financial figures for A-1042.', fields: [] },
+      },
     },
     ...answers,
   });
@@ -107,7 +109,7 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('shows the planned cost in the plan currency with the display currency under it (016 FR-013)', async () => {
     openRows({
-      'GET /api/plans/P-1001/activities': {
+      'GET /api/v1/plans/P-1001/activities': {
         body: {
           items: [
             launchFilmRow({
@@ -159,12 +161,12 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('deletes an activity from its row after asking, by keyboard, and offers Undo (FR-031)', async () => {
     const { user, router, api } = openRows({
-      'GET /api/activities/A-1042': {
+      'GET /api/v1/activities/A-1042': {
         body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
       },
-      'DELETE /api/activities/A-1042': { body: DELETED },
-      'POST /api/recycle-bin/BIN-1001/undo': { body: {} },
-      'GET /api/financials/records/A-1042': {
+      'DELETE /api/v1/activities/A-1042': { body: DELETED },
+      'POST /api/v1/recycle-bin/BIN-1001/undo': { body: {} },
+      'GET /api/v1/financials/records/A-1042': {
         body: activityRecord({ record: { type: 'activity', id: 'A-1042', name: 'Launch film' } }),
       },
     });
@@ -182,7 +184,7 @@ describe('activityTreeRows (feature 006)', () => {
       ),
     ).toBeVisible();
     expect(within(question).getByRole('button', { name: 'Cancel' })).toHaveFocus();
-    expect(api.bodiesOf('DELETE /api/activities/A-1042')).toEqual([]);
+    expect(api.bodiesOf('DELETE /api/v1/activities/A-1042')).toEqual([]);
 
     // Enter on the question's button is the dialog's, not the row's (which opens the page).
     await user.tab();
@@ -202,11 +204,11 @@ describe('activityTreeRows (feature 006)', () => {
 
   it('copies an activity from its row with the activity as stored now (FR-030)', async () => {
     const { user, router, api } = openRows({
-      'GET /api/activities/A-1042': {
+      'GET /api/v1/activities/A-1042': {
         body: launchFilm({ lineItems: { ...launchFilm().lineItems, count: 2 } }),
       },
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/copy': {
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/copy': {
         status: 201,
         body: launchFilm({ id: 'A-1043', name: 'Launch film (copy)' }),
       },
@@ -222,15 +224,17 @@ describe('activityTreeRows (feature 006)', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1043'),
     );
-    expect(api.bodiesOf('POST /api/activities/A-1042/copy')).toEqual([{ initiativeId: 'I-1001' }]);
+    expect(api.bodiesOf('POST /api/v1/activities/A-1042/copy')).toEqual([
+      { initiativeId: 'I-1001' },
+    ]);
     expect(await findMessages()).toHaveTextContent("Activity 'Launch film (copy)' created");
   });
 
   it('moves an activity from its row with the version stored now (FR-029)', async () => {
     const { user, api } = openRows({
-      'GET /api/activities/A-1042': { body: launchFilm({ version: 7 }) },
-      'GET /api/activities/A-1042/destinations': { body: destinations() },
-      'POST /api/activities/A-1042/move': {
+      'GET /api/v1/activities/A-1042': { body: launchFilm({ version: 7 }) },
+      'GET /api/v1/activities/A-1042/destinations': { body: destinations() },
+      'POST /api/v1/activities/A-1042/move': {
         body: launchFilm({
           initiative: { type: 'initiative', id: 'I-1002', name: 'Print & outdoor' },
           version: 8,
@@ -247,14 +251,14 @@ describe('activityTreeRows (feature 006)', () => {
     expect(await findMessages()).toHaveTextContent(
       "Activity 'Launch film' moved to 'Print & outdoor'",
     );
-    expect(api.bodiesOf('POST /api/activities/A-1042/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/activities/A-1042/move')).toEqual([
       { initiativeId: 'I-1002', version: 7 },
     ]);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('closes the question of a row on Cancel, deleting nothing', async () => {
-    const { user, api } = openRows({ 'GET /api/activities/A-1042': { body: launchFilm() } });
+    const { user, api } = openRows({ 'GET /api/v1/activities/A-1042': { body: launchFilm() } });
 
     await user.click(await screen.findByRole('button', { name: 'Actions for Launch film' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
@@ -262,7 +266,7 @@ describe('activityTreeRows (feature 006)', () => {
     await user.click(within(question).getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-    expect(api.bodiesOf('DELETE /api/activities/A-1042')).toEqual([]);
+    expect(api.bodiesOf('DELETE /api/v1/activities/A-1042')).toEqual([]);
   });
 
   it('Add activity opens the new-activity page (FR-001)', async () => {

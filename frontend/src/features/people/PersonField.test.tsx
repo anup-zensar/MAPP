@@ -58,7 +58,7 @@ function Members({ start = [] }: { start?: string[] }) {
 
 describe('PersonField (feature 003, US3)', () => {
   it('loads the people and offers them, the signed-in person first', async () => {
-    mockApi({ 'GET /api/people': { body: PEOPLE } });
+    mockApi({ 'GET /api/v1/people': { body: PEOPLE } });
     const { user } = renderWithProviders(<Owner />, { user: testUser() });
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
@@ -70,7 +70,7 @@ describe('PersonField (feature 003, US3)', () => {
   it('says when the people could not be loaded, with Try again', async () => {
     let calls = 0;
     mockApi({
-      'GET /api/people': () => {
+      'GET /api/v1/people': () => {
         calls += 1;
         return calls === 1 ? { status: 500 } : { body: PEOPLE };
       },
@@ -87,7 +87,7 @@ describe('PersonField (feature 003, US3)', () => {
     const many = Array.from({ length: 300 }, (_, index) =>
       person(`U-${2000 + index}`, `Person ${String(index).padStart(3, '0')}`, 'Marketer'),
     );
-    mockApi({ 'GET /api/people': { body: { items: many, total: many.length } } });
+    mockApi({ 'GET /api/v1/people': { body: { items: many, total: many.length } } });
     const { user } = renderWithProviders(<Owner />, { user: testUser() });
 
     await user.click(await screen.findByRole('combobox', { name: 'Owner' }));
@@ -99,7 +99,7 @@ describe('PersonField (feature 003, US3)', () => {
   });
 
   it('in team mode says when no member of the chosen teams matches (FR-019)', async () => {
-    mockApi({ 'GET /api/people': { body: PEOPLE } });
+    mockApi({ 'GET /api/v1/people': { body: PEOPLE } });
     const { user } = renderWithProviders(<Owner teamIds={[CHINA.id]} />, { user: testUser() });
 
     await user.click(await screen.findByRole('combobox', { name: 'Owner' }));
@@ -112,7 +112,7 @@ describe('PersonField (feature 003, US3)', () => {
   });
 
   it('chooses several people with the keyboard and removes the last with Backspace (US3-7)', async () => {
-    mockApi({ 'GET /api/people': { body: PEOPLE } });
+    mockApi({ 'GET /api/v1/people': { body: PEOPLE } });
     const { user } = renderWithProviders(<Members />, { user: testUser() });
 
     await user.click(await screen.findByRole('combobox', { name: 'Members' }));
@@ -130,7 +130,7 @@ describe('PersonField (feature 003, US3)', () => {
       ...PEOPLE,
       items: [...PEOPLE.items, person('U-1009', 'Old Timer', '', [EUROPE], false)],
     };
-    mockApi({ 'GET /api/people': { body: inactive } });
+    mockApi({ 'GET /api/v1/people': { body: inactive } });
     const { user } = renderWithProviders(<Members start={['U-1009']} />, { user: testUser() });
 
     expect(await screen.findByText('Old Timer (inactive)')).toBeInTheDocument();

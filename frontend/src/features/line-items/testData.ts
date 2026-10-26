@@ -328,10 +328,10 @@ const PRIYA: Person = {
  */
 export function formAnswers(): Record<string, MockHandler> {
   return {
-    'GET /api/people': { body: { items: [PRIYA], total: 1 } },
-    'GET /api/shell-attribute-forms/lineItem': { body: lineItemForm() },
+    'GET /api/v1/people': { body: { items: [PRIYA], total: 1 } },
+    'GET /api/v1/shell-attribute-forms/lineItem': { body: lineItemForm() },
     // The rates' dates of the conversion line (016 FR-009).
-    'GET /api/exchange-rates/current': { body: currentRates() },
+    'GET /api/v1/exchange-rates/current': { body: currentRates() },
   };
 }
 
@@ -342,7 +342,9 @@ export function validationError(fields: { field: string; message: string }[]): {
 } {
   return {
     status: 400,
-    body: { code: 'validation_failed', message: 'Check the highlighted fields.', fields },
+    body: {
+      error: { code: 'validation_failed', message: 'Check the highlighted fields.', fields },
+    },
   };
 }
 
@@ -359,7 +361,7 @@ export function restartRefusal() {
 
 /** A 404 with the API's message. */
 export function notFound(message: string): { status: number; body: ErrorBody } {
-  return { status: 404, body: { code: 'not_found', message, fields: [] } };
+  return { status: 404, body: { error: { code: 'not_found', message, fields: [] } } };
 }
 
 /** The answer to a delete: the recycle-bin entry for Undo. */
@@ -380,7 +382,7 @@ export function deleteResult(name = 'Agency fee', id = 'L-1001') {
   };
 }
 
-/** Today's rates (GET /api/exchange-rates/current), for the ⓘ that names the rates used (016 FR-009). */
+/** Today's rates (GET /api/v1/exchange-rates/current), for the ⓘ that names the rates used (016 FR-009). */
 export function currentRates() {
   return {
     today: '2026-03-12',
@@ -557,7 +559,7 @@ export function lineItemRecord(overrides: Partial<FinancialRecordView> = {}): Fi
   };
 }
 
-/** One page of a line item's transactions (GET /api/financials/transactions). */
+/** One page of a line item's transactions (GET /api/v1/financials/transactions). */
 export function transactionPage(items: FinancialTransactionRow[]) {
   return {
     items,

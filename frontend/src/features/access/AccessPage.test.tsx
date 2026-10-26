@@ -21,7 +21,7 @@ const ALEX_USER = testUser({ id: ALEX.id, name: ALEX.name, firstName: 'Alex', in
 
 function renderAccess(answers: Record<string, MockHandler> = {}, route = '/settings/access') {
   // A change refreshes the session too: the signed-in person's own access may have changed.
-  const api = mockApi({ 'GET /api/me': { body: ALEX_USER }, ...ACCESS_ANSWERS, ...answers });
+  const api = mockApi({ 'GET /api/v1/me': { body: ALEX_USER }, ...ACCESS_ANSWERS, ...answers });
   return {
     api,
     ...renderWithProviders(<AccessPage />, { user: ALEX_USER, route, path: '/settings/access' }),
@@ -36,7 +36,7 @@ function rowOf(name: string) {
 describe('AccessPage: People tab (feature 014, US3)', () => {
   it('lists everyone with teams and roles, with a search and a role filter with No role (US3-1)', async () => {
     const { user } = renderAccess({
-      'GET /api/access/changes': {
+      'GET /api/v1/access/changes': {
         body: {
           items: [
             {
@@ -94,7 +94,7 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
 
   it('flags a scope that covers no team any more', async () => {
     renderAccess({
-      'GET /api/access/people': {
+      'GET /api/v1/access/people': {
         body: {
           items: [
             {
@@ -117,8 +117,8 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
       version: 3,
     };
     const { api, user, router } = renderAccess({
-      'GET /api/people/U-1006/roles': { body: SARA_ROLES },
-      'PUT /api/people/U-1006/roles': { body: saved },
+      'GET /api/v1/people/U-1006/roles': { body: SARA_ROLES },
+      'PUT /api/v1/people/U-1006/roles': { body: saved },
     });
 
     await user.click(await screen.findByRole('button', { name: 'Edit roles of Sara Novak' }));
@@ -147,7 +147,7 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
     // The panel closes at once: the saved roles are not "unsaved changes".
     await waitFor(() => expect(router.state.location.search).toBe(''));
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    expect(api.bodiesOf('PUT /api/people/U-1006/roles')).toEqual([
+    expect(api.bodiesOf('PUT /api/v1/people/U-1006/roles')).toEqual([
       {
         roles: [
           { roleId: 'RL-1003', scope: { type: 'teams', teamIds: [CHINA.id] } },
@@ -157,19 +157,21 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
       },
     ]);
     // Adding a role takes nothing away: no impact check.
-    expect(api.bodiesOf('POST /api/people/U-1006/roles/impact')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/people/U-1006/roles/impact')).toEqual([]);
   });
 
   it('shows the field problems of a save at their role', async () => {
     const { user } = renderAccess(
       {
-        'GET /api/people/U-1006/roles': { body: SARA_ROLES },
-        'PUT /api/people/U-1006/roles': {
+        'GET /api/v1/people/U-1006/roles': { body: SARA_ROLES },
+        'PUT /api/v1/people/U-1006/roles': {
           status: 400,
           body: {
-            code: 'validation_failed',
-            message: 'Check the highlighted fields.',
-            fields: [{ field: 'roles.0.teamIds', message: 'Choose at least one team.' }],
+            error: {
+              code: 'validation_failed',
+              message: 'Check the highlighted fields.',
+              fields: [{ field: 'roles.0.teamIds', message: 'Choose at least one team.' }],
+            },
           },
         },
       },
@@ -190,11 +192,11 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
       'Daniel Okoro is an approver in 1 approval workflow and has 2 activities waiting. Without a role that approves, an administrator will have to decide on their behalf.';
     const { api, user } = renderAccess(
       {
-        'GET /api/people/U-1003/roles': { body: DANIEL_ROLES },
-        'POST /api/people/U-1003/roles/impact': {
+        'GET /api/v1/people/U-1003/roles': { body: DANIEL_ROLES },
+        'POST /api/v1/people/U-1003/roles/impact': {
           body: { warnings: [{ kind: 'approverCannotApprove', message: warning, count: 2 }] },
         },
-        'PUT /api/people/U-1003/roles': { body: { ...DANIEL_ROLES, version: 4 } },
+        'PUT /api/v1/people/U-1003/roles': { body: { ...DANIEL_ROLES, version: 4 } },
       },
       '/settings/access?person=U-1003',
     );
@@ -209,7 +211,7 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
     expect(dialog).toHaveTextContent(warning);
     expect(within(dialog).getByRole('button', { name: 'Keep editing' })).toHaveFocus();
     await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }));
-    expect(api.bodiesOf('PUT /api/people/U-1003/roles')).toEqual([]);
+    expect(api.bodiesOf('PUT /api/v1/people/U-1003/roles')).toEqual([]);
 
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
     await user.click(
@@ -220,8 +222,8 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
 
     expect(await screen.findByText('Roles of Daniel Okoro saved')).toBeInTheDocument();
     const body = { roles: [{ roleId: 'RL-1003', scope: { type: 'myTeams' } }], version: 3 };
-    expect(api.bodiesOf('POST /api/people/U-1003/roles/impact')).toEqual([body, body]);
-    expect(api.bodiesOf('PUT /api/people/U-1003/roles')).toEqual([body]);
+    expect(api.bodiesOf('POST /api/v1/people/U-1003/roles/impact')).toEqual([body, body]);
+    expect(api.bodiesOf('PUT /api/v1/people/U-1003/roles')).toEqual([body]);
   });
 
   it('says why the only administrator keeps the role (US3-4)', async () => {
@@ -229,11 +231,11 @@ describe('AccessPage: People tab (feature 014, US3)', () => {
       'Alex Morgan is the only administrator. Give someone else the Administrator role first.';
     const { user } = renderAccess(
       {
-        'GET /api/people/U-1001/roles': { body: ALEX_ROLES },
-        'POST /api/people/U-1001/roles/impact': { body: { warnings: [] } },
-        'PUT /api/people/U-1001/roles': {
+        'GET /api/v1/people/U-1001/roles': { body: ALEX_ROLES },
+        'POST /api/v1/people/U-1001/roles/impact': { body: { warnings: [] } },
+        'PUT /api/v1/people/U-1001/roles': {
           status: 409,
-          body: { code: 'not_allowed', message: refusal, fields: [] },
+          body: { error: { code: 'not_allowed', message: refusal, fields: [] } },
         },
       },
       '/settings/access?person=U-1001',
@@ -293,7 +295,7 @@ describe('AccessPage: Roles tab (feature 014, US4)', () => {
   it('deletes an unused role with Undo (US4-5)', async () => {
     const { user } = renderAccess(
       {
-        'DELETE /api/roles/RL-1006': {
+        'DELETE /api/v1/roles/RL-1006': {
           body: {
             recycleBinEntry: {
               id: 'RB-1101',
@@ -309,7 +311,7 @@ describe('AccessPage: Roles tab (feature 014, US4)', () => {
             },
           },
         },
-        'POST /api/recycle-bin/RB-1101/undo': {
+        'POST /api/v1/recycle-bin/RB-1101/undo': {
           body: {
             recordType: 'role',
             recordTypeLabel: 'role',
@@ -354,7 +356,7 @@ describe('AccessPage: Rules tab (feature 014, FR-019)', () => {
   it('shows the rules and saves a change with their version', async () => {
     const { api, user } = renderAccess(
       {
-        'PATCH /api/access-rules': {
+        'PATCH /api/v1/access-rules': {
           body: {
             ...RULES,
             noSelfApproval: false,
@@ -384,7 +386,7 @@ describe('AccessPage: Rules tab (feature 014, FR-019)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Access rules saved')).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/access-rules')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/access-rules')).toEqual([
       { noSelfApproval: false, version: 0 },
     ]);
   });
