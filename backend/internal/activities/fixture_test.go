@@ -1,7 +1,6 @@
 package activities_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -211,9 +210,7 @@ func (f *fixture) stored(t *testing.T, id string) (activities.Activity, bool) {
 		t.Fatalf("Get(%s): %v", id, err)
 	}
 	for attribute, value := range activity.Attributes {
-		var compacted bytes.Buffer
-		_ = json.Compact(&compacted, value)
-		activity.Attributes[attribute] = compacted.Bytes()
+		activity.Attributes[attribute], _ = json.Marshal(value)
 	}
 	return activity, found
 }
