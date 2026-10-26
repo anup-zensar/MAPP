@@ -14,6 +14,10 @@ type table struct {
 	areas map[string]map[string]any // area → key → value; a name is "<area>:<key>"
 }
 
+// Derived is the area of values a service works out from records of several areas, such as the roll-up of
+// an activity's line items: any change forgets them.
+const Derived = "derived"
+
 type contextKey struct{}
 
 func With(ctx context.Context) context.Context {
@@ -71,11 +75,13 @@ func Keep(ctx context.Context, name string, value any) {
 	}
 }
 
-// Forget drops everything kept under the area, the part of a name before its first colon.
+// Forget drops everything kept under the area, the part of a name before its first colon, and what is kept
+// under Derived: values worked out from several areas.
 func Forget(ctx context.Context, area string) {
 	if t, ok := ctx.Value(contextKey{}).(*table); ok {
 		t.mu.Lock()
 		delete(t.areas, area)
+		delete(t.areas, Derived)
 		t.mu.Unlock()
 	}
 }

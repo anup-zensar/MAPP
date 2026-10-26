@@ -47,7 +47,7 @@ func (s *Service) Summaries(ctx context.Context, initiativeIDs []string) ([]camp
 				contexts[a.InitiativeID] = pc
 			}
 			li := facts[a.ID]
-			d, err := s.derive(ctx, a, pc, li)
+			d, err := s.storedDerive(ctx, a, pc, li)
 			if err != nil {
 				return err
 			}
@@ -143,7 +143,7 @@ func (s *Service) addFacts(ctx context.Context, inPlan planActivities, lineItems
 		if goals.Revenue != nil {
 			f.ActivityGoals.Revenue = money.USD(f.ActivityGoals.Revenue.Amount.Add(goals.Revenue.Amount))
 		}
-		d, err := s.derive(ctx, a, inPlan.contextOf(a), lineItems[a.ID])
+		d, err := s.storedDerive(ctx, a, inPlan.contextOf(a), lineItems[a.ID])
 		if err != nil {
 			return err
 		}

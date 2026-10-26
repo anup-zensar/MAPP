@@ -8,6 +8,7 @@ import (
 
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
+	"mapp/internal/platform/memo"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
 	"mapp/internal/settings"
@@ -37,54 +38,71 @@ type Incomplete struct {
 
 // Summaries returns the summary of each activity in activityIDs that has line items; an activity without
 // line items, or one that is not stored, has no entry. It runs inside the caller's transaction (it joins
-// it), so a change shows at once: nothing here is stored.
+// it), so a change shows at once: nothing here is stored. A summary is worked out once per transaction
+// until data changes: the plan levels and the activities ask for the same activities' summaries.
 func (s *Service) Summaries(ctx context.Context, activityIDs []string) (map[string]Summary, error) {
 	summaries := map[string]Summary{}
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		items, err := s.repo.ListByActivities(ctx, activityIDs)
-		if err != nil || len(items) == 0 {
-			return err
-		}
-		if ctx, err = s.withRates(ctx); err != nil { // once for every activity (016: rates are dated records)
-			return err
-		}
-		byActivity := map[string][]LineItem{}
-		for _, li := range items {
-			byActivity[li.ActivityID] = append(byActivity[li.ActivityID], li)
-		}
-		for activityID, list := range byActivity {
-			f, found, err := s.deps.Activities.Facts(ctx, activityID)
-			if err != nil {
-				return err
+		kept, err := memo.Many(ctx, memo.Derived+":lineItemSummary:", activityIDs, s.summariesOf)
+		for id, summary := range kept {
+			if summary != nil {
+				summaries[id] = *summary
 			}
-			if !found {
-				continue
-			}
-			views, err := s.views(ctx, f, list)
-			if err != nil {
-				return err
-			}
-			summary := Summary{Count: len(views), Incomplete: []Incomplete{}, Currency: f.planCurrency()}
-			for _, v := range views {
-				summary.PlannedCostUSD = summary.PlannedCostUSD.Add(v.PlannedCostUSD.Amount)
-				summary.PlannedCostPlan = summary.PlannedCostPlan.Add(v.PlannedCostPlan.Amount)
-				if v.Spread.Method == SpreadCustom {
-					summary.CustomSpread++
-				} else {
-					summary.AutoSpread++
-				}
-				if len(v.Missing) > 0 {
-					summary.Incomplete = append(summary.Incomplete, Incomplete{LineItemID: v.ID, LineItemName: v.Name, Missing: v.Missing})
-				}
-			}
-			summaries[activityID] = summary
 		}
-		return nil
+		return err
 	})
 	if err != nil {
 		return nil, err
 	}
 	return summaries, nil
+}
+
+// summariesOf works out the summaries of the activities with line items among activityIDs.
+func (s *Service) summariesOf(ctx context.Context, activityIDs []string) (map[string]*Summary, error) {
+	summaries := map[string]*Summary{}
+	items, err := s.repo.ListByActivities(ctx, activityIDs)
+	if err != nil || len(items) == 0 {
+		return summaries, err
+	}
+	if ctx, err = s.withRates(ctx); err != nil { // once for every activity (016: rates are dated records)
+		return nil, err
+	}
+	byActivity := map[string][]LineItem{}
+	for _, li := range items {
+		byActivity[li.ActivityID] = append(byActivity[li.ActivityID], li)
+	}
+	for activityID, list := range byActivity {
+		f, found, err := s.deps.Activities.Facts(ctx, activityID)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			continue
+		}
+		views, err := s.views(ctx, f, list)
+		if err != nil {
+			return nil, err
+		}
+		summaries[activityID] = summaryOf(f, views)
+	}
+	return summaries, nil
+}
+
+func summaryOf(f ActivityFacts, views []View) *Summary {
+	summary := &Summary{Count: len(views), Incomplete: []Incomplete{}, Currency: f.planCurrency()}
+	for _, v := range views {
+		summary.PlannedCostUSD = summary.PlannedCostUSD.Add(v.PlannedCostUSD.Amount)
+		summary.PlannedCostPlan = summary.PlannedCostPlan.Add(v.PlannedCostPlan.Amount)
+		if v.Spread.Method == SpreadCustom {
+			summary.CustomSpread++
+		} else {
+			summary.AutoSpread++
+		}
+		if len(v.Missing) > 0 {
+			summary.Incomplete = append(summary.Incomplete, Incomplete{LineItemID: v.ID, LineItemName: v.Name, Missing: v.Missing})
+		}
+	}
+	return summary
 }
 
 // CopyLineItems copies every line item of the activity fromActivityID into the activity toActivityID (data

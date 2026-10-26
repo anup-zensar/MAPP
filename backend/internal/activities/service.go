@@ -243,7 +243,7 @@ func (s *Service) ListForPlan(ctx context.Context, a actor.Actor, planID string)
 		}
 		summaries = make([]Summary, 0, len(all.activities))
 		for _, activity := range all.activities {
-			d, err := s.derive(ctx, activity, all.contextOf(activity), facts[activity.ID])
+			d, err := s.storedDerive(ctx, activity, all.contextOf(activity), facts[activity.ID])
 			if err != nil {
 				return err
 			}
