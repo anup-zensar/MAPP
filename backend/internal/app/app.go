@@ -87,7 +87,6 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		return nil, err
 	}
 	signedIn := engine.Group(apiV1, authService.RequireSignIn, accessService.Authorize)
-	router := web.NewRouter(engine.Group("", authService.RequireSignIn, accessService.Authorize))
 	probeRoutes(engine, cfg, db)
 	auth.NewHandler(authService, peopleService).RegisterRoutes(engine.Group(apiV1))
 	people.NewHandler(peopleService).RegisterRoutes(signedIn)
@@ -242,7 +241,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 			return nil, err
 		}
 	}
-	financials.NewHandler(financialsService).Routes(router, unwrapped)
+	financials.NewHandler(financialsService).RegisterRoutes(signedIn)
 
 	// Home (009): a read-only dashboard over the services of 003–008 and 011's activity log (home_sources.go).
 	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
@@ -260,7 +259,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		history: historyService, financials: financialsService, financeAccess: financialAccess{tx: db, plans: plansRepo},
 	}
 	allWorkService := allwork.NewService(db, allwork.NewJSONRepository(), allWork, generator, now)
-	allwork.NewHandler(allWorkService).Routes(router, unwrapped)
+	allwork.NewHandler(allWorkService).RegisterRoutes(signedIn)
 
 	// Where the records of people (003) and Settings (002) are used, now that every feature is built
 	// (references.go): people's plans (004), owner and approver counts (005–008) and currencies (002);

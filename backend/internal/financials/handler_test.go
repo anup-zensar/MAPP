@@ -451,7 +451,7 @@ func TestOperations_NeedSignIn_FR028(t *testing.T) {
 func TestOperations_TransactionsAreReadOnly_FR002(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
-	financials.NewHandler(nil).Routes(web.NewRouter(engine), func(h http.HandlerFunc) http.HandlerFunc { return h })
+	financials.NewHandler(nil).RegisterRoutes(engine.Group("/api/v1"))
 	operations := web.Operations(engine.Routes())
 
 	changing := []string{}

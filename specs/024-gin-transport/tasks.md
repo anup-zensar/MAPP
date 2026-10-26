@@ -200,10 +200,10 @@ Then change the area's line in `app.go` to `RegisterRoutes(signedIn)`. Its tests
   helpers `respond`, `readBody` and `actorOf` move to Gin; `readRateUpload` uses `BindJSON`, because
   `LimitBody` now sets the 3 MB limit (FR-010)
 - [x] T042 [US1] ⏳022 Slice C6: wiring in `app.go` — **checkpoint C6**
-- [ ] T043 [P] [US1] ⏳022 Slice C7: `backend/internal/financials/handler.go`, and in `handler_test.go` its own
+- [x] T043 [P] [US1] ⏳022 Slice C7: `backend/internal/financials/handler.go`, and in `handler_test.go` its own
   router becomes a Gin engine
-- [ ] T044 [P] [US1] ⏳022 Slice C7: `backend/internal/allwork/handler.go`
-- [ ] T045 [US1] ⏳022 Slice C7: wiring in `app.go` — **checkpoint C7**
+- [x] T044 [P] [US1] ⏳022 Slice C7: `backend/internal/allwork/handler.go`
+- [x] T045 [US1] ⏳022 Slice C7: wiring in `app.go` — **checkpoint C7**
 - [ ] T046 [US1] ⏳022 Slice D: delete the bridge — `web/router.go`, `web.Wrap`, `ReadJSON`, `ReadJSONUpTo`,
   `WriteJSON`, `WriteError` and `NotFound` in `web.go` — and the bridge's use in `app.go`. The build proves
   that no handler takes `http.ResponseWriter` any more (FR-013, SC-005)
