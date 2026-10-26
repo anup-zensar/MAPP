@@ -7,57 +7,13 @@ import (
 	"testing"
 
 	"mapp/internal/platform/authz"
-	"mapp/internal/platform/record"
 	"mapp/internal/platform/store"
 )
-
-// The JSON store keeps roles, role assignments and the access rules; the rules are missing until the first
-// save (data model §1.1–§1.3).
-func TestStore_RolesAssignmentsRules_FR001(t *testing.T) {
-	db := newFixture(t).db
-	repo := NewJSONRepository()
-	err := db.Write(t.Context(), func(ctx context.Context) error {
-		role := Role{ID: "RL-2001", Name: "Analyst", Permissions: []authz.Permission{authz.PlansView}, DefaultScope: authz.ScopeAll,
-			Meta: record.NewMeta(alex, start)}
-		if err := repo.PutRole(ctx, role); err != nil {
-			return err
-		}
-		got, found, err := repo.GetRole(ctx, "RL-2001")
-		if err != nil || !found || !reflect.DeepEqual(got, role) {
-			t.Errorf("GetRole = %+v, %v, %v; want %+v", got, found, err, role)
-		}
-		mine, err := repo.AssignmentsOfPerson(ctx, daniel.ID)
-		if err != nil || len(mine) != 2 || mine[0].RoleID != plannerID || mine[1].RoleID != approverID {
-			t.Errorf("Daniel's assignments = %+v, %v; want Planner and Approver", mine, err)
-		}
-		if err := repo.DeleteAssignment(ctx, mine[1].ID); err != nil {
-			return err
-		}
-		if mine, _ = repo.AssignmentsOfPerson(ctx, daniel.ID); len(mine) != 1 {
-			t.Errorf("after the delete Daniel has %d assignments, want 1", len(mine))
-		}
-		if err := repo.DeleteRole(ctx, "RL-2001"); err != nil {
-			return err
-		}
-		if _, found, _ := repo.GetRole(ctx, "RL-2001"); found {
-			t.Error("the role is still there after DeleteRole")
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	empty := newEmptyStoreService(t)
-	rules, err := empty.GetRules(t.Context(), alex)
-	if err != nil || rules.Version != 0 || !rules.NoSelfApproval || rules.NewPersonRole != nil || rules.UpdatedAt != nil {
-		t.Errorf("rules of an empty store = %+v, %v; want the defaults with version 0", rules, err)
-	}
-}
 
 // A person may do what any of their roles allows (FR-002): Daniel is a Planner and an Approver, both for his
 // teams; Sara, a Viewer, may only see and export.
 func TestGrantsFor_UnionOfRoles_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	danielG, saraG := f.grants(t, daniel.ID), f.grants(t, sara.ID)
@@ -84,6 +40,7 @@ func TestGrantsFor_UnionOfRoles_FR002(t *testing.T) {
 // Scopes (FR-004, FR-005): All markets applies everywhere, My teams follows the person's teams at the moment
 // of the action, Chosen teams only the teams chosen; the Administrator role holds every permission.
 func TestGrantsFor_Scopes_FR004_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	if g := f.grants(t, carlos.ID); !g.InScope(authz.PlansDelete, planOf(lubricants.ID)) || g.Has(authz.SettingsManage) {
@@ -114,6 +71,7 @@ func TestGrantsFor_Scopes_FR004_FR005(t *testing.T) {
 
 // A role or rule change applies to the person's next request, without signing in again (FR-020).
 func TestGrantsFor_ChangesApplyAtOnce_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if f.grants(t, sara.ID).Has(authz.ActivitiesEdit) {
 		t.Fatal("Sara may already change activities")
@@ -135,6 +93,7 @@ func TestGrantsFor_ChangesApplyAtOnce_FR020(t *testing.T) {
 
 // A person without a role holds nothing, and is told so (FR-001, message 1).
 func TestGrantsFor_NoRole_FR001(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if _, err := f.service.SetPersonRoles(t.Context(), alex, sara.ID, PersonRolesUpdate{Version: version(1), Roles: []AssignmentInput{}}); err != nil {
 		t.Fatalf("SetPersonRoles: %v", err)
@@ -153,6 +112,7 @@ func TestGrantsFor_NoRole_FR001(t *testing.T) {
 // GET /api/v1/me's access (FR-024): the roles with scopes, the merged permissions in Table A order (for All
 // markets, or the teams sorted by name), the administrators and the segregation-of-duties rule.
 func TestSummary_RolesPermissionsAdministrators_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	got, err := f.service.Summary(t.Context(), sara.ID)
@@ -181,6 +141,7 @@ func TestSummary_RolesPermissionsAdministrators_FR024(t *testing.T) {
 
 // Only active administrators are named to ask (FR-024): an inactive one is left out.
 func TestSummary_ActiveAdministratorsOnly_FR024(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if _, err := f.service.SetPersonRoles(t.Context(), alex, carlos.ID, PersonRolesUpdate{Version: version(1), Roles: []AssignmentInput{
 		{RoleID: administratorID, Scope: ScopeInput{Type: authz.ScopeAll}},

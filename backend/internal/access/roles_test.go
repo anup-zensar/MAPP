@@ -13,16 +13,17 @@ import (
 
 // The role page groups the fixed permissions as Table A does (FR-001).
 func TestPermissions_GroupedAsTableA_FR001(t *testing.T) {
+	t.Parallel()
 	got := newFixture(t).service.Permissions()
 
 	var groups []string
-	count := 0
+	var sizes []int
 	for _, g := range got.Groups {
 		groups = append(groups, g.Name)
-		count += len(g.Permissions)
+		sizes = append(sizes, len(g.Permissions))
 	}
-	if !slices.Equal(groups, authz.Groups) || count != 25 {
-		t.Errorf("groups = %q with %d permissions, want Table A's five groups and 25 permissions", groups, count)
+	if !slices.Equal(groups, authz.Groups) || !slices.Equal(sizes, []int{11, 3, 2, 2, 7}) {
+		t.Errorf("groups = %q of sizes %v, want Table A's five groups of 11, 3, 2, 2 and 7", groups, sizes)
 	}
 	first := got.Groups[0].Permissions[0]
 	if first != (PermissionInfo{Key: authz.PlansView, Label: "View plans and everything in them", Scoped: true}) {
@@ -33,6 +34,7 @@ func TestPermissions_GroupedAsTableA_FR001(t *testing.T) {
 // The roles list starts with Administrator, then by name, each with the people who hold it; the
 // Administrator role is locked and lists every permission (FR-018, message 11).
 func TestListRoles_AdministratorFirstWithLocks_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	roles, err := f.service.ListRoles(t.Context(), alex)
@@ -66,6 +68,7 @@ func TestListRoles_AdministratorFirstWithLocks_FR018(t *testing.T) {
 // A new role needs a unique name, at most 60 characters, a description of at most 300, at least one
 // known permission and a default scope; every problem is reported at once (FR-018, messages 14, 15).
 func TestCreateRole_Rules_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.service.CreateRole(t.Context(), alex, RoleInput{Name: " planner ", Description: string(make([]byte, 301)),
@@ -108,6 +111,7 @@ func TestCreateRole_Rules_FR018(t *testing.T) {
 // permissions as labels and "Added: …; removed: …", and writes nothing when nothing changes (FR-018,
 // FR-037, data model §3).
 func TestUpdateRole_ChangedFieldsLogged_FR018_FR037(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.now = start.Add(time.Hour)
 	permissions := []authz.Permission{authz.PlansView, authz.FinanceView, authz.ActivitiesSubmit}
@@ -159,6 +163,7 @@ func TestUpdateRole_ChangedFieldsLogged_FR018_FR037(t *testing.T) {
 
 // The Administrator role can't be changed or deleted (FR-018, message 11).
 func TestAdministratorRole_Locked_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	name := "Boss"
 
@@ -177,6 +182,7 @@ func TestAdministratorRole_Locked_FR018(t *testing.T) {
 // Undo brings it back; when it was the role for new people, the rule becomes "No role", logged (FR-018,
 // data model §1.3).
 func TestDeleteRole_InUseThenBinAndUndo_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.service.DeleteRole(t.Context(), alex, approverID)
@@ -213,6 +219,7 @@ func TestDeleteRole_InUseThenBinAndUndo_FR018(t *testing.T) {
 // A role restored from the bin while another role took its name is renamed "<name> (restored)"; an Undo is
 // refused instead (001's name rule, FR-018).
 func TestRestoreRole_NameTaken_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	analyst, err := f.service.CreateRole(t.Context(), alex, RoleInput{Name: "Analyst", Permissions: []authz.Permission{authz.PlansView},
 		DefaultScope: authz.ScopeAll})
