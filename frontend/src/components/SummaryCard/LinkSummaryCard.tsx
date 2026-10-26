@@ -9,7 +9,7 @@ import styles from './LinkSummaryCard.module.css';
 export interface LinkSummaryCardProps {
   /** A lucide icon in the ink colour on a lightly tinted tile. */
   icon: ReactNode;
-  /** The colour of the tile, as CSS: "var(--blue)". */
+  /** The colour of the tile, as CSS: "var(--info)". */
   tint: string;
   label: string;
   /** A plain explanation of the label, shown in an info tip. */

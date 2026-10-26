@@ -12,7 +12,7 @@ import (
 )
 
 // The body of the API's answer for a team that does not exist.
-const teamGoneBody = `{"code":"not_found","message":"This team no longer exists — someone may have deleted it.","fields":[]}`
+const teamGoneBody = `{"error":{"code":"not_found","message":"This team no longer exists — someone may have deleted it.","fields":[]}}`
 
 // The Teams list and the team picker get every team, sorted by name, with its colour, status and members
 // (FR-010).
@@ -20,10 +20,10 @@ func TestListTeams_TeamsWithMembers_FR010(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/teams", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/teams", nil)
 
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/teams = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/teams = %d %s", response.Status, response.Body)
 	}
 	var page people.TeamPage
 	response.Decode(t, &page)
@@ -47,14 +47,14 @@ func TestGetTeam_DetailsOrNotFound_FR010(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	found := priya.Do(t, http.MethodGet, "/api/teams/T-1001", nil)
-	missing := priya.Do(t, http.MethodGet, "/api/teams/T-9999", nil)
+	found := priya.Do(t, http.MethodGet, "/api/v1/teams/T-1001", nil)
+	missing := priya.Do(t, http.MethodGet, "/api/v1/teams/T-9999", nil)
 
 	var europe people.TeamView
 	found.Decode(t, &europe)
 	if found.Status != http.StatusOK || europe.Description != "Marketing for lubricants across Europe." ||
 		memberNames(europe.Members) != "Daniel Okoro, Priya Raman, Sara Novak" || europe.Plans == nil {
-		t.Errorf("GET /api/teams/T-1001 = %d %s", found.Status, found.Body)
+		t.Errorf("GET /api/v1/teams/T-1001 = %d %s", found.Status, found.Body)
 	}
 	assertAnswer(t, missing, http.StatusNotFound, teamGoneBody)
 }
@@ -65,9 +65,9 @@ func TestCreateTeam_CreatedOrRefused_FR010_FR011(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	created := alex.Do(t, http.MethodPost, "/api/teams", map[string]any{"name": " Lubricants Asia ",
+	created := alex.Do(t, http.MethodPost, "/api/v1/teams", map[string]any{"name": " Lubricants Asia ",
 		"description": "Marketing for lubricants across Asia.", "memberIds": []string{"U-1002", "U-1003"}})
-	refused := alex.Do(t, http.MethodPost, "/api/teams", map[string]any{"name": "mobility CHINA", "colour": "pink"})
+	refused := alex.Do(t, http.MethodPost, "/api/v1/teams", map[string]any{"name": "mobility CHINA", "colour": "pink"})
 
 	assertAnswer(t, created, http.StatusCreated, `{"id":"T-1004","name":"Lubricants Asia",`+
 		`"description":"Marketing for lubricants across Asia.","colour":"magenta","active":true,"members":[`+
@@ -95,9 +95,9 @@ func TestUpdateTeam_ChangedConflictOrNotFound_FR011(t *testing.T) {
 	update := map[string]any{"name": "Lubricants Asia Pacific", "description": "", "colour": asia.Colour,
 		"memberIds": []string{"U-1002", "U-1003"}, "version": 1}
 
-	changed := daniel.Do(t, http.MethodPatch, "/api/teams/"+asia.ID, update)
-	outOfDate := priya.Do(t, http.MethodPatch, "/api/teams/"+asia.ID, update)
-	missing := priya.Do(t, http.MethodPatch, "/api/teams/T-9999", update)
+	changed := daniel.Do(t, http.MethodPatch, "/api/v1/teams/"+asia.ID, update)
+	outOfDate := priya.Do(t, http.MethodPatch, "/api/v1/teams/"+asia.ID, update)
+	missing := priya.Do(t, http.MethodPatch, "/api/v1/teams/T-9999", update)
 
 	var team people.TeamView
 	changed.Decode(t, &team)
@@ -105,9 +105,9 @@ func TestUpdateTeam_ChangedConflictOrNotFound_FR011(t *testing.T) {
 		memberNames(team.Members) != "Daniel Okoro, Priya Raman" || team.UpdatedBy.Name != "Daniel Okoro" {
 		t.Errorf("PATCH = %d %s", changed.Status, changed.Body)
 	}
-	assertAnswer(t, outOfDate, http.StatusConflict, `{"code":"version_conflict",`+
+	assertAnswer(t, outOfDate, http.StatusConflict, `{"error":{"code":"version_conflict",`+
 		`"message":"Not saved — Daniel Okoro changed this team","fields":[],`+
-		`"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:00:00Z"}}`)
+		`"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:00:00Z"}}}`)
 	assertAnswer(t, missing, http.StatusNotFound, teamGoneBody)
 }
 
@@ -118,8 +118,8 @@ func TestDeleteTeam_ThenUndo_FR015(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	asia := createTeam(t, alex, map[string]any{"name": "Lubricants Asia", "memberIds": []string{"U-1002", "U-1003"}})
 
-	deleted := alex.Do(t, http.MethodDelete, "/api/teams/"+asia.ID, nil)
-	gone := alex.Do(t, http.MethodDelete, "/api/teams/"+asia.ID, nil)
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/teams/"+asia.ID, nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/teams/"+asia.ID, nil)
 
 	var result history.DeleteResult
 	deleted.Decode(t, &result)
@@ -131,8 +131,8 @@ func TestDeleteTeam_ThenUndo_FR015(t *testing.T) {
 	}
 	assertAnswer(t, gone, http.StatusNotFound, teamGoneBody)
 
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+entry.ID+"/undo", nil)
-	back := alex.Do(t, http.MethodGet, "/api/teams/"+asia.ID, nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+entry.ID+"/undo", nil)
+	back := alex.Do(t, http.MethodGet, "/api/v1/teams/"+asia.ID, nil)
 
 	var team people.TeamView
 	back.Decode(t, &team)
@@ -147,10 +147,10 @@ func TestRestoreTeam_NameTaken_FR015(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	asia := createTeam(t, alex, map[string]any{"name": "Lubricants Asia"})
 	var result history.DeleteResult
-	alex.Do(t, http.MethodDelete, "/api/teams/"+asia.ID, nil).Decode(t, &result)
+	alex.Do(t, http.MethodDelete, "/api/v1/teams/"+asia.ID, nil).Decode(t, &result)
 	createTeam(t, alex, map[string]any{"name": "Lubricants Asia"})
 
-	response := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+result.RecycleBinEntry.ID+"/restore", nil)
+	response := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/restore", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"recordType":"team","recordTypeLabel":"team","recordId":"`+asia.ID+`",`+
 		`"recordName":"Lubricants Asia (restored)","details":"Renamed to 'Lubricants Asia (restored)' because the name was taken."}`)
@@ -165,16 +165,16 @@ func TestTeamImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 	form := map[string]any{"name": "Lubricants Asia", "description": "", "colour": asia.Colour,
 		"memberIds": []string{"U-1003"}, "version": 1}
 
-	impact := alex.Do(t, http.MethodPost, "/api/teams/"+asia.ID+"/impact", form)
+	impact := alex.Do(t, http.MethodPost, "/api/v1/teams/"+asia.ID+"/impact", form)
 	form["name"] = " "
-	invalid := alex.Do(t, http.MethodPost, "/api/teams/"+asia.ID+"/impact", form)
-	missing := alex.Do(t, http.MethodPost, "/api/teams/T-9999/impact", form)
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/teams/"+asia.ID+"/impact", form)
+	missing := alex.Do(t, http.MethodPost, "/api/v1/teams/T-9999/impact", form)
 
 	assertAnswer(t, impact, http.StatusOK, `{"warnings":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a name."}`))
 	assertAnswer(t, missing, http.StatusNotFound, teamGoneBody)
 	var team people.TeamView
-	alex.Do(t, http.MethodGet, "/api/teams/"+asia.ID, nil).Decode(t, &team)
+	alex.Do(t, http.MethodGet, "/api/v1/teams/"+asia.ID, nil).Decode(t, &team)
 	if team.Version != 1 || len(team.Members) != 2 {
 		t.Errorf("after the impact check the team = %+v, want it unchanged", team)
 	}
@@ -186,7 +186,7 @@ func TestSetTeamStatus_InactiveAndBack_FR014(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	asia := createTeam(t, alex, map[string]any{"name": "Lubricants Asia"})
-	path := "/api/teams/" + asia.ID + "/status"
+	path := "/api/v1/teams/" + asia.ID + "/status"
 
 	var inactive, active people.TeamView
 	alex.Do(t, http.MethodPost, path, map[string]any{"active": false, "version": 1}).Decode(t, &inactive)
@@ -204,12 +204,12 @@ func TestSetTeamStatus_InactiveAndBack_FR014(t *testing.T) {
 	}
 }
 
-// createTeam creates a team through POST /api/teams and stops the test when that fails.
+// createTeam creates a team through POST /api/v1/teams and stops the test when that fails.
 func createTeam(t *testing.T, client *apitest.Client, body map[string]any) people.TeamView {
 	t.Helper()
-	response := client.Do(t, http.MethodPost, "/api/teams", body)
+	response := client.Do(t, http.MethodPost, "/api/v1/teams", body)
 	if response.Status != http.StatusCreated {
-		t.Fatalf("POST /api/teams %v = %d %s", body, response.Status, response.Body)
+		t.Fatalf("POST /api/v1/teams %v = %d %s", body, response.Status, response.Body)
 	}
 	var team people.TeamView
 	response.Decode(t, &team)
@@ -218,7 +218,7 @@ func createTeam(t *testing.T, client *apitest.Client, body map[string]any) peopl
 
 // validationBody is the body of a validation_failed answer with the field problems fields.
 func validationBody(fields string) string {
-	return `{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}`
+	return `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}}`
 }
 
 // memberNames joins the names of members with ", ".

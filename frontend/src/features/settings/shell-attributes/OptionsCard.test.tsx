@@ -16,7 +16,7 @@ import {
   usedBy,
 } from './testData';
 
-const OPTIONS_PATH = 'GET /api/shell-attributes/SA-1010/options';
+const OPTIONS_PATH = 'GET /api/v1/shell-attributes/SA-1010/options';
 
 const TV = shellOption({
   id: 'SO-1101',
@@ -44,7 +44,7 @@ function renderCard(answers: Record<string, MockHandler>, attribute = MEDIA_CHAN
 /** The query of each options request, as `URLSearchParams`. */
 function optionQueries(api: ReturnType<typeof mockApi>) {
   return api.requests
-    .filter((request) => request.path === '/api/shell-attributes/SA-1010/options')
+    .filter((request) => request.path === '/api/v1/shell-attributes/SA-1010/options')
     .map((request) => new URLSearchParams(request.search));
 }
 
@@ -145,17 +145,19 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     let attempts = 0;
     const { user, api } = renderCard({
       [OPTIONS_PATH]: { body: page([TV]) },
-      'POST /api/shell-attributes/SA-1010/options': () => {
+      'POST /api/v1/shell-attributes/SA-1010/options': () => {
         attempts += 1;
         return attempts === 1
           ? {
               status: 400,
               body: {
-                code: 'validation_failed',
-                message: 'Check the highlighted fields.',
-                fields: [
-                  { field: 'label', message: "'tv' is already an option of Media channel." },
-                ],
+                error: {
+                  code: 'validation_failed',
+                  message: 'Check the highlighted fields.',
+                  fields: [
+                    { field: 'label', message: "'tv' is already an option of Media channel." },
+                  ],
+                },
               },
             }
           : { status: 201, body: RADIO };
@@ -166,7 +168,7 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     const panel = await screen.findByRole('dialog', { name: 'Add option' });
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
     expect(within(panel).getAllByText('Enter a label.')).not.toHaveLength(0);
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1010/options')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1010/options')).toEqual([]);
 
     await user.type(within(panel).getByRole('textbox', { name: /Label/ }), 'tv');
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
@@ -180,7 +182,7 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Option 'Radio' added");
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1010/options').at(-1)).toEqual({
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1010/options').at(-1)).toEqual({
       label: 'Radio',
     });
   });
@@ -189,16 +191,18 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     let attempts = 0;
     const { user, api } = renderCard({
       [OPTIONS_PATH]: { body: page([TV, RADIO]) },
-      'GET /api/shell-attribute-options/SO-1102': { body: { ...RADIO, version: 4 } },
-      'PATCH /api/shell-attribute-options/SO-1102': () => {
+      'GET /api/v1/shell-attribute-options/SO-1102': { body: { ...RADIO, version: 4 } },
+      'PATCH /api/v1/shell-attribute-options/SO-1102': () => {
         attempts += 1;
         return attempts === 1
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Someone else changed this option.',
-                conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Someone else changed this option.',
+                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-14T14:32:00Z' },
+                },
               },
             }
           : { body: { ...RADIO, label: 'Radio ads', version: 5 } };
@@ -218,7 +222,7 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Option 'Radio ads' saved");
-    expect(api.bodiesOf('PATCH /api/shell-attribute-options/SO-1102')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/shell-attribute-options/SO-1102')).toEqual([
       { label: 'Radio ads', version: 1 },
       { label: 'Radio ads', version: 4 },
     ]);
@@ -227,15 +231,15 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   it('moves an option and sets it inactive', async () => {
     const { user, api } = renderCard({
       [OPTIONS_PATH]: { body: page([TV, RADIO]) },
-      'POST /api/shell-attribute-options/SO-1101/move': { body: { ...TV, position: 2 } },
-      'POST /api/shell-attribute-options/SO-1102/status': { body: { ...RADIO, active: false } },
+      'POST /api/v1/shell-attribute-options/SO-1101/move': { body: { ...TV, position: 2 } },
+      'POST /api/v1/shell-attribute-options/SO-1102/status': { body: { ...RADIO, active: false } },
     });
 
     await user.click(await screen.findByRole('button', { name: 'Actions for TV' }));
     expect(screen.queryByRole('menuitem', { name: 'Move up' })).not.toBeInTheDocument();
     await user.click(await screen.findByRole('menuitem', { name: 'Move down' }));
     await waitFor(() =>
-      expect(api.bodiesOf('POST /api/shell-attribute-options/SO-1101/move')).toEqual([
+      expect(api.bodiesOf('POST /api/v1/shell-attribute-options/SO-1101/move')).toEqual([
         { direction: 'down', version: 1 },
       ]),
     );
@@ -303,7 +307,7 @@ describe('OptionsCard (FR-018, FR-020, SC-007)', () => {
   it('deletes an unused option and offers Undo', async () => {
     const { user } = renderCard({
       [OPTIONS_PATH]: { body: page([TV, RADIO]) },
-      'DELETE /api/shell-attribute-options/SO-1102': {
+      'DELETE /api/v1/shell-attribute-options/SO-1102': {
         body: {
           recycleBinEntry: {
             id: 'BIN-1003',
@@ -441,8 +445,8 @@ describe('OptionsCard: options of a dependent attribute (FR-022)', () => {
     const { user, api } = renderCard(
       {
         [OPTIONS_PATH]: { body: page([CHINA]) },
-        'GET /api/shell-attribute-forms/activity': { body: FORM },
-        'POST /api/shell-attributes/SA-1010/options': {
+        'GET /api/v1/shell-attribute-forms/activity': { body: FORM },
+        'POST /api/v1/shell-attributes/SA-1010/options': {
           status: 201,
           body: { ...CHINA, id: 'SO-1102', label: 'Retail – Japan' },
         },
@@ -461,12 +465,12 @@ describe('OptionsCard: options of a dependent attribute (FR-022)', () => {
     expect(
       await within(panel).findAllByText("Link 'Retail – Japan' to at least one cluster option."),
     ).toHaveLength(2);
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1010/options')).toEqual([]);
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1010/options')).toEqual([]);
     await user.click(within(linkedTo).getByRole('checkbox', { name: 'Asia' }));
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Option 'Retail – Japan' added");
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1010/options')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1010/options')).toEqual([
       { label: 'Retail – Japan', parentOptionIds: ['SO-1'] },
     ]);
   });
@@ -475,8 +479,8 @@ describe('OptionsCard: options of a dependent attribute (FR-022)', () => {
     const { user, api } = renderCard(
       {
         [OPTIONS_PATH]: { body: page([CHINA]) },
-        'GET /api/shell-attribute-forms/activity': { body: FORM },
-        'PATCH /api/shell-attribute-options/SO-1101': {
+        'GET /api/v1/shell-attribute-forms/activity': { body: FORM },
+        'PATCH /api/v1/shell-attribute-options/SO-1101': {
           body: { ...CHINA, parentOptions: [{ id: 'SO-1', name: 'Asia', active: true }] },
         },
       },
@@ -494,7 +498,7 @@ describe('OptionsCard: options of a dependent attribute (FR-022)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Option 'Retail – China' saved");
-    expect(api.bodiesOf('PATCH /api/shell-attribute-options/SO-1101')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/shell-attribute-options/SO-1101')).toEqual([
       { parentOptionIds: ['SO-1'], version: 1 },
     ]);
   });

@@ -37,7 +37,7 @@ export const campaignKeys = {
     'destinations',
     purpose,
   ],
-  /** Feature 004's key of the plan page (GET /api/plans/{planId}). */
+  /** Feature 004's key of the plan page (GET /api/v1/plans/{planId}). */
   plan: (planId: string): QueryKey => ['plan', planId],
 };
 
@@ -66,7 +66,8 @@ export async function refreshPlanning(queryClient: QueryClient): Promise<void> {
 export function usePlanCampaigns(planId: string) {
   return useQuery({
     queryKey: campaignKeys.planCampaigns(planId),
-    queryFn: () => call(api.GET('/api/plans/{planId}/campaigns', { params: { path: { planId } } })),
+    queryFn: () =>
+      call(api.GET('/api/v1/plans/{planId}/campaigns', { params: { path: { planId } } })),
   });
 }
 
@@ -87,13 +88,13 @@ export function useInitiative(initiativeId: string) {
 }
 
 /**
- * The plan (feature 004's GET /api/plans/{planId}, same key as its plan page): the forms need its
+ * The plan (feature 004's GET /api/v1/plans/{planId}, same key as its plan page): the forms need its
  * business unit, which decides the Shell attributes shown.
  */
 export function usePlan(planId: string) {
   return useQuery({
     queryKey: campaignKeys.plan(planId),
-    queryFn: () => call(api.GET('/api/plans/{planId}', { params: { path: { planId } } })),
+    queryFn: () => call(api.GET('/api/v1/plans/{planId}', { params: { path: { planId } } })),
   });
 }
 
@@ -123,7 +124,7 @@ export function useCreateCampaign(planId: string) {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: (body: CampaignCreate) =>
-      call(api.POST('/api/plans/{planId}/campaigns', { params: { path: { planId } }, body })),
+      call(api.POST('/api/v1/plans/{planId}/campaigns', { params: { path: { planId } }, body })),
     onSettled: refresh,
   });
 }
@@ -133,7 +134,7 @@ export function useCreateInitiative(campaignId: string) {
   return useMutation({
     mutationFn: (body: InitiativeCreate) =>
       call(
-        api.POST('/api/campaigns/{campaignId}/initiatives', {
+        api.POST('/api/v1/campaigns/{campaignId}/initiatives', {
           params: { path: { campaignId } },
           body,
         }),
@@ -152,13 +153,13 @@ export function useUpdateRecord(level: 'campaign' | 'initiative', id: string) {
     mutationFn: (body: RecordUpdate): Promise<Campaign | Initiative> =>
       level === 'campaign'
         ? call(
-            api.PATCH('/api/campaigns/{campaignId}', {
+            api.PATCH('/api/v1/campaigns/{campaignId}', {
               params: { path: { campaignId: id } },
               body,
             }),
           )
         : call(
-            api.PATCH('/api/initiatives/{initiativeId}', {
+            api.PATCH('/api/v1/initiatives/{initiativeId}', {
               params: { path: { initiativeId: id } },
               body,
             }),
@@ -182,9 +183,11 @@ export function useDeleteRecord() {
   return useMutation({
     mutationFn: ({ level, id }: DeleteTarget) =>
       level === 'campaign'
-        ? call(api.DELETE('/api/campaigns/{campaignId}', { params: { path: { campaignId: id } } }))
+        ? call(
+            api.DELETE('/api/v1/campaigns/{campaignId}', { params: { path: { campaignId: id } } }),
+          )
         : call(
-            api.DELETE('/api/initiatives/{initiativeId}', {
+            api.DELETE('/api/v1/initiatives/{initiativeId}', {
               params: { path: { initiativeId: id } },
             }),
           ),
@@ -201,12 +204,12 @@ export function useDestinations(level: 'campaign' | 'initiative', id: string, pu
     queryFn: () =>
       level === 'campaign'
         ? call(
-            api.GET('/api/campaigns/{campaignId}/destinations', {
+            api.GET('/api/v1/campaigns/{campaignId}/destinations', {
               params: { path: { campaignId: id }, query: { purpose } },
             }),
           )
         : call(
-            api.GET('/api/initiatives/{initiativeId}/destinations', {
+            api.GET('/api/v1/initiatives/{initiativeId}/destinations', {
               params: { path: { initiativeId: id }, query: { purpose } },
             }),
           ),
@@ -237,13 +240,13 @@ export function useMoveRecord() {
     }: DestinationTarget & { version: number }): Promise<Campaign | Initiative> =>
       level === 'campaign'
         ? call(
-            api.POST('/api/campaigns/{campaignId}/move', {
+            api.POST('/api/v1/campaigns/{campaignId}/move', {
               params: { path: { campaignId: id } },
               body: { planId: destinationId, version },
             }),
           )
         : call(
-            api.POST('/api/initiatives/{initiativeId}/move', {
+            api.POST('/api/v1/initiatives/{initiativeId}/move', {
               params: { path: { initiativeId: id } },
               body: { campaignId: destinationId, version },
             }),
@@ -264,13 +267,13 @@ export function useCopyRecord() {
     }: DestinationTarget & { name: string }): Promise<Campaign | Initiative> =>
       level === 'campaign'
         ? call(
-            api.POST('/api/campaigns/{campaignId}/copy', {
+            api.POST('/api/v1/campaigns/{campaignId}/copy', {
               params: { path: { campaignId: id } },
               body: { planId: destinationId, name },
             }),
           )
         : call(
-            api.POST('/api/initiatives/{initiativeId}/copy', {
+            api.POST('/api/v1/initiatives/{initiativeId}/copy', {
               params: { path: { initiativeId: id } },
               body: { campaignId: destinationId, name },
             }),
@@ -280,11 +283,13 @@ export function useCopyRecord() {
 }
 
 function fetchCampaign(campaignId: string) {
-  return call(api.GET('/api/campaigns/{campaignId}', { params: { path: { campaignId } } }));
+  return call(api.GET('/api/v1/campaigns/{campaignId}', { params: { path: { campaignId } } }));
 }
 
 function fetchInitiative(initiativeId: string) {
-  return call(api.GET('/api/initiatives/{initiativeId}', { params: { path: { initiativeId } } }));
+  return call(
+    api.GET('/api/v1/initiatives/{initiativeId}', { params: { path: { initiativeId } } }),
+  );
 }
 
 function useRefresh() {

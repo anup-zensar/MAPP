@@ -10,7 +10,7 @@ import { routes } from './router';
 
 const PRIYA = testUser();
 
-const HEALTH_LOCAL = { status: 'ok', environment: 'local', demoSignIn: true };
+const ENVIRONMENT_LOCAL = { environment: 'local', demoSignIn: true };
 
 function BrokenPage(): never {
   throw new Error('A programming mistake');
@@ -67,7 +67,7 @@ describe('routes', () => {
   )(
     'opens %s from the sidebar address %s, highlighted, with its tab title (US2 scenario 1, SC-003)',
     async (label, path) => {
-      mockApi({ 'GET /api/me': { body: PRIYA }, ...HOME_ANSWERS });
+      mockApi({ 'GET /api/v1/me': { body: PRIYA }, ...HOME_ANSWERS });
       renderRoutes(routes, { route: path });
 
       const title = label === 'Home' ? 'Welcome back, Priya.' : label;
@@ -101,7 +101,7 @@ describe('routes', () => {
   ])(
     'names %s in the browser tab already while the session is checked (plan "Session")',
     async (path, title) => {
-      mockApi({ 'GET /api/me': () => new Promise<never>(() => {}) });
+      mockApi({ 'GET /api/v1/me': () => new Promise<never>(() => {}) });
       renderRoutes(routes, { route: path });
 
       await screen.findByRole('status');
@@ -116,11 +116,11 @@ describe('routes', () => {
     'opens the developer page %s in the app layout, outside the navigation, where demo sign-in is on (research R23)',
     async (path, title) => {
       mockApi({
-        'GET /api/me': { body: PRIYA },
-        'GET /api/health': { body: HEALTH_LOCAL },
-        'GET /api/sample-folders': { body: { items: [], total: 0 } },
-        'GET /api/recycle-bin': { body: { items: [], total: 0 } },
-        'GET /api/activity-log': { body: { items: [], total: 0 } },
+        'GET /api/v1/me': { body: PRIYA },
+        'GET /api/v1/environment': { body: ENVIRONMENT_LOCAL },
+        'GET /api/v1/sample-folders': { body: { items: [], total: 0 } },
+        'GET /api/v1/recycle-bin': { body: { items: [], total: 0 } },
+        'GET /api/v1/activity-log': { body: { items: [], total: 0 } },
       });
       renderRoutes(routes, { route: path });
 
@@ -135,9 +135,9 @@ describe('routes', () => {
     'shows "Page not found" at %s where demo sign-in is off (FR-009, D-036)',
     async (path) => {
       const api = mockApi({
-        'GET /api/me': { body: PRIYA },
-        'GET /api/health': {
-          body: { ...HEALTH_LOCAL, environment: 'production', demoSignIn: false },
+        'GET /api/v1/me': { body: PRIYA },
+        'GET /api/v1/environment': {
+          body: { ...ENVIRONMENT_LOCAL, environment: 'production', demoSignIn: false },
         },
       });
       renderRoutes(routes, { route: path });
@@ -147,7 +147,7 @@ describe('routes', () => {
       ).toBeInTheDocument();
       expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
       // The developer route asked the API which environment this is.
-      expect(api.requests.map((request) => request.path)).toContain('/api/health');
+      expect(api.requests.map((request) => request.path)).toContain('/api/v1/environment');
     },
   );
 });

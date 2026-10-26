@@ -12,7 +12,7 @@ import { DISPLAY_CURRENCIES } from './testData';
 const CURRENCY_LIST = { body: { items: DISPLAY_CURRENCIES, total: DISPLAY_CURRENCIES.length } };
 
 function renderPicker(answers: Record<string, MockHandler> = {}, user: CurrentUser = testUser()) {
-  const api = mockApi({ 'GET /api/me/display-currencies': CURRENCY_LIST, ...answers });
+  const api = mockApi({ 'GET /api/v1/me/display-currencies': CURRENCY_LIST, ...answers });
   const rendered = renderWithProviders(<CurrencyPicker />, { user });
   return { ...rendered, api };
 }
@@ -40,7 +40,7 @@ describe('CurrencyPicker', () => {
   it('keeps an inactive display currency in the list, because it stays in use (D-201)', async () => {
     renderPicker(
       {
-        'GET /api/me/display-currencies': {
+        'GET /api/v1/me/display-currencies': {
           body: {
             items: [{ code: 'CNY', name: 'Chinese yuan', active: false }, ...DISPLAY_CURRENCIES],
             total: 4,
@@ -55,7 +55,7 @@ describe('CurrencyPicker', () => {
   });
 
   it('shows the display currency while the list is still loading', () => {
-    renderPicker({ 'GET /api/me/display-currencies': () => new Promise<never>(() => {}) });
+    renderPicker({ 'GET /api/v1/me/display-currencies': () => new Promise<never>(() => {}) });
 
     expect(optionTexts()).toEqual(['USD']);
     expect(picker()).toHaveValue('USD');
@@ -63,7 +63,7 @@ describe('CurrencyPicker', () => {
 
   it('saves the chosen currency as display currency and asks every card again (FR-002, SC-005)', async () => {
     const { user, api, queryClient } = renderPicker({
-      'PATCH /api/me/preferences': {
+      'PATCH /api/v1/me/preferences': {
         body: { ...testUser().preferences, displayCurrency: 'EUR' },
       },
     });
@@ -77,7 +77,7 @@ describe('CurrencyPicker', () => {
         'EUR',
       ),
     );
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([{ displayCurrency: 'EUR' }]);
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([{ displayCurrency: 'EUR' }]);
     expect(queryClient.getQueryState(['home', 'summary', 'myTeams'])?.isInvalidated).toBe(true);
     expect(picker()).toHaveValue('EUR');
   });
@@ -85,7 +85,7 @@ describe('CurrencyPicker', () => {
   it('says when the choice could not be saved, goes back, and saves on Try again (FR-002)', async () => {
     let attempts = 0;
     const { user, api } = renderPicker({
-      'PATCH /api/me/preferences': () =>
+      'PATCH /api/v1/me/preferences': () =>
         ++attempts === 1
           ? { status: 500 }
           : { body: { ...testUser().preferences, displayCurrency: 'EUR' } },
@@ -101,7 +101,7 @@ describe('CurrencyPicker', () => {
     await user.click(within(messages).getByRole('button', { name: 'Try again' }));
 
     await waitFor(() => expect(picker()).toHaveValue('EUR'));
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([
       { displayCurrency: 'EUR' },
       { displayCurrency: 'EUR' },
     ]);

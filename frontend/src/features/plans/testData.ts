@@ -125,7 +125,7 @@ export function planDefaults(overrides: Partial<PlanDefaults> = {}): PlanDefault
 
 const NO_MONEY = { amount: '0.00', currency: 'USD' };
 
-/** FY2026 Lubricants Europe as GET /api/plans/P-1001 answers it: complete, nothing inside yet. */
+/** FY2026 Lubricants Europe as GET /api/v1/plans/P-1001 answers it: complete, nothing inside yet. */
 export function plan(overrides: Partial<Plan> = {}): Plan {
   return {
     id: 'P-1001',
@@ -268,11 +268,11 @@ export function seedList(overrides: Partial<PlanList> = {}): PlanList {
 
 /** What the plan form asks besides the plan: models, the attribute form, people, teams, budgets. */
 export const FORM_ANSWERS: Record<string, MockHandler> = {
-  'GET /api/models': { body: MODELS },
-  'GET /api/shell-attribute-forms/plan': { body: planForm() },
-  'GET /api/people': { body: PEOPLE },
-  'GET /api/teams': { body: TEAMS },
-  'GET /api/finance-budgets': { body: FINANCE_BUDGETS },
+  'GET /api/v1/models': { body: MODELS },
+  'GET /api/v1/shell-attribute-forms/plan': { body: planForm() },
+  'GET /api/v1/people': { body: PEOPLE },
+  'GET /api/v1/teams': { body: TEAMS },
+  'GET /api/v1/finance-budgets': { body: FINANCE_BUDGETS },
 };
 
 /**
@@ -282,8 +282,8 @@ export const FORM_ANSWERS: Record<string, MockHandler> = {
 export function financialsNotServed(...recordIds: string[]): Record<string, MockHandler> {
   return Object.fromEntries(
     recordIds.map((id) => [
-      `GET /api/financials/records/${id}`,
-      { status: 404, body: { code: 'not_found', message: 'Not found', fields: [] } },
+      `GET /api/v1/financials/records/${id}`,
+      { status: 404, body: { error: { code: 'not_found', message: 'Not found', fields: [] } } },
     ]),
   );
 }

@@ -35,15 +35,19 @@ const DEMO_PEOPLE = {
 };
 
 const SIGN_IN_REQUIRED = {
-  code: 'sign_in_required',
-  message: 'Please sign in to continue.',
-  fields: [],
+  error: {
+    code: 'sign_in_required',
+    message: 'Please sign in to continue.',
+    fields: [],
+  },
 };
-const SESSION_EXPIRED = { code: 'session_expired', message: 'Please sign in again', fields: [] };
+const SESSION_EXPIRED = {
+  error: { code: 'session_expired', message: 'Please sign in again', fields: [] },
+};
 
 /** The Plans page's request, answered with no plans: these tests use /plans as a signed-in page. */
 const NO_PLANS = {
-  'GET /api/plans': {
+  'GET /api/v1/plans': {
     body: {
       items: [],
       total: 0,
@@ -61,9 +65,9 @@ const NO_PLANS = {
 
 /** The Approvals page's request, answered with no rows. */
 const NO_APPROVALS = {
-  'GET /api/approvals': { body: { items: [], total: 0 } },
+  'GET /api/v1/approvals': { body: { items: [], total: 0 } },
   // The Approvals page lists the person's delegations too (feature 017).
-  'GET /api/approval-delegations': NO_DELEGATIONS,
+  'GET /api/v1/approval-delegations': NO_DELEGATIONS,
 };
 
 /** Shows what useSession() says, with a button that checks the session again. */
@@ -80,7 +84,7 @@ function SessionProbe() {
   );
 }
 
-/** The probe under the session, on a fresh page load: nothing is known until GET /api/me answers. */
+/** The probe under the session, on a fresh page load: nothing is known until GET /api/v1/me answers. */
 function renderProbe() {
   return renderRoutes([
     {
@@ -109,8 +113,8 @@ afterEach(() => {
 });
 
 describe('SessionProvider: who is signed in (research R15)', () => {
-  it('is loading until GET /api/me answers, then knows the signed-in person (FR-006)', async () => {
-    mockApi({ 'GET /api/me': { body: PRIYA } });
+  it('is loading until GET /api/v1/me answers, then knows the signed-in person (FR-006)', async () => {
+    mockApi({ 'GET /api/v1/me': { body: PRIYA } });
     renderProbe();
 
     expect(screen.getByText('Status: loading')).toBeInTheDocument();
@@ -119,7 +123,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
   });
 
   it('treats a 401 answer as signed out (FR-005)', async () => {
-    mockApi({ 'GET /api/me': { status: 401, body: SIGN_IN_REQUIRED } });
+    mockApi({ 'GET /api/v1/me': { status: 401, body: SIGN_IN_REQUIRED } });
     renderProbe();
 
     expect(await screen.findByText('Status: signedOut')).toBeInTheDocument();
@@ -132,7 +136,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
   ])(
     'is unreachable when nobody is known and the API cannot be asked: %s (edge case)',
     async (_case, answer) => {
-      mockApi({ 'GET /api/me': answer });
+      mockApi({ 'GET /api/v1/me': answer });
       renderProbe();
 
       expect(await screen.findByText('Status: unreachable')).toBeInTheDocument();
@@ -142,7 +146,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
   it('keeps the person signed in when a later check cannot reach the API (FR-006)', async () => {
     let calls = 0;
     mockApi({
-      'GET /api/me': () =>
+      'GET /api/v1/me': () =>
         ++calls === 1 ? { body: PRIYA } : Promise.reject(new TypeError('Failed to fetch')),
     });
     const { user, queryClient } = renderProbe();
@@ -158,7 +162,7 @@ describe('SessionProvider: who is signed in (research R15)', () => {
   it('shows the signed-in person’s light or dark mode, whatever this browser chose (FR-014)', async () => {
     localStorage.setItem('mapp.theme', 'light');
     mockApi({
-      'GET /api/me': {
+      'GET /api/v1/me': {
         body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
       },
     });
@@ -174,10 +178,10 @@ describe('SessionProvider: who is signed in (research R15)', () => {
 describe('SessionProvider: ending a session (US4)', () => {
   it('signs out to the sign-in page with "You have been signed out." only (US4 scenario 1)', async () => {
     mockApi({
-      'GET /api/me': { body: PRIYA },
-      'POST /api/auth/sign-out': { status: 204 },
+      'GET /api/v1/me': { body: PRIYA },
+      'POST /api/v1/auth/sign-out': { status: 204 },
       ...HOME_ANSWERS,
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { user, router } = renderRoutes(routes, { route: '/' });
 
@@ -192,10 +196,10 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('forgets the person and their data when the session ends (US4 scenario 1)', async () => {
     mockApi({
-      'GET /api/me': { body: PRIYA },
-      'POST /api/auth/sign-out': { status: 204 },
+      'GET /api/v1/me': { body: PRIYA },
+      'POST /api/v1/auth/sign-out': { status: 204 },
       ...HOME_ANSWERS,
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { user, router, queryClient } = renderRoutes(routes, { route: '/' });
     await user.click(await screen.findByRole('button', { name: 'Priya — account menu' }));
@@ -210,8 +214,8 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('says "Please sign in again" after a reload once the session has expired (FR-006)', async () => {
     mockApi({
-      'GET /api/me': { status: 401, body: SESSION_EXPIRED },
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'GET /api/v1/me': { status: 401, body: SESSION_EXPIRED },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { router } = renderRoutes(routes, { route: '/plans' });
 
@@ -222,8 +226,8 @@ describe('SessionProvider: ending a session (US4)', () => {
 
   it('keeps the sign-in page’s own way back when the expired session is found there (FR-005, FR-006)', async () => {
     mockApi({
-      'GET /api/me': { status: 401, body: SESSION_EXPIRED },
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'GET /api/v1/me': { status: 401, body: SESSION_EXPIRED },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { router } = renderRoutes(routes, { route: '/sign-in?next=%2Fplans' });
 
@@ -236,12 +240,12 @@ describe('SessionProvider: ending a session (US4)', () => {
     // This browser was light when the page opened; the person chose dark.
     localStorage.setItem('mapp.theme', 'light');
     mockApi({
-      'GET /api/me': {
+      'GET /api/v1/me': {
         body: { ...PRIYA, preferences: { theme: 'dark', sidebarCollapsed: false } },
       },
-      'POST /api/auth/sign-out': { status: 204 },
+      'POST /api/v1/auth/sign-out': { status: 204 },
       ...HOME_ANSWERS,
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
     });
     const { user, router } = renderRoutes(routes, { route: '/' });
 
@@ -259,14 +263,14 @@ describe('SessionProvider: ending a session (US4)', () => {
     const priyaInLight = { ...PRIYA, preferences: { theme: 'light', sidebarCollapsed: false } };
     let signedIn = false;
     const api = mockApi({
-      'GET /api/me': () =>
+      'GET /api/v1/me': () =>
         signedIn ? { body: priyaInLight } : { status: 401, body: SIGN_IN_REQUIRED },
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/auth/sign-in': () => {
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
+      'POST /api/v1/auth/sign-in': () => {
         signedIn = true;
         return { body: priyaInLight };
       },
-      'POST /api/auth/sign-out': { status: 204 },
+      'POST /api/v1/auth/sign-out': { status: 204 },
       ...HOME_ANSWERS,
     });
     const { user, router } = renderRoutes(routes, { route: '/sign-in' });
@@ -286,16 +290,16 @@ describe('SessionProvider: ending a session (US4)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
     expect(await screen.findByText('You have been signed out.')).toBeInTheDocument();
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(api.bodiesOf('PATCH /api/me/preferences')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toEqual([]);
   });
 
   it('brings the person back to where they were after signing in again (US4 scenario 2)', async () => {
     let checks = 0;
     const api = mockApi({
-      'GET /api/me': () =>
+      'GET /api/v1/me': () =>
         ++checks === 1 ? { status: 401, body: SESSION_EXPIRED } : { body: PRIYA },
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
-      'POST /api/auth/sign-in': { body: PRIYA },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
+      'POST /api/v1/auth/sign-in': { body: PRIYA },
       ...NO_PLANS,
     });
     const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
@@ -306,7 +310,7 @@ describe('SessionProvider: ending a session (US4)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans'));
     expect(router.state.location.search).toBe('?year=2026');
     expect(await screen.findByRole('heading', { level: 1, name: 'Plans' })).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/auth/sign-in')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/auth/sign-in')).toEqual([
       { email: 'priya.raman@shell.com', password: 'mapp' },
     ]);
   });
@@ -314,12 +318,12 @@ describe('SessionProvider: ending a session (US4)', () => {
   it('ends a lost session once, however many answers say so at the same time (US4 scenario 2)', async () => {
     const answers = gate();
     const api = mockApi({
-      'GET /api/me': { body: PRIYA },
-      'PATCH /api/me/preferences': async () => {
+      'GET /api/v1/me': { body: PRIYA },
+      'PATCH /api/v1/me/preferences': async () => {
         await answers.opened;
         return { status: 401, body: SESSION_EXPIRED };
       },
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
       ...NO_PLANS,
     });
     const { user, router } = renderRoutes(routes, { route: '/plans?year=2026' });
@@ -334,7 +338,7 @@ describe('SessionProvider: ending a session (US4)', () => {
     // Two choices whose saves are both on their way when the API says the session is gone.
     await user.click(screen.getByRole('button', { name: 'Collapse' }));
     await user.click(await screen.findByRole('button', { name: 'Expand sidebar' }));
-    await waitFor(() => expect(api.bodiesOf('PATCH /api/me/preferences')).toHaveLength(2));
+    await waitFor(() => expect(api.bodiesOf('PATCH /api/v1/me/preferences')).toHaveLength(2));
     act(() => answers.open());
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/sign-in'));
@@ -349,7 +353,7 @@ describe('SessionProvider: ending a session (US4)', () => {
     const lateAnswer = gate();
     let checks = 0;
     mockApi({
-      'GET /api/me': async () => {
+      'GET /api/v1/me': async () => {
         checks += 1;
         if (checks === 2) {
           // The check of the next navigation: the API answers it only after the sign-out.
@@ -357,8 +361,8 @@ describe('SessionProvider: ending a session (US4)', () => {
         }
         return checks <= 2 ? { body: PRIYA } : { status: 401, body: SIGN_IN_REQUIRED };
       },
-      'POST /api/auth/sign-out': { status: 204 },
-      'GET /api/auth/demo-people': { body: DEMO_PEOPLE },
+      'POST /api/v1/auth/sign-out': { status: 204 },
+      'GET /api/v1/auth/demo-people': { body: DEMO_PEOPLE },
       ...NO_PLANS,
       ...NO_APPROVALS,
       ...HOME_ANSWERS,
@@ -384,7 +388,7 @@ describe('SessionProvider: ending a session (US4)', () => {
   it('notices another person signing in in another tab, and starts again on Home (edge case)', async () => {
     let checks = 0;
     mockApi({
-      'GET /api/me': () => ({ body: ++checks === 1 ? PRIYA : DANIEL }),
+      'GET /api/v1/me': () => ({ body: ++checks === 1 ? PRIYA : DANIEL }),
       ...NO_PLANS,
       ...NO_APPROVALS,
       ...HOME_ANSWERS,

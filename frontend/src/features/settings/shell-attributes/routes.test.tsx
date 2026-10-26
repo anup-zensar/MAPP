@@ -5,9 +5,9 @@ import { BUSINESS_UNIT, FORM_ANSWERS, page } from './testData';
 
 /** What the Shell attribute pages ask the API when they open. */
 const ANSWERS = {
-  'GET /api/shell-attributes': { body: page([BUSINESS_UNIT]) },
-  'GET /api/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
-  'GET /api/shell-attributes/SA-1001/options': { body: page([]) },
+  'GET /api/v1/shell-attributes': { body: page([BUSINESS_UNIT]) },
+  'GET /api/v1/shell-attributes/SA-1001': { body: BUSINESS_UNIT },
+  'GET /api/v1/shell-attributes/SA-1001/options': { body: page([]) },
   ...FORM_ANSWERS,
 };
 

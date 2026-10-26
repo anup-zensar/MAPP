@@ -1,5 +1,8 @@
-/* Like the not-found page: a centred icon, title, sentence and Go to Home (feature 014, FR-008). */
+/* Like the not-found page: a centred icon, title, sentence and Go to Home (feature 014, FR-008).
+   On the grey page its secondary text and links are Text Strong (constitution X). */
 .page {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9,15 +12,15 @@
   text-align: center;
 }
 
-/* The icon sits in a soft blue circle, like the empty states. */
+/* The icon sits in a grey circle, like the empty states. */
 .icon {
   display: grid;
   place-items: center;
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--blue) 10%, transparent);
-  color: var(--blue);
+  background: var(--chip);
+  color: var(--ink-2);
 }
 
 .icon svg {

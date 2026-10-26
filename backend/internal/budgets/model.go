@@ -112,7 +112,7 @@ type AllocationOption struct {
 	CanAllocate Availability      `json:"canAllocate"`
 }
 
-// AllocationOptionPage is the answer of GET /api/global-budgets/{globalBudgetId}/allocation-options
+// AllocationOptionPage is the answer of GET /api/v1/global-budgets/{globalBudgetId}/allocation-options
 // (AllocationOptionPage).
 type AllocationOptionPage struct {
 	Items []AllocationOption `json:"items"`
@@ -153,7 +153,7 @@ type Summary struct {
 	AllocationCount int               `json:"allocationCount"` // every allocation of the global budget
 }
 
-// Page is the answer of GET /api/global-budgets (GlobalBudgetPage).
+// Page is the answer of GET /api/v1/global-budgets (GlobalBudgetPage).
 type Page struct {
 	Items  []Summary    `json:"items"`
 	Total  int          `json:"total"`
@@ -161,7 +161,7 @@ type Page struct {
 	Create Availability `json:"create"` // New global budget
 }
 
-// GlobalBudgetInput is the body of POST /api/global-budgets (GlobalBudgetCreate). The amount is a money
+// GlobalBudgetInput is the body of POST /api/v1/global-budgets (GlobalBudgetCreate). The amount is a money
 // input, so a wrong one becomes a field message.
 type GlobalBudgetInput struct {
 	Name        string       `json:"name"`
@@ -171,7 +171,7 @@ type GlobalBudgetInput struct {
 	Description string       `json:"description"`
 }
 
-// GlobalBudgetUpdate is the body of PATCH /api/global-budgets/{globalBudgetId} (GlobalBudgetUpdate): only the
+// GlobalBudgetUpdate is the body of PATCH /api/v1/global-budgets/{globalBudgetId} (GlobalBudgetUpdate): only the
 // fields to change, and the version the person started from (D-203). The year never changes.
 type GlobalBudgetUpdate struct {
 	Name        *string      `json:"name"`
@@ -181,7 +181,7 @@ type GlobalBudgetUpdate struct {
 	Version     *int         `json:"version"`
 }
 
-// AllocationInput is the body of POST /api/global-budgets/{globalBudgetId}/allocations
+// AllocationInput is the body of POST /api/v1/global-budgets/{globalBudgetId}/allocations
 // (BudgetAllocationCreate). PlanVersion is the plan's version the person saw.
 type AllocationInput struct {
 	PlanID      string       `json:"planId"`
@@ -189,7 +189,7 @@ type AllocationInput struct {
 	PlanVersion *int         `json:"planVersion"`
 }
 
-// AllocationUpdate is the body of PATCH /api/budget-allocations/{allocationId} (BudgetAllocationUpdate).
+// AllocationUpdate is the body of PATCH /api/v1/budget-allocations/{allocationId} (BudgetAllocationUpdate).
 type AllocationUpdate struct {
 	Amount      *money.Input `json:"amount"`
 	Version     *int         `json:"version"`     // the allocation's version

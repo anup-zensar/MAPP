@@ -21,12 +21,12 @@ import {
 
 const PATH = '/activities/:activityId/line-items/new';
 const ROUTE = '/activities/A-1001/line-items/new';
-const CREATE = 'POST /api/activities/A-1001/line-items';
+const CREATE = 'POST /api/v1/activities/A-1001/line-items';
 
 function renderPage(answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...formAnswers(),
-    'GET /api/activities/A-1001/line-items/form-options': { body: formOptions() },
+    'GET /api/v1/activities/A-1001/line-items/form-options': { body: formOptions() },
     ...answers,
   });
   return {
@@ -125,7 +125,7 @@ describe('LineItemCreatePage (US2)', () => {
   it('calculates in the plan currency of a GBP plan, with both rates and their date (016 FR-009, FR-015)', async () => {
     const gbp = (amount: string) => ({ amount, currency: 'GBP' });
     const { user } = renderPage({
-      'GET /api/activities/A-1001/line-items/form-options': {
+      'GET /api/v1/activities/A-1001/line-items/form-options': {
         body: formOptions({
           balance: {
             plannedCost: gbp('40000.00'),
@@ -262,7 +262,7 @@ describe('LineItemCreatePage (US2)', () => {
     };
     nothingLeft.balance = { ...nothingLeft.balance, balance: usd('0.00'), state: 'allAssigned' };
     const { user, router } = renderPage({
-      'GET /api/activities/A-1001/line-items/form-options': () => ({
+      'GET /api/v1/activities/A-1001/line-items/form-options': () => ({
         body: round++ === 0 ? formOptions() : nothingLeft,
       }),
       [CREATE]: { status: 201, body: lineItem({ name: 'Launch film – line item' }) },
@@ -285,7 +285,7 @@ describe('LineItemCreatePage (US2)', () => {
   it('asks before adding to an approved activity and confirms the restart (FR-031)', async () => {
     const options = formOptions({ activity: approvedActivity() });
     const { user, api } = renderPage({
-      'GET /api/activities/A-1001/line-items/form-options': { body: options },
+      'GET /api/v1/activities/A-1001/line-items/form-options': { body: options },
       [CREATE]: { status: 201, body: lineItem() },
     });
     await findForm();
@@ -320,7 +320,7 @@ describe('LineItemCreatePage (US2)', () => {
   it('says when the activity was deleted (edge case)', async () => {
     const message =
       'This activity was deleted — restore it from the recycle bin to keep working on its line items.';
-    renderPage({ 'GET /api/activities/A-1001/line-items/form-options': notFound(message) });
+    renderPage({ 'GET /api/v1/activities/A-1001/line-items/form-options': notFound(message) });
 
     expect(await screen.findByText(message)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Go to the recycle bin' })).toHaveAttribute(
@@ -331,12 +331,14 @@ describe('LineItemCreatePage (US2)', () => {
 
   it('shows a load failure with Try again', async () => {
     renderPage({
-      'GET /api/activities/A-1001/line-items/form-options': {
+      'GET /api/v1/activities/A-1001/line-items/form-options': {
         status: 500,
         body: {
-          code: 'internal_error',
-          message: 'Something went wrong. Please try again.',
-          fields: [],
+          error: {
+            code: 'internal_error',
+            message: 'Something went wrong. Please try again.',
+            fields: [],
+          },
         },
       },
     });
@@ -374,7 +376,7 @@ describe('LineItemCreatePage (US2)', () => {
       plannedCost: null,
       plannedCostSource: 'noActivityPlannedCost',
     };
-    renderPage({ 'GET /api/activities/A-1001/line-items/form-options': { body: options } });
+    renderPage({ 'GET /api/v1/activities/A-1001/line-items/form-options': { body: options } });
 
     await findForm();
     expect(
@@ -402,7 +404,7 @@ describe('LineItemCreatePage (US2)', () => {
   }
 
   it('hides a line-item attribute of another business unit than the plan has (002 FR-023, D-212)', async () => {
-    renderPage({ 'GET /api/shell-attribute-forms/lineItem': mobilityOnlyForm() });
+    renderPage({ 'GET /api/v1/shell-attribute-forms/lineItem': mobilityOnlyForm() });
 
     await findForm();
     expect(screen.queryByLabelText('Mobility channel')).not.toBeInTheDocument();
@@ -410,14 +412,14 @@ describe('LineItemCreatePage (US2)', () => {
 
   it("shows it from the activity's Business unit options alone, without asking for the plan (D-212)", async () => {
     const { api } = renderPage({
-      'GET /api/shell-attribute-forms/lineItem': mobilityOnlyForm(),
-      'GET /api/activities/A-1001/line-items/form-options': {
+      'GET /api/v1/shell-attribute-forms/lineItem': mobilityOnlyForm(),
+      'GET /api/v1/activities/A-1001/line-items/form-options': {
         body: formOptions({ activity: activity({ businessUnitOptionIds: ['SO-BU-MOB'] }) }),
       },
     });
 
     await findForm();
     expect(screen.getByLabelText('Mobility channel')).toBeInTheDocument();
-    expect(api.requests.some((request) => request.path.startsWith('/api/plans'))).toBe(false);
+    expect(api.requests.some((request) => request.path.startsWith('/api/v1/plans'))).toBe(false);
   });
 });

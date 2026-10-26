@@ -22,8 +22,8 @@ const EUROPE = {
   ...META,
 };
 const TEAMS: Record<string, MockHandler> = {
-  'GET /api/teams': { body: { items: [EUROPE], total: 1 } },
-  'GET /api/teams/T-1001': { body: EUROPE },
+  'GET /api/v1/teams': { body: { items: [EUROPE], total: 1 } },
+  'GET /api/v1/teams/T-1001': { body: EUROPE },
 };
 const PRIYA = {
   id: 'U-1002',
@@ -36,15 +36,15 @@ const PRIYA = {
   ...META,
 };
 const PEOPLE: Record<string, MockHandler> = {
-  'GET /api/people': { body: { items: [PRIYA], total: 1 } },
-  'GET /api/people/U-1002': { body: { ...PRIYA, usage: [] } },
-  'GET /api/people/U-1002/roles': {
+  'GET /api/v1/people': { body: { items: [PRIYA], total: 1 } },
+  'GET /api/v1/people/U-1002': { body: { ...PRIYA, usage: [] } },
+  'GET /api/v1/people/U-1002/roles': {
     status: 403,
-    body: { code: 'forbidden', message: 'No access', fields: [] },
+    body: { error: { code: 'forbidden', message: 'No access', fields: [] } },
   },
 };
 const CURRENCIES: Record<string, MockHandler> = {
-  'GET /api/me/display-currencies': {
+  'GET /api/v1/me/display-currencies': {
     body: { items: [{ code: 'USD', name: 'US dollar', active: true }], total: 1 },
   },
 };
@@ -93,12 +93,12 @@ describe('People, teams and profile routes (feature 003)', () => {
     let saved = false;
     const { user } = renderApp('/profile', {
       ...CURRENCIES,
-      'PATCH /api/me': () => {
+      'PATCH /api/v1/me': () => {
         saved = true;
         return { body: renamed };
       },
       // The session is asked again after the change; by then it has the new name.
-      'GET /api/me': () => ({ body: saved ? renamed : testUser() }),
+      'GET /api/v1/me': () => ({ body: saved ? renamed : testUser() }),
     });
     const accountButtons = () => screen.getAllByRole('button', { name: 'Priya — account menu' });
     const editDetails = await screen.findByRole('button', { name: 'Edit details' });

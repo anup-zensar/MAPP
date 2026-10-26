@@ -36,7 +36,7 @@ func get[T any](t *testing.T, client *apitest.Client, path string) T {
 	return v
 }
 
-// apiError is the body of an error answer.
+// apiError is the inner object of an error answer.
 type apiError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -52,12 +52,14 @@ func refused(t *testing.T, response *apitest.Response, status int, code string) 
 	if response.Status != status {
 		t.Fatalf("status %d %s, want %d %s", response.Status, response.Body, status, code)
 	}
-	var body apiError
-	response.Decode(t, &body)
-	if body.Code != code {
-		t.Fatalf("code %q (%s), want %q", body.Code, body.Message, code)
+	var body struct {
+		Error apiError `json:"error"`
 	}
-	return body
+	response.Decode(t, &body)
+	if body.Error.Code != code {
+		t.Fatalf("code %q (%s), want %q", body.Error.Code, body.Error.Message, code)
+	}
+	return body.Error
 }
 
 // fieldRefused checks a 400 validation_failed on field with message (any message when "").
@@ -96,7 +98,7 @@ func TestRecord_Contract_FR015(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	activity := get[financials.RecordView](t, alex, "/api/financials/records/A-1002")
+	activity := get[financials.RecordView](t, alex, "/api/v1/financials/records/A-1002")
 	f := activity.Figures
 	if f.Committed != dollars(t, "25000.00") || f.Invoiced != dollars(t, "22500.00") || f.Paid != dollars(t, "20000.00") ||
 		f.Accrued != dollars(t, "2500.00") || f.PlannedCost == nil || *f.PlannedCost != dollars(t, "80000.00") ||
@@ -121,7 +123,7 @@ func TestRecord_Contract_FR015(t *testing.T) {
 		t.Errorf("source = %+v", activity.Source)
 	}
 
-	standBuild := get[financials.RecordView](t, alex, "/api/financials/records/L-1006")
+	standBuild := get[financials.RecordView](t, alex, "/api/v1/financials/records/L-1006")
 	if s := standBuild.Figures; !s.CommittedAbovePlanned || s.CommittedPercent == nil || *s.CommittedPercent != 107 ||
 		*s.NotYetCommitted != dollars(t, "-652.17") || s.LineItemsAbovePlanned != 0 {
 		t.Errorf("Stand build = %+v", s)
@@ -131,7 +133,7 @@ func TestRecord_Contract_FR015(t *testing.T) {
 		t.Errorf("Stand build breakdown %v %+v, SWBS codes %v", standBuild.BreakdownLevel, standBuild.Breakdown, standBuild.SwbsCodes)
 	}
 
-	plan := get[financials.RecordView](t, alex, "/api/financials/records/P-1001")
+	plan := get[financials.RecordView](t, alex, "/api/v1/financials/records/P-1001")
 	if p := plan.Figures; p.Committed != dollars(t, "35652.17") || *p.PlannedCost != dollars(t, "460000.00") ||
 		*p.CommittedPercent != 8 || p.LineItemsAbovePlanned != 1 || p.FirstLineItemAbovePlanned == nil ||
 		p.FirstLineItemAbovePlanned.ID != "L-1006" {
@@ -149,14 +151,14 @@ func TestRecord_NotFoundAndDisplayCurrency_FR011(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	body := refused(t, priya.Do(t, http.MethodGet, "/api/financials/records/A-9999", nil), http.StatusNotFound, "not_found")
+	body := refused(t, priya.Do(t, http.MethodGet, "/api/v1/financials/records/A-9999", nil), http.StatusNotFound, "not_found")
 	if body.Message != "This activity no longer exists — someone may have deleted it." {
 		t.Errorf("message = %q", body.Message)
 	}
-	if response := priya.Do(t, http.MethodPatch, "/api/me/preferences", map[string]any{"displayCurrency": "EUR"}); response.Status != http.StatusOK {
+	if response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "EUR"}); response.Status != http.StatusOK {
 		t.Fatalf("preferences = %d %s", response.Status, response.Body)
 	}
-	got := get[financials.RecordView](t, priya, "/api/financials/records/L-1003")
+	got := get[financials.RecordView](t, priya, "/api/v1/financials/records/L-1003")
 	if eur := dollars(t, "18400.00").Amount; got.Figures.Committed != (money.Money{Amount: eur, Currency: "EUR"}) {
 		t.Errorf("Venue hire committed = %+v, want 18,400.00 EUR", got.Figures.Committed)
 	}
@@ -168,7 +170,7 @@ func TestTransactions_Contract_FR021(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	all := get[financials.TransactionPage](t, alex, "/api/financials/transactions")
+	all := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions")
 	want := financials.TypeCounts{All: 11, PurchaseOrder: 4, Invoice: 3, Payment: 2, Accrual: 2, NotLinked: 1}
 	if all.Counts != want || all.Total != 11 || len(all.Items) != 11 || all.Year != 2026 || all.Page != 1 || all.PageSize != 50 {
 		t.Errorf("counts %+v, total %d, %d items, year %d, page %d of %d", all.Counts, all.Total, len(all.Items), all.Year,
@@ -182,33 +184,33 @@ func TestTransactions_Contract_FR021(t *testing.T) {
 		t.Errorf("first %s, choices %+v", all.Items[0].ID, all.Choices)
 	}
 
-	pos := get[financials.TransactionPage](t, alex, "/api/financials/transactions?type=purchaseOrder&sort=amount:desc")
+	pos := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?type=purchaseOrder&sort=amount:desc")
 	if pos.Total != 4 || pos.Items[0].ID != "FT-1001" || pos.Counts != want || pos.Totals.Invoiced != dollars(t, "33152.17") {
 		t.Errorf("purchase orders: total %d, first %s, counts %+v", pos.Total, pos.Items[0].ID, pos.Counts)
 	}
-	notLinked := get[financials.TransactionPage](t, alex, "/api/financials/transactions?link=notLinked")
+	notLinked := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?link=notLinked")
 	if notLinked.Total != 1 || notLinked.Items[0].ID != "FT-1004" || notLinked.Items[0].Link.Reason == nil ||
 		*notLinked.Items[0].Link.Reason != "No line item for HX key HX1099 — check the tracking key in GSAP." {
 		t.Errorf("not linked = %+v", notLinked.Items)
 	}
-	speakerFees := get[financials.TransactionPage](t, alex, "/api/financials/transactions?recordId=L-1004&pageSize=100")
+	speakerFees := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?recordId=L-1004&pageSize=100")
 	if speakerFees.Total != 4 || speakerFees.RecordFilter == nil || speakerFees.RecordFilter.Name != "Speaker fees" ||
 		speakerFees.Counts.NotLinked != 0 || speakerFees.PageSize != 100 {
 		t.Errorf("Speaker fees: total %d, record %+v, counts %+v", speakerFees.Total, speakerFees.RecordFilter, speakerFees.Counts)
 	}
-	search := get[financials.TransactionPage](t, alex, "/api/financials/transactions?q=4500001003")
+	search := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?q=4500001003")
 	if search.Total != 2 || search.Items[0].ID != "FT-1007" || search.Items[1].ID != "FT-1003" {
 		t.Errorf("search 4500001003 = %d items", search.Total)
 	}
-	byActivity := get[financials.TransactionPage](t, alex, "/api/financials/transactions?q=social%20ALWAYS")
+	byActivity := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?q=social%20ALWAYS")
 	if byActivity.Total != 7 {
 		t.Errorf("search by activity name = %d, want 7", byActivity.Total)
 	}
-	secondPage := get[financials.TransactionPage](t, alex, "/api/financials/transactions?page=2")
+	secondPage := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?page=2")
 	if len(secondPage.Items) != 0 || secondPage.Total != 11 || secondPage.Page != 2 {
 		t.Errorf("page 2 = %d items of %d", len(secondPage.Items), secondPage.Total)
 	}
-	lastYear := get[financials.TransactionPage](t, alex, "/api/financials/transactions?year=2025")
+	lastYear := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions?year=2025")
 	if lastYear.Total != 0 || lastYear.Counts.All != 0 || lastYear.Totals.Committed != dollars(t, "0.00") {
 		t.Errorf("2025 = %d, counts %+v", lastYear.Total, lastYear.Counts)
 	}
@@ -226,13 +228,13 @@ func TestTransactions_ParameterRefusals_FR021(t *testing.T) {
 	}
 	for query, field := range cases {
 		t.Run(field, func(t *testing.T) {
-			fieldRefused(t, alex.Do(t, http.MethodGet, "/api/financials/transactions?"+query, nil, apitest.SkipRequestValidation()),
+			fieldRefused(t, alex.Do(t, http.MethodGet, "/api/v1/financials/transactions?"+query, nil, apitest.SkipRequestValidation()),
 				field, "")
 		})
 	}
-	fieldRefused(t, alex.Do(t, http.MethodGet, "/api/financials/transactions?recordId=A-9999", nil), "recordId",
+	fieldRefused(t, alex.Do(t, http.MethodGet, "/api/v1/financials/transactions?recordId=A-9999", nil), "recordId",
 		"This activity no longer exists — someone may have deleted it.")
-	fieldRefused(t, alex.Do(t, http.MethodGet, "/api/financials/transactions?planId=P-9999", nil), "planId", "Choose a plan of the list.")
+	fieldRefused(t, alex.Do(t, http.MethodGet, "/api/v1/financials/transactions?planId=P-9999", nil), "planId", "Choose a plan of the list.")
 }
 
 // One transaction with every field, how it was linked and the import it came from; an unknown one is 404
@@ -241,7 +243,7 @@ func TestTransaction_Contract_FR022(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	got := get[financials.TransactionView](t, alex, "/api/financials/transactions/FT-1003")
+	got := get[financials.TransactionView](t, alex, "/api/v1/financials/transactions/FT-1003")
 	if got.Name != "PO 4500001003 / 10" || got.TrackingKey != "HX1006" || got.Amount.Currency != "EUR" ||
 		got.AmountUSD == nil || *got.AmountUSD != dollars(t, "10652.17") || got.Link.State != financials.StateLinked ||
 		*got.Link.MatchedBy != financials.MatchedByTrackingKey || len(got.Link.Path) != 5 || got.Link.Path[4].ID != "L-1006" {
@@ -251,11 +253,11 @@ func TestTransaction_Contract_FR022(t *testing.T) {
 		got.Version != 1 {
 		t.Errorf("import %+v, can link %v, can unlink %v, version %d", got.Import, got.CanLink, got.CanUnlink, got.Version)
 	}
-	notLinked := get[financials.TransactionView](t, alex, "/api/financials/transactions/FT-1004")
+	notLinked := get[financials.TransactionView](t, alex, "/api/v1/financials/transactions/FT-1004")
 	if !notLinked.CanLink || notLinked.Link.State != financials.StateNotLinked || len(notLinked.Link.Path) != 0 {
 		t.Errorf("FT-1004 = %+v", notLinked)
 	}
-	body := refused(t, alex.Do(t, http.MethodGet, "/api/financials/transactions/FT-9999", nil), http.StatusNotFound, "not_found")
+	body := refused(t, alex.Do(t, http.MethodGet, "/api/v1/financials/transactions/FT-9999", nil), http.StatusNotFound, "not_found")
 	if body.Message != "This GSAP transaction doesn't exist." {
 		t.Errorf("message = %q", body.Message)
 	}
@@ -268,10 +270,10 @@ func TestLinkAndUnlink_Contract_FR026(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	link := func(id string, body any, opts ...apitest.RequestOption) *apitest.Response {
-		return alex.Do(t, http.MethodPost, "/api/financials/transactions/"+id+"/link", body, opts...)
+		return alex.Do(t, http.MethodPost, "/api/v1/financials/transactions/"+id+"/link", body, opts...)
 	}
 	unlink := func(id string, body any, opts ...apitest.RequestOption) *apitest.Response {
-		return alex.Do(t, http.MethodPost, "/api/financials/transactions/"+id+"/unlink", body, opts...)
+		return alex.Do(t, http.MethodPost, "/api/v1/financials/transactions/"+id+"/unlink", body, opts...)
 	}
 
 	byRule := refused(t, link("FT-1003", map[string]any{"lineItemId": "L-1007", "version": 1}), http.StatusConflict, "not_allowed")
@@ -293,7 +295,7 @@ func TestLinkAndUnlink_Contract_FR026(t *testing.T) {
 		linked.Link.ManualBy == nil || linked.Link.ManualBy.Name != "Alex Morgan" || !linked.CanUnlink || linked.Version != 2 {
 		t.Errorf("linked = %+v", linked)
 	}
-	signage := get[financials.RecordView](t, alex, "/api/financials/records/L-1007")
+	signage := get[financials.RecordView](t, alex, "/api/v1/financials/records/L-1007")
 	if signage.Figures.Committed != dollars(t, "12000.00") || !signage.Figures.CommittedAbovePlanned {
 		t.Errorf("Station signage = %+v", signage.Figures)
 	}
@@ -325,18 +327,18 @@ func TestOverview_Contract_FR025(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	mine := get[financials.Overview](t, priya, "/api/financials/overview?scope=myTeams")
+	mine := get[financials.Overview](t, priya, "/api/v1/financials/overview?scope=myTeams")
 	f := mine.Figures
 	if mine.Year != 2026 || mine.Scope != financials.ScopeMyTeams || f.Committed != dollars(t, "35652.17") ||
 		*f.PlannedCost != dollars(t, "460000.00") || *f.CommittedPercent != 8 || mine.ActivitiesAbovePlanned != 1 ||
 		mine.NotLinked != 0 { // not-linked transactions show only to people who may import (014: Priya may not)
 		t.Errorf("my teams = %+v", mine)
 	}
-	everything := get[financials.Overview](t, priya, "/api/financials/overview?scope=everything")
+	everything := get[financials.Overview](t, priya, "/api/v1/financials/overview?scope=everything")
 	if everything.Figures.Committed != dollars(t, "35652.17") || everything.Figures.PlannedCost.Amount.Cmp(f.PlannedCost.Amount) < 0 { // Priya sees her team's plans only (014)
 		t.Errorf("everything = %+v", everything.Figures)
 	}
-	fieldRefused(t, priya.Do(t, http.MethodGet, "/api/financials/overview?scope=all", nil, apitest.SkipRequestValidation()), "scope",
+	fieldRefused(t, priya.Do(t, http.MethodGet, "/api/v1/financials/overview?scope=all", nil, apitest.SkipRequestValidation()), "scope",
 		"Choose My teams or Everything.")
 }
 
@@ -346,14 +348,14 @@ func TestImportsAndTemplate_Contract_FR008(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	page := get[financials.ImportPage](t, alex, "/api/financials/imports")
+	page := get[financials.ImportPage](t, alex, "/api/v1/financials/imports")
 	want := financials.ImportCounts{Rows: 11, New: 11, NotLinked: 1}
 	if page.Total != 1 || page.Items[0].ID != "FIM-1001" || page.Items[0].Source != financials.SourceDemo ||
 		page.Items[0].Counts != want || page.Items[0].ImportedBy.Name != "MAPP" {
 		t.Errorf("imports = %+v", page)
 	}
 
-	response := alex.Do(t, http.MethodGet, "/api/financials/imports/template", nil)
+	response := alex.Do(t, http.MethodGet, "/api/v1/financials/imports/template", nil)
 	if response.Status != http.StatusOK || response.Header.Get("Content-Type") != "text/csv" ||
 		response.Header.Get("Content-Disposition") != `attachment; filename="mapp-gsap-extract-sample.csv"` {
 		t.Fatalf("template = %d %v", response.Status, response.Header)
@@ -375,7 +377,7 @@ func TestImport_Contract_FR004(t *testing.T) {
 		"PO,4500001011,10,,,2026-10-01,,500.00,XYZ,V-1,Signs Ltd,Signage,,HX1007,",
 	)
 
-	response := alex.Do(t, http.MethodPost, "/api/financials/imports/check", body)
+	response := alex.Do(t, http.MethodPost, "/api/v1/financials/imports/check", body)
 	if response.Status != http.StatusOK {
 		t.Fatalf("check = %d %s", response.Status, response.Body)
 	}
@@ -386,11 +388,11 @@ func TestImport_Contract_FR004(t *testing.T) {
 			Message: "Currency 'XYZ' isn't set up in Settings — an administrator adds it under Currencies."}) {
 		t.Errorf("check = %+v", check)
 	}
-	if got := get[financials.TransactionPage](t, alex, "/api/financials/transactions"); got.Counts.All != 11 {
+	if got := get[financials.TransactionPage](t, alex, "/api/v1/financials/transactions"); got.Counts.All != 11 {
 		t.Errorf("after the check: %d transactions, want 11", got.Counts.All)
 	}
 
-	response = alex.Do(t, http.MethodPost, "/api/financials/imports", body)
+	response = alex.Do(t, http.MethodPost, "/api/v1/financials/imports", body)
 	if response.Status != http.StatusCreated {
 		t.Fatalf("import = %d %s", response.Status, response.Body)
 	}
@@ -400,7 +402,7 @@ func TestImport_Contract_FR004(t *testing.T) {
 		result.Import.Source != financials.SourceFile || result.Import.FeedName != "Simulated GSAP extract" {
 		t.Errorf("import = %+v", result)
 	}
-	opening := get[financials.RecordView](t, alex, "/api/financials/records/A-1008")
+	opening := get[financials.RecordView](t, alex, "/api/v1/financials/records/A-1008")
 	if opening.Figures.Committed != dollars(t, "3000.00") || opening.Figures.Invoiced != dollars(t, "1000.00") {
 		t.Errorf("Grand opening Shanghai = %+v", opening.Figures)
 	}
@@ -408,19 +410,19 @@ func TestImport_Contract_FR004(t *testing.T) {
 		t.Errorf("source = %+v", source)
 	}
 
-	response = alex.Do(t, http.MethodPost, "/api/financials/imports", body)
+	response = alex.Do(t, http.MethodPost, "/api/v1/financials/imports", body)
 	response.Decode(t, &result)
 	if result.Import.Counts != (financials.ImportCounts{Rows: 3, Unchanged: 2, Refused: 1}) {
 		t.Errorf("second import = %+v", result.Import.Counts)
 	}
 
-	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/financials/imports/check", csvFile("gsap.txt", extractHeader)), "fileName",
+	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/v1/financials/imports/check", csvFile("gsap.txt", extractHeader)), "fileName",
 		"Choose a .csv file — GSAP extracts are imported as CSV.")
-	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/financials/imports",
+	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/v1/financials/imports",
 		map[string]string{"fileName": "gsap.csv", "content": "%%%"}), "content", "The file couldn't be read — choose it again.")
-	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/financials/imports", csvFile("gsap.csv", "type,amount")), "content",
+	fieldRefused(t, alex.Do(t, http.MethodPost, "/api/v1/financials/imports", csvFile("gsap.csv", "type,amount")), "content",
 		"The first row must name the columns. Missing: document_number, posting_date, currency.")
-	if got := get[financials.ImportPage](t, alex, "/api/financials/imports"); got.Total != 3 || got.Items[0].Counts.Unchanged != 2 {
+	if got := get[financials.ImportPage](t, alex, "/api/v1/financials/imports"); got.Total != 3 || got.Items[0].Counts.Unchanged != 2 {
 		t.Errorf("imports = %+v", got)
 	}
 }
@@ -429,15 +431,15 @@ func TestImport_Contract_FR004(t *testing.T) {
 func TestOperations_NeedSignIn_FR028(t *testing.T) {
 	server := apitest.New(t)
 	for _, path := range []string{
-		"/api/financials/records/A-1002", "/api/financials/transactions", "/api/financials/transactions/FT-1001",
-		"/api/financials/overview?scope=myTeams", "/api/financials/imports", "/api/financials/imports/template",
+		"/api/v1/financials/records/A-1002", "/api/v1/financials/transactions", "/api/v1/financials/transactions/FT-1001",
+		"/api/v1/financials/overview?scope=myTeams", "/api/v1/financials/imports", "/api/v1/financials/imports/template",
 	} {
 		if response := server.Do(t, http.MethodGet, path, nil); response.Status != http.StatusUnauthorized {
 			t.Errorf("GET %s = %d, want 401", path, response.Status)
 		}
 	}
 	payload, _ := json.Marshal(map[string]any{"version": 1})
-	if response := server.Do(t, http.MethodPost, "/api/financials/transactions/FT-1004/unlink", nil, apitest.RawBody(payload)); response.Status != http.StatusUnauthorized {
+	if response := server.Do(t, http.MethodPost, "/api/v1/financials/transactions/FT-1004/unlink", nil, apitest.RawBody(payload)); response.Status != http.StatusUnauthorized {
 		t.Errorf("unlink = %d, want 401", response.Status)
 	}
 }
@@ -455,10 +457,10 @@ func TestOperations_TransactionsAreReadOnly_FR002(t *testing.T) {
 		}
 	}
 	want := []string{
-		"POST /api/financials/transactions/{transactionId}/link",
-		"POST /api/financials/transactions/{transactionId}/unlink",
-		"POST /api/financials/imports",
-		"POST /api/financials/imports/check",
+		"POST /api/v1/financials/transactions/{transactionId}/link",
+		"POST /api/v1/financials/transactions/{transactionId}/unlink",
+		"POST /api/v1/financials/imports",
+		"POST /api/v1/financials/imports/check",
 	}
 	if len(router.Patterns()) != 10 || !slices.Equal(changing, want) {
 		t.Errorf("operations = %q\nchanging = %q, want %q", router.Patterns(), changing, want)

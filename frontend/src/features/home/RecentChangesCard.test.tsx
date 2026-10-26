@@ -14,7 +14,7 @@ const page = (items: ActivityLogEntry[]) => ({ body: { items, total: items.lengt
 const secondsAgo = (seconds: number) => new Date(Date.now() - seconds * 1000).toISOString();
 
 function renderCard(scope: HomeScope = 'myTeams', answer: MockHandler = page([])) {
-  const api = mockApi({ 'GET /api/home/recent-changes': answer });
+  const api = mockApi({ 'GET /api/v1/home/recent-changes': answer });
   const rendered = renderWithProviders(<RecentChangesCard scope={scope} />, {
     user: testUser(),
     path: '/',

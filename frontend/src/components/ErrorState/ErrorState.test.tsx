@@ -20,9 +20,11 @@ describe('ErrorState', () => {
 
   it('shows the API’s own plain-language message (FR-020)', () => {
     const error = ApiError.fromBody(404, {
-      code: 'not_found',
-      message: "This page or record doesn't exist.",
-      fields: [],
+      error: {
+        code: 'not_found',
+        message: "This page or record doesn't exist.",
+        fields: [],
+      },
     });
 
     render(<ErrorState error={error} onRetry={vi.fn()} />);

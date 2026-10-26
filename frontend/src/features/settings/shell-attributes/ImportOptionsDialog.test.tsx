@@ -11,8 +11,8 @@ import { shellAttribute } from './testData';
 type ImportRow = components['schemas']['ImportRow'];
 
 const COST_CENTRE = shellAttribute({ id: 'SA-1030', label: 'Cost centre', optionCount: 3 });
-const CHECK = 'POST /api/shell-attributes/SA-1030/options/import-check';
-const IMPORT = 'POST /api/shell-attributes/SA-1030/options/import';
+const CHECK = 'POST /api/v1/shell-attributes/SA-1030/options/import-check';
+const IMPORT = 'POST /api/v1/shell-attributes/SA-1030/options/import';
 
 const FILE_TEXT = 'Option\r\nCN04000220\r\n';
 
@@ -159,14 +159,16 @@ describe('ImportOptionsDialog (US6, FR-031)', () => {
       [CHECK]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the highlighted fields.',
-          fields: [
-            {
-              field: 'content',
-              message: 'The file has 6,000 rows — import at most 5,000 rows at a time.',
-            },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the highlighted fields.',
+            fields: [
+              {
+                field: 'content',
+                message: 'The file has 6,000 rows — import at most 5,000 rows at a time.',
+              },
+            ],
+          },
         },
       },
     });

@@ -104,7 +104,7 @@ function renderItems(
   answers: Record<string, MockHandler> = {},
   route = '/settings/finance-budget-items',
 ) {
-  const api = mockApi({ 'GET /api/finance-budgets': BUDGETS, ...answers });
+  const api = mockApi({ 'GET /api/v1/finance-budgets': BUDGETS, ...answers });
   return {
     ...renderWithProviders(<FinanceBudgetItemsPage />, {
       route,
@@ -205,12 +205,17 @@ describe('FinanceBudgetItemsPage: the list (FR-014, FR-015)', () => {
   it('says when the budgets cannot be loaded, and tries again', async () => {
     let calls = 0;
     const { user } = renderItems({
-      'GET /api/finance-budgets': () => {
+      'GET /api/v1/finance-budgets': () => {
         calls += 1;
         return calls === 1
           ? {
               status: 500,
-              body: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+              body: {
+                error: {
+                  code: 'internal_error',
+                  message: 'Something went wrong. Please try again.',
+                },
+              },
             }
           : { body: PAGE_2026 };
       },
@@ -264,7 +269,7 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
   it('creates "Europe – Retail" in an existing budget, offering its name while typing', async () => {
     const created = item({ id: 'FBI-1005', name: 'Europe – Retail', code: 'LUB-EU-RET' });
     const { user, api } = renderItems({
-      'POST /api/finance-budget-items': { status: 201, body: created },
+      'POST /api/v1/finance-budget-items': { status: 201, body: created },
     });
 
     await screen.findByRole('region', { name: '2026 Lubricants Budget' });
@@ -288,7 +293,7 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Finance budget item 'Europe – Retail' created");
-    expect(api.bodiesOf('POST /api/finance-budget-items')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/finance-budget-items')).toEqual([
       {
         year: 2026,
         budgetName: '2026 Lubricants Budget',
@@ -300,7 +305,7 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
 
   it('shows every problem at once and saves nothing', async () => {
     const { user } = renderItems({
-      'POST /api/finance-budget-items': {
+      'POST /api/v1/finance-budget-items': {
         status: 400,
         body: validationFailed([
           { field: 'budgetName', message: 'Enter a budget name.' },
@@ -329,7 +334,7 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
 
   it('locks the year of a saved item and saves only the changed fields', async () => {
     const { user, api } = renderItems({
-      'PATCH /api/finance-budget-items/FBI-1001': {
+      'PATCH /api/v1/finance-budget-items/FBI-1001': {
         body: { ...DIGITAL, name: 'Europe – Online', version: 3 },
       },
     });
@@ -344,7 +349,7 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Finance budget item 'Europe – Online' saved");
-    expect(api.bodiesOf('PATCH /api/finance-budget-items/FBI-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/finance-budget-items/FBI-1001')).toEqual([
       { name: 'Europe – Online', version: 2 },
     ]);
   });
@@ -352,13 +357,13 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
   it('keeps the typed values after a conflict and saves again over it (FR-007)', async () => {
     let patches = 0;
     const { user, api } = renderItems({
-      'PATCH /api/finance-budget-items/FBI-1002': () => {
+      'PATCH /api/v1/finance-budget-items/FBI-1002': () => {
         patches += 1;
         return patches === 1
           ? { status: 409, body: versionConflict() }
           : { body: { ...ASIA, code: 'LUB-AS-RET' } };
       },
-      'GET /api/finance-budget-items/FBI-1002': { body: { ...ASIA, version: 5 } },
+      'GET /api/v1/finance-budget-items/FBI-1002': { body: { ...ASIA, version: 5 } },
     });
 
     await chooseAction('Asia – Retail', 'Edit', user);
@@ -372,14 +377,14 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
     await waitFor(() =>
       expect(
         api.requests.some(
-          (r) => r.method === 'GET' && r.path === '/api/finance-budget-items/FBI-1002',
+          (r) => r.method === 'GET' && r.path === '/api/v1/finance-budget-items/FBI-1002',
         ),
       ).toBe(true),
     );
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await findMessages();
-    expect(api.bodiesOf('PATCH /api/finance-budget-items/FBI-1002')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/finance-budget-items/FBI-1002')).toEqual([
       { code: 'LUB-AS-RET', version: 1 },
       { code: 'LUB-AS-RET', version: 5 },
     ]);
@@ -389,7 +394,7 @@ describe('FinanceBudgetItemsPage: create and edit (US5 scenarios 3 and 4, FR-014
 describe('FinanceBudgetItemsPage: Rename budget (US5 scenario 4, FR-015)', () => {
   it('renames the whole budget, saying what follows', async () => {
     const { user, api } = renderItems({
-      'PATCH /api/finance-budgets/FB-1001': {
+      'PATCH /api/v1/finance-budgets/FB-1001': {
         body: { ...LUBRICANTS_BUDGET, name: '2026 Lubricants Budget (EU)', version: 5 },
       },
     });
@@ -413,14 +418,14 @@ describe('FinanceBudgetItemsPage: Rename budget (US5 scenario 4, FR-015)', () =>
     expect(await findMessages()).toHaveTextContent(
       "Budget renamed to '2026 Lubricants Budget (EU)'",
     );
-    expect(api.bodiesOf('PATCH /api/finance-budgets/FB-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/finance-budgets/FB-1001')).toEqual([
       { name: '2026 Lubricants Budget (EU)', version: 4 },
     ]);
   });
 
   it('shows a taken name at the field and keeps the dialog open', async () => {
     const { user } = renderItems({
-      'PATCH /api/finance-budgets/FB-1002': {
+      'PATCH /api/v1/finance-budgets/FB-1002': {
         status: 400,
         body: validationFailed([
           { field: 'name', message: "2026 already has a budget called '2026 Lubricants Budget'." },
@@ -449,7 +454,7 @@ describe('FinanceBudgetItemsPage: Rename budget (US5 scenario 4, FR-015)', () =>
 describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', () => {
   it('moves an unused item to the recycle bin and offers Undo', async () => {
     const { user } = renderItems({
-      'DELETE /api/finance-budget-items/FBI-1002': {
+      'DELETE /api/v1/finance-budget-items/FBI-1002': {
         body: deleted('finance budget item', 'FBI-1002', 'Asia – Retail'),
       },
     });
@@ -469,7 +474,7 @@ describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', (
 
   it('offers Set inactive instead of deleting an item in use', async () => {
     const { user, api } = renderItems({
-      'POST /api/finance-budget-items/FBI-1001/status': { body: { ...DIGITAL, active: false } },
+      'POST /api/v1/finance-budget-items/FBI-1001/status': { body: { ...DIGITAL, active: false } },
     });
 
     await chooseAction('Europe – Digital', 'Delete', user);
@@ -482,21 +487,21 @@ describe('FinanceBudgetItemsPage: status and delete (US5 scenario 5, FR-004)', (
     expect(await findMessages()).toHaveTextContent(
       "Finance budget item 'Europe – Digital' set inactive",
     );
-    expect(api.bodiesOf('POST /api/finance-budget-items/FBI-1001/status')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/finance-budget-items/FBI-1001/status')).toEqual([
       { active: false, version: 2 },
     ]);
   });
 
   it('reactivates an inactive item', async () => {
     const { user, api } = renderItems(
-      { 'POST /api/finance-budget-items/FBI-1003/status': { body: { ...OLD, active: true } } },
+      { 'POST /api/v1/finance-budget-items/FBI-1003/status': { body: { ...OLD, active: true } } },
       '/settings/finance-budget-items?status=inactive',
     );
 
     await chooseAction('Old item', 'Reactivate', user);
 
     expect(await findMessages()).toHaveTextContent("Finance budget item 'Old item' reactivated");
-    expect(api.bodiesOf('POST /api/finance-budget-items/FBI-1003/status')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/finance-budget-items/FBI-1003/status')).toEqual([
       { active: true, version: 1 },
     ]);
   });

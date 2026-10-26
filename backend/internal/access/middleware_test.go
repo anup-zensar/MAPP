@@ -45,7 +45,7 @@ func TestAuthorize_GrantsInContext_FR009(t *testing.T) {
 	f := newFixture(t)
 	var h reached
 
-	w := serve(t, f, "GET /api/plans", priya, h.serve)
+	w := serve(t, f, "GET /api/v1/plans", priya, h.serve)
 
 	if w.Code != http.StatusNoContent || !h.ran || !h.found || h.grants.PersonID != priya.ID ||
 		!h.grants.InScope(authz.PlansEdit, planOf(lubricants.ID)) {
@@ -59,19 +59,19 @@ func TestAuthorize_NeedRefused403_FR010(t *testing.T) {
 	f := newFixture(t)
 	var h reached
 
-	w := serve(t, f, "POST /api/models", daniel, h.serve)
+	w := serve(t, f, "POST /api/v1/models", daniel, h.serve)
 
 	if h.ran || w.Code != http.StatusForbidden {
 		t.Fatalf("answer %d, handler ran %v; want 403 before the handler", w.Code, h.ran)
 	}
-	want := `{"code":"forbidden","message":"Changing Settings isn't part of your roles (Approver, Planner). ` +
-		`Ask an administrator if you need it.","fields":[]}`
+	want := `{"error":{"code":"forbidden","message":"Changing Settings isn't part of your roles (Approver, Planner). ` +
+		`Ask an administrator if you need it.","fields":[]}}`
 	if got := strings.TrimSpace(w.Body.String()); got != want {
 		t.Errorf("body = %s\nwant %s", got, want)
 	}
 
 	var admin reached
-	if serve(t, f, "POST /api/models", alex, admin.serve); !admin.ran {
+	if serve(t, f, "POST /api/v1/models", alex, admin.serve); !admin.ran {
 		t.Error("the administrator was refused")
 	}
 }
@@ -82,8 +82,8 @@ func TestAuthorize_InPlanPreCheck_FR009(t *testing.T) {
 	f := newFixture(t)
 	var viewer, planner reached
 
-	refused := serve(t, f, "PATCH /api/activities/{activityId}", sara, viewer.serve)
-	serve(t, f, "PATCH /api/activities/{activityId}", mei, planner.serve)
+	refused := serve(t, f, "PATCH /api/v1/activities/{activityId}", sara, viewer.serve)
+	serve(t, f, "PATCH /api/v1/activities/{activityId}", mei, planner.serve)
 
 	if viewer.ran || refused.Code != http.StatusForbidden ||
 		!strings.Contains(refused.Body.String(), "Changing activities and line items isn't part of your role (Viewer).") {
@@ -101,7 +101,7 @@ func TestAuthorize_ViewAndSignedInPass_FR009(t *testing.T) {
 	if _, err := f.service.SetPersonRoles(t.Context(), alex, sara.ID, PersonRolesUpdate{Version: version(1), Roles: []AssignmentInput{}}); err != nil {
 		t.Fatalf("SetPersonRoles: %v", err)
 	}
-	for _, pattern := range []string{"GET /api/me", "GET /api/plans/{planId}", "POST /api/activities/{activityId}/approval/approve"} {
+	for _, pattern := range []string{"GET /api/v1/me", "GET /api/v1/plans/{planId}", "POST /api/v1/activities/{activityId}/approval/approve"} {
 		var h reached
 		if w := serve(t, f, pattern, sara, h.serve); !h.ran || w.Code != http.StatusNoContent {
 			t.Errorf("%s without a role = %d, handler ran %v", pattern, w.Code, h.ran)
@@ -114,7 +114,7 @@ func TestAuthorize_NoRuleRefused_FR010(t *testing.T) {
 	f := newFixture(t)
 	var h reached
 
-	w := serve(t, f, "GET /api/not-declared", alex, h.serve)
+	w := serve(t, f, "GET /api/v1/not-declared", alex, h.serve)
 
 	if h.ran || w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), `"code":"forbidden"`) {
 		t.Errorf("an operation without a rule = %d %s (handler ran %v), want 403", w.Code, w.Body, h.ran)
@@ -131,17 +131,17 @@ func TestAuthorize_RefusalsInTheTechnicalLogOnly_FR039(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(&out, nil)))
 	t.Cleanup(func() { slog.SetDefault(previous) })
 
-	serve(t, f, "DELETE /api/models/{modelId}", sara, (&reached{}).serve)
-	serve(t, f, "DELETE /api/plans/{planId}", priya, func(w http.ResponseWriter, r *http.Request) {
-		web.WriteError(w, r, errs.Forbidden(authz.NoAccessMessage("plan"))) // refused by the service
+	serve(t, f, "DELETE /api/v1/models/{modelId}", sara, (&reached{}).serve)
+	serve(t, f, "DELETE /api/v1/plans/{planId}", priya, func(w http.ResponseWriter, r *http.Request) {
+		web.WriteError(w, r, errs.Forbidden("Deleting plans isn't part of your role.")) // refused by the service
 	})
 
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
 	if len(lines) != 2 {
 		t.Fatalf("technical log =\n%s\nwant two lines", out.String())
 	}
-	for i, want := range []string{`operation="DELETE /api/models/{modelId}" person=U-1006 code=forbidden`,
-		`operation="DELETE /api/plans/{planId}" person=U-1002 code=forbidden`} {
+	for i, want := range []string{`operation="DELETE /api/v1/models/{modelId}" person=U-1006 code=forbidden`,
+		`operation="DELETE /api/v1/plans/{planId}" person=U-1002 code=forbidden`} {
 		if !strings.Contains(lines[i], want) {
 			t.Errorf("log line %d = %s, want it to contain %s", i+1, lines[i], want)
 		}

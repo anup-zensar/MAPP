@@ -9,7 +9,7 @@ import type { BinItem } from './binText';
 import { EmptyBinDialog } from './EmptyBinDialog';
 import { binItem, lineItemEntry } from './testData';
 
-const EMPTY = 'POST /api/recycle-bin/empty';
+const EMPTY = 'POST /api/v1/recycle-bin/empty';
 
 /** The dialog as the page shows it: gone once it closes. */
 function Harness({ items }: { items: BinItem[] }) {

@@ -66,14 +66,15 @@ func (h historyAccess) CanSeeBinEntry(ctx context.Context, e history.BinEntry) b
 	return h.canSee(ctx, e.RecordType, e.RecordID, e.Path, e.Snapshots)
 }
 
-// CanRestore refuses, with 403 forbidden, an Undo or Restore of e that the person acting may not make.
+// CanRestore refuses an Undo or Restore of e that the person acting may not make: 404 when they cannot see
+// it, as for a missing record, otherwise 403 forbidden.
 func (h historyAccess) CanRestore(ctx context.Context, e history.BinEntry) error {
 	g, restricted := authz.From(ctx)
 	if !restricted || openToAll[e.RecordType] {
 		return nil
 	}
 	if !h.canSee(ctx, e.RecordType, e.RecordID, e.Path, e.Snapshots) {
-		return errs.Forbidden(authz.NoAccessMessage(e.RecordTypeLabel))
+		return errs.NotFound(authz.NotFoundMessage(e.RecordTypeLabel))
 	}
 	if p, planning := deletedWith[e.RecordType]; planning {
 		plan, _ := h.planOf(ctx, e.RecordType, e.RecordID, e.Path, e.Snapshots)

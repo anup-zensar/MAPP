@@ -89,9 +89,10 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--card-border);
   border-left: 4px solid var(--danger);
   border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  background: var(--surface);
   color: var(--ink);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -122,7 +123,10 @@
 }
 
 /* Demo sign-in off, or no demo people yet. */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .box {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -179,7 +183,12 @@
   transition: background-color var(--dur) var(--ease-out);
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .person:hover {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 

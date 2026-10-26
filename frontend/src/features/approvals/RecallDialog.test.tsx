@@ -8,7 +8,7 @@ import { APPROVED_NO_RECALL } from './messages';
 import { RecallDialog } from './RecallDialog';
 import { approvalOf, DANIEL, roundOf } from './testData';
 
-const RECALL = 'POST /api/activities/A-1042/approval/recall';
+const RECALL = 'POST /api/v1/activities/A-1042/approval/recall';
 
 /** "Launch film" after the recall: Created, round 1 Recalled. */
 const RECALLED = approvalOf({
@@ -68,10 +68,12 @@ describe('RecallDialog (feature 008, US5)', () => {
       [RECALL]: {
         status: 409,
         body: {
-          code: 'version_conflict',
-          message: 'Approval was restarted by Daniel Okoro',
-          fields: [],
-          conflict: { changedBy: DANIEL.name, changedAt: new Date().toISOString() },
+          error: {
+            code: 'version_conflict',
+            message: 'Approval was restarted by Daniel Okoro',
+            fields: [],
+            conflict: { changedBy: DANIEL.name, changedAt: new Date().toISOString() },
+          },
         },
       },
     });
@@ -88,7 +90,7 @@ describe('RecallDialog (feature 008, US5)', () => {
     const { user } = renderDialog({
       [RECALL]: {
         status: 400,
-        body: { code: 'bad_request', message: APPROVED_NO_RECALL, fields: [] },
+        body: { error: { code: 'bad_request', message: APPROVED_NO_RECALL, fields: [] } },
       },
     });
 
@@ -102,9 +104,11 @@ describe('RecallDialog (feature 008, US5)', () => {
       [RECALL]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the reason.',
-          fields: [{ field: 'reason', message: 'Use 2,000 characters or fewer.' }],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the reason.',
+            fields: [{ field: 'reason', message: 'Use 2,000 characters or fewer.' }],
+          },
         },
       },
     });

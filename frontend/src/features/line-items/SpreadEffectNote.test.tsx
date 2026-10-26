@@ -7,7 +7,7 @@ import { testUser } from '@/test/users';
 import { SpreadEffectNote } from './SpreadEffectNote';
 import { eur, launchFilmSection, lineItem, spreadMonth, usd } from './testData';
 
-const SECTION = 'GET /api/activities/A-1001/line-items';
+const SECTION = 'GET /api/v1/activities/A-1001/line-items';
 
 function custom(id: string, months: string[]) {
   return lineItem({

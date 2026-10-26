@@ -21,7 +21,7 @@ function renderDialog(
   answer: MockHandler = { body: copyOptions() },
   onCopy: (request: unknown) => Promise<CopyRefusal | null> = async () => null,
 ) {
-  const api = mockApi({ 'GET /api/plans/P-1001/copy-options': answer });
+  const api = mockApi({ 'GET /api/v1/plans/P-1001/copy-options': answer });
   const copy = vi.fn(onCopy);
   const onClose = vi.fn();
   const result = renderWithProviders(
@@ -192,9 +192,11 @@ describe('CopyPlanDialog (US6#1–2, FR-026 – FR-028)', () => {
     const { user, dialog, onClose } = renderDialog({
       status: 404,
       body: {
-        code: 'not_found',
-        message: 'This plan no longer exists — someone may have deleted it.',
-        fields: [],
+        error: {
+          code: 'not_found',
+          message: 'This plan no longer exists — someone may have deleted it.',
+          fields: [],
+        },
       },
     });
 

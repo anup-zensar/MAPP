@@ -35,7 +35,10 @@
 }
 
 /* The header row on the subtle grey of table headers (design system §3). */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .table thead th {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   padding-block: var(--space-2);
   background: var(--gray-bg);
   color: var(--ink-2);

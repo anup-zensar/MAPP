@@ -8,7 +8,7 @@ import type { BinItem } from './binText';
 import { RecycleBinPage } from './RecycleBinPage';
 import { binItem, lineItemEntry, restorePreview } from './testData';
 
-const BIN = 'GET /api/recycle-bin';
+const BIN = 'GET /api/v1/recycle-bin';
 const PARENT = { type: 'initiative', typeLabel: 'initiative', id: 'I-1009', name: 'Trade shows' };
 
 function binPage(items: BinItem[]) {
@@ -126,8 +126,8 @@ describe('RecycleBinPage', () => {
     let restored = false;
     const { user, api } = renderPage({
       [BIN]: () => ({ body: binPage(restored ? [lineItemEntry()] : [binItem(), lineItemEntry()]) }),
-      'GET /api/recycle-bin/BIN-1001/restore-preview': { body: restorePreview() },
-      'POST /api/recycle-bin/BIN-1001/restore': () => {
+      'GET /api/v1/recycle-bin/BIN-1001/restore-preview': { body: restorePreview() },
+      'POST /api/v1/recycle-bin/BIN-1001/restore': () => {
         restored = true;
         return {
           body: {
@@ -148,13 +148,15 @@ describe('RecycleBinPage', () => {
 
     expect(await findMessages()).toHaveTextContent("Initiative 'Trade shows' restored");
     await waitFor(() => expect(rowNames()).toEqual(['Print ads']));
-    expect(api.requests.filter((request) => request.path === '/api/recycle-bin')).toHaveLength(2);
+    expect(api.requests.filter((request) => request.path === '/api/v1/recycle-bin')).toHaveLength(
+      2,
+    );
   });
 
   it('deletes a row permanently from its menu (FR-028)', async () => {
     const { user, api } = renderPage({
       [BIN]: { body: binPage([binItem()]) },
-      'DELETE /api/recycle-bin/BIN-1001': {
+      'DELETE /api/v1/recycle-bin/BIN-1001': {
         body: {
           recordType: 'initiative',
           recordTypeLabel: 'initiative',
@@ -201,7 +203,7 @@ describe('RecycleBinPage', () => {
   it('empties every listed entry, also those the search hides (FR-029)', async () => {
     const { user, api } = renderPage({
       [BIN]: { body: binPage([binItem(), lineItemEntry()]) },
-      'POST /api/recycle-bin/empty': { body: { count: 2 } },
+      'POST /api/v1/recycle-bin/empty': { body: { count: 2 } },
     });
 
     await user.type(await screen.findByRole('searchbox', { name: 'Search name or ID' }), 'print');
@@ -217,7 +219,7 @@ describe('RecycleBinPage', () => {
     expect(await findMessages()).toHaveTextContent(
       'The recycle bin is empty — 2 items deleted permanently',
     );
-    expect(api.bodiesOf('POST /api/recycle-bin/empty')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/recycle-bin/empty')).toEqual([
       { entryIds: ['BIN-1001', 'BIN-1002'] },
     ]);
   });

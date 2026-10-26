@@ -34,11 +34,12 @@ func (s *Service) Transactions(ctx context.Context, a actor.Actor, q Query) (Tra
 		}
 		var record *tnode
 		if q.RecordID != "" {
+			gone := fieldProblem("recordId", fmt.Sprintf(msgRecordGone, levelWordOf(q.RecordID)))
 			if record = b.tree.byID[q.RecordID]; record == nil {
-				return fieldProblem("recordId", fmt.Sprintf(msgRecordGone, levelWordOf(q.RecordID)))
+				return gone
 			}
 			if err := s.access.SeeFinanceIn(ctx, a, record.PlanID); err != nil {
-				return err
+				return orGone(err, gone)
 			}
 		}
 		if q.PlanID != "" {
@@ -46,7 +47,7 @@ func (s *Service) Transactions(ctx context.Context, a actor.Actor, q Query) (Tra
 				return fieldProblem("planId", msgChoosePlan)
 			}
 			if err := s.access.SeeFinanceIn(ctx, a, q.PlanID); err != nil {
-				return err
+				return orGone(err, fieldProblem("planId", msgChoosePlan))
 			}
 		}
 		year := q.Year

@@ -24,7 +24,7 @@ const (
 
 // Bodies that several tests expect.
 const (
-	modelGoneBody = `{"code":"not_found","message":"This model no longer exists — someone may have deleted it.","fields":[]}`
+	modelGoneBody = `{"error":{"code":"not_found","message":"This model no longer exists — someone may have deleted it.","fields":[]}}`
 	unusedBody    = `{"inUse":false,"summary":"Not used yet","parts":[],"records":[]}`
 	alexAtStart   = `"createdAt":"2026-03-12T09:00:00Z","createdBy":{"id":"U-1001","name":"Alex Morgan"},` +
 		`"updatedAt":"2026-03-12T09:00:00Z","updatedBy":{"id":"U-1001","name":"Alex Morgan"}`
@@ -35,7 +35,7 @@ func TestOverview_API_FR001(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	response := alex.Do(t, http.MethodGet, "/api/settings/overview", nil)
+	response := alex.Do(t, http.MethodGet, "/api/v1/settings/overview", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"models":2,"activityTypes":6,"shellAttributes":35,"currencies":5,"financeBudgetItems":6}`)
 }
@@ -46,17 +46,17 @@ func TestModelsAPI_ListCreateGet_FR009(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	created := alex.Do(t, http.MethodPost, "/api/models", lubricants2)
-	invalid := alex.Do(t, http.MethodPost, "/api/models", map[string]any{
+	created := alex.Do(t, http.MethodPost, "/api/v1/models", lubricants2)
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/models", map[string]any{
 		"name": " ", "inqToMqlRate": "0", "mqlToDealRate": "5", "averageDealSize": nil, "activityTypeIds": []string{},
 	})
-	got := alex.Do(t, http.MethodGet, "/api/models/MOD-1003", nil)
-	gone := alex.Do(t, http.MethodGet, "/api/models/MOD-9999", nil)
+	got := alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1003", nil)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/models/MOD-9999", nil)
 	var list struct {
 		Items []struct{ Name string } `json:"items"`
 		Total int                     `json:"total"`
 	}
-	alex.Do(t, http.MethodGet, "/api/models", nil).Decode(t, &list)
+	alex.Do(t, http.MethodGet, "/api/v1/models", nil).Decode(t, &list)
 
 	assertAnswer(t, created, http.StatusCreated, lubricants2Body(1, alexAtStart))
 	assertAnswer(t, got, http.StatusOK, lubricants2Body(1, alexAtStart))
@@ -95,18 +95,18 @@ func TestModelsAPI_UpdateConflict_FR007(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing Settings
-	mustCreate(t, alex, "/api/models", lubricants2)
+	mustCreate(t, alex, "/api/v1/models", lubricants2)
 	server.Advance(90 * time.Minute)
-	daniels := daniel.Do(t, http.MethodPatch, "/api/models/MOD-1003", map[string]any{"mqlToDealRate": "6", "version": 1})
+	daniels := daniel.Do(t, http.MethodPatch, "/api/v1/models/MOD-1003", map[string]any{"mqlToDealRate": "6", "version": 1})
 
-	alexs := alex.Do(t, http.MethodPatch, "/api/models/MOD-1003", map[string]any{"name": "Alex's model", "version": 1})
-	gone := alex.Do(t, http.MethodPatch, "/api/models/MOD-9999", map[string]any{"name": "X", "version": 1})
+	alexs := alex.Do(t, http.MethodPatch, "/api/v1/models/MOD-1003", map[string]any{"name": "Alex's model", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/v1/models/MOD-9999", map[string]any{"name": "X", "version": 1})
 
 	if daniels.Status != http.StatusOK {
 		t.Fatalf("Daniel's update = %d %s", daniels.Status, daniels.Body)
 	}
-	assertAnswer(t, alexs, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this model",`+
-		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}`)
+	assertAnswer(t, alexs, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this model",`+
+		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}}`)
 	assertAnswer(t, gone, http.StatusNotFound, modelGoneBody)
 }
 
@@ -115,18 +115,18 @@ func TestModelsAPI_UpdateConflict_FR007(t *testing.T) {
 // given the Administrator role, he edits Alex's model.
 func TestSettings_ChangedWithSettingsManage_FR008(t *testing.T) {
 	server := apitest.New(t)
-	mustCreate(t, server.SignIn(t, alexsEmail), "/api/models", lubricants2)
+	mustCreate(t, server.SignIn(t, alexsEmail), "/api/v1/models", lubricants2)
 	daniel := server.SignIn(t, danielsEmail)
 	server.Advance(time.Hour)
 	change := map[string]any{"name": "Lubricants 2.0", "inqToMqlRate": "2.5", "version": 1}
 
-	refused := daniel.Do(t, http.MethodPatch, "/api/models/MOD-1003", change)
-	read := daniel.Do(t, http.MethodGet, "/api/models/MOD-1003", nil)
+	refused := daniel.Do(t, http.MethodPatch, "/api/v1/models/MOD-1003", change)
+	read := daniel.Do(t, http.MethodGet, "/api/v1/models/MOD-1003", nil)
 	server.GrantRole(t, danielsEmail, "administrator", "all")
-	response := daniel.Do(t, http.MethodPatch, "/api/models/MOD-1003", change)
+	response := daniel.Do(t, http.MethodPatch, "/api/v1/models/MOD-1003", change)
 
-	assertAnswer(t, refused, http.StatusForbidden, `{"code":"forbidden","message":"Changing Settings isn't part of your roles `+
-		`(Approver, Planner). Ask an administrator if you need it.","fields":[]}`)
+	assertAnswer(t, refused, http.StatusForbidden, `{"error":{"code":"forbidden","message":"Changing Settings isn't part of your roles `+
+		`(Approver, Planner). Ask an administrator if you need it.","fields":[]}}`)
 	if read.Status != http.StatusOK {
 		t.Errorf("Daniel reading the model = %d %s, want 200", read.Status, read.Body)
 	}
@@ -140,16 +140,16 @@ func TestSettings_ChangedWithSettingsManage_FR008(t *testing.T) {
 func TestModelsAPI_Impact_FR011(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/models", lubricants2)
+	mustCreate(t, alex, "/api/v1/models", lubricants2)
 
-	unused := alex.Do(t, http.MethodPost, "/api/models/MOD-1003/impact", map[string]any{"inqToMqlRate": "3", "version": 1})
-	invalid := alex.Do(t, http.MethodPost, "/api/models/MOD-1003/impact", map[string]any{"activityTypeIds": []string{}, "version": 1})
-	gone := alex.Do(t, http.MethodPost, "/api/models/MOD-9999/impact", map[string]any{"version": 1})
+	unused := alex.Do(t, http.MethodPost, "/api/v1/models/MOD-1003/impact", map[string]any{"inqToMqlRate": "3", "version": 1})
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/models/MOD-1003/impact", map[string]any{"activityTypeIds": []string{}, "version": 1})
+	gone := alex.Do(t, http.MethodPost, "/api/v1/models/MOD-9999/impact", map[string]any{"version": 1})
 
 	assertAnswer(t, unused, http.StatusOK, `{"warnings":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"activityTypeIds","message":"Tick at least one activity type."}`))
 	assertAnswer(t, gone, http.StatusNotFound, modelGoneBody)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/models/MOD-1003", nil), http.StatusOK, lubricants2Body(1, alexAtStart))
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1003", nil), http.StatusOK, lubricants2Body(1, alexAtStart))
 }
 
 // Set inactive and Reactivate answer the model with its new status; an out-of-date version is refused
@@ -157,11 +157,11 @@ func TestModelsAPI_Impact_FR011(t *testing.T) {
 func TestModelsAPI_Status_FR004(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/models", lubricants2)
+	mustCreate(t, alex, "/api/v1/models", lubricants2)
 
-	inactive := alex.Do(t, http.MethodPost, "/api/models/MOD-1003/status", map[string]any{"active": false, "version": 1})
-	stale := alex.Do(t, http.MethodPost, "/api/models/MOD-1003/status", map[string]any{"active": true, "version": 1})
-	active := alex.Do(t, http.MethodPost, "/api/models/MOD-1003/status", map[string]any{"active": true, "version": 2})
+	inactive := alex.Do(t, http.MethodPost, "/api/v1/models/MOD-1003/status", map[string]any{"active": false, "version": 1})
+	stale := alex.Do(t, http.MethodPost, "/api/v1/models/MOD-1003/status", map[string]any{"active": true, "version": 1})
+	active := alex.Do(t, http.MethodPost, "/api/v1/models/MOD-1003/status", map[string]any{"active": true, "version": 2})
 
 	assertAnswer(t, inactive, http.StatusOK, replace(lubricants2Body(2, alexAtStart), `"active":true,"usage"`, `"active":false,"usage"`))
 	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
@@ -174,12 +174,12 @@ func TestModelsAPI_Status_FR004(t *testing.T) {
 func TestModelsAPI_DeleteAndUndo_FR004(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory()) // BIN-1001 is the first entry of an empty recycle bin
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/models", lubricants2)
+	mustCreate(t, alex, "/api/v1/models", lubricants2)
 
-	deleted := alex.Do(t, http.MethodDelete, "/api/models/MOD-1003", nil)
-	afterDelete := alex.Do(t, http.MethodGet, "/api/models/MOD-1003", nil)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/undo", nil)
-	gone := alex.Do(t, http.MethodDelete, "/api/models/MOD-9999", nil)
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/models/MOD-1003", nil)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1003", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/undo", nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/models/MOD-9999", nil)
 
 	assertAnswer(t, deleted, http.StatusOK, `{"recycleBinEntry":{"id":"BIN-1001","recordType":"model","recordTypeLabel":"model",`+
 		`"recordId":"MOD-1003","recordName":"Lubricants 2.0","path":[],"parent":null,"deletedAt":"2026-03-12T09:00:00Z",`+
@@ -187,7 +187,7 @@ func TestModelsAPI_DeleteAndUndo_FR004(t *testing.T) {
 	assertAnswer(t, afterDelete, http.StatusNotFound, modelGoneBody)
 	assertAnswer(t, undone, http.StatusOK, `{"recordType":"model","recordTypeLabel":"model","recordId":"MOD-1003",`+
 		`"recordName":"Lubricants 2.0","details":""}`)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/models/MOD-1003", nil), http.StatusOK, lubricants2Body(1, alexAtStart))
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1003", nil), http.StatusOK, lubricants2Body(1, alexAtStart))
 	assertAnswer(t, gone, http.StatusNotFound, modelGoneBody)
 }
 
@@ -200,22 +200,22 @@ func TestActivityTypesAPI_ListCreateGet_FR013(t *testing.T) {
 	var list struct {
 		Items []struct{ Name string } `json:"items"`
 	}
-	alex.Do(t, http.MethodGet, "/api/activity-types", nil).Decode(t, &list)
+	alex.Do(t, http.MethodGet, "/api/v1/activity-types", nil).Decode(t, &list)
 	var event struct {
 		Name               string
 		DefaultPlannedCost struct{ Amount, Currency string }
 		Models             []struct{ Name string }
 	}
 
-	alex.Do(t, http.MethodGet, "/api/activity-types/AT-1002", nil).Decode(t, &event)
-	gone := alex.Do(t, http.MethodGet, "/api/activity-types/AT-9999", nil)
-	created := alex.Do(t, http.MethodPost, "/api/activity-types", webinarBody("MOD-1001"))
-	got := alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil)
-	invalid := alex.Do(t, http.MethodPost, "/api/activity-types", map[string]any{
+	alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1002", nil).Decode(t, &event)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-9999", nil)
+	created := alex.Do(t, http.MethodPost, "/api/v1/activity-types", webinarBody("MOD-1001"))
+	got := alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1007", nil)
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/activity-types", map[string]any{
 		"name": " event ", "defaultPlannedCost": map[string]string{"amount": "-5", "currency": "USD"}, "modelIds": []string{"MOD-9999"},
 	})
 	var lubricants struct{ ActivityTypes []struct{ Name string } }
-	alex.Do(t, http.MethodGet, "/api/models/MOD-1001", nil).Decode(t, &lubricants)
+	alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1001", nil).Decode(t, &lubricants)
 
 	var names []string
 	for _, item := range list.Items {
@@ -242,7 +242,7 @@ func TestActivityTypesAPI_ListCreateGet_FR013(t *testing.T) {
 
 // Bodies of the activity-type tests.
 const (
-	activityTypeGoneBody = `{"code":"not_found","message":"This activity type no longer exists — someone may have deleted it.","fields":[]}`
+	activityTypeGoneBody = `{"error":{"code":"not_found","message":"This activity type no longer exists — someone may have deleted it.","fields":[]}}`
 	lubricantsRef        = `{"id":"MOD-1001","name":"Lubricants 1.0","active":true}`
 	mobilityRef          = `{"id":"MOD-1002","name":"Mobility 1.0","active":true}`
 	allowedInOneModel    = `{"inUse":true,"summary":"Allowed in 1 model","parts":[{"kind":"model","text":"Allowed in 1 model","count":1,"inRecycleBin":0}],"records":[]}`
@@ -270,18 +270,18 @@ func TestActivityTypesAPI_UpdateConflict_FR007(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing Settings
-	mustCreate(t, alex, "/api/activity-types", webinarBody())
+	mustCreate(t, alex, "/api/v1/activity-types", webinarBody())
 	server.Advance(90 * time.Minute)
-	daniels := daniel.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"defaultPlannedCost": nil, "version": 1})
+	daniels := daniel.Do(t, http.MethodPatch, "/api/v1/activity-types/AT-1007", map[string]any{"defaultPlannedCost": nil, "version": 1})
 
-	alexs := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"name": "Webinars", "version": 1})
-	gone := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-9999", map[string]any{"name": "X", "version": 1})
+	alexs := alex.Do(t, http.MethodPatch, "/api/v1/activity-types/AT-1007", map[string]any{"name": "Webinars", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/v1/activity-types/AT-9999", map[string]any{"name": "X", "version": 1})
 
 	assertAnswer(t, daniels, http.StatusOK, `{"id":"AT-1007","name":"Webinar","defaultPlannedCost":null,"models":[],"active":true,"usage":`+
 		unusedBody+`,"version":2,"createdAt":"2026-03-12T09:00:00Z","createdBy":{"id":"U-1001","name":"Alex Morgan"},`+
 		`"updatedAt":"2026-03-12T10:30:00Z","updatedBy":{"id":"U-1003","name":"Daniel Okoro"}}`)
-	assertAnswer(t, alexs, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this activity type",`+
-		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}`)
+	assertAnswer(t, alexs, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this activity type",`+
+		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}}`)
 	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
 }
 
@@ -290,7 +290,7 @@ func TestActivityTypesAPI_UpdateConflict_FR007(t *testing.T) {
 func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/activity-types", webinarBody("MOD-1001"))
+	mustCreate(t, alex, "/api/v1/activity-types", webinarBody("MOD-1001"))
 	var event struct {
 		Warnings []struct {
 			Kind, Message string
@@ -298,10 +298,10 @@ func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
 		}
 	}
 
-	unused := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/impact", map[string]any{"modelIds": []string{}, "version": 1})
-	alex.Do(t, http.MethodPost, "/api/activity-types/AT-1002/impact", map[string]any{"modelIds": []string{"MOD-1002"}, "version": 1}).Decode(t, &event)
-	invalid := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/impact", map[string]any{"modelIds": []string{"MOD-9999"}, "version": 1})
-	gone := alex.Do(t, http.MethodPost, "/api/activity-types/AT-9999/impact", map[string]any{"version": 1})
+	unused := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1007/impact", map[string]any{"modelIds": []string{}, "version": 1})
+	alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1002/impact", map[string]any{"modelIds": []string{"MOD-1002"}, "version": 1}).Decode(t, &event)
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1007/impact", map[string]any{"modelIds": []string{"MOD-9999"}, "version": 1})
+	gone := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-9999/impact", map[string]any{"version": 1})
 
 	assertAnswer(t, unused, http.StatusOK, `{"warnings":[]}`)
 	if len(event.Warnings) != 1 || event.Warnings[0].Kind != "activityTypeRemoved" || event.Warnings[0].Count < 1 ||
@@ -310,7 +310,7 @@ func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
 	}
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"modelIds","message":"A model you ticked no longer exists — reload the page and try again."}`))
 	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil), http.StatusOK,
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1007", nil), http.StatusOK,
 		webinarAnswer(1, lubricantsRef, allowedInOneModel, alexAtStart))
 }
 
@@ -319,11 +319,11 @@ func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
 func TestActivityTypesAPI_Status_FR004(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/activity-types", webinarBody())
+	mustCreate(t, alex, "/api/v1/activity-types", webinarBody())
 
-	inactive := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/status", map[string]any{"active": false, "version": 1})
-	stale := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/status", map[string]any{"active": true, "version": 1})
-	active := alex.Do(t, http.MethodPost, "/api/activity-types/AT-1007/status", map[string]any{"active": true, "version": 2})
+	inactive := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1007/status", map[string]any{"active": false, "version": 1})
+	stale := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1007/status", map[string]any{"active": true, "version": 1})
+	active := alex.Do(t, http.MethodPost, "/api/v1/activity-types/AT-1007/status", map[string]any{"active": true, "version": 2})
 
 	assertAnswer(t, inactive, http.StatusOK, replace(webinarAnswer(2, "", unusedBody, alexAtStart), `"active":true`, `"active":false`))
 	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
@@ -336,14 +336,16 @@ func TestActivityTypesAPI_Status_FR004(t *testing.T) {
 func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/activity-types", webinarBody())
+	mustCreate(t, alex, "/api/v1/activity-types", webinarBody())
 
-	deleted := alex.Do(t, http.MethodDelete, "/api/activity-types/AT-1007", nil)
-	afterDelete := alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/undo", nil)
-	inUse := alex.Do(t, http.MethodDelete, "/api/activity-types/AT-1002", nil)
-	gone := alex.Do(t, http.MethodDelete, "/api/activity-types/AT-9999", nil)
-	var refused struct{ Code, Message string }
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/activity-types/AT-1007", nil)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1007", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/undo", nil)
+	inUse := alex.Do(t, http.MethodDelete, "/api/v1/activity-types/AT-1002", nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/activity-types/AT-9999", nil)
+	var refused struct {
+		Error struct{ Code, Message string }
+	}
 	inUse.Decode(t, &refused)
 
 	assertAnswer(t, deleted, http.StatusOK, `{"recycleBinEntry":{"id":"BIN-1001","recordType":"activityType","recordTypeLabel":"activity type",`+
@@ -352,9 +354,9 @@ func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
 	assertAnswer(t, afterDelete, http.StatusNotFound, activityTypeGoneBody)
 	assertAnswer(t, undone, http.StatusOK, `{"recordType":"activityType","recordTypeLabel":"activity type","recordId":"AT-1007",`+
 		`"recordName":"Webinar","details":""}`)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/activity-types/AT-1007", nil), http.StatusOK, webinarAnswer(1, "", unusedBody, alexAtStart))
-	if inUse.Status != http.StatusConflict || refused.Code != "in_use" || !strings.HasPrefix(refused.Message, "'Event' is in use (used by ") ||
-		!strings.HasSuffix(refused.Message, " · Allowed in 2 models) — set it inactive instead.") {
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/activity-types/AT-1007", nil), http.StatusOK, webinarAnswer(1, "", unusedBody, alexAtStart))
+	if inUse.Status != http.StatusConflict || refused.Error.Code != "in_use" || !strings.HasPrefix(refused.Error.Message, "'Event' is in use (used by ") ||
+		!strings.HasSuffix(refused.Error.Message, " · Allowed in 2 models) — set it inactive instead.") {
 		t.Errorf("deleting Event = %d %s", inUse.Status, inUse.Body)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
@@ -365,15 +367,15 @@ func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
 func TestActivityTypesAPI_ModelsEditedFromType_FR013(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/activity-types", webinarBody("MOD-1001"))
+	mustCreate(t, alex, "/api/v1/activity-types", webinarBody("MOD-1001"))
 
-	moved := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"modelIds": []string{"MOD-1002"}, "version": 1})
+	moved := alex.Do(t, http.MethodPatch, "/api/v1/activity-types/AT-1007", map[string]any{"modelIds": []string{"MOD-1002"}, "version": 1})
 	var lubricants, mobility struct{ ActivityTypes []struct{ ID string } }
-	alex.Do(t, http.MethodGet, "/api/models/MOD-1001", nil).Decode(t, &lubricants)
-	alex.Do(t, http.MethodGet, "/api/models/MOD-1002", nil).Decode(t, &mobility)
-	mustCreate(t, alex, "/api/models", map[string]any{"name": "Webinars only", "inqToMqlRate": "2", "mqlToDealRate": "5",
+	alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1001", nil).Decode(t, &lubricants)
+	alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1002", nil).Decode(t, &mobility)
+	mustCreate(t, alex, "/api/v1/models", map[string]any{"name": "Webinars only", "inqToMqlRate": "2", "mqlToDealRate": "5",
 		"averageDealSize": map[string]string{"amount": "10000", "currency": "USD"}, "activityTypeIds": []string{"AT-1007"}})
-	lastType := alex.Do(t, http.MethodPatch, "/api/activity-types/AT-1007", map[string]any{"modelIds": []string{}, "version": 1})
+	lastType := alex.Do(t, http.MethodPatch, "/api/v1/activity-types/AT-1007", map[string]any{"modelIds": []string{}, "version": 1})
 
 	assertAnswer(t, moved, http.StatusOK, webinarAnswer(1, mobilityRef, allowedInOneModel, alexAtStart))
 	has := func(types []struct{ ID string }) bool {
@@ -394,7 +396,7 @@ func TestShellAttributesAPI_ListByLevel_FR019(t *testing.T) {
 
 	activity := attributeList(t, alex, "?level=activity")
 	all := attributeList(t, alex, "")
-	unknown := alex.Do(t, http.MethodGet, "/api/shell-attributes?level=program", nil, apitest.SkipRequestValidation())
+	unknown := alex.Do(t, http.MethodGet, "/api/v1/shell-attributes?level=program", nil, apitest.SkipRequestValidation())
 
 	if len(activity) != 20 || activity[0].Label != "Channel / audience" || activity[10].Section != "Lubricants attributes" ||
 		activity[15].Section != "Mobility attributes" {
@@ -403,7 +405,7 @@ func TestShellAttributesAPI_ListByLevel_FR019(t *testing.T) {
 	if len(all) != 35 || all[0].Label != "Business unit" || all[34].Label != "Contracted spend" {
 		t.Errorf("%d attributes, first %+v", len(all), all[0])
 	}
-	assertAnswer(t, unknown, http.StatusBadRequest, `{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}`)
+	assertAnswer(t, unknown, http.StatusBadRequest, `{"error":{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`)
 }
 
 // listedAttribute is the part of an attribute these tests read.
@@ -419,7 +421,7 @@ type listedAttribute struct {
 func attributeList(t *testing.T, c *apitest.Client, query string) []listedAttribute {
 	t.Helper()
 	var page struct{ Items []listedAttribute }
-	c.Do(t, http.MethodGet, "/api/shell-attributes"+query, nil).Decode(t, &page)
+	c.Do(t, http.MethodGet, "/api/v1/shell-attributes"+query, nil).Decode(t, &page)
 	return page.Items
 }
 
@@ -443,9 +445,9 @@ func TestShellAttributesAPI_Get_FR020(t *testing.T) {
 	region := findAttribute(t, alex, "campaign", "Region")
 	var businessUnit, got listedAttribute
 
-	alex.Do(t, http.MethodGet, "/api/shell-attributes/SA-1001", nil).Decode(t, &businessUnit)
-	alex.Do(t, http.MethodGet, "/api/shell-attributes/"+region.ID, nil).Decode(t, &got)
-	gone := alex.Do(t, http.MethodGet, "/api/shell-attributes/SA-9999", nil)
+	alex.Do(t, http.MethodGet, "/api/v1/shell-attributes/SA-1001", nil).Decode(t, &businessUnit)
+	alex.Do(t, http.MethodGet, "/api/v1/shell-attributes/"+region.ID, nil).Decode(t, &got)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/shell-attributes/SA-9999", nil)
 
 	if !businessUnit.BusinessUnit || len(businessUnit.Locks) != 8 || businessUnit.Locks[0].Reason != "Business unit can't be deleted, "+
 		"set inactive, moved or given another type, because other attributes are shown or hidden by it." {
@@ -454,7 +456,7 @@ func TestShellAttributesAPI_Get_FR020(t *testing.T) {
 	if got.ParentAttribute == nil || got.ParentAttribute.Name != "Cluster" || got.OptionCount != 7 {
 		t.Errorf("Region = %+v", got)
 	}
-	assertAnswer(t, gone, http.StatusNotFound, `{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}`)
+	assertAnswer(t, gone, http.StatusNotFound, `{"error":{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
 // Options are searched by any part of the label and paged; the total counts every match; wrong paging is
@@ -463,7 +465,7 @@ func TestOptionsAPI_ListSearch_SC007(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	costCentre := findAttribute(t, alex, "activity", "Cost centre")
-	path := "/api/shell-attributes/" + costCentre.ID + "/options"
+	path := "/api/v1/shell-attributes/" + costCentre.ID + "/options"
 	type page struct {
 		Items []struct{ Label string }
 		Total int
@@ -473,7 +475,7 @@ func TestOptionsAPI_ListSearch_SC007(t *testing.T) {
 	alex.Do(t, http.MethodGet, path+"?q=%200220%20", nil).Decode(t, &found)
 	alex.Do(t, http.MethodGet, path+"?limit=2&offset=1&status=active", nil).Decode(t, &paged)
 	invalid := alex.Do(t, http.MethodGet, path+"?limit=0&offset=-1&status=some", nil, apitest.SkipRequestValidation())
-	gone := alex.Do(t, http.MethodGet, "/api/shell-attributes/SA-9999/options", nil)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/shell-attributes/SA-9999/options", nil)
 
 	if found.Total != 1 || len(found.Items) != 1 || found.Items[0].Label != "CN04000220" {
 		t.Errorf("search 0220 = %+v", found)
@@ -483,7 +485,7 @@ func TestOptionsAPI_ListSearch_SC007(t *testing.T) {
 	}
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"limit","message":"Choose a number from 1 to 500."},`+
 		`{"field":"offset","message":"Choose 0 or more."},{"field":"status","message":"Choose active, inactive or all."}`))
-	assertAnswer(t, gone, http.StatusNotFound, `{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}`)
+	assertAnswer(t, gone, http.StatusNotFound, `{"error":{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
 // formView is the part of a form these tests read.
@@ -521,7 +523,7 @@ func (f formView) ids() map[string]string {
 func getForm(t *testing.T, c *apitest.Client, level string) formView {
 	t.Helper()
 	var form formView
-	c.Do(t, http.MethodGet, "/api/shell-attribute-forms/"+level, nil).Decode(t, &form)
+	c.Do(t, http.MethodGet, "/api/v1/shell-attribute-forms/"+level, nil).Decode(t, &form)
 	return form
 }
 
@@ -532,7 +534,7 @@ func TestFormsAPI_Get_FR024(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 
 	form := getForm(t, alex, "activity")
-	unknown := alex.Do(t, http.MethodGet, "/api/shell-attribute-forms/program", nil, apitest.SkipRequestValidation())
+	unknown := alex.Do(t, http.MethodGet, "/api/v1/shell-attribute-forms/program", nil, apitest.SkipRequestValidation())
 
 	var sections []string
 	for _, s := range form.Sections {
@@ -558,11 +560,11 @@ func TestFormsAPI_Check_FR025(t *testing.T) {
 	europe, china := campaign["Cluster/Lubricants – Europe"], campaign["Cluster/Retail – China"]
 	dach := campaign["Region/LUBES – DACH"]
 
-	changed := alex.Do(t, http.MethodPost, "/api/shell-attribute-forms/campaign/check", map[string]any{
+	changed := alex.Do(t, http.MethodPost, "/api/v1/shell-attribute-forms/campaign/check", map[string]any{
 		"values":         map[string]any{cluster: []string{china}, region: []string{dach}},
 		"previousValues": map[string]any{cluster: []string{europe}, region: []string{dach}},
 	})
-	mobility := alex.Do(t, http.MethodPost, "/api/shell-attribute-forms/activity/check", map[string]any{
+	mobility := alex.Do(t, http.MethodPost, "/api/v1/shell-attribute-forms/activity/check", map[string]any{
 		"values": map[string]any{}, "businessUnitOptionIds": []string{activity["Business unit/Mobility"]},
 	})
 
@@ -586,20 +588,20 @@ func TestFormsAPI_Check_FR025(t *testing.T) {
 func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	gone := alex.Do(t, http.MethodGet, "/api/currencies/JPY", nil)
-	created := mustCreate(t, alex, "/api/currencies", jpyBody)
-	invalid := alex.Do(t, http.MethodPost, "/api/currencies", map[string]any{"code": "EURO", "name": "Euro", "rate": "0"})
+	gone := alex.Do(t, http.MethodGet, "/api/v1/currencies/JPY", nil)
+	created := mustCreate(t, alex, "/api/v1/currencies", jpyBody)
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/currencies", map[string]any{"code": "EURO", "name": "Euro", "rate": "0"})
 	var list struct {
 		Items []struct{ Code string }
 	}
-	alex.Do(t, http.MethodGet, "/api/currencies", nil).Decode(t, &list)
+	alex.Do(t, http.MethodGet, "/api/v1/currencies", nil).Decode(t, &list)
 	var euro, dollar struct {
 		Rate, InverseRate string
 		Locks             []struct{ Field, Reason string }
 	}
 
-	alex.Do(t, http.MethodGet, "/api/currencies/EUR", nil).Decode(t, &euro)
-	alex.Do(t, http.MethodGet, "/api/currencies/USD", nil).Decode(t, &dollar)
+	alex.Do(t, http.MethodGet, "/api/v1/currencies/EUR", nil).Decode(t, &euro)
+	alex.Do(t, http.MethodGet, "/api/v1/currencies/USD", nil).Decode(t, &dollar)
 
 	assertAnswer(t, created, http.StatusCreated, jpyAnswer(1, `"rateChangedAt":"2026-03-12T09:00:00Z","rateChangedBy":{"id":"U-1001","name":"Alex Morgan"}`, true))
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"code","message":"Enter a three-letter code such as JPY."},`+
@@ -618,7 +620,7 @@ func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
 	if len(dollar.Locks) != 4 || dollar.Locks[1].Reason != "USD is MAPP's base currency; its rate is always 1." {
 		t.Errorf("USD = %+v", dollar)
 	}
-	assertAnswer(t, gone, http.StatusNotFound, `{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}`)
+	assertAnswer(t, gone, http.StatusNotFound, `{"error":{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
 // The finance budgets of the current year come by name with their items; the years run from the current
@@ -642,11 +644,11 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 		Locks      []struct{ Field string }
 	}
 
-	alex.Do(t, http.MethodGet, "/api/finance-budgets", nil).Decode(t, &current)
-	alex.Do(t, http.MethodGet, "/api/finance-budgets?year=2027", nil).Decode(t, &next)
-	alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1002", nil).Decode(t, &item)
-	notANumber := alex.Do(t, http.MethodGet, "/api/finance-budgets?year=next", nil, apitest.SkipRequestValidation())
-	gone := alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-9999", nil)
+	alex.Do(t, http.MethodGet, "/api/v1/finance-budgets", nil).Decode(t, &current)
+	alex.Do(t, http.MethodGet, "/api/v1/finance-budgets?year=2027", nil).Decode(t, &next)
+	alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1002", nil).Decode(t, &item)
+	notANumber := alex.Do(t, http.MethodGet, "/api/v1/finance-budgets?year=next", nil, apitest.SkipRequestValidation())
+	gone := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-9999", nil)
 
 	if current.Year != 2026 || current.Total != 2 || current.Items[0].Name != "2026 Lubricants Budget" ||
 		current.Items[0].ActiveItemCount != 3 || current.Items[0].Items[0].Name != "Europe – Brand" ||
@@ -667,8 +669,8 @@ func TestFinanceAPI_ListYear_FR015(t *testing.T) {
 
 // Bodies of the finance tests.
 const (
-	itemGoneBody   = `{"code":"not_found","message":"This finance budget item no longer exists — someone may have deleted it.","fields":[]}`
-	budgetGoneBody = `{"code":"not_found","message":"This finance budget no longer exists — someone may have deleted it.","fields":[]}`
+	itemGoneBody   = `{"error":{"code":"not_found","message":"This finance budget item no longer exists — someone may have deleted it.","fields":[]}}`
+	budgetGoneBody = `{"error":{"code":"not_found","message":"This finance budget no longer exists — someone may have deleted it.","fields":[]}}`
 	yearLockBody   = `[{"field":"year","reason":"The year can't change once the item is saved — create a new item for another year."}]`
 )
 
@@ -688,14 +690,14 @@ func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	created := alex.Do(t, http.MethodPost, "/api/finance-budget-items", retailBody)
-	got := alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1007", nil)
-	moved := alex.Do(t, http.MethodPatch, "/api/finance-budget-items/FBI-1007", map[string]any{"budgetName": "2026 Retail Budget", "code": "", "version": 1})
-	taken := alex.Do(t, http.MethodPost, "/api/finance-budget-items", map[string]any{
+	created := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", retailBody)
+	got := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil)
+	moved := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1007", map[string]any{"budgetName": "2026 Retail Budget", "code": "", "version": 1})
+	taken := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", map[string]any{
 		"year": 2026, "budgetName": " 2026 lubricants budget", "name": "europe – digital", "code": "lub-eu-dig"})
-	invalid := alex.Do(t, http.MethodPost, "/api/finance-budget-items", map[string]any{"year": 2040, "budgetName": " ", "name": ""})
-	stale := alex.Do(t, http.MethodPatch, "/api/finance-budget-items/FBI-1007", map[string]any{"name": "X", "version": 1})
-	gone := alex.Do(t, http.MethodPatch, "/api/finance-budget-items/FBI-9999", map[string]any{"name": "X", "version": 1})
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", map[string]any{"year": 2040, "budgetName": " ", "name": ""})
+	stale := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1007", map[string]any{"name": "X", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-9999", map[string]any{"name": "X", "version": 1})
 
 	assertAnswer(t, created, http.StatusCreated, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
 	assertAnswer(t, got, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
@@ -724,11 +726,11 @@ func TestFinanceAPI_Rename_FR015(t *testing.T) {
 	}
 	var item struct{ BudgetName string }
 
-	alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-1002", map[string]any{"name": "2026 Mobility Budget (China)", "version": 1}).Decode(t, &renamed)
-	alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1004", nil).Decode(t, &item)
-	taken := alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-1002", map[string]any{"name": "2026 lubricants budget", "version": 2})
-	stale := alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-1002", map[string]any{"name": "Other", "version": 1})
-	gone := alex.Do(t, http.MethodPatch, "/api/finance-budgets/FB-9999", map[string]any{"name": "Other", "version": 1})
+	alex.Do(t, http.MethodPatch, "/api/v1/finance-budgets/FB-1002", map[string]any{"name": "2026 Mobility Budget (China)", "version": 1}).Decode(t, &renamed)
+	alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1004", nil).Decode(t, &item)
+	taken := alex.Do(t, http.MethodPatch, "/api/v1/finance-budgets/FB-1002", map[string]any{"name": "2026 lubricants budget", "version": 2})
+	stale := alex.Do(t, http.MethodPatch, "/api/v1/finance-budgets/FB-1002", map[string]any{"name": "Other", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/v1/finance-budgets/FB-9999", map[string]any{"name": "Other", "version": 1})
 
 	if renamed.Name != "2026 Mobility Budget (China)" || renamed.Version != 2 || len(renamed.Items) != 3 ||
 		renamed.Items[0].BudgetName != "2026 Mobility Budget (China)" || !strings.HasPrefix(renamed.Usage.Summary, "Default finance budget of ") {
@@ -738,8 +740,8 @@ func TestFinanceAPI_Rename_FR015(t *testing.T) {
 		t.Errorf("China – Retail is in %q", item.BudgetName)
 	}
 	assertAnswer(t, taken, http.StatusBadRequest, validationBody(`{"field":"name","message":"2026 already has a budget called '2026 Lubricants Budget'."}`))
-	assertAnswer(t, stale, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Alex Morgan changed this finance budget",`+
-		`"fields":[],"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T09:00:00Z"}}`)
+	assertAnswer(t, stale, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Alex Morgan changed this finance budget",`+
+		`"fields":[],"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T09:00:00Z"}}}`)
 	assertAnswer(t, gone, http.StatusNotFound, budgetGoneBody)
 }
 
@@ -748,12 +750,12 @@ func TestFinanceAPI_Rename_FR015(t *testing.T) {
 func TestFinanceAPI_Status_FR004(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/finance-budget-items", retailBody)
+	mustCreate(t, alex, "/api/v1/finance-budget-items", retailBody)
 
-	inactive := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-1007/status", map[string]any{"active": false, "version": 1})
-	stale := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 1})
-	active := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 2})
-	gone := alex.Do(t, http.MethodPost, "/api/finance-budget-items/FBI-9999/status", map[string]any{"active": true, "version": 1})
+	inactive := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1007/status", map[string]any{"active": false, "version": 1})
+	stale := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 1})
+	active := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-1007/status", map[string]any{"active": true, "version": 2})
+	gone := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items/FBI-9999/status", map[string]any{"active": true, "version": 1})
 
 	assertAnswer(t, inactive, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 2, false, alexAtStart))
 	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
@@ -767,14 +769,16 @@ func TestFinanceAPI_Status_FR004(t *testing.T) {
 func TestFinanceAPI_Delete_FR004(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/finance-budget-items", retailBody)
+	mustCreate(t, alex, "/api/v1/finance-budget-items", retailBody)
 
-	deleted := alex.Do(t, http.MethodDelete, "/api/finance-budget-items/FBI-1007", nil)
-	afterDelete := alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1007", nil)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/undo", nil)
-	inUse := alex.Do(t, http.MethodDelete, "/api/finance-budget-items/FBI-1001", nil)
-	gone := alex.Do(t, http.MethodDelete, "/api/finance-budget-items/FBI-9999", nil)
-	var refused struct{ Code, Message string }
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/finance-budget-items/FBI-1007", nil)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/undo", nil)
+	inUse := alex.Do(t, http.MethodDelete, "/api/v1/finance-budget-items/FBI-1001", nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/finance-budget-items/FBI-9999", nil)
+	var refused struct {
+		Error struct{ Code, Message string }
+	}
 	inUse.Decode(t, &refused)
 
 	budget := `{"type":"financeBudget","id":"FB-1001","name":"2026 Lubricants Budget"}`
@@ -784,10 +788,10 @@ func TestFinanceAPI_Delete_FR004(t *testing.T) {
 	assertAnswer(t, afterDelete, http.StatusNotFound, itemGoneBody)
 	assertAnswer(t, undone, http.StatusOK, `{"recordType":"financeBudgetItem","recordTypeLabel":"finance budget item","recordId":"FBI-1007",`+
 		`"recordName":"Europe – Retail","details":""}`)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/finance-budget-items/FBI-1007", nil), http.StatusOK,
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil), http.StatusOK,
 		retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
-	if inUse.Status != http.StatusConflict || refused.Code != "in_use" ||
-		!strings.HasPrefix(refused.Message, "'Europe – Digital' is in use (linked to ") {
+	if inUse.Status != http.StatusConflict || refused.Error.Code != "in_use" ||
+		!strings.HasPrefix(refused.Error.Message, "'Europe – Digital' is in use (linked to ") {
 		t.Errorf("deleting Europe – Digital = %d %s", inUse.Status, inUse.Body)
 	}
 	assertAnswer(t, gone, http.StatusNotFound, itemGoneBody)
@@ -795,8 +799,8 @@ func TestFinanceAPI_Delete_FR004(t *testing.T) {
 
 // Bodies of the Shell attribute tests.
 const (
-	attributeGoneBody = `{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}`
-	optionGoneBody    = `{"code":"not_found","message":"This option no longer exists — someone may have deleted it.","fields":[]}`
+	attributeGoneBody = `{"error":{"code":"not_found","message":"This Shell attribute no longer exists — someone may have deleted it.","fields":[]}}`
+	optionGoneBody    = `{"error":{"code":"not_found","message":"This option no longer exists — someone may have deleted it.","fields":[]}}`
 )
 
 // mediaChannelBody is the new activity attribute of US2-1: a single choice with four options, needed to
@@ -825,9 +829,9 @@ type savedOption struct {
 func createMediaChannel(t *testing.T, c *apitest.Client) (savedAttribute, []savedOption) {
 	t.Helper()
 	var created savedAttribute
-	mustCreate(t, c, "/api/shell-attributes", mediaChannelBody).Decode(t, &created)
+	mustCreate(t, c, "/api/v1/shell-attributes", mediaChannelBody).Decode(t, &created)
 	var page struct{ Items []savedOption }
-	c.Do(t, http.MethodGet, "/api/shell-attributes/"+created.ID+"/options", nil).Decode(t, &page)
+	c.Do(t, http.MethodGet, "/api/v1/shell-attributes/"+created.ID+"/options", nil).Decode(t, &page)
 	return created, page.Items
 }
 
@@ -839,7 +843,7 @@ func TestShellAttributesAPI_Create_FR016(t *testing.T) {
 	before := attributeList(t, alex, "?level=activity")
 
 	created, options := createMediaChannel(t, alex)
-	invalid := alex.Do(t, http.MethodPost, "/api/shell-attributes", map[string]any{
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/shell-attributes", map[string]any{
 		"label": "Channel / audience", "level": "activity", "type": "singleChoice", "marking": "neededToPublish",
 		"options": []map[string]any{{"label": "TV"}, {"label": "tv"}},
 	})
@@ -868,13 +872,13 @@ func TestShellAttributesAPI_Update_FR021(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
-	path := "/api/shell-attributes/" + created.ID
+	path := "/api/v1/shell-attributes/" + created.ID
 	var renamed savedAttribute
 
 	alex.Do(t, http.MethodPatch, path, map[string]any{"label": "Media", "helpText": "Where it runs", "version": 1}).Decode(t, &renamed)
 	stale := alex.Do(t, http.MethodPatch, path, map[string]any{"label": "Media channel", "version": 1})
-	locked := alex.Do(t, http.MethodPatch, "/api/shell-attributes/SA-1001", map[string]any{"type": "singleChoice", "version": 1})
-	gone := alex.Do(t, http.MethodPatch, "/api/shell-attributes/SA-9999", map[string]any{"label": "X", "version": 1})
+	locked := alex.Do(t, http.MethodPatch, "/api/v1/shell-attributes/SA-1001", map[string]any{"type": "singleChoice", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/v1/shell-attributes/SA-9999", map[string]any{"label": "X", "version": 1})
 
 	if renamed.Label != "Media" || renamed.Version != 2 {
 		t.Errorf("renamed = %+v", renamed)
@@ -892,11 +896,11 @@ func TestShellAttributesAPI_Impact_FR021(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
-	path := "/api/shell-attributes/" + created.ID
+	path := "/api/v1/shell-attributes/" + created.ID
 
 	removed := alex.Do(t, http.MethodPost, path+"/impact", map[string]any{"type": "text", "version": 1})
 	invalid := alex.Do(t, http.MethodPost, path+"/impact", map[string]any{"marking": "neededToPublish", "version": 1})
-	gone := alex.Do(t, http.MethodPost, "/api/shell-attributes/SA-9999/impact", map[string]any{"version": 1})
+	gone := alex.Do(t, http.MethodPost, "/api/v1/shell-attributes/SA-9999/impact", map[string]any{"version": 1})
 
 	assertAnswer(t, removed, http.StatusOK, `{"warnings":[{"kind":"optionsRemoved","message":"Its 4 options will be removed: TV, Radio, Print, Online.","count":4}]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"marking","message":"At activity level the marking is Optional or Needed to submit."}`))
@@ -912,12 +916,12 @@ func TestShellAttributesAPI_Status_FR023(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
-	path := "/api/shell-attributes/" + created.ID + "/status"
+	path := "/api/v1/shell-attributes/" + created.ID + "/status"
 	var inactive, active savedAttribute
 
 	alex.Do(t, http.MethodPost, path, map[string]any{"active": false, "version": 1}).Decode(t, &inactive)
 	alex.Do(t, http.MethodPost, path, map[string]any{"active": true, "version": 2}).Decode(t, &active)
-	unit := alex.Do(t, http.MethodPost, "/api/shell-attributes/SA-1001/status", map[string]any{"active": false, "version": 1})
+	unit := alex.Do(t, http.MethodPost, "/api/v1/shell-attributes/SA-1001/status", map[string]any{"active": false, "version": 1})
 	stale := alex.Do(t, http.MethodPost, path, map[string]any{"active": false, "version": 1})
 
 	if inactive.Active || inactive.Version != 2 || !active.Active || active.Version != 3 {
@@ -936,7 +940,7 @@ func TestShellAttributesAPI_Move_FR019(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
-	path := "/api/shell-attributes/" + created.ID + "/move"
+	path := "/api/v1/shell-attributes/" + created.ID + "/move"
 	var page struct {
 		Items []listedAttribute
 		Total int
@@ -969,11 +973,11 @@ func TestShellAttributesAPI_Delete_FR004(t *testing.T) {
 		}
 	}
 
-	alex.Do(t, http.MethodDelete, "/api/shell-attributes/"+created.ID, nil).Decode(t, &deleted)
-	afterDelete := alex.Do(t, http.MethodGet, "/api/shell-attributes/"+created.ID, nil)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
-	unit := alex.Do(t, http.MethodDelete, "/api/shell-attributes/SA-1001", nil)
-	gone := alex.Do(t, http.MethodDelete, "/api/shell-attributes/SA-9999", nil)
+	alex.Do(t, http.MethodDelete, "/api/v1/shell-attributes/"+created.ID, nil).Decode(t, &deleted)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/v1/shell-attributes/"+created.ID, nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
+	unit := alex.Do(t, http.MethodDelete, "/api/v1/shell-attributes/SA-1001", nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/shell-attributes/SA-9999", nil)
 
 	if deleted.RecycleBinEntry.RecordType != "shellAttribute" || len(deleted.RecycleBinEntry.Contents) != 1 || deleted.RecycleBinEntry.Contents[0].Count != 4 {
 		t.Errorf("deleted = %+v", deleted)
@@ -982,8 +986,8 @@ func TestShellAttributesAPI_Delete_FR004(t *testing.T) {
 	if undone.Status != http.StatusOK || findAttribute(t, alex, "activity", "Media channel").OptionCount != 4 {
 		t.Errorf("undo = %d %s", undone.Status, undone.Body)
 	}
-	assertAnswer(t, unit, http.StatusConflict, `{"code":"in_use","message":"Business unit can't be deleted, set inactive, moved or given `+
-		`another type, because other attributes are shown or hidden by it.","fields":[]}`)
+	assertAnswer(t, unit, http.StatusConflict, `{"error":{"code":"in_use","message":"Business unit can't be deleted, set inactive, moved or given `+
+		`another type, because other attributes are shown or hidden by it.","fields":[]}}`)
 	assertAnswer(t, gone, http.StatusNotFound, attributeGoneBody)
 }
 
@@ -992,12 +996,12 @@ func TestOptionsAPI_Create_FR018(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
-	path := "/api/shell-attributes/" + created.ID + "/options"
+	path := "/api/v1/shell-attributes/" + created.ID + "/options"
 	var added savedOption
 
 	mustCreate(t, alex, path, map[string]any{"label": "Cinema"}).Decode(t, &added)
 	taken := alex.Do(t, http.MethodPost, path, map[string]any{"label": "tv"})
-	gone := alex.Do(t, http.MethodPost, "/api/shell-attributes/SA-9999/options", map[string]any{"label": "Cinema"})
+	gone := alex.Do(t, http.MethodPost, "/api/v1/shell-attributes/SA-9999/options", map[string]any{"label": "Cinema"})
 
 	if added.Label != "Cinema" || added.Position != 5 || added.AttributeID != created.ID || !added.Active {
 		t.Errorf("added = %+v", added)
@@ -1011,12 +1015,12 @@ func TestOptionsAPI_Update_FR018(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	_, options := createMediaChannel(t, alex)
-	path := "/api/shell-attribute-options/" + options[0].ID
+	path := "/api/v1/shell-attribute-options/" + options[0].ID
 	var renamed savedOption
 
 	alex.Do(t, http.MethodPatch, path, map[string]any{"label": "Television", "version": 1}).Decode(t, &renamed)
 	stale := alex.Do(t, http.MethodPatch, path, map[string]any{"label": "TV", "version": 1})
-	gone := alex.Do(t, http.MethodPatch, "/api/shell-attribute-options/SO-99999", map[string]any{"label": "TV", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/v1/shell-attribute-options/SO-99999", map[string]any{"label": "TV", "version": 1})
 
 	if renamed.Label != "Television" || renamed.Version != 2 {
 		t.Errorf("renamed = %+v", renamed)
@@ -1032,7 +1036,7 @@ func TestOptionsAPI_Status_FR018(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	_, options := createMediaChannel(t, alex)
-	path := "/api/shell-attribute-options/" + options[1].ID + "/status"
+	path := "/api/v1/shell-attribute-options/" + options[1].ID + "/status"
 	var inactive, active savedOption
 
 	alex.Do(t, http.MethodPost, path, map[string]any{"active": false, "version": 1}).Decode(t, &inactive)
@@ -1052,8 +1056,8 @@ func TestOptionsAPI_Move_FR018(t *testing.T) {
 	_, options := createMediaChannel(t, alex)
 	var moved savedOption
 
-	alex.Do(t, http.MethodPost, "/api/shell-attribute-options/"+options[1].ID+"/move", map[string]any{"direction": "up", "version": 1}).Decode(t, &moved)
-	first := alex.Do(t, http.MethodPost, "/api/shell-attribute-options/"+options[1].ID+"/move", map[string]any{"direction": "up", "version": 2})
+	alex.Do(t, http.MethodPost, "/api/v1/shell-attribute-options/"+options[1].ID+"/move", map[string]any{"direction": "up", "version": 1}).Decode(t, &moved)
+	first := alex.Do(t, http.MethodPost, "/api/v1/shell-attribute-options/"+options[1].ID+"/move", map[string]any{"direction": "up", "version": 2})
 
 	if moved.Label != "Radio" || moved.Position != 1 || moved.Version != 2 {
 		t.Errorf("moved = %+v", moved)
@@ -1074,13 +1078,13 @@ func TestOptionsAPI_Get_D211(t *testing.T) {
 		Locks     []lock
 	}
 
-	alex.Do(t, http.MethodGet, "/api/shell-attribute-options/"+options[0].ID, nil).Decode(t, &first)
+	alex.Do(t, http.MethodGet, "/api/v1/shell-attribute-options/"+options[0].ID, nil).Decode(t, &first)
 	for _, o := range options[1:] {
-		alex.Do(t, http.MethodDelete, "/api/shell-attribute-options/"+o.ID, nil)
+		alex.Do(t, http.MethodDelete, "/api/v1/shell-attribute-options/"+o.ID, nil)
 	}
 	var last struct{ Locks []lock }
-	alex.Do(t, http.MethodGet, "/api/shell-attribute-options/"+options[0].ID, nil).Decode(t, &last)
-	gone := alex.Do(t, http.MethodGet, "/api/shell-attribute-options/SO-99999", nil)
+	alex.Do(t, http.MethodGet, "/api/v1/shell-attribute-options/"+options[0].ID, nil).Decode(t, &last)
+	gone := alex.Do(t, http.MethodGet, "/api/v1/shell-attribute-options/SO-99999", nil)
 
 	if first.ID != options[0].ID || first.Label != "TV" || first.Locks == nil || len(first.Locks) != 0 {
 		t.Errorf("first = %+v; want TV without locks", first)
@@ -1090,7 +1094,7 @@ func TestOptionsAPI_Get_D211(t *testing.T) {
 		t.Errorf("last option's locks = %+v, want %+v", last.Locks, want)
 	}
 	assertAnswer(t, gone, http.StatusNotFound,
-		`{"code":"not_found","message":"This option no longer exists — someone may have deleted it.","fields":[]}`)
+		`{"error":{"code":"not_found","message":"This option no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
 // An unused option moves to the recycle bin and Undo brings it back; the last option of an attribute is
@@ -1106,19 +1110,19 @@ func TestOptionsAPI_Delete_FR004(t *testing.T) {
 		}
 	}
 
-	alex.Do(t, http.MethodDelete, "/api/shell-attribute-options/"+options[3].ID, nil).Decode(t, &deleted)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
+	alex.Do(t, http.MethodDelete, "/api/v1/shell-attribute-options/"+options[3].ID, nil).Decode(t, &deleted)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+deleted.RecycleBinEntry.ID+"/undo", nil)
 	for _, o := range options[1:] {
-		alex.Do(t, http.MethodDelete, "/api/shell-attribute-options/"+o.ID, nil)
+		alex.Do(t, http.MethodDelete, "/api/v1/shell-attribute-options/"+o.ID, nil)
 	}
-	last := alex.Do(t, http.MethodDelete, "/api/shell-attribute-options/"+options[0].ID, nil)
-	gone := alex.Do(t, http.MethodDelete, "/api/shell-attribute-options/SO-99999", nil)
+	last := alex.Do(t, http.MethodDelete, "/api/v1/shell-attribute-options/"+options[0].ID, nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/shell-attribute-options/SO-99999", nil)
 
 	if deleted.RecycleBinEntry.RecordType != "shellAttributeOption" || deleted.RecycleBinEntry.Parent == nil ||
 		deleted.RecycleBinEntry.Parent.ID != created.ID || undone.Status != http.StatusOK {
 		t.Errorf("deleted = %+v; undo %d %s", deleted, undone.Status, undone.Body)
 	}
-	assertAnswer(t, last, http.StatusConflict, `{"code":"in_use","message":"'Media channel' needs at least one option, so 'TV' can't be deleted.","fields":[]}`)
+	assertAnswer(t, last, http.StatusConflict, `{"error":{"code":"in_use","message":"'Media channel' needs at least one option, so 'TV' can't be deleted.","fields":[]}}`)
 	assertAnswer(t, gone, http.StatusNotFound, optionGoneBody)
 }
 
@@ -1129,19 +1133,19 @@ func TestImportAPI_CheckAndImport_FR031(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var created savedAttribute
-	mustCreate(t, alex, "/api/shell-attributes", map[string]any{"label": "Cost centre", "level": "lineItem", "type": "singleChoice",
+	mustCreate(t, alex, "/api/v1/shell-attributes", map[string]any{"label": "Cost centre", "level": "lineItem", "type": "singleChoice",
 		"marking": "optional", "section": "Finance coding", "options": []map[string]any{{"label": "CN04000001"}}}).Decode(t, &created)
 	file := func(text string) map[string]string {
 		return map[string]string{"fileName": "cost-centres.csv", "content": base64.StdEncoding.EncodeToString([]byte(text))}
 	}
-	path := "/api/shell-attributes/" + created.ID + "/options/"
+	path := "/api/v1/shell-attributes/" + created.ID + "/options/"
 	csv := "Option\nCN04000001\nCN04000002\n,see the note\n"
 
 	checked := alex.Do(t, http.MethodPost, path+"import-check", file(csv))
 	imported := alex.Do(t, http.MethodPost, path+"import", file(csv))
 	again := alex.Do(t, http.MethodPost, path+"import", file(csv))
 	tooLarge := alex.Do(t, http.MethodPost, path+"import-check", file(strings.Repeat("a", 700*1024+10)))
-	gone := alex.Do(t, http.MethodPost, "/api/shell-attributes/SA-9999/options/import", file(csv))
+	gone := alex.Do(t, http.MethodPost, "/api/v1/shell-attributes/SA-9999/options/import", file(csv))
 	var options struct{ Items []savedOption }
 	alex.Do(t, http.MethodGet, path[:len(path)-1], nil).Decode(t, &options)
 
@@ -1159,7 +1163,7 @@ func TestImportAPI_CheckAndImport_FR031(t *testing.T) {
 
 // Bodies of the currency tests.
 const (
-	currencyGoneBody = `{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}`
+	currencyGoneBody = `{"error":{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}}`
 	usdLockedReason  = "USD is MAPP's base currency; its rate is always 1."
 )
 
@@ -1181,7 +1185,7 @@ func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
 	server.GrantRole(t, danielsEmail, "administrator", "all") // 014: changing Settings
-	mustCreate(t, alex, "/api/currencies", jpyBody)
+	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
 	server.Advance(90 * time.Minute)
 	var daniels struct {
 		Rate          string
@@ -1189,15 +1193,15 @@ func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
 		Version       int
 	}
 
-	daniel.Do(t, http.MethodPatch, "/api/currencies/JPY", map[string]any{"rate": "151", "version": 1}).Decode(t, &daniels)
-	alexs := alex.Do(t, http.MethodPatch, "/api/currencies/JPY", map[string]any{"name": "Yen", "version": 1})
-	gone := alex.Do(t, http.MethodPatch, "/api/currencies/XXX", map[string]any{"name": "X", "version": 1})
+	daniel.Do(t, http.MethodPatch, "/api/v1/currencies/JPY", map[string]any{"rate": "151", "version": 1}).Decode(t, &daniels)
+	alexs := alex.Do(t, http.MethodPatch, "/api/v1/currencies/JPY", map[string]any{"name": "Yen", "version": 1})
+	gone := alex.Do(t, http.MethodPatch, "/api/v1/currencies/XXX", map[string]any{"name": "X", "version": 1})
 
 	if daniels.Rate != "151" || daniels.RateChangedBy.Name != "Daniel Okoro" || daniels.Version != 2 {
 		t.Errorf("Daniel's update = %+v", daniels)
 	}
-	assertAnswer(t, alexs, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this currency",`+
-		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}`)
+	assertAnswer(t, alexs, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this currency",`+
+		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}}`)
 	assertAnswer(t, gone, http.StatusNotFound, currencyGoneBody)
 }
 
@@ -1205,16 +1209,16 @@ func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
 func TestCurrenciesAPI_Impact_FR030(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/currencies", jpyBody)
+	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
 
-	unused := alex.Do(t, http.MethodPost, "/api/currencies/JPY/impact", map[string]any{"rate": "151", "version": 1})
-	invalid := alex.Do(t, http.MethodPost, "/api/currencies/JPY/impact", map[string]any{"rate": "0", "version": 1})
-	gone := alex.Do(t, http.MethodPost, "/api/currencies/XXX/impact", map[string]any{"version": 1})
+	unused := alex.Do(t, http.MethodPost, "/api/v1/currencies/JPY/impact", map[string]any{"rate": "151", "version": 1})
+	invalid := alex.Do(t, http.MethodPost, "/api/v1/currencies/JPY/impact", map[string]any{"rate": "0", "version": 1})
+	gone := alex.Do(t, http.MethodPost, "/api/v1/currencies/XXX/impact", map[string]any{"version": 1})
 
 	assertAnswer(t, unused, http.StatusOK, `{"warnings":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"rate","message":"Enter a rate above 0, with at most six decimals."}`))
 	assertAnswer(t, gone, http.StatusNotFound, currencyGoneBody)
-	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/currencies/JPY", nil), http.StatusOK,
+	assertAnswer(t, alex.Do(t, http.MethodGet, "/api/v1/currencies/JPY", nil), http.StatusOK,
 		jpyAnswer(1, `"rateChangedAt":"2026-03-12T09:00:00Z","rateChangedBy":{"id":"U-1001","name":"Alex Morgan"}`, true))
 }
 
@@ -1223,12 +1227,12 @@ func TestCurrenciesAPI_Impact_FR030(t *testing.T) {
 func TestCurrenciesAPI_Status_FR004(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/currencies", jpyBody)
+	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
 	rateChanged := `"rateChangedAt":"2026-03-12T09:00:00Z","rateChangedBy":{"id":"U-1001","name":"Alex Morgan"}`
 
-	inactive := alex.Do(t, http.MethodPost, "/api/currencies/JPY/status", map[string]any{"active": false, "version": 1})
-	stale := alex.Do(t, http.MethodPost, "/api/currencies/JPY/status", map[string]any{"active": true, "version": 1})
-	active := alex.Do(t, http.MethodPost, "/api/currencies/JPY/status", map[string]any{"active": true, "version": 2})
+	inactive := alex.Do(t, http.MethodPost, "/api/v1/currencies/JPY/status", map[string]any{"active": false, "version": 1})
+	stale := alex.Do(t, http.MethodPost, "/api/v1/currencies/JPY/status", map[string]any{"active": true, "version": 1})
+	active := alex.Do(t, http.MethodPost, "/api/v1/currencies/JPY/status", map[string]any{"active": true, "version": 2})
 
 	assertAnswer(t, inactive, http.StatusOK, jpyAnswer(2, rateChanged, false))
 	if stale.Status != http.StatusConflict || active.Status != http.StatusOK {
@@ -1240,12 +1244,12 @@ func TestCurrenciesAPI_Status_FR004(t *testing.T) {
 func TestCurrenciesAPI_DeleteAndUndo_FR004(t *testing.T) {
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/currencies", jpyBody)
+	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
 
-	deleted := alex.Do(t, http.MethodDelete, "/api/currencies/JPY", nil)
-	afterDelete := alex.Do(t, http.MethodGet, "/api/currencies/JPY", nil)
-	undone := alex.Do(t, http.MethodPost, "/api/recycle-bin/BIN-1001/undo", nil)
-	gone := alex.Do(t, http.MethodDelete, "/api/currencies/XXX", nil)
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/currencies/JPY", nil)
+	afterDelete := alex.Do(t, http.MethodGet, "/api/v1/currencies/JPY", nil)
+	undone := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/BIN-1001/undo", nil)
+	gone := alex.Do(t, http.MethodDelete, "/api/v1/currencies/XXX", nil)
 
 	assertAnswer(t, deleted, http.StatusOK, `{"recycleBinEntry":{"id":"BIN-1001","recordType":"currency","recordTypeLabel":"currency",`+
 		`"recordId":"JPY","recordName":"JPY","path":[],"parent":null,"deletedAt":"2026-03-12T09:00:00Z",`+
@@ -1260,14 +1264,14 @@ func TestCurrenciesAPI_USDLocked_FR028(t *testing.T) {
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
-	rate := alex.Do(t, http.MethodPatch, "/api/currencies/USD", map[string]any{"rate": "2", "version": 1})
-	status := alex.Do(t, http.MethodPost, "/api/currencies/USD/status", map[string]any{"active": false, "version": 1})
-	deleted := alex.Do(t, http.MethodDelete, "/api/currencies/USD", nil)
-	renamed := alex.Do(t, http.MethodPatch, "/api/currencies/USD", map[string]any{"name": "United States dollar", "version": 1})
+	rate := alex.Do(t, http.MethodPatch, "/api/v1/currencies/USD", map[string]any{"rate": "2", "version": 1})
+	status := alex.Do(t, http.MethodPost, "/api/v1/currencies/USD/status", map[string]any{"active": false, "version": 1})
+	deleted := alex.Do(t, http.MethodDelete, "/api/v1/currencies/USD", nil)
+	renamed := alex.Do(t, http.MethodPatch, "/api/v1/currencies/USD", map[string]any{"name": "United States dollar", "version": 1})
 
 	assertAnswer(t, rate, http.StatusBadRequest, validationBody(`{"field":"rate","message":"`+usdLockedReason+`"}`))
 	assertAnswer(t, status, http.StatusBadRequest, validationBody(`{"field":"active","message":"`+usdLockedReason+`"}`))
-	assertAnswer(t, deleted, http.StatusConflict, `{"code":"in_use","message":"`+usdLockedReason+`","fields":[]}`)
+	assertAnswer(t, deleted, http.StatusConflict, `{"error":{"code":"in_use","message":"`+usdLockedReason+`","fields":[]}}`)
 	if renamed.Status != http.StatusOK {
 		t.Errorf("rename USD = %d %s", renamed.Status, renamed.Body)
 	}
@@ -1285,7 +1289,7 @@ func mustCreate(t *testing.T, c *apitest.Client, path string, body any) *apitest
 
 // validationBody is the body of a validation_failed answer listing fields, which are written as JSON.
 func validationBody(fields string) string {
-	return `{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}`
+	return `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}}`
 }
 
 // assertAnswer checks the status and the exact body of an answer.

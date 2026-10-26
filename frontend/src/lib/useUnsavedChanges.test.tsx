@@ -38,7 +38,7 @@ function NameForm({ onClose = () => {} }: { onClose?: () => void }) {
       </button>
       <button
         type="button"
-        onClick={() => call(api.POST('/api/sample-folders', { body: { name } })).catch(() => {})}
+        onClick={() => call(api.POST('/api/v1/sample-folders', { body: { name } })).catch(() => {})}
       >
         Save
       </button>
@@ -175,9 +175,9 @@ describe('useUnsavedChanges', () => {
 
   it('lets the sign-in page open when the session has ended, as nothing can be saved without one (US4 scenario 2)', async () => {
     mockApi({
-      'POST /api/sample-folders': {
+      'POST /api/v1/sample-folders': {
         status: 401,
-        body: { code: 'session_expired', message: 'Please sign in again', fields: [] },
+        body: { error: { code: 'session_expired', message: 'Please sign in again', fields: [] } },
       },
     });
     const { user, router } = renderForm();
@@ -192,7 +192,7 @@ describe('useUnsavedChanges', () => {
   });
 
   it('lets Home open when another person signed in in another tab, so nothing is saved in their name (spec edge case)', async () => {
-    mockApi({ 'GET /api/me': { body: DANIEL } });
+    mockApi({ 'GET /api/v1/me': { body: DANIEL } });
     const { user, router, queryClient } = renderForm();
     await user.type(screen.getByLabelText('Name'), 'Ideas');
 

@@ -539,6 +539,25 @@ func TestChangeAndRemoveAllocation_NeedTheirPlansScope_FR030(t *testing.T) {
 	}
 }
 
+// An allocation whose plan the person cannot see answers like a missing one, and nothing changes (022 FR-005).
+func TestChangeAndRemoveAllocation_HiddenPlanIsNotFound_022_FR005(t *testing.T) {
+	f := newFixture(t)
+	f.demo(t)
+	f.access.hidden = map[string]bool{planEurope: true}
+
+	_, errUpdate := f.service.UpdateAllocation(t.Context(), priya, "BA-1001", AllocationUpdate{
+		Amount: &money.Input{Amount: "1.00", Currency: "USD"}, Version: ptr(1), PlanVersion: ptr(2),
+	})
+	_, errRemove := f.service.RemoveAllocation(t.Context(), priya, "BA-1001")
+
+	gone := errs.NotFound("This allocation no longer exists — someone may have removed it.")
+	assertError(t, errUpdate, gone)
+	assertError(t, errRemove, gone)
+	if n := len(f.allocations(t)); n != 2 {
+		t.Errorf("allocations = %d, want 2", n)
+	}
+}
+
 // Removing an allocation deletes it outright: the plan keeps its budget, which is editable again, the plan's
 // log says the allocation was removed, and the global budget's log keeps the amount (FR-034, US6 scenario 6).
 func TestRemoveAllocation_KeepsThePlanBudget_FR034(t *testing.T) {

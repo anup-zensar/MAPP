@@ -36,7 +36,7 @@ export function ExportMenu({ state, result }: ExportMenuProps) {
     setPreparing(true);
     try {
       const fileName = await downloadFromApi(
-        api.GET('/api/all-work/export', {
+        api.GET('/api/v1/all-work/export', {
           params: {
             query: { ...toQueryParams(state), format, unassigned: state.showUnassigned },
           },

@@ -59,7 +59,7 @@ describe('accessOf (useAccess)', () => {
     expect(access.rulesNoSelfApproval).toBe(true);
   });
 
-  it('allows everything while GET /api/me sends no access (an API from before feature 014, D-298)', () => {
+  it('allows everything while GET /api/v1/me sends no access (an API from before feature 014, D-298)', () => {
     const access = accessOf(undefined);
 
     expect(access.known).toBe(false);

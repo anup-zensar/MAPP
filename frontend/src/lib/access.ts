@@ -1,7 +1,7 @@
 /**
  * What the signed-in person may do (feature 014, D-229): the web app shows the server's decisions and
  * never works a permission out itself. Navigation, page-level gates and the View only note read the
- * person's access from GET /api/me (`useAccess`); per-record actions read the records' own `access`
+ * person's access from GET /api/v1/me (`useAccess`); per-record actions read the records' own `access`
  * objects (`availabilityProps`).
  *
  * An answer without `access` (an API from before feature 014) counts as "allowed", as before
@@ -13,7 +13,7 @@ import { useSession } from '@/app/useSession';
 
 /** One of the fixed permissions of 014 Table A, such as "plans.edit". */
 export type Permission = components['schemas']['PermissionKey'];
-/** The signed-in person's access (GET /api/me). */
+/** The signed-in person's access (GET /api/v1/me). */
 export type MyAccess = components['schemas']['MyAccess'];
 /** One permission a person holds, merged over their roles: for All markets or for some teams. */
 export type MyPermission = components['schemas']['MyPermission'];
@@ -47,13 +47,13 @@ export interface Access {
   known: boolean;
 }
 
-/** The signed-in person's access, from GET /api/me (FR-024); everything allowed while it is unknown. */
+/** The signed-in person's access, from GET /api/v1/me (FR-024); everything allowed while it is unknown. */
 export function useAccess(): Access {
   const { user } = useSession();
   return accessOf(user?.access);
 }
 
-/** The Access of `access` as GET /api/me answers it; everything allowed when it is missing. */
+/** The Access of `access` as GET /api/v1/me answers it; everything allowed when it is missing. */
 export function accessOf(access: MyAccess | undefined): Access {
   const administrators = access?.administrators ?? [];
   const byKey = new Map((access?.permissions ?? []).map((p) => [p.key, p]));

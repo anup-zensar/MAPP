@@ -73,10 +73,10 @@
 }
 
 /* "You are here" (Shell): the section on screen, marked with aria-current="page", has a 4 px
-   yellow bar at its start, bold text and a yellow tint, so colour is never the only signal. */
+   yellow bar at its start, bold text and the hover grey, so colour is never the only signal. */
 .item[aria-current='page'],
 .item[aria-current='page']:hover {
-  background: var(--brand-yellow-tint);
+  background: var(--hover);
   font-weight: var(--weight-bold);
 }
 

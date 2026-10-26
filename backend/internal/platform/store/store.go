@@ -231,6 +231,21 @@ func (db *DB) IsEmpty() bool {
 	return len(db.tables) == 0 && len(db.logs) == 0
 }
 
+// Ready returns why the store cannot serve requests now: a save broke off half-way (ErrFailed), or the data
+// folder cannot be reached. Call it outside transactions.
+func (db *DB) Ready() error {
+	db.mu.RLock()
+	failed := db.failed
+	db.mu.RUnlock()
+	if failed {
+		return ErrFailed
+	}
+	if _, err := os.Stat(db.dir); err != nil {
+		return fmt.Errorf("store: data folder: %w", err)
+	}
+	return nil
+}
+
 // Write runs fn with exclusive access to the store. When fn returns nil, everything it changed is saved
 // to the data folder together; when fn returns an error, nothing changes and that error is returned
 // unchanged. Called inside another Write (its context carries that transaction), Write joins it: its

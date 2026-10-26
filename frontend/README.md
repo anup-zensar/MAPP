@@ -84,7 +84,7 @@ next to the code they test (`Name.test.tsx`).
 3. Add or change its sidebar item in `src/app/navigation.ts`. When a section is built, it gets its real
    page and leaves `COMING_SOON_SECTIONS`.
 4. Ask the API with TanStack Query, `api` and `call()`, as `src/features/dev/sampleApi.ts` does:
-   `useQuery({ queryKey: ['sample-folders'], queryFn: () => call(api.GET('/api/sample-folders')) })`.
+   `useQuery({ queryKey: ['sample-folders'], queryFn: () => call(api.GET('/api/v1/sample-folders')) })`.
    `call()` returns the data or throws an `ApiError` with a plain-language message.
 5. Need a new shared component? Only with a reason in the feature's plan: its own folder in
    `src/components/`, a test, and an export in `index.ts`.
@@ -93,12 +93,12 @@ next to the code they test (`Name.test.tsx`).
 
 Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
 
-- **Fake API.** `mockApi({ 'GET /api/me': { body: priya }, 'POST /api/auth/sign-out': { status: 204 } })`
+- **Fake API.** `mockApi({ 'GET /api/v1/me': { body: priya }, 'POST /api/v1/auth/sign-out': { status: 204 } })`
   answers each `"METHOD /path"`; a function as the answer covers special cases (a slow answer, a network
   failure). A request without an answer **fails the test** — except the app frame's background
   requests (`FRAME_ANSWERS`: the Approvals count and the notifications, answered "nothing waiting"
   unless the test answers them). To see what the code sent, keep what `mockApi` returns:
-  `api.requests`, or `api.bodiesOf('POST /api/auth/sign-in')` for one endpoint.
+  `api.requests`, or `api.bodiesOf('POST /api/v1/auth/sign-in')` for one endpoint.
 - **People.** `testUser(overrides)` (`src/test/users.ts`) is a complete signed-in person (Priya Raman);
   `src/test/attributeForms.ts` has Shell attribute forms for form tests.
 - **Rendering** (`src/test/render.tsx`). Both helpers return `{ router, queryClient, user }`:
@@ -107,7 +107,7 @@ Component and page tests use Vitest, Testing Library and jsdom, always in UTC.
     signed-in person (`null`, the default: nobody); `ui` is shown at `path` (every address unless given);
     other addresses show the stand-ins "Sign-in page" and "Another page".
   - `renderRoutes(routes, { route, user })` renders the app's real routes. Without `user`, the app asks
-    `GET /api/me` as on a real page load, so mock it.
+    `GET /api/v1/me` as on a real page load, so mock it.
   - `renderApp(path, answers)` (`src/test/app.tsx`) opens the whole app at an address as `testUser()`,
     with `answers` for the page's requests; `expectCurrentSection('Plans')` checks the sidebar. Each
     feature folder's `routes.test.tsx` uses them; it stands in for other features' parts with

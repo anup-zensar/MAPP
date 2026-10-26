@@ -1,4 +1,4 @@
-/* A dark bubble: 12 px text, 4 px corners, at most 280 px wide (Shell). */
+/* A Text Strong bubble: 12 px text, 4 px corners, at most 280 px wide (Shell). */
 .bubble {
   z-index: 60;
   max-width: 280px;

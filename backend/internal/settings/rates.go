@@ -177,7 +177,7 @@ type RateInfo struct {
 	ImportFileName *string     `json:"importFileName"` // the GSAP file of an imported rate; null otherwise
 }
 
-// CurrentRatePage is the answer of GET /api/exchange-rates/current (contract CurrentRatePage).
+// CurrentRatePage is the answer of GET /api/v1/exchange-rates/current (contract CurrentRatePage).
 type CurrentRatePage struct {
 	Today date.Date  `json:"today"`
 	Items []RateInfo `json:"items"`
@@ -247,7 +247,7 @@ func (s *Service) CurrentRate(ctx context.Context, code string) (RateInfo, bool,
 	return RateInfo{}, false, nil
 }
 
-// ListCurrentRates answers GET /api/exchange-rates/current. Every signed-in person may read it (014 Table C).
+// ListCurrentRates answers GET /api/v1/exchange-rates/current. Every signed-in person may read it (014 Table C).
 func (s *Service) ListCurrentRates(ctx context.Context, a actor.Actor) (CurrentRatePage, error) {
 	infos, err := s.CurrentRates(ctx)
 	if err != nil {
@@ -316,13 +316,13 @@ type ExchangeRatePage struct {
 	Current RateInfo           `json:"current"`
 }
 
-// RateInput is the body of POST /api/currencies/{code}/rates and its impact check (ExchangeRateCreate).
+// RateInput is the body of POST /api/v1/currencies/{code}/rates and its impact check (ExchangeRateCreate).
 type RateInput struct {
 	Date string `json:"date"`
 	Rate string `json:"rate"`
 }
 
-// RateUpdate is the body of PATCH /api/exchange-rates/{rateId} and its impact check (ExchangeRateUpdate).
+// RateUpdate is the body of PATCH /api/v1/exchange-rates/{rateId} and its impact check (ExchangeRateUpdate).
 type RateUpdate struct {
 	Rate    string `json:"rate"`
 	Version *int   `json:"version"`

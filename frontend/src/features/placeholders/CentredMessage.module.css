@@ -1,5 +1,8 @@
-/* Centred in the content column, no card (UI audit M-02). */
+/* Centred in the content column, no card (UI audit M-02): on the grey page, so its secondary
+   text and links are Text Strong (constitution X). */
 .page {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   align-items: center;

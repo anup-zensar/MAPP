@@ -100,7 +100,7 @@ export function lockReason(attribute: ShellAttribute, field: string): string | u
 export type FormAttribute = components['schemas']['FormAttribute'];
 type AttributeForm = components['schemas']['AttributeForm'];
 
-/** One attribute of a level's form (GET /api/shell-attribute-forms/{level}), with its options. */
+/** One attribute of a level's form (GET /api/v1/shell-attribute-forms/{level}), with its options. */
 export function findFormAttribute(form: AttributeForm, id: string): FormAttribute | undefined {
   return form.sections
     .flatMap((section) => section.attributes)

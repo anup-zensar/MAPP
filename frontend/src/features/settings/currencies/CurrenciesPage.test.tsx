@@ -15,11 +15,11 @@ function renderCurrencies(
   route = '/settings/currencies',
 ) {
   const api = mockApi({
-    'GET /api/currencies': { body: CURRENCIES },
+    'GET /api/v1/currencies': { body: CURRENCIES },
     // Recent imports and EUR's rate history (016 US1).
-    'GET /api/exchange-rates/imports': { body: NO_IMPORTS },
-    'GET /api/currencies/EUR/rates': { body: EUR_RATES },
-    'GET /api/currencies/JPY/rates': { body: NO_RATES },
+    'GET /api/v1/exchange-rates/imports': { body: NO_IMPORTS },
+    'GET /api/v1/currencies/EUR/rates': { body: EUR_RATES },
+    'GET /api/v1/currencies/JPY/rates': { body: NO_RATES },
     ...answers,
   });
   const rendered = renderWithProviders(<CurrenciesPage />, {
@@ -74,7 +74,7 @@ describe('CurrenciesPage: the list (FR-002, FR-028)', () => {
   });
 
   it('says when the currencies cannot be loaded', async () => {
-    renderCurrencies({ 'GET /api/currencies': () => Promise.reject(new TypeError('offline')) });
+    renderCurrencies({ 'GET /api/v1/currencies': () => Promise.reject(new TypeError('offline')) });
 
     expect(await screen.findByRole('alert')).toHaveTextContent("can't reach its server");
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
@@ -126,7 +126,7 @@ describe('CurrenciesPage: details (US4 scenarios 2 and 4)', () => {
 describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
   it('adds a currency, showing its rate both ways while it is typed (scenario 1)', async () => {
     const { user, api } = renderCurrencies({
-      'POST /api/currencies': { status: 201, body: { ...JPY, active: true } },
+      'POST /api/v1/currencies': { status: 201, body: { ...JPY, active: true } },
     });
 
     await user.click(screen.getByRole('button', { name: 'New currency' }));
@@ -143,14 +143,14 @@ describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Currency 'Japanese yen' created");
-    expect(api.bodiesOf('POST /api/currencies')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/currencies')).toEqual([
       { code: 'JPY', name: 'Japanese yen', symbol: '¥', rate: '150' },
     ]);
   });
 
   it('shows every problem at once (scenario 5)', async () => {
     const { user } = renderCurrencies({
-      'POST /api/currencies': {
+      'POST /api/v1/currencies': {
         status: 400,
         body: validationFailed([
           { field: 'code', message: 'Enter a three-letter code such as JPY.' },
@@ -182,10 +182,10 @@ describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
       '14 line items in 6 activities use EUR. Their EUR amounts stay the same; their USD amounts will be recalculated (52,173.91 → 50,526.32 USD). Unassigned planned cost of these activities will change. No activity goes back for approval.';
     const { user, api } = renderCurrencies(
       {
-        'POST /api/currencies/EUR/impact': {
+        'POST /api/v1/currencies/EUR/impact': {
           body: { warnings: [{ kind: 'amountsRecalculated', message: warning, count: 14 }] },
         },
-        'PATCH /api/currencies/EUR': { body: { ...EUR, rate: '0.95', version: 5 } },
+        'PATCH /api/v1/currencies/EUR': { body: { ...EUR, rate: '0.95', version: 5 } },
       },
       '/settings/currencies?id=EUR',
     );
@@ -210,13 +210,15 @@ describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
     await user.click(within(impact).getByRole('button', { name: 'Save changes' }));
 
     expect(await screen.findAllByText("Currency 'Euro' saved")).not.toHaveLength(0);
-    expect(api.bodiesOf('POST /api/currencies/EUR/impact')).toEqual([{ rate: '0.95', version: 4 }]);
-    expect(api.bodiesOf('PATCH /api/currencies/EUR')).toEqual([{ rate: '0.95', version: 4 }]);
+    expect(api.bodiesOf('POST /api/v1/currencies/EUR/impact')).toEqual([
+      { rate: '0.95', version: 4 },
+    ]);
+    expect(api.bodiesOf('PATCH /api/v1/currencies/EUR')).toEqual([{ rate: '0.95', version: 4 }]);
   });
 
   it("shows USD's rate read-only with its lock; its name can still change (scenario 4)", async () => {
     const { user, api } = renderCurrencies({
-      'PATCH /api/currencies/USD': {
+      'PATCH /api/v1/currencies/USD': {
         body: { ...CURRENCIES.items[0], name: 'United States dollar' },
       },
     });
@@ -233,15 +235,15 @@ describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await findMessages()).toHaveTextContent("Currency 'United States dollar' saved");
-    expect(api.bodiesOf('PATCH /api/currencies/USD')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/currencies/USD')).toEqual([
       { name: 'United States dollar', version: 1 },
     ]);
   });
 
   it('keeps the typed values after a conflict and names who saved first (FR-007)', async () => {
     const { user } = renderCurrencies({
-      'PATCH /api/currencies/EUR': { status: 409, body: versionConflict() },
-      'GET /api/currencies/EUR': { body: { ...EUR, version: 6 } },
+      'PATCH /api/v1/currencies/EUR': { status: 409, body: versionConflict() },
+      'GET /api/v1/currencies/EUR': { body: { ...EUR, version: 6 } },
     });
 
     await chooseAction('EUR', 'Edit', user);
@@ -259,7 +261,7 @@ describe('CurrenciesPage: create and edit (US4 scenarios 1, 3, 4, 5)', () => {
 describe('CurrenciesPage: status and delete (US4 scenario 2, FR-004)', () => {
   it('offers Set inactive instead of deleting a currency in use', async () => {
     const { user, api } = renderCurrencies({
-      'POST /api/currencies/EUR/status': { body: { ...EUR, active: false, version: 5 } },
+      'POST /api/v1/currencies/EUR/status': { body: { ...EUR, active: false, version: 5 } },
     });
 
     await chooseAction('EUR', 'Delete', user);
@@ -270,14 +272,14 @@ describe('CurrenciesPage: status and delete (US4 scenario 2, FR-004)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Set inactive' }));
 
     expect(await findMessages()).toHaveTextContent("Currency 'Euro' set inactive");
-    expect(api.bodiesOf('POST /api/currencies/EUR/status')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/currencies/EUR/status')).toEqual([
       { active: false, version: 4 },
     ]);
   });
 
   it('moves an unused currency to the recycle bin and offers Undo', async () => {
     const { user } = renderCurrencies(
-      { 'DELETE /api/currencies/JPY': { body: deleted('currency', 'JPY', 'Japanese yen') } },
+      { 'DELETE /api/v1/currencies/JPY': { body: deleted('currency', 'JPY', 'Japanese yen') } },
       '/settings/currencies?status=inactive',
     );
 
@@ -294,14 +296,16 @@ describe('CurrenciesPage: status and delete (US4 scenario 2, FR-004)', () => {
 
   it('reactivates an inactive currency', async () => {
     const { user, api } = renderCurrencies(
-      { 'POST /api/currencies/JPY/status': { body: { ...JPY, active: true, version: 2 } } },
+      { 'POST /api/v1/currencies/JPY/status': { body: { ...JPY, active: true, version: 2 } } },
       '/settings/currencies?status=inactive',
     );
 
     await chooseAction('JPY', 'Reactivate', user);
 
     expect(await findMessages()).toHaveTextContent("Currency 'Japanese yen' reactivated");
-    expect(api.bodiesOf('POST /api/currencies/JPY/status')).toEqual([{ active: true, version: 1 }]);
+    expect(api.bodiesOf('POST /api/v1/currencies/JPY/status')).toEqual([
+      { active: true, version: 1 },
+    ]);
   });
 });
 
@@ -319,8 +323,8 @@ describe('CurrenciesPage: dated rates and the GSAP import (016 US1)', () => {
 
   it('shows the date and source of each current rate, Import GSAP rates and Recent imports', async () => {
     renderCurrencies({
-      'GET /api/currencies': { body: DATED },
-      'GET /api/exchange-rates/imports': { body: RECENT_IMPORTS_PAGE },
+      'GET /api/v1/currencies': { body: DATED },
+      'GET /api/v1/exchange-rates/imports': { body: RECENT_IMPORTS_PAGE },
     });
     await screen.findAllByRole('table');
 
@@ -339,7 +343,7 @@ describe('CurrenciesPage: dated rates and the GSAP import (016 US1)', () => {
   });
 
   it("shows the current rate's date and source and the rate history in the details (US1-1)", async () => {
-    renderCurrencies({ 'GET /api/currencies': { body: DATED } }, '/settings/currencies?id=EUR');
+    renderCurrencies({ 'GET /api/v1/currencies': { body: DATED } }, '/settings/currencies?id=EUR');
 
     const panel = await screen.findByRole('dialog', { name: 'Euro (EUR)' });
     expect(panel).toHaveTextContent('Rate of 19 Oct 2026 · GSAP import');

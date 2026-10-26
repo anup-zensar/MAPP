@@ -38,7 +38,7 @@ export const ALL_WORK_KEYS = {
 export function useAllWork(query: AllWorkQuery | null) {
   return useQuery({
     queryKey: ALL_WORK_KEYS.view(query),
-    queryFn: () => call(api.GET('/api/all-work', { params: { query: query ?? {} } })),
+    queryFn: () => call(api.GET('/api/v1/all-work', { params: { query: query ?? {} } })),
     enabled: query !== null,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -81,7 +81,7 @@ async function fetchOptions(queryClient: QueryClient, year: number | null, yearT
       : yearTo !== undefined && yearTo > year
         ? { yearFrom: year, yearTo }
         : { year };
-  const options = await call(api.GET('/api/all-work/options', { params: { query } }));
+  const options = await call(api.GET('/api/v1/all-work/options', { params: { query } }));
   if (year === null) {
     queryClient.setQueryData(ALL_WORK_KEYS.options(options.year), options);
   }
@@ -92,7 +92,7 @@ async function fetchOptions(queryClient: QueryClient, year: number | null, yearT
 export function useAllWorkPreferences() {
   return useQuery({
     queryKey: ALL_WORK_KEYS.preferences,
-    queryFn: () => call(api.GET('/api/all-work/preferences')),
+    queryFn: () => call(api.GET('/api/v1/all-work/preferences')),
     staleTime: Infinity,
   });
 }
@@ -110,7 +110,8 @@ export function usePreferencesSaver(): (preferences: AllWorkPreferences) => void
   const pending = useRef<AllWorkPreferences | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const { mutate } = useMutation({
-    mutationFn: (body: AllWorkPreferences) => call(api.PUT('/api/all-work/preferences', { body })),
+    mutationFn: (body: AllWorkPreferences) =>
+      call(api.PUT('/api/v1/all-work/preferences', { body })),
     onSuccess: (saved) => queryClient.setQueryData(ALL_WORK_KEYS.preferences, saved),
     onError: (error) => {
       if (error instanceof ApiError && error.kind !== 'signInRequired') {
@@ -143,7 +144,7 @@ export function usePreferencesSaver(): (preferences: AllWorkPreferences) => void
 export function useSavedViews() {
   return useQuery({
     queryKey: ALL_WORK_KEYS.views,
-    queryFn: () => call(api.GET('/api/saved-views')),
+    queryFn: () => call(api.GET('/api/v1/saved-views')),
   });
 }
 
@@ -173,7 +174,7 @@ function useViewsRefresh() {
 export function useCreateView() {
   const { remember, refresh } = useViewsRefresh();
   return useMutation({
-    mutationFn: (body: SavedViewCreate) => call(api.POST('/api/saved-views', { body })),
+    mutationFn: (body: SavedViewCreate) => call(api.POST('/api/v1/saved-views', { body })),
     onSuccess: remember,
     onSettled: refresh,
   });
@@ -183,7 +184,7 @@ export function useUpdateView() {
   const { remember, refresh } = useViewsRefresh();
   return useMutation({
     mutationFn: ({ viewId, body }: { viewId: string; body: SavedViewUpdate }) =>
-      call(api.PATCH('/api/saved-views/{viewId}', { params: { path: { viewId } }, body })),
+      call(api.PATCH('/api/v1/saved-views/{viewId}', { params: { path: { viewId } }, body })),
     onSuccess: remember,
     onSettled: refresh,
   });
@@ -194,12 +195,12 @@ export function useDeleteView() {
   const { refresh } = useViewsRefresh();
   return useMutation({
     mutationFn: (viewId: string) =>
-      call(api.DELETE('/api/saved-views/{viewId}', { params: { path: { viewId } } })),
+      call(api.DELETE('/api/v1/saved-views/{viewId}', { params: { path: { viewId } } })),
     onSettled: refresh,
   });
 }
 
 /** Whether a row's record still exists, before it opens (D-123). */
 export function locateRecord(recordId: string) {
-  return call(api.GET('/api/all-work/records/{recordId}', { params: { path: { recordId } } }));
+  return call(api.GET('/api/v1/all-work/records/{recordId}', { params: { path: { recordId } } }));
 }

@@ -8,9 +8,9 @@ import { testUser } from '@/test/users';
 import { NotificationList } from './NotificationList';
 import { DECLINED, NOW, notificationOf, pageOf } from './testData';
 
-const LIST = 'GET /api/notifications';
-const READ = 'POST /api/notifications/NT-1003/read';
-const READ_ALL = 'POST /api/notifications/read-all';
+const LIST = 'GET /api/v1/notifications';
+const READ = 'POST /api/v1/notifications/NT-1003/read';
+const READ_ALL = 'POST /api/v1/notifications/read-all';
 
 function renderList(answers: Record<string, MockHandler>) {
   const api = mockApi(answers);

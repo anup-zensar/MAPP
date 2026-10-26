@@ -11,7 +11,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -80,21 +79,21 @@ func run(args []string, getenv func(string) string, out io.Writer) error {
 	return nil
 }
 
-// apiIsRunning reports whether a MAPP API answers GET /api/health on port within one second: 200 OK
-// with its health answer, {"status": "ok", ...}. Another program that happens to use the port does not
-// count, whatever it answers — an error, or a web page with 200 OK.
+// apiIsRunning reports whether a MAPP API answers its liveness probe, GET /healthz, on port within one
+// second: 204 No Content. Another program that happens to use the port does not count, whatever it
+// answers — an error, or a web page with 200 OK.
 func apiIsRunning(port int) bool {
 	client := http.Client{Timeout: time.Second}
-	response, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/api/health", port))
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/healthz", port), nil)
+	if err != nil {
+		return false
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		return false // nothing answered
 	}
 	defer response.Body.Close()
-	var health struct {
-		Status string `json:"status"`
-	}
-	return response.StatusCode == http.StatusOK &&
-		json.NewDecoder(response.Body).Decode(&health) == nil && health.Status == "ok"
+	return response.StatusCode == http.StatusNoContent
 }
 
 // deleteData deletes the data files in the folder dir: its *.json, *.jsonl and *.tmp files. Other files

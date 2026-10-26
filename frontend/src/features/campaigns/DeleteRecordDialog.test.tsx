@@ -129,8 +129,8 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const { api, onClose, onDeleted } = renderDialog(HELIX, {
-      'DELETE /api/campaigns/C-1001': { body: HELIX_DELETED },
-      'POST /api/recycle-bin/BIN-1001/undo': { body: {} },
+      'DELETE /api/v1/campaigns/C-1001': { body: HELIX_DELETED },
+      'POST /api/v1/recycle-bin/BIN-1001/undo': { body: {} },
     });
 
     await user.click(screen.getByRole('button', { name: 'Delete campaign' }));
@@ -138,7 +138,7 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
     await waitFor(() => expect(onDeleted).toHaveBeenCalled());
     expect(onClose).toHaveBeenCalled();
     expect(api.requests.map((r) => `${r.method} ${r.path}`)).toContain(
-      'DELETE /api/campaigns/C-1001',
+      'DELETE /api/v1/campaigns/C-1001',
     );
     const messages = await findMessages();
     expect(messages).toHaveTextContent("Campaign 'Helix launch' moved to the recycle bin");
@@ -147,16 +147,18 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
     await user.click(within(messages).getByRole('button', { name: 'Undo' }));
 
     await waitFor(() => expect(messages).toHaveTextContent("Campaign 'Helix launch' restored"));
-    expect(api.bodiesOf('POST /api/recycle-bin/BIN-1001/undo')).toHaveLength(1);
+    expect(api.bodiesOf('POST /api/v1/recycle-bin/BIN-1001/undo')).toHaveLength(1);
   });
 
   it('says so when the campaign is already gone (404)', async () => {
     const { user, onClose, onDeleted } = renderDialog(HELIX, {
-      'DELETE /api/campaigns/C-1001': {
+      'DELETE /api/v1/campaigns/C-1001': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This campaign no longer exists — someone may have deleted it.',
+          error: {
+            code: 'not_found',
+            message: 'This campaign no longer exists — someone may have deleted it.',
+          },
         },
       },
     });

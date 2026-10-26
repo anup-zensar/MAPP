@@ -46,7 +46,7 @@ export function logEntry(overrides: Partial<ActivityLogEntry> = {}): ActivityLog
   };
 }
 
-/** A page of the log as GET /api/activity-log answers it. */
+/** A page of the log as GET /api/v1/activity-log answers it. */
 export function logPage(
   items: ActivityLogEntry[],
   overrides: Partial<ActivityLogPage> = {},
@@ -60,7 +60,7 @@ export function logPage(
   };
 }
 
-/** GET /api/activity-log/summary with two people, two record types and one plan. */
+/** GET /api/v1/activity-log/summary with two people, two record types and one plan. */
 export function logSummary(overrides: Partial<ActivityLogSummary> = {}): ActivityLogSummary {
   return {
     changesToday: 5,
@@ -83,5 +83,5 @@ export function logSummary(overrides: Partial<ActivityLogSummary> = {}): Activit
  * campaign, initiative, activity and line item pages, which all show the section.
  */
 export const HISTORY_ANSWERS = {
-  'GET /api/activity-log': { body: logPage([]) },
+  'GET /api/v1/activity-log': { body: logPage([]) },
 };

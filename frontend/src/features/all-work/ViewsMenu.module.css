@@ -2,7 +2,7 @@
 .modified {
   padding: 1px var(--space-2);
   border-radius: var(--radius-chip);
-  background: color-mix(in srgb, var(--status-review) 16%, transparent);
+  background: color-mix(in srgb, var(--status-review) 16%, var(--surface));
   color: var(--status-review-text);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
@@ -18,10 +18,15 @@
   padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
   color: var(--ink);
   font-size: var(--text-sm);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .menu {
+  --ink-2: var(--ink);
 }
 
 .item {
@@ -69,7 +74,7 @@
   padding: 1px var(--space-2);
   border-radius: var(--radius-chip);
   background: var(--chip);
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
 }

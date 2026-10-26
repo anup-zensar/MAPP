@@ -18,13 +18,13 @@ export type FinancialTransactionPage = components['schemas']['FinancialTransacti
 export type FinancialTransactionType = components['schemas']['FinancialTransactionType'];
 export type FinancialSource = components['schemas']['FinancialSource'];
 
-/** A record's figures, breakdown, latest transactions and SWBS codes (GET /api/financials/records/{id}). */
+/** A record's figures, breakdown, latest transactions and SWBS codes (GET /api/v1/financials/records/{id}). */
 export function useFinancialRecord(recordId: string, enabled = true) {
   const { displayCurrency } = useFormatters();
   return useQuery({
     queryKey: ['financials', 'record', recordId, displayCurrency],
     queryFn: () =>
-      call(api.GET('/api/financials/records/{recordId}', { params: { path: { recordId } } })),
+      call(api.GET('/api/v1/financials/records/{recordId}', { params: { path: { recordId } } })),
     enabled,
   });
 }
@@ -32,7 +32,7 @@ export function useFinancialRecord(recordId: string, enabled = true) {
 /** Transactions shown per page on the line-item page (FR-017). */
 export const TRANSACTIONS_PAGE_SIZE = 50;
 
-/** One page of a record's transactions, newest first (GET /api/financials/transactions). */
+/** One page of a record's transactions, newest first (GET /api/v1/financials/transactions). */
 export function useRecordTransactions(recordId: string, page: number) {
   const { displayCurrency } = useFormatters();
   return useQuery({
@@ -44,7 +44,7 @@ export function useRecordTransactions(recordId: string, page: number) {
     ],
     queryFn: () =>
       call(
-        api.GET('/api/financials/transactions', {
+        api.GET('/api/v1/financials/transactions', {
           params: { query: { recordId, page, pageSize: TRANSACTIONS_PAGE_SIZE } },
         }),
       ),

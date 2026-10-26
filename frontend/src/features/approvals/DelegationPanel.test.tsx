@@ -8,11 +8,11 @@ import { testUser } from '@/test/users';
 import { DelegationPanel } from './DelegationPanel';
 import { ALEX, CARLOS, DANIEL, delegationOf, NO_DELEGATIONS, PRIYA } from './testData';
 
-const LIST = 'GET /api/approval-delegations';
-const CREATE = 'POST /api/approval-delegations';
+const LIST = 'GET /api/v1/approval-delegations';
+const CREATE = 'POST /api/v1/approval-delegations';
 
 function renderPanel(answers: Record<string, MockHandler>) {
-  const api = mockApi({ 'GET /api/people': PEOPLE, ...answers });
+  const api = mockApi({ 'GET /api/v1/people': PEOPLE, ...answers });
   const onClose = vi.fn();
   const rendered = renderWithProviders(<DelegationPanel onClose={onClose} />, {
     user: testUser(),
@@ -103,13 +103,15 @@ describe('DelegationPanel (feature 017, US4)', () => {
       [CREATE]: {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Fix the problems.',
-          fields: [
-            { field: 'delegateId', message: 'Choose who approves for you.' },
-            { field: 'startDate', message: 'Enter the first day.' },
-            { field: 'endDate', message: 'Enter the last day.' },
-          ],
+          error: {
+            code: 'validation_failed',
+            message: 'Fix the problems.',
+            fields: [
+              { field: 'delegateId', message: 'Choose who approves for you.' },
+              { field: 'startDate', message: 'Enter the first day.' },
+              { field: 'endDate', message: 'Enter the last day.' },
+            ],
+          },
         },
       },
     });
@@ -152,7 +154,7 @@ describe('DelegationPanel (feature 017, US4)', () => {
   it('cancels a delegation after asking, and says so (FR-024)', async () => {
     const { user, api } = renderPanel({
       [LIST]: listOf([delegationOf()]),
-      'POST /api/approval-delegations/DLG-1001/cancel': {
+      'POST /api/v1/approval-delegations/DLG-1001/cancel': {
         body: delegationOf({ state: 'cancelled', canChange: false }),
       },
     });
@@ -170,7 +172,7 @@ describe('DelegationPanel (feature 017, US4)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Cancel delegation' }));
 
     expect(await screen.findByText('Delegation to Carlos Mendes cancelled')).toBeInTheDocument();
-    expect(api.bodiesOf('POST /api/approval-delegations/DLG-1001/cancel')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/approval-delegations/DLG-1001/cancel')).toEqual([
       { version: 1 },
     ]);
   });
@@ -178,7 +180,7 @@ describe('DelegationPanel (feature 017, US4)', () => {
   it('changes a delegation, sending only what changed', async () => {
     const { user, api } = renderPanel({
       [LIST]: listOf([delegationOf()]),
-      'PATCH /api/approval-delegations/DLG-1001': { body: delegationOf() },
+      'PATCH /api/v1/approval-delegations/DLG-1001': { body: delegationOf() },
     });
 
     await user.click(
@@ -191,7 +193,7 @@ describe('DelegationPanel (feature 017, US4)', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Delegation to Carlos Mendes saved')).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/approval-delegations/DLG-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/approval-delegations/DLG-1001')).toEqual([
       { version: 1, note: 'Conference' },
     ]);
   });

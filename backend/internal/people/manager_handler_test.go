@@ -20,9 +20,9 @@ func TestPeople_ManagerField_FR016(t *testing.T) {
 	jane := createPerson(t, alex, map[string]any{"name": "Jane Doe", "email": janesEmail, "managerId": daniel})
 	after := listPeople(t, alex)
 	var danielsDetails people.PersonDetails
-	alex.Do(t, http.MethodGet, "/api/people/"+daniel, nil).Decode(t, &danielsDetails)
-	loop := alex.Do(t, http.MethodPatch, "/api/people/"+daniel, map[string]any{"managerId": jane.ID, "version": danielsDetails.Version})
-	cleared := alex.Do(t, http.MethodPatch, "/api/people/"+jane.ID, map[string]any{"managerId": "", "version": jane.Version})
+	alex.Do(t, http.MethodGet, "/api/v1/people/"+daniel, nil).Decode(t, &danielsDetails)
+	loop := alex.Do(t, http.MethodPatch, "/api/v1/people/"+daniel, map[string]any{"managerId": jane.ID, "version": danielsDetails.Version})
+	cleared := alex.Do(t, http.MethodPatch, "/api/v1/people/"+jane.ID, map[string]any{"managerId": "", "version": jane.Version})
 
 	if m := after[jane.ID].Manager; m == nil || m.ID != daniel || m.Name != "Daniel Okoro" {
 		t.Errorf("Jane's manager = %+v, want Daniel Okoro", m)
@@ -41,13 +41,13 @@ func TestPeople_ManagerField_FR016(t *testing.T) {
 	}
 }
 
-// listPeople reads GET /api/people as client, by person id.
+// listPeople reads GET /api/v1/people as client, by person id.
 func listPeople(t *testing.T, client *apitest.Client) map[string]people.PersonListItem {
 	t.Helper()
 	var page people.PersonPage
-	response := client.Do(t, http.MethodGet, "/api/people", nil)
+	response := client.Do(t, http.MethodGet, "/api/v1/people", nil)
 	if response.Status != http.StatusOK {
-		t.Fatalf("GET /api/people = %d %s", response.Status, response.Body)
+		t.Fatalf("GET /api/v1/people = %d %s", response.Status, response.Body)
 	}
 	response.Decode(t, &page)
 	byID := map[string]people.PersonListItem{}

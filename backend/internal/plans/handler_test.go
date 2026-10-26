@@ -24,8 +24,8 @@ const (
 )
 
 const (
-	signInRequiredBody = `{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}`
-	planGoneBody       = `{"code":"not_found","message":"This plan no longer exists — someone may have deleted it.","fields":[]}`
+	signInRequiredBody = `{"error":{"code":"sign_in_required","message":"Please sign in to continue.","fields":[]}}`
+	planGoneBody       = `{"error":{"code":"not_found","message":"This plan no longer exists — someone may have deleted it.","fields":[]}}`
 )
 
 // newPlanBody is the whole form of a new plan, as the web app sends it: FY2026 Lubricants Test with
@@ -45,7 +45,7 @@ func TestPlanDefaults_FR006(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	response := priya.Do(t, http.MethodGet, "/api/plan-defaults", nil)
+	response := priya.Do(t, http.MethodGet, "/api/v1/plan-defaults", nil)
 
 	assertAnswer(t, response, http.StatusOK, `{"currentYear":2026,"years":[2025,2026,2027,2028,2029,2030,2031],`+
 		`"year":2026,"teamIds":["T-1001"],"ownerId":"U-1002","modelId":null,"aop":false,"bcpir":false,`+
@@ -60,8 +60,8 @@ func TestCreatePlan_201AndValidation_FR010(t *testing.T) {
 	missing := newPlanBody()
 	missing["name"], missing["year"], missing["modelId"] = " ", nil, nil
 
-	created := priya.Do(t, http.MethodPost, "/api/plans", newPlanBody())
-	refused := priya.Do(t, http.MethodPost, "/api/plans", missing)
+	created := priya.Do(t, http.MethodPost, "/api/v1/plans", newPlanBody())
+	refused := priya.Do(t, http.MethodPost, "/api/v1/plans", missing)
 
 	if created.Status != http.StatusCreated {
 		t.Fatalf("create = %d %s, want 201", created.Status, created.Body)
@@ -85,17 +85,17 @@ func TestPlansOperations_WithoutSession_FR005(t *testing.T) {
 		method, path string
 		body         any
 	}{
-		{http.MethodGet, "/api/plan-defaults", nil},
-		{http.MethodGet, "/api/plans", nil},
-		{http.MethodPost, "/api/plans", newPlanBody()},
-		{http.MethodGet, "/api/plans/P-1001", nil},
-		{http.MethodPatch, "/api/plans/P-1001", europeForm(1)},
-		{http.MethodDelete, "/api/plans/P-1001", nil},
-		{http.MethodPost, "/api/plans/P-1001/change-effects", map[string]any{"modelId": "MOD-1002", "attributes": map[string]any{}}},
-		{http.MethodPost, "/api/plans/P-1002/publish", nil},
-		{http.MethodPost, "/api/plans/P-1001/unpublish", map[string]any{"reason": "Budget under review"}},
-		{http.MethodGet, "/api/plans/P-1001/copy-options", nil},
-		{http.MethodPost, "/api/plans/P-1001/copy", map[string]any{"name": "Copy", "year": 2026, "includeContents": false}},
+		{http.MethodGet, "/api/v1/plan-defaults", nil},
+		{http.MethodGet, "/api/v1/plans", nil},
+		{http.MethodPost, "/api/v1/plans", newPlanBody()},
+		{http.MethodGet, "/api/v1/plans/P-1001", nil},
+		{http.MethodPatch, "/api/v1/plans/P-1001", europeForm(1)},
+		{http.MethodDelete, "/api/v1/plans/P-1001", nil},
+		{http.MethodPost, "/api/v1/plans/P-1001/change-effects", map[string]any{"modelId": "MOD-1002", "attributes": map[string]any{}}},
+		{http.MethodPost, "/api/v1/plans/P-1002/publish", nil},
+		{http.MethodPost, "/api/v1/plans/P-1001/unpublish", map[string]any{"reason": "Budget under review"}},
+		{http.MethodGet, "/api/v1/plans/P-1001/copy-options", nil},
+		{http.MethodPost, "/api/v1/plans/P-1001/copy", map[string]any{"name": "Copy", "year": 2026, "includeContents": false}},
 	}
 	for _, call := range calls {
 		response := server.Do(t, call.method, call.path, call.body)
@@ -106,7 +106,7 @@ func TestPlansOperations_WithoutSession_FR005(t *testing.T) {
 
 // validationBody is the answer of a validation_failed error with the given field problems.
 func validationBody(fields string) string {
-	return `{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}`
+	return `{"error":{"code":"validation_failed","message":"Some fields need your attention.","fields":[` + fields + `]}}`
 }
 
 // assertAnswer checks the status and the exact body of an answer.
@@ -156,11 +156,11 @@ func TestListPlans_SeedOrderSummaryAndFilters_FR001_FR003(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	all := listOf(t, priya.Do(t, http.MethodGet, "/api/plans", nil))
-	draft2026 := listOf(t, priya.Do(t, http.MethodGet, "/api/plans?status=draft&year=2026", nil))
-	byName := listOf(t, priya.Do(t, http.MethodGet, "/api/plans?q=mobility", nil))
-	byID := listOf(t, priya.Do(t, http.MethodGet, "/api/plans?q=p-1002", nil))
-	wrong := priya.Do(t, http.MethodGet, "/api/plans?status=open&year=next", nil, apitest.SkipRequestValidation())
+	all := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans", nil))
+	draft2026 := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans?status=draft&year=2026", nil))
+	byName := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans?q=mobility", nil))
+	byID := listOf(t, priya.Do(t, http.MethodGet, "/api/v1/plans?q=p-1002", nil))
+	wrong := priya.Do(t, http.MethodGet, "/api/v1/plans?status=open&year=next", nil, apitest.SkipRequestValidation())
 
 	// Since 016 the seed has P-1004, FY2027 Lubricants UK & Ireland, planned in GBP: 600,000.00 GBP budget
 	// (759,493.67 USD) and 65,000.00 GBP planned (82,278.48 USD), each plan converted once (FR-014).
@@ -187,7 +187,7 @@ func TestListPlans_MyTeams_FR004(t *testing.T) {
 	server := apitest.New(t)
 	mei := server.SignIn(t, meisEmail)
 
-	mine := listOf(t, mei.Do(t, http.MethodGet, "/api/plans?scope=myTeams", nil))
+	mine := listOf(t, mei.Do(t, http.MethodGet, "/api/v1/plans?scope=myTeams", nil))
 
 	if ids := listIDs(mine); !reflect.DeepEqual(ids, []string{"P-1002"}) || mine.Total != 1 {
 		t.Errorf("Mei's teams: %q, total %d; want P-1002 of 1", ids, mine.Total)
@@ -205,9 +205,9 @@ func TestGetPlan_ViewAnd404_FR011(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	europe := priya.Do(t, http.MethodGet, "/api/plans/P-1001", nil)
-	china := priya.Do(t, http.MethodGet, "/api/plans/P-1002", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/plans/P-9999", nil)
+	europe := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001", nil)
+	china := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/plans/P-9999", nil)
 
 	system := map[string]any{"id": "system", "name": "MAPP"}
 	usdOf := func(amount string) map[string]any { return map[string]any{"amount": amount, "currency": "USD"} }
@@ -294,17 +294,17 @@ func TestUpdatePlan_200_409_404_FR018_FR023(t *testing.T) {
 	invalid := europeForm(0)
 	invalid["name"] = ""
 
-	saved := daniel.Do(t, http.MethodPatch, "/api/plans/P-1001", edited)
-	outOfDate := priya.Do(t, http.MethodPatch, "/api/plans/P-1001", europeForm(1))
-	refused := priya.Do(t, http.MethodPatch, "/api/plans/P-1001", invalid)
-	gone := priya.Do(t, http.MethodPatch, "/api/plans/P-9999", europeForm(1))
+	saved := daniel.Do(t, http.MethodPatch, "/api/v1/plans/P-1001", edited)
+	outOfDate := priya.Do(t, http.MethodPatch, "/api/v1/plans/P-1001", europeForm(1))
+	refused := priya.Do(t, http.MethodPatch, "/api/v1/plans/P-1001", invalid)
+	gone := priya.Do(t, http.MethodPatch, "/api/v1/plans/P-9999", europeForm(1))
 
 	assertFields(t, saved, http.StatusOK, map[string]any{
 		"status": "published", "version": 2, "year": 2026,
 		"description": "Lubricants marketing in Europe for 2026, with the spring campaign.", "updatedAt": "2026-03-12T10:30:00Z", "updatedBy": map[string]any{"id": "U-1003", "name": "Daniel Okoro"},
 	})
-	assertAnswer(t, outOfDate, http.StatusConflict, `{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this plan",`+
-		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}`)
+	assertAnswer(t, outOfDate, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Daniel Okoro changed this plan",`+
+		`"fields":[],"conflict":{"changedBy":"Daniel Okoro","changedAt":"2026-03-12T10:30:00Z"}}}`)
 	assertAnswer(t, refused, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a plan name."},`+
 		`{"field":"version","message":"Reload the page and try again."}`))
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
@@ -318,11 +318,11 @@ func TestChangeEffects_FR019_FR020(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	effects := priya.Do(t, http.MethodPost, "/api/plans/P-1003/change-effects",
+	effects := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1003/change-effects",
 		map[string]any{"modelId": "MOD-1002", "attributes": map[string]any{"SA-1001": []string{"SO-1001"}}})
-	unknown := priya.Do(t, http.MethodPost, "/api/plans/P-1003/change-effects",
+	unknown := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1003/change-effects",
 		map[string]any{"modelId": "MOD-9999", "attributes": map[string]any{}})
-	gone := priya.Do(t, http.MethodPost, "/api/plans/P-9999/change-effects", map[string]any{"modelId": nil, "attributes": map[string]any{}})
+	gone := priya.Do(t, http.MethodPost, "/api/v1/plans/P-9999/change-effects", map[string]any{"modelId": nil, "attributes": map[string]any{}})
 
 	assertAnswer(t, effects, http.StatusOK, `{"modelChanged":true,"disallowedActivities":[],"hiddenGroups":[`+
 		`{"unit":"Lubricants","levels":["activity"],"attributes":["Brands","Global key accounts","Sector","Sub-sector","Product launch"]}],`+
@@ -330,7 +330,7 @@ func TestChangeEffects_FR019_FR020(t *testing.T) {
 	assertAnswer(t, unknown, http.StatusBadRequest, validationBody(`{"field":"modelId","message":"Choose a model from the list."}`))
 	assertAnswer(t, gone, http.StatusNotFound, planGoneBody)
 	var plan plans.PlanView
-	priya.Do(t, http.MethodGet, "/api/plans/P-1003", nil).Decode(t, &plan)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1003", nil).Decode(t, &plan)
 	if plan.Version != 1 || plan.Model.ID != "MOD-1001" || len(plan.BusinessUnit) != 2 {
 		t.Errorf("FY2027 Global Brand changed: version %d, model %s, business unit %+v", plan.Version, plan.Model.ID, plan.BusinessUnit)
 	}
@@ -366,29 +366,29 @@ func TestPublish_NotReadyThenPublished_FR024(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
-	refused := priya.Do(t, http.MethodPost, "/api/plans/P-1002/publish", nil)
+	refused := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1002/publish", nil)
 	var china plans.PlanView
-	priya.Do(t, http.MethodGet, "/api/plans/P-1002", nil).Decode(t, &china)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1002", nil).Decode(t, &china)
 	form := formOf(china)
 	form["attributes"] = map[string]any{"SA-1001": []string{"SO-1002"}}
-	saved := priya.Do(t, http.MethodPatch, "/api/plans/P-1002", form)
-	stillRefused := priya.Do(t, http.MethodPost, "/api/plans/P-1002/publish", nil)
-	deleted := priya.Do(t, http.MethodDelete, "/api/campaigns/C-1003", nil)
-	published := priya.Do(t, http.MethodPost, "/api/plans/P-1002/publish", nil)
-	gone := priya.Do(t, http.MethodPost, "/api/plans/P-9999/publish", nil)
+	saved := priya.Do(t, http.MethodPatch, "/api/v1/plans/P-1002", form)
+	stillRefused := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1002/publish", nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/v1/campaigns/C-1003", nil)
+	published := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1002/publish", nil)
+	gone := priya.Do(t, http.MethodPost, "/api/v1/plans/P-9999/publish", nil)
 
 	below := `{"record":{"type":"campaign","id":"C-1003","name":"Retail growth"},` +
 		`"fields":[{"field":"attributes.SA-1003","label":"Cluster"},{"field":"attributes.SA-1004","label":"Region"}]},` +
 		`{"record":{"type":"initiative","id":"I-1006","name":"Fleet cards"},"fields":[{"field":"startDate","label":"Dates"}]}`
-	assertAnswer(t, refused, http.StatusConflict, `{"code":"not_ready","message":"Publish needs 4 fields","fields":[],`+
+	assertAnswer(t, refused, http.StatusConflict, `{"error":{"code":"not_ready","message":"Publish needs 4 fields","fields":[],`+
 		`"missing":[{"record":{"type":"plan","id":"P-1002","name":"FY2026 Mobility China"},`+
-		`"fields":[{"field":"attributes.SA-1001","label":"Business unit"}]},`+below+`]}`)
+		`"fields":[{"field":"attributes.SA-1001","label":"Business unit"}]},`+below+`]}}`)
 	if china.Status != plans.StatusDraft || china.Version != 1 {
 		t.Errorf("after the refusal: %s, version %d; want Draft, version 1", china.Status, china.Version)
 	}
 	assertFields(t, saved, http.StatusOK, map[string]any{"status": "draft", "version": 2})
-	assertAnswer(t, stillRefused, http.StatusConflict, `{"code":"not_ready","message":"Publish needs 3 fields","fields":[],`+
-		`"missing":[`+below+`]}`)
+	assertAnswer(t, stillRefused, http.StatusConflict, `{"error":{"code":"not_ready","message":"Publish needs 3 fields","fields":[],`+
+		`"missing":[`+below+`]}}`)
 	if deleted.Status != http.StatusOK {
 		t.Fatalf("deleting Retail growth = %d %s, want 200", deleted.Status, deleted.Body)
 	}
@@ -404,11 +404,11 @@ func TestUnpublish_FR025(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	empty := priya.Do(t, http.MethodPost, "/api/plans/P-1001/unpublish", map[string]any{"reason": "  "})
-	long := priya.Do(t, http.MethodPost, "/api/plans/P-1001/unpublish", map[string]any{"reason": strings.Repeat("x", 501)})
-	unpublished := priya.Do(t, http.MethodPost, "/api/plans/P-1001/unpublish", map[string]any{"reason": "Budget under review"})
-	log := priya.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1001", nil)
-	gone := priya.Do(t, http.MethodPost, "/api/plans/P-9999/unpublish", map[string]any{"reason": "Budget under review"})
+	empty := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/unpublish", map[string]any{"reason": "  "})
+	long := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/unpublish", map[string]any{"reason": strings.Repeat("x", 501)})
+	unpublished := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/unpublish", map[string]any{"reason": "Budget under review"})
+	log := priya.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=plan&recordId=P-1001", nil)
+	gone := priya.Do(t, http.MethodPost, "/api/v1/plans/P-9999/unpublish", map[string]any{"reason": "Budget under review"})
 
 	assertAnswer(t, empty, http.StatusBadRequest, validationBody(`{"field":"reason","message":"Enter a reason."}`))
 	assertAnswer(t, long, http.StatusBadRequest, validationBody(`{"field":"reason","message":"Use 500 characters or fewer."}`))
@@ -433,8 +433,8 @@ func TestDeletePlan_AndUndo_FR029_FR030(t *testing.T) {
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: deleting plans
 
-	deleted := priya.Do(t, http.MethodDelete, "/api/plans/P-1001", nil)
-	inBin := priya.Do(t, http.MethodGet, "/api/plans/P-1001", nil)
+	deleted := priya.Do(t, http.MethodDelete, "/api/v1/plans/P-1001", nil)
+	inBin := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001", nil)
 	var result struct {
 		RecycleBinEntry struct {
 			ID              string `json:"id"`
@@ -445,9 +445,9 @@ func TestDeletePlan_AndUndo_FR029_FR030(t *testing.T) {
 		} `json:"recycleBinEntry"`
 	}
 	deleted.Decode(t, &result)
-	undone := priya.Do(t, http.MethodPost, "/api/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
-	back := priya.Do(t, http.MethodGet, "/api/plans/P-1001", nil)
-	gone := priya.Do(t, http.MethodDelete, "/api/plans/P-9999", nil)
+	undone := priya.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/undo", nil)
+	back := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001", nil)
+	gone := priya.Do(t, http.MethodDelete, "/api/v1/plans/P-9999", nil)
 
 	if deleted.Status != http.StatusOK || result.RecycleBinEntry.RecordType != "plan" ||
 		result.RecycleBinEntry.RecordTypeLabel != "plan" || result.RecycleBinEntry.RecordID != "P-1001" ||
@@ -468,8 +468,8 @@ func TestCopyOptions_FR026(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	options := priya.Do(t, http.MethodGet, "/api/plans/P-1001/copy-options", nil)
-	gone := priya.Do(t, http.MethodGet, "/api/plans/P-9999/copy-options", nil)
+	options := priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/copy-options", nil)
+	gone := priya.Do(t, http.MethodGet, "/api/v1/plans/P-9999/copy-options", nil)
 
 	assertAnswer(t, options, http.StatusOK, `{"name":"FY2026 Lubricants Europe (copy)","sameYear":2026,`+
 		`"nextYear":{"year":2027,"available":true,"reason":""},`+
@@ -485,11 +485,11 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
-	copied := priya.Do(t, http.MethodPost, "/api/plans/P-1001/copy",
+	copied := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/copy",
 		map[string]any{"name": "FY2027 Lubricants Europe", "year": 2027, "includeContents": true})
-	refused := priya.Do(t, http.MethodPost, "/api/plans/P-1001/copy",
+	refused := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/copy",
 		map[string]any{"name": "fy2026 mobility china", "year": 2025, "includeContents": false})
-	gone := priya.Do(t, http.MethodPost, "/api/plans/P-9999/copy",
+	gone := priya.Do(t, http.MethodPost, "/api/v1/plans/P-9999/copy",
 		map[string]any{"name": "Copy", "year": 2026, "includeContents": false})
 
 	var result plans.CopyResult
@@ -513,7 +513,7 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 			ID, Name, StartDate, EndDate string
 		} `json:"items"`
 	}
-	priya.Do(t, http.MethodGet, "/api/plans/P-1005/campaigns", nil).Decode(t, &campaigns)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1005/campaigns", nil).Decode(t, &campaigns)
 	var helix []string
 	for _, c := range campaigns.Items {
 		if c.Name == "Helix launch" {
@@ -528,7 +528,7 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 			Name, Status, StartDate string
 		} `json:"items"`
 	}
-	priya.Do(t, http.MethodGet, "/api/plans/P-1005/activities", nil).Decode(t, &activities)
+	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1005/activities", nil).Decode(t, &activities)
 	for _, a := range activities.Items {
 		if a.Status != "created" || (a.Name == "Partner co-marketing fund" && a.StartDate != "2027-03-01") {
 			t.Errorf("copied activity %q: %s from %s, want Created, a year later", a.Name, a.Status, a.StartDate)
@@ -539,7 +539,7 @@ func TestCopy_201_FR027_FR028(t *testing.T) {
 			Action, Details string
 		} `json:"items"`
 	}
-	priya.Do(t, http.MethodGet, "/api/activity-log?recordType=plan&recordId=P-1005", nil).Decode(t, &log)
+	priya.Do(t, http.MethodGet, "/api/v1/activity-log?recordType=plan&recordId=P-1005", nil).Decode(t, &log)
 	if len(log.Items) != 1 || log.Items[0].Action != "copied" || log.Items[0].Details !=
 		"from 'FY2026 Lubricants Europe' (P-1001), with 2 campaigns, 4 initiatives, 7 activities and 6 line items" {
 		t.Errorf("log of the copy = %+v, want one copied entry with the counts", log.Items)

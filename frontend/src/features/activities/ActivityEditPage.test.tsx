@@ -18,17 +18,19 @@ const EDIT_ROUTE = '/plans/P-1001/activities/A-1042/edit';
 const CONFLICT = {
   status: 409,
   body: {
-    code: 'version_conflict',
-    message: 'Someone else changed this activity.',
-    fields: [],
-    conflict: { changedBy: 'Alex Morgan', changedAt: '2026-03-12T10:42:00Z' },
+    error: {
+      code: 'version_conflict',
+      message: 'Someone else changed this activity.',
+      fields: [],
+      conflict: { changedBy: 'Alex Morgan', changedAt: '2026-03-12T10:42:00Z' },
+    },
   },
 };
 
 // The edit form's dates say what a change does to the line items' spreads (feature 007's
 // SpreadEffectNote), which reads the activity's line items: here it has none.
 const NO_LINE_ITEMS = {
-  'GET /api/activities/A-1042/line-items': { body: launchFilmSection({ items: [] }) },
+  'GET /api/v1/activities/A-1042/line-items': { body: launchFilmSection({ items: [] }) },
 };
 
 function openEditForm(
@@ -37,11 +39,11 @@ function openEditForm(
   route = EDIT_ROUTE,
 ) {
   const api = mockApi({
-    'GET /api/activities/A-1042': { body: activity },
-    'GET /api/activities/A-1042/form': { body: editForm() },
-    'GET /api/shell-attribute-forms/activity': { body: activityAttributeForm() },
-    'GET /api/people': { body: PEOPLE },
-    'PATCH /api/activities/A-1042': { body: activity },
+    'GET /api/v1/activities/A-1042': { body: activity },
+    'GET /api/v1/activities/A-1042/form': { body: editForm() },
+    'GET /api/v1/shell-attribute-forms/activity': { body: activityAttributeForm() },
+    'GET /api/v1/people': { body: PEOPLE },
+    'PATCH /api/v1/activities/A-1042': { body: activity },
     ...NO_LINE_ITEMS,
     ...answers,
   });
@@ -57,7 +59,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
   it('opens with the activity and saves it with the version it opened with (FR-026)', async () => {
     let reads = 0;
     const { user, api, router, queryClient } = openEditForm(launchFilm(), {
-      'GET /api/activities/A-1042': () => {
+      'GET /api/v1/activities/A-1042': () => {
         reads += 1;
         return { body: launchFilm({ version: reads === 1 ? 3 : 4 }) };
       },
@@ -83,7 +85,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1042'),
     );
-    expect(api.bodiesOf('PATCH /api/activities/A-1042')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([
       expect.objectContaining({
         name: 'Launch film',
         description: 'Shot in Lisbon',
@@ -97,8 +99,10 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
   it('keeps the typed values after a conflict and saves over it with the newer version (FR-026)', async () => {
     let saves = 0;
     const { user, api } = openEditForm(launchFilm(), {
-      'GET /api/activities/A-1042': () => ({ body: launchFilm({ version: saves === 0 ? 3 : 4 }) }),
-      'PATCH /api/activities/A-1042': () => {
+      'GET /api/v1/activities/A-1042': () => ({
+        body: launchFilm({ version: saves === 0 ? 3 : 4 }),
+      }),
+      'PATCH /api/v1/activities/A-1042': () => {
         saves += 1;
         return saves === 1 ? CONFLICT : { body: launchFilm({ description: 'Mine', version: 5 }) };
       },
@@ -117,7 +121,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByText("Activity 'Launch film' saved")).toBeVisible();
     expect(
-      api.bodiesOf('PATCH /api/activities/A-1042').map((body) => (body as Activity).version),
+      api.bodiesOf('PATCH /api/v1/activities/A-1042').map((body) => (body as Activity).version),
     ).toEqual([3, 4]);
   });
 
@@ -139,14 +143,14 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
     );
     expect(question).toHaveTextContent('Planned cost: 120,000.00 USD → 150,000.00 USD');
     await user.click(within(question).getByRole('button', { name: 'Keep editing' }));
-    expect(api.bodiesOf('PATCH /api/activities/A-1042')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([]);
     expect(screen.getByLabelText('Planned cost')).toHaveValue('150,000.00');
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await user.click(await screen.findByRole('button', { name: 'Save and restart approval' }));
 
     expect(await screen.findByText("Activity 'Launch film' saved")).toBeVisible();
-    expect(api.bodiesOf('PATCH /api/activities/A-1042')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([
       expect.objectContaining({
         plannedCost: { amount: '150000.00', currency: 'USD' },
         restartApproval: true,
@@ -156,7 +160,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
   it('says in the re-approval question what new dates do to the line-item spreads (007 FR-022, D-150)', async () => {
     const { user } = openEditForm(launchFilm({ status: 'approved', displayStatus: 'approved' }), {
-      'GET /api/activities/A-1042/line-items': { body: launchFilmSection() },
+      'GET /api/v1/activities/A-1042/line-items': { body: launchFilmSection() },
     });
 
     const end = await screen.findByLabelText('End date');
@@ -182,7 +186,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
     expect(await screen.findByText("Activity 'Launch film' saved")).toBeVisible();
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/activities/A-1042')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([
       expect.objectContaining({ restartApproval: false }),
     ]);
   });
@@ -245,9 +249,9 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
   it('says when the activity no longer exists', async () => {
     openEditForm(launchFilm(), {
-      'GET /api/activities/A-1042': {
+      'GET /api/v1/activities/A-1042': {
         status: 404,
-        body: { code: 'not_found', message: 'Gone', fields: [] },
+        body: { error: { code: 'not_found', message: 'Gone', fields: [] } },
       },
     });
 

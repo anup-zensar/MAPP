@@ -20,26 +20,26 @@ func NewHandler(s *Service) *Handler {
 
 // Routes registers the ten operations of feature 015 on r, each behind signedIn.
 func (h *Handler) Routes(r *web.Router, signedIn web.Wrap) {
-	r.Handle("GET /api/financials/records/{recordId}", signedIn(h.record))
-	r.Handle("GET /api/financials/transactions", signedIn(h.transactions))
-	r.Handle("GET /api/financials/transactions/{transactionId}", signedIn(h.transaction))
-	r.Handle("POST /api/financials/transactions/{transactionId}/link", signedIn(h.link))
-	r.Handle("POST /api/financials/transactions/{transactionId}/unlink", signedIn(h.unlink))
-	r.Handle("GET /api/financials/overview", signedIn(h.overview))
-	r.Handle("GET /api/financials/imports", signedIn(h.imports))
-	r.Handle("POST /api/financials/imports", signedIn(h.importFile))
-	r.Handle("POST /api/financials/imports/check", signedIn(h.checkFile))
-	r.Handle("GET /api/financials/imports/template", signedIn(h.template))
+	r.Handle("GET /api/v1/financials/records/{recordId}", signedIn(h.record))
+	r.Handle("GET /api/v1/financials/transactions", signedIn(h.transactions))
+	r.Handle("GET /api/v1/financials/transactions/{transactionId}", signedIn(h.transaction))
+	r.Handle("POST /api/v1/financials/transactions/{transactionId}/link", signedIn(h.link))
+	r.Handle("POST /api/v1/financials/transactions/{transactionId}/unlink", signedIn(h.unlink))
+	r.Handle("GET /api/v1/financials/overview", signedIn(h.overview))
+	r.Handle("GET /api/v1/financials/imports", signedIn(h.imports))
+	r.Handle("POST /api/v1/financials/imports", signedIn(h.importFile))
+	r.Handle("POST /api/v1/financials/imports/check", signedIn(h.checkFile))
+	r.Handle("GET /api/v1/financials/imports/template", signedIn(h.template))
 }
 
-// record answers GET /api/financials/records/{recordId}: a Financials card.
+// record answers GET /api/v1/financials/records/{recordId}: a Financials card.
 func (h *Handler) record(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context()) // put there by the sign-in middleware
 	view, err := h.service.Record(r.Context(), a, r.PathValue("recordId"))
 	answer(w, r, http.StatusOK, view, err)
 }
 
-// transactions answers GET /api/financials/transactions: one page of the Financials page. Every wrong
+// transactions answers GET /api/v1/financials/transactions: one page of the Financials page. Every wrong
 // parameter is reported at once.
 func (h *Handler) transactions(w http.ResponseWriter, r *http.Request) {
 	q, err := ParseQuery(r.URL.Query())
@@ -52,14 +52,14 @@ func (h *Handler) transactions(w http.ResponseWriter, r *http.Request) {
 	answer(w, r, http.StatusOK, page, err)
 }
 
-// transaction answers GET /api/financials/transactions/{transactionId}: the details panel.
+// transaction answers GET /api/v1/financials/transactions/{transactionId}: the details panel.
 func (h *Handler) transaction(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
 	view, err := h.service.Transaction(r.Context(), a, r.PathValue("transactionId"))
 	answer(w, r, http.StatusOK, view, err)
 }
 
-// link answers POST /api/financials/transactions/{transactionId}/link: a manual link.
+// link answers POST /api/v1/financials/transactions/{transactionId}/link: a manual link.
 func (h *Handler) link(w http.ResponseWriter, r *http.Request) {
 	var req LinkRequest
 	if err := web.ReadJSON(w, r, &req); err != nil {
@@ -71,7 +71,7 @@ func (h *Handler) link(w http.ResponseWriter, r *http.Request) {
 	answer(w, r, http.StatusOK, view, err)
 }
 
-// unlink answers POST /api/financials/transactions/{transactionId}/unlink: a manual link undone.
+// unlink answers POST /api/v1/financials/transactions/{transactionId}/unlink: a manual link undone.
 func (h *Handler) unlink(w http.ResponseWriter, r *http.Request) {
 	var req UnlinkRequest
 	if err := web.ReadJSON(w, r, &req); err != nil {
@@ -83,21 +83,21 @@ func (h *Handler) unlink(w http.ResponseWriter, r *http.Request) {
 	answer(w, r, http.StatusOK, view, err)
 }
 
-// overview answers GET /api/financials/overview: Home's Financials card.
+// overview answers GET /api/v1/financials/overview: Home's Financials card.
 func (h *Handler) overview(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
 	overview, err := h.service.Overview(r.Context(), a, r.URL.Query().Get("scope"))
 	answer(w, r, http.StatusOK, overview, err)
 }
 
-// imports answers GET /api/financials/imports: the import history.
+// imports answers GET /api/v1/financials/imports: the import history.
 func (h *Handler) imports(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
 	page, err := h.service.Imports(r.Context(), a)
 	answer(w, r, http.StatusOK, page, err)
 }
 
-// importFile answers POST /api/financials/imports: an import of a simulated GSAP extract.
+// importFile answers POST /api/v1/financials/imports: an import of a simulated GSAP extract.
 func (h *Handler) importFile(w http.ResponseWriter, r *http.Request) {
 	var req ImportRequest
 	if err := web.ReadJSON(w, r, &req); err != nil {
@@ -109,7 +109,7 @@ func (h *Handler) importFile(w http.ResponseWriter, r *http.Request) {
 	answer(w, r, http.StatusCreated, result, err)
 }
 
-// checkFile answers POST /api/financials/imports/check: what an import would do.
+// checkFile answers POST /api/v1/financials/imports/check: what an import would do.
 func (h *Handler) checkFile(w http.ResponseWriter, r *http.Request) {
 	var req ImportRequest
 	if err := web.ReadJSON(w, r, &req); err != nil {
@@ -121,7 +121,7 @@ func (h *Handler) checkFile(w http.ResponseWriter, r *http.Request) {
 	answer(w, r, http.StatusOK, check, err)
 }
 
-// template answers GET /api/financials/imports/template: the sample file, as an attachment.
+// template answers GET /api/v1/financials/imports/template: the sample file, as an attachment.
 func (h *Handler) template(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor.From(r.Context())
 	body, err := h.service.Template(r.Context(), a)

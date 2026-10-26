@@ -46,7 +46,7 @@ export function usePlans(query: PlanQuery) {
     queryKey: PLAN_KEYS.list(query),
     queryFn: () =>
       call(
-        api.GET('/api/plans', {
+        api.GET('/api/v1/plans', {
           params: {
             query: {
               scope: query.scope,
@@ -74,7 +74,7 @@ export function usePlan(planId: string) {
 export function usePlanDefaults() {
   return useQuery({
     queryKey: PLAN_KEYS.defaults,
-    queryFn: () => call(api.GET('/api/plan-defaults')),
+    queryFn: () => call(api.GET('/api/v1/plan-defaults')),
     staleTime: 0,
   });
 }
@@ -91,7 +91,7 @@ export function fetchLatestPlan(queryClient: QueryClient, planId: string): Promi
 export function useCreatePlan() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: (body: PlanCreate) => call(api.POST('/api/plans', { body })),
+    mutationFn: (body: PlanCreate) => call(api.POST('/api/v1/plans', { body })),
     onSettled: (plan) => refresh(plan?.id),
   });
 }
@@ -101,7 +101,7 @@ export function useUpdatePlan(planId: string) {
   return useMutation({
     // The version comes from the form, never from the cache (edit-form rule).
     mutationFn: (body: PlanUpdate) =>
-      call(api.PATCH('/api/plans/{planId}', { params: { path: { planId } }, body })),
+      call(api.PATCH('/api/v1/plans/{planId}', { params: { path: { planId } }, body })),
     onSettled: () => refresh(planId),
   });
 }
@@ -110,7 +110,9 @@ export function useUpdatePlan(planId: string) {
 export function useChangeEffects(planId: string) {
   return useMutation({
     mutationFn: (body: PlanChangeEffectsRequest) =>
-      call(api.POST('/api/plans/{planId}/change-effects', { params: { path: { planId } }, body })),
+      call(
+        api.POST('/api/v1/plans/{planId}/change-effects', { params: { path: { planId } }, body }),
+      ),
   });
 }
 
@@ -118,7 +120,7 @@ export function usePublishPlan() {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: (planId: string) =>
-      call(api.POST('/api/plans/{planId}/publish', { params: { path: { planId } } })),
+      call(api.POST('/api/v1/plans/{planId}/publish', { params: { path: { planId } } })),
     onSettled: (_plan, _error, planId) => refresh(planId),
   });
 }
@@ -128,7 +130,7 @@ export function useUnpublishPlan() {
   return useMutation({
     mutationFn: ({ planId, reason }: { planId: string; reason: string }) =>
       call(
-        api.POST('/api/plans/{planId}/unpublish', {
+        api.POST('/api/v1/plans/{planId}/unpublish', {
           params: { path: { planId } },
           body: { reason },
         }),
@@ -145,7 +147,7 @@ export function useCopyOptions(planId: string, enabled: boolean) {
   return useQuery({
     queryKey: PLAN_KEYS.copyOptions(planId),
     queryFn: () =>
-      call(api.GET('/api/plans/{planId}/copy-options', { params: { path: { planId } } })),
+      call(api.GET('/api/v1/plans/{planId}/copy-options', { params: { path: { planId } } })),
     enabled,
     staleTime: 0,
   });
@@ -157,7 +159,7 @@ export function useCopyPlan() {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: ({ planId, body }: { planId: string; body: PlanCopyRequest }) =>
-      call(api.POST('/api/plans/{planId}/copy', { params: { path: { planId } }, body })),
+      call(api.POST('/api/v1/plans/{planId}/copy', { params: { path: { planId } }, body })),
     onSettled: (_result, _error, { planId }) =>
       Promise.all([
         refresh(planId),
@@ -172,14 +174,14 @@ export function useDeletePlan() {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: (planId: string) =>
-      call(api.DELETE('/api/plans/{planId}', { params: { path: { planId } } })),
+      call(api.DELETE('/api/v1/plans/{planId}', { params: { path: { planId } } })),
     // The plan itself is not asked again: it is gone, and its page is being left.
     onSettled: () => refresh(),
   });
 }
 
 function fetchPlan(planId: string) {
-  return call(api.GET('/api/plans/{planId}', { params: { path: { planId } } }));
+  return call(api.GET('/api/v1/plans/{planId}', { params: { path: { planId } } }));
 }
 
 /** Asks again for every list of plans, the plan, and the recycle bin and activity log. */

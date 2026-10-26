@@ -31,7 +31,7 @@ interface BinItem {
 
 /** The recycle bin's entries as the API lists them. */
 async function binItems(page: Page): Promise<BinItem[]> {
-  return (await callApi<{ items: BinItem[] }>(page, 'GET', '/api/recycle-bin')).items;
+  return (await callApi<{ items: BinItem[] }>(page, 'GET', '/api/v1/recycle-bin')).items;
 }
 
 /** The bin's row of the record called `name` (each row is a list item named by an h2). */
@@ -122,7 +122,7 @@ test('US1: an approved activity restored from the bin comes back as Created (FR-
   await approveThroughApi(page, records);
   await signInAs(page, MEI);
   // Deleted from its page, after the Undo message closed: it is in the bin.
-  await callApi(page, 'DELETE', `/api/activities/${records.activityId}`);
+  await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
 
   await searchBin(page, records.activityName);
   const name = records.activityName;
@@ -151,8 +151,8 @@ test('US4: an activity whose initiative is also in the bin comes back with it โ€
     withWorkflow: false,
     leaveEmpty: [],
   });
-  await callApi(page, 'DELETE', `/api/activities/${records.activityId}`);
-  await callApi(page, 'DELETE', `/api/initiatives/${records.initiativeId}`);
+  await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
+  await callApi(page, 'DELETE', `/api/v1/initiatives/${records.initiativeId}`);
 
   await searchBin(page, records.activityName);
   const row = binRow(page, records.activityName);
@@ -195,7 +195,7 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
     withWorkflow: false,
     leaveEmpty: [],
   });
-  await callApi(page, 'DELETE', `/api/activities/${records.activityId}`);
+  await callApi(page, 'DELETE', `/api/v1/activities/${records.activityId}`);
   const name = records.activityName;
 
   // Delete permanently: Cancel has the focus; the red button deletes it for good (FR-028). Alex's
@@ -215,7 +215,7 @@ test('US5: Delete permanently and Empty recycle bin, both in the activity log (F
   await expect(gone(page)).toBeVisible();
 
   // Empty recycle bin: everything listed goes, in one step (FR-029).
-  await callApi(page, 'DELETE', `/api/initiatives/${records.initiativeId}`);
+  await callApi(page, 'DELETE', `/api/v1/initiatives/${records.initiativeId}`);
   await page.goto('/recycle-bin');
   // Destructive and rare, so it is in the header's More menu (design system ยง5.1).
   await page.getByRole('button', { name: 'More' }).click();

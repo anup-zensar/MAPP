@@ -27,10 +27,10 @@ function renderPanel(route: string, answers: Record<string, MockHandler> = {}) {
   const api = mockApi({
     ...HISTORY_ANSWERS,
     ...financialsNotServed('C-1001'),
-    'GET /api/campaigns/C-1001': { body: campaign() },
-    'GET /api/plans/P-1001': { body: planAnswer() },
-    'GET /api/shell-attribute-forms/campaign': { body: campaignForm() },
-    'GET /api/people': { body: PEOPLE },
+    'GET /api/v1/campaigns/C-1001': { body: campaign() },
+    'GET /api/v1/plans/P-1001': { body: planAnswer() },
+    'GET /api/v1/shell-attribute-forms/campaign': { body: campaignForm() },
+    'GET /api/v1/people': { body: PEOPLE },
     ...answers,
   });
   const rendered = renderRoutes(
@@ -127,7 +127,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('shows planned cost, budget used in red and over-allocation (FR-010, FR-011)', async () => {
     const { user } = renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001': {
+      'GET /api/v1/campaigns/C-1001': {
         body: campaign({
           budget: usd('120000.00'),
           outsidePlanYear: true,
@@ -172,7 +172,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('links a needed field to the edit form with that field focused (FR-014)', async () => {
     const { user, router } = renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001': {
+      'GET /api/v1/campaigns/C-1001': {
         body: campaign({
           completeness: {
             missing: [{ field: 'startDate', label: 'Dates' }],
@@ -194,7 +194,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('says when the campaign has no initiatives and offers Add initiative (FR-016)', async () => {
     renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001': {
+      'GET /api/v1/campaigns/C-1001': {
         body: campaign({
           initiatives: [],
           counts: { initiatives: 0, activities: 0, approvedActivities: 0, lineItems: 0 },
@@ -251,13 +251,13 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
       '/activity-log?record=C-1001',
     );
     expect(await within(history).findByText('No changes recorded yet.')).toBeVisible();
-    const asked = api.requests.find((request) => request.path === '/api/activity-log');
+    const asked = api.requests.find((request) => request.path === '/api/v1/activity-log');
     expect(new URLSearchParams(asked?.search).get('recordId')).toBe('C-1001');
   });
 
   it('deletes from More, closes the panel and offers Undo (US5, FR-028, FR-029)', async () => {
     const { user, router, api } = renderPanel(DETAILS, {
-      'DELETE /api/campaigns/C-1001': {
+      'DELETE /api/v1/campaigns/C-1001': {
         body: {
           recycleBinEntry: {
             id: 'BIN-1001',
@@ -285,7 +285,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete campaign' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
-    expect(api.bodiesOf('DELETE /api/campaigns/C-1001')).toHaveLength(1);
+    expect(api.bodiesOf('DELETE /api/v1/campaigns/C-1001')).toHaveLength(1);
     expect(await findMessages()).toHaveTextContent(
       "Campaign 'Helix launch' moved to the recycle bin",
     );
@@ -293,13 +293,13 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('moves from More and opens the plan it moved to, with the campaign highlighted (US6, FR-025)', async () => {
     const { user, router, api } = renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001/destinations': {
+      'GET /api/v1/campaigns/C-1001/destinations': {
         body: destinationList(
           [planDestination()],
           'Campaigns move only between plans of the same year',
         ),
       },
-      'POST /api/campaigns/C-1001/move': { body: campaign({ planId: 'P-1002', version: 4 }) },
+      'POST /api/v1/campaigns/C-1001/move': { body: campaign({ planId: 'P-1002', version: 4 }) },
     });
     const panel = await findDetails();
 
@@ -311,7 +311,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1002'));
     expect(router.state.location.state).toEqual({ highlight: 'C-1001' });
-    expect(api.bodiesOf('POST /api/campaigns/C-1001/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/campaigns/C-1001/move')).toEqual([
       { planId: 'P-1002', version: 3 },
     ]);
     expect(await findMessages()).toHaveTextContent(
@@ -321,7 +321,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('copies from More (US6, FR-026)', async () => {
     const { user } = renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001/destinations': {
+      'GET /api/v1/campaigns/C-1001/destinations': {
         body: destinationList(
           [
             planDestination({
@@ -349,9 +349,9 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('opens under the right plan when the campaign has moved (FR-017)', async () => {
     const { router } = renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001': { body: campaign({ planId: 'P-1002' }) },
+      'GET /api/v1/campaigns/C-1001': { body: campaign({ planId: 'P-1002' }) },
       // The panel at its new address may ask for its plan before the test ends.
-      'GET /api/plans/P-1002': { body: { ...planAnswer(), id: 'P-1002' } },
+      'GET /api/v1/plans/P-1002': { body: { ...planAnswer(), id: 'P-1002' } },
     });
 
     await waitFor(() =>
@@ -361,11 +361,13 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('says when the campaign no longer exists, with Back to the plan', async () => {
     const { user, router } = renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001': {
+      'GET /api/v1/campaigns/C-1001': {
         status: 404,
         body: {
-          code: 'not_found',
-          message: 'This campaign no longer exists — someone may have deleted it.',
+          error: {
+            code: 'not_found',
+            message: 'This campaign no longer exists — someone may have deleted it.',
+          },
         },
       },
     });
@@ -380,9 +382,9 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   it('shows a loading state, then a failure with Try again', async () => {
     let calls = 0;
     const { user } = renderPanel(DETAILS, {
-      'GET /api/campaigns/C-1001': () =>
+      'GET /api/v1/campaigns/C-1001': () =>
         ++calls === 1
-          ? { status: 500, body: { code: 'internal_error', message: 'Oops' } }
+          ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
           : { body: campaign() },
     });
 
@@ -396,7 +398,9 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 describe('CampaignPanel — edit (feature 005, US3)', () => {
   it('saves the form with the version it started from and goes back to the details (US3#2, FR-018)', async () => {
     const { user, api, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/campaigns/C-1001': { body: campaign({ budget: usd('450000.00'), version: 4 }) },
+      'PATCH /api/v1/campaigns/C-1001': {
+        body: campaign({ budget: usd('450000.00'), version: 4 }),
+      },
     });
     const form = await findForm();
     expect(within(form).getByLabelText('Campaign name')).toHaveValue('Helix launch');
@@ -411,7 +415,7 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe(DETAILS));
-    expect(api.bodiesOf('PATCH /api/campaigns/C-1001')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toEqual([
       {
         name: 'Helix launch',
         description: 'Launch of the new Helix range.',
@@ -435,8 +439,8 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
   it('types the budget in the plan currency and says clearing it removes Budget by month (016 FR-011, FR-022)', async () => {
     const gbp = (amount: string) => ({ amount, currency: 'GBP' });
     const { user, api } = renderPanel(`${DETAILS}/edit`, {
-      'GET /api/plans/P-1001': { body: { ...planAnswer(), currency: 'GBP' } },
-      'GET /api/campaigns/C-1001': {
+      'GET /api/v1/plans/P-1001': { body: { ...planAnswer(), currency: 'GBP' } },
+      'GET /api/v1/campaigns/C-1001': {
         body: campaign({
           budget: gbp('120000.00'),
           parentRemainingBudget: gbp('80000.00'),
@@ -449,8 +453,8 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
           },
         }),
       },
-      'PATCH /api/campaigns/C-1001': { body: campaign() },
-      'GET /api/plans/P-1001/budget-by-month': { body: budgetByMonth() },
+      'PATCH /api/v1/campaigns/C-1001': { body: campaign() },
+      'GET /api/v1/plans/P-1001/budget-by-month': { body: budgetByMonth() },
     });
     const form = await findForm();
     const budget = within(form).getByLabelText('Campaign budget');
@@ -464,8 +468,8 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     expect(within(form).queryByText('Budget by month will be removed when you save.')).toBeNull();
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
-    await waitFor(() => expect(api.bodiesOf('PATCH /api/campaigns/C-1001')).toHaveLength(1));
-    expect(api.bodiesOf('PATCH /api/campaigns/C-1001')[0]).toMatchObject({
+    await waitFor(() => expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(1));
+    expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')[0]).toMatchObject({
       budget: { amount: '150000.00', currency: 'GBP' },
     });
   });
@@ -474,12 +478,14 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     const problem =
       'Digital & social (01 Feb – 30 Nov 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
     const { user, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/campaigns/C-1001': {
+      'PATCH /api/v1/campaigns/C-1001': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Some fields need your attention.',
-          fields: [{ field: 'startDate', message: problem }],
+          error: {
+            code: 'validation_failed',
+            message: 'Some fields need your attention.',
+            fields: [{ field: 'startDate', message: problem }],
+          },
         },
       },
     });
@@ -499,15 +505,17 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     let saves = 0;
     let reads = 0;
     const { user, api } = renderPanel(`${DETAILS}/edit`, {
-      'GET /api/campaigns/C-1001': () => ({ body: campaign({ version: ++reads > 1 ? 4 : 3 }) }),
-      'PATCH /api/campaigns/C-1001': () =>
+      'GET /api/v1/campaigns/C-1001': () => ({ body: campaign({ version: ++reads > 1 ? 4 : 3 }) }),
+      'PATCH /api/v1/campaigns/C-1001': () =>
         ++saves === 1
           ? {
               status: 409,
               body: {
-                code: 'version_conflict',
-                message: 'Not saved — Daniel Okoro changed this campaign',
-                conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+                error: {
+                  code: 'version_conflict',
+                  message: 'Not saved — Daniel Okoro changed this campaign',
+                  conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
+                },
               },
             }
           : { body: campaign({ name: 'Helix relaunch', version: 5 }) },
@@ -525,22 +533,22 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
     expect(name).toHaveValue('Helix relaunch');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
 
-    await waitFor(() => expect(api.bodiesOf('PATCH /api/campaigns/C-1001')).toHaveLength(2));
+    await waitFor(() => expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(2));
     expect(
       api
-        .bodiesOf('PATCH /api/campaigns/C-1001')
+        .bodiesOf('PATCH /api/v1/campaigns/C-1001')
         .map((body) => (body as { version: number }).version),
     ).toEqual([3, 4]);
   });
 
   it('lists the values a removed cluster clears, before saving, and guards unsaved changes (US3#4, FR-009, FR-018)', async () => {
     const { user, api } = renderPanel(`${DETAILS}/edit`, {
-      'GET /api/campaigns/C-1001': {
+      'GET /api/v1/campaigns/C-1001': {
         body: campaign({
           attributes: { 'SA-CLUSTER': ['SO-RETAIL', 'SO-B2B'], 'SA-REGION': ['SO-CHINA', 'SO-EU'] },
         }),
       },
-      'PATCH /api/campaigns/C-1001': { body: campaign() },
+      'PATCH /api/v1/campaigns/C-1001': { body: campaign() },
     });
     const form = await findForm();
 
@@ -557,10 +565,10 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
       name: 'Clear values that no longer fit?',
     });
     expect(within(clear).getByText('Region: B2B – EUROPE')).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/campaigns/C-1001')).toHaveLength(0);
+    expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(0);
     await user.click(within(clear).getByRole('button', { name: 'Clear and save' }));
 
-    await waitFor(() => expect(api.bodiesOf('PATCH /api/campaigns/C-1001')).toHaveLength(1));
+    await waitFor(() => expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(1));
   });
 
   it('goes back to the details on Cancel when nothing changed', async () => {
@@ -574,9 +582,11 @@ describe('CampaignPanel — edit (feature 005, US3)', () => {
 
   it('shows a failed save that is not about a field as a message and keeps the values', async () => {
     const { user, router } = renderPanel(`${DETAILS}/edit`, {
-      'PATCH /api/campaigns/C-1001': {
+      'PATCH /api/v1/campaigns/C-1001': {
         status: 500,
-        body: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        body: {
+          error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+        },
       },
     });
     const form = await findForm();

@@ -19,20 +19,20 @@ export const FIELD_HELP_KEY = ['field-help'] as const;
 export const HELP_MAX_LENGTH = 300;
 
 /**
- * Every help entry with its text (GET /api/field-help). Asked again whenever a page that shows
+ * Every help entry with its text (GET /api/v1/field-help). Asked again whenever a page that shows
  * tips opens (staleTime 0), so an edited text shows on the next form anyone opens (SC-008).
  */
 export function useFieldHelpEntries() {
   return useQuery({
     queryKey: FIELD_HELP_KEY,
-    queryFn: ({ signal }) => call(api.GET('/api/field-help', { signal })),
+    queryFn: ({ signal }) => call(api.GET('/api/v1/field-help', { signal })),
     staleTime: 0,
   });
 }
 
 /** One entry as it is stored now, for its version after a conflict. */
 export async function fetchFieldHelp(key: string): Promise<FieldHelpEntry | undefined> {
-  const page = await call(api.GET('/api/field-help'));
+  const page = await call(api.GET('/api/v1/field-help'));
   return page.items.find((entry) => entry.key === key);
 }
 
@@ -41,7 +41,7 @@ export function useUpdateFieldHelp() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ key, body }: { key: string; body: FieldHelpUpdate }) =>
-      call(api.PATCH('/api/field-help/{helpKey}', { params: { path: { helpKey: key } }, body })),
+      call(api.PATCH('/api/v1/field-help/{helpKey}', { params: { path: { helpKey: key } }, body })),
     onSettled: () =>
       Promise.all(
         [FIELD_HELP_KEY, ['activity-log']].map((queryKey) =>

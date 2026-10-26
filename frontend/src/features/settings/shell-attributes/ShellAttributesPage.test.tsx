@@ -17,7 +17,7 @@ import {
 } from './testData';
 
 const ALL = [BUSINESS_UNIT, ...ACTIVITY_ATTRIBUTES];
-const LIST = 'GET /api/shell-attributes';
+const LIST = 'GET /api/v1/shell-attributes';
 
 function renderPage(route: string, answers: Record<string, MockHandler> = {}) {
   const api = mockApi({ [LIST]: { body: page(ALL) }, ...answers });
@@ -142,7 +142,10 @@ describe('ShellAttributesPage: list (FR-016 – FR-019)', () => {
       [LIST]: () => {
         calls += 1;
         return calls === 1
-          ? { status: 500, body: { code: 'internal_error', message: 'Something went wrong.' } }
+          ? {
+              status: 500,
+              body: { error: { code: 'internal_error', message: 'Something went wrong.' } },
+            }
           : { body: page(ALL) };
       },
     });
@@ -165,7 +168,7 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
 
   it('moves an attribute with the keyboard, keeps the focus on its button and says so', async () => {
     const { user, api } = renderPage('/settings/shell-attributes?level=activity&status=all', {
-      'POST /api/shell-attributes/SA-1011/move': { body: PIR_FIRST },
+      'POST /api/v1/shell-attributes/SA-1011/move': { body: PIR_FIRST },
     });
 
     const up = await screen.findByRole('button', { name: "Move 'PIR' up" });
@@ -182,7 +185,7 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
         'Old notes',
       ]),
     );
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1011/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1011/move')).toEqual([
       { what: 'attribute', direction: 'up', version: 1 },
     ]);
     await waitFor(() =>
@@ -229,7 +232,7 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
 
   it('moves a whole section', async () => {
     const { user, api } = renderPage('/settings/shell-attributes?level=activity&status=all', {
-      'POST /api/shell-attributes/SA-1012/move': {
+      'POST /api/v1/shell-attributes/SA-1012/move': {
         body: page([BRANDS, OLD_NOTES, MEDIA_CHANNEL, PIR]),
       },
     });
@@ -239,7 +242,7 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
     );
 
     await waitFor(() => expect(rowNames()[0]).toBe('Lubricants attributes'));
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1012/move')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1012/move')).toEqual([
       { what: 'section', direction: 'up', version: 1 },
     ]);
     expect(screen.getByText("Moved 'Lubricants attributes' up.")).toHaveAttribute('role', 'status');
@@ -247,12 +250,14 @@ describe('ShellAttributesPage: order (FR-019, SC-009)', () => {
 
   it('shows why the API refused a move', async () => {
     const { user } = renderPage('/settings/shell-attributes?level=activity&status=all', {
-      'POST /api/shell-attributes/SA-1013/move': {
+      'POST /api/v1/shell-attributes/SA-1013/move': {
         status: 400,
         body: {
-          code: 'validation_failed',
-          message: 'Check the move.',
-          fields: [{ field: 'direction', message: 'Old notes must stay below Brands.' }],
+          error: {
+            code: 'validation_failed',
+            message: 'Check the move.',
+            fields: [{ field: 'direction', message: 'Old notes must stay below Brands.' }],
+          },
         },
       },
     });
@@ -297,7 +302,7 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
 
   it('deletes an unused attribute with its options after asking, and offers Undo', async () => {
     const { user, api } = renderPage('/settings/shell-attributes?level=activity', {
-      'DELETE /api/shell-attributes/SA-1011': {
+      'DELETE /api/v1/shell-attributes/SA-1011': {
         body: {
           recycleBinEntry: {
             id: 'BIN-1001',
@@ -332,7 +337,7 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
 
   it('offers Set inactive instead of deleting an attribute in use (SC-004)', async () => {
     const { user, api } = renderPage('/settings/shell-attributes?level=activity', {
-      'POST /api/shell-attributes/SA-1010/status': { body: { ...MEDIA_CHANNEL, active: false } },
+      'POST /api/v1/shell-attributes/SA-1010/status': { body: { ...MEDIA_CHANNEL, active: false } },
     });
 
     await choose(user, 'Media channel', 'Delete');
@@ -347,18 +352,20 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Set inactive' }));
 
     expect(await findMessages()).toHaveTextContent("Shell attribute 'Media channel' set inactive");
-    expect(api.bodiesOf('POST /api/shell-attributes/SA-1010/status')).toEqual([
+    expect(api.bodiesOf('POST /api/v1/shell-attributes/SA-1010/status')).toEqual([
       { active: false, version: 1 },
     ]);
   });
 
   it('switches to the in-use question when someone started using it meanwhile', async () => {
     const { user } = renderPage('/settings/shell-attributes?level=activity', {
-      'DELETE /api/shell-attributes/SA-1011': {
+      'DELETE /api/v1/shell-attributes/SA-1011': {
         status: 409,
         body: {
-          code: 'in_use',
-          message: "'PIR' is in use (used by 1 activity) — set it inactive instead.",
+          error: {
+            code: 'in_use',
+            message: "'PIR' is in use (used by 1 activity) — set it inactive instead.",
+          },
         },
       },
     });
@@ -374,7 +381,7 @@ describe('ShellAttributesPage: row actions (FR-004)', () => {
 
   it('reactivates an inactive attribute', async () => {
     const { user } = renderPage('/settings/shell-attributes?level=activity&status=inactive', {
-      'POST /api/shell-attributes/SA-1013/status': { body: { ...OLD_NOTES, active: true } },
+      'POST /api/v1/shell-attributes/SA-1013/status': { body: { ...OLD_NOTES, active: true } },
     });
 
     await choose(user, 'Old notes', 'Reactivate');

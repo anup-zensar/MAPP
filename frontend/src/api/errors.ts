@@ -8,6 +8,7 @@ import type { DateFormat } from '@/lib/format';
 import type { components } from './schema';
 
 type ErrorBody = components['schemas']['Error'];
+type ErrorDetail = components['schemas']['ErrorDetail'];
 type FieldError = components['schemas']['FieldError'];
 type Conflict = components['schemas']['Conflict'];
 type RecordRef = components['schemas']['RecordRef'];
@@ -37,7 +38,7 @@ export type ApiErrorKind =
   | 'other';
 
 /** The kind of each error code the API sends (research R9). */
-const KIND_BY_CODE: Record<ErrorBody['code'], ApiErrorKind> = {
+const KIND_BY_CODE: Record<ErrorDetail['code'], ApiErrorKind> = {
   validation_failed: 'validation',
   bad_request: 'badRequest',
   sign_in_required: 'signInRequired',
@@ -108,15 +109,16 @@ export class ApiError extends Error {
 
   /** The error for an error answer of the API: the code gives the kind, the message is kept. */
   static fromBody(status: number, body: ErrorBody): ApiError {
+    const { error } = body;
     // A code this version of the web app does not know yet is shown like any other failure.
-    return new ApiError(KIND_BY_CODE[body.code] ?? 'other', {
+    return new ApiError(KIND_BY_CODE[error.code] ?? 'other', {
       status,
-      message: body.message,
-      fields: body.fields,
-      conflict: body.conflict,
-      parent: body.parent,
-      resolution: body.resolution,
-      missing: body.missing,
+      message: error.message,
+      fields: error.fields,
+      conflict: error.conflict,
+      parent: error.parent,
+      resolution: error.resolution,
+      missing: error.missing,
     });
   }
 }

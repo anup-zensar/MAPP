@@ -47,7 +47,7 @@ function renderCard(
   plans: MockHandler = page([LUBRICANTS, CHINA]),
   onShowEverything = vi.fn(),
 ) {
-  const api = mockApi({ 'GET /api/home/plans': plans });
+  const api = mockApi({ 'GET /api/v1/home/plans': plans });
   const rendered = renderWithProviders(
     <PlansAtAGlanceCard scope={scope} onShowEverything={onShowEverything} />,
     { user: testUser(), path: '/' },
@@ -85,7 +85,9 @@ describe('PlansAtAGlanceCard', () => {
       'aria-valuenow',
       '84',
     );
-    expect(api.requests.find((r) => r.path === '/api/home/plans')?.search).toBe('?scope=myTeams');
+    expect(api.requests.find((r) => r.path === '/api/v1/home/plans')?.search).toBe(
+      '?scope=myTeams',
+    );
   });
 
   it('shows each team as a pill in its own colour, with its name as text (FR-008, SC-007, D-217)', async () => {
@@ -97,7 +99,7 @@ describe('PlansAtAGlanceCard', () => {
       'var(--team-teal)',
     );
     // The row carries the colour itself: no list of teams is asked for.
-    expect(api.requests.some((request) => request.path === '/api/teams')).toBe(false);
+    expect(api.requests.some((request) => request.path === '/api/v1/teams')).toBe(false);
   });
 
   it('shows a budget used above 100 % in red (US2 scenario 2)', async () => {

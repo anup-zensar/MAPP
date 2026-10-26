@@ -6,9 +6,10 @@
 }
 
 /* "GSAP data as of …": right under the header's description, so it reads as part of it. */
+/* On the grey page, Text Subtle and links are Text Strong (constitution X). */
 .source {
   margin-top: calc(var(--space-4) * -1);
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }

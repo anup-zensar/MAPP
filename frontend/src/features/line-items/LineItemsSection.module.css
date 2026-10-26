@@ -57,7 +57,12 @@
   white-space: nowrap;
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .table tbody tr:hover {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 
@@ -97,10 +102,14 @@
   text-align: right;
 }
 
-/* The row just created: the pale yellow of "you are here" with a 4 px yellow start bar. */
+/* The row just created: the hover grey with a 4 px yellow start bar ("you are here"). */
 .highlight,
 .table tbody tr.highlight:hover {
-  background: var(--brand-yellow-tint);
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
+  background: var(--hover);
   box-shadow: inset 4px 0 0 var(--brand-yellow);
 }
 

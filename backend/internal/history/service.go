@@ -427,7 +427,7 @@ func (s *Service) putBack(ctx context.Context, a actor.Actor, entryID string, un
 		if err != nil {
 			return err
 		}
-		if !found {
+		if !found || !s.canSeeBinEntry(ctx, entry) {
 			return errs.NotFound(entryUnknownMessage)
 		}
 		if err := s.canRestore(ctx, entry); err != nil { // the person's roles (014 D-238)

@@ -32,7 +32,7 @@ export function useFinanceBudgetPage(year?: number) {
   return useQuery({
     queryKey: SETTINGS_KEYS.financeBudgets(year),
     queryFn: () =>
-      call(api.GET('/api/finance-budgets', { params: { query: year ? { year } : {} } })),
+      call(api.GET('/api/v1/finance-budgets', { params: { query: year ? { year } : {} } })),
     placeholderData: keepPreviousData,
   });
 }
@@ -45,19 +45,21 @@ export async function fetchFinanceBudget(
   year: number,
   id: string,
 ): Promise<FinanceBudget | undefined> {
-  const page = await call(api.GET('/api/finance-budgets', { params: { query: { year } } }));
+  const page = await call(api.GET('/api/v1/finance-budgets', { params: { query: { year } } }));
   return page.items.find((budget) => budget.id === id);
 }
 
 /** One item as it is stored now; after a conflict the form takes its version from it. */
 export function fetchFinanceBudgetItem(id: string): Promise<FinanceBudgetItem> {
-  return call(api.GET('/api/finance-budget-items/{itemId}', { params: { path: { itemId: id } } }));
+  return call(
+    api.GET('/api/v1/finance-budget-items/{itemId}', { params: { path: { itemId: id } } }),
+  );
 }
 
 /** POST …/status: sets an item inactive or reactivates it (FR-004). */
 export function setFinanceBudgetItemStatus(id: string, body: { active: boolean; version: number }) {
   return call(
-    api.POST('/api/finance-budget-items/{itemId}/status', {
+    api.POST('/api/v1/finance-budget-items/{itemId}/status', {
       params: { path: { itemId: id } },
       body,
     }),
@@ -68,7 +70,7 @@ export function useCreateFinanceBudgetItem() {
   const refresh = useRefreshFinanceLists();
   return useMutation({
     mutationFn: (body: FinanceBudgetItemCreate) =>
-      call(api.POST('/api/finance-budget-items', { body })),
+      call(api.POST('/api/v1/finance-budget-items', { body })),
     onSettled: refresh,
   });
 }
@@ -79,7 +81,7 @@ export function useUpdateFinanceBudgetItem() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: FinanceBudgetItemUpdate }) =>
       call(
-        api.PATCH('/api/finance-budget-items/{itemId}', {
+        api.PATCH('/api/v1/finance-budget-items/{itemId}', {
           params: { path: { itemId: id } },
           body,
         }),
@@ -93,7 +95,9 @@ export function useDeleteFinanceBudgetItem() {
   const refresh = useRefreshFinanceLists();
   return useMutation({
     mutationFn: (id: string) =>
-      call(api.DELETE('/api/finance-budget-items/{itemId}', { params: { path: { itemId: id } } })),
+      call(
+        api.DELETE('/api/v1/finance-budget-items/{itemId}', { params: { path: { itemId: id } } }),
+      ),
     onSettled: refresh,
   });
 }
@@ -104,7 +108,7 @@ export function useRenameFinanceBudget() {
   return useMutation({
     mutationFn: ({ id, name, version }: { id: string; name: string; version: number }) =>
       call(
-        api.PATCH('/api/finance-budgets/{budgetId}', {
+        api.PATCH('/api/v1/finance-budgets/{budgetId}', {
           params: { path: { budgetId: id } },
           body: { name, version },
         }),

@@ -46,20 +46,20 @@ export const HOME_KEYS = {
 /** Current figures each time Home is opened or returned to (FR-019). */
 const ALWAYS_FRESH = { staleTime: 0, refetchOnMount: 'always' } as const;
 
-/** The four summary cards and whether to show Getting started (GET /api/home/summary). */
+/** The four summary cards and whether to show Getting started (GET /api/v1/home/summary). */
 export function useHomeSummary(scope: HomeScope) {
   return useQuery({
     queryKey: HOME_KEYS.summary(scope),
-    queryFn: () => call(api.GET('/api/home/summary', { params: { query: { scope } } })),
+    queryFn: () => call(api.GET('/api/v1/home/summary', { params: { query: { scope } } })),
     ...ALWAYS_FRESH,
   });
 }
 
-/** Plans at a glance: at most 10 rows and the number of plans in scope (GET /api/home/plans). */
+/** Plans at a glance: at most 10 rows and the number of plans in scope (GET /api/v1/home/plans). */
 export function useHomePlans(scope: HomeScope) {
   return useQuery({
     queryKey: HOME_KEYS.plans(scope),
-    queryFn: () => call(api.GET('/api/home/plans', { params: { query: { scope } } })),
+    queryFn: () => call(api.GET('/api/v1/home/plans', { params: { query: { scope } } })),
     ...ALWAYS_FRESH,
   });
 }
@@ -68,7 +68,7 @@ export function useHomePlans(scope: HomeScope) {
 export function useHomeAttention() {
   return useQuery({
     queryKey: HOME_KEYS.attention,
-    queryFn: () => call(api.GET('/api/home/attention')),
+    queryFn: () => call(api.GET('/api/v1/home/attention')),
     ...ALWAYS_FRESH,
   });
 }
@@ -77,7 +77,7 @@ export function useHomeAttention() {
 export function useHomeWaiting() {
   return useQuery({
     queryKey: HOME_KEYS.waiting,
-    queryFn: () => call(api.GET('/api/home/waiting')),
+    queryFn: () => call(api.GET('/api/v1/home/waiting')),
     ...ALWAYS_FRESH,
   });
 }
@@ -86,7 +86,7 @@ export function useHomeWaiting() {
 export function useHomeMyActivities() {
   return useQuery({
     queryKey: HOME_KEYS.myActivities,
-    queryFn: () => call(api.GET('/api/home/my-activities')),
+    queryFn: () => call(api.GET('/api/v1/home/my-activities')),
     ...ALWAYS_FRESH,
   });
 }
@@ -95,21 +95,21 @@ export function useHomeMyActivities() {
 export function useHomeRecentChanges(scope: HomeScope) {
   return useQuery({
     queryKey: HOME_KEYS.recentChanges(scope),
-    queryFn: () => call(api.GET('/api/home/recent-changes', { params: { query: { scope } } })),
+    queryFn: () => call(api.GET('/api/v1/home/recent-changes', { params: { query: { scope } } })),
     ...ALWAYS_FRESH,
   });
 }
 
 /**
  * The Financials card (015 FR-025): committed, invoiced, paid and accrued for the current year and
- * the Home scope (GET /api/financials/overview). Its key starts with 'financials', so a GSAP import
+ * the Home scope (GET /api/v1/financials/overview). Its key starts with 'financials', so a GSAP import
  * or a link made on the Financials page asks it again (015 plan, "Query keys"); the display
  * currency is part of the key, so a new currency asks it again too.
  */
 export function useFinancialOverview(scope: HomeScope, currency: string) {
   return useQuery({
     queryKey: ['financials', 'overview', scope, currency] as const,
-    queryFn: () => call(api.GET('/api/financials/overview', { params: { query: { scope } } })),
+    queryFn: () => call(api.GET('/api/v1/financials/overview', { params: { query: { scope } } })),
     ...ALWAYS_FRESH,
   });
 }
@@ -123,7 +123,7 @@ export function useSaveDisplayCurrency() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (displayCurrency: string) =>
-      call(api.PATCH('/api/me/preferences', { body: { displayCurrency } })),
+      call(api.PATCH('/api/v1/me/preferences', { body: { displayCurrency } })),
     onSuccess: (preferences) => {
       queryClient.setQueryData<CurrentUser | null>(SESSION_KEY, (person) =>
         person ? { ...person, preferences: { ...person.preferences, ...preferences } } : person,

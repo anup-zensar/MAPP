@@ -73,7 +73,7 @@
 }
 
 .input:focus {
-  border-color: var(--blue);
+  border-color: var(--control-border-hover);
 }
 
 .invalid,
@@ -119,13 +119,14 @@
   color: var(--ink);
 }
 
-/* A failure that is not about one field, above the fields of the dialog. */
+/* A failure that is not about one field, above the fields of the dialog: a framed box with a
+   red bar (red is never tinted, and ink is never written on red). */
 .failure {
   margin: 0;
   padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--card-border);
   border-left: 4px solid var(--danger);
   border-radius: var(--radius-control);
-  background: var(--danger-bg);
   color: var(--ink);
   font-size: var(--text-sm);
 }
@@ -271,7 +272,7 @@
 }
 
 .fileInput::file-selector-button:hover {
-  background: var(--gray-bg);
+  background: var(--hover);
 }
 
 .fileInput:focus-visible {

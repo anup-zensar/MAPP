@@ -69,7 +69,7 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
-/* Keyboard focus is always visible: a 2 px navy ring (yellow in dark mode) with a 2 px gap. */
+/* Keyboard focus is always visible: a 2 px Text Strong ring with a 2 px gap (constitution X). */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;

@@ -44,8 +44,13 @@
   padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .menu {
+  --ink-2: var(--ink);
 }
 
 /* Name, e-mail and job title wrap instead of being cut (there is no tooltip inside a menu). */
@@ -91,17 +96,16 @@
   font-size: var(--text-sm);
   text-decoration: none;
   cursor: pointer;
-  outline: none;
 }
 
 .item:hover {
   text-decoration: none;
 }
 
-/* Radix marks the item under the pointer or the arrow keys with data-highlighted; the blue tint
-   is also the keyboard focus indicator. */
+/* Radix marks the item under the pointer or the arrow keys with data-highlighted; keyboard
+   focus also shows the focus ring. */
 .item[data-highlighted] {
-  background: color-mix(in srgb, var(--blue) 12%, transparent);
+  background: var(--hover);
 }
 
 .item svg {

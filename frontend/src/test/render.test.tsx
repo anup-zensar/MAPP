@@ -134,8 +134,8 @@ describe('renderWithProviders', () => {
 });
 
 describe('renderRoutes', () => {
-  it('renders the given routes, which ask GET /api/me when no person is given', async () => {
-    const api = mockApi({ 'GET /api/me': { body: PRIYA } });
+  it('renders the given routes, which ask GET /api/v1/me when no person is given', async () => {
+    const api = mockApi({ 'GET /api/v1/me': { body: PRIYA } });
 
     renderRoutes([
       {

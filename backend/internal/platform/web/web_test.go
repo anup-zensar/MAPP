@@ -17,9 +17,9 @@ import (
 
 // The bodies of the API's own refusals, as the web app receives them.
 const (
-	otherSiteBody  = `{"code":"bad_request","message":"This request came from another site and was refused.","fields":[]}`
-	unreadableBody = `{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}`
-	internalBody   = `{"code":"internal_error","message":"Something went wrong on our side. Please try again.","fields":[]}`
+	otherSiteBody  = `{"error":{"code":"bad_request","message":"This request came from another site and was refused.","fields":[]}}`
+	unreadableBody = `{"error":{"code":"bad_request","message":"MAPP couldn't read this request. Reload the page and try again.","fields":[]}}`
+	internalBody   = `{"error":{"code":"internal_error","message":"Something went wrong on our side. Please try again.","fields":[]}}`
 )
 
 // Requests that a browser marks as coming from another site or origin are refused, so another web page
@@ -43,7 +43,7 @@ func TestMiddleware_RefusesCrossOriginRequests(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			handler, called := countingHandler()
-			r := newRequest(tt.method, "/api/test", "")
+			r := newRequest(tt.method, "/api/v1/test", "")
 			if tt.header != "" {
 				r.Header.Set(tt.header, tt.value)
 			}
@@ -84,7 +84,7 @@ func TestMiddleware_RefusesOtherHosts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.host, func(t *testing.T) {
 			handler, called := countingHandler()
-			r := newRequest(http.MethodGet, "/api/test", "")
+			r := newRequest(http.MethodGet, "/api/v1/test", "")
 			r.Host = tt.host
 
 			w := serve(web.Middleware(handler), r)
@@ -105,7 +105,7 @@ func TestMiddleware_RefusesOtherHosts(t *testing.T) {
 func TestMiddleware_PanicAnswersInternalError_FR020(t *testing.T) {
 	panicking := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })
 
-	w := serve(web.Middleware(panicking), newRequest(http.MethodGet, "/api/test", ""))
+	w := serve(web.Middleware(panicking), newRequest(http.MethodGet, "/api/v1/test", ""))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
 }
@@ -117,7 +117,7 @@ func TestMiddleware_PanicAfterTheAnswerStartedAddsNothing(t *testing.T) {
 		panic("boom")
 	})
 
-	w := serve(web.Middleware(startedThenPanics), newRequest(http.MethodGet, "/api/test", ""))
+	w := serve(web.Middleware(startedThenPanics), newRequest(http.MethodGet, "/api/v1/test", ""))
 
 	assertAnswer(t, w, http.StatusOK, `{"ok":true}`)
 }
@@ -127,16 +127,16 @@ func TestMiddleware_PanicAfterTheAnswerStartedAddsNothing(t *testing.T) {
 func TestMiddleware_APIHeadersOnEveryAnswer(t *testing.T) {
 	ok, _ := countingHandler()
 	panicking := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })
-	otherHost := newRequest(http.MethodGet, "/api/test", "")
+	otherHost := newRequest(http.MethodGet, "/api/v1/test", "")
 	otherHost.Host = "evil.example"
-	crossSite := newRequest(http.MethodPost, "/api/test", "")
+	crossSite := newRequest(http.MethodPost, "/api/v1/test", "")
 	crossSite.Header.Set("Sec-Fetch-Site", "cross-site")
 
 	answers := map[string]*httptest.ResponseRecorder{
-		"normal answer":      serve(web.Middleware(ok), newRequest(http.MethodGet, "/api/test", "")),
+		"normal answer":      serve(web.Middleware(ok), newRequest(http.MethodGet, "/api/v1/test", "")),
 		"refused host":       serve(web.Middleware(ok), otherHost),
 		"refused cross-site": serve(web.Middleware(ok), crossSite),
-		"panic":              serve(web.Middleware(panicking), newRequest(http.MethodGet, "/api/test", "")),
+		"panic":              serve(web.Middleware(panicking), newRequest(http.MethodGet, "/api/v1/test", "")),
 	}
 	for name, w := range answers {
 		if got := w.Header().Get("Cache-Control"); got != "no-store" {
@@ -149,7 +149,7 @@ func TestMiddleware_APIHeadersOnEveryAnswer(t *testing.T) {
 }
 
 func TestReadJSON_AcceptsAJSONBody(t *testing.T) {
-	r := newRequest(http.MethodPost, "/api/test", `{"name":"Ideas"}`+"\n")
+	r := newRequest(http.MethodPost, "/api/v1/test", `{"name":"Ideas"}`+"\n")
 	r.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	w := serve(http.HandlerFunc(echoName), r)
@@ -177,7 +177,7 @@ func TestReadJSON_RefusesUnreadableBodies(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := newRequest(http.MethodPost, "/api/test", tt.body)
+			r := newRequest(http.MethodPost, "/api/v1/test", tt.body)
 			r.Header.Del("Content-Type")
 			if tt.contentType != "" {
 				r.Header.Set("Content-Type", tt.contentType)
@@ -196,17 +196,17 @@ func TestWriteError_WrappedErrorKeepsItsStatus(t *testing.T) {
 	err := fmt.Errorf("deleting folder: %w", errs.NotFound("This sample folder no longer exists — someone may have deleted it."))
 	w := httptest.NewRecorder()
 
-	web.WriteError(w, newRequest(http.MethodDelete, "/api/sample-folders/SF-1001", ""), err)
+	web.WriteError(w, newRequest(http.MethodDelete, "/api/v1/sample-folders/SF-1001", ""), err)
 
 	assertAnswer(t, w, http.StatusNotFound,
-		`{"code":"not_found","message":"This sample folder no longer exists — someone may have deleted it.","fields":[]}`)
+		`{"error":{"code":"not_found","message":"This sample folder no longer exists — someone may have deleted it.","fields":[]}}`)
 }
 
 // Any other error becomes a plain-language 500; its technical text never reaches the user (FR-020).
 func TestWriteError_UnexpectedErrorHidesDetails_FR020(t *testing.T) {
 	w := httptest.NewRecorder()
 
-	web.WriteError(w, newRequest(http.MethodGet, "/api/test", ""), errors.New("open data/people.json: Access is denied."))
+	web.WriteError(w, newRequest(http.MethodGet, "/api/v1/test", ""), errors.New("open data/people.json: access is denied"))
 
 	assertAnswer(t, w, http.StatusInternalServerError, internalBody)
 }
@@ -220,13 +220,15 @@ func TestWriteError_FieldsAlwaysPresent_FR020(t *testing.T) {
 	}
 	for name, err := range failures {
 		w := httptest.NewRecorder()
-		web.WriteError(w, newRequest(http.MethodGet, "/api/test", ""), err)
+		web.WriteError(w, newRequest(http.MethodGet, "/api/v1/test", ""), err)
 
-		var body map[string]json.RawMessage
+		var body struct {
+			Error map[string]json.RawMessage `json:"error"`
+		}
 		if decodeErr := json.Unmarshal(w.Body.Bytes(), &body); decodeErr != nil {
 			t.Fatalf("%s: body %s is not JSON: %v", name, w.Body, decodeErr)
 		}
-		if got := string(body["fields"]); got != "[]" {
+		if got := string(body.Error["fields"]); got != "[]" {
 			t.Errorf("%s: fields = %s, want []", name, got)
 		}
 	}
@@ -235,9 +237,9 @@ func TestWriteError_FieldsAlwaysPresent_FR020(t *testing.T) {
 func TestNotFound_AnswersJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 
-	web.NotFound(w, newRequest(http.MethodGet, "/api/nowhere", ""))
+	web.NotFound(w, newRequest(http.MethodGet, "/api/v1/nowhere", ""))
 
-	assertAnswer(t, w, http.StatusNotFound, `{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}`)
+	assertAnswer(t, w, http.StatusNotFound, `{"error":{"code":"not_found","message":"This page or record doesn't exist.","fields":[]}}`)
 }
 
 func TestWriteJSON_StatusContentTypeAndBody(t *testing.T) {
@@ -253,27 +255,27 @@ func TestWriteJSON_StatusContentTypeAndBody(t *testing.T) {
 func TestRouter_RecordsPatterns(t *testing.T) {
 	ok, _ := countingHandler()
 	router := web.NewRouter()
-	router.Handle("GET /api/health", ok)
-	router.Handle("POST /api/auth/sign-in", ok)
+	router.Handle("GET /api/v1/health", ok)
+	router.Handle("POST /api/v1/auth/sign-in", ok)
 
 	got := router.Patterns()
-	if want := []string{"GET /api/health", "POST /api/auth/sign-in"}; !slices.Equal(got, want) {
+	if want := []string{"GET /api/v1/health", "POST /api/v1/auth/sign-in"}; !slices.Equal(got, want) {
 		t.Fatalf("Patterns() = %q, want %q", got, want)
 	}
 
 	got[0] = "changed by the caller"
-	if again := router.Patterns(); again[0] != "GET /api/health" {
+	if again := router.Patterns(); again[0] != "GET /api/v1/health" {
 		t.Errorf("changing the returned list changed the router: %q", again)
 	}
 }
 
 func TestRouter_ServesRegisteredPatterns(t *testing.T) {
 	router := web.NewRouter()
-	router.Handle("GET /api/sample-folders/{folderId}", func(w http.ResponseWriter, r *http.Request) {
+	router.Handle("GET /api/v1/sample-folders/{folderId}", func(w http.ResponseWriter, r *http.Request) {
 		web.WriteJSON(w, http.StatusOK, map[string]string{"folderId": r.PathValue("folderId")})
 	})
 
-	w := serve(router, newRequest(http.MethodGet, "/api/sample-folders/SF-1001", ""))
+	w := serve(router, newRequest(http.MethodGet, "/api/v1/sample-folders/SF-1001", ""))
 
 	assertAnswer(t, w, http.StatusOK, `{"folderId":"SF-1001"}`)
 }

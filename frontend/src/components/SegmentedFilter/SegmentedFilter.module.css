@@ -34,7 +34,7 @@
 }
 
 .pill:hover {
-  background: var(--gray-bg);
+  background: var(--hover);
 }
 
 /* The focus ring sits above the neighbouring buttons. */

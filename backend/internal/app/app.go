@@ -83,7 +83,7 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	}
 
 	router := web.NewRouter()
-	router.Handle("GET /api/health", health(cfg))
+	probeRoutes(router, cfg, db)
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
 	history.NewHandler(historyService).Routes(router, signedIn)
@@ -273,24 +273,9 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 
 	// Routes lists the operations only: the catch-all registered next is not an operation of the contract.
 	routes := router.Patterns()
-	// Every other path or method under /api/ answers JSON 404 (http.ServeMux would answer plain text).
+	// Every other path or method under /api/, unversioned ones included, answers JSON 404 (http.ServeMux would
+	// answer plain text).
 	router.Handle("/api/", web.NotFound)
 
 	return &App{Handler: web.Middleware(router), Routes: routes, allWork: allWork, finance: finance}, nil
-}
-
-// healthAnswer is the answer of GET /api/health.
-type healthAnswer struct {
-	Status      string `json:"status"`
-	Environment string `json:"environment"`
-	DemoSignIn  bool   `json:"demoSignIn"`
-}
-
-// health answers GET /api/health without a session: the API is running, in which environment, and
-// whether demo sign-in is on. The web app's developer pages and the seed command ask it.
-func health(cfg Config) http.HandlerFunc {
-	answer := healthAnswer{Status: "ok", Environment: cfg.Env, DemoSignIn: cfg.DemoMode()}
-	return func(w http.ResponseWriter, r *http.Request) {
-		web.WriteJSON(w, http.StatusOK, answer)
-	}
 }

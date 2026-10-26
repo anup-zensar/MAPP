@@ -10,7 +10,7 @@ import { FieldHelpPage } from './FieldHelpPage';
 import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from './fieldHelpTestData';
 
 function renderHelp(answers: Record<string, MockHandler> = {}, route = '/settings/field-help') {
-  const api = mockApi({ 'GET /api/field-help': { body: FIELD_HELP_PAGE }, ...answers });
+  const api = mockApi({ 'GET /api/v1/field-help': { body: FIELD_HELP_PAGE }, ...answers });
   const rendered = renderWithProviders(<FieldHelpPage />, {
     route,
     path: '/settings/field-help',
@@ -87,7 +87,7 @@ describe('FieldHelpPage: the list (016 FR-045, FR-048)', () => {
   });
 
   it('says when the help texts cannot be loaded', async () => {
-    renderHelp({ 'GET /api/field-help': () => Promise.reject(new TypeError('offline')) });
+    renderHelp({ 'GET /api/v1/field-help': () => Promise.reject(new TypeError('offline')) });
 
     expect(await screen.findByRole('alert')).toHaveTextContent("can't reach its server");
   });
@@ -97,7 +97,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
   it('edits a text in a side panel and saves it with its version (US7-2)', async () => {
     const newText = 'What the plan may spend in its year.';
     const { user, api, router } = renderHelp({
-      'PATCH /api/field-help/plan.budget': {
+      'PATCH /api/v1/field-help/plan.budget': {
         body: { ...PLAN_BUDGET, text: newText, isDefault: false, version: 1 },
       },
     });
@@ -114,7 +114,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(api.bodiesOf('PATCH /api/field-help/plan.budget')).toEqual([
+    expect(api.bodiesOf('PATCH /api/v1/field-help/plan.budget')).toEqual([
       { text: newText, version: 0 },
     ]);
     expect(
@@ -124,7 +124,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
 
   it('refuses a text over 300 characters; an empty text is allowed (US7-4)', async () => {
     const { user, api } = renderHelp({
-      'PATCH /api/field-help/plan.budget': {
+      'PATCH /api/v1/field-help/plan.budget': {
         body: { ...PLAN_BUDGET, text: '', isDefault: false, version: 1 },
       },
     });
@@ -140,19 +140,21 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     expect(await within(panel).findAllByText('Use 300 characters or fewer.')).not.toHaveLength(0);
-    expect(api.bodiesOf('PATCH /api/field-help/plan.budget')).toEqual([]);
+    expect(api.bodiesOf('PATCH /api/v1/field-help/plan.budget')).toEqual([]);
 
     await user.clear(text);
     await user.click(within(panel).getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
-      expect(api.bodiesOf('PATCH /api/field-help/plan.budget')).toEqual([{ text: '', version: 0 }]),
+      expect(api.bodiesOf('PATCH /api/v1/field-help/plan.budget')).toEqual([
+        { text: '', version: 0 },
+      ]),
     );
   });
 
   it('names who saved first and keeps the typed text (001 FR-029)', async () => {
     const { user } = renderHelp({
-      'PATCH /api/field-help/plan.plannedCost': { status: 409, body: versionConflict() },
+      'PATCH /api/v1/field-help/plan.plannedCost': { status: 409, body: versionConflict() },
     });
     await screen.findByRole('table');
 
@@ -170,7 +172,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
 
   it('shows the problem the API finds under the text', async () => {
     const { user } = renderHelp({
-      'PATCH /api/field-help/plan.budget': {
+      'PATCH /api/v1/field-help/plan.budget': {
         status: 400,
         body: validationFailed([{ field: 'text', message: 'Use plain text without links.' }]),
       },
@@ -187,7 +189,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
 
   it('resets an edited text to the default after asking (US7-3)', async () => {
     const { user, api } = renderHelp({
-      'PATCH /api/field-help/plan.plannedCost': {
+      'PATCH /api/v1/field-help/plan.plannedCost': {
         body: { ...PLAN_PLANNED_COST, text: PLAN_PLANNED_COST.defaultText, isDefault: true },
       },
     });
@@ -200,7 +202,7 @@ describe('FieldHelpPage: edit and reset (016 FR-046)', () => {
     await user.click(within(question).getByRole('button', { name: 'Reset to default' }));
 
     await waitFor(() =>
-      expect(api.bodiesOf('PATCH /api/field-help/plan.plannedCost')).toEqual([
+      expect(api.bodiesOf('PATCH /api/v1/field-help/plan.plannedCost')).toEqual([
         { text: null, version: 2 },
       ]),
     );
