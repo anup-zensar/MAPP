@@ -45,6 +45,7 @@ export const VALUE_FILTERS = [
   'planCurrencies',
   'finance',
 ] as const;
+export type ValueFilter = (typeof VALUE_FILTERS)[number];
 
 /**
  * The years a state shows (016 FR-034): from `year` to `yearTo`, or the one year of a state saved

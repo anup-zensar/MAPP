@@ -3,6 +3,7 @@ import {
   ACTIVITY_STATUS_LABELS,
   CONTAINER_STATUS_LABELS,
   FINANCE_LABELS,
+  isLabelled,
   MAX_YEARS,
   PLAN_STATUS_LABELS,
   PLAN_TYPE_LABELS,
@@ -45,9 +46,7 @@ const ids = z
 
 /** The values of a fixed list (its labels' keys), in the address's order; others are left out. */
 function known<T extends string>(labels: Record<T, string>) {
-  return z
-    .array(z.string())
-    .transform((values) => values.filter((value): value is T => Object.hasOwn(labels, value)));
+  return z.array(z.string()).transform((values) => values.filter(isLabelled(labels)));
 }
 
 /** The first known value of a single-choice filter, else its "not filtered" value. */

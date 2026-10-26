@@ -1,13 +1,8 @@
-import { ClipboardList, SearchX } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
 import { ApiError } from '@/api/errors';
-import { Button, LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
-import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
-import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { Tabs } from '@/ui/Tabs/Tabs';
 import { useToast } from '@/ui/Toast/useToast';
 import type { TabItem } from '@/ui/Tabs/Tabs';
@@ -16,19 +11,21 @@ import { useAccess } from '@/session/access';
 import { useAllWork, useAllWorkOptions, useAllWorkPreferences, usePreferencesSaver } from './api';
 import styles from './AllWorkPage.module.css';
 import { ALL_WORK_DESCRIPTION, VIEW_LABELS } from './all-work-text';
-import type { AllWorkResult, Sort, ViewState, ViewType } from './all-work-types';
+import type { Sort, ViewState, ViewType } from './all-work-types';
 import { AllWorkGrid } from './AllWorkGrid';
 import { BudgetView } from './BudgetView';
 import { CalendarView } from './CalendarView';
 import { ColumnChooser } from './ColumnChooser';
 import { ExportMenu } from './ExportMenu';
 import { FilterBar } from './FilterBar';
+import { GridSkeleton } from './GridSkeleton';
 import { MonthCalendar } from './MonthCalendar';
 import { Pager } from './Pager';
 import { SummaryCards } from './SummaryCards';
 import { useAllWorkSession } from './useAllWorkSession';
 import { useOpenRecord } from './useOpenRecord';
 import { ViewsControl } from './ViewsControl';
+import { ViewContent } from './ViewContent';
 import { ViewToolbar } from './ViewToolbar';
 import { clearAll } from './view-chips';
 import { continuedPath, pageOf, toggleRow, visibleRows } from './view-rows';
@@ -87,17 +84,17 @@ export function AllWorkPage() {
   }, [result, entry.scrollY]);
 
   // A refused filter is named in a message and set back (plan "States").
-  const refused = query.error instanceof ApiError && query.error.kind === 'validation';
+  const refusal =
+    query.error instanceof ApiError && query.error.kind === 'validation' ? query.error : null;
   useEffect(() => {
-    if (!refused || !state || !preferences.data || !options.data) {
+    if (!refusal || !state || !preferences.data || !options.data) {
       return;
     }
-    const error = query.error as ApiError;
-    show({ message: error.message });
+    show({ message: refusal.message });
     const standard = standardState(preferences.data, options.data.currentYear);
-    const fields = error.fields.map((field) => field.field);
+    const fields = refusal.fields.map((field) => field.field);
     setState((current) => withoutRefused(current, fields, standard));
-  }, [refused, query.error, state, preferences.data, options.data, setState, show]);
+  }, [refusal, state, preferences.data, options.data, setState, show]);
 
   function changeExpansion(next: ViewState) {
     // Opening and closing rows keeps the page (it may become shorter).
@@ -244,69 +241,5 @@ export function AllWorkPage() {
         />
       )}
     </>
-  );
-}
-
-interface ViewContentProps {
-  state: ViewState;
-  result: AllWorkResult | undefined;
-  error: unknown;
-  /** Whether the year has plans at all (the filter bar's choices). */
-  hasPlans: boolean;
-  onRetry: () => void;
-  onClearFilters: () => void;
-  /** The view itself, shown when there are rows. */
-  children: ReactNode;
-}
-
-/** The states of a view (plan "States"): loading, error, no plans, nothing matches, the rows. */
-function ViewContent({
-  state,
-  result,
-  error,
-  hasPlans,
-  onRetry,
-  onClearFilters,
-  children,
-}: ViewContentProps) {
-  if (!result) {
-    return error && !(error instanceof ApiError && error.kind === 'validation') ? (
-      <div className={styles.state}>
-        <ErrorState error={error} onRetry={onRetry} />
-      </div>
-    ) : (
-      <GridSkeleton />
-    );
-  }
-  if (result.rows.length === 0) {
-    return (
-      <div className={styles.state}>
-        {!hasPlans ? (
-          <EmptyState
-            icon={<ClipboardList />}
-            title={`No plans in ${state.year} yet`}
-            text={`Plans of ${state.year} appear here once they're created.`}
-            action={<LinkButton to="/plans">Go to Plans</LinkButton>}
-          />
-        ) : (
-          <EmptyState
-            icon={<SearchX />}
-            title="Nothing matches these filters"
-            text="Try removing a filter or changing the search."
-            action={<Button onClick={onClearFilters}>Clear filters</Button>}
-          />
-        )}
-      </div>
-    );
-  }
-  return <>{children}</>;
-}
-
-/** Eight grey lines while the first answer loads. */
-function GridSkeleton() {
-  return (
-    <div className={styles.state}>
-      <Skeleton lines={8} height="18px" />
-    </div>
   );
 }

@@ -44,7 +44,12 @@ export function Pager({ page, pageSize, onPage, onPageSize }: PagerProps) {
         <select
           id={sizeId}
           value={pageSize}
-          onChange={(event) => onPageSize(Number(event.target.value) as PageSize)}
+          onChange={(event) => {
+            const size = PAGE_SIZES.find((one) => one === Number(event.target.value));
+            if (size) {
+              onPageSize(size);
+            }
+          }}
         >
           {PAGE_SIZES.map((size) => (
             <option key={size} value={size}>
