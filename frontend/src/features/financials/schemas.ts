@@ -46,12 +46,10 @@ export function readFilters(params: URLSearchParams): FinancialFilters {
   };
 }
 
-/** The page size a "Per page" choice names; null for anything else. */
 export function pageSizeOf(text: string): PageSize | null {
   return parsed(pageSizeSchema, text, null);
 }
 
-/** The GSAP extract to check: a .csv file of at most 700 KB (FR-004). */
 export const importFileSchema = z.object({
   file: z
     .instanceof(File)
@@ -63,7 +61,6 @@ export const importFileSchema = z.object({
     ),
 });
 
-/** The line item to link, as typed: its ID in any letter case, spaces around it ignored. */
 export const linkSchema = z.object({
   lineItemId: z
     .string()

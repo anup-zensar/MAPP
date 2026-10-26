@@ -62,7 +62,6 @@ export const SUBMITTED: HistoryEntry = {
   changes: [],
 };
 
-/** Level 1 of "Launch film": Carlos decides, and it waits for him. */
 export const LEVEL_1: ChainLevel = {
   number: 1,
   label: 'Level 1',
@@ -70,7 +69,6 @@ export const LEVEL_1: ChainLevel = {
   state: 'waiting',
   decision: null,
 };
-/** Level 2: Alex decides once level 1 is approved. */
 export const LEVEL_2: ChainLevel = {
   number: 2,
   label: 'Level 2',

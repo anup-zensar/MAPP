@@ -37,7 +37,6 @@ export function renderFinancials(route = '/financials') {
   );
 }
 
-/** The Financials page at `route`, its list answered by `list` (2026's 11 transactions). */
 export function renderFinancialsPage(
   route = '/financials',
   list: Answer<'GET /api/v1/financials/transactions'> = { body: transactionPage() },
