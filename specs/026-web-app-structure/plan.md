@@ -111,8 +111,8 @@ frontend/
 ├── eslint.config.js        # + import-x boundaries/cycles/order, jsx-a11y, type rules (R5)
 └── src/
     ├── main.tsx            # mounts <App /> only
-    ├── app/                # App (providers, styles), routes.tsx (every route), pages.ts (lazy pages),
-    │                       # layouts, navigation, settings sections, theme, error pages
+    ├── app/                # App (providers, styles), routes.tsx (every route), pages.tsx (lazy pages),
+    │                       # layouts, navigation, settings sections, error pages
     ├── features/           # 17 features: index.ts · api.ts · schemas.ts · screens · tests
     │   ├── people/         #   + access/ (was features/access)
     │   ├── plans/          #   + campaigns/, phasing/ (were features/campaigns, budget-phasing)
@@ -121,13 +121,13 @@ frontend/
     │                       #   dev, financials, global-budgets, home, line-items, notifications,
     │                       #   placeholders, recycle-bin, sign-in
     ├── ui/                 # <Component>/ (was components/), tokens.css, global.css, FormField,
-    │                       # form-problems.ts, record-links.ts, list blocks from settings/shared
+    │                       # useFormProblems.ts, record-links.ts, list blocks from settings/shared
     ├── api/                # client.ts, errors.ts, download.ts, generated/schema.d.ts
     ├── session/            # SessionProvider, useSession, RequireSignIn, RequirePermission,
     │                       # SessionCheckPage, access.ts, gate-action.ts, safe-next.ts, api.ts
-    ├── format/             # money.ts, dates.ts, text.ts, useFormatters.ts
-    └── testing/            # setup.ts, server.ts (MSW), http.ts (typed handlers), render helpers,
-                            # users, attribute forms, axe.ts
+    ├── format/             # decimal.ts, intl.ts, text.ts, useFormatters.ts
+    └── testing/            # setup.ts, mock-api.ts (MSW), replies.ts (typed answers), render helpers,
+                            # fixtures/ (test data per feature), dom.ts, axe.ts
 ```
 
 **Structure Decision**: the F2 layout with three feature merges (R3); `ui/` without a barrel (R4).

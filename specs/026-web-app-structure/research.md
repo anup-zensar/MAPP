@@ -165,25 +165,31 @@ notifications, recycle-bin, dev, placeholders, sign-in). 20 feature folders beco
 ## R10 — Per-route splitting
 
 - **Decision**: `React.lazy` per page, importing the feature's `index.ts`
-  (`lazy(() => import('@/features/plans').then((m) => ({ default: m.PlansPage })))` through one
-  small helper in `app/`), so each feature is one chunk (F1) and no feature needs a default export.
+  (`lazy(() => plans().then((feature) => ({ default: feature.PlansPage })))`, one declaration per
+  page in `app/pages.tsx`; a generic helper lost the page's props in TypeScript's inference), so
+  each feature is one chunk (F1) and no feature needs a default export.
   A `<Suspense>` around the routed page in each layout shows the page's loading skeleton while its
   code loads, and the shell is drawn at once; a failed download reaches the route's error page
   (F4). All routes, including today's `accessRoutes` and `settingsRoutes`, are declared in `app/`
   (F1).
 - **Measured** (experiment: pages imported lazily, everything else unchanged): first-page JS
-  185 KiB gzip (from 374 KiB); the largest page chunk 21 KiB. The shell keeps approvals and
-  notifications (badge and bell) in the first page.
+  185 KiB gzip (from 374 KiB); the largest page chunk 21 KiB. In the experiment the shell kept
+  approvals and notifications (badge and bell) in the first page.
 - **No JavaScript budget** (product owner, 2026-10-26): gate 12's budget stays deferred (ADR-0010)
   and nothing in the build checks sizes. Chunks are named after their feature
   (`build.rolldownOptions.output.chunkFileNames` in `vite.config.ts`), so the first-page end-to-end
-  check can tell them apart. After the split, T054 measures the first page (entry chunk and its
-  static imports) and each feature chunk once, gzip, and records them here:
+  check can tell them apart. After the split, T054 measured the first page (entry chunk and its
+  static imports) and each feature chunk once, gzip (production build of 2026-10-26):
 
-  | Measure | Today | After the split (T054) |
+  | Measure | Before | After the split (T054) |
   |---|---|---|
-  | First page | 374 KiB (one chunk) | to be recorded (experiment: 185 KiB) |
-  | Largest feature chunk | — | to be recorded (experiment: largest page 21 KiB) |
+  | First page | 374 KiB (one chunk) | 187.5 KiB (one chunk, 612 KiB raw) |
+  | Feature chunks | — | plans 37.7, settings 33.3, all-work 21.3, line-items 20.2, activities 18.0, approvals 17.7, people 17.1, financials 11.2, dev 9.9, home 9.3, approval-workflows 7.9, activity-log 7.3, global-budgets 7.0, recycle-bin 5.2, sign-in 2.4 KiB |
+  | Shared by features | — | the form libraries (React Hook Form, Zod, resolvers) 15.2 KiB, loaded with the first form; smaller shared components 0.2–4.8 KiB each |
+
+  The first page keeps the app frame, the session, the shared components it draws, the
+  notifications bell and the placeholders; the Approvals badge in the sidebar is lazy, so the
+  approvals code arrives with its first page.
 - **Alternatives**: React Router's `lazy` route property (on the first load the router draws
   nothing until the page's code arrives — a blank screen where the shell appears today); splitting
   per page (finer than F1's per feature, which Principle V forbids without a measurement).
