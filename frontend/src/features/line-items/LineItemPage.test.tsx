@@ -3,24 +3,29 @@ import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { financialsNotServed } from '@/testing/fixtures/plans';
+import { closestTo } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import {
   approvedActivity,
-  currentRates,
-  deleteResult,
   details,
   filmProduction,
-  formAnswers,
   lineItem,
-  lineItemRecord,
-  notFound,
-  transaction,
-  transactionPage,
   usd,
 } from '@/testing/fixtures/line-items';
-import { looseReply } from '@/testing/replies';
+import {
+  currentRates,
+  deleteResult,
+  formAnswers,
+  notFound,
+} from '@/testing/fixtures/line-item-forms';
+import {
+  lineItemRecord,
+  transaction,
+  transactionPage,
+} from '@/testing/fixtures/line-item-financials';
+import { reply } from '@/testing/replies';
 import { LineItemPage } from './LineItemPage';
 
 const DUPLICATE = 'POST /api/v1/line-items/L-1001/duplicate';
@@ -29,13 +34,13 @@ function renderPage(answers: HttpHandler[] = []) {
   const api = mockApi([
     ...HISTORY_ANSWERS,
     ...formAnswers(),
-    looseReply('GET /api/v1/exchange-rates/current', { body: currentRates() }),
-    looseReply(
+    reply('GET /api/v1/exchange-rates/current', { body: currentRates() }),
+    reply(
       'GET /api/v1/financials/records/{recordId}',
       { body: lineItemRecord() },
       { recordId: 'L-1001' },
     ),
-    looseReply('GET /api/v1/financials/transactions', {
+    reply('GET /api/v1/financials/transactions', {
       body: transactionPage([
         transaction({
           id: 'FT-1003',
@@ -48,11 +53,7 @@ function renderPage(answers: HttpHandler[] = []) {
         transaction(),
       ]),
     }),
-    looseReply(
-      'GET /api/v1/line-items/{lineItemId}',
-      { body: details() },
-      { lineItemId: 'L-1001' },
-    ),
+    reply('GET /api/v1/line-items/{lineItemId}', { body: details() }, { lineItemId: 'L-1001' }),
     ...answers,
   ]);
   return {
@@ -100,7 +101,7 @@ describe('LineItemPage (US4, FR-026)', () => {
       '/line-items/L-1001/edit',
     );
     expect(screen.getByRole('button', { name: 'Actions for Agency fee' })).toBeInTheDocument();
-    const march = screen.getByRole('cell', { name: 'Mar 2026' }).closest('tr') as HTMLElement;
+    const march = closestTo(screen.getByRole('cell', { name: 'Mar 2026' }), 'tr');
     expect(within(march).getAllByRole('cell')[1]).toHaveTextContent('16,666.66 USD');
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
     // Details and Finance coding: two cards with the same header, no heading repeated (LI-03).
@@ -121,7 +122,7 @@ describe('LineItemPage (US4, FR-026)', () => {
 
   it('shows a planned cost in another currency with its USD amount', async () => {
     renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         { body: details({ lineItem: { ...filmProduction(), id: 'L-1001' } }) },
         { lineItemId: 'L-1001' },
@@ -164,12 +165,12 @@ describe('LineItemPage (US4, FR-026)', () => {
 
   it('duplicates and opens the copy (scenario 4, FR-029)', async () => {
     const { user, api, router } = renderPage([
-      looseReply(
+      reply(
         'POST /api/v1/line-items/{lineItemId}/duplicate',
         { status: 201, body: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) },
         { lineItemId: 'L-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         {
           body: details({ lineItem: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) }),
@@ -188,17 +189,17 @@ describe('LineItemPage (US4, FR-026)', () => {
 
   it('asks before duplicating in an approved activity (FR-031)', async () => {
     const { user, api } = renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         { body: details({ activity: approvedActivity() }) },
         { lineItemId: 'L-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/line-items/{lineItemId}/duplicate',
         { status: 201, body: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) },
         { lineItemId: 'L-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         {
           body: details({ lineItem: lineItem({ id: 'L-2002', name: 'Agency fee (copy)' }) }),
@@ -222,12 +223,12 @@ describe('LineItemPage (US4, FR-026)', () => {
 
   it('deletes after the dialog and offers Undo (scenario 5, FR-030)', async () => {
     const { user, api, router } = renderPage([
-      looseReply(
+      reply(
         'DELETE /api/v1/line-items/{lineItemId}',
         { body: deleteResult() },
         { lineItemId: 'L-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/undo',
         {
           body: {
@@ -275,12 +276,12 @@ describe('LineItemPage (US4, FR-026)', () => {
 
   it('says that deleting restarts the approval of an approved activity (FR-031)', async () => {
     const { user, api } = renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         { body: details({ activity: approvedActivity() }) },
         { lineItemId: 'L-1001' },
       ),
-      looseReply(
+      reply(
         'DELETE /api/v1/line-items/{lineItemId}',
         { body: deleteResult() },
         { lineItemId: 'L-1001' },
@@ -309,7 +310,7 @@ describe('LineItemPage (US4, FR-026)', () => {
     ],
   ])('says when it is gone: %s (D-154)', async (message, link, href) => {
     renderPage([
-      looseReply('GET /api/v1/line-items/{lineItemId}', notFound(message), {
+      reply('GET /api/v1/line-items/{lineItemId}', notFound(message), {
         lineItemId: 'L-1001',
       }),
     ]);

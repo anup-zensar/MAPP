@@ -5,7 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { eur, launchFilmSection, lineItem, spreadMonth, usd } from '@/testing/fixtures/line-items';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { SpreadEffectNote } from './SpreadEffectNote';
 
 function custom(id: string, months: string[]) {
@@ -31,7 +31,7 @@ function renderNote(
   ],
 ) {
   mockApi([
-    looseReply(
+    reply(
       'GET /api/v1/activities/{activityId}/line-items',
       { body: launchFilmSection({ items }) },
       { activityId: 'A-1001' },

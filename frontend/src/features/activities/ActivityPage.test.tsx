@@ -2,7 +2,7 @@ import { configure, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { approvalOf } from '@/testing/fixtures/approvals';
-import { activityRecord } from '@/testing/fixtures/line-items';
+import { activityRecord } from '@/testing/fixtures/line-item-financials';
 import type { ShowSubmitProblems } from '@/features/approvals';
 import { mockApi } from '@/testing/mock-api';
 import type { LooseAnswer } from '@/testing/replies';

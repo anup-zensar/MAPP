@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { approvalOf } from '@/testing/fixtures/approvals';
-import { activityRecord } from '@/testing/fixtures/line-items';
+import { activityRecord } from '@/testing/fixtures/line-item-financials';
 import { expectCurrentSection, renderApp } from '@/testing/app';
 import {
   activityAttributeForm,

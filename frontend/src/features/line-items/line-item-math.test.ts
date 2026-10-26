@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { components } from '@/api/generated/schema';
+import { toCents } from '@/format/decimal';
+import { nth } from '@/testing/dom';
 import {
   activityMonths,
   addMonths,
@@ -34,7 +36,7 @@ describe('the shared example table (D-142, SC-002, SC-003)', () => {
     ['15800.00', '0.79', 2_000_000n],
     ['20000.00', '1', 2_000_000n],
   ])('converts %s at %s to USD half-up (FR-011)', (amount, rate, cents) => {
-    expect(toUsd(parseAmount(amount)!, rate)).toBe(cents);
+    expect(toUsd(toCents(amount), rate)).toBe(cents);
   });
 
   it('converts 20,000.00 USD to 18,400.00 EUR at 0.92 (FR-012)', () => {
@@ -49,7 +51,7 @@ describe('the shared example table (D-142, SC-002, SC-003)', () => {
   ])(
     'converts %s at %s into the plan currency at %s half-up (016 data model §3.1)',
     (amount, from, to, cents) => {
-      expect(convert(parseAmount(amount)!, from, to)).toBe(cents);
+      expect(convert(toCents(amount), from, to)).toBe(cents);
     },
   );
 
@@ -82,7 +84,7 @@ describe('the shared example table (D-142, SC-002, SC-003)', () => {
       { month: '2026-05', cents: 0n },
     ];
     const converted = usdMonths(months, '0.92');
-    expect(converted[2].cents).toBe(0n);
+    expect(nth(converted, 2).cents).toBe(0n);
     expect(converted.reduce((sum, m) => sum + m.cents, 0n)).toBe(toUsd(200_001n, '0.92'));
   });
 
@@ -227,7 +229,7 @@ describe('quarterColumns (FR-003)', () => {
     const quarters = quarterColumns(grid);
     expect(quarters.columns.map((c) => c.label)).toEqual(['Q1 2026', 'Q2 2026', 'No dates yet']);
     expect(quarters.columns.map((c) => c.outsideActivityDates)).toEqual([true, false, false]);
-    expect(quarters.rows[0].cells).toEqual([usd('100.00'), usd('200.00'), usd('5.00')]);
+    expect(nth(quarters.rows, 0).cells).toEqual([usd('100.00'), usd('200.00'), usd('5.00')]);
     expect(quarters.totals).toEqual([usd('100.00'), usd('200.00'), usd('5.00')]);
   });
 });

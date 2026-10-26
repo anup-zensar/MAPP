@@ -10,14 +10,12 @@ import {
   DIGITAL,
   eur,
   EUR,
-  formAnswers,
-  formOptions,
   lineItem,
-  notFound,
   spreadMonth,
   usd,
 } from '@/testing/fixtures/line-items';
-import { looseReply } from '@/testing/replies';
+import { formAnswers, formOptions, notFound } from '@/testing/fixtures/line-item-forms';
+import { reply } from '@/testing/replies';
 import { LineItemEditPage } from './LineItemEditPage';
 
 const PATCH = 'PATCH /api/v1/line-items/L-1001';
@@ -25,12 +23,8 @@ const PATCH = 'PATCH /api/v1/line-items/L-1001';
 function renderPage(answers: HttpHandler[] = [], route = '/line-items/L-1001/edit') {
   const api = mockApi([
     ...formAnswers(),
-    looseReply(
-      'GET /api/v1/line-items/{lineItemId}',
-      { body: details() },
-      { lineItemId: 'L-1001' },
-    ),
-    looseReply(
+    reply('GET /api/v1/line-items/{lineItemId}', { body: details() }, { lineItemId: 'L-1001' }),
+    reply(
       'GET /api/v1/activities/{activityId}/line-items/form-options',
       { body: formOptions() },
       { activityId: 'A-1001' },
@@ -49,12 +43,12 @@ function renderPage(answers: HttpHandler[] = [], route = '/line-items/L-1001/edi
 
 function approved(): HttpHandler[] {
   return [
-    looseReply(
+    reply(
       'GET /api/v1/line-items/{lineItemId}',
       { body: details({ activity: approvedActivity() }) },
       { lineItemId: 'L-1001' },
     ),
-    looseReply(
+    reply(
       'GET /api/v1/activities/{activityId}/line-items/form-options',
       { body: formOptions({ activity: approvedActivity() }) },
       { activityId: 'A-1001' },
@@ -83,7 +77,7 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   it('saves coding changes of an approved activity without a dialog (scenario 2, FR-032)', async () => {
     const { user, api, router } = renderPage([
       ...approved(),
-      looseReply(
+      reply(
         'PATCH /api/v1/line-items/{lineItemId}',
         { body: lineItem({ financeBudgetItem: DIGITAL }) },
         { lineItemId: 'L-1001' },
@@ -112,7 +106,7 @@ describe('LineItemEditPage (US4, FR-027)', () => {
   it('asks before a cost change restarts approval (scenario 3, FR-031)', async () => {
     const { user, api } = renderPage([
       ...approved(),
-      looseReply(
+      reply(
         'PATCH /api/v1/line-items/{lineItemId}',
         { body: lineItem() },
         { lineItemId: 'L-1001' },
@@ -164,12 +158,12 @@ describe('LineItemEditPage (US4, FR-027)', () => {
     let gets = 0;
     let patches = 0;
     const { user, api } = renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         () => ({ body: details({ lineItem: lineItem({ version: gets++ === 0 ? 1 : 2 }) }) }),
         { lineItemId: 'L-1001' },
       ),
-      looseReply(
+      reply(
         'PATCH /api/v1/line-items/{lineItemId}',
         () =>
           patches++ === 0
@@ -199,8 +193,9 @@ describe('LineItemEditPage (US4, FR-027)', () => {
     expect(screen.getByLabelText('Line item name')).toHaveValue('Agency fees');
     await user.click(button('Save'));
     await waitFor(() => expect(api.bodiesOf(PATCH)).toHaveLength(2));
-    expect(api.bodiesOf(PATCH).map((body) => (body as { version: number }).version)).toEqual([
-      1, 2,
+    expect(api.bodiesOf(PATCH)).toEqual([
+      expect.objectContaining({ version: 1 }),
+      expect.objectContaining({ version: 2 }),
     ]);
   });
 
@@ -208,7 +203,7 @@ describe('LineItemEditPage (US4, FR-027)', () => {
     const message =
       'This activity was deleted — restore it from the recycle bin to keep working on its line items.';
     const { user } = renderPage([
-      looseReply('PATCH /api/v1/line-items/{lineItemId}', notFound(message), {
+      reply('PATCH /api/v1/line-items/{lineItemId}', notFound(message), {
         lineItemId: 'L-1001',
       }),
     ]);
@@ -222,7 +217,7 @@ describe('LineItemEditPage (US4, FR-027)', () => {
 
   it('says when the line item is gone on opening', async () => {
     renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         notFound('This line item no longer exists — someone may have deleted it.'),
         { lineItemId: 'L-1001' },
@@ -261,16 +256,12 @@ describe('LineItemEditPage (US4, FR-027)', () => {
       missing: [{ field: 'spread', label: "Spread doesn't add up to the planned cost" }],
     });
     const { user, api } = renderPage([
-      looseReply(
+      reply(
         'GET /api/v1/line-items/{lineItemId}',
         { body: details({ lineItem: custom }) },
         { lineItemId: 'L-1001' },
       ),
-      looseReply(
-        'PATCH /api/v1/line-items/{lineItemId}',
-        { body: custom },
-        { lineItemId: 'L-1001' },
-      ),
+      reply('PATCH /api/v1/line-items/{lineItemId}', { body: custom }, { lineItemId: 'L-1001' }),
     ]);
     await screen.findByLabelText('Line item name');
 

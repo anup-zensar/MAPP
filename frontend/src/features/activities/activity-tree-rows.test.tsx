@@ -7,7 +7,7 @@ import { TreeTable } from '@/ui/TreeTable/TreeTable';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { activityRecord } from '@/testing/fixtures/line-items';
+import { activityRecord } from '@/testing/fixtures/line-item-financials';
 import { destinations, launchFilm, launchFilmRow } from '@/testing/fixtures/activities';
 import { looseReply } from '@/testing/replies';
 import { activityActionsForInitiative, useActivityRows } from './activity-tree-rows';

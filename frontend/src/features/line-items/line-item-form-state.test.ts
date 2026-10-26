@@ -6,12 +6,12 @@ import {
   DIGITAL,
   DIGITAL_2027,
   EUR,
-  formOptions,
   GBP,
   lineItem,
   PRIYA_REF,
   USD,
 } from '@/testing/fixtures/line-items';
+import { formOptions } from '@/testing/fixtures/line-item-forms';
 import {
   changeBudgetYear,
   changeCurrency,
