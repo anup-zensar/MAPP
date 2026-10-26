@@ -71,11 +71,12 @@ func (s *Service) summariesOf(ctx context.Context, activityIDs []string) (map[st
 	for _, li := range items {
 		byActivity[li.ActivityID] = append(byActivity[li.ActivityID], li)
 	}
+	facts, err := s.deps.Activities.FactsOf(ctx, slices.Collect(maps.Keys(byActivity)))
+	if err != nil {
+		return nil, err
+	}
 	for activityID, list := range byActivity {
-		f, found, err := s.deps.Activities.Facts(ctx, activityID)
-		if err != nil {
-			return nil, err
-		}
+		f, found := facts[activityID]
 		if !found {
 			continue
 		}

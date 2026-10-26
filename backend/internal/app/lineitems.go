@@ -96,6 +96,55 @@ func (x lineItemActivities) Facts(ctx context.Context, id string) (lineitems.Act
 	return f, true, nil
 }
 
+// FactsOf returns the facts of the stored activities among ids: their initiatives, campaigns and plans are
+// read once for all of them, and kept for the transaction, before each activity's facts are put together.
+func (x lineItemActivities) FactsOf(ctx context.Context, ids []string) (map[string]lineitems.ActivityFacts, error) {
+	list, err := x.activities.ListByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	if err := x.readParents(ctx, list); err != nil {
+		return nil, err
+	}
+	facts := make(map[string]lineitems.ActivityFacts, len(list))
+	for _, act := range list {
+		f, found, err := x.Facts(ctx, act.ID)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			facts[act.ID] = f
+		}
+	}
+	return facts, nil
+}
+
+// readParents reads the initiatives, campaigns and plans of the activities list, one level at a time.
+func (x lineItemActivities) readParents(ctx context.Context, list []activities.Activity) error {
+	initiativeIDs := make([]string, 0, len(list))
+	for _, act := range list {
+		initiativeIDs = append(initiativeIDs, act.InitiativeID)
+	}
+	initiatives, err := x.campaigns.InitiativesByIDs(ctx, initiativeIDs)
+	if err != nil {
+		return err
+	}
+	campaignIDs := make([]string, 0, len(initiatives))
+	for _, i := range initiatives {
+		campaignIDs = append(campaignIDs, i.CampaignID)
+	}
+	campaignList, err := x.campaigns.CampaignsByIDs(ctx, campaignIDs)
+	if err != nil {
+		return err
+	}
+	planIDs := make([]string, 0, len(campaignList))
+	for _, c := range campaignList {
+		planIDs = append(planIDs, c.PlanID)
+	}
+	_, err = x.plans.ListByIDs(ctx, planIDs)
+	return err
+}
+
 // RestartApproval sends a Submitted or Approved activity back to Created with the reasons (006's rule,
 // which also tells approvals to end the open round).
 func (x lineItemActivities) RestartApproval(ctx context.Context, a actor.Actor, id string, reasons []string) error {
