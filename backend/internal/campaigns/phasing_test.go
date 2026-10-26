@@ -33,6 +33,7 @@ func phasedCampaign(t *testing.T, f *fixture) (CampaignView, InitiativeView) {
 // A campaign's and an initiative's budgets are phased like the plan's: saved with their own operation over
 // the plan's year in the plan currency, each change logged month by month (FR-020, FR-023).
 func TestSetCampaignPhasing_SavesAndLogs_FR020_FR023(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c, i := phasedCampaign(t, f)
 	f.advance(time.Hour)
@@ -63,6 +64,7 @@ func TestSetCampaignPhasing_SavesAndLogs_FR020_FR023(t *testing.T) {
 // The rules of a phasing save hold for initiatives too: a budget first, months of the plan's year, the
 // version the person started from (FR-020).
 func TestSetInitiativePhasing_Rules_FR020(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c, _ := phasedCampaign(t, f)
 	empty := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Ireland"})
@@ -81,6 +83,7 @@ func TestSetInitiativePhasing_Rules_FR020(t *testing.T) {
 
 // Removing a campaign's budget removes its phasing in the same save (FR-022).
 func TestCampaignBudgetRemoved_ResetsPhasing_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c, _ := phasedCampaign(t, f)
 	if _, err := f.service.SetCampaignBudgetPhasing(t.Context(), priya, c.ID, quarterly(1)); err != nil {
@@ -101,6 +104,7 @@ func TestCampaignBudgetRemoved_ResetsPhasing_FR022(t *testing.T) {
 // A Custom phasing that does not add up is a needed-to-publish problem of the campaign or initiative, and so
 // one of the plan's publish problems (FR-022).
 func TestCampaignCompleteness_PhasingProblem_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c, i := phasedCampaign(t, f)
 	if _, err := f.service.SetCampaignBudgetPhasing(t.Context(), priya, c.ID, quarterly(1)); err != nil {
@@ -140,6 +144,7 @@ func TestCampaignCompleteness_PhasingProblem_FR022(t *testing.T) {
 
 // Moves and copies keep the phasing; a copy into the next year (plan copy) moves the months one year (FR-025).
 func TestMoveCopy_KeepPhasing_FR025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c, i := phasedCampaign(t, f)
 	if _, err := f.service.SetCampaignBudgetPhasing(t.Context(), priya, c.ID, quarterly(1)); err != nil {

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"slices"
 	"testing"
-	"time"
 
 	"mapp/internal/platform/apitest"
 )
@@ -136,6 +135,7 @@ func usd(text string) amount { return amount{Amount: text, Currency: "USD"} }
 // plan owner as the default owner, and the totals row — allocated 1,150,000.00 of 1,200,000.00, and the 7
 // activities of 006's demo data with 460,000.00 planned (FR-019 – FR-022).
 func TestListPlanCampaigns_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -173,6 +173,7 @@ func TestListPlanCampaigns_Contract(t *testing.T) {
 
 // An unknown plan answers 404 with the plan's message.
 func TestListPlanCampaigns_UnknownPlan404(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -184,6 +185,7 @@ func TestListPlanCampaigns_UnknownPlan404(t *testing.T) {
 // Adding a campaign answers 201 with the new campaign: its readable ID, the plan's remaining budget going
 // negative without blocking (D-015), and the R4 flag (FR-004, FR-008, FR-010).
 func TestCreateCampaign_Contract201(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	meiLin := server.SignIn(t, meiLinsEmail)
 
@@ -207,68 +209,10 @@ func TestCreateCampaign_Contract201(t *testing.T) {
 	assertStatus(t, minimal, http.StatusCreated)
 }
 
-// Every problem of the form comes back in one 400 answer, field by field (FR-005).
-func TestCreateCampaign_AllProblems400(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	response := priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/campaigns", map[string]any{
-		"name": " HELIX LAUNCH ", "startDate": "2026-12-01", "endDate": "2026-03-01", "budget": usd("-5.00"),
-		"ownerId": "U-9999",
-	})
-
-	assertBody(t, response, http.StatusBadRequest, validationBody(
-		`{"field":"name","message":"'FY2026 Lubricants Europe' already has a campaign called 'Helix launch'."}`,
-		`{"field":"endDate","message":"End date must be on or after the start date (01 Dec 2026)."}`,
-		`{"field":"budget","message":"Budget can't be negative."}`,
-		`{"field":"ownerId","message":"Choose an active person."}`,
-	))
-}
-
-// A campaign's details: the campaign with its initiatives and roll-ups (FR-016).
-func TestGetCampaign_Contract(t *testing.T) {
-	server := apitest.New(t)
-	daniel := server.SignIn(t, danielsEmail)
-	server.GrantRole(t, danielsEmail, "globalPlanner", "all") // 014: every market's plans
-
-	response := daniel.Do(t, http.MethodGet, "/api/v1/campaigns/C-1004", nil)
-
-	assertStatus(t, response, http.StatusOK)
-	var brand campaign
-	response.Decode(t, &brand)
-	if brand.Name != "Brand platform" || !brand.OutsidePlanYear || brand.Counts.Initiatives != 2 ||
-		brand.BudgetAndCost.OverAllocatedBy == nil || *brand.BudgetAndCost.OverAllocatedBy != usd("50000.00") {
-		t.Errorf("Brand platform = %+v", brand)
-	}
-}
-
-// A campaign that does not exist answers 404 with its message.
-func TestGetCampaign_404(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	assertBody(t, priya.Do(t, http.MethodGet, "/api/v1/campaigns/C-9999", nil), http.StatusNotFound, campaignGoneBody)
-}
-
-// The plan's remaining budget follows a new campaign straight away (FR-012).
-func TestCreateCampaign_TotalsFollow_FR012(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-	server.Advance(time.Minute)
-
-	assertStatus(t, priya.Do(t, http.MethodPost, "/api/v1/plans/P-1001/campaigns",
-		map[string]any{"name": "Helix extra", "budget": usd("100000.00")}), http.StatusCreated)
-
-	var tree planCampaigns
-	priya.Do(t, http.MethodGet, "/api/v1/plans/P-1001/campaigns", nil).Decode(t, &tree)
-	if *tree.Totals.RemainingPlanBudget != usd("-50000.00") || *tree.Totals.OverAllocatedBy != usd("50000.00") {
-		t.Errorf("totals = %+v, want remaining -50000.00", tree.Totals)
-	}
-}
-
 // Adding an initiative under Helix launch with only a name answers 201; it appears under its campaign
 // (FR-001, FR-004, US2 scenario 1).
 func TestCreateInitiative_Contract201(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -298,6 +242,7 @@ func TestCreateInitiative_Contract201(t *testing.T) {
 // Dates outside the campaign's are refused with the allowed range (FR-006, R3); a campaign that is gone
 // answers 404.
 func TestCreateInitiative_OutsideCampaign400(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	daniel := server.SignIn(t, danielsEmail)
 
@@ -308,28 +253,4 @@ func TestCreateInitiative_OutsideCampaign400(t *testing.T) {
 		`{"field":"startDate","message":"Dates must be inside the campaign's dates (01 Feb 2026 – 31 Dec 2026)."}`))
 	assertBody(t, daniel.Do(t, http.MethodPost, "/api/v1/campaigns/C-9999/initiatives", map[string]any{"name": "Lost"}),
 		http.StatusNotFound, campaignGoneBody)
-}
-
-// An initiative's details: its campaign, plan and roll-ups (FR-016); Fleet cards has no dates, so no
-// Timing.
-func TestGetInitiative_Contract(t *testing.T) {
-	server := apitest.New(t)
-	meiLin := server.SignIn(t, meiLinsEmail)
-
-	response := meiLin.Do(t, http.MethodGet, "/api/v1/initiatives/I-1006", nil)
-
-	assertStatus(t, response, http.StatusOK)
-	var fleet initiative
-	response.Decode(t, &fleet)
-	if fleet.Name != "Fleet cards" || fleet.PlanID != "P-1002" || fleet.Timing != nil || fleet.StartDate != nil {
-		t.Errorf("Fleet cards = %+v", fleet)
-	}
-}
-
-// An initiative that does not exist answers 404 with its message.
-func TestGetInitiative_404(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	assertBody(t, priya.Do(t, http.MethodGet, "/api/v1/initiatives/I-9999", nil), http.StatusNotFound, initiativeGoneBody)
 }

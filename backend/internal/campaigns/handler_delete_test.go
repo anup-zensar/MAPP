@@ -37,6 +37,7 @@ var globalBrand = pathStep{Type: "plan", ID: "P-1003", Name: "FY2027 Global Bran
 // Deleting Brand platform answers its recycle-bin entry, with its 2 initiatives, so the web app can offer
 // Undo; the campaign is gone from the plan until Undo puts it back as it was (FR-028, FR-029).
 func TestDeleteCampaign_ContractAndUndo(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, "alex.morgan@shell.com")
 	var before campaign
@@ -73,6 +74,7 @@ func TestDeleteCampaign_ContractAndUndo(t *testing.T) {
 // Deleting an initiative answers its recycle-bin entry with its path; one that no longer exists answers 404
 // (FR-028).
 func TestDeleteInitiative_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, "alex.morgan@shell.com")
 

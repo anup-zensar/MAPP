@@ -65,6 +65,7 @@ func (f *fixture) putStored(t *testing.T, campaigns []Campaign, initiatives []In
 // An update without a version, or with one below 1, is refused next to "version", together with every
 // other problem; a missing record answers 404 first (FR-018).
 func TestUpdateCampaign_MissingVersion_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 
@@ -87,6 +88,7 @@ func TestUpdateCampaign_MissingVersion_FR018(t *testing.T) {
 // A save from an out-of-date copy is refused with version_conflict naming who changed the record and when;
 // nothing is saved (FR-018, D-030).
 func TestUpdateCampaign_VersionConflict_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	f.advance(time.Hour)
@@ -114,6 +116,7 @@ func TestUpdateCampaign_VersionConflict_FR018(t *testing.T) {
 // or attribute values written with spaces — answers the campaign as it is: no new version and no log entry
 // (FR-030).
 func TestUpdateCampaign_NoChangeNoVersionNoLog_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{
 		Name: "Helix launch", OwnerID: ptr("U-1002"), Budget: input("700000.00"),
@@ -139,6 +142,7 @@ func TestUpdateCampaign_NoChangeNoVersionNoLog_FR030(t *testing.T) {
 // texts: the owner's name, money as "400,000.00 USD", dates as "01 Mar 2026", and one change per attribute
 // (FR-030, US3 scenario 2).
 func TestUpdateCampaign_LogsEachChangedFieldWithTexts_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{
 		Name: "Helix launch", OwnerID: ptr("U-1002"), StartDate: day("2026-01-01"), EndDate: day("2026-12-31"),
@@ -180,6 +184,7 @@ func TestUpdateCampaign_LogsEachChangedFieldWithTexts_FR030(t *testing.T) {
 // New campaign dates that would leave initiatives outside are refused, naming each initiative with its
 // dates; nothing is saved (FR-007, US3 scenario 3).
 func TestUpdateCampaign_DatesLeavingInitiativesOutside_Refused_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", StartDate: day("2026-01-01"), EndDate: day("2026-12-31")})
 	f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social", StartDate: day("2026-02-01"), EndDate: day("2026-11-30")})
@@ -212,6 +217,7 @@ func TestUpdateCampaign_DatesLeavingInitiativesOutside_Refused_FR007(t *testing.
 // The date rules run only when the dates being saved change: a campaign that already has an initiative
 // outside its dates can still have other fields edited, and so can that initiative (D-095).
 func TestUpdateCampaign_UnchangedDatesNeverRefused_DecisionF(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	meta := record.NewMeta(priya, start)
 	c := Campaign{ID: "C-1001", PlanID: "P-1001", Name: "Helix launch", StartDate: day("2026-03-01"), EndDate: day("2026-12-31"),
@@ -236,6 +242,7 @@ func TestUpdateCampaign_UnchangedDatesNeverRefused_DecisionF(t *testing.T) {
 
 // Editing is allowed whatever the plan's status: P-1001 is published (FR-018).
 func TestUpdateCampaign_AllowedInPublishedPlan_FR018(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	update := updateOf(c, 1)
@@ -251,6 +258,7 @@ func TestUpdateCampaign_AllowedInPublishedPlan_FR018(t *testing.T) {
 // An owner who has become inactive stays when the form is saved with them; only a newly chosen owner must
 // be active (spec edge case, FR-002).
 func TestUpdateCampaign_InactiveOwnerKept_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := Campaign{ID: "C-1001", PlanID: "P-1001", Name: "Helix launch", OwnerID: ptr(sam.ID), Attributes: settings.AttributeValues{},
 		Meta: record.NewMeta(priya, start)}
@@ -275,6 +283,7 @@ func TestUpdateCampaign_InactiveOwnerKept_EdgeCase(t *testing.T) {
 // New initiative dates that would leave activities outside are refused, naming each; an ongoing activity
 // has only its start checked, an undated one is ignored (FR-007).
 func TestUpdateInitiative_DatesLeavingActivitiesOutside_Refused_FR007(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	i := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social", StartDate: day("2026-01-01"), EndDate: day("2026-12-31")})
@@ -306,6 +315,7 @@ func TestUpdateInitiative_DatesLeavingActivitiesOutside_Refused_FR007(t *testing
 
 // New initiative dates outside the campaign's are refused (FR-006, R3).
 func TestUpdateInitiative_OutsideCampaign_Refused_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", StartDate: day("2026-03-01"), EndDate: day("2026-12-31")})
 	i := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social", StartDate: day("2026-03-01"), EndDate: day("2026-11-30")})
@@ -320,6 +330,7 @@ func TestUpdateInitiative_OutsideCampaign_Refused_FR006(t *testing.T) {
 // A saved initiative change gets a new version and one "changed" entry; its name stays unique in the
 // campaign (FR-005, FR-030).
 func TestUpdateInitiative_SavedAndLogged_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Print & outdoor"})
@@ -344,6 +355,7 @@ func TestUpdateInitiative_SavedAndLogged_FR030(t *testing.T) {
 
 // Nobody's changes are restricted by role: Daniel and Mei Lin change records Priya created (FR-031, D-004).
 func TestNoRoleChecks_AnyoneChangesAnyRecord_FR031(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	i := f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social"})

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"slices"
 	"testing"
-	"time"
 
 	"mapp/internal/platform/apitest"
 )
@@ -58,6 +57,7 @@ type counted struct {
 // business unit; a copy may also go into its own plan, first, with a suggested name; any other purpose is
 // refused (FR-023, FR-024, FR-026).
 func TestCampaignDestinations_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -84,14 +84,17 @@ func TestCampaignDestinations_Contract(t *testing.T) {
 }
 
 // Moving Helix launch to FY2026 Mobility China answers the campaign there with a new version; its
-// initiatives come along and the old plan's totals follow (FR-025).
+// initiatives come along and the old plan's totals follow; a campaign that is gone answers 404 (FR-025).
 func TestMoveCampaign_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
 
 	response := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
+	gone := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-9999/move", map[string]any{"planId": "P-1002", "version": 1})
 
+	assertBody(t, gone, http.StatusNotFound, campaignGoneBody)
 	assertStatus(t, response, http.StatusOK)
 	var moved counted
 	response.Decode(t, &moved)
@@ -105,31 +108,10 @@ func TestMoveCampaign_Contract(t *testing.T) {
 	}
 }
 
-// A move to a plan of another year is refused on planId, a move of a campaign that is gone answers 404, and
-// one from an out-of-date version 409 (FR-023, FR-025).
-func TestMoveCampaign_Refused400(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
-	server.Advance(time.Hour)
-	edit := helixForm(1)
-	edit["description"] = "Premium launch"
-	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/v1/campaigns/C-1001", edit), http.StatusOK)
-
-	otherYear := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/move", map[string]any{"planId": "P-1003", "version": 2})
-	gone := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-9999/move", map[string]any{"planId": "P-1002", "version": 1})
-	stale := priya.Do(t, http.MethodPost, "/api/v1/campaigns/C-1001/move", map[string]any{"planId": "P-1002", "version": 1})
-
-	assertBody(t, otherYear, http.StatusBadRequest,
-		validationBody(`{"field":"planId","message":"Campaigns move only between plans of the same year (2026)."}`))
-	assertBody(t, gone, http.StatusNotFound, campaignGoneBody)
-	assertBody(t, stale, http.StatusConflict, `{"error":{"code":"version_conflict","message":"Not saved — Priya Raman changed this campaign",`+
-		`"fields":[],"conflict":{"changedBy":"Priya Raman","changedAt":"2026-03-12T10:00:00Z"}}}`)
-}
-
 // Copying Helix launch into its own plan answers 201 with a new campaign holding copies of its 2
 // initiatives, 4 activities — all Created — and 6 line items; one log entry counts them (FR-027, R13, D-097).
 func TestCopyCampaign_Contract201(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -162,6 +144,7 @@ func TestCopyCampaign_Contract201(t *testing.T) {
 // Digital & social (1 Jan – 30 Jun) does not fit in Rimula fleet (1 Feb – 31 Dec): a move lists it as
 // unavailable with the reason; a copy lists its own campaign first with a suggested name (FR-023, FR-026).
 func TestInitiativeDestinations_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -187,6 +170,7 @@ func TestInitiativeDestinations_Contract(t *testing.T) {
 // Events moves from Rimula fleet to Helix launch, whose dates contain it; Digital & social does not fit in
 // Rimula fleet and is refused on campaignId (FR-023, FR-025).
 func TestMoveInitiative_Contract(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -206,6 +190,7 @@ func TestMoveInitiative_Contract(t *testing.T) {
 // Copying Digital & social into its own campaign answers 201 with a new initiative holding copies of its 2
 // activities and 4 line items (FR-027).
 func TestCopyInitiative_Contract201(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 

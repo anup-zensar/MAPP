@@ -17,6 +17,7 @@ import (
 
 // A name is all a campaign needs; it is saved without its surrounding spaces (FR-005).
 func TestCreateCampaign_OnlyNameRequired_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "  Helix launch  "})
@@ -38,6 +39,7 @@ func TestCreateCampaign_OnlyNameRequired_FR005(t *testing.T) {
 // Every problem of a campaign form is reported in one attempt (FR-005, US1 scenario 5): a taken name, an
 // end before the start, a negative budget and a description of 2,001 characters together.
 func TestCreateCampaign_EveryProblemAtOnce_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 
@@ -86,13 +88,14 @@ func TestCreateCampaign_EveryProblemAtOnce_FR005(t *testing.T) {
 // moneyInputEUR is a budget in another currency than USD.
 var moneyInputEUR = moneyInput("100.00", "EUR")
 
-// A name is unique within its plan, ignoring letter case and surrounding spaces; another plan may use it
-// (FR-005).
+// A name is unique within its plan, ignoring letter case and surrounding spaces, also when a second person
+// adds it (spec edge case); another plan may use it (FR-005).
 func TestCreateCampaign_NameUniqueInPlanIgnoringCaseAndSpaces_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 
-	_, err := f.service.CreateCampaign(t.Context(), priya, "P-1001", CampaignInput{Name: "  HELIX launch "})
+	_, err := f.service.CreateCampaign(t.Context(), daniel, "P-1001", CampaignInput{Name: "  HELIX launch "})
 	assertError(t, err, problems("name", "'FY2026 Lubricants Europe' already has a campaign called 'Helix launch'."))
 
 	other := f.createCampaign(t, priya, "P-1002", CampaignInput{Name: "Helix launch"})
@@ -104,6 +107,7 @@ func TestCreateCampaign_NameUniqueInPlanIgnoringCaseAndSpaces_FR005(t *testing.T
 // A new campaign gets the next readable ID (C-1001, C-1002, …) and one "created" log entry with the actor
 // and its path (FR-004, FR-030).
 func TestCreateCampaign_ReadableIDAndCreatedEntry_FR004_FR030(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	first := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
@@ -126,6 +130,7 @@ func TestCreateCampaign_ReadableIDAndCreatedEntry_FR004_FR030(t *testing.T) {
 // The API applies no defaults: it stores exactly what the form sends — owner, dates, budget and attribute
 // values (D-093); the form fills in the defaults of FR-003.
 func TestCreateCampaign_StoresWhatItReceives_DecisionD(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	values := settings.AttributeValues{clusterID: json.RawMessage(`["SO-1003"]`), regionID: json.RawMessage(`["SO-1010"]`)}
 
@@ -150,6 +155,7 @@ func TestCreateCampaign_StoresWhatItReceives_DecisionD(t *testing.T) {
 
 // A newly chosen owner must be an active person (FR-002).
 func TestCreateCampaign_NewOwnerMustBeActive_FR002(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	for _, id := range []string{sam.ID, "U-9999"} {
 		_, err := f.service.CreateCampaign(t.Context(), priya, "P-1001", CampaignInput{Name: "Helix launch", OwnerID: &id})
@@ -161,6 +167,7 @@ func TestCreateCampaign_NewOwnerMustBeActive_FR002(t *testing.T) {
 // Problems with Shell attribute values — such as a region of no chosen cluster (R8) — are reported with
 // every other problem (FR-009, FR-005).
 func TestCreateCampaign_AttributeProblemsReportedWithOthers_FR009(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	regionProblem := errs.FieldError{Field: "attributes." + regionID, Message: "'RETAIL – CHINA' doesn't belong to the chosen cluster — choose another region."}
 	f.settings.problems[settings.LevelCampaign] = []errs.FieldError{regionProblem}
@@ -176,6 +183,7 @@ func TestCreateCampaign_AttributeProblemsReportedWithOthers_FR009(t *testing.T) 
 
 // Dates outside the plan's year only warn: the campaign is saved and flagged (FR-008, R4, US1 scenario 5).
 func TestCreateCampaign_OutsidePlanYearWarnsOnly_FR008(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	outside := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Long", StartDate: day("2026-01-01"), EndDate: day("2027-03-31")})
@@ -192,6 +200,7 @@ func TestCreateCampaign_OutsidePlanYearWarnsOnly_FR008(t *testing.T) {
 // A budget larger than what the plan has left is saved; the remaining plan budget goes negative and says by
 // how much (FR-010, D-015, US1 scenario 3).
 func TestCreateCampaign_OverAllocationAllowed_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.createCampaign(t, meiLin, "P-1002", CampaignInput{Name: "Retail growth", Budget: input("600000.00")})
 
@@ -208,6 +217,7 @@ func TestCreateCampaign_OverAllocationAllowed_FR010(t *testing.T) {
 
 // A campaign cannot be added to a plan that no longer exists (404 with the plan's message).
 func TestCreateCampaign_PlanGone_NotFound(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.service.CreateCampaign(t.Context(), priya, "P-9999", CampaignInput{Name: "Helix launch"})
@@ -217,19 +227,9 @@ func TestCreateCampaign_PlanGone_NotFound(t *testing.T) {
 	assertError(t, err, errs.NotFound("This plan no longer exists — someone may have deleted it."))
 }
 
-// Two people adding the same name under the same plan: the second gets the duplicate-name message (spec
-// edge case); the check and the save happen in one transaction.
-func TestCreateCampaign_SameNameTwice_SecondRefused_EdgeCase(t *testing.T) {
-	f := newFixture(t)
-	f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Fleet growth"})
-
-	_, err := f.service.CreateCampaign(t.Context(), daniel, "P-1001", CampaignInput{Name: "Fleet growth"})
-
-	assertError(t, err, problems("name", "'FY2026 Lubricants Europe' already has a campaign called 'Fleet growth'."))
-}
-
 // GetCampaign answers the campaign with its initiatives, and 404 once it is gone (FR-016).
 func TestGetCampaign_WithInitiatives_FR016(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	f.createInitiative(t, priya, c.ID, InitiativeInput{Name: "Digital & social"})
@@ -248,6 +248,7 @@ func TestGetCampaign_WithInitiatives_FR016(t *testing.T) {
 // An initiative's dates must lie inside its campaign's dates; the message names the allowed range with
 // both years (FR-006, R3, US2 scenario 2).
 func TestCreateInitiative_DatesInsideCampaign_FR006(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", StartDate: day("2026-03-01"), EndDate: day("2026-12-31")})
 	outside := problems("startDate", "Dates must be inside the campaign's dates (01 Mar 2026 – 31 Dec 2026).")
@@ -283,6 +284,7 @@ func TestCreateInitiative_DatesInsideCampaign_FR006(t *testing.T) {
 
 // A campaign without dates does not limit its initiatives' dates (spec edge case).
 func TestCreateInitiative_CampaignWithoutDates_NotChecked_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	c := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 
@@ -296,6 +298,7 @@ func TestCreateInitiative_CampaignWithoutDates_NotChecked_EdgeCase(t *testing.T)
 // An initiative's name is unique within its campaign, ignoring letter case and spaces; another campaign may
 // use it (FR-005). The other field rules are the campaign's.
 func TestCreateInitiative_NameUniqueInCampaign_FR005(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch"})
 	rimula := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Rimula fleet"})
@@ -318,6 +321,7 @@ func TestCreateInitiative_NameUniqueInCampaign_FR005(t *testing.T) {
 // negative allowed (US2 scenario 3, D-015) — and one "created" entry with the path plan › campaign (FR-004,
 // FR-030). A campaign that is gone answers 404.
 func TestCreateInitiative_IDRemainingAndCreatedEntry_FR004_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	helix := f.createCampaign(t, priya, "P-1001", CampaignInput{Name: "Helix launch", Budget: input("400000.00")})
 	f.createInitiative(t, priya, helix.ID, InitiativeInput{Name: "Print & outdoor", Budget: input("300000.00")})
