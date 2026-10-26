@@ -94,6 +94,7 @@ func (f *fixture) optionLabels(t *testing.T, id string) []string {
 // A new attribute is listed last in its section, with its options in the order given, shows on its level's
 // form with its marking, and is logged once with its options counted (US2-1, FR-019).
 func TestCreateAttribute_ListedLastInSection_FR019(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	shellForm(t, f)
 
@@ -128,6 +129,7 @@ func TestCreateAttribute_ListedLastInSection_FR019(t *testing.T) {
 // label twice ignoring case (once per label), an empty or too long label, and options on a type without
 // any (US2-2, FR-018).
 func TestCreateAttribute_OptionProblemsTogether_FR018(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	shellForm(t, f)
 	noOptions := mediaChannel()
@@ -154,6 +156,7 @@ func TestCreateAttribute_OptionProblemsTogether_FR018(t *testing.T) {
 // A label is unique within its level, ignoring letter case and surrounding spaces, and at most 80
 // characters; another level may use it (FR-016).
 func TestCreateAttribute_LabelUniqueWithinLevel_FR016(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	shellForm(t, f)
 	sameLevel := mediaChannel()
@@ -177,6 +180,7 @@ func TestCreateAttribute_LabelUniqueWithinLevel_FR016(t *testing.T) {
 // Help text has at most 300 characters and a section at most 60; an empty section is "Shell attributes"
 // (FR-016, FR-019).
 func TestCreateAttribute_HelpTextLimit_FR016(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	shellForm(t, f)
 	tooLong := mediaChannel()
@@ -196,6 +200,7 @@ func TestCreateAttribute_HelpTextLimit_FR016(t *testing.T) {
 // Needed to publish is for plans, campaigns and initiatives, needed to submit for activities and line items;
 // a level, type and marking must be chosen (FR-017).
 func TestCreateAttribute_MarkingByLevel_FR017(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	shellForm(t, f)
 	plan := mediaChannel()
@@ -220,6 +225,7 @@ func TestCreateAttribute_MarkingByLevel_FR017(t *testing.T) {
 
 // A yes/no attribute is always optional (FR-017).
 func TestCreateAttribute_YesNoAlwaysOptional_FR017(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	needed := ShellAttributeInput{Label: "Sponsored", Level: "activity", Type: "yesNo", Marking: "neededToSubmit"}
 	optional := needed
@@ -237,6 +243,7 @@ func TestCreateAttribute_YesNoAlwaysOptional_FR017(t *testing.T) {
 
 // Multiple choice with % split is only for activities and line items, which carry cost (FR-017, D-029).
 func TestCreateAttribute_SplitOnlyActivityAndLineItem_FR017(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	campaign := ShellAttributeInput{Label: "Country split", Level: "campaign", Type: "multipleChoiceSplit", Marking: "optional",
 		Options: []NewOption{{Label: "China"}, {Label: "India"}}}
@@ -255,6 +262,7 @@ func TestCreateAttribute_SplitOnlyActivityAndLineItem_FR017(t *testing.T) {
 // An attribute depends only on a single or multiple choice attribute of its level that comes before it,
 // and only a choice attribute depends on anything (FR-022).
 func TestCreateAttribute_DependentNeedsEarlierChoiceParent_FR022(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	tf = f.addAttributes(t, testAttribute{level: LevelActivity, label: "Notes", typ: TypeText})
@@ -290,6 +298,7 @@ func TestCreateAttribute_DependentNeedsEarlierChoiceParent_FR022(t *testing.T) {
 // Every option of a dependent attribute that is not linked to an option of the parent is listed at once;
 // links go to the parent's options only, and to active ones (US3-2, FR-022).
 func TestCreateAttribute_UnlinkedOptionsAllListed_FR022(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	china, closed := tf.option(LevelActivity, "Cluster", "Retail – China"), tf.option(LevelActivity, "Cluster", "Closed")
@@ -311,6 +320,7 @@ func TestCreateAttribute_UnlinkedOptionsAllListed_FR022(t *testing.T) {
 // A condition is made of Business unit options; without a Business unit attribute there are no conditions
 // (FR-023).
 func TestCreateAttribute_ConditionUsesBusinessUnitOptions_FR023(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	lubricants := tf.option(LevelPlan, "Business unit", "Lubricants")
@@ -333,6 +343,7 @@ func TestCreateAttribute_ConditionUsesBusinessUnitOptions_FR023(t *testing.T) {
 // A rename shows at once and the log keeps the old and the new label; saving without a change writes
 // nothing; an out-of-date version is refused (US2-4, FR-006, FR-007).
 func TestRenameAttribute_LogKeepsOldAndNew_FR006(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	channel := shellForm(t, f).attribute(LevelActivity, "Channel")
 
@@ -358,6 +369,7 @@ func TestRenameAttribute_LogKeepsOldAndNew_FR006(t *testing.T) {
 
 // Type and level are locked once a record has a value — also a record in the recycle bin only (FR-021).
 func TestUpdateAttribute_TypeAndLevelLockedWhenValues_FR021(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel := tf.attribute(LevelActivity, "Channel")
@@ -379,6 +391,7 @@ func TestUpdateAttribute_TypeAndLevelLockedWhenValues_FR021(t *testing.T) {
 // A choice attribute that gets a type without options loses its options for good, after a warning, and the
 // log says which (FR-021, D-049).
 func TestUpdateAttribute_TypeChangeRemovesOptions_FR021(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	channel := shellForm(t, f).attribute(LevelActivity, "Channel")
 	update := ShellAttributeUpdate{Type: text("text"), Version: version(1)}
@@ -404,6 +417,7 @@ func TestUpdateAttribute_TypeChangeRemovesOptions_FR021(t *testing.T) {
 // listed — and each option whose links changed is logged; depending on nothing again removes the links
 // (FR-022).
 func TestUpdateAttribute_BecomeDependentLinksAllOptions_FR022(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel, cluster := tf.attribute(LevelActivity, "Channel"), tf.attribute(LevelActivity, "Cluster")
@@ -442,6 +456,7 @@ func TestUpdateAttribute_BecomeDependentLinksAllOptions_FR022(t *testing.T) {
 // and would show as incomplete — not those in the recycle bin, those where the attribute is hidden by its
 // condition, nor a dependent without options for the chosen parent (US2-5, FR-021, D-034).
 func TestAttributeImpact_MarkingMakesIncomplete_FR021(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	region, brands := tf.attribute(LevelActivity, "Region"), tf.attribute(LevelActivity, "Brands")
@@ -491,6 +506,7 @@ func TestAttributeImpact_MarkingMakesIncomplete_FR021(t *testing.T) {
 // The Business unit attribute cannot get another type or section, be set inactive, deleted or moved,
 // because conditions depend on it; it can be renamed (FR-023, D-055).
 func TestBusinessUnit_Locked_FR023(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	unit := shellForm(t, f).attribute(LevelPlan, "Business unit")
 	const reason = "Business unit can't be deleted, set inactive, moved or given another type, because other attributes are shown or hidden by it."
@@ -514,6 +530,7 @@ func TestBusinessUnit_Locked_FR023(t *testing.T) {
 // An attribute that an active attribute depends on cannot be set inactive, and a dependent cannot be
 // reactivated while its parent is inactive (FR-004, FR-023, US2-7).
 func TestSetAttributeInactive_ParentWithActiveDependentRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	cluster, region := tf.attribute(LevelActivity, "Cluster"), tf.attribute(LevelActivity, "Region")
@@ -536,6 +553,7 @@ func TestSetAttributeInactive_ParentWithActiveDependentRefused_FR004(t *testing.
 // An attribute counts the records with a value, those in the recycle bin too, and the attributes depending
 // on it; each option counts its own records (US2-3, FR-003, FR-020).
 func TestAttributeUsage_RecordsAndBin_FR003_FR020(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel, cluster := tf.attribute(LevelActivity, "Channel"), tf.attribute(LevelActivity, "Cluster")
@@ -569,6 +587,7 @@ func TestAttributeUsage_RecordsAndBin_FR003_FR020(t *testing.T) {
 // An attribute in use cannot be deleted: the answer says where it is used and to set it inactive instead
 // (US2-7, FR-004).
 func TestDeleteAttribute_InUseRefused_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := shellForm(t, f)
 	channel, cluster := tf.attribute(LevelActivity, "Channel"), tf.attribute(LevelActivity, "Cluster")
@@ -586,6 +605,7 @@ func TestDeleteAttribute_InUseRefused_FR004(t *testing.T) {
 // An unused attribute moves to the recycle bin with its options, and Undo brings them all back exactly
 // (US2-7, FR-004).
 func TestDeleteAttribute_WithOptions_Undo_FR004(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	channel := shellForm(t, f).attribute(LevelActivity, "Channel")
 	options, _ := f.service.Options(t.Context(), channel.ID)

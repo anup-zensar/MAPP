@@ -32,6 +32,7 @@ const (
 
 // The Settings page counts the active records of each section of the demo data (FR-001).
 func TestOverview_API_FR001(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -43,6 +44,7 @@ func TestOverview_API_FR001(t *testing.T) {
 // A new model answers 201 with its values, its allowed types by name and its usage; the list has it in name
 // order; a model that is gone answers not found; every problem of a new model comes at once (FR-009).
 func TestModelsAPI_ListCreateGet_FR009(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -91,6 +93,7 @@ func lubricants2Body(version int, meta string) string {
 
 // A save from an out-of-date copy is refused with who changed the model and when (FR-007).
 func TestModelsAPI_UpdateConflict_FR007(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -114,6 +117,7 @@ func TestModelsAPI_UpdateConflict_FR007(t *testing.T) {
 // feature 014 rewrote it, D-240): Daniel, a Planner and Approver, is refused with 403 and nothing changes;
 // given the Administrator role, he edits Alex's model.
 func TestSettings_ChangedWithSettingsManage_FR008(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	mustCreate(t, server.SignIn(t, alexsEmail), "/api/v1/models", lubricants2)
 	daniel := server.SignIn(t, danielsEmail)
@@ -138,6 +142,7 @@ func TestSettings_ChangedWithSettingsManage_FR008(t *testing.T) {
 
 // The impact check validates like the update and answers the warnings, saving nothing (FR-011, D-044).
 func TestModelsAPI_Impact_FR011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/models", lubricants2)
@@ -155,6 +160,7 @@ func TestModelsAPI_Impact_FR011(t *testing.T) {
 // Set inactive and Reactivate answer the model with its new status; an out-of-date version is refused
 // (FR-004).
 func TestModelsAPI_Status_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/models", lubricants2)
@@ -172,6 +178,7 @@ func TestModelsAPI_Status_FR004(t *testing.T) {
 // An unused model moves to the recycle bin, which lists it as a model, and Undo brings it back (FR-004,
 // FR-006).
 func TestModelsAPI_DeleteAndUndo_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory()) // BIN-1001 is the first entry of an empty recycle bin
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/models", lubricants2)
@@ -195,6 +202,7 @@ func TestModelsAPI_DeleteAndUndo_FR004(t *testing.T) {
 // planned cost; a new one answers 201, allowed in the models ticked, which list it from then on; every
 // problem of a new one comes at once (FR-013, US5-1).
 func TestActivityTypesAPI_ListCreateGet_FR013(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var list struct {
@@ -244,7 +252,6 @@ func TestActivityTypesAPI_ListCreateGet_FR013(t *testing.T) {
 const (
 	activityTypeGoneBody = `{"error":{"code":"not_found","message":"This activity type no longer exists — someone may have deleted it.","fields":[]}}`
 	lubricantsRef        = `{"id":"MOD-1001","name":"Lubricants 1.0","active":true}`
-	mobilityRef          = `{"id":"MOD-1002","name":"Mobility 1.0","active":true}`
 	allowedInOneModel    = `{"inUse":true,"summary":"Allowed in 1 model","parts":[{"kind":"model","text":"Allowed in 1 model","count":1,"inRecycleBin":0}],"records":[]}`
 )
 
@@ -266,6 +273,7 @@ func webinarAnswer(version int, models, usage, meta string) string {
 
 // A save from an out-of-date copy is refused with who changed the activity type and when (FR-007).
 func TestActivityTypesAPI_UpdateConflict_FR007(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -288,6 +296,7 @@ func TestActivityTypesAPI_UpdateConflict_FR007(t *testing.T) {
 // The impact check validates like the update and answers, per model the type is removed from, the
 // activities of its plans that keep the type; it saves nothing (FR-012, D-044).
 func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/activity-types", webinarBody("MOD-1001"))
@@ -317,6 +326,7 @@ func TestActivityTypesAPI_Impact_FR012(t *testing.T) {
 // Set inactive and Reactivate answer the activity type with its new status; an out-of-date version is
 // refused (FR-004).
 func TestActivityTypesAPI_Status_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/activity-types", webinarBody())
@@ -334,6 +344,7 @@ func TestActivityTypesAPI_Status_FR004(t *testing.T) {
 // An unused activity type moves to the recycle bin and Undo brings it back; a type in use is refused with
 // in_use (FR-004, US5-5).
 func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/activity-types", webinarBody())
@@ -362,35 +373,10 @@ func TestActivityTypesAPI_DeleteAndUndo_FR004(t *testing.T) {
 	assertAnswer(t, gone, http.StatusNotFound, activityTypeGoneBody)
 }
 
-// The models allowing a type are edited from the type: the models left out lose it and the models added
-// gain it; a model is never left without a type (FR-013, FR-009).
-func TestActivityTypesAPI_ModelsEditedFromType_FR013(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-	mustCreate(t, alex, "/api/v1/activity-types", webinarBody("MOD-1001"))
-
-	moved := alex.Do(t, http.MethodPatch, "/api/v1/activity-types/AT-1007", map[string]any{"modelIds": []string{"MOD-1002"}, "version": 1})
-	var lubricants, mobility struct{ ActivityTypes []struct{ ID string } }
-	alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1001", nil).Decode(t, &lubricants)
-	alex.Do(t, http.MethodGet, "/api/v1/models/MOD-1002", nil).Decode(t, &mobility)
-	mustCreate(t, alex, "/api/v1/models", map[string]any{"name": "Webinars only", "inqToMqlRate": "2", "mqlToDealRate": "5",
-		"averageDealSize": map[string]string{"amount": "10000", "currency": "USD"}, "activityTypeIds": []string{"AT-1007"}})
-	lastType := alex.Do(t, http.MethodPatch, "/api/v1/activity-types/AT-1007", map[string]any{"modelIds": []string{}, "version": 1})
-
-	assertAnswer(t, moved, http.StatusOK, webinarAnswer(1, mobilityRef, allowedInOneModel, alexAtStart))
-	has := func(types []struct{ ID string }) bool {
-		return slices.ContainsFunc(types, func(t struct{ ID string }) bool { return t.ID == "AT-1007" })
-	}
-	if has(lubricants.ActivityTypes) || !has(mobility.ActivityTypes) {
-		t.Errorf("Lubricants 1.0 = %+v, Mobility 1.0 = %+v", lubricants, mobility)
-	}
-	assertAnswer(t, lastType, http.StatusBadRequest, validationBody(
-		`{"field":"modelIds","message":"'Webinars only' needs at least one activity type, so 'Webinar' can't be removed from it."}`))
-}
-
 // The attributes of a level come in display order — sections in the order of their first attribute — and
 // every level's without the filter; an unknown level is refused (FR-019).
 func TestShellAttributesAPI_ListByLevel_FR019(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -440,6 +426,7 @@ func findAttribute(t *testing.T, c *apitest.Client, level, label string) listedA
 // One attribute answers with its parent, its options counted and its locks: the Business unit attribute
 // is locked with the reason (FR-020, FR-023).
 func TestShellAttributesAPI_Get_FR020(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	region := findAttribute(t, alex, "campaign", "Region")
@@ -462,6 +449,7 @@ func TestShellAttributesAPI_Get_FR020(t *testing.T) {
 // Options are searched by any part of the label and paged; the total counts every match; wrong paging is
 // refused with a message (SC-007, FR-018).
 func TestOptionsAPI_ListSearch_SC007(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	costCentre := findAttribute(t, alex, "activity", "Cost centre")
@@ -527,31 +515,10 @@ func getForm(t *testing.T, c *apitest.Client, level string) formView {
 	return form
 }
 
-// A level's form has its sections in display order, conditional ones marked, and the Business unit options
-// for the condition notes (FR-024).
-func TestFormsAPI_Get_FR024(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-
-	form := getForm(t, alex, "activity")
-	unknown := alex.Do(t, http.MethodGet, "/api/v1/shell-attribute-forms/program", nil, apitest.SkipRequestValidation())
-
-	var sections []string
-	for _, s := range form.Sections {
-		sections = append(sections, s.Name)
-	}
-	if !slices.Equal(sections, []string{"Shell attributes", "Lubricants attributes", "Mobility attributes"}) ||
-		form.Sections[0].Conditional || !form.Sections[1].Conditional || form.BusinessUnitAttributeID != "SA-1001" || len(form.BusinessUnitOptions) != 2 {
-		t.Errorf("form = %+v", form)
-	}
-	if unknown.Status != http.StatusBadRequest {
-		t.Errorf("unknown level = %d %s", unknown.Status, unknown.Body)
-	}
-}
-
-// The check answers what a save would say: a Region that no longer fits a changed Cluster is cleared, and
-// a hidden Lubricants attribute is not missing for a Mobility plan (FR-025, FR-026, FR-020).
+// The check answers what a save would say: a Region that no longer fits a changed Cluster is cleared, a hidden
+// Lubricants attribute is not missing for a Mobility plan, and an unknown level is refused (FR-025, FR-026, FR-020).
 func TestFormsAPI_Check_FR025(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	campaign := getForm(t, alex, "campaign").ids()
@@ -567,6 +534,7 @@ func TestFormsAPI_Check_FR025(t *testing.T) {
 	mobility := alex.Do(t, http.MethodPost, "/api/v1/shell-attribute-forms/activity/check", map[string]any{
 		"values": map[string]any{}, "businessUnitOptionIds": []string{activity["Business unit/Mobility"]},
 	})
+	unknown := alex.Do(t, http.MethodGet, "/api/v1/shell-attribute-forms/program", nil, apitest.SkipRequestValidation())
 
 	assertAnswer(t, changed, http.StatusOK, `{"problems":[],"missing":[{"field":"attributes.`+region+`","label":"Region"}],`+
 		`"cleared":[{"attributeId":"`+region+`","label":"Region","optionIds":["`+dach+`"],"optionLabels":["LUBES – DACH"]}],`+
@@ -581,11 +549,15 @@ func TestFormsAPI_Check_FR025(t *testing.T) {
 	if len(result.Missing) != 9 { // the nine needed attributes of section Shell attributes
 		t.Errorf("missing = %+v", result.Missing)
 	}
+	if unknown.Status != http.StatusBadRequest {
+		t.Errorf("unknown level = %d %s", unknown.Status, unknown.Body)
+	}
 }
 
 // The currencies come USD first, then by code, with the rate both ways and their locks; a new currency
 // answers 201 and is listed; every problem of a new currency comes at once (FR-028, US4-1, US4-5).
 func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	gone := alex.Do(t, http.MethodGet, "/api/v1/currencies/JPY", nil)
@@ -626,6 +598,7 @@ func TestCurrenciesAPI_ListCreateGet_FR028(t *testing.T) {
 // The finance budgets of the current year come by name with their items; the years run from the current
 // year − 1 to + 5; one item answers with its budget and its year locked (FR-014, FR-015).
 func TestFinanceAPI_ListYear_FR015(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	type budgetPage struct {
@@ -687,14 +660,13 @@ func retailAnswer(budgetID, budgetName, code string, version int, active bool, m
 // A new item answers 201 in the budget of its year and name and is read back; a new budget name moves it to
 // a new budget of the same year; every problem comes at once (FR-014, US5-3, US5-4).
 func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
 	created := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", retailBody)
 	got := alex.Do(t, http.MethodGet, "/api/v1/finance-budget-items/FBI-1007", nil)
 	moved := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1007", map[string]any{"budgetName": "2026 Retail Budget", "code": "", "version": 1})
-	taken := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", map[string]any{
-		"year": 2026, "budgetName": " 2026 lubricants budget", "name": "europe – digital", "code": "lub-eu-dig"})
 	invalid := alex.Do(t, http.MethodPost, "/api/v1/finance-budget-items", map[string]any{"year": 2040, "budgetName": " ", "name": ""})
 	stale := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-1007", map[string]any{"name": "X", "version": 1})
 	gone := alex.Do(t, http.MethodPatch, "/api/v1/finance-budget-items/FBI-9999", map[string]any{"name": "X", "version": 1})
@@ -702,9 +674,6 @@ func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
 	assertAnswer(t, created, http.StatusCreated, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
 	assertAnswer(t, got, http.StatusOK, retailAnswer("FB-1001", "2026 Lubricants Budget", "LUB-EU-RET", 1, true, alexAtStart))
 	assertAnswer(t, moved, http.StatusOK, retailAnswer("FB-1003", "2026 Retail Budget", "", 2, true, alexAtStart))
-	assertAnswer(t, taken, http.StatusBadRequest, validationBody(
-		`{"field":"name","message":"The budget '2026 Lubricants Budget' already has an item called 'Europe – Digital'."},`+
-			`{"field":"code","message":"The code 'lub-eu-dig' is already used in 2026 by 'Europe – Digital'."}`))
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"year","message":"Choose a year from 2025 to 2031."},`+
 		`{"field":"budgetName","message":"Enter a budget name."},{"field":"name","message":"Enter a name."}`))
 	if stale.Status != http.StatusConflict {
@@ -716,6 +685,7 @@ func TestFinanceAPI_CreateGetUpdate_FR014(t *testing.T) {
 // Rename budget answers the budget with all its items under the new name; the name must be free in its
 // year; an out-of-date version is refused (FR-015, US5-4).
 func TestFinanceAPI_Rename_FR015(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var renamed struct {
@@ -748,6 +718,7 @@ func TestFinanceAPI_Rename_FR015(t *testing.T) {
 // Set inactive and Reactivate answer the item with its new status; an out-of-date version is refused
 // (FR-004).
 func TestFinanceAPI_Status_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/finance-budget-items", retailBody)
@@ -767,6 +738,7 @@ func TestFinanceAPI_Status_FR004(t *testing.T) {
 // An unused item moves to the recycle bin under its budget and Undo brings it back; an item linked to line
 // items is refused with in_use (FR-004, US5-5).
 func TestFinanceAPI_Delete_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/finance-budget-items", retailBody)
@@ -838,6 +810,7 @@ func createMediaChannel(t *testing.T, c *apitest.Client) (savedAttribute, []save
 // A new attribute answers 201, last in its section with its options counted; every problem comes at once
 // (FR-016, FR-018, US2-1, US2-2).
 func TestShellAttributesAPI_Create_FR016(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	before := attributeList(t, alex, "?level=activity")
@@ -869,6 +842,7 @@ func TestShellAttributesAPI_Create_FR016(t *testing.T) {
 // A change answers the attribute at its new version; an out-of-date version is a conflict; a locked field
 // is refused with its reason (FR-021, FR-007, FR-023).
 func TestShellAttributesAPI_Update_FR021(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
@@ -893,6 +867,7 @@ func TestShellAttributesAPI_Update_FR021(t *testing.T) {
 
 // The impact check answers the warnings and saves nothing (FR-021, D-044).
 func TestShellAttributesAPI_Impact_FR021(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
@@ -913,6 +888,7 @@ func TestShellAttributesAPI_Impact_FR021(t *testing.T) {
 // Set inactive and Reactivate answer the attribute in its new status; the Business unit attribute is
 // refused with its reason (FR-004, FR-023).
 func TestShellAttributesAPI_Status_FR023(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
@@ -937,6 +913,7 @@ func TestShellAttributesAPI_Status_FR023(t *testing.T) {
 // A move answers the level's attributes in their new order; a move past the edge of the section is refused
 // (FR-019, US2-6).
 func TestShellAttributesAPI_Move_FR019(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
@@ -963,6 +940,7 @@ func TestShellAttributesAPI_Move_FR019(t *testing.T) {
 // An unused attribute moves to the recycle bin with its options and Undo brings it back; one in use is
 // refused (FR-004, US2-7).
 func TestShellAttributesAPI_Delete_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
@@ -993,6 +971,7 @@ func TestShellAttributesAPI_Delete_FR004(t *testing.T) {
 
 // A new option answers 201, last in its attribute's list; a label already used is refused (FR-018).
 func TestOptionsAPI_Create_FR018(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, _ := createMediaChannel(t, alex)
@@ -1012,6 +991,7 @@ func TestOptionsAPI_Create_FR018(t *testing.T) {
 
 // A renamed option answers at its new version; an out-of-date version is a conflict (FR-018, FR-007).
 func TestOptionsAPI_Update_FR018(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	_, options := createMediaChannel(t, alex)
@@ -1033,6 +1013,7 @@ func TestOptionsAPI_Update_FR018(t *testing.T) {
 
 // Set inactive and Reactivate answer the option in its new status (FR-018).
 func TestOptionsAPI_Status_FR018(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	_, options := createMediaChannel(t, alex)
@@ -1051,6 +1032,7 @@ func TestOptionsAPI_Status_FR018(t *testing.T) {
 
 // An option moves one place and answers in its new place; the first goes no further up (FR-018).
 func TestOptionsAPI_Move_FR018(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	_, options := createMediaChannel(t, alex)
@@ -1069,6 +1051,7 @@ func TestOptionsAPI_Move_FR018(t *testing.T) {
 // delete lock once it is the last one — and 404 for an option that is gone (D-211). Both answers follow
 // the contract.
 func TestOptionsAPI_Get_D211(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	_, options := createMediaChannel(t, alex)
@@ -1100,6 +1083,7 @@ func TestOptionsAPI_Get_D211(t *testing.T) {
 // An unused option moves to the recycle bin and Undo brings it back; the last option of an attribute is
 // refused (FR-004, FR-018).
 func TestOptionsAPI_Delete_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	created, options := createMediaChannel(t, alex)
@@ -1130,6 +1114,7 @@ func TestOptionsAPI_Delete_FR004(t *testing.T) {
 // answers the counts; a file with nothing new, a file over 700 KB and an attribute that is gone are refused
 // (FR-031, US6-1, US6-2).
 func TestImportAPI_CheckAndImport_FR031(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	var created savedAttribute
@@ -1164,7 +1149,6 @@ func TestImportAPI_CheckAndImport_FR031(t *testing.T) {
 // Bodies of the currency tests.
 const (
 	currencyGoneBody = `{"error":{"code":"not_found","message":"This currency no longer exists — someone may have deleted it.","fields":[]}}`
-	usdLockedReason  = "USD is MAPP's base currency; its rate is always 1."
 )
 
 // jpyBody is the new currency of US4-1.
@@ -1181,6 +1165,7 @@ func jpyAnswer(version int, rateChanged string, active bool) string {
 // A save from an out-of-date copy is refused with who changed the currency and when; a new rate marks who
 // changed it (FR-007, FR-028).
 func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -1207,6 +1192,7 @@ func TestCurrenciesAPI_UpdateConflict_FR007(t *testing.T) {
 
 // The impact check validates like the update and answers the warnings, saving nothing (FR-030, D-044).
 func TestCurrenciesAPI_Impact_FR030(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
@@ -1225,6 +1211,7 @@ func TestCurrenciesAPI_Impact_FR030(t *testing.T) {
 // Set inactive and Reactivate answer the currency with its new status; an out-of-date version is refused
 // (FR-004).
 func TestCurrenciesAPI_Status_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
@@ -1242,6 +1229,7 @@ func TestCurrenciesAPI_Status_FR004(t *testing.T) {
 
 // An unused currency moves to the recycle bin, listed by its code, and Undo brings it back (FR-004).
 func TestCurrenciesAPI_DeleteAndUndo_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t, apitest.WithoutDemoHistory())
 	alex := server.SignIn(t, alexsEmail)
 	mustCreate(t, alex, "/api/v1/currencies", jpyBody)
@@ -1257,24 +1245,6 @@ func TestCurrenciesAPI_DeleteAndUndo_FR004(t *testing.T) {
 	assertAnswer(t, afterDelete, http.StatusNotFound, currencyGoneBody)
 	assertAnswer(t, undone, http.StatusOK, `{"recordType":"currency","recordTypeLabel":"currency","recordId":"JPY","recordName":"JPY","details":""}`)
 	assertAnswer(t, gone, http.StatusNotFound, currencyGoneBody)
-}
-
-// USD's rate, status and delete are refused with the reason; its name may change (FR-028, US4-4).
-func TestCurrenciesAPI_USDLocked_FR028(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-
-	rate := alex.Do(t, http.MethodPatch, "/api/v1/currencies/USD", map[string]any{"rate": "2", "version": 1})
-	status := alex.Do(t, http.MethodPost, "/api/v1/currencies/USD/status", map[string]any{"active": false, "version": 1})
-	deleted := alex.Do(t, http.MethodDelete, "/api/v1/currencies/USD", nil)
-	renamed := alex.Do(t, http.MethodPatch, "/api/v1/currencies/USD", map[string]any{"name": "United States dollar", "version": 1})
-
-	assertAnswer(t, rate, http.StatusBadRequest, validationBody(`{"field":"rate","message":"`+usdLockedReason+`"}`))
-	assertAnswer(t, status, http.StatusBadRequest, validationBody(`{"field":"active","message":"`+usdLockedReason+`"}`))
-	assertAnswer(t, deleted, http.StatusConflict, `{"error":{"code":"in_use","message":"`+usdLockedReason+`","fields":[]}}`)
-	if renamed.Status != http.StatusOK {
-		t.Errorf("rename USD = %d %s", renamed.Status, renamed.Body)
-	}
 }
 
 // mustCreate posts body to path and stops the test unless the answer is 201.

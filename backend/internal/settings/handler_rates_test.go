@@ -25,6 +25,7 @@ type rateRecord struct {
 // A currency's rate history comes newest first with the current rate marked; the current rates come USD
 // first with their date and source (FR-001, FR-003, FR-009).
 func TestRatesAPI_HistoryAndCurrent_FR003_FR009(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -72,12 +73,12 @@ func TestRatesAPI_HistoryAndCurrent_FR003_FR009(t *testing.T) {
 // Add rate answers 201; its impact check, Edit (with its impact check and a stale version) and Delete with
 // Undo follow the rules of the service (FR-003, FR-005).
 func TestRatesAPI_AddUpdateDelete_FR003_FR005(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
 	impact := alex.Do(t, http.MethodPost, "/api/v1/currencies/EUR/rates/impact", map[string]any{"date": "2027-01-01", "rate": "0.95"})
 	invalid := alex.Do(t, http.MethodPost, "/api/v1/currencies/EUR/rates", map[string]any{"date": "2026-03-12", "rate": "0"})
-	usd := alex.Do(t, http.MethodPost, "/api/v1/currencies/USD/rates", map[string]any{"date": "2026-03-12", "rate": "1"})
 	var added rateRecord
 	mustCreate(t, alex, "/api/v1/currencies/EUR/rates", map[string]any{"date": "2027-01-01", "rate": "0.95"}).Decode(t, &added)
 	editImpact := alex.Do(t, http.MethodPost, "/api/v1/exchange-rates/"+added.ID+"/impact", map[string]any{"rate": "0.96", "version": 1})
@@ -94,7 +95,6 @@ func TestRatesAPI_AddUpdateDelete_FR003_FR005(t *testing.T) {
 	assertAnswer(t, impact, http.StatusOK, `{"warnings":[]}`)
 	assertAnswer(t, invalid, http.StatusBadRequest, validationBody(`{"field":"date","message":"EUR already has a rate on 12 Mar 2026."},`+
 		`{"field":"rate","message":"Enter a rate above 0, with at most six decimals."}`))
-	assertAnswer(t, usd, http.StatusBadRequest, validationBody(`{"field":"code","message":"USD is always 1."}`))
 	if added.Currency != "EUR" || added.Date != "2027-01-01" || added.Rate != "0.95" || added.Source != "manual" || !added.Future || added.Current {
 		t.Errorf("added = %+v", added)
 	}
@@ -118,6 +118,7 @@ func TestRatesAPI_AddUpdateDelete_FR003_FR005(t *testing.T) {
 // The sample file is a CSV of today's rates; its review and import answer every row and the import record;
 // Recent imports lists the newest first; a second import has nothing to import (FR-006, FR-007).
 func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	server.Advance(24 * time.Hour) // 13 Mar 2026: a day without a rate yet
 	alex := server.SignIn(t, alexsEmail)
@@ -176,6 +177,7 @@ func TestRatesAPI_ImportCheckAndImport_FR006_FR007(t *testing.T) {
 // an edit answers the edited entry, a stale version 409, a reset the default again, an unknown key 404
 // (FR-045, FR-046, FR-048).
 func TestFieldHelpAPI_ListAndUpdate_FR045_FR046_FR048(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 

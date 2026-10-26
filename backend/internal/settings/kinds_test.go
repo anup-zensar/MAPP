@@ -13,6 +13,7 @@ import (
 // them (FR-006, data model §12): percentages, money, rates, the names of linked records, status words and
 // the words of the attribute enums.
 func TestKinds_DescribeTexts_FR006(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	digital := f.addType(t, "Digital media", true)

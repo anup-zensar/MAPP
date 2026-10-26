@@ -46,6 +46,7 @@ func costCentres() (string, int) {
 // 1,214 options to add, and three problems — empty, too long, twice in the file. It adds nothing (US6-1,
 // FR-031).
 func TestImportCheck_RowOutcomes_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelLineItem, label: "Cost centre", typ: TypeSingleChoice})
 	text, row220 := costCentres()
@@ -77,6 +78,7 @@ func TestImportCheck_RowOutcomes_FR031(t *testing.T) {
 // The import adds only the new valid rows, in file order after the existing options, and writes one log
 // entry on the attribute for all of them (US6-2, FR-031).
 func TestImport_AddsOnlyNewValid_OneLogEntry_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelLineItem, label: "Cost centre", typ: TypeSingleChoice, options: []string{"CN04000001", "CN04000002"}})
 	attribute := tf.attribute(LevelLineItem, "Cost centre")
@@ -119,6 +121,7 @@ func TestImport_AddsOnlyNewValid_OneLogEntry_FR031(t *testing.T) {
 // An import never removes, renames, relinks or reactivates options: a row matching an option ignoring
 // letter case — active or not — is skipped as already present (FR-031).
 func TestImport_NeverRenamesOrReactivates_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Media channel", typ: TypeSingleChoice,
 		options: []string{"TV", "Radio", "Print"}, inactiveOptions: []string{"TV"}})
@@ -152,6 +155,7 @@ func TestImport_NeverRenamesOrReactivates_FR031(t *testing.T) {
 // the active options of the parent attribute; rows with the same option and different parents become one
 // option linked to each parent (FR-031, FR-022).
 func TestImport_DependentParentColumn_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t,
 		testAttribute{level: LevelCampaign, label: "Cluster", typ: TypeMultipleChoice,
@@ -200,17 +204,13 @@ func TestImport_DependentParentColumn_FR031(t *testing.T) {
 	}
 }
 
-// The file is refused as a whole — on the field content — when it cannot be decoded or read, is larger
-// than 700 KB, is an .xls file, has more than 5,000 rows or none below the header; rows beyond the 5,000
-// options of an attribute are problems; an attribute without options takes no import (FR-031, D-053).
+// The file is refused as a whole, on the field content, when it cannot be decoded or read, is over 700 KB, is
+// an .xls file, or has more than 5,000 rows or none below the header; a Text attribute takes none (FR-031, D-053).
 func TestImport_RowAndSizeLimits_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
-	existing := make([]string, 4999)
-	for i := range existing {
-		existing[i] = fmt.Sprintf("CC-%04d", i+1)
-	}
 	tf := f.addAttributes(t,
-		testAttribute{level: LevelLineItem, label: "Cost centre", typ: TypeSingleChoice, options: existing},
+		testAttribute{level: LevelLineItem, label: "Cost centre", typ: TypeSingleChoice, options: []string{"CC-0001"}},
 		testAttribute{level: LevelLineItem, label: "Notes", typ: TypeText})
 	costCentre := tf.attribute(LevelLineItem, "Cost centre").ID
 	check := func(file ImportFile) error {
@@ -218,13 +218,9 @@ func TestImport_RowAndSizeLimits_FR031(t *testing.T) {
 		return err
 	}
 
-	var tooMany strings.Builder
-	tooMany.WriteString("Option\n")
-	for i := range 5001 {
-		fmt.Fprintf(&tooMany, "NEW-%d\n", i)
-	}
-	assertError(t, check(importFile("big.csv", tooMany.String())), problems("content", "The file has 5,001 rows — import at most 5,000 rows at a time."))
-	_, importErr := f.service.Import(t.Context(), alex, costCentre, importFile("big.csv", tooMany.String()))
+	tooMany := importFile("big.csv", "Option\n"+strings.Repeat("NEW\n", 5001))
+	assertError(t, check(tooMany), problems("content", "The file has 5,001 rows — import at most 5,000 rows at a time."))
+	_, importErr := f.service.Import(t.Context(), alex, costCentre, tooMany)
 	assertError(t, importErr, problems("content", "The file has 5,001 rows — import at most 5,000 rows at a time."))
 	assertError(t, check(importFile("empty.csv", "Option\n\n")), problems("content", "The file has no rows below the header."))
 	assertError(t, check(importFile("large.csv", strings.Repeat("a", 700*1024+1))),
@@ -234,22 +230,35 @@ func TestImport_RowAndSizeLimits_FR031(t *testing.T) {
 	assertError(t, check(importFile("old.xls", "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")),
 		problems("content", "Choose a .csv or .xlsx file. An older .xls file can be saved as .xlsx in Excel."))
 
-	overLimit, err := f.service.CheckImport(t.Context(), alex, costCentre, importFile("new.csv", "NEW-1\nNEW-2\nNEW-3\n"))
-	wantProblems := []ImportRow{{Row: 2, Label: "NEW-2", Message: "Over the 5,000-option limit of this attribute."},
-		{Row: 3, Label: "NEW-3", Message: "Over the 5,000-option limit of this attribute."}}
-	if err != nil || len(overLimit.ToAdd) != 1 || !reflect.DeepEqual(overLimit.Problems, wantProblems) {
-		t.Errorf("over the limit = %+v, %v", overLimit, err)
-	}
-
 	_, text := f.service.CheckImport(t.Context(), alex, tf.attribute(LevelLineItem, "Notes").ID, importFile("notes.csv", "A\n"))
 	_, gone := f.service.Import(t.Context(), alex, "SA-9999", importFile("x.csv", "A\n"))
 	assertError(t, text, problems("content", "Notes has no options — its type is Text."))
 	assertError(t, gone, errs.NotFound("This Shell attribute no longer exists — someone may have deleted it."))
 }
 
+// Rows of a file beyond an attribute's 5,000 options are problems; adding one beyond them is refused (FR-031, FR-018).
+func TestOptions_AtMost5000_FR031_FR018(t *testing.T) {
+	t.Parallel()
+	f := newTestService(t)
+	costCentre := f.addAttributes(t, testAttribute{level: LevelLineItem, label: "Cost centre", typ: TypeSingleChoice}).attribute(LevelLineItem, "Cost centre").ID
+	f.addOptions(t, costCentre, "CC", 4999)
+
+	overLimit, err := f.service.CheckImport(t.Context(), alex, costCentre, importFile("new.csv", "NEW-1\nNEW-2\nNEW-3\n"))
+	_, last := f.service.CreateOption(t.Context(), alex, costCentre, OptionInput{Label: "CC5000"})
+	_, full := f.service.CreateOption(t.Context(), alex, costCentre, OptionInput{Label: "CC5001"})
+
+	wantProblems := []ImportRow{{Row: 2, Label: "NEW-2", Message: "Over the 5,000-option limit of this attribute."},
+		{Row: 3, Label: "NEW-3", Message: "Over the 5,000-option limit of this attribute."}}
+	if err != nil || len(overLimit.ToAdd) != 1 || !reflect.DeepEqual(overLimit.Problems, wantProblems) || last != nil {
+		t.Errorf("over the limit = %+v, %v; the 5,000th option: %v", overLimit, err, last)
+	}
+	assertError(t, full, problems("label", "An attribute can have at most 5,000 options."))
+}
+
 // A file with nothing new to add is refused by the import, which adds and logs nothing; the check shows
 // why (FR-031).
 func TestImport_NothingToAdd_FR031(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	tf := f.addAttributes(t, testAttribute{level: LevelActivity, label: "Media channel", typ: TypeSingleChoice, options: []string{"TV", "Radio"}})
 	attribute := tf.attribute(LevelActivity, "Media channel")

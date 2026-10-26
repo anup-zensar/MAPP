@@ -12,6 +12,7 @@ import (
 // joins the parts with " · ", and lists the live plans of models and finance budgets by name; an unused
 // record reads "Not used yet" (FR-003, data model §10).
 func TestUsage_SummaryAndRecycleBin_FR003(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	webinar := f.addType(t, "Webinar", true)
@@ -93,6 +94,7 @@ func TestUsage_SummaryAndRecycleBin_FR003(t *testing.T) {
 // setting (spec edge case): a model in the bin keeps its activity types, a dependent attribute in the bin
 // keeps its parent, and its options keep their parent options.
 func TestUsage_SettingsInBinCount_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newTestService(t)
 	event := f.addType(t, "Event", true)
 	model := f.addModel(t, "Lubricants 1.0", event.ID)
