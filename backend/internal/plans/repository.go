@@ -24,6 +24,4 @@ type Repository interface {
 	Put(ctx context.Context, p Plan) error
 	// Delete removes the plan with id; removing one that does not exist changes nothing.
 	Delete(ctx context.Context, id string) error
-	// ListByIDs returns the plans with ids that are stored.
-	ListByIDs(ctx context.Context, ids []string) ([]Plan, error)
 }
