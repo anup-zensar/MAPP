@@ -154,7 +154,7 @@ history kinds and handlers (docs/sdd/plan-module-build.md).
 5. **Tests** — `service_test.go` inside the package (`package plans`) for every rule;
    `handler_test.go` as `package plans_test` with `apitest.New(t)` and `server.SignIn(t, email)`, for every
    endpoint. Test names mention the requirement they prove (`TestCreateFolder_Validation_FR020`).
-6. **Contract** — add the paths and schemas to `api/openapi.yaml`, then run `npm run api:types` in
+6. **Contract** — add the paths and schemas to `api/openapi.yaml`, then run `pnpm run api:types` in
    `frontend/`.
 7. **Wiring** — in `internal/app/app.go`: build the repository and the service, register the kinds with
    `historyService.Register` (parents first), and call `NewHandler(…).Routes(router, signedIn)`.

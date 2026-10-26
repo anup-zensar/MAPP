@@ -16,13 +16,13 @@ natively, and Docker or Podman stays optional for everyone.
 - **`backend/Dockerfile`**: a `golang:1.27.3-alpine` stage builds `api` and `seed` with `CGO_ENABLED=0`,
   `-trimpath` and `-ldflags="-s -w"`; the run stage is `gcr.io/distroless/static-debian13:nonroot`, with no
   shell or package manager, running as user 65532.
-- **`frontend/Dockerfile`**: a `node:24-alpine` stage runs `npm ci` and `npm run build`; the run stage is
+- **`frontend/Dockerfile`**: a `node:24-alpine` stage runs `pnpm install --frozen-lockfile` and `pnpm run build`; the run stage is
   `nginxinc/nginx-unprivileged:1.29-alpine` (non-root), which serves the production build, falls back to
   `index.html` for the app's routes, caches the hashed assets for a year and forwards `/api/` to the API
   container with the browser's `Host`, as the Vite development server does. Node and `node_modules` stay
   in the build stage. Vite's development or preview server was considered: no extra config, but the image
   keeps Node and every package, several hundred MB instead of about 50.
-- **Layer order**: `go.mod`/`go.sum` and `package.json`/`package-lock.json` are copied and installed before
+- **Layer order**: `go.mod`/`go.sum` and `package.json`/`pnpm-lock.yaml` are copied and installed before
   the code, so a rebuild after a code change reuses the downloaded modules. No BuildKit-only syntax, so
   Docker's classic builder and Podman build the same files. Both images are two stages; only the
   binaries and the built web files reach the final images.

@@ -1,13 +1,16 @@
 <!--
 Sync Impact Report
-- Version change: 4.1.0 → 4.2.0 (MINOR: guidance changed for existing files; no principle removed)
-- Modified principles: VIII Clean Construction — files over the comment budget are brought within
-  it by the first change that touches them (whole file), except in features 025, 027 and 028
-- Modified sections: Governance (Alignment of existing code), Amendment History
+- Version change: 4.2.0 → 4.3.0 (MINOR: the package manager changes; no principle removed)
+- Modified principles: VII Security and Privacy by Design — release age enforced by pnpm's
+  minimumReleaseAge instead of npm's min-release-age
+- Modified sections: Frontend Standards (technology table, repository layout), quality gates 7–13
+  and 16 (commands), Amendment History
 - Added sections: none
 - Removed sections: none
-- Files changed with this amendment: CLAUDE.md, backend/docs/GO_STANDARDS.md, docs/sdd/feature-map.md
-  (021 dropped)
+- Files changed with this amendment: frontend/package.json, frontend/pnpm-lock.yaml,
+  frontend/pnpm-workspace.yaml (replaces .npmrc and package-lock.json), CI, frontend/Dockerfile,
+  frontend/playwright.config.ts, READMEs, agent guidance, GO_STANDARDS, quality-gates, ADR-0010,
+  ADR-0012, ADR-0015
 - Templates: no change needed (plan-template.md reads its gates from this file)
 - Follow-up TODOs:
   - TODO(DARK_TOKENS): dark-theme values for Disabled Text, Link Hover and an error-text red
@@ -258,8 +261,8 @@ tests that prove nothing cost time to write, read and maintain, and erode trust 
   Dependencies MUST be scanned for known vulnerabilities on every build; a reachable high or
   critical vulnerability blocks merge.
 - **Release age:** a package version — an npm package or a Go module — MUST have been published at
-  least 24 hours before it is installed or added. `frontend/.npmrc` sets npm's built-in
-  `min-release-age=1` and the web app requires an npm that honours it; Go has no such setting, so
+  least 24 hours before it is installed or added. `frontend/pnpm-workspace.yaml` sets pnpm's built-in
+  `minimumReleaseAge: 1440` (minutes) and the web app requires that pnpm version; Go has no such setting, so
   the reviewer checks the publication date of every Go module a pull request adds or upgrades.
 
 **Rationale:** Shell's markets must see and change only their own plans, and adding real sign-in
@@ -650,16 +653,16 @@ These rules apply to everything under `frontend/` and refine the Core Principles
 |---|---|
 | Language | TypeScript in strict mode with the compiler options in F5; no JavaScript source files under `src/` |
 | UI library | React with function components and hooks; the major version declared in `package.json` |
-| Build and dev server | Vite; `npm run build` type-checks with `tsc -b` before bundling |
+| Build and dev server | Vite; `pnpm run build` type-checks with `tsc -b` before bundling |
 | Tooling runtime | An Active or Maintenance LTS release of Node.js, declared in `engines.node` |
-| Package manager | npm with a committed `package-lock.json`; CI installs with `npm ci` |
+| Package manager | pnpm (version pinned by `packageManager` in `package.json`, through Corepack) with a committed `pnpm-lock.yaml`; CI installs with `pnpm install --frozen-lockfile`; dependency install scripts run only when allowed in `pnpm-workspace.yaml` |
 | Routing | React Router; all routes declared in one module and code-split per feature |
 | Server state | TanStack Query for every read and write of API data |
 | Forms and validation | React Hook Form with Zod schemas |
 | API access | `fetch`, directly or through the thin typed wrapper `openapi-fetch`, used only inside the client module in `src/api/`; types generated from `backend/api/openapi.yaml` with `openapi-typescript` |
 | Component primitives, icons, styling, data grid, charts | One library or approach for each, chosen by ADR that records accessibility conformance, maintenance activity, licence and bundle size. Current: Radix primitives, lucide-react icons, CSS Modules with the design tokens |
 | Testing | Vitest, React Testing Library with `user-event`, Mock Service Worker (`msw`), Playwright, `axe-core` (through `vitest-axe` and `@axe-core/playwright`), `fast-check` |
-| Static analysis | ESLint with a flat config in `frontend/eslint.config.js`, using `typescript-eslint`, `eslint-plugin-react-hooks` and `eslint-plugin-jsx-a11y`; Prettier; `npm audit`; SonarQube |
+| Static analysis | ESLint with a flat config in `frontend/eslint.config.js`, using `typescript-eslint`, `eslint-plugin-react-hooks` and `eslint-plugin-jsx-a11y`; Prettier; `pnpm audit`; SonarQube |
 
 - `package.json` MUST define the scripts `dev`, `build`, `typecheck`, `lint`, `format:check`,
   `test`, `test:coverage`, `test:e2e` and `api:types`. Each quality gate below runs one of them.
@@ -684,7 +687,7 @@ These rules apply to everything under `frontend/` and refine the Core Principles
 frontend/
 ├── index.html
 ├── package.json              # scripts, engines, browserslist
-├── package-lock.json
+├── pnpm-lock.yaml
 ├── tsconfig.json
 ├── vite.config.ts
 ├── eslint.config.js
@@ -969,14 +972,14 @@ MUST run in the approved CI/CD system (TOE default: GitHub Actions) and be requi
 
 *Frontend*
 
-7. `npm run format:check` reports no changes.
-8. `npm run typecheck` reports no errors.
-9. `npm run lint` reports no findings, warnings included.
-10. `npm run api:types` produces no diff against the committed generated types.
-11. `npm run test:coverage` passes, accessibility checks included; its results and coverage report
+7. `pnpm run format:check` reports no changes.
+8. `pnpm run typecheck` reports no errors.
+9. `pnpm run lint` reports no findings, warnings included.
+10. `pnpm run api:types` produces no diff against the committed generated types.
+11. `pnpm run test:coverage` passes, accessibility checks included; its results and coverage report
     are published, and new-code coverage meets Principle VI.
-12. `npm run build` succeeds and stays within the JavaScript budget (F8).
-13. `npm run test:e2e` passes against the real API and PostgreSQL, accessibility checks included.
+12. `pnpm run build` succeeds and stays within the JavaScript budget (F8).
+13. `pnpm run test:e2e` passes against the real API and PostgreSQL, accessibility checks included.
 
 *Whole repository*
 
@@ -986,7 +989,7 @@ MUST run in the approved CI/CD system (TOE default: GitHub Actions) and be requi
 16. Static application security testing (GitHub Advanced Security code scanning, or the SonarQube
     scanning policy) reveals no high or critical vulnerability.
 17. Software composition analysis (GitHub Advanced Security, Apiiro or Mend) reveals no high or
-    critical vulnerability in any dependency, and `npm audit --omit=dev --audit-level=high`
+    critical vulnerability in any dependency, and `pnpm audit --prod --audit-level high`
     reports none. The reachability exception in Principle VII does not apply to this gate.
 18. The SonarQube quality gate passes, and its findings are remediated in line with the quality
     scanning policy.
@@ -1125,5 +1128,6 @@ amended to match.
 | 4.0.0 | 2026-10-26 | VI, B9: only end-to-end tests and the scope-isolation tests of scoped store reads use a real database; every other test uses fakes, and database tests of queries, constraints or migrations are forbidden (they were required store tests before) | Product owner decision of 2026-10-26 |
 | 4.1.0 | 2026-10-26 | Current Phase & Scope: `compose.yaml` may also build and run the whole application locally for reviewers such as business analysts, published on `127.0.0.1` only and pushed nowhere; Docker and Podman stay optional for developers (ADR-0012) | Product owner instruction of 2026-10-26 |
 | 4.2.0 | 2026-10-26 | VIII, Governance: the comment budget is aligned file by file — a change that touches a file brings the whole file's comments within the budget, except in features 025, 027 and 028; feature 021 (a dedicated comment pass) is dropped | Product owner instruction of 2026-10-26 |
+| 4.3.0 | 2026-10-27 | F1 and VII: pnpm replaces npm as the web app's package manager (pinned through Corepack, `pnpm-lock.yaml`, `pnpm install --frozen-lockfile`); the 24-hour release age is pnpm's `minimumReleaseAge`, and dependency install scripts run only when allowed (ADR-0015) | Product owner instruction of 2026-10-27 |
 
-**Version**: 4.2.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-26
+**Version**: 4.3.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-27

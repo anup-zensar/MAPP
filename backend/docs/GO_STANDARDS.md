@@ -862,7 +862,7 @@ type ListResponse[T any] struct {
 ### Contract and versioning
 
 - `api/openapi.yaml` (OpenAPI 3.1) is the contract. Update it in the same pull request as the
-  handler, then run `npm run api:types` in `frontend/`.
+  handler, then run `pnpm run api:types` in `frontend/`.
 - Routes live under `/api/v1`. Adding fields or endpoints is backward compatible. Removing or
   renaming fields, or changing their meaning, requires `/api/v2`.
 - Use the right status codes: `201` with the created resource, `204` for no body, `400` for
@@ -1617,7 +1617,7 @@ Copy this into the pull request description and tick each item.
 - [ ] `go test -race ./...` passes, store and contract tests included
 - [ ] Every changed rule, validation and access check has a test for each outcome; new-code coverage ≥ 80%; no test written only for coverage
 - [ ] `govulncheck ./...` is clean
-- [ ] `api/openapi.yaml` updated for any API change, and `npm run api:types` run
+- [ ] `api/openapi.yaml` updated for any API change, and `pnpm run api:types` run
 - [ ] Every new query on plan-owned data filters by the scope's teams and has an isolation test
 - [ ] Every changed file is within the comment budget (≤ 5% of non-blank lines)
 - [ ] Fan-out ≤ 7 and expression terms ≤ 5, or justified below

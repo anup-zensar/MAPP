@@ -20,3 +20,4 @@ Consequences. Add a new ADR (next number) instead of editing an accepted one; ma
 | [0012](0012-local-container-images.md) | Local container images for reviewers | Accepted |
 | [0013](0013-postgresql-storage.md) | PostgreSQL storage | Accepted |
 | [0014](0014-transaction-memo-and-batched-reads.md) | Transaction memo and batched reads | Accepted |
+| [0015](0015-pnpm-package-manager.md) | pnpm as the web app's package manager | Accepted |
