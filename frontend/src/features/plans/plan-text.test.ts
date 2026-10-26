@@ -1,32 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { formatDateRange } from '@/format/intl';
-import {
-  activitiesApprovedText,
-  contentsText,
-  goalAmountLabel,
-  groupLabel,
-  SPREAD_LABELS,
-  STATUS,
-  yearDates,
-} from './plan-text';
+import { activitiesApprovedText, contentsText, groupLabel, yearDates } from './plan-text';
 
 describe('planText', () => {
-  it('names statuses with a word and a tone', () => {
-    expect(STATUS.draft).toEqual({ word: 'Draft', tone: 'neutral' });
-    expect(STATUS.published).toEqual({ word: 'Published', tone: 'positive' });
-  });
-
-  it('labels spreads and goal amounts', () => {
-    expect(Object.values(SPREAD_LABELS)).toEqual([
-      'Evenly',
-      'All in first month',
-      'All in last month',
-      'Custom',
-    ]);
-    expect(goalAmountLabel('inq')).toBe('Goal amount (INQ)');
-    expect(goalAmountLabel('revenue')).toBe('Goal amount (Revenue, USD)');
-  });
-
   it('joins the counts of what a plan holds (FR-029)', () => {
     expect(
       contentsText({

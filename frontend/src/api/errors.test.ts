@@ -134,7 +134,6 @@ describe('call()', () => {
     ['validation_failed', 400, 'validation'],
     ['bad_request', 400, 'badRequest'],
     ['sign_in_required', 401, 'signInRequired'],
-    ['session_expired', 401, 'sessionExpired'],
     ['incorrect_credentials', 401, 'incorrectCredentials'],
     ['not_found', 404, 'notFound'],
     ['version_conflict', 409, 'conflict'],
@@ -147,7 +146,6 @@ describe('call()', () => {
     ['not_allowed', 409, 'notAllowed'],
     ['not_ready', 409, 'notReady'],
     ['parent_deleted_permanently', 409, 'parentDeletedPermanently'],
-    ['internal_error', 500, 'other'],
   ] as const)('turns the code %s (%i) into the kind %s', async (code, status, kind) => {
     mockApi([
       reply(

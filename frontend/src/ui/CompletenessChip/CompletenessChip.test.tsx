@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
@@ -24,19 +24,7 @@ describe('CompletenessChip', () => {
     expect(screen.getByRole('button', { name: '1 field needed' })).toBeInTheDocument();
   });
 
-  it('lists the missing fields when clicked (FR-019, constitution III)', async () => {
-    const user = userEvent.setup();
-    render(<CompletenessChip missing={THREE_MISSING} onSelectField={vi.fn()} />);
-
-    await user.click(screen.getByRole('button', { name: '3 fields needed' }));
-
-    const list = screen.getByRole('dialog', { name: '3 fields needed' });
-    expect(list).toContainElement(screen.getByRole('button', { name: 'Owner' }));
-    expect(list).toContainElement(screen.getByRole('button', { name: 'Budget' }));
-    expect(list).toContainElement(screen.getByRole('button', { name: 'Teams' }));
-  });
-
-  it('takes the person to the field they choose (FR-019, constitution III)', async () => {
+  it('lists the missing fields when clicked and takes the person to the one they choose (FR-019, constitution III)', async () => {
     const user = userEvent.setup();
     const onSelectField = vi.fn((id: string) => document.getElementById(id)?.focus());
     render(
@@ -48,7 +36,10 @@ describe('CompletenessChip', () => {
     );
 
     await user.click(screen.getByRole('button', { name: '3 fields needed' }));
-    await user.click(screen.getByRole('button', { name: 'Budget' }));
+    const list = screen.getByRole('dialog', { name: '3 fields needed' });
+    expect(list).toContainElement(screen.getByRole('button', { name: 'Owner' }));
+    expect(list).toContainElement(screen.getByRole('button', { name: 'Teams' }));
+    await user.click(within(list).getByRole('button', { name: 'Budget' }));
 
     await waitFor(() => expect(onSelectField).toHaveBeenCalledWith('budget'));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

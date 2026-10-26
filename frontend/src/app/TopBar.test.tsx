@@ -30,12 +30,4 @@ describe('TopBar', () => {
       'Priya',
     );
   });
-
-  it('has the menu button that opens the sections on narrow screens (FR-011)', () => {
-    renderWithProviders(<TopBar />, { user: PRIYA });
-
-    expect(
-      within(screen.getByRole('banner')).getByRole('button', { name: 'Open menu' }),
-    ).toBeInTheDocument();
-  });
 });

@@ -8,18 +8,16 @@ import (
 	"mapp/internal/platform/authz"
 )
 
-// withPermissions returns a context of a person holding perms for All markets, through one role.
 func withPermissions(perms ...authz.Permission) context.Context {
 	role := authz.GrantedRole{ID: "RL-1010", Name: "Custom", Scope: authz.ScopeAll}
 	g := authz.NewGrants("U-1006", []authz.GrantedRole{role}, nil, map[string][]authz.Permission{"RL-1010": perms}, nil, authz.Rules{})
 	return authz.With(context.Background(), g)
 }
 
-// The log entries of the kinds features 014-017 add are seen as D-304 says: GSAP imports and transactions
-// with "Import GSAP extracts" or "See the whole activity log"; delegations, exchange rates, rate imports,
-// field help, roles and the access rules only with "See the whole activity log"; the sample records by
-// everyone; an internal call sees everything (FR-007, FR-038, D-304).
+// D-304: GSAP imports and transactions need Import GSAP extracts or the whole log, the administration kinds
+// the whole log; everyone sees the sample records, and an internal call sees everything.
 func TestHistoryAccess_KindsOfLaterFeatures_D304(t *testing.T) {
+	t.Parallel()
 	h := historyAccess{}
 	importer, auditor, planner := withPermissions(authz.FinanceImport), withPermissions(authz.ActivityLogViewAll),
 		withPermissions(authz.PlansView, authz.ActivitiesEdit)
@@ -50,9 +48,8 @@ func TestHistoryAccess_KindsOfLaterFeatures_D304(t *testing.T) {
 	}
 }
 
-// Restoring an administration record needs the permission that manages it (D-238): an exchange rate needs
-// "Manage currencies and exchange rates", which an auditor does not hold.
 func TestHistoryAccess_RestoreNeedsTheManagingPermission_D238(t *testing.T) {
+	t.Parallel()
 	h := historyAccess{}
 	e := history.BinEntry{RecordType: "exchangeRate", RecordTypeLabel: "exchange rate", RecordID: "XR-1001"}
 

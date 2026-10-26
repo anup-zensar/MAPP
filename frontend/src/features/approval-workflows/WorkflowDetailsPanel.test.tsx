@@ -88,7 +88,8 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
   });
 
   it('offers Edit, then Set inactive and Delete in the panel footer menu', async () => {
-    const { user, actions } = renderPanel({ body: detailsOf() });
+    const workflow = workflowOf();
+    const { user, actions } = renderPanel({ body: detailsOf(workflow) });
 
     const panel = await screen.findByRole('dialog', { name: 'Lubricants EU approval' });
     expect(within(panel).queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
@@ -104,9 +105,9 @@ describe('WorkflowDetailsPanel (feature 008, US4)', () => {
     await user.click(more);
     await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
 
-    expect(actions.edit).toHaveBeenCalled();
-    expect(actions.setInactive).toHaveBeenCalled();
-    expect(actions.remove).toHaveBeenCalled();
+    expect(actions.edit).toHaveBeenCalledWith(workflow);
+    expect(actions.setInactive).toHaveBeenCalledWith(workflow);
+    expect(actions.remove).toHaveBeenCalledWith(workflow);
   });
 
   it('says when the workflow no longer exists', async () => {

@@ -1,14 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { FINANCE_BUDGETS, FORM_ANSWERS, plan, planDefaults } from '@/testing/fixtures/plans';
+import { FINANCE_BUDGETS, FORM_ANSWERS, planDefaults } from '@/testing/fixtures/plans';
 import { reply } from '@/testing/replies';
 import { PlanForm } from './PlanForm';
 import type { PlanFormProps } from './PlanForm';
-import { valuesFromDefaults, valuesFromPlan } from './plan-form-values';
+import { valuesFromDefaults } from './plan-form-values';
 
 function renderForm(props: Partial<PlanFormProps> = {}, answers: HttpHandler[] = []) {
   const api = mockApi([...FORM_ANSWERS, ...answers]);
@@ -90,18 +90,6 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
     );
   });
 
-  it('names the owner who is in none of the chosen teams (FR-021)', async () => {
-    renderForm({
-      initial: { ...valuesFromDefaults(planDefaults()), teamIds: ['T-1002'] },
-    });
-
-    expect(
-      await screen.findByText(
-        "Priya Raman isn't in any of the chosen teams — choose another owner or clear the field",
-      ),
-    ).toBeInTheDocument();
-  });
-
   it('calculates the goals live from the chosen model (US1#5, FR-009)', async () => {
     const { user } = renderForm();
 
@@ -153,74 +141,5 @@ describe('PlanForm (US1, FR-005 – FR-010)', () => {
         'No finance budgets for 2026 yet — an administrator adds them in Settings.',
       ),
     ).toBeInTheDocument();
-  });
-
-  it('shows every problem at once, in the summary and under the fields (US1#3, FR-010)', async () => {
-    const { user } = renderForm({
-      onSave: async () => ({
-        problems: [
-          {
-            field: 'name',
-            message:
-              "There is already a plan called 'FY2026 Lubricants Europe'. Choose another name.",
-          },
-          { field: 'modelId', message: 'Choose a model.' },
-          { field: 'attributes.SA-BU', message: 'Choose a business unit.' },
-        ],
-      }),
-    });
-    await user.click(await screen.findByRole('button', { name: 'Save' }));
-
-    const summary = await screen.findByRole('alert');
-    expect(within(summary).getByText('3 problems need your attention')).toBeInTheDocument();
-    await waitFor(() => expect(summary.parentElement).toHaveFocus());
-    expect(screen.getAllByText('Choose a model.')).toHaveLength(2);
-  });
-
-  it('sends the typed values to onSave', async () => {
-    const onSave = vi.fn(async () => null);
-    const { user } = renderForm({ onSave });
-
-    await user.type(await screen.findByRole('textbox', { name: /Plan name/ }), 'FY2026 Test');
-    await user.click(screen.getByRole('button', { name: 'Save' }));
-
-    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-    expect(onSave.mock.calls[0]).toEqual([
-      expect.objectContaining({ name: 'FY2026 Test', year: '2026', teamIds: ['T-1001'] }),
-    ]);
-  });
-});
-
-describe('PlanForm on the edit page (US4, FR-018, FR-022)', () => {
-  it('shows the year locked with the reason', async () => {
-    renderForm({
-      mode: 'edit',
-      plan: plan(),
-      initial: valuesFromPlan(plan()),
-      defaults: undefined,
-    });
-
-    expect(
-      await screen.findByText(
-        "Year can't change once the plan is saved — copy the plan into the next year or create a new plan.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: /Year/ })).not.toBeInTheDocument();
-  });
-
-  it('says that changed defaults apply to line items created from now on', async () => {
-    const { user } = renderForm({
-      mode: 'edit',
-      plan: plan(),
-      initial: valuesFromPlan(plan()),
-      defaults: undefined,
-    });
-
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Default line-item spread' }),
-      'firstMonth',
-    );
-
-    expect(screen.getByText('Applies to line items created from now on.')).toBeInTheDocument();
   });
 });

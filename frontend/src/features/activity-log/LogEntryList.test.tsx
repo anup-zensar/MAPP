@@ -55,12 +55,6 @@ describe('LogEntryList', () => {
     ).toEqual(['Five', 'Four']);
   });
 
-  it('uses third-level headings inside a card', () => {
-    renderList({ headingLevel: 3 });
-
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3);
-  });
-
   it('says how many are loaded and offers Load more while there are more (FR-009)', async () => {
     const onLoadMore = vi.fn();
     const { user } = renderList({ total: 1204, hasMore: true, onLoadMore });

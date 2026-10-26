@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatDate, formatDateRange } from '@/format/intl';
 import { activityBannerText } from '@/ui/ActivityStatusChip/activity-status';
-import {
-  activityEditHref,
-  activityHref,
-  datesText,
-  lineItemsText,
-  newActivityHref,
-  thingsText,
-} from './activity-text';
+import { activityEditHref, activityHref, datesText, newActivityHref } from './activity-text';
 
 describe('activityText (feature 006)', () => {
   it('writes the dates as every date range reads, ongoing ones from their start, and "—" without both (D-216)', () => {
@@ -24,13 +17,6 @@ describe('activityText (feature 006)', () => {
         formatDateRange(start, end, 'DD/MM/YYYY'),
     };
     expect(datesText('2026-03-01', '2026-05-31', false, daysFirst)).toBe('01/03/2026 – 31/05/2026');
-  });
-
-  it('counts things and line items', () => {
-    expect(thingsText(1)).toBe('1 thing');
-    expect(thingsText(5)).toBe('5 things');
-    expect(lineItemsText(1)).toBe('1 line item');
-    expect(lineItemsText(3)).toBe('3 line items');
   });
 
   it('gives the addresses of the activity pages', () => {

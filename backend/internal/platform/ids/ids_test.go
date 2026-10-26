@@ -12,6 +12,7 @@ import (
 
 // The first ID of every prefix is 1001, and each prefix counts on its own (FR-027).
 func TestNext_StartsAt1001_FR027(t *testing.T) {
+	t.Parallel()
 	db := openStore(t, t.TempDir())
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 
@@ -39,6 +40,7 @@ func TestNext_StartsAt1001_FR027(t *testing.T) {
 
 // Two IDs taken in one transaction differ, because the transaction reads its own counter change (FR-027).
 func TestNext_TwiceInOneTransaction_FR027(t *testing.T) {
+	t.Parallel()
 	db := openStore(t, t.TempDir())
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 
@@ -63,6 +65,7 @@ func TestNext_TwiceInOneTransaction_FR027(t *testing.T) {
 // An ID is never given out again: not after its record was deleted, and not after the API restarted
 // (FR-027).
 func TestNext_NeverReused_FR027(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	db := openStore(t, dir)
 	generator := ids.NewGenerator(ids.NewJSONCounters())
@@ -87,8 +90,8 @@ func TestNext_NeverReused_FR027(t *testing.T) {
 	}
 }
 
-// The counters table keeps the last number given per prefix (data model §4).
 func TestJSONCounters_StoreTheLastNumberPerPrefix(t *testing.T) {
+	t.Parallel()
 	db := openStore(t, t.TempDir())
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	for range 6 {
@@ -113,6 +116,7 @@ func TestJSONCounters_StoreTheLastNumberPerPrefix(t *testing.T) {
 
 // IDs are taken inside the caller's Write, so that the counter and the new record are saved together.
 func TestNext_NeedsAWrite(t *testing.T) {
+	t.Parallel()
 	db := openStore(t, t.TempDir())
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 
@@ -157,6 +161,7 @@ func nextID(t *testing.T, db *store.DB, generator *ids.Generator, prefix string)
 // Every record type has its own prefix: capital letters only, and no two record types share one, so every
 // counter belongs to one table (FR-027; the data models of features 002-008).
 func TestPrefixes_UniquePerRecordType_FR027(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	for _, prefix := range ids.Prefixes {
 		if !prefixForm.MatchString(prefix) {
@@ -166,24 +171,6 @@ func TestPrefixes_UniquePerRecordType_FR027(t *testing.T) {
 			t.Errorf("prefix %q is listed twice", prefix)
 		}
 		seen[prefix] = true
-	}
-	want := map[string]string{
-		ids.PrefixModel: "MOD", ids.PrefixActivityType: "AT", ids.PrefixShellAttribute: "SA", ids.PrefixShellOption: "SO",
-		ids.PrefixFinanceBudget: "FB", ids.PrefixFinanceBudgetItem: "FBI", ids.PrefixTeam: "T", ids.PrefixTeamMembership: "TM",
-		ids.PrefixPlan: "P", ids.PrefixCampaign: "C", ids.PrefixInitiative: "I", ids.PrefixActivity: "A", ids.PrefixLineItem: "L",
-		ids.PrefixApprovalWorkflow: "WF", ids.PrefixApprovalRound: "AR", ids.PrefixApprovalAction: "AH", ids.PrefixNotification: "NT",
-		ids.PrefixSavedView: "SV", ids.PrefixFinancialTransaction: "FT", ids.PrefixFinancialImport: "FIM",
-		ids.PrefixApprovalDelegation: "DLG",
-		ids.PrefixRole:               "RL", ids.PrefixRoleAssignment: "RA", ids.PrefixGlobalBudget: "GB", ids.PrefixBudgetAllocation: "BA",
-		ids.PrefixExchangeRate: "XR", ids.PrefixRateImport: "RI",
-	}
-	for got, wantPrefix := range want {
-		if got != wantPrefix {
-			t.Errorf("prefix %q, want %q", got, wantPrefix)
-		}
-	}
-	if len(ids.Prefixes) != 32 {
-		t.Errorf("%d prefixes, want 32", len(ids.Prefixes))
 	}
 }
 

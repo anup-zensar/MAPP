@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { nth } from '@/testing/dom';
@@ -9,9 +9,13 @@ import { http, reply } from '@/testing/replies';
 import { resetAllWorkStore } from './all-work-store';
 import type { SavedView } from './all-work-types';
 
+// More than the 500 ms the page waits before it saves the person's columns and sort.
+const PAST_THE_SAVE_DELAY_MS = 600;
+
 afterEach(() => {
   resetAllWorkStore();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe('AllWorkPage saved views (US6)', () => {
@@ -133,6 +137,7 @@ describe('AllWorkPage saved views (US6)', () => {
   });
 
   it('does not remember columns or sort while a view is applied (FR-021)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     const { api, user } = renderAllWorkPage(viewAnswers());
     await screen.findByRole('link', { name: 'Helix launch' });
     await chooseView(user, 'Declined activities');
@@ -143,7 +148,7 @@ describe('AllWorkPage saved views (US6)', () => {
     expect(
       await screen.findByRole('button', { name: 'View: Declined activities Modified' }),
     ).toBeVisible();
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await act(() => vi.advanceTimersByTimeAsync(PAST_THE_SAVE_DELAY_MS));
     expect(api.bodiesOf('PUT /api/v1/all-work/preferences')).toEqual([]);
   });
 

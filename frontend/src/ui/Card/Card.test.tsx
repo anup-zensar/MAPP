@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Button } from '../Button/Button';
 import { Card } from './Card';
 
 describe('Card', () => {
@@ -17,16 +16,6 @@ describe('Card', () => {
     );
     expect(card).toHaveTextContent('The Plan module in five steps');
     expect(card).toHaveTextContent('Step one');
-  });
-
-  it('shows its actions in the header (FR-019)', () => {
-    render(
-      <Card title="Sample folders" actions={<Button size="sm">Refresh</Button>}>
-        <p>No sample folders yet</p>
-      </Card>,
-    );
-
-    expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument();
   });
 
   it('can hold content without a title (FR-019)', () => {

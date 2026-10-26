@@ -12,9 +12,9 @@ import (
 	"mapp/internal/platform/money"
 )
 
-// The planning adapter of feature 015 answers the seed's tree with the planned costs of data model §6.1:
-// activities as typed, line items in USD at the current rate, containers left to the roll-up (T010).
+// Line items in USD at the current rate; containers are left to the roll-up (data model §6.1).
 func TestFinancialPlanning_SeedTree_FR012(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	var nodes []financials.Node
 	var mine []string
@@ -23,7 +23,7 @@ func TestFinancialPlanning_SeedTree_FR012(t *testing.T) {
 		if nodes, err = built.finance.Nodes(ctx); err != nil {
 			return err
 		}
-		mine, err = built.finance.MyTeamPlanIDs(ctx, "U-1002") // Priya Raman
+		mine, err = built.finance.MyTeamPlanIDs(ctx, "U-1002")
 		return err
 	})
 	if err != nil {
@@ -68,9 +68,9 @@ func TestFinancialPlanning_SeedTree_FR012(t *testing.T) {
 	}
 }
 
-// A line item in the recycle bin leaves the live tree and is reported as in the bin, so matching still
-// finds it (data model §4.2, T010).
+// Matching still finds a line item in the recycle bin (data model §4.2).
 func TestFinancialPlanning_LineItemsInBin_FR007(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	adapter := built.finance.(financialPlanning)
 	var inBin []string
@@ -97,8 +97,8 @@ func TestFinancialPlanning_LineItemsInBin_FR007(t *testing.T) {
 	}
 }
 
-// The display adapter gives the person's display currency with its current rate.
 func TestFinancialDisplays_PersonCurrency_FR011(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	displays := financialDisplays{people: built.finance.(financialPlanning).people}
 	var d money.Display
@@ -112,9 +112,8 @@ func TestFinancialDisplays_PersonCurrency_FR011(t *testing.T) {
 	}
 }
 
-// All work's source gives the year's line items their GSAP figures from feature 015, says when the data was
-// loaded and that the person may see it (015 FR-023, FR-028, T037).
 func TestPlanningSource_FinancialFigures_FR023(t *testing.T) {
+	t.Parallel()
 	built, db := newSeededApp(t)
 	var data allwork.YearData
 	var choices allwork.Choices

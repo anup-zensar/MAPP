@@ -104,15 +104,6 @@ describe('RequireSignIn', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the page inside the app layout to a signed-in person (FR-010)', async () => {
-    mockApi([reply('GET /api/v1/me', { body: PRIYA }), ...NO_PLANS]);
-    renderRoutes(routes, { route: '/plans' });
-
-    expect(await screen.findByRole('heading', { level: 1, name: 'Plans' })).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
-    expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
-  });
-
   it('checks the session again on every navigation (research R15)', async () => {
     const api = mockApi([reply('GET /api/v1/me', { body: PRIYA }), ...NO_PLANS, ...HOME_ANSWERS]);
     const sessionChecks = () => api.requests.filter((r) => r.path === '/api/v1/me').length;

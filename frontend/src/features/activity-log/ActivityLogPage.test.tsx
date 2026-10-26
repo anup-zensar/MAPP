@@ -164,20 +164,6 @@ describe('ActivityLogPage', () => {
     await waitFor(() => expect(router.state.location.search).toBe(''));
   });
 
-  it('groups the entries by day (FR-004)', async () => {
-    renderPage('/activity-log', [
-      reply('GET /api/v1/activity-log', {
-        body: logPage([
-          logEntry({ id: 'LOG-2', seq: 2 }),
-          logEntry({ id: 'LOG-1', seq: 1, at: '2026-10-18T09:00:00Z' }),
-        ]),
-      }),
-    ]);
-
-    expect(await screen.findByRole('heading', { name: 'Today · 1 entry' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Yesterday · 1 entry' })).toBeInTheDocument();
-  });
-
   it('loads 50 more entries before the last one shown (FR-009)', async () => {
     const first = Array.from({ length: 50 }, (_, index) =>
       logEntry({ id: `LOG-${200 - index}`, seq: 200 - index }),

@@ -202,7 +202,8 @@ describe('RecycleBinPage', () => {
     );
 
     expect(await findMessages()).toHaveTextContent("Initiative 'Trade shows' deleted permanently");
-    expect(api.requests.some((request) => request.method === 'DELETE')).toBe(true);
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(api.requests.filter((request) => request.method === 'DELETE')).toHaveLength(1);
   });
 
   it('opens Delete permanently from a restore that cannot happen (FR-024)', async () => {

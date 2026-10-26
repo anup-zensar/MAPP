@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { InfoTip } from './InfoTip';
 
 const TEXT = 'The budget given to the plan when it was created.';
@@ -24,6 +24,10 @@ function bubble() {
 }
 
 describe('InfoTip', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('is a button named "About <label>" (FR-019)', () => {
     renderTip();
 
@@ -32,14 +36,16 @@ describe('InfoTip', () => {
   });
 
   it('opens on hover and closes when the pointer leaves (FR-019)', async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderTip();
 
     await user.hover(tipButton());
     expect(bubble()).toHaveTextContent(TEXT);
 
     await user.unhover(tipButton());
-    await waitFor(() => expect(bubble()).not.toBeInTheDocument());
+    await act(() => vi.advanceTimersByTimeAsync(150));
+    expect(bubble()).not.toBeInTheDocument();
   });
 
   it('opens on keyboard focus and closes on Escape, keeping the focus (FR-019)', async () => {

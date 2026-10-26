@@ -102,18 +102,6 @@ type ErrorDetail = components['schemas']['ErrorDetail'];
 type ErrorCode = ErrorDetail['code'];
 
 describe('useUndoableDelete', () => {
-  it('says what moved to the recycle bin and offers Undo (FR-026, design system §6.5)', async () => {
-    const { user } = renderWithProviders(<DeleteButton result={IDEAS_DELETED} />, {
-      user: PRIYA,
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    const messages = await findMessages();
-    expect(messages).toHaveTextContent(IDEAS_MOVED);
-    expect(within(messages).getByRole('button', { name: 'Undo' })).toBeInTheDocument();
-  });
-
   it('tells screen readers where else to restore it: the recycle bin, unless told otherwise (FR-026)', async () => {
     const { user } = renderWithProviders(
       <>

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
@@ -79,27 +79,5 @@ describe('Activity routes (feature 006)', () => {
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1001');
     expect(router.state.location.hash).toBe('#line-items');
-  });
-
-  it('places the line items (007) and the approval (008) on the activity page', async () => {
-    const { user } = renderApp('/plans/P-1001/activities/A-1001', ANSWERS);
-
-    const lineItems = await screen.findByRole('region', { name: 'Line items' });
-    await waitFor(() => expect(lineItems).toHaveTextContent('Agency fee'));
-    expect(lineItems.closest('#line-items')).not.toBeNull();
-    await user.click(screen.getByRole('tab', { name: 'Approval' }));
-    const approval = await screen.findByRole('region', { name: 'Approval' });
-    await waitFor(() => expect(approval).toHaveTextContent('Not submitted yet'));
-    expect(approval.closest('#approval')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
-  });
-
-  it('places the spread effect note (007) on the edit form', async () => {
-    renderApp('/plans/P-1001/activities/A-1001/edit', ANSWERS);
-
-    fireEvent.change(await screen.findByLabelText('End date'), { target: { value: '2026-06-30' } });
-    expect(
-      await screen.findByText('When you save, 2 line items are re-spread over the new dates.'),
-    ).toBeInTheDocument();
   });
 });

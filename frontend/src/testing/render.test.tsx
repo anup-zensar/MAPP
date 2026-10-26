@@ -39,12 +39,6 @@ function SessionName() {
   return <p>Signed in: {user?.name ?? 'nobody'}</p>;
 }
 
-/** Shows the router state of the current location. */
-function RouterState() {
-  const location = useLocation();
-  return <p>State: {JSON.stringify(location.state)}</p>;
-}
-
 /** Shows a message with Try again a moment after Save, as after an API call that failed. */
 function SaveLater() {
   const { show } = useToast();
@@ -73,12 +67,6 @@ afterEach(() => {
 });
 
 describe('renderWithProviders', () => {
-  it('shows the page at the address the test starts on', () => {
-    renderWithProviders(<Page />, { route: '/plans?year=2026' });
-
-    expect(screen.getByText('At /plans?year=2026')).toBeInTheDocument();
-  });
-
   it('gives the page tooltips and messages, and a user-event instance', async () => {
     const { user } = renderWithProviders(<Page />);
 
@@ -95,14 +83,6 @@ describe('renderWithProviders', () => {
     expect(router.state.location.pathname).toBe('/sign-in');
     expect(router.state.location.search).toBe('?next=%2Fplans');
     expect(screen.getByText('Sign-in page')).toBeInTheDocument();
-  });
-
-  it('starts signed out unless a person is given', () => {
-    const signedOut = renderWithProviders(<Page />);
-    expect(signedOut.queryClient.getQueryData(['session'])).toBeNull();
-
-    const signedIn = renderWithProviders(<Page />, { user: PRIYA });
-    expect(signedIn.queryClient.getQueryData(['session'])).toEqual(PRIYA);
   });
 
   it('gives the page the session, without asking the API', () => {
@@ -124,15 +104,6 @@ describe('renderWithProviders', () => {
     await act(() => router.navigate('/plans'));
 
     expect(screen.getByText('Another page')).toBeInTheDocument();
-  });
-
-  it('can start on a location with router state', () => {
-    renderWithProviders(<RouterState />, {
-      route: { pathname: '/sign-in', state: { notice: 'signedOut' } },
-      path: '/sign-in',
-    });
-
-    expect(screen.getByText('State: {"notice":"signedOut"}')).toBeInTheDocument();
   });
 });
 

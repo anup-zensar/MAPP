@@ -9,13 +9,11 @@ import (
 	"mapp/internal/platform/apitest"
 )
 
-// binItem is a recycle-bin entry as the recycle bin page lists it, with its access object.
 type binItem struct {
 	ID, RecordName string
 	Access         *struct{ Restore, DeletePermanently availability }
 }
 
-// binOf returns the recycle bin as the person of client sees it.
 func binOf(t *testing.T, client *apitest.Client) []binItem {
 	t.Helper()
 	var page struct{ Items []binItem }
@@ -23,12 +21,10 @@ func binOf(t *testing.T, client *apitest.Client) []binItem {
 	return page.Items
 }
 
-// Each entry of the recycle bin says what the person may do with it, with the refusal as the reason, and the
-// restore preview follows the same rule (FR-011, D-238). The demo's deleted initiative "Trade shows" is in
-// FY2026 Lubricants Europe: Priya (Planner) may restore it but not delete it permanently; Alex may do both;
-// Sara (Viewer) sees it but may not restore it; Mei (Mobility China) does not see it, and its preview
-// refuses her with message 4.
+// The demo's deleted initiative is in Lubricants Europe: Priya may restore it, Alex may also delete it
+// permanently, Sara may do neither, and Mei does not see it.
 func TestRecycleBin_EntryAccess_FR011_D238(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex, priya, sara, mei := server.SignIn(t, alexsEmail), server.SignIn(t, priyasEmail), server.SignIn(t, sarasEmail),
 		server.SignIn(t, meisEmail)
@@ -70,10 +66,9 @@ func TestRecycleBin_EntryAccess_FR011_D238(t *testing.T) {
 		"Deleting permanently isn't part of your role (Planner). Ask an administrator if you need it.")
 }
 
-// The activity log's summary and filter choices cover only the entries the person may see (FR-007,
-// D-238): Mei's name only her market's plans and fewer entries than Alex's; Alex's name every plan of the
-// demo history.
+// Mei's summary names only her market's plans; Alex's every plan of the demo history.
 func TestLogSummary_OnlyWhatThePersonSees_FR007(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex, mei := server.SignIn(t, alexsEmail), server.SignIn(t, meisEmail)
 	const path = "/api/v1/activity-log/summary?todayStart=2026-03-13T00:00:00Z&weekStart=2026-03-09T00:00:00Z"
