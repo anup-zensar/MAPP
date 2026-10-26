@@ -188,8 +188,8 @@ func (h *Handler) get(c *gin.Context) {
 ## R11 — Contract tests keep working
 
 - `apitest` builds the API with `app.New` and serves `App.Handler` through `httptest`. A Gin engine is an
-  `http.Handler`, so request and response validation against `openapi.yaml` does not change. The one change:
-  `app.New` takes the telemetry, and `apitest` passes `telemetry.Start` with `none`.
+  `http.Handler`, so request and response validation against `openapi.yaml` does not change, and `apitest`
+  needs no change: `app.New` starts the telemetry from the configuration, `none` in tests.
 - **The safety net, unchanged throughout**: `TestRoutesMatchContract`, `TestEveryOperationHasAnAccessRule_SC001`,
   `TestEveryProtectedOperationRequiresSignIn_FR005`, `TestUnknownPathOrMethod_AnswersJSONNotFound`,
   `TestOtherHost_IsRefused`, `TestAnswers_CarryTheAPIHeaders`, the access matrix, every handler test and the

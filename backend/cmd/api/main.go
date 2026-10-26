@@ -54,7 +54,10 @@ func run(ctx context.Context) error {
 	}
 	slog.InfoContext(ctx, "MAPP API listening", "url", "http://"+listener.Addr().String(),
 		"environment", cfg.Env, "demo_sign_in", cfg.DemoMode())
-	return app.Serve(ctx, listener, api.Handler, cfg.ShutdownTimeout)
+	served := app.Serve(ctx, listener, api.Handler, cfg.ShutdownTimeout)
+	closing, cancel := context.WithTimeout(context.WithoutCancel(ctx), cfg.ShutdownTimeout)
+	defer cancel()
+	return errors.Join(served, api.Close(closing))
 }
 
 // listen opens port on 127.0.0.1 only, so that other computers cannot reach the API.

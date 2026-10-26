@@ -23,6 +23,7 @@ import (
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/store"
+	"mapp/internal/platform/telemetry"
 	"mapp/internal/platform/web"
 	"mapp/internal/samples"
 	"mapp/internal/settings"
@@ -30,7 +31,7 @@ import (
 
 // App is the MAPP API, ready to serve.
 type App struct {
-	// Handler serves every route of the API, wrapped in web.Middleware.
+	// Handler is the Gin engine that serves every route of the API.
 	Handler http.Handler
 	// Routes lists the "METHOD /path" pattern of every operation the API serves. Tests compare it with
 	// the operations of the contract, backend/api/openapi.yaml.
@@ -40,6 +41,8 @@ type App struct {
 	allWork allwork.Source
 	// finance is the planning tree financials reads (financials.go), kept for the adapter's tests.
 	finance financials.Planning
+
+	telemetry *telemetry.Telemetry
 }
 
 // New builds the API on the data in db, with now as the clock of the services that need one (a fixed clock
@@ -82,7 +85,11 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 		}
 	}
 
-	router := web.NewRouter()
+	engine, tel, err := newEngine(cfg)
+	if err != nil {
+		return nil, err
+	}
+	router := web.NewRouter(engine)
 	probeRoutes(router, cfg, db)
 	auth.NewHandler(authService, peopleService).Routes(router, signedIn)
 	people.NewHandler(peopleService).Routes(router, signedIn)
@@ -271,11 +278,6 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	settingsService.AddReferenceSource(planReferences(planService))
 	settingsService.AddReferenceSource(planning.references)
 
-	// Routes lists the operations only: the catch-all registered next is not an operation of the contract.
-	routes := router.Patterns()
-	// Every other path or method under /api/, unversioned ones included, answers JSON 404 (http.ServeMux would
-	// answer plain text).
-	router.Handle("/api/", web.NotFound)
-
-	return &App{Handler: web.Middleware(router), Routes: routes, allWork: allWork, finance: finance}, nil
+	return &App{Handler: engine, Routes: web.Operations(engine.Routes()), allWork: allWork, finance: finance,
+		telemetry: tel}, nil
 }

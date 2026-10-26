@@ -38,8 +38,8 @@ type FeedRow struct {
 const (
 	maxRateFileBytes = 2 << 20 // 2 MB
 	maxRateFileRows  = 20_000
-	// maxRateUploadBytes is the request body of the import operations: the file in base64 and its name.
-	maxRateUploadBytes = 3 << 20
+	// MaxRateUploadBytes is the request body of the import operations: the file in base64 and its name.
+	MaxRateUploadBytes = 3 << 20
 )
 
 // gsapFeedName is the name of the simulated GSAP daily rate feed.

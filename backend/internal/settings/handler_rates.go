@@ -157,7 +157,7 @@ func (h *Handler) updateFieldHelp(w http.ResponseWriter, r *http.Request) {
 
 // readRateUpload decodes a rate file upload of up to 3 MB; when it cannot, it answers the error and returns false.
 func readRateUpload(w http.ResponseWriter, r *http.Request, dst *RateImportUpload) bool {
-	if err := web.ReadJSONUpTo(w, r, dst, maxRateUploadBytes); err != nil {
+	if err := web.ReadJSONUpTo(w, r, dst, MaxRateUploadBytes); err != nil {
 		web.WriteError(w, r, err)
 		return false
 	}

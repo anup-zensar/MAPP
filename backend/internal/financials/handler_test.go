@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+
 	"mapp/internal/financials"
 	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/money"
@@ -447,22 +449,25 @@ func TestOperations_NeedSignIn_FR028(t *testing.T) {
 // Transactions are read-only: of the ten operations, only an import, its check and a manual link or unlink
 // change anything; none creates, edits or deletes a transaction (FR-002).
 func TestOperations_TransactionsAreReadOnly_FR002(t *testing.T) {
-	router := web.NewRouter()
-	financials.NewHandler(nil).Routes(router, func(h http.HandlerFunc) http.HandlerFunc { return h })
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.New()
+	financials.NewHandler(nil).Routes(web.NewRouter(engine), func(h http.HandlerFunc) http.HandlerFunc { return h })
+	operations := web.Operations(engine.Routes())
 
 	changing := []string{}
-	for _, pattern := range router.Patterns() {
-		if !strings.HasPrefix(pattern, http.MethodGet+" ") {
-			changing = append(changing, pattern)
+	for _, operation := range operations {
+		if !strings.HasPrefix(operation, http.MethodGet+" ") {
+			changing = append(changing, operation)
 		}
 	}
+	slices.Sort(changing)
 	want := []string{
-		"POST /api/v1/financials/transactions/{transactionId}/link",
-		"POST /api/v1/financials/transactions/{transactionId}/unlink",
 		"POST /api/v1/financials/imports",
 		"POST /api/v1/financials/imports/check",
+		"POST /api/v1/financials/transactions/{transactionId}/link",
+		"POST /api/v1/financials/transactions/{transactionId}/unlink",
 	}
-	if len(router.Patterns()) != 10 || !slices.Equal(changing, want) {
-		t.Errorf("operations = %q\nchanging = %q, want %q", router.Patterns(), changing, want)
+	if len(operations) != 10 || !slices.Equal(changing, want) {
+		t.Errorf("operations = %q\nchanging = %q, want %q", operations, changing, want)
 	}
 }

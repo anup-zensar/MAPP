@@ -83,8 +83,8 @@ environment operations); 15 handler packages; 429 helper call sites
 | `internal/auth` | Sign-in middleware | `(*Service).RequireSignIn(c *gin.Context)`: 401 without a session; actor and `actor_id` into the request context · `(*Handler).RegisterRoutes(public gin.IRoutes)` |
 | `internal/access` | Route table and its enforcement | `RuleFor(operation string) (Rule, bool)` (unchanged) · `(*Service).Authorize(c *gin.Context)` |
 | each business area | Gin handlers | `(*Handler).RegisterRoutes(r gin.IRoutes)`, with paths relative to `/api/v1` |
-| `internal/app` | Wiring, configuration, server | `New(cfg Config, db *store.DB, now clock.Clock, tel *telemetry.Telemetry) (*App, error)` · `App.Handler http.Handler` (the engine) · `App.Routes []string` (from `engine.Routes()`) · `Serve(ctx, listener net.Listener, handler http.Handler, shutdownTimeout time.Duration) error` · `Config` gains `LogLevel`, `ShutdownTimeout`, `Telemetry` |
-| `cmd/api` | Process lifetime | `run`: signals → config → logger → telemetry → store → `app.New` → `listen` → `app.Serve` → telemetry `Shutdown` |
+| `internal/app` | Wiring, configuration, server | `New(cfg Config, db *store.DB, now clock.Clock) (*App, error)` (starts the telemetry from `cfg.Telemetry`) · `(*App).Close(ctx) error` (flushes it) · `App.Handler http.Handler` (the engine) · `App.Routes []string` (from `engine.Routes()`) · `Serve(ctx, listener net.Listener, handler http.Handler, shutdownTimeout time.Duration) error` · `Config` gains `LogLevel`, `ShutdownTimeout`, `Telemetry` |
+| `cmd/api` | Process lifetime | `run`: signals → config → logger → store → `app.New` → `listen` → `app.Serve` → `App.Close` |
 
 **Request flow** (engine → groups):
 
@@ -120,7 +120,7 @@ Cryptography: `crypto/rand` for request IDs only.
 |---|---|---|
 | ServeMux and Gin match differently (HEAD, trailing slash, 405, encoded paths) | Engine settings (R3); the unknown-path, other-host and header tests stay unchanged; end-to-end suite after slices A, B and D. HEAD now answers 404 | Technical lead |
 | 022 not merged, or its paths change again | Every task that touches 022's files waits for it (marked ⏳022 in `tasks.md`) | — |
-| 023 lands in parallel and both change `app.go`, `apitest` and `/readyz` | The second to merge rebases; both add a parameter to `app.New` | Technical lead |
+| 023 lands in parallel and both change `app.go`, `apitest` and `/readyz` | The second to merge rebases; `app.New` keeps its signature, so only its body and `transport.go` meet | Technical lead |
 | The half-moved state lingers | Slice D belongs to this feature's Definition of Done; the feature is not Done while the bridge exists | Product owner (schedules) |
 | Gin brings in a large set of indirect modules | `govulncheck` and SCA gates; accepted because B1 mandates Gin | Technical lead |
 | Creating spans for every request costs time | No exporter locally; measure if a performance requirement appears | Technical lead |
@@ -152,7 +152,6 @@ backend/internal/platform/logging/             new
 backend/internal/platform/telemetry/           new
 backend/internal/platform/web/                 engine.go, middleware.go, respond.go (new); router.go and
                                                  web.go are the bridge until slice D; web_test.go rewritten
-backend/internal/platform/apitest/apitest.go   app.New's telemetry argument
 backend/internal/auth/middleware.go, handler.go
 backend/internal/access/middleware.go, targets.go, middleware_test.go
 backend/internal/{samples,home,history,lineitems,budgets,plans,campaigns,activities,approvals,

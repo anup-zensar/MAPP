@@ -87,34 +87,34 @@ request.
 
 ### Slice A — the engine and the bridge
 
-- [ ] T010 ⏳022 Re-check the publish dates, then `go get github.com/gin-gonic/gin@v1.12.0` and
+- [x] T010 ⏳022 Re-check the publish dates, then `go get github.com/gin-gonic/gin@v1.12.0` and
   `go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin@v0.72.0`. Record both dates
   in the pull request (VII release age)
-- [ ] T011 ⏳022 Create `backend/internal/platform/web/engine.go`: `NewEngine` with the settings of R3,
+- [x] T011 ⏳022 Create `backend/internal/platform/web/engine.go`: `NewEngine` with the settings of R3,
   middleware 1–7 of R5 and a `NoRoute` answering the 404 envelope (FR-001, FR-004)
-- [ ] T012 ⏳022 Create `backend/internal/platform/web/middleware.go` with `RequestID`, `LogRequest`,
+- [x] T012 ⏳022 Create `backend/internal/platform/web/middleware.go` with `RequestID`, `LogRequest`,
   `Recover` (via `gin.CustomRecoveryWithWriter(nil, …)`), `SecurityHeaders`, `SameOrigin` and `LimitBody`.
   Move today's host and cross-origin logic out of `web.Middleware`, which is deleted (FR-004, FR-005,
   FR-007, FR-009, FR-010)
-- [ ] T013 ⏳022 Create `backend/internal/platform/web/respond.go` with `BindJSON`, `Respond`, `RespondError`,
+- [x] T013 ⏳022 Create `backend/internal/platform/web/respond.go` with `BindJSON`, `Respond`, `RespondError`,
   `Operation` and `Operations` (R4, R10). The legacy `ReadJSON`, `WriteJSON` and `WriteError` in `web.go`
   log with `slog.…Context(r.Context(), …)` (FR-006)
-- [ ] T014 ⏳022 Turn `backend/internal/platform/web/router.go` into the bridge. `Router` wraps a
+- [x] T014 ⏳022 Turn `backend/internal/platform/web/router.go` into the bridge. `Router` wraps a
   `gin.IRoutes`; `Handle` converts the ServeMux pattern and, before calling the handler, sets
   `c.Request.Pattern` and calls `c.Request.SetPathValue` for every parameter (R12) (FR-013)
-- [ ] T015 ⏳022 In `backend/internal/platform/web/web_test.go`, rewrite the `TestMiddleware_*` tests against
-  the engine. Add `TestRequestID_ServerMadeClientIgnored_024_FR005`,
-  `TestLogRequest_OneRecordPerRequest_024_FR007`, `TestRecover_Answers500AndLogsOnce_024_FR009`,
-  `TestLimitBody_DefaultAndPerOperation_024_FR010` and `TestOperation_ContractForm_024_FR003`. Remove the
-  `TestRouter_*` tests
-- [ ] T016 ⏳022 Rewire `backend/internal/app/app.go`. `New` takes `tel *telemetry.Telemetry` and builds the
-  engine with the body limits (export `settings.MaxRateUploadBytes` in `internal/settings/ratefeed.go`).
-  Register the probes and `/api/v1/environment` natively; the bridge sits on the engine root. `NoRoute`
-  replaces the `/api/` catch-all, and `App.Routes = web.Operations(engine.Routes())` (FR-001, FR-003)
-- [ ] T017 ⏳022 Pass telemetry started with both exporters `none` (writer `io.Discard`) to `app.New` in
-  `backend/internal/platform/apitest/apitest.go`. In `backend/cmd/api/main.go`, call
-  `telemetry.Start(cfg.Telemetry, os.Stderr)` and `Shutdown` after `Serve`, within the shutdown deadline
-  (FR-008, FR-011)
+- [x] T015 ⏳022 In `backend/internal/platform/web/web_test.go`, rewrite the middleware, decoding and error
+  tests against the engine (`TestEngine_*`, `TestBindJSON_*`, `TestRespondError_*`). Add
+  `TestEngine_RequestIDMadeByTheServer_024_FR005`, `TestEngine_OneRequestRecordPerRequest_024_FR007`,
+  `TestEngine_PanicAnswersInternalError_024_FR009` and `TestLimitBody_AnOperationMayRaiseTheLimit_024_FR010`.
+  Remove the `TestRouter_*` tests; `Operation` is proven by every access test that finds its rule
+- [x] T016 ⏳022 Rewire `backend/internal/app/app.go` through the new `internal/app/transport.go`: `New` keeps
+  its signature (so feature 023's wiring changes stay small), starts the telemetry from `cfg.Telemetry`
+  (console writer `os.Stderr`) and builds the engine with the body limits (export
+  `settings.MaxRateUploadBytes` in `internal/settings/ratefeed.go`); the bridge, the probes and
+  `/api/v1/environment` sit on the engine root. `NoRoute` replaces the `/api/` catch-all, and
+  `App.Routes = web.Operations(engine.Routes())` (FR-001, FR-003)
+- [x] T017 ⏳022 `App.Close(ctx)` flushes the telemetry; `backend/cmd/api/main.go` calls it after `Serve`,
+  within `SHUTDOWN_TIMEOUT`. `apitest` needs no change (FR-008, FR-011)
 
 **Checkpoint A**: every route is served by Gin, every area still uses `net/http` handlers; gates and the
 end-to-end suite green with no test expectation changed.
