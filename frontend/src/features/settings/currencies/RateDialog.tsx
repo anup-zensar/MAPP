@@ -1,19 +1,23 @@
-import { CircleAlert } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
 import { problemOf } from '@/ui/FormPanel/problem-of';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { inverseRate, parseDecimalInput } from '@/format/decimal';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { localDate } from '@/format/intl';
 import { useFormatters } from '@/format/useFormatters';
 import settingsStyles from '@/ui/settings-table.module.css';
+import { ImpactWarnings } from '../ImpactWarnings';
 import { CONFLICT_NEXT_STEP } from '../save-failure';
-import { inverseLine, rateLine } from './currency-actions';
+import { liveRate, rateText } from './rate-input';
+import { futureRateNote } from './rate-words';
+import { RateDateField } from './RateDateField';
 import {
   checkAddRateImpact,
   checkUpdateRateImpact,
@@ -22,11 +26,14 @@ import {
   useUpdateRate,
 } from './rates-api';
 import type { ChangeImpact, ExchangeRateRecord } from './rates-api';
-import { futureRateNote } from './rate-words';
 import styles from './rates.module.css';
+import { rateSchema } from './schemas';
+import type { RateValues } from './schemas';
 
 /** Why a rate keeps its date (data-model §2.1). */
 const DATE_FIXED = "A rate's date can't change: add a rate on the new date and delete this one.";
+
+const FIELDS = ['date', 'rate'] as const;
 
 export interface RateDialogProps {
   /** The currency the rate is of, such as "EUR". */
@@ -54,30 +61,32 @@ export function RateDialog({ code, rate, onClose }: RateDialogProps) {
   const addRate = useAddRate();
   const updateRate = useUpdateRate();
   const today = localDate(new Date());
-  const [day, setDay] = useState(rate?.date ?? today);
-  const [typed, setTyped] = useState(rate?.rate ?? '');
+  const form = useForm<RateValues>({
+    resolver: zodResolver(rateSchema),
+    defaultValues: { date: rate?.date ?? today, rate: rate?.rate ?? '' },
+    ...CHECK_ON_SAVE,
+  });
   const [version, setVersion] = useState(rate?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<{ message: string; nextStep?: string } | null>(null);
   const [pending, setPending] = useState<PendingSave | null>(null);
+  const [day, typed] = useWatch({ control: form.control, name: ['date', 'rate'] });
   const editing = rate !== undefined;
   const rateDay = rate?.date ?? day;
 
-  async function submit() {
+  async function check(values: RateValues) {
     setSaving(true);
     setFailure(null);
     try {
-      const value = rateText(typed);
+      const value = rateText(values.rate);
       const impact = editing
         ? await checkUpdateRateImpact(rate.id, { rate: value, version })
-        : await checkAddRateImpact(code, { date: day, rate: value });
-      setProblems([]);
+        : await checkAddRateImpact(code, { date: values.date, rate: value });
       if (impact.warnings.length > 0) {
         setPending({ warnings: impact.warnings });
         return;
       }
-      await save();
+      await save(values);
     } catch (error) {
       await showFailure(error);
     } finally {
@@ -85,11 +94,11 @@ export function RateDialog({ code, rate, onClose }: RateDialogProps) {
     }
   }
 
-  async function save() {
-    const value = rateText(typed);
+  async function save(values: RateValues) {
+    const value = rateText(values.rate);
     const saved = editing
       ? await updateRate.mutateAsync({ rateId: rate.id, body: { rate: value, version } })
-      : await addRate.mutateAsync({ code, body: { date: day, rate: value } });
+      : await addRate.mutateAsync({ code, body: { date: values.date, rate: value } });
     show({ message: `Rate of ${code} on ${formatDate(saved.date)} saved` });
     onClose();
   }
@@ -97,7 +106,7 @@ export function RateDialog({ code, rate, onClose }: RateDialogProps) {
   async function confirm() {
     setSaving(true);
     try {
-      await save();
+      await save(form.getValues());
     } catch (error) {
       await showFailure(error);
     } finally {
@@ -112,15 +121,19 @@ export function RateDialog({ code, rate, onClose }: RateDialogProps) {
       return;
     }
     if (apiError.kind === 'validation') {
-      setProblems(apiError.fields);
+      for (const field of FIELDS) {
+        const message = problemOf(apiError.fields, field);
+        if (message) {
+          form.setError(field, { message });
+        }
+      }
       // A problem with no field of this dialog is shown above the fields.
-      const other = apiError.fields.filter(
+      const [other] = apiError.fields.filter(
         (field) => field.field !== 'date' && field.field !== 'rate',
       );
-      setFailure(other.length > 0 ? { message: other[0].message } : null);
+      setFailure(other ? { message: other.message } : null);
       return;
     }
-    setProblems([]);
     if (apiError.kind === 'conflict' && rate) {
       setFailure({
         message: conflictMessage(apiError, 'rate', dateFormat),
@@ -136,7 +149,7 @@ export function RateDialog({ code, rate, onClose }: RateDialogProps) {
     setFailure({ message: apiError.message });
   }
 
-  const dateError = problemOf(problems, 'date');
+  const submit = form.handleSubmit(check);
   const future = rateDay > today;
 
   return (
@@ -164,47 +177,30 @@ export function RateDialog({ code, rate, onClose }: RateDialogProps) {
             </dd>
           </dl>
         ) : (
-          <div className={styles.field}>
-            <label htmlFor="rate-date" className={styles.label}>
-              Date<span className={styles.marking}>Required</span>
-            </label>
-            <input
-              id="rate-date"
-              name="date"
-              type="date"
-              value={day}
-              onChange={(event) => setDay(event.target.value)}
-              aria-invalid={dateError ? true : undefined}
-              aria-describedby={
-                [future && 'rate-date-note', dateError && 'rate-date-error']
-                  .filter(Boolean)
-                  .join(' ') || undefined
-              }
-              className={`${styles.input} ${dateError ? styles.invalid : ''}`}
-            />
-            {future && (
-              <p id="rate-date-note" className={styles.note}>
-                {futureRateNote(day, formatDate)}
-              </p>
+          <FormField
+            control={form.control}
+            name="date"
+            render={(field) => (
+              <RateDateField
+                note={future ? futureRateNote(day, formatDate) : undefined}
+                {...field}
+              />
             )}
-            {dateError && (
-              <p id="rate-date-error" className={styles.error}>
-                <CircleAlert aria-hidden="true" />
-                {dateError}
-              </p>
-            )}
-          </div>
+          />
         )}
-        <DecimalField
-          label="Rate (units per 1 USD)"
+        <FormField
+          control={form.control}
           name="rate"
-          marking="Required"
-          decimals={6}
-          suffix="per USD"
-          value={typed}
-          onChange={setTyped}
-          note={liveRate(code, typed)}
-          error={problemOf(problems, 'rate')}
+          render={(field) => (
+            <DecimalField
+              label="Rate (units per 1 USD)"
+              marking="Required"
+              decimals={6}
+              suffix="per USD"
+              note={liveRate(code, typed)}
+              {...field}
+            />
+          )}
         />
         {editing && future && (
           <p className={settingsStyles.meta}>{futureRateNote(rate.date, formatDate)}</p>
@@ -220,32 +216,9 @@ export function RateDialog({ code, rate, onClose }: RateDialogProps) {
           busy={saving}
           onConfirm={() => void confirm()}
         >
-          {pending.warnings.length === 1 ? (
-            <p>{pending.warnings[0].message}</p>
-          ) : (
-            <ul className={settingsStyles.warnings}>
-              {pending.warnings.map((warning) => (
-                <li key={warning.message}>{warning.message}</li>
-              ))}
-            </ul>
-          )}
+          <ImpactWarnings warnings={pending.warnings} />
         </ConfirmDialog>
       )}
     </>
   );
-}
-
-/** "1 USD = 0.95 EUR · 1 EUR = 1.052632 USD" for a typed rate above 0; nothing otherwise. */
-function liveRate(code: string, typed: string): string | undefined {
-  const rate = parseDecimalInput(typed, 6);
-  const inverse = rate === null ? null : inverseRate(rate);
-  if (rate === null || inverse === null) {
-    return undefined;
-  }
-  return `${rateLine(code, rate)} · ${inverseLine(code, inverse)}`;
-}
-
-/** A typed rate as the API takes it: grouping removed; anything else as typed, for the API to judge. */
-function rateText(text: string): string {
-  return parseDecimalInput(text, 6) ?? text.trim();
 }
