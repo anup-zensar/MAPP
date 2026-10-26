@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -207,10 +206,9 @@ func tooLong(text string, limit int) bool {
 // decidedConflict refuses a decision on a level or round that has moved on (FR-018, D-155):
 // version_conflict whose message says what happened and whose conflict says who and when.
 func decidedConflict(message, by string, at time.Time) *errs.Error {
-	return &errs.Error{
-		Status: http.StatusConflict, Code: errs.CodeVersionConflict, Message: message, Fields: []errs.FieldError{},
-		Conflict: &errs.Conflict{ChangedBy: by, ChangedAt: at},
-	}
+	conflict := errs.VersionConflict("", by, at)
+	conflict.Message = message
+	return conflict
 }
 
 // changeText is the sentence of one changed value of a restart (data model §3).

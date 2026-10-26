@@ -29,35 +29,6 @@ type errorEnvelope struct {
 	Error *errs.Error `json:"error"`
 }
 
-type Wrap func(http.HandlerFunc) http.HandlerFunc
-
-func ReadJSON(w http.ResponseWriter, r *http.Request, dst any) error {
-	return ReadJSONUpTo(w, r, dst, maxBodyBytes)
-}
-
-func ReadJSONUpTo(w http.ResponseWriter, r *http.Request, dst any, limit int64) error {
-	return readBody(r, http.MaxBytesReader(w, r.Body, limit), dst)
-}
-
-func WriteJSON(w http.ResponseWriter, status int, v any) {
-	code, body, err := encode(status, v)
-	if err != nil {
-		slog.Error("could not encode the answer", "error", err)
-	}
-	w.Header().Set("Content-Type", jsonType)
-	w.WriteHeader(code)
-	_, _ = w.Write(body)
-}
-
-func WriteError(w http.ResponseWriter, r *http.Request, err error) {
-	apiErr, ok := errors.AsType[*errs.Error](err)
-	if !ok {
-		slog.ErrorContext(r.Context(), "request failed", "method", r.Method, "path", r.URL.Path, "error", err)
-		apiErr = errs.Internal()
-	}
-	WriteJSON(w, apiErr.Status, errorEnvelope{Error: apiErr})
-}
-
 // readBody refuses, with bad_request, anything but one strict JSON value; the reason goes only to the log.
 func readBody(r *http.Request, body io.Reader, dst any) error {
 	if err := decode(r.Header.Get("Content-Type"), body, dst); err != nil {

@@ -204,10 +204,10 @@ Then change the area's line in `app.go` to `RegisterRoutes(signedIn)`. Its tests
   router becomes a Gin engine
 - [x] T044 [P] [US1] ⏳022 Slice C7: `backend/internal/allwork/handler.go`
 - [x] T045 [US1] ⏳022 Slice C7: wiring in `app.go` — **checkpoint C7**
-- [ ] T046 [US1] ⏳022 Slice D: delete the bridge — `web/router.go`, `web.Wrap`, `ReadJSON`, `ReadJSONUpTo`,
+- [x] T046 [US1] ⏳022 Slice D: delete the bridge — `web/router.go`, `web.Wrap`, `ReadJSON`, `ReadJSONUpTo`,
   `WriteJSON`, `WriteError` and `NotFound` in `web.go` — and the bridge's use in `app.go`. The build proves
   that no handler takes `http.ResponseWriter` any more (FR-013, SC-005)
-- [ ] T047 [US1] ⏳022 Slice D: `golangci-lint run ./...` reports no `transport-only` or `service-layer`
+- [x] T047 [US1] ⏳022 Slice D: `golangci-lint run ./...` reports no `transport-only` or `service-layer`
   finding — **checkpoint D** with the end-to-end suite (FR-002, SC-001)
 
 ---

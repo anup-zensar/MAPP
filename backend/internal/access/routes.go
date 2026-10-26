@@ -46,8 +46,8 @@ func viewAnd(p authz.Permission) Rule    { return Rule{Kind: View, Permission: p
 func custom() Rule                       { return Rule{Kind: Custom} }
 func customWith(p authz.Permission) Rule { return Rule{Kind: Custom, Permission: p} }
 
-// routeRules is plan Table C: the rule of every operation of the contract, by its ServeMux pattern
-// ("METHOD /path"), including the operations of features 012 and 015–017 that are not served yet, so that
+// routeRules is plan Table C: the rule of every operation of the contract, keyed as the contract writes it
+// ("METHOD /path"; web.Operation builds it from the matched route), including the operations of features 012 and 015–017 that are not served yet, so that
 // they are protected the moment they are (D-301). An operation without a rule is refused (fail closed,
 // FR-010); app/access_routes_test.go fails for any operation of the contract without one.
 var routeRules = map[string]Rule{
@@ -320,10 +320,10 @@ var routeRules = map[string]Rule{
 	"POST /api/v1/approvals/escalations/run":                  need(authz.WorkflowsManage),
 }
 
-// RuleFor returns the rule of the operation with the ServeMux pattern ("GET /api/v1/plans/{planId}"), and false
-// when the operation has none: the middleware then refuses it.
-func RuleFor(pattern string) (Rule, bool) {
-	rule, found := routeRules[pattern]
+// RuleFor returns the rule of the operation ("GET /api/v1/plans/{planId}"), and false when the operation has
+// none: the middleware then refuses it.
+func RuleFor(operation string) (Rule, bool) {
+	rule, found := routeRules[operation]
 	return rule, found
 }
 

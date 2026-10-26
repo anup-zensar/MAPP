@@ -57,13 +57,3 @@ func contractPath(ginPath string) string {
 	}
 	return strings.Join(segments, "/")
 }
-
-func ginPath(contractPath string) string {
-	segments := strings.Split(contractPath, "/")
-	for i, segment := range segments {
-		if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
-			segments[i] = ":" + strings.Trim(segment, "{}")
-		}
-	}
-	return strings.Join(segments, "/")
-}
