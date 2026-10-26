@@ -168,6 +168,7 @@ export function Combobox({
       {(describedBy) => (
         <Popover.Root open={isOpen} onOpenChange={setOpen}>
           <Popover.Anchor asChild>
+            {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer shortcut to the input, which keyboards reach directly */}
             <div
               ref={anchor}
               className={cx(styles.control, error && inputs.invalid, disabled && styles.disabled)}
@@ -262,6 +263,7 @@ export function Combobox({
                     {shown.map((option, index) => {
                       const chosen = value.includes(option.id);
                       return (
+                        // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events -- the input handles keys (aria-activedescendant)
                         <li
                           key={option.id}
                           id={optionId(index)}

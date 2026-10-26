@@ -60,6 +60,7 @@ export function OutsideYearNote({ year, compact = false }: { year: number; compa
   if (compact) {
     return (
       <Tooltip content={text}>
+        {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- opens the tooltip */}
         <span role="img" aria-label={text} tabIndex={0} className={styles.warningIcon}>
           <TriangleAlert aria-hidden="true" />
         </span>

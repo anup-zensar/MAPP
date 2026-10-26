@@ -100,7 +100,12 @@ export function BudgetByMonthCard({
       ...(row.noDates ? [{ label: 'No dates', planned: row.noDates }] : []),
     ];
     return (
-      <div className={styles.scroll} tabIndex={0} aria-label="Budget by month, scrolls sideways">
+      <div
+        className={styles.scroll}
+        role="region"
+        aria-label="Budget by month, scrolls sideways"
+        tabIndex={0}
+      >
         <table className={styles.table}>
           <caption className="visually-hidden">
             Budget by {view === 'months' ? 'month' : 'quarter'} of {record.name} in {amountsIn},{' '}

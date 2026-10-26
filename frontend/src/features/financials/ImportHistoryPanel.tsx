@@ -36,6 +36,7 @@ export function ImportHistoryPanel({ onClose }: ImportHistoryPanelProps) {
           <EmptyState icon={<FileText />} title={NO_DATA} />
         ) : (
           // Focusable, so the keyboard can scroll a long history, which holds no link or button.
+          // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- the list scrolls
           <ol className={styles.list} tabIndex={0} aria-label="Imports, newest first">
             {imports.data.items.map((item) => (
               <ImportItem key={item.id} item={item} />

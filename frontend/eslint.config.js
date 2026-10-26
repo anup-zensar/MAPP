@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import importX, { createNodeResolver } from 'eslint-plugin-import-x';
+import jsxA11y from 'eslint-plugin-jsx-a11y-x';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
@@ -39,10 +40,18 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      jsxA11y.configs.recommended,
     ],
     languageOptions: {
       ecmaVersion: 2023,
       globals: globals.browser,
+    },
+    rules: {
+      // Safari drops the list role of a list without bullets, so lists say role="list".
+      'jsx-a11y-x/no-redundant-roles': ['error', { ul: ['list'], ol: ['list'] }],
+      // A region or group that scrolls takes the focus, so the keyboard can scroll it (WCAG 2.1.1).
+      'jsx-a11y-x/no-noninteractive-tabindex': ['error', { roles: ['region', 'group'] }],
+      'jsx-a11y-x/label-has-associated-control': ['error', { depth: 3 }],
     },
   },
   {

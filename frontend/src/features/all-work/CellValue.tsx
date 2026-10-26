@@ -86,6 +86,7 @@ function LongText({ text, search }: { text: string; search: string }) {
   }
   return (
     <Tooltip content={text}>
+      {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- opens the tooltip */}
       <span tabIndex={0} className={cx(styles.text, styles.cut)}>
         <Highlight text={text} search={search} />
       </span>

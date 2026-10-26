@@ -330,6 +330,7 @@ function RowList<T>({ heading, rows, line, tone }: RowListProps<T>) {
         {heading}
       </h3>
       {/* A long list scrolls; it can take the focus, so the keyboard can scroll it too. */}
+      {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- the list scrolls */}
       <ul className={styles.list} tabIndex={0} aria-labelledby={id}>
         {rows.map((row) => {
           const text = line(row);

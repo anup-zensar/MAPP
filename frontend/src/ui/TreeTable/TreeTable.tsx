@@ -149,6 +149,7 @@ export function TreeTable({
 
   return (
     <div className={styles.scroll}>
+      {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-to-interactive-role -- the ARIA treegrid pattern on a table */}
       <table ref={table} role="treegrid" aria-label={label} className={styles.table}>
         <thead>
           <tr>
