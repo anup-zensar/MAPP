@@ -18,4 +18,6 @@ type Repository interface {
 	GetBinEntry(ctx context.Context, id string) (BinEntry, bool, error)
 	// BinEntries returns every recycle-bin entry, resolved or not, in the order they were made.
 	BinEntries(ctx context.Context) ([]BinEntry, error)
+	// PurgeBinEntries resolves the entries ids with r and drops their snapshots, all at once.
+	PurgeBinEntries(ctx context.Context, ids []string, r Resolution) error
 }

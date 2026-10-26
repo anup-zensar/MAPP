@@ -179,6 +179,32 @@ func (q *Queries) ListLogEntries(ctx context.Context) ([]ActivityLog, error) {
 	return items, nil
 }
 
+const purgeBinEntries = `-- name: PurgeBinEntries :exec
+UPDATE recycle_bin
+SET snapshots = '[]', resolution_how = $1, resolution_by_id = $2,
+    resolution_by_name = $3, resolution_at = $4
+WHERE id = ANY ($5::text[])
+`
+
+type PurgeBinEntriesParams struct {
+	ResolutionHow    *string
+	ResolutionByID   *string
+	ResolutionByName *string
+	ResolutionAt     *time.Time
+	Ids              []string
+}
+
+func (q *Queries) PurgeBinEntries(ctx context.Context, arg PurgeBinEntriesParams) error {
+	_, err := q.db.Exec(ctx, purgeBinEntries,
+		arg.ResolutionHow,
+		arg.ResolutionByID,
+		arg.ResolutionByName,
+		arg.ResolutionAt,
+		arg.Ids,
+	)
+	return err
+}
+
 const putBinEntry = `-- name: PutBinEntry :exec
 INSERT INTO recycle_bin (
     id, record_type, record_type_label, record_id, record_name, path, parent, deleted_at, deleted_by_id,

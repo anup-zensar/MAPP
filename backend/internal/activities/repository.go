@@ -34,6 +34,8 @@ type Repository interface {
 	Delete(ctx context.Context, id string) error
 	// AddMany saves new activities, whose ids are not stored yet, all at once.
 	AddMany(ctx context.Context, list []Activity) error
+	// ListByIDs returns the activities with ids that are stored.
+	ListByIDs(ctx context.Context, ids []string) ([]Activity, error)
 	// DeleteMany removes the activities with ids all at once.
 	DeleteMany(ctx context.Context, ids []string) error
 	// CountOwnedBy counts the stored activities the person owns.
