@@ -44,6 +44,27 @@ test('026 FR-013: the sign-in page loads no other feature’s code (US3 scenario
   expect(featuresIn(scripts)).toEqual(['sign-in']);
 });
 
+test('026 FR-012: the shell is drawn while the page’s code is still on its way (US3 scenario 3)', async ({
+  page,
+}) => {
+  await signInAs(page, 'priya.raman@shell.com');
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/assets\/plans-[\w-]+\.js$/, async (route) => {
+    await held;
+    await route.continue();
+  });
+
+  await page.goto('/plans');
+
+  await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('status')).toHaveText('Loading…');
+  release();
+  await expect(page.getByRole('heading', { name: 'Plans', level: 1 })).toBeVisible();
+});
+
 test('026 FR-012: a page whose code cannot be downloaded shows the error page with Try again (US3 scenario 3)', async ({
   page,
 }) => {
