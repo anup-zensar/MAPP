@@ -94,6 +94,76 @@ type AllWorkPreference struct {
 	UpdatedAt     time.Time
 }
 
+type ApprovalAction struct {
+	ID               string
+	RoundID          string
+	RoundNumber      int
+	ActivityID       string
+	Action           string
+	Level            int
+	LevelName        string
+	Approvers        []byte
+	ActorID          string
+	ActorName        string
+	OnBehalfOf       []byte
+	At               time.Time
+	Comment          string
+	Changes          []byte
+	Capacity         string
+	AsDelegateOfID   *string
+	AsDelegateOfName *string
+	Rule             string
+	EscalatedToID    *string
+	EscalatedToName  *string
+	WaitedDays       int
+}
+
+type ApprovalDelegation struct {
+	ID              string
+	PersonID        string
+	DelegateID      string
+	StartDate       time.Time
+	EndDate         time.Time
+	Note            string
+	CancelledAt     *time.Time
+	CancelledByID   *string
+	CancelledByName *string
+	Version         int
+	CreatedAt       time.Time
+	CreatedByID     string
+	CreatedByName   string
+	UpdatedAt       time.Time
+	UpdatedByID     string
+	UpdatedByName   string
+}
+
+type ApprovalRound struct {
+	ID              string
+	ActivityID      string
+	Number          int
+	WorkflowID      string
+	WorkflowName    string
+	Levels          []byte
+	CurrentLevel    int
+	Outcome         string
+	SubmittedAt     time.Time
+	SubmittedByID   string
+	SubmittedByName string
+	Comment         string
+	EndedAt         *time.Time
+	Facts           []byte
+	ReminderDays    *int
+	EscalationDays  *int
+	AutoApproved    bool
+	Version         int
+	CreatedAt       time.Time
+	CreatedByID     string
+	CreatedByName   string
+	UpdatedAt       time.Time
+	UpdatedByID     string
+	UpdatedByName   string
+}
+
 type ApprovalWorkflow struct {
 	ID             string
 	Name           string
@@ -312,6 +382,21 @@ type ModelActivityType struct {
 	ModelID        string
 	Position       int
 	ActivityTypeID string
+}
+
+type Notification struct {
+	ID           string
+	RecipientID  string
+	Kind         string
+	Title        string
+	Text         string
+	ActivityID   string
+	ActivityName string
+	ActorID      string
+	ActorName    string
+	At           time.Time
+	Read         bool
+	ReadAt       *time.Time
 }
 
 type Person struct {

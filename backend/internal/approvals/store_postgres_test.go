@@ -14,13 +14,14 @@ import (
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/database"
 	"mapp/internal/platform/database/dbtest"
+	"mapp/internal/platform/date"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
 )
 
 var (
 	pgMeta  = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
-	pgExact = cmpopts.EquateComparable(money.Amount{})
+	pgExact = cmpopts.EquateComparable(money.Amount{}, date.Date{})
 )
 
 // pgStore gives a store whose database already holds the approvers U-1001 and U-1002.

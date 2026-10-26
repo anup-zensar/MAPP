@@ -15,8 +15,8 @@ import (
 	"mapp/internal/platform/record"
 )
 
-// PostgresStore is the Repository on PostgreSQL. It holds the approval workflows so far; rounds, history
-// entries, notifications and delegations follow (feature 023 T021), and until then it is not a Repository.
+// PostgresStore is the Repository on PostgreSQL: workflows here, rounds and history entries in
+// store_postgres_rounds.go, notifications and delegations in store_postgres_notifications.go.
 type PostgresStore struct {
 	db *database.DB
 }
