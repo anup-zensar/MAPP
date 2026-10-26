@@ -16,6 +16,7 @@ import {
 } from './api';
 import type { LineItemDetails, LineItemFormOptions } from './api';
 import { EDIT_TITLE, savedToast } from './line-item-text';
+import { focusFieldOf } from './schemas';
 
 const LOADING_TITLE = 'Edit line item';
 
@@ -51,7 +52,7 @@ export function LineItemEditPage() {
       details={details.data}
       options={options.data}
       attributeForm={attributeForm.data}
-      focusField={search.get('field')}
+      focusField={focusFieldOf(search)}
     />
   );
 }

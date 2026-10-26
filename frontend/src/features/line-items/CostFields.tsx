@@ -122,9 +122,9 @@ function Conversion({
   const dates = parts.map(
     (part) => rates.data?.items.find((item) => item.currency === part.code)?.rateDate ?? null,
   );
-  const known = dates.every((day) => day !== null)
-    ? rateDatesText(dates.map((day) => date(day as string)))
-    : null;
+  const knownDates = dates.filter((day) => day !== null);
+  const known =
+    knownDates.length === dates.length ? rateDatesText(knownDates.map((day) => date(day))) : null;
   return (
     <p className={styles.conversion}>
       <span className={styles.calculated}>{CALCULATED}</span>

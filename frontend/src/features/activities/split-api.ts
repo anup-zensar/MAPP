@@ -3,7 +3,13 @@
  * activities and the split itself. The API works out every amount in the plan currency; the web
  * app adds up the ticked line items only to pre-fill the amount, as feedback (D-061).
  */
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
 import { ACTIVITY_PLANNING_KEYS } from './api';
@@ -34,14 +40,16 @@ export function useSplitOptions(activityId: string) {
 export function useSplitPreview(activityId: string, request: ActivitySplitRequest | null) {
   return useQuery({
     queryKey: ['activity', activityId, 'split-preview', request],
-    queryFn: () =>
-      call(
-        api.POST('/api/v1/activities/{activityId}/split-preview', {
-          params: { path: { activityId } },
-          body: request!,
-        }),
-      ),
-    enabled: request !== null,
+    queryFn:
+      request === null
+        ? skipToken
+        : () =>
+            call(
+              api.POST('/api/v1/activities/{activityId}/split-preview', {
+                params: { path: { activityId } },
+                body: request,
+              }),
+            ),
     placeholderData: keepPreviousData,
     gcTime: 0,
   });

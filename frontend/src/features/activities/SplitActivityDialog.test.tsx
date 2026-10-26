@@ -4,8 +4,9 @@ import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { destination, launchFilm, OWN_INITIATIVE } from '@/testing/fixtures/activities';
-import { looseReply } from '@/testing/replies';
+import { launchFilm } from '@/testing/fixtures/activities';
+import { destination, OWN_INITIATIVE } from '@/testing/fixtures/activity-destinations';
+import { reply } from '@/testing/replies';
 import type { ActivitySplitOptions, ActivitySplitPreview, ActivitySplitSide } from './split-api';
 import { SplitActivityDialog } from './SplitActivityDialog';
 
@@ -78,17 +79,17 @@ const PREVIEWED: ActivitySplitPreview = {
 function openDialog(answers: HttpHandler[] = [], activity = launchFilm()) {
   const onClose = vi.fn();
   const api = mockApi([
-    looseReply(
+    reply(
       'GET /api/v1/activities/{activityId}/split-options',
       { body: options() },
       { activityId: 'A-1042' },
     ),
-    looseReply(
+    reply(
       'POST /api/v1/activities/{activityId}/split-preview',
       { body: PREVIEWED },
       { activityId: 'A-1042' },
     ),
-    looseReply(
+    reply(
       'POST /api/v1/activities/{activityId}/split',
       {
         body: {
@@ -172,7 +173,7 @@ describe('SplitActivityDialog (016 US4, FR-026 – FR-029)', () => {
   it('says an approved activity will need approval again and asks for it (scenario 3, FR-029)', async () => {
     const { user, api } = openDialog(
       [
-        looseReply(
+        reply(
           'GET /api/v1/activities/{activityId}/split-options',
           { body: options({ status: 'approved', needsRestart: true }) },
           { activityId: 'A-1042' },
@@ -197,7 +198,7 @@ describe('SplitActivityDialog (016 US4, FR-026 – FR-029)', () => {
 
   it('lists an initiative that cannot take the activity with Move’s reason (scenario 5)', async () => {
     openDialog([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/split-options',
         {
           body: options({
@@ -225,7 +226,7 @@ describe('SplitActivityDialog (016 US4, FR-026 – FR-029)', () => {
 
   it('shows every problem the preview finds at once', async () => {
     const { user } = openDialog([
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/split-preview',
         {
           body: {

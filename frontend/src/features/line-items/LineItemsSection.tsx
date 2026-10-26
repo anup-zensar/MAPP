@@ -18,6 +18,7 @@ import { moneyText } from './line-item-math';
 import { useLineItemSection } from './api';
 import type { LineItem } from './api';
 import styles from './LineItemsSection.module.css';
+import { highlightedLineItemOf } from './schemas';
 import {
   ADD_LINE_ITEM,
   DELETE,
@@ -56,8 +57,7 @@ export function LineItemsSection({ activityId }: LineItemsSectionProps) {
   const actions = useLineItemActions();
   const location = useLocation();
   const navigate = useNavigate();
-  const highlight = (location.state as { highlightLineItemId?: string } | null)
-    ?.highlightLineItemId;
+  const highlight = highlightedLineItemOf(location.state);
 
   useEffect(() => {
     if (highlight && section.data) {

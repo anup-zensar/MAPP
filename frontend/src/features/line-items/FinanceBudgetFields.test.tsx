@@ -8,9 +8,9 @@ import {
   DIGITAL,
   DIGITAL_2027,
   EVENTS,
-  formOptions,
   MOBILITY_RETAIL,
 } from '@/testing/fixtures/line-items';
+import { formOptions } from '@/testing/fixtures/line-item-forms';
 import { FinanceBudgetFields } from './FinanceBudgetFields';
 import { changeBudgetYear, newFormState, withField } from './line-item-form-state';
 import type { LineItemFormState } from './line-item-form-state';

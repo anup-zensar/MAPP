@@ -5,8 +5,9 @@ import { launchFilmSection } from '@/testing/fixtures/line-items';
 import { mockApi } from '@/testing/mock-api';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { activityAttributeForm, editForm, launchFilm, PEOPLE } from '@/testing/fixtures/activities';
-import { looseReply } from '@/testing/replies';
+import { launchFilm, PEOPLE } from '@/testing/fixtures/activities';
+import { activityAttributeForm, editForm } from '@/testing/fixtures/activity-forms';
+import { reply } from '@/testing/replies';
 import type { Activity } from './api';
 import { ActivityFormPage } from './ActivityFormPage';
 
@@ -20,7 +21,7 @@ const CONFLICT = {
   status: 409,
   body: {
     error: {
-      code: 'version_conflict',
+      code: 'version_conflict' as const,
       message: 'Someone else changed this activity.',
       fields: [],
       conflict: { changedBy: 'Alex Morgan', changedAt: '2026-03-12T10:42:00Z' },
@@ -31,7 +32,7 @@ const CONFLICT = {
 // The edit form's dates say what a change does to the line items' spreads (feature 007's
 // SpreadEffectNote), which reads the activity's line items: here it has none.
 const NO_LINE_ITEMS = [
-  looseReply(
+  reply(
     'GET /api/v1/activities/{activityId}/line-items',
     { body: launchFilmSection({ items: [] }) },
     { activityId: 'A-1042' },
@@ -40,23 +41,19 @@ const NO_LINE_ITEMS = [
 
 function openEditForm(activity: Activity, answers: HttpHandler[] = [], route = EDIT_ROUTE) {
   const api = mockApi([
-    looseReply('GET /api/v1/activities/{activityId}', { body: activity }, { activityId: 'A-1042' }),
-    looseReply(
+    reply('GET /api/v1/activities/{activityId}', { body: activity }, { activityId: 'A-1042' }),
+    reply(
       'GET /api/v1/activities/{activityId}/form',
       { body: editForm() },
       { activityId: 'A-1042' },
     ),
-    looseReply(
+    reply(
       'GET /api/v1/shell-attribute-forms/{level}',
       { body: activityAttributeForm() },
       { level: 'activity' },
     ),
-    looseReply('GET /api/v1/people', { body: PEOPLE }),
-    looseReply(
-      'PATCH /api/v1/activities/{activityId}',
-      { body: activity },
-      { activityId: 'A-1042' },
-    ),
+    reply('GET /api/v1/people', { body: PEOPLE }),
+    reply('PATCH /api/v1/activities/{activityId}', { body: activity }, { activityId: 'A-1042' }),
     ...NO_LINE_ITEMS,
     ...answers,
   ]);
@@ -72,7 +69,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
   it('opens with the activity and saves it with the version it opened with (FR-026)', async () => {
     let reads = 0;
     const { user, api, router, queryClient } = openEditForm(launchFilm(), [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}',
         () => {
           reads += 1;
@@ -116,14 +113,14 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
   it('keeps the typed values after a conflict and saves over it with the newer version (FR-026)', async () => {
     let saves = 0;
     const { user, api } = openEditForm(launchFilm(), [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}',
         () => ({
           body: launchFilm({ version: saves === 0 ? 3 : 4 }),
         }),
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'PATCH /api/v1/activities/{activityId}',
         () => {
           saves += 1;
@@ -145,9 +142,10 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByText("Activity 'Launch film' saved")).toBeVisible();
-    expect(
-      api.bodiesOf('PATCH /api/v1/activities/A-1042').map((body) => (body as Activity).version),
-    ).toEqual([3, 4]);
+    expect(api.bodiesOf('PATCH /api/v1/activities/A-1042')).toEqual([
+      expect.objectContaining({ version: 3 }),
+      expect.objectContaining({ version: 4 }),
+    ]);
   });
 
   it('asks before a cost change sends a submitted activity back for approval (FR-027)', async () => {
@@ -185,7 +183,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
   it('says in the re-approval question what new dates do to the line-item spreads (007 FR-022, D-150)', async () => {
     const { user } = openEditForm(launchFilm({ status: 'approved', displayStatus: 'approved' }), [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/line-items',
         { body: launchFilmSection() },
         { activityId: 'A-1042' },
@@ -278,7 +276,7 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
 
   it('says when the activity no longer exists', async () => {
     openEditForm(launchFilm(), [
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}',
         {
           status: 404,

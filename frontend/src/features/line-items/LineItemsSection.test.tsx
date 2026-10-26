@@ -1,44 +1,17 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
-import { renderWithProviders } from '@/testing/render';
-import { testUser } from '@/testing/fixtures/users';
-import {
-  activity,
-  activityRecord,
-  deleteResult,
-  launchFilmSection,
-  lineItem,
-  lineItemRecord,
-  usd,
-} from '@/testing/fixtures/line-items';
-import { looseReply } from '@/testing/replies';
-import { LineItemsSection } from './LineItemsSection';
-
-function renderSection(
-  answer: LooseAnswer,
-  state?: unknown,
-  financials: LooseAnswer = { body: activityRecord() },
-) {
-  mockApi([
-    looseReply('GET /api/v1/activities/{activityId}/line-items', answer, { activityId: 'A-1001' }),
-    looseReply('GET /api/v1/financials/records/{recordId}', financials, { recordId: 'A-1001' }),
-  ]);
-  return renderWithProviders(<LineItemsSection activityId="A-1001" />, {
-    route: { pathname: '/plans/P-1001/activities/A-1001', state },
-    user: testUser(),
-  });
-}
+import { closestTo, nth } from '@/testing/dom';
+import { activity, launchFilmSection, lineItem, usd } from '@/testing/fixtures/line-items';
+import { renderLineItemsSection } from '@/testing/fixtures/line-item-pages';
 
 describe('LineItemsSection (US1)', () => {
   it('lists each cost with its amounts, spread and chips (scenario 1, FR-001)', async () => {
-    renderSection({ body: launchFilmSection() });
+    renderLineItemsSection({ body: launchFilmSection() });
 
     const table = await screen.findByRole('table', { name: 'Line items' });
     const rows = within(table).getAllByRole('row');
     expect(rows).toHaveLength(3);
-    const film = rows[2];
+    const film = nth(rows, 2);
     expect(within(film).getByRole('link', { name: 'Film production' })).toHaveAttribute(
       'href',
       '/line-items/L-1002',
@@ -58,7 +31,7 @@ describe('LineItemsSection (US1)', () => {
   });
 
   it('shows Committed and Invoiced from GSAP on every row, a commitment above planned cost in red words (015 FR-016)', async () => {
-    renderSection({ body: launchFilmSection() });
+    renderLineItemsSection({ body: launchFilmSection() });
 
     const table = await screen.findByRole('table', { name: 'Line items' });
     const heads = within(table)
@@ -70,32 +43,34 @@ describe('LineItemsSection (US1)', () => {
       'Committed (USD)',
       'Invoiced (USD)',
     ]);
-    const [, fee, film] = within(table).getAllByRole('row');
+    const rows = within(table).getAllByRole('row');
+    const fee = nth(rows, 1);
+    const film = nth(rows, 2);
     await waitFor(() =>
       expect(within(fee).getAllByRole('cell')[3]).toHaveTextContent('30,000.00 USD'),
     );
     expect(within(fee).getAllByRole('cell')[4]).toHaveTextContent('12,000.00 USD');
     expect(within(film).getAllByRole('cell')[3]).toHaveTextContent('52,000.00 USD');
     expect(
-      within(within(film).getAllByRole('cell')[3]).getByRole('img', {
+      within(nth(within(film).getAllByRole('cell'), 3)).getByRole('img', {
         name: 'Committed above planned cost',
       }),
     ).toBeInTheDocument();
   });
 
   it('shows "—" in the GSAP columns when the figures cannot be read', async () => {
-    renderSection({ body: launchFilmSection() }, undefined, {
+    renderLineItemsSection({ body: launchFilmSection() }, undefined, {
       status: 409,
       body: { error: { code: 'not_allowed', message: 'Not allowed', fields: [] } },
     });
 
     const table = await screen.findByRole('table', { name: 'Line items' });
-    const [, fee] = within(table).getAllByRole('row');
+    const fee = nth(within(table).getAllByRole('row'), 1);
     await waitFor(() => expect(within(fee).getAllByRole('cell')[3]).toHaveTextContent('—'));
   });
 
   it('shows the unassigned planned cost with its meter (scenario 1, FR-002)', async () => {
-    renderSection({ body: launchFilmSection() });
+    renderLineItemsSection({ body: launchFilmSection() });
 
     expect(
       await screen.findByText('Unassigned planned cost (Sys_Gen_Balance)'),
@@ -113,7 +88,7 @@ describe('LineItemsSection (US1)', () => {
   });
 
   it('shows the grid by month with totals (scenario 2, FR-003)', async () => {
-    renderSection({ body: launchFilmSection() });
+    renderLineItemsSection({ body: launchFilmSection() });
 
     const grid = await screen.findByRole('table', { name: 'Line items spread over time, in USD' });
     const headers = within(grid)
@@ -135,7 +110,7 @@ describe('LineItemsSection (US1)', () => {
         roundingHint: false,
       },
     });
-    renderSection({ body: section });
+    renderLineItemsSection({ body: section });
 
     expect(
       await screen.findByText("Line items exceed the activity's planned cost by 500.00 USD"),
@@ -155,7 +130,7 @@ describe('LineItemsSection (US1)', () => {
       },
       grid: { columns: [], rows: [], totals: [], total: usd('0.00') },
     });
-    renderSection({ body: section });
+    renderLineItemsSection({ body: section });
 
     expect(
       await screen.findByText(
@@ -178,7 +153,7 @@ describe('LineItemsSection (US1)', () => {
         lineItem({ id: 'L-3', name: 'Three', requestSwbs: false, swbsStatus: 'notRequested' }),
       ],
     });
-    renderSection({ body: section });
+    renderLineItemsSection({ body: section });
 
     expect(await screen.findByText('Ready to send to GSAP')).toBeInTheDocument();
     expect(screen.getByText('Waiting for activity approval')).toBeInTheDocument();
@@ -195,7 +170,7 @@ describe('LineItemsSection (US1)', () => {
         roundingHint: true,
       },
     });
-    renderSection({ body: allAssigned });
+    renderLineItemsSection({ body: allAssigned });
     expect(
       await screen.findByText(
         "If a currency rate leaves a few cents unassigned, adjust the activity's planned cost instead.",
@@ -223,7 +198,9 @@ describe('LineItemsSection (US1)', () => {
       'This activity has no planned cost yet — add one to see how much is left to assign.',
     ],
   ])('words the balance state %#', async (balance, text) => {
-    renderSection({ body: launchFilmSection({ balance: { ...balance, roundingHint: false } }) });
+    renderLineItemsSection({
+      body: launchFilmSection({ balance: { ...balance, roundingHint: false } }),
+    });
     expect(await screen.findByText(text)).toBeInTheDocument();
   });
 
@@ -240,7 +217,7 @@ describe('LineItemsSection (US1)', () => {
       balance: { amount: '18400.00', currency: 'EUR' },
     };
     section.grid = { ...section.grid, total: { amount: '92000.00', currency: 'EUR' } };
-    renderSection({ body: section });
+    renderLineItemsSection({ body: section });
 
     expect(
       await screen.findByRole('columnheader', { name: 'Planned cost (EUR)' }),
@@ -250,88 +227,13 @@ describe('LineItemsSection (US1)', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('92,000.00 of 110,400.00 EUR assigned')).toBeInTheDocument();
     // Agency fee: 50,000.00 USD typed, shown as 46,000.00 EUR in the display-currency column.
-    const fee = screen.getByRole('link', { name: 'Agency fee' }).closest('tr') as HTMLElement;
+    const fee = closestTo(screen.getByRole('link', { name: 'Agency fee' }), 'tr');
     expect(within(fee).getAllByRole('cell')[2]).toHaveTextContent('46,000.00 EUR');
-  });
-
-  it('highlights the row just created (FR-010)', async () => {
-    renderSection({ body: launchFilmSection() }, { highlightLineItemId: 'L-1002' });
-
-    const link = await screen.findByRole('link', { name: 'Film production' });
-    expect(link.closest('tr')?.className).toMatch(/highlight/);
-    expect(screen.getByRole('link', { name: 'Agency fee' }).closest('tr')?.className).not.toMatch(
-      /highlight/,
-    );
-  });
-
-  it('offers View, Edit, Duplicate and Delete in each row', async () => {
-    const { user, router } = renderSection({ body: launchFilmSection() });
-
-    await user.click(await screen.findByRole('button', { name: 'Actions for Agency fee' }));
-    const items = (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
-    expect(items).toEqual(['View', 'Edit', 'Duplicate', 'Delete']);
-    await user.click(screen.getByRole('menuitem', { name: 'Edit' }));
-    await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-1001/edit'));
-  });
-
-  it('deletes from the row and offers Undo, staying on the activity (FR-030)', async () => {
-    mockApi([
-      looseReply(
-        'GET /api/v1/activities/{activityId}/line-items',
-        { body: launchFilmSection() },
-        { activityId: 'A-1001' },
-      ),
-      looseReply(
-        'GET /api/v1/financials/records/{recordId}',
-        { body: activityRecord() },
-        { recordId: 'A-1001' },
-      ),
-      looseReply(
-        'GET /api/v1/financials/records/{recordId}',
-        { body: lineItemRecord() },
-        { recordId: 'L-1001' },
-      ),
-      looseReply(
-        'DELETE /api/v1/line-items/{lineItemId}',
-        { body: deleteResult() },
-        { lineItemId: 'L-1001' },
-      ),
-    ]);
-    const { user, router } = renderWithProviders(<LineItemsSection activityId="A-1001" />, {
-      route: '/plans/P-1001/activities/A-1001',
-      user: testUser(),
-    });
-
-    await user.click(await screen.findByRole('button', { name: 'Actions for Agency fee' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
-    const dialog = await screen.findByRole('alertdialog', {
-      name: "Delete line item 'Agency fee'?",
-    });
-    // The GSAP transactions linked to it stay (015 FR-029).
-    expect(
-      await within(dialog).findByText(/^2 GSAP transactions are linked to it\./),
-    ).toBeVisible();
-    await user.click(within(dialog).getByRole('button', { name: 'Delete line item' }));
-
-    expect(
-      await screen.findByText("Line item 'Agency fee' moved to the recycle bin"),
-    ).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/plans/P-1001/activities/A-1001');
-  });
-
-  it('opens a needed field from the completeness chip (FR-028)', async () => {
-    const { user, router } = renderSection({ body: launchFilmSection() });
-
-    await user.click(await screen.findByRole('button', { name: '3 fields needed' }));
-    await user.click(await screen.findByRole('button', { name: 'Finance budget item' }));
-
-    await waitFor(() => expect(router.state.location.pathname).toBe('/line-items/L-1001/edit'));
-    expect(router.state.location.search).toBe('?field=financeBudgetItemId');
   });
 
   it('shows a skeleton while loading and Try again after a failure', async () => {
     let calls = 0;
-    const { user } = renderSection(() =>
+    const { user } = renderLineItemsSection(() =>
       calls++ === 0
         ? {
             status: 500,

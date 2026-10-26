@@ -3,19 +3,18 @@ import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { expectCurrentSection, renderApp } from '@/testing/app';
+import { details } from '@/testing/fixtures/line-items';
+import { formAnswers, formOptions } from '@/testing/fixtures/line-item-forms';
 import {
-  details,
-  formAnswers,
-  formOptions,
   lineItemRecord,
   transaction,
   transactionPage,
-} from '@/testing/fixtures/line-items';
-import { looseReply } from '@/testing/replies';
+} from '@/testing/fixtures/line-item-financials';
+import { reply } from '@/testing/replies';
 
 const FORM_OPTIONS: HttpHandler[] = [
   ...formAnswers(),
-  looseReply(
+  reply(
     'GET /api/v1/activities/{activityId}/line-items/form-options',
     { body: formOptions() },
     { activityId: 'A-1001' },
@@ -24,13 +23,13 @@ const FORM_OPTIONS: HttpHandler[] = [
 const DETAILS: HttpHandler[] = [
   ...FORM_OPTIONS,
   ...HISTORY_ANSWERS,
-  looseReply('GET /api/v1/line-items/{lineItemId}', { body: details() }, { lineItemId: 'L-1001' }),
-  looseReply(
+  reply('GET /api/v1/line-items/{lineItemId}', { body: details() }, { lineItemId: 'L-1001' }),
+  reply(
     'GET /api/v1/financials/records/{recordId}',
     { body: lineItemRecord() },
     { recordId: 'L-1001' },
   ),
-  looseReply('GET /api/v1/financials/transactions', { body: transactionPage([transaction()]) }),
+  reply('GET /api/v1/financials/transactions', { body: transactionPage([transaction()]) }),
 ];
 
 // Feature 007's addresses (build guide §5), with the requests each page makes.

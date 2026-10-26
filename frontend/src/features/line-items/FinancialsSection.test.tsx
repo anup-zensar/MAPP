@@ -1,34 +1,35 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { nth } from '@/testing/dom';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
+import { usd } from '@/testing/fixtures/line-items';
 import {
   activityRecord,
   figures,
   lineItemRecord,
   transaction,
   transactionPage,
-  usd,
-} from '@/testing/fixtures/line-items';
-import { looseReply } from '@/testing/replies';
+} from '@/testing/fixtures/line-item-financials';
+import { reply } from '@/testing/replies';
 import { ActivityFinancials, LineItemFinancials } from './FinancialsSection';
 
-function renderActivity(answer: LooseAnswer) {
-  mockApi([
-    looseReply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'A-1001' }),
-  ]);
+function renderActivity(answer: Answer<'GET /api/v1/financials/records/{recordId}'>) {
+  mockApi([reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'A-1001' })]);
   return renderWithProviders(<ActivityFinancials activityId="A-1001" />, { user: testUser() });
 }
 
 function renderLineItem(
-  answer: LooseAnswer,
-  transactions: LooseAnswer = { body: transactionPage([transaction()]) },
+  answer: Answer<'GET /api/v1/financials/records/{recordId}'>,
+  transactions: Answer<'GET /api/v1/financials/transactions'> = {
+    body: transactionPage([transaction()]),
+  },
 ) {
   mockApi([
-    looseReply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'L-1001' }),
-    looseReply('GET /api/v1/financials/transactions', transactions),
+    reply('GET /api/v1/financials/records/{recordId}', answer, { recordId: 'L-1001' }),
+    reply('GET /api/v1/financials/transactions', transactions),
   ]);
   return renderWithProviders(<LineItemFinancials lineItemId="L-1001" />, { user: testUser() });
 }
@@ -51,12 +52,14 @@ describe('ActivityFinancials (015 US1, FR-011 – FR-015)', () => {
 
     const byLineItem = within(card).getByRole('table', { name: 'Financial figures by line item' });
     const rows = within(byLineItem).getAllByRole('row');
-    expect(within(rows[1]).getByRole('link', { name: 'Agency fee' })).toHaveAttribute(
+    expect(within(nth(rows, 1)).getByRole('link', { name: 'Agency fee' })).toHaveAttribute(
       'href',
       '/line-items/L-1001',
     );
-    expect(within(rows[2]).getAllByRole('cell')[1]).toHaveTextContent('52,000.00 USD');
-    expect(within(rows[2]).getAllByRole('cell')[1]).toHaveTextContent('Above planned cost');
+    expect(nth(within(nth(rows, 2)).getAllByRole('cell'), 1)).toHaveTextContent('52,000.00 USD');
+    expect(nth(within(nth(rows, 2)).getAllByRole('cell'), 1)).toHaveTextContent(
+      'Above planned cost',
+    );
 
     const latest = within(card).getByRole('table', {
       name: 'The latest transactions, newest first',

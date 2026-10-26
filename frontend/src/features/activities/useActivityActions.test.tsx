@@ -5,25 +5,11 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { destinations, launchFilm } from '@/testing/fixtures/activities';
-import { looseReply } from '@/testing/replies';
+import { launchFilm, DELETED, RESTORED } from '@/testing/fixtures/activities';
+import { destinations } from '@/testing/fixtures/activity-destinations';
+import { reply } from '@/testing/replies';
 import type { Activity } from './api';
 import { useActivityActions } from './useActivityActions';
-
-const DELETED = {
-  recycleBinEntry: {
-    id: 'BIN-1001',
-    recordType: 'activity',
-    recordTypeLabel: 'activity',
-    recordId: 'A-1042',
-    recordName: 'Launch film',
-    path: [],
-    parent: { type: 'initiative', id: 'I-1001', name: 'Digital & social' },
-    deletedAt: '2026-03-12T09:00:00Z',
-    deletedBy: { id: 'U-1002', name: 'Priya Raman' },
-    contents: [],
-  },
-};
 
 function More({ activity }: { activity: Activity }) {
   const more = useActivityActions(activity);
@@ -41,13 +27,9 @@ function More({ activity }: { activity: Activity }) {
 
 function openMenu(answers: HttpHandler[] = []) {
   const api = mockApi([
-    looseReply(
-      'DELETE /api/v1/activities/{activityId}',
-      { body: DELETED },
-      { activityId: 'A-1042' },
-    ),
-    looseReply('POST /api/v1/recycle-bin/{entryId}/undo', { body: {} }, { entryId: 'BIN-1001' }),
-    looseReply(
+    reply('DELETE /api/v1/activities/{activityId}', { body: DELETED }, { activityId: 'A-1042' }),
+    reply('POST /api/v1/recycle-bin/{entryId}/undo', { body: RESTORED }, { entryId: 'BIN-1001' }),
+    reply(
       'GET /api/v1/financials/records/{recordId}',
       {
         status: 404,
@@ -82,12 +64,12 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
 
   it('copies from More and opens the copy (US5#2, FR-030)', async () => {
     const { user, router } = openMenu([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/destinations',
         { body: destinations() },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/copy',
         {
           status: 201,
@@ -112,12 +94,12 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
 
   it('moves from More (US5#1, FR-029)', async () => {
     const { user, api } = openMenu([
-      looseReply(
+      reply(
         'GET /api/v1/activities/{activityId}/destinations',
         { body: destinations() },
         { activityId: 'A-1042' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/activities/{activityId}/move',
         {
           body: launchFilm({
@@ -170,7 +152,7 @@ describe('useActivityActions (feature 006, FR-029 – FR-032)', () => {
 
   it('says why a delete did not work', async () => {
     const { user, router } = openMenu([
-      looseReply(
+      reply(
         'DELETE /api/v1/activities/{activityId}',
         {
           status: 404,
