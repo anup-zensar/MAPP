@@ -25,15 +25,28 @@ type book struct {
 // load reads the book for the reader personID (an empty personID shows US dollars). It runs inside the
 // caller's transaction.
 func (s *Service) load(ctx context.Context, personID string) (*book, error) {
+	nodes, err := s.planning.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.newBook(ctx, personID, nodes)
+}
+
+// loadPlans reads the book with only the plans planIDs: a record's figures never depend on another plan.
+func (s *Service) loadPlans(ctx context.Context, personID string, planIDs []string) (*book, error) {
+	nodes, err := s.planning.PlanNodes(ctx, planIDs)
+	if err != nil {
+		return nil, err
+	}
+	return s.newBook(ctx, personID, nodes)
+}
+
+func (s *Service) newBook(ctx context.Context, personID string, nodes []Node) (*book, error) {
 	stored, err := s.repo.ListTransactions(ctx)
 	if err != nil {
 		return nil, err
 	}
 	rates, err := s.rates.Rates(ctx)
-	if err != nil {
-		return nil, err
-	}
-	nodes, err := s.planning.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
