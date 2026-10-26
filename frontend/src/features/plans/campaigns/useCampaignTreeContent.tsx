@@ -8,8 +8,10 @@ import { allows, gateItem } from '@/session/gate-action';
 import type { Availability } from '@/session/access';
 import { useFormatters } from '@/format/useFormatters';
 import { usePlanCampaigns } from './api';
-import { campaignRows, totalsFooter } from './campaign-rows';
+import { campaignRows } from './campaign-rows';
+import { totalsFooter } from './totals-footer';
 import { useRowsBelowInitiatives } from './extensions';
+import { highlightOf } from './schemas';
 import { ADD_CAMPAIGN } from './texts';
 import { useRecordActions } from './useRecordActions';
 
@@ -85,13 +87,4 @@ export function useCampaignTreeContent(
     error: query.error,
     refetch: () => void query.refetch(),
   };
-}
-
-/** The record to highlight, from the location state a create, move or copy leaves (FR-004). */
-function highlightOf(state: unknown): string | undefined {
-  if (state && typeof state === 'object' && 'highlight' in state) {
-    const { highlight } = state;
-    return typeof highlight === 'string' ? highlight : undefined;
-  }
-  return undefined;
 }

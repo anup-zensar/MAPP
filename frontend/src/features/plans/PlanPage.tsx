@@ -23,23 +23,16 @@ import type { Plan } from './api';
 import { planCurrencyOf } from './plan-currency';
 import { PlanSummaryCards } from './PlanSummaryCards';
 import { RecordFinancials } from './RecordFinancials';
+import { planTabOf } from './schemas';
+import type { PlanTab } from './schemas';
 import { PlanTree } from './tree/PlanTree';
 import { usePlanActions } from './usePlanActions';
-
-/** The plan page's tabs (design system §2.4 B): the tree is the working view. */
-export type PlanTab = 'tree' | 'details' | 'history';
 
 const TABS: TabItem<PlanTab>[] = [
   { value: 'tree', label: 'Plan tree' },
   { value: 'details', label: 'Details' },
   { value: 'history', label: 'History' },
 ];
-
-/** The chosen tab, kept in the address (?tab=details); the tree when none or an unknown one. */
-function tabOf(search: URLSearchParams): PlanTab {
-  const tab = search.get('tab');
-  return tab === 'details' || tab === 'history' ? tab : 'tree';
-}
 
 /**
  * A plan's page (US3, FR-011 – FR-017), the layout route of /plans/:planId, on the record template
@@ -55,7 +48,7 @@ export function PlanPage() {
   const campaigns = useCampaignTreeContent(planId, plan.data?.access?.content.addCampaign);
   const panel = useOutlet();
   const [search, setSearch] = useSearchParams();
-  const tab = tabOf(search);
+  const tab = planTabOf(search);
   // View history: once the History tab is shown, its heading takes the focus (feature 011).
   const focusHistory = useRef(false);
   usePageTitle(panel ? null : (plan.data?.name ?? 'Plan'));

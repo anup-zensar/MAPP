@@ -6,18 +6,18 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { BUDGET_CURRENCY, budgetInput, budgetText } from './budget';
 import type { Campaign, CampaignCreate, Initiative } from './api';
+import type { RecordFormValues } from './schemas';
 import type { RecordLevel } from './texts';
 
-/** What the form's fields hold. Dates are "YYYY-MM-DD" or ""; the budget is the typed text. */
-export interface RecordFormValues {
-  name: string;
-  ownerId: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-  budget: string;
-  attributes: AttributeValues;
-}
+/** The fields that show the API's problems under them, in the form's order. */
+export const RECORD_FIELDS = [
+  'name',
+  'ownerId',
+  'startDate',
+  'endDate',
+  'description',
+  'budget',
+] as const;
 
 /** Every field of a create or update request but the version (CampaignCreate = InitiativeCreate). */
 export type RecordBody = Required<CampaignCreate>;
@@ -50,11 +50,6 @@ export function bodyOf(values: RecordFormValues, currency = BUDGET_CURRENCY): Re
     budget: budgetInput(values.budget, currency),
     attributes: values.attributes,
   };
-}
-
-/** Whether two forms hold the same values (unsaved changes). */
-export function sameValues(a: RecordFormValues, b: RecordFormValues): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 /**

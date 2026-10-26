@@ -1,58 +1,47 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { Outlet } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { financialsNotServed } from '@/testing/fixtures/plans';
 import { campaignForm } from '@/testing/fixtures/attribute-forms';
 import { renderApp } from '@/testing/app';
-import { looseReply } from '@/testing/replies';
-import { campaign, initiative, PEOPLE, planAnswer, planCampaigns } from './fixtures';
-
-// The plan page (004) and an initiative's activities (006) are tested by their features; here
-// they stand in, so those features never break these tests.
-vi.mock('../PlanPage', () => ({
-  PlanPage: () => (
-    <>
-      <h1>Plan page</h1>
-      <Outlet />
-    </>
-  ),
-}));
-vi.mock('@/features/activities/InitiativeActivities', () => ({
-  InitiativeActivities: ({ initiativeId }: { initiativeId: string }) => (
-    <section aria-label="Activities">{`Activities of ${initiativeId}`}</section>
-  ),
-}));
+import { launchFilmRow } from '@/testing/fixtures/activities';
+import { reply } from '@/testing/replies';
+import {
+  campaign,
+  initiative,
+  PEOPLE,
+  planAnswer,
+  planCampaigns,
+} from '@/testing/fixtures/campaigns';
 
 const ANSWERS: HttpHandler[] = [
   ...HISTORY_ANSWERS,
   ...financialsNotServed('P-1001', 'C-1001', 'I-1001'),
-  looseReply(
-    'GET /api/v1/plans/{planId}/campaigns',
-    { body: planCampaigns() },
-    { planId: 'P-1001' },
-  ),
-  looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-  looseReply('GET /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
-  looseReply(
+  reply('GET /api/v1/plans/{planId}/campaigns', { body: planCampaigns() }, { planId: 'P-1001' }),
+  reply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
+  reply('GET /api/v1/campaigns/{campaignId}', { body: campaign() }, { campaignId: 'C-1001' }),
+  reply(
     'GET /api/v1/initiatives/{initiativeId}',
     { body: initiative() },
     { initiativeId: 'I-1001' },
   ),
-  looseReply(
+  reply(
     'GET /api/v1/shell-attribute-forms/{level}',
     { body: campaignForm() },
     { level: 'campaign' },
   ),
-  looseReply(
+  reply(
     'GET /api/v1/shell-attribute-forms/{level}',
     {
       body: { ...campaignForm(), level: 'initiative' },
     },
     { level: 'initiative' },
   ),
-  looseReply('GET /api/v1/people', { body: PEOPLE }),
+  reply('GET /api/v1/people', { body: PEOPLE }),
+  reply('GET /api/v1/plans/{planId}/activities', {
+    body: { items: [launchFilmRow()], total: 1 },
+  }),
 ];
 
 // Feature 005's addresses: side panels over the plan page (build guide §5).
@@ -69,7 +58,11 @@ describe('Campaign and initiative routes (feature 005)', () => {
 
     expect(await screen.findByRole('dialog', { name: panel })).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Plan page', hidden: true }),
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'FY2026 Lubricants Europe',
+        hidden: true,
+      }),
     ).toBeInTheDocument();
     await waitFor(() => expect(document.title).toBe(`${tab} · MAPP`));
   });
@@ -78,8 +71,10 @@ describe('Campaign and initiative routes (feature 005)', () => {
     renderApp('/plans/P-1001/initiatives/I-1001', ANSWERS);
 
     const panel = await screen.findByRole('dialog', { name: 'Digital & social' });
-    expect(within(panel).getByRole('region', { name: 'Activities' })).toHaveTextContent(
-      'Activities of I-1001',
+    await waitFor(() =>
+      expect(within(panel).getByRole('region', { name: 'Activities' })).toHaveTextContent(
+        launchFilmRow().name,
+      ),
     );
   });
 });

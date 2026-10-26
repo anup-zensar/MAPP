@@ -5,30 +5,26 @@ import { campaignForm, LUBRICANTS } from '@/testing/fixtures/attribute-forms';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { campaign, PEOPLE, planAnswer, planCampaigns } from './fixtures';
+import { reply } from '@/testing/replies';
+import { campaign, PEOPLE, planAnswer, planCampaigns } from '@/testing/fixtures/campaigns';
 import { NewCampaignPanel } from './NewCampaignPanel';
 
 const NEW_PATH = '/plans/P-1001/campaigns/new';
 
 function renderPanel(answers: HttpHandler[] = []) {
   const api = mockApi([
-    looseReply(
-      'GET /api/v1/plans/{planId}/campaigns',
-      { body: planCampaigns() },
-      { planId: 'P-1001' },
-    ),
-    looseReply(
+    reply('GET /api/v1/plans/{planId}/campaigns', { body: planCampaigns() }, { planId: 'P-1001' }),
+    reply(
       'GET /api/v1/plans/{planId}',
-      { body: planAnswer([{ id: LUBRICANTS, label: 'Lubricants' }]) },
+      { body: planAnswer([{ id: LUBRICANTS, label: 'Lubricants', active: true }]) },
       { planId: 'P-1001' },
     ),
-    looseReply(
+    reply(
       'GET /api/v1/shell-attribute-forms/{level}',
       { body: campaignForm() },
       { level: 'campaign' },
     ),
-    looseReply('GET /api/v1/people', { body: PEOPLE }),
+    reply('GET /api/v1/people', { body: PEOPLE }),
     ...answers,
   ]);
   const rendered = renderWithProviders(<NewCampaignPanel />, {
@@ -89,7 +85,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('follows the typed budget in the remaining plan budget, red when over-allocated (US1#3, FR-010)', async () => {
     const { user, api } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/plans/{planId}/campaigns',
         { status: 201, body: campaign({ id: 'C-1005' }) },
         { planId: 'P-1001' },
@@ -112,7 +108,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('says when the plan has no budget to allocate from (FR-010)', async () => {
     renderPanel([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         {
           body: planCampaigns([], { planBudget: null, remainingPlanBudget: null }),
@@ -127,7 +123,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('saves, announces the campaign with View and highlights its row (US1#4, FR-004)', async () => {
     const { user, api, router } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/plans/{planId}/campaigns',
         {
           status: 201,
@@ -167,7 +163,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('saves and opens a fresh panel for the same plan (FR-001 Save and add another)', async () => {
     const { user, router } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/plans/{planId}/campaigns',
         {
           status: 201,
@@ -188,7 +184,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('shows every problem of a refused save at once, the summary focused (US1#5, FR-005)', async () => {
     const { user } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/plans/{planId}/campaigns',
         {
           status: 400,
@@ -235,7 +231,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('warns when the dates leave the plan’s year, and saves anyway (US1#5, FR-008)', async () => {
     const { user, api } = renderPanel([
-      looseReply(
+      reply(
         'POST /api/v1/plans/{planId}/campaigns',
         { status: 201, body: campaign({ id: 'C-1005' }) },
         { planId: 'P-1001' },
@@ -281,7 +277,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
 
   it('shows a loading state, then says when the plan is gone (parent gone)', async () => {
     const { user, router } = renderPanel([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         {
           status: 404,
@@ -289,6 +285,7 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
             error: {
               code: 'not_found',
               message: 'This plan no longer exists — someone may have deleted it.',
+              fields: [],
             },
           },
         },
@@ -307,11 +304,14 @@ describe('NewCampaignPanel (feature 005, US1)', () => {
   it('shows a failure with Try again when the plan cannot be read', async () => {
     let calls = 0;
     const { user } = renderPanel([
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}/campaigns',
         () =>
           ++calls === 1
-            ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
+            ? {
+                status: 500,
+                body: { error: { code: 'internal_error', message: 'Oops', fields: [] } },
+              }
             : {
                 body: planCampaigns(),
               },

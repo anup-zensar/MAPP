@@ -1,4 +1,6 @@
+import fc from 'fast-check';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import {
   DEFAULT_FILTERS,
   readFilters,
@@ -6,6 +8,48 @@ import {
   remember,
   toSearchParams,
 } from './list-preferences';
+import type { PlanListFilters } from './list-preferences';
+import { PLAN_TYPES } from './plan-currency';
+
+const VALID = z
+  .strictObject({
+    status: z.enum(['all', 'draft', 'published']),
+    yearFrom: z.int().nullable(),
+    yearTo: z.int().nullable(),
+    types: z.array(z.enum(PLAN_TYPES)),
+    scope: z.enum(['all', 'myTeams']),
+    q: z.string(),
+    layout: z.enum(['cards', 'table']),
+  })
+  .refine(({ yearFrom, yearTo }) =>
+    yearFrom === null || yearTo === null ? yearFrom === yearTo : yearFrom <= yearTo,
+  );
+
+const KEYS = ['status', 'yearFrom', 'yearTo', 'year', 'type', 'scope', 'q', 'layout', 'other'];
+const WORDS = ['draft', 'published', 'myTeams', 'table', 'strategic', 'crossMarket', '2026', '999'];
+
+/** Any address: the list's parameters with any text or one of their words. */
+const anyAddress = fc
+  .array(fc.tuple(fc.constantFrom(...KEYS), fc.oneof(fc.string(), fc.constantFrom(...WORDS))))
+  .map((pairs) => new URLSearchParams(pairs));
+
+const year = fc.integer({ min: 1000, max: 9999 });
+
+/** Any filter set the list can show (a search that is not only spaces). */
+const anyFilters: fc.Arbitrary<PlanListFilters> = fc
+  .record({
+    status: fc.constantFrom('all', 'draft', 'published'),
+    years: fc.option(fc.tuple(year, year)),
+    types: fc.subarray(PLAN_TYPES),
+    scope: fc.constantFrom('all', 'myTeams'),
+    q: fc.string().filter((q) => q === '' || q.trim() !== ''),
+    layout: fc.constantFrom('cards', 'table'),
+  })
+  .map(({ years, ...rest }) => ({
+    ...rest,
+    yearFrom: years ? Math.min(...years) : null,
+    yearTo: years ? Math.max(...years) : null,
+  }));
 
 afterEach(() => {
   window.localStorage.clear();
@@ -13,6 +57,34 @@ afterEach(() => {
 });
 
 describe('listPreferences (FR-003)', () => {
+  it('never fails on any address or stored text, and reads a valid filter set', () => {
+    fc.assert(
+      fc.property(
+        anyAddress,
+        fc.oneof(
+          fc.string(),
+          fc.jsonValue().map((value) => JSON.stringify(value)),
+        ),
+        (search, text) => {
+          window.localStorage.setItem('mapp.plans.list.U-1002', text);
+          expect(VALID.safeParse(readFilters(search, 'U-1002')).success).toBe(true);
+          expect(VALID.safeParse(readRemembered('U-1002')).success).toBe(true);
+        },
+      ),
+    );
+  });
+
+  it('reads back every filter set it writes, to the address and to the storage', () => {
+    fc.assert(
+      fc.property(anyFilters, (filters) => {
+        window.localStorage.clear();
+        expect(readFilters(toSearchParams(filters), 'U-1002')).toEqual(filters);
+        remember('U-1002', filters);
+        expect(readRemembered('U-1002')).toEqual({ ...filters, q: '' });
+      }),
+    );
+  });
+
   it('uses the defaults when nothing is remembered', () => {
     expect(readFilters(new URLSearchParams(), 'U-1002')).toEqual(DEFAULT_FILTERS);
   });

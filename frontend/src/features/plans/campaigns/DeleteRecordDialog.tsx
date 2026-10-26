@@ -5,7 +5,7 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { PLANNING_KEYS, refreshPlanning, useDeleteRecord } from './api';
-import type { RecordTarget } from './campaign-rows';
+import type { RecordTarget } from './record-target';
 import styles from './DeleteRecordDialog.module.css';
 import {
   approvedSentence,

@@ -3,29 +3,28 @@ import type { NavigateFunction } from 'react-router';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
-import type { TreeNode, TreeTableFooter } from '@/ui/TreeTable/TreeTable';
+import type { TreeNode } from '@/ui/TreeTable/TreeTable';
 import { gateItem } from '@/session/gate-action';
 import { recordHref } from '@/ui/record-links';
 import type { Formatters } from '@/format/useFormatters';
 import { completenessFieldHref } from '../phasing/phasing-links';
-import { AmountPair } from '../AmountPair';
 import { AttentionChip } from './AttentionChip';
-import { BudgetCell, CampaignBudgetCell, PlannedCostCell } from './BudgetCost';
+import { BudgetCell, CampaignBudgetCell, PlannedCostCell } from './BudgetCells';
 import styles from './campaign-rows.module.css';
 import type { Campaign, Initiative, PlanCampaigns } from './api';
 import { initiativeExtraActions } from './extensions';
+import { targetOf } from './record-target';
+import type { RecordTarget } from './record-target';
 import { ApprovalProgressChip, OutsideYearNote, TimingNote } from './StatusChips';
 import {
   activitiesCount,
   ADD_INITIATIVE,
   addInitiativeTo,
-  ALLOCATED,
   COPY,
   DELETE,
   EDIT,
   initiativesCount,
   MOVE_TO,
-  totalsText,
   VIEW,
 } from './texts';
 import type { RecordLevel } from './texts';
@@ -37,27 +36,6 @@ import type { RecordLevel } from './texts';
  * share of the budget it uses beneath).
  */
 export const CELL_KEYS = ['name', 'owner', 'dates', 'status', 'budget', 'plannedCost'] as const;
-
-/** A campaign or initiative a row action is about. */
-export interface RecordTarget {
-  level: RecordLevel;
-  id: string;
-  name: string;
-  planId: string;
-  /** The plan's year: a campaign moves only between plans of that year (FR-023). */
-  year: number;
-  /** The version the row or panel showed; a move sends it (FR-025). */
-  version: number;
-  /** What the signed-in person may do with it (feature 014); missing means everything. */
-  access?: Campaign['access'];
-  /** What goes with it (the delete, move and copy dialogs). */
-  counts: {
-    initiatives?: number;
-    activities: number;
-    approvedActivities: number;
-    lineItems: number;
-  };
-}
 
 export interface RowOptions {
   planId: string;
@@ -73,21 +51,6 @@ export interface RowOptions {
   onCopy?: (target: RecordTarget) => void;
   /** **Move to…** (US6): opens the move dialog; the item is listed only with it. */
   onMove?: (target: RecordTarget) => void;
-}
-
-/** The record a row stands for, for its actions. */
-export function targetOf(record: Campaign | Initiative): RecordTarget {
-  const common = {
-    id: record.id,
-    name: record.name,
-    planId: record.planId,
-    year: record.plan.year,
-    version: record.version,
-    access: record.access,
-  };
-  return 'initiatives' in record
-    ? { ...common, level: 'campaign', counts: record.counts }
-    : { ...common, level: 'initiative', counts: record.counts };
 }
 
 /**
@@ -290,39 +253,4 @@ function deleteItem(record: Campaign | Initiative, options: RowOptions): Actions
 
 export function addInitiativeHref(planId: string, campaignId: string): string {
   return `${recordHref('campaign', campaignId, planId)}/initiatives/new`;
-}
-
-/**
- * The totals row (FR-022): "Total · 2 campaigns · 4 initiatives · 7 activities", the sum of the
- * campaign budgets ("Allocated") and the plan's planned cost.
- */
-export function totalsFooter(data: PlanCampaigns, formatters: Formatters): TreeTableFooter {
-  // Amounts in the plan currency, the reader's display currency beneath when it differs (016
-  // FR-013).
-  const { totals, displayTotals } = data;
-  return {
-    // "Total" on the first line, the counts in one line beneath (UI audit PL-05: never wrapping).
-    name: (
-      <span className={styles.total}>
-        <span>Total</span>
-        <span className={styles.left}>
-          {totalsText(totals.campaigns, totals.initiatives, totals.activities)}
-        </span>
-      </span>
-    ),
-    budget: (
-      <span className={styles.money}>
-        <AmountPair
-          primary={totals.allocatedToCampaigns}
-          secondary={displayTotals.allocatedToCampaigns}
-        />
-        <span className={styles.left}>{ALLOCATED}</span>
-      </span>
-    ),
-    plannedCost: totals.plannedCost ? (
-      <AmountPair primary={totals.plannedCost} secondary={displayTotals.plannedCost} />
-    ) : (
-      formatters.money(null)
-    ),
-  };
 }

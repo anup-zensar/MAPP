@@ -1,20 +1,25 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { ClearValuesDialog } from '@/ui/ShellAttributeFields/ClearValuesDialog';
 import { valuesToClear } from '@/ui/ShellAttributeFields/rules';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { recordHref } from '@/ui/record-links';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
+import { focusOf } from '../schemas';
 import { fetchLatestRecord, useUpdateRecord } from './api';
 import type { Campaign, Initiative } from './api';
-import { bodyOf, fieldId, sameValues, valuesOf } from './form-values';
+import { bodyOf, fieldId, RECORD_FIELDS, valuesOf } from './form-values';
 import { RecordFormPanel } from './PanelFrame';
 import { RecordForm } from './RecordForm';
+import { recordFormSchema } from './schemas';
+import type { RecordFormValues } from './schemas';
 import { CONFLICT_NEXT_STEP, EDIT_CAMPAIGN, EDIT_INITIATIVE, savedToast } from './texts';
 import type { RecordLevel } from './texts';
 import { useLeaveAfterSave } from './useLeaveAfterSave';
@@ -51,27 +56,32 @@ export function RecordEdit({
   const { leaving, leave } = useLeaveAfterSave();
   // The record as the form opened it: later refreshes never change the form.
   const [opened] = useState(record);
-  const [start] = useState(() => valuesOf(opened));
-  const [values, setValues] = useState(start);
+  const start = valuesOf(opened);
+  const form = useForm<RecordFormValues>({
+    resolver: zodResolver(recordFormSchema),
+    defaultValues: start,
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems } = useFormProblems(form, RECORD_FIELDS);
+  const attributes = useWatch({ control: form.control, name: 'attributes' });
   const [version, setVersion] = useState(opened.version);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [askingToClear, setAskingToClear] = useState(false);
   const detailsHref = recordHref(level, record.id, planId);
-  const cleared = valuesToClear(attributeForm, values.attributes, start.attributes);
-  const focus = searchParams.get('focus');
+  const cleared = valuesToClear(attributeForm, attributes, start.attributes);
+  const focus = focusOf(searchParams);
   useFocusField(focus ? fieldId(level, focus) : null);
 
-  function requestSave() {
-    if (cleared.length > 0) {
+  const requestSave = form.handleSubmit((typed) => {
+    if (valuesToClear(attributeForm, typed.attributes, start.attributes).length > 0) {
       setAskingToClear(true);
     } else {
-      void save();
+      void save(typed);
     }
-  }
+  }, onInvalid);
 
-  async function save() {
+  async function save(values: RecordFormValues) {
     setSaving(true);
     try {
       const saved = await update.mutateAsync({ ...bodyOf(values, currency), version });
@@ -87,11 +97,11 @@ export function RecordEdit({
   async function showFailure(error: unknown) {
     const apiError = error instanceof ApiError ? error : new ApiError('other');
     if (apiError.kind === 'validation') {
-      setProblems(apiError.fields);
+      showServerProblems(apiError.fields);
       setFailure(null);
       return;
     }
-    setProblems([]);
+    showServerProblems([]);
     if (apiError.kind === 'conflict') {
       // The typed values stay; the form takes the version with the other person's change, so
       // Save again replaces it on purpose.
@@ -116,12 +126,12 @@ export function RecordEdit({
     <RecordFormPanel
       title={level === 'campaign' ? EDIT_CAMPAIGN : EDIT_INITIATIVE}
       description={opened.name}
-      isDirty={!leaving && !sameValues(values, start)}
+      isDirty={!leaving && form.formState.isDirty}
       saving={saving}
       problems={problems}
       failure={failure}
       fieldId={(field) => fieldId(level, field)}
-      onSave={requestSave}
+      onSave={() => void requestSave()}
       onCancel={() => leave(detailsHref)}
       onClose={() => leave(`/plans/${planId}`)}
       dialogs={
@@ -129,15 +139,14 @@ export function RecordEdit({
           open={askingToClear && cleared.length > 0}
           onOpenChange={setAskingToClear}
           cleared={cleared}
-          onConfirm={() => void save()}
+          onConfirm={() => void save(form.getValues())}
           busy={saving}
         />
       }
     >
       <RecordForm
         level={level}
-        values={values}
-        onChange={setValues}
+        control={form.control}
         problems={problems}
         attributeForm={attributeForm}
         businessUnit={businessUnit}

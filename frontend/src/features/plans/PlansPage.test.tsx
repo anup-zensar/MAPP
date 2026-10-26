@@ -2,11 +2,13 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { HttpHandler } from 'msw';
 import { mockApi } from '@/testing/mock-api';
-import type { LooseAnswer } from '@/testing/replies';
+import type { Answer } from '@/testing/replies';
+import { nth } from '@/testing/dom';
+import type { CurrentUser } from '@/session/useSession';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { seedList } from '@/testing/fixtures/plans';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { remember, DEFAULT_FILTERS } from './list-preferences';
 import { PlansPage } from './PlansPage';
 
@@ -14,25 +16,21 @@ afterEach(() => window.localStorage.clear());
 
 function renderPage(
   route = '/plans',
-  list: LooseAnswer = { body: seedList() },
-  { user = testUser(), handlers = [] as HttpHandler[] } = {},
+  list: Answer<'GET /api/v1/plans'> = { body: seedList() },
+  { user = testUser(), handlers = [] }: { user?: CurrentUser; handlers?: HttpHandler[] } = {},
 ) {
-  const api = mockApi([looseReply('GET /api/v1/plans', list), ...handlers]);
+  const api = mockApi([reply('GET /api/v1/plans', list), ...handlers]);
   const result = renderWithProviders(<PlansPage />, { user, route, path: '/plans' });
   return { ...result, api };
 }
 
 /** The page with `pinned` already pinned and PATCH /api/v1/me/preferences answered (018). */
 function renderWithPins(...pinned: string[]) {
+  const user = testUser({ preferences: { ...testUser().preferences, pinnedPlanIds: pinned } });
   return renderPage(
     '/plans',
     { body: seedList() },
-    {
-      user: testUser({
-        preferences: { ...testUser().preferences, pinnedPlanIds: pinned },
-      }),
-      handlers: [looseReply('PATCH /api/v1/me/preferences', { body: {} })],
-    },
+    { user, handlers: [reply('PATCH /api/v1/me/preferences', { body: user.preferences })] },
   );
 }
 
@@ -76,7 +74,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     const { api, user, router } = renderPage('/plans', (request) => {
       const url = new URL(request.url);
       return url.searchParams.get('status') === 'draft' && url.searchParams.get('year') === '2026'
-        ? { body: seedList({ items: [seedList().items[1]] }) }
+        ? { body: seedList({ items: [nth(seedList().items, 1)] }) }
         : { body: seedList() };
     });
 
@@ -215,7 +213,7 @@ describe('PlansPage (US2, FR-001 – FR-004)', () => {
     expect(await screen.findByText('Nothing matches these filters')).toBeInTheDocument();
     expect(screen.getByText('0 of 3 plans')).toBeInTheDocument();
     const clear = screen.getAllByRole('button', { name: 'Clear filters' });
-    await user.click(clear[clear.length - 1]);
+    await user.click(nth(clear, -1));
 
     await waitFor(() => expect(router.state.location.search).toBe(''));
   });

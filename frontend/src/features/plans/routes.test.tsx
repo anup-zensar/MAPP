@@ -2,6 +2,8 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { expectCurrentSection, renderApp } from '@/testing/app';
+import { planCampaigns } from '@/testing/fixtures/campaigns';
+import { NOTHING_INSIDE } from '@/testing/fixtures/plan-page';
 import {
   financialsNotServed,
   FORM_ANSWERS,
@@ -11,25 +13,11 @@ import {
 } from '@/testing/fixtures/plans';
 import { reply } from '@/testing/replies';
 
-// Feature 005 fills the plan tree; its own tests cover that, so it never breaks these.
-vi.mock('./campaigns/useCampaignTreeContent', () => ({
-  useCampaignTreeContent: () => ({
-    nodes: [],
-    toolbarActions: null,
-    planRowActions: [],
-    emptyAction: null,
-    footer: undefined,
-    dialogs: <p>Campaign dialogs</p>,
-    isLoading: false,
-    error: null,
-    refetch: () => {},
-  }),
-}));
-
 /** What the four pages ask the API. */
 const ANSWERS = [
   ...FORM_ANSWERS,
   ...HISTORY_ANSWERS,
+  ...NOTHING_INSIDE,
   ...financialsNotServed('P-1001'),
   reply('GET /api/v1/plans', { body: seedList() }),
   reply('GET /api/v1/plan-defaults', { body: planDefaults() }),
@@ -52,8 +40,11 @@ describe('Plans routes (feature 004)', () => {
   });
 
   it('places feature 005’s campaign content on the plan page', async () => {
-    renderApp('/plans/P-1001', ANSWERS);
+    renderApp('/plans/P-1001', [
+      ...ANSWERS,
+      reply('GET /api/v1/plans/{planId}/campaigns', { body: planCampaigns() }),
+    ]);
 
-    expect(await screen.findByText('Campaign dialogs')).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Helix launch' })).toBeInTheDocument();
   });
 });

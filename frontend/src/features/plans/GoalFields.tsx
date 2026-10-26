@@ -5,7 +5,7 @@ import type { WaterfallModel } from '@/features/settings';
 import styles from './PlanForm.module.css';
 import { goalRows } from './goal-waterfall';
 import type { WaterfallStage } from './goal-waterfall';
-import { goalAmountLabel, STAGE_OPTIONS } from './plan-text';
+import { GOAL_STAGES, goalAmountLabel, STAGE_OPTIONS } from './plan-text';
 import type { GoalStage } from './plan-text';
 
 const ROW_LABELS: Record<WaterfallStage, string> = {
@@ -52,13 +52,13 @@ export function GoalFields({
         name="goalStage"
         marking="Needed to publish"
         hint={stageHint}
-        options={(Object.keys(STAGE_OPTIONS) as GoalStage[]).map((id) => ({
+        options={GOAL_STAGES.map((id) => ({
           id,
           label: STAGE_OPTIONS[id],
           active: true,
         }))}
         value={stage}
-        onChange={(value) => onStageChange((value || stage) as GoalStage)}
+        onChange={(value) => onStageChange(GOAL_STAGES.find((known) => known === value) ?? stage)}
         error={stageError}
       />
       {stage === 'revenue' ? (

@@ -2,11 +2,11 @@ import { useNavigate } from 'react-router';
 import type { components } from '@/api/generated/schema';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { recordHref } from '@/ui/record-links';
-import type { PlanningRecordType } from '@/ui/record-links';
 import { AttentionChip } from './campaigns/AttentionChip';
 import { completenessFieldHref } from './phasing/phasing-links';
 import styles from './PlanFacts.module.css';
 import { fieldsNeededText, groupLabel, STATUS } from './plan-text';
+import { isPlanningType } from './planning-type';
 import type { PlanStatus } from './plan-text';
 
 type Completeness = components['schemas']['Completeness'];
@@ -40,7 +40,9 @@ export function PlanCompleteness({
       itemsBelow={completeness.itemsBelow.map(({ record, missing }) => ({
         id: `${record.type}:${record.id}`,
         label: `${groupLabel(record)} — ${fieldsNeededText(missing.length)}`,
-        href: recordHref(record.type as PlanningRecordType, record.id, planId),
+        href: isPlanningType(record.type)
+          ? recordHref(record.type, record.id, planId)
+          : recordHref('plan', planId),
       }))}
       compact={compact}
     />

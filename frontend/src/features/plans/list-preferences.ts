@@ -5,9 +5,9 @@
  * then the list simply uses the defaults. A single `year` — in an old address or in what was
  * remembered before 016 — reads as a one-year range (D-269).
  */
-import { PLAN_TYPES } from './plan-currency';
 import type { PlanType } from './plan-currency';
 import type { PlanStatus } from './plan-text';
+import { looseFiltersSchema } from './schemas';
 
 export interface PlanListFilters {
   status: 'all' | PlanStatus;
@@ -36,52 +36,14 @@ export const DEFAULT_FILTERS: PlanListFilters = {
 /** The address parameters of the list; any of them in the address means the address decides. */
 const KEYS = ['status', 'yearFrom', 'yearTo', 'year', 'type', 'scope', 'q', 'layout'] as const;
 
-type LooseValues = Partial<Record<(typeof KEYS)[number], unknown>>;
-
 function storageKey(personId: string): string {
   return `mapp.plans.list.${personId}`;
 }
 
-/** A four-digit year from a number or text; null for anything else. */
-function yearOf(value: unknown): number | null {
-  if (typeof value === 'number') {
-    return Number.isInteger(value) && value >= 1000 && value <= 9999 ? value : null;
-  }
-  return typeof value === 'string' && /^\d{4}$/.test(value) ? Number(value) : null;
-}
-
-/** The year range from loose values: from–to in order, one year when only one end is valid. */
-function rangeOf({
-  yearFrom,
-  yearTo,
-  year,
-}: LooseValues): Pick<PlanListFilters, 'yearFrom' | 'yearTo'> {
-  const single = yearOf(year);
-  const from = yearOf(yearFrom) ?? yearOf(yearTo) ?? single;
-  const to = yearOf(yearTo) ?? yearOf(yearFrom) ?? single;
-  if (from === null || to === null) {
-    return { yearFrom: null, yearTo: null };
-  }
-  return { yearFrom: Math.min(from, to), yearTo: Math.max(from, to) };
-}
-
-/** The known plan types among loose values, in the order the filter offers them. */
-function typesOf(value: unknown): PlanType[] {
-  const values = Array.isArray(value) ? (value as unknown[]) : [value];
-  return PLAN_TYPES.filter((type) => values.includes(type));
-}
-
 /** Reads one filter set from loose values; anything invalid becomes its default. */
-function parse(values: LooseValues): PlanListFilters {
-  const { status, type, scope, q, layout } = values;
-  return {
-    status: status === 'draft' || status === 'published' ? status : 'all',
-    ...rangeOf(values),
-    types: typesOf(type),
-    scope: scope === 'myTeams' ? 'myTeams' : 'all',
-    q: typeof q === 'string' ? q : '',
-    layout: layout === 'table' ? 'table' : 'cards',
-  };
+function parse(values: unknown): PlanListFilters {
+  const parsed = looseFiltersSchema.safeParse(values);
+  return parsed.success ? parsed.data : DEFAULT_FILTERS;
 }
 
 /**
@@ -121,10 +83,7 @@ export function toSearchParams(filters: PlanListFilters): URLSearchParams {
 export function readRemembered(personId: string): PlanListFilters {
   try {
     const stored = window.localStorage.getItem(storageKey(personId));
-    const values: unknown = stored ? JSON.parse(stored) : null;
-    return typeof values === 'object' && values !== null
-      ? { ...parse(values as LooseValues), q: '' }
-      : DEFAULT_FILTERS;
+    return stored ? { ...parse(JSON.parse(stored)), q: '' } : DEFAULT_FILTERS;
   } catch {
     return DEFAULT_FILTERS;
   }

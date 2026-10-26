@@ -19,7 +19,7 @@ export function periods(overrides: Partial<BudgetByMonthPeriods> = {}): BudgetBy
     plannedCost: twelveAmounts('40000.00'),
     difference: twelve('10000.00'),
     allocated: twelve('30000.00'),
-    over: Array(12).fill(false),
+    over: Array<boolean>(12).fill(false),
     ...overrides,
   };
 }
@@ -33,7 +33,7 @@ export function quarters(overrides: Partial<BudgetByMonthPeriods> = {}): BudgetB
     plannedCost: fourAmounts('120000.00'),
     difference: four('30000.00'),
     allocated: four('90000.00'),
-    over: Array(4).fill(false),
+    over: Array<boolean>(4).fill(false),
     ...overrides,
   };
 }

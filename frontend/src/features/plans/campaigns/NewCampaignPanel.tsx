@@ -1,9 +1,11 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { useAttributeForm } from '@/features/settings';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { recordHref } from '@/ui/record-links';
 import { usePageTitle } from '@/ui/usePageTitle';
@@ -12,8 +14,9 @@ import { useCreateCampaign, usePlan, usePlanCampaigns } from './api';
 import type { PlanCampaigns } from './api';
 import { PanelFailure, PanelLoading, RecordFormPanel, StatePanel } from './PanelFrame';
 import { RecordForm } from './RecordForm';
-import { bodyOf, defaultAttributes, fieldId, sameValues } from './form-values';
-import type { RecordFormValues } from './form-values';
+import { bodyOf, defaultAttributes, fieldId, RECORD_FIELDS } from './form-values';
+import { recordFormSchema } from './schemas';
+import type { RecordFormValues } from './schemas';
 import { createdToast, insidePlan, NEW_CAMPAIGN, openName, VIEW } from './texts';
 import { failureOf, useLeaveAfterSave } from './useLeaveAfterSave';
 
@@ -86,20 +89,23 @@ function NewCampaignForm({
     startDate: `${year}-01-01`,
     endDate: `${year}-12-31`,
   };
-  const [start] = useState<RecordFormValues>(() => ({
-    name: '',
-    description: '',
-    budget: '',
-    ...defaults,
-    attributes: defaultAttributes(attributeForm),
-  }));
-  const [values, setValues] = useState(start);
+  const form = useForm<RecordFormValues>({
+    resolver: zodResolver(recordFormSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      budget: '',
+      ...defaults,
+      attributes: defaultAttributes(attributeForm),
+    },
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems } = useFormProblems(form, RECORD_FIELDS);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const planHref = `/plans/${planId}`;
 
-  async function save(addAnother: boolean) {
+  async function save(values: RecordFormValues, addAnother: boolean) {
     setSaving(true);
     try {
       const created = await create.mutateAsync(bodyOf(values, currency));
@@ -114,7 +120,7 @@ function NewCampaignForm({
       leave(addAnother ? `${planHref}/campaigns/new` : planHref, { highlight: created.id });
     } catch (error) {
       const shown = failureOf(error);
-      setProblems(shown.problems);
+      showServerProblems(shown.problems);
       setFailure(shown.failure);
       setSaving(false);
     }
@@ -124,20 +130,21 @@ function NewCampaignForm({
     <RecordFormPanel
       title={NEW_CAMPAIGN}
       description={insidePlan(data.plan.name)}
-      isDirty={!leaving && !sameValues(values, start)}
+      isDirty={!leaving && form.formState.isDirty}
       saving={saving}
       problems={problems}
       failure={failure}
       fieldId={(field) => fieldId('campaign', field)}
-      onSave={() => void save(false)}
-      onSaveAndAddAnother={() => void save(true)}
+      onSave={() => void form.handleSubmit((values) => save(values, false), onInvalid)()}
+      onSaveAndAddAnother={() =>
+        void form.handleSubmit((values) => save(values, true), onInvalid)()
+      }
       onCancel={() => leave(planHref)}
       onClose={() => leave(planHref)}
     >
       <RecordForm
         level="campaign"
-        values={values}
-        onChange={setValues}
+        control={form.control}
         problems={problems}
         attributeForm={attributeForm}
         businessUnit={businessUnit}

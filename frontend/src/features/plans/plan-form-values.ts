@@ -3,37 +3,11 @@
  * Amounts stay text while typed; they are read only when sent. Text that can't be read as an amount
  * is sent as typed, so the API reports it together with every other problem (FR-010).
  */
-import type { AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { formatAmount, formatWhole, parseDecimalInput, parseMoneyInput } from '@/format/decimal';
 import { planCurrencyOf, planTypeOf } from './plan-currency';
-import type { PlanType } from './plan-currency';
 import type { Plan, PlanCreate, PlanDefaults, PlanUpdate } from './api';
-import type { GoalStage, SpreadMethod } from './plan-text';
-
-export interface PlanFormValues {
-  name: string;
-  /** The year as chosen ("2026"); fixed after the first save. */
-  year: string;
-  modelId: string;
-  teamIds: string[];
-  ownerId: string;
-  aop: boolean;
-  description: string;
-  /** Operational (default), Strategic or Cross-market (016 FR-032). */
-  planType: PlanType;
-  /** The plan currency (016 FR-011): the budget and every amount of the plan are kept in it. */
-  currency: string;
-  /** The plan budget in the plan currency as typed ("1,200,000.00"); "" for none. */
-  budget: string;
-  /** "" for no default. */
-  defaultFinanceBudgetId: string;
-  defaultSpread: SpreadMethod;
-  bcpir: boolean;
-  goalStage: GoalStage;
-  /** As typed: a whole number for INQ and MQL, USD for Revenue; "" for none. */
-  goalAmount: string;
-  attributes: AttributeValues;
-}
+import type { GoalStage } from './plan-text';
+import type { PlanFormValues } from './schemas';
 
 /** A new plan's form, filled in with the person's defaults (FR-006). */
 export function valuesFromDefaults(defaults: PlanDefaults): PlanFormValues {
@@ -141,7 +115,7 @@ export function answers016(source: { planType?: unknown } | undefined): boolean 
   return source?.planType !== undefined;
 }
 
-/** Whether two forms hold the same values (the unsaved-changes guard). */
+/** Whether two forms hold the same values (the "Default: …" hints). */
 export function sameValues(a: PlanFormValues, b: PlanFormValues): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }

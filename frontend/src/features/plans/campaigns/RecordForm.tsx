@@ -1,6 +1,8 @@
 import { useId } from 'react';
+import { useWatch } from 'react-hook-form';
+import type { Control } from 'react-hook-form';
 import { DateRangeField } from '@/ui/DateRangeField/DateRangeField';
-import { problemOf } from '@/ui/FormPanel/problem-of';
+import { FormField } from '@/ui/FormField/FormField';
 import { FormSection } from '@/ui/FormSection/FormSection';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { ShellAttributeFields } from '@/ui/ShellAttributeFields/ShellAttributeFields';
@@ -14,8 +16,8 @@ import { PHASING_REMOVED } from '../plan-text';
 import { RemainingBudgetLine } from './BudgetCost';
 import type { Money } from './api';
 import { attributeErrors, outsideYear } from './form-values';
-import type { RecordFormValues } from './form-values';
 import styles from './RecordForm.module.css';
+import type { RecordFormValues } from './schemas';
 import {
   allowedRange,
   BASICS,
@@ -55,8 +57,7 @@ export interface ParentCampaign {
 
 export interface RecordFormProps {
   level: RecordLevel;
-  values: RecordFormValues;
-  onChange: (values: RecordFormValues) => void;
+  control: Control<RecordFormValues>;
   /** The field problems of the last save, all at once. */
   problems: FieldProblem[];
   /** The level's Shell attributes (GET /api/v1/shell-attribute-forms/{level}). */
@@ -88,8 +89,7 @@ export interface RecordFormProps {
  */
 export function RecordForm({
   level,
-  values,
-  onChange,
+  control,
   problems,
   attributeForm,
   businessUnit,
@@ -105,12 +105,8 @@ export function RecordForm({
 }: RecordFormProps) {
   const { date } = useFormatters();
   const campaignFieldId = useId();
+  const values = useWatch({ control, compute: (all: RecordFormValues) => all });
   const isCampaign = level === 'campaign';
-
-  function set<K extends keyof RecordFormValues>(field: K, value: RecordFormValues[K]) {
-    onChange({ ...values, [field]: value });
-  }
-
   const ownerDefaulted = defaults && defaults.ownerId !== '' && values.ownerId === defaults.ownerId;
   const datesDefaulted =
     defaults &&
@@ -125,14 +121,18 @@ export function RecordForm({
   return (
     <>
       <FormSection title={BASICS}>
-        <TextField
-          label={NAME_LABEL[level]}
-          name={`${level}-name`}
-          marking="Required"
-          maxLength={120}
-          value={values.name}
-          onChange={(name) => set('name', name)}
-          error={problemOf(problems, 'name')}
+        <FormField
+          control={control}
+          name="name"
+          render={(field) => (
+            <TextField
+              label={NAME_LABEL[level]}
+              marking="Required"
+              maxLength={120}
+              {...field}
+              name={`${level}-name`}
+            />
+          )}
         />
         {campaign && (
           <div className={styles.readOnly}>
@@ -152,55 +152,85 @@ export function RecordForm({
             </p>
           </div>
         )}
-        <PersonField
-          label={OWNER}
-          name={`${level}-ownerId`}
-          marking="Needed to publish"
-          hint={ownerDefaulted ? (isCampaign ? FROM_THE_PLAN : FROM_THE_CAMPAIGN) : undefined}
-          value={values.ownerId}
-          onChange={(ownerId) => set('ownerId', ownerId)}
-          error={problemOf(problems, 'ownerId')}
+        <FormField
+          control={control}
+          name="ownerId"
+          render={(field) => (
+            <PersonField
+              label={OWNER}
+              marking="Needed to publish"
+              hint={ownerDefaulted ? (isCampaign ? FROM_THE_PLAN : FROM_THE_CAMPAIGN) : undefined}
+              {...field}
+              name={`${level}-ownerId`}
+            />
+          )}
         />
-        <DateRangeField
-          label={DATES}
-          idPrefix={level}
-          marking="Needed to publish"
-          hint={datesDefaulted ? (isCampaign ? THE_PLANS_YEAR : THE_CAMPAIGNS_DATES) : undefined}
-          start={values.startDate}
-          end={values.endDate}
-          onChange={({ start, end }) => onChange({ ...values, startDate: start, endDate: end })}
-          allowed={allowed}
-          allowedHint={
-            allowed ? allowedRange(`${date(allowed.start)} – ${date(allowed.end)}`) : undefined
-          }
-          errors={{
-            start: problemOf(problems, 'startDate'),
-            end: problemOf(problems, 'endDate'),
-          }}
-          warning={
-            isCampaign && outsideYear(values.startDate, values.endDate, planYear)
-              ? outsidePlanYear(planYear)
-              : undefined
-          }
+        <FormField
+          control={control}
+          name="startDate"
+          render={(start) => (
+            <FormField
+              control={control}
+              name="endDate"
+              render={(end) => (
+                <DateRangeField
+                  label={DATES}
+                  idPrefix={level}
+                  marking="Needed to publish"
+                  hint={
+                    datesDefaulted ? (isCampaign ? THE_PLANS_YEAR : THE_CAMPAIGNS_DATES) : undefined
+                  }
+                  start={start.value}
+                  end={end.value}
+                  onChange={(range) => {
+                    start.onChange(range.start);
+                    end.onChange(range.end);
+                  }}
+                  allowed={allowed}
+                  allowedHint={
+                    allowed
+                      ? allowedRange(`${date(allowed.start)} – ${date(allowed.end)}`)
+                      : undefined
+                  }
+                  errors={{ start: start.error, end: end.error }}
+                  warning={
+                    isCampaign && outsideYear(start.value, end.value, planYear)
+                      ? outsidePlanYear(planYear)
+                      : undefined
+                  }
+                />
+              )}
+            />
+          )}
         />
-        <TextAreaField
-          label={DESCRIPTION}
-          name={`${level}-description`}
-          maxLength={2000}
-          value={values.description}
-          onChange={(description) => set('description', description)}
-          error={problemOf(problems, 'description')}
+        <FormField
+          control={control}
+          name="description"
+          render={(field) => (
+            <TextAreaField
+              label={DESCRIPTION}
+              maxLength={2000}
+              {...field}
+              name={`${level}-description`}
+            />
+          )}
         />
       </FormSection>
       <FormSection title={BUDGET}>
-        <MoneyField
-          label={BUDGET_LABEL[level]}
-          name={`${level}-budget`}
-          currency={currency}
-          value={values.budget}
-          onChange={(budget) => set('budget', budget)}
-          note={phased && savedBudget && values.budget.trim() === '' ? PHASING_REMOVED : undefined}
-          error={problemOf(problems, 'budget')}
+        <FormField
+          control={control}
+          name="budget"
+          render={(field) => (
+            <MoneyField
+              label={BUDGET_LABEL[level]}
+              currency={currency}
+              note={
+                phased && savedBudget && field.value.trim() === '' ? PHASING_REMOVED : undefined
+              }
+              {...field}
+              name={`${level}-budget`}
+            />
+          )}
         />
         <RemainingBudgetLine
           label={isCampaign ? REMAINING_PLAN_BUDGET : REMAINING_CAMPAIGN_BUDGET}
@@ -210,15 +240,21 @@ export function RecordForm({
           typed={values.budget}
         />
       </FormSection>
-      <ShellAttributeFields
-        form={attributeForm}
-        values={values.attributes}
-        onChange={(attributes) => set('attributes', attributes)}
-        businessUnit={businessUnit}
-        previousValues={previousAttributes}
-        errors={attributeErrors(problems)}
-        planLink={`/plans/${planId}`}
-        sectionHeading="h2"
+      <FormField
+        control={control}
+        name="attributes"
+        render={(field) => (
+          <ShellAttributeFields
+            form={attributeForm}
+            values={field.value}
+            onChange={field.onChange}
+            businessUnit={businessUnit}
+            previousValues={previousAttributes}
+            errors={attributeErrors(problems)}
+            planLink={`/plans/${planId}`}
+            sectionHeading="h2"
+          />
+        )}
       />
     </>
   );

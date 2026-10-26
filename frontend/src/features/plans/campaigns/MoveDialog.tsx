@@ -1,19 +1,24 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
 import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/ui/record-links';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
 import { useFormatters } from '@/format/useFormatters';
 import { useDestinations, useMoveRecord } from './api';
-import type { DestinationList } from './api';
-import type { RecordTarget } from './campaign-rows';
+import type { Destination } from './api';
+import type { RecordTarget } from './record-target';
 import { DestinationChoice, DestinationNotes, DestinationsLoad } from './Destinations';
 import styles from './Destinations.module.css';
 import { focusOnArrival } from './focus-on-arrival';
+import { moveSchema } from './schemas';
+import type { MoveValues } from './schemas';
 import {
-  CHOOSE_WHERE_TO_MOVE,
   MOVE_INTRO,
   MOVE_TO,
   moveLabel,
@@ -44,18 +49,17 @@ export function MoveDialog({ target, onClose }: MoveDialogProps) {
   const { dateFormat } = useFormatters();
   const destinations = useDestinations(level, id, 'move');
   const move = useMoveRecord();
-  const [chosen, setChosen] = useState('');
-  const [choiceError, setChoiceError] = useState<string | undefined>();
+  const form = useForm<MoveValues>({
+    resolver: zodResolver(moveSchema(destinations.data?.items ?? [])),
+    defaultValues: { destinationId: '' },
+    ...CHECK_ON_SAVE,
+  });
   const [failure, setFailure] = useState<string | null>(null);
 
-  async function submit(list: DestinationList) {
-    if (list.items.length === 0) {
-      // Nothing to choose: the dialog already says so.
-      return;
-    }
-    const destination = list.items.find((item) => item.id === chosen && item.available);
+  async function submit(items: Destination[], { destinationId }: MoveValues) {
+    const destination = items.find((item) => item.id === destinationId && item.available);
+    // Nothing to choose: the dialog already says so.
     if (!destination) {
-      setChoiceError(CHOOSE_WHERE_TO_MOVE);
       return;
     }
     setFailure(null);
@@ -92,7 +96,12 @@ export function MoveDialog({ target, onClose }: MoveDialogProps) {
       title={moveTitle(level, name)}
       description={MOVE_INTRO[level]}
       submitLabel={moveLabel(level)}
-      onSubmit={() => destinations.data && void submit(destinations.data)}
+      onSubmit={() => {
+        const list = destinations.data;
+        if (list) {
+          void form.handleSubmit((values) => submit(list.items, values))();
+        }
+      }}
       busy={move.isPending}
     >
       <DestinationsLoad query={destinations}>
@@ -103,20 +112,28 @@ export function MoveDialog({ target, onClose }: MoveDialogProps) {
             {list.items.length === 0 ? (
               <p>{nothingToMoveTo(level, year)}</p>
             ) : (
-              <>
-                <DestinationChoice
-                  legend={MOVE_TO}
-                  legendHidden
-                  items={list.items}
-                  value={chosen}
-                  onChange={(destinationId) => {
-                    setChosen(destinationId);
-                    setChoiceError(undefined);
-                  }}
-                  error={choiceError}
-                />
-                <DestinationNotes destination={list.items.find((item) => item.id === chosen)} />
-              </>
+              <FormField
+                control={form.control}
+                name="destinationId"
+                render={(field) => (
+                  <>
+                    <DestinationChoice
+                      legend={MOVE_TO}
+                      legendHidden
+                      items={list.items}
+                      value={field.value}
+                      onChange={(destinationId) => {
+                        field.onChange(destinationId);
+                        form.clearErrors('destinationId');
+                      }}
+                      error={field.error}
+                    />
+                    <DestinationNotes
+                      destination={list.items.find((item) => item.id === field.value)}
+                    />
+                  </>
+                )}
+              />
             )}
           </div>
         )}

@@ -1,19 +1,20 @@
 /**
- * Contract-shaped answers for this feature's tests (typed with the API schema, so a contract
- * change shows here first). Only test files import this file.
+ * Campaigns and initiatives for the tests of feature 005, typed with the API schema so a contract
+ * change shows here first.
  */
 import type { components } from '@/api/generated/schema';
-import type {
-  Campaign,
-  Destination,
-  DestinationList,
-  Initiative,
-  Money,
-  PersonRef,
-  PlanCampaigns,
-} from './api';
+import type { Plan } from '@/features/plans';
+import { plan } from './plans';
 
 type BudgetAndCost = components['schemas']['BudgetAndCost'];
+type Campaign = components['schemas']['Campaign'];
+type Destination = components['schemas']['Destination'];
+type DestinationList = components['schemas']['DestinationList'];
+type Initiative = components['schemas']['Initiative'];
+type Money = components['schemas']['Money'];
+type OptionRef = components['schemas']['OptionRef'];
+type PersonRef = components['schemas']['PersonRef'];
+type PlanCampaigns = components['schemas']['PlanCampaigns'];
 
 export const PLAN_ID = 'P-1001';
 export const PLAN_NAME = 'FY2026 Lubricants Europe';
@@ -165,9 +166,11 @@ export function planCampaigns(
   };
 }
 
-/** The part of feature 004's GET /api/v1/plans/{planId} answer the forms read: the business unit. */
-export function planAnswer(businessUnit: { id: string; label: string }[] = []) {
-  return { id: PLAN_ID, name: PLAN_NAME, year: 2026, businessUnit };
+/** The plan of these campaigns (GET /api/v1/plans/{planId}); the forms read its business unit. */
+export function planAnswer(businessUnit: OptionRef[] = [], overrides: Partial<Plan> = {}): Plan {
+  const attributes: Plan['attributes'] =
+    businessUnit.length > 0 ? { 'SA-BU': businessUnit.map((unit) => unit.id) } : {};
+  return plan({ businessUnit, attributes, ...overrides });
 }
 
 const PERSON_META = {

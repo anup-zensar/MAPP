@@ -1,29 +1,30 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { Button } from '@/ui/Button/Button';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
+import { FormField } from '@/ui/FormField/FormField';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
-import { MoneyField } from '@/ui/MoneyField/MoneyField';
-import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { useToast } from '@/ui/Toast/useToast';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
-import { formatCents, formatMoneyText, toCents } from '@/format/decimal';
+import { CHECK_ON_SAVE } from '@/ui/useFormProblems';
+import { formatCents, toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { useSetPhasing } from './api';
 import type { BudgetPhasing, PhasingLevel, PhasingMethod } from './api';
 import styles from './BudgetByMonth.module.css';
+import { CustomMonths } from './CustomMonths';
+import type { Entry } from './CustomMonths';
 import {
   amountText,
   balanceOf,
   balanceText,
   monthKeys,
-  monthLabel,
-  quarterLabels,
-  quarterTotals,
   readAmount,
   splitEvenly,
-  withQuarter,
 } from './phasing-math';
+import { phasingSchema } from './schemas';
+import type { PhasingValues } from './schemas';
 
 type Money = { amount: string; currency: string };
 
@@ -75,60 +76,36 @@ export function PhasingEditor({
   const save = useSetPhasing(level, record.id);
   const keys = monthKeys(year);
   const budget = record.budget ? toCents(record.budget.amount) : null;
-  const [method, setMethod] = useState<PhasingMethod>(phasing.method);
-  const [entry, setEntry] = useState<'monthly' | 'quarterly'>('monthly');
-  const [texts, setTexts] = useState<string[]>(() =>
-    keys.map((_, index) => {
-      const amount = phasing.monthly[index]?.amount;
-      return amount ? amountText(toCents(amount)) : '';
-    }),
-  );
-  const [quarterTexts, setQuarterTexts] = useState<string[] | null>(null);
+  const form = useForm<PhasingValues>({
+    resolver: zodResolver(phasingSchema),
+    defaultValues: {
+      method: phasing.method,
+      months: keys.map((_, index) => {
+        const amount = phasing.monthly[index]?.amount;
+        return amount ? amountText(toCents(amount)) : '';
+      }),
+      quarters: null,
+    },
+    ...CHECK_ON_SAVE,
+  });
+  const values = useWatch({ control: form.control, compute: (all: PhasingValues) => all });
+  const [entry, setEntry] = useState<Entry>('monthly');
   const [copiedNote, setCopiedNote] = useState<string | null>(null);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
-
-  const months = texts.map((text) => readAmount(text));
-  const readable = months.every((month) => month !== null);
-  const cents = months.map((month) => month ?? 0n);
+  const cents = values.months.map((text) => readAmount(text) ?? 0n);
   const evenly = budget === null ? [] : splitEvenly(budget, 12);
 
-  function fill(next: bigint[]) {
-    setTexts(next.map((amount) => amountText(amount)));
-    setQuarterTexts(null);
-  }
-
-  function typeQuarter(quarter: number, text: string) {
-    const quarters = quarterTexts ?? quarterTotals(cents).map((amount) => amountText(amount));
-    const nextQuarters = quarters.map((value, index) => (index === quarter ? text : value));
-    setQuarterTexts(nextQuarters);
-    const amount = readAmount(text);
-    if (amount !== null) {
-      setTexts(withQuarter(cents, quarter, amount).map((value) => amountText(value)));
-    }
-  }
-
-  function copyPlannedCost() {
-    fill(plannedByMonth.map((money) => (money ? toCents(money.amount) : 0n)));
-    const parts = [
-      leftOut.otherYears && `${formatMoneyText(leftOut.otherYears)} in other years`,
-      leftOut.noDates && `${formatMoneyText(leftOut.noDates)} without dates`,
-    ].filter(Boolean);
-    setCopiedNote(parts.length > 0 ? `Left out: ${parts.join(' and ')}.` : null);
-  }
-
-  async function submit() {
-    if (method === 'custom' && !readable) {
-      setFailure({ message: 'Type each month as an amount of 0.00 or more.' });
-      return;
-    }
+  async function submit({ method, months }: PhasingValues) {
+    const amounts = months.map((text) => readAmount(text) ?? 0n);
     try {
       await save.mutateAsync({
         method,
         months:
           method === 'custom'
-            ? keys
-                .map((month, index) => ({ month, amount: formatCents(cents[index]) }))
-                .filter((part) => cents[keys.indexOf(part.month)] !== 0n)
+            ? keys.flatMap((month, index) => {
+                const amount = amounts[index] ?? 0n;
+                return amount === 0n ? [] : [{ month, amount: formatCents(amount) }];
+              })
             : [],
         version: record.version,
       });
@@ -152,7 +129,9 @@ export function PhasingEditor({
     }
   }
 
-  const balance = balanceOf(method === 'evenly' ? evenly : cents, budget);
+  const balance = balanceOf(values.method === 'evenly' ? evenly : cents, budget);
+  const first = evenly[0] ?? 0n;
+  const december = evenly[11] ?? 0n;
 
   return (
     <FormDialog
@@ -160,95 +139,63 @@ export function PhasingEditor({
       onOpenChange={onOpenChange}
       title={`Budget by month — ${record.name}`}
       submitLabel="Save budget by month"
-      onSubmit={() => void submit()}
+      onSubmit={() =>
+        void form.handleSubmit(submit, (errors) =>
+          setFailure({ message: errors.months?.message ?? '' }),
+        )()
+      }
       busy={save.isPending}
     >
       <div className={styles.editor}>
         {failure && <FailureMessage failure={failure} />}
-        <fieldset className={styles.methods}>
-          <legend className={styles.legend}>How to phase the budget</legend>
-          {METHODS.map((choice) => (
-            <label key={choice.value} className={styles.method}>
-              <input
-                type="radio"
-                name="method"
-                value={choice.value}
-                checked={method === choice.value}
-                onChange={() => setMethod(choice.value)}
-              />
-              <span>
-                <span className={styles.methodLabel}>{choice.label}</span>
-                <span className={styles.methodText}>{choice.text}</span>
-              </span>
-            </label>
-          ))}
-        </fieldset>
+        <FormField
+          control={form.control}
+          name="method"
+          render={(field) => (
+            <fieldset className={styles.methods}>
+              <legend className={styles.legend}>How to phase the budget</legend>
+              {METHODS.map((choice) => (
+                <label key={choice.value} className={styles.method}>
+                  <input
+                    type="radio"
+                    name="method"
+                    value={choice.value}
+                    checked={field.value === choice.value}
+                    onChange={() => field.onChange(choice.value)}
+                  />
+                  <span>
+                    <span className={styles.methodLabel}>{choice.label}</span>
+                    <span className={styles.methodText}>{choice.text}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
+        />
 
-        {method === 'evenly' && budget !== null && (
+        {values.method === 'evenly' && budget !== null && (
           <p className={styles.note}>
-            Each month gets {amountText(evenly[0])} {currency}
-            {evenly[11] !== evenly[0] && `; December gets ${amountText(evenly[11])} ${currency}`}.
+            Each month gets {amountText(first)} {currency}
+            {december !== first && `; December gets ${amountText(december)} ${currency}`}.
           </p>
         )}
 
-        {method === 'custom' && (
-          <>
-            <div className={styles.tools}>
-              <SegmentedFilter
-                label="Type amounts"
-                options={[
-                  { value: 'monthly', label: 'Monthly' },
-                  { value: 'quarterly', label: 'Quarterly' },
-                ]}
-                value={entry}
-                onChange={(next) => {
-                  setEntry(next);
-                  setQuarterTexts(null);
-                }}
-              />
-              {budget !== null && (
-                <Button size="sm" onClick={() => fill(splitEvenly(budget, 12))}>
-                  Split evenly
-                </Button>
-              )}
-              <Button size="sm" onClick={copyPlannedCost}>
-                Copy from planned cost
-              </Button>
-            </div>
-            {copiedNote && <p className={styles.note}>{copiedNote}</p>}
-            <div className={styles.grid}>
-              {entry === 'monthly'
-                ? keys.map((key, index) => (
-                    <MoneyField
-                      key={key}
-                      label={monthLabel(key)}
-                      name={`month-${key}`}
-                      currency={currency}
-                      value={texts[index]}
-                      onChange={(text) =>
-                        setTexts((current) =>
-                          current.map((value, at) => (at === index ? text : value)),
-                        )
-                      }
-                      error={months[index] === null ? 'Type an amount of 0.00 or more.' : undefined}
-                    />
-                  ))
-                : quarterLabels(year).map((label, quarter) => (
-                    <MoneyField
-                      key={label}
-                      label={label}
-                      name={`quarter-${quarter + 1}`}
-                      currency={currency}
-                      value={quarterTexts?.[quarter] ?? amountText(quarterTotals(cents)[quarter])}
-                      onChange={(text) => typeQuarter(quarter, text)}
-                      note="Spread evenly over its three months"
-                    />
-                  ))}
-            </div>
-          </>
+        {values.method === 'custom' && (
+          <CustomMonths
+            form={form}
+            year={year}
+            currency={currency}
+            budget={budget}
+            plannedByMonth={plannedByMonth}
+            leftOut={leftOut}
+            entry={entry}
+            onEntryChange={setEntry}
+            copiedNote={copiedNote}
+            onCopied={setCopiedNote}
+          />
         )}
 
-        {method !== 'none' && (
+        {values.method !== 'none' && (
           <p
             className={balance.kind === 'tooMuch' ? styles.balanceProblem : styles.balance}
             aria-live="polite"
@@ -256,7 +203,7 @@ export function PhasingEditor({
             {balanceText(balance, currency)}
           </p>
         )}
-        {method !== 'none' && budget === null && (
+        {values.method !== 'none' && budget === null && (
           <p className={styles.note}>Set a budget before phasing it.</p>
         )}
       </div>

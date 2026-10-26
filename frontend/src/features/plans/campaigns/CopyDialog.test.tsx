@@ -6,8 +6,6 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { reply } from '@/testing/replies';
-import type { RecordTarget } from './campaign-rows';
-import { CopyDialog } from './CopyDialog';
 import {
   campaign,
   destination,
@@ -15,7 +13,9 @@ import {
   initiative,
   planDestination,
   usd,
-} from './fixtures';
+} from '@/testing/fixtures/campaigns';
+import type { RecordTarget } from './record-target';
+import { CopyDialog } from './CopyDialog';
 
 const HELIX: RecordTarget = {
   level: 'campaign',

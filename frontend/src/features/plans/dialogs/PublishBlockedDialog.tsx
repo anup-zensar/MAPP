@@ -2,8 +2,8 @@ import { Link } from 'react-router';
 import type { components } from '@/api/generated/schema';
 import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { fieldHref } from '@/ui/record-links';
-import type { PlanningRecordType } from '@/ui/record-links';
 import { groupLabel } from '../plan-text';
+import { isPlanningType } from '../planning-type';
 import styles from './dialogs.module.css';
 
 type ReadinessGroup = components['schemas']['ReadinessGroup'];
@@ -45,17 +45,16 @@ export function PublishBlockedDialog({
             <ul className={styles.list}>
               {fields.map((field) => (
                 <li key={field.field}>
-                  <Link
-                    to={fieldHref(
-                      record.type as PlanningRecordType,
-                      record.id,
-                      field.field,
-                      planId,
-                    )}
-                    onClick={onClose}
-                  >
-                    {field.label}
-                  </Link>
+                  {isPlanningType(record.type) ? (
+                    <Link
+                      to={fieldHref(record.type, record.id, field.field, planId)}
+                      onClick={onClose}
+                    >
+                      {field.label}
+                    </Link>
+                  ) : (
+                    field.label
+                  )}
                 </li>
               ))}
             </ul>

@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/testing/render';
+import { budgetAndCost, usd } from '@/testing/fixtures/campaigns';
 import { budgetInput, remainingWhileTyping } from './budget';
 import { BudgetCostSection, GoalsSection, RemainingBudgetLine } from './BudgetCost';
-import { budgetAndCost, usd } from './fixtures';
 
 describe('budget arithmetic (feature 005, FR-010)', () => {
   it('takes the typed amount instead of the saved one, exact to the cent', () => {

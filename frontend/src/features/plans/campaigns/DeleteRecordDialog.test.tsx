@@ -7,8 +7,8 @@ import type { components } from '@/api/generated/schema';
 import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import type { RecordTarget } from './campaign-rows';
+import { reply } from '@/testing/replies';
+import type { RecordTarget } from './record-target';
 import { DeleteRecordDialog } from './DeleteRecordDialog';
 
 type DeleteResult = components['schemas']['DeleteResult'];
@@ -126,12 +126,24 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const { api, onClose, onDeleted } = renderDialog(HELIX, [
-      looseReply(
+      reply(
         'DELETE /api/v1/campaigns/{campaignId}',
         { body: HELIX_DELETED },
         { campaignId: 'C-1001' },
       ),
-      looseReply('POST /api/v1/recycle-bin/{entryId}/undo', { body: {} }, { entryId: 'BIN-1001' }),
+      reply(
+        'POST /api/v1/recycle-bin/{entryId}/undo',
+        {
+          body: {
+            recordType: 'campaign',
+            recordTypeLabel: 'campaign',
+            recordId: 'C-1001',
+            recordName: 'Helix launch',
+            details: '',
+          },
+        },
+        { entryId: 'BIN-1001' },
+      ),
     ]);
 
     await user.click(screen.getByRole('button', { name: 'Delete campaign' }));
@@ -153,7 +165,7 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
 
   it('says so when the campaign is already gone (404)', async () => {
     const { user, onClose, onDeleted } = renderDialog(HELIX, [
-      looseReply(
+      reply(
         'DELETE /api/v1/campaigns/{campaignId}',
         {
           status: 404,
@@ -161,6 +173,7 @@ describe('DeleteRecordDialog (feature 005, US5)', () => {
             error: {
               code: 'not_found',
               message: 'This campaign no longer exists — someone may have deleted it.',
+              fields: [],
             },
           },
         },

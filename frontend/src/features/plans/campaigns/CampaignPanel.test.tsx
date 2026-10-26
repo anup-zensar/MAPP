@@ -1,85 +1,8 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { Outlet } from 'react-router';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { HttpHandler } from 'msw';
-import { SessionProvider } from '@/session/SessionProvider';
-import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
-import { budgetByMonth } from '@/testing/fixtures/phasing';
-import { financialsNotServed } from '@/testing/fixtures/plans';
-import { campaignForm } from '@/testing/fixtures/attribute-forms';
-import { mockApi } from '@/testing/mock-api';
-import { findMessages, renderRoutes } from '@/testing/render';
-import { testUser } from '@/testing/fixtures/users';
-import { looseReply } from '@/testing/replies';
-import { CampaignPanel } from './CampaignPanel';
-import {
-  budgetAndCost,
-  campaign,
-  destinationList,
-  PEOPLE,
-  planAnswer,
-  planDestination,
-  usd,
-} from './fixtures';
-
-const DETAILS = '/plans/P-1001/campaigns/C-1001';
-
-function renderPanel(route: string, answers: HttpHandler[] = []) {
-  const api = mockApi([
-    ...HISTORY_ANSWERS,
-    ...financialsNotServed('C-1001'),
-    looseReply(
-      'GET /api/v1/campaigns/{campaignId}',
-      { body: campaign() },
-      { campaignId: 'C-1001' },
-    ),
-    looseReply('GET /api/v1/plans/{planId}', { body: planAnswer() }, { planId: 'P-1001' }),
-    looseReply(
-      'GET /api/v1/shell-attribute-forms/{level}',
-      { body: campaignForm() },
-      { level: 'campaign' },
-    ),
-    looseReply('GET /api/v1/people', { body: PEOPLE }),
-    ...answers,
-  ]);
-  const rendered = renderRoutes(
-    [
-      {
-        element: (
-          <SessionProvider>
-            <Outlet />
-          </SessionProvider>
-        ),
-        children: [
-          {
-            path: '/plans/:planId',
-            element: <Outlet />,
-            children: [
-              { path: 'campaigns/:campaignId', element: <CampaignPanel mode="details" /> },
-              { path: 'campaigns/:campaignId/edit', element: <CampaignPanel mode="edit" /> },
-              { path: '*', element: <p>Another panel</p> },
-              { index: true, element: <p>Plan page</p> },
-            ],
-          },
-          { path: '*', element: <p>Another page</p> },
-        ],
-      },
-    ],
-    { route, user: testUser() },
-  );
-  return { api, ...rendered };
-}
-
-async function findDetails(name = 'Helix launch') {
-  return screen.findByRole('dialog', { name });
-}
-
-/** The edit form once it is shown (the loading panel is another one). */
-async function findForm() {
-  await screen.findByLabelText('Campaign name');
-  await screen.findByText(/Alex Morgan/);
-  return screen.getByRole('dialog', { name: 'Edit campaign' });
-}
+import { DETAILS, findDetails, findForm, renderPanel } from '@/testing/fixtures/campaign-panel';
+import { budgetAndCost, campaign, planAnswer, usd } from '@/testing/fixtures/campaigns';
+import { reply } from '@/testing/replies';
 
 describe('CampaignPanel — details (feature 005, US3)', () => {
   it('opens by its own address with the header, facts and sections (US3#1, FR-016, FR-017)', async () => {
@@ -136,7 +59,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('shows planned cost, budget used in red and over-allocation (FR-010, FR-011)', async () => {
     const { user } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -185,7 +108,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('links a needed field to the edit form with that field focused (FR-014)', async () => {
     const { user, router } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -211,7 +134,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('says when the campaign has no initiatives and offers Add initiative (FR-016)', async () => {
     renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           body: campaign({
@@ -276,122 +199,14 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     expect(new URLSearchParams(asked?.search).get('recordId')).toBe('C-1001');
   });
 
-  it('deletes from More, closes the panel and offers Undo (US5, FR-028, FR-029)', async () => {
-    const { user, router, api } = renderPanel(DETAILS, [
-      looseReply(
-        'DELETE /api/v1/campaigns/{campaignId}',
-        {
-          body: {
-            recycleBinEntry: {
-              id: 'BIN-1001',
-              recordType: 'campaign',
-              recordTypeLabel: 'campaign',
-              recordId: 'C-1001',
-              recordName: 'Helix launch',
-              path: [],
-              parent: null,
-              deletedAt: '2026-03-12T09:00:00Z',
-              deletedBy: { id: 'U-1002', name: 'Priya Raman' },
-              contents: [],
-            },
-          },
-        },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const panel = await findDetails();
-
-    await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
-    const dialog = await screen.findByRole('alertdialog', {
-      name: "Delete campaign 'Helix launch'?",
-    });
-    expect(dialog).toHaveTextContent('With it go 1 initiative.');
-    await user.click(within(dialog).getByRole('button', { name: 'Delete campaign' }));
-
-    await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1001'));
-    expect(api.bodiesOf('DELETE /api/v1/campaigns/C-1001')).toHaveLength(1);
-    expect(await findMessages()).toHaveTextContent(
-      "Campaign 'Helix launch' moved to the recycle bin",
-    );
-  });
-
-  it('moves from More and opens the plan it moved to, with the campaign highlighted (US6, FR-025)', async () => {
-    const { user, router, api } = renderPanel(DETAILS, [
-      looseReply(
-        'GET /api/v1/campaigns/{campaignId}/destinations',
-        {
-          body: destinationList(
-            [planDestination()],
-            'Campaigns move only between plans of the same year',
-          ),
-        },
-        { campaignId: 'C-1001' },
-      ),
-      looseReply(
-        'POST /api/v1/campaigns/{campaignId}/move',
-        { body: campaign({ planId: 'P-1002', version: 4 }) },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const panel = await findDetails();
-
-    await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Move to…' }));
-    const dialog = await screen.findByRole('dialog', { name: "Move campaign 'Helix launch'" });
-    await user.click(await within(dialog).findByRole('radio', { name: 'FY2026 Mobility China' }));
-    await user.click(within(dialog).getByRole('button', { name: 'Move campaign' }));
-
-    await waitFor(() => expect(router.state.location.pathname).toBe('/plans/P-1002'));
-    expect(router.state.location.state).toEqual({ highlight: 'C-1001' });
-    expect(api.bodiesOf('POST /api/v1/campaigns/C-1001/move')).toEqual([
-      { planId: 'P-1002', version: 3 },
-    ]);
-    expect(await findMessages()).toHaveTextContent(
-      "Campaign 'Helix launch' moved to 'FY2026 Mobility China'",
-    );
-  });
-
-  it('copies from More (US6, FR-026)', async () => {
-    const { user } = renderPanel(DETAILS, [
-      looseReply(
-        'GET /api/v1/campaigns/{campaignId}/destinations',
-        {
-          body: destinationList(
-            [
-              planDestination({
-                id: 'P-1001',
-                name: 'FY2026 Lubricants Europe',
-                current: true,
-                suggestedName: 'Helix launch (copy)',
-              }),
-            ],
-            'A copy can go into this plan or another plan of the same year',
-          ),
-        },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const panel = await findDetails();
-
-    await user.click(within(panel).getByRole('button', { name: 'Actions for Helix launch' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Copy' }));
-
-    const dialog = await screen.findByRole('dialog', { name: "Copy campaign 'Helix launch'" });
-    expect(await within(dialog).findByRole('textbox', { name: /Name of the copy/ })).toHaveValue(
-      'Helix launch (copy)',
-    );
-    expect(dialog).toHaveTextContent('It copies 1 initiative.');
-  });
-
   it('opens under the right plan when the campaign has moved (FR-017)', async () => {
     const { router } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         { body: campaign({ planId: 'P-1002' }) },
         { campaignId: 'C-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/plans/{planId}',
         { body: { ...planAnswer(), id: 'P-1002' } },
         { planId: 'P-1002' },
@@ -405,7 +220,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
 
   it('says when the campaign no longer exists, with Back to the plan', async () => {
     const { user, router } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         {
           status: 404,
@@ -413,6 +228,7 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
             error: {
               code: 'not_found',
               message: 'This campaign no longer exists — someone may have deleted it.',
+              fields: [],
             },
           },
         },
@@ -430,11 +246,14 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
   it('shows a loading state, then a failure with Try again', async () => {
     let calls = 0;
     const { user } = renderPanel(DETAILS, [
-      looseReply(
+      reply(
         'GET /api/v1/campaigns/{campaignId}',
         () =>
           ++calls === 1
-            ? { status: 500, body: { error: { code: 'internal_error', message: 'Oops' } } }
+            ? {
+                status: 500,
+                body: { error: { code: 'internal_error', message: 'Oops', fields: [] } },
+              }
             : { body: campaign() },
         { campaignId: 'C-1001' },
       ),
@@ -444,261 +263,5 @@ describe('CampaignPanel — details (feature 005, US3)', () => {
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
 
     expect(await findDetails()).toBeInTheDocument();
-  });
-});
-
-describe('CampaignPanel — edit (feature 005, US3)', () => {
-  it('saves the form with the version it started from and goes back to the details (US3#2, FR-018)', async () => {
-    const { user, api, router } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        {
-          body: campaign({ budget: usd('450000.00'), version: 4 }),
-        },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const form = await findForm();
-    expect(within(form).getByLabelText('Campaign name')).toHaveValue('Helix launch');
-    expect(within(form).getByLabelText('Campaign budget')).toHaveValue('400,000.00');
-    // The plan's remaining budget counts this campaign's saved budget once.
-    expect(within(form).getByText('$200,000.00')).toBeInTheDocument();
-
-    const budget = within(form).getByLabelText('Campaign budget');
-    await user.clear(budget);
-    await user.type(budget, '450000');
-    expect(within(form).getByText('$150,000.00')).toBeInTheDocument();
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    await waitFor(() => expect(router.state.location.pathname).toBe(DETAILS));
-    expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toEqual([
-      {
-        name: 'Helix launch',
-        description: 'Launch of the new Helix range.',
-        ownerId: 'U-1001',
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
-        budget: { amount: '450000.00', currency: 'USD' },
-        attributes: {},
-        version: 3,
-      },
-    ]);
-    await findDetails();
-    // The details panel is open over the messages area, which stays readable for screen readers.
-    await waitFor(() =>
-      expect(screen.getByRole('region', { name: 'Messages (F8)', hidden: true })).toHaveTextContent(
-        "Campaign 'Helix launch' saved",
-      ),
-    );
-  });
-
-  it('types the budget in the plan currency and says clearing it removes Budget by month (016 FR-011, FR-022)', async () => {
-    const gbp = (amount: string) => ({ amount, currency: 'GBP' });
-    const { user, api } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
-        'GET /api/v1/plans/{planId}',
-        { body: { ...planAnswer(), currency: 'GBP' } },
-        { planId: 'P-1001' },
-      ),
-      looseReply(
-        'GET /api/v1/campaigns/{campaignId}',
-        {
-          body: campaign({
-            budget: gbp('120000.00'),
-            parentRemainingBudget: gbp('80000.00'),
-            budgetPhasing: {
-              method: 'evenly',
-              months: [],
-              monthly: Array.from({ length: 12 }, () => gbp('10000.00')),
-              total: gbp('120000.00'),
-              problem: null,
-            },
-          }),
-        },
-        { campaignId: 'C-1001' },
-      ),
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        { body: campaign() },
-        { campaignId: 'C-1001' },
-      ),
-      looseReply(
-        'GET /api/v1/plans/{planId}/budget-by-month',
-        { body: budgetByMonth() },
-        { planId: 'P-1001' },
-      ),
-    ]);
-    const form = await findForm();
-    const budget = within(form).getByLabelText('Campaign budget');
-    expect(within(form).queryByText('Budget by month will be removed when you save.')).toBeNull();
-
-    await user.clear(budget);
-    expect(
-      within(form).getByText('Budget by month will be removed when you save.'),
-    ).toBeInTheDocument();
-    await user.type(budget, '150000');
-    expect(within(form).queryByText('Budget by month will be removed when you save.')).toBeNull();
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    await waitFor(() => expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(1));
-    expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')[0]).toMatchObject({
-      budget: { amount: '150000.00', currency: 'GBP' },
-    });
-  });
-
-  it('shows the FR-007 problem under the dates and saves nothing (US3#3, FR-007)', async () => {
-    const problem =
-      'Digital & social (01 Feb – 30 Nov 2026) would be outside these dates. Change its dates first, or choose dates that include it.';
-    const { user, router } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        {
-          status: 400,
-          body: {
-            error: {
-              code: 'validation_failed',
-              message: 'Some fields need your attention.',
-              fields: [{ field: 'startDate', message: problem }],
-            },
-          },
-        },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const form = await findForm();
-
-    fireEvent.change(within(form).getByLabelText('Start date'), {
-      target: { value: '2026-03-01' },
-    });
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    expect(await within(form).findByText('1 problem needs your attention')).toBeInTheDocument();
-    expect(within(form).getByLabelText('Start date')).toHaveAccessibleDescription(problem);
-    expect(router.state.location.pathname).toBe(`${DETAILS}/edit`);
-  });
-
-  it('keeps the typed values after a conflict and saves again with the new version (FR-018)', async () => {
-    let saves = 0;
-    let reads = 0;
-    const { user, api } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
-        'GET /api/v1/campaigns/{campaignId}',
-        () => ({ body: campaign({ version: ++reads > 1 ? 4 : 3 }) }),
-        { campaignId: 'C-1001' },
-      ),
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        () =>
-          ++saves === 1
-            ? {
-                status: 409,
-                body: {
-                  error: {
-                    code: 'version_conflict',
-                    message: 'Not saved — Daniel Okoro changed this campaign',
-                    conflict: { changedBy: 'Daniel Okoro', changedAt: '2026-03-12T09:00:00Z' },
-                  },
-                },
-              }
-            : { body: campaign({ name: 'Helix relaunch', version: 5 }) },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const form = await findForm();
-
-    const name = within(form).getByLabelText('Campaign name');
-    await user.clear(name);
-    await user.type(name, 'Helix relaunch');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    expect(
-      await within(form).findByText(/^Not saved — Daniel Okoro changed this campaign/),
-    ).toBeInTheDocument();
-    expect(name).toHaveValue('Helix relaunch');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    await waitFor(() => expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(2));
-    expect(
-      api
-        .bodiesOf('PATCH /api/v1/campaigns/C-1001')
-        .map((body) => (body as { version: number }).version),
-    ).toEqual([3, 4]);
-  });
-
-  it('lists the values a removed cluster clears, before saving, and guards unsaved changes (US3#4, FR-009, FR-018)', async () => {
-    const { user, api } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
-        'GET /api/v1/campaigns/{campaignId}',
-        {
-          body: campaign({
-            attributes: {
-              'SA-CLUSTER': ['SO-RETAIL', 'SO-B2B'],
-              'SA-REGION': ['SO-CHINA', 'SO-EU'],
-            },
-          }),
-        },
-        { campaignId: 'C-1001' },
-      ),
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        { body: campaign() },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const form = await findForm();
-
-    await user.click(within(form).getByRole('checkbox', { name: 'B2B' }));
-    expect(within(form).getByText(/'B2B – EUROPE' will be cleared/)).toBeInTheDocument();
-
-    // Closing asks first.
-    await user.click(within(form).getByRole('button', { name: 'Close' }));
-    const question = await screen.findByRole('alertdialog', { name: 'Discard changes?' });
-    await user.click(within(question).getByRole('button', { name: 'Keep editing' }));
-
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-    const clear = await screen.findByRole('alertdialog', {
-      name: 'Clear values that no longer fit?',
-    });
-    expect(within(clear).getByText('Region: B2B – EUROPE')).toBeInTheDocument();
-    expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(0);
-    await user.click(within(clear).getByRole('button', { name: 'Clear and save' }));
-
-    await waitFor(() => expect(api.bodiesOf('PATCH /api/v1/campaigns/C-1001')).toHaveLength(1));
-  });
-
-  it('goes back to the details on Cancel when nothing changed', async () => {
-    const { user, router } = renderPanel(`${DETAILS}/edit`);
-    const form = await findForm();
-
-    await user.click(within(form).getByRole('button', { name: 'Cancel' }));
-
-    await waitFor(() => expect(router.state.location.pathname).toBe(DETAILS));
-  });
-
-  it('shows a failed save that is not about a field as a message and keeps the values', async () => {
-    const { user, router } = renderPanel(`${DETAILS}/edit`, [
-      looseReply(
-        'PATCH /api/v1/campaigns/{campaignId}',
-        {
-          status: 500,
-          body: {
-            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
-          },
-        },
-        { campaignId: 'C-1001' },
-      ),
-    ]);
-    const form = await findForm();
-
-    await user.type(within(form).getByLabelText('Campaign name'), ' 2');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-
-    await waitFor(() =>
-      expect(screen.getByRole('region', { name: 'Messages (F8)', hidden: true })).toHaveTextContent(
-        'Something went wrong. Please try again.',
-      ),
-    );
-    expect(within(form).getByLabelText('Campaign name')).toHaveValue('Helix launch 2');
-    expect(router.state.location.pathname).toBe(`${DETAILS}/edit`);
   });
 });
