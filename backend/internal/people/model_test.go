@@ -5,6 +5,7 @@ import "testing"
 // The sign-in page and the sidebar show a person's first name and initials, worked out from the full name
 // (data model §1).
 func TestPerson_FirstNameAndInitials_FR001(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		firstName string

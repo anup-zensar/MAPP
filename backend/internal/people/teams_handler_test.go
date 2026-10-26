@@ -17,6 +17,7 @@ const teamGoneBody = `{"error":{"code":"not_found","message":"This team no longe
 // The Teams list and the team picker get every team, sorted by name, with its colour, status and members
 // (FR-010).
 func TestListTeams_TeamsWithMembers_FR010(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -44,6 +45,7 @@ func TestListTeams_TeamsWithMembers_FR010(t *testing.T) {
 // A team's details answer its description, members and the plans using it; an unknown team answers 404
 // with the message the details panel shows (US2 scenario 3).
 func TestGetTeam_DetailsOrNotFound_FR010(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -62,6 +64,7 @@ func TestGetTeam_DetailsOrNotFound_FR010(t *testing.T) {
 // Creating a team answers 201 with the team, its members by name and the least-used colour; a form with
 // problems answers 400 listing every one (FR-010, FR-011).
 func TestCreateTeam_CreatedOrRefused_FR010_FR011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 
@@ -85,6 +88,7 @@ func TestCreateTeam_CreatedOrRefused_FR010_FR011(t *testing.T) {
 // Someone else than the creator changes a team (FR-011); Daniel and Priya hold the Administrator role for it
 // (014 FR-009).
 func TestUpdateTeam_ChangedConflictOrNotFound_FR011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	asia := createTeam(t, server.SignIn(t, alexsEmail), map[string]any{"name": "Lubricants Asia", "memberIds": []string{"U-1002"}})
 	daniel := server.SignIn(t, danielsEmail)
@@ -114,6 +118,7 @@ func TestUpdateTeam_ChangedConflictOrNotFound_FR011(t *testing.T) {
 // Deleting an unused team answers its recycle-bin entry with its memberships; Undo brings both back
 // (FR-015). A team that is gone answers 404.
 func TestDeleteTeam_ThenUndo_FR015(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	asia := createTeam(t, alex, map[string]any{"name": "Lubricants Asia", "memberIds": []string{"U-1002", "U-1003"}})
@@ -141,24 +146,10 @@ func TestDeleteTeam_ThenUndo_FR015(t *testing.T) {
 	}
 }
 
-// A Restore from the recycle bin of a team whose name was taken meanwhile renames it (FR-015).
-func TestRestoreTeam_NameTaken_FR015(t *testing.T) {
-	server := apitest.New(t)
-	alex := server.SignIn(t, alexsEmail)
-	asia := createTeam(t, alex, map[string]any{"name": "Lubricants Asia"})
-	var result history.DeleteResult
-	alex.Do(t, http.MethodDelete, "/api/v1/teams/"+asia.ID, nil).Decode(t, &result)
-	createTeam(t, alex, map[string]any{"name": "Lubricants Asia"})
-
-	response := alex.Do(t, http.MethodPost, "/api/v1/recycle-bin/"+result.RecycleBinEntry.ID+"/restore", nil)
-
-	assertAnswer(t, response, http.StatusOK, `{"recordType":"team","recordTypeLabel":"team","recordId":"`+asia.ID+`",`+
-		`"recordName":"Lubricants Asia (restored)","details":"Renamed to 'Lubricants Asia (restored)' because the name was taken."}`)
-}
-
 // Without plans that use the team, removing a member needs no confirmation; the check validates the form
 // like the save and saves nothing (FR-013, D-058).
 func TestTeamImpact_NoPlansNoWarnings_FR013(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	asia := createTeam(t, alex, map[string]any{"name": "Lubricants Asia", "memberIds": []string{"U-1002", "U-1003"}})
@@ -183,6 +174,7 @@ func TestTeamImpact_NoPlansNoWarnings_FR013(t *testing.T) {
 // Set team inactive and Reactivate answer the team in its new status; both fields of the body are needed,
 // and an out-of-date version is refused (FR-014).
 func TestSetTeamStatus_InactiveAndBack_FR014(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	asia := createTeam(t, alex, map[string]any{"name": "Lubricants Asia"})

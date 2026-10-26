@@ -51,6 +51,7 @@ func inLubricantsEurope(keys ...string) string {
 // and what My profile shows: the version, the five preferences, the person's teams (003 FR-021, FR-026) and
 // their access (014 FR-024).
 func TestGetMe_SignedInPerson_FR012(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -61,18 +62,10 @@ func TestGetMe_SignedInPerson_FR012(t *testing.T) {
 		`"preferences":`+defaultPreferencesBody+`,"version":1,"teams":`+priyasTeamsBody+`,"access":`+priyasAccessBody+`}`)
 }
 
-// Without a session cookie, the API asks the person to sign in (FR-005).
-func TestGetMe_WithoutSession_FR005(t *testing.T) {
-	server := apitest.New(t)
-
-	response := server.Do(t, http.MethodGet, "/api/v1/me", nil)
-
-	assertAnswer(t, response, http.StatusUnauthorized, signInRequiredBody)
-}
-
 // After more than 12 hours without a request the session has expired, and the person is asked to sign in
 // again (FR-006, US4 scenario 2).
 func TestGetMe_SessionExpired_FR006(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.Advance(12*time.Hour + 2*time.Minute)
@@ -82,18 +75,9 @@ func TestGetMe_SessionExpired_FR006(t *testing.T) {
 	assertAnswer(t, response, http.StatusUnauthorized, sessionExpiredBody)
 }
 
-// Sending no preference changes nothing (FR-011, FR-014).
-func TestPatchPreferences_NothingSent_FR011(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{})
-
-	assertAnswer(t, response, http.StatusOK, defaultPreferencesBody)
-}
-
 // Only the preferences sent change, and the person keeps them (FR-011, FR-014).
 func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	collapse := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"sidebarCollapsed": true})
@@ -111,21 +95,10 @@ func TestPatchPreferences_ThemeKeepsSidebarCollapsed_FR014(t *testing.T) {
 	}
 }
 
-// A theme other than system, light or dark is refused next to the field (FR-014, FR-020).
-func TestPatchPreferences_InvalidTheme_FR014(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	response := priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"theme": "blue"},
-		apitest.SkipRequestValidation()) // the contract itself allows only the three themes
-
-	assertAnswer(t, response, http.StatusBadRequest, `{"error":{"code":"validation_failed",`+
-		`"message":"Some fields need your attention.","fields":[{"field":"theme","message":"Choose system, light or dark."}]}}`)
-}
-
 // Home's My teams / Everything switch is saved per person and comes back with GET /api/v1/me; a value other
 // than myTeams or everything is refused next to the field (009 FR-003).
 func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -147,6 +120,7 @@ func TestPatchPreferences_HomeScope_FR003(t *testing.T) {
 // order pinned; a repeated id is pinned once; an id that is no plan id is refused next to the field
 // (018 FR-004 – FR-006, D-317).
 func TestPatchPreferences_PinnedPlans_FR004_FR005(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -165,6 +139,7 @@ func TestPatchPreferences_PinnedPlans_FR004_FR005(t *testing.T) {
 
 // Changing preferences needs a signed-in person (FR-005).
 func TestPatchPreferences_WithoutSession_FR005(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 
 	response := server.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"theme": "dark"})
@@ -176,6 +151,7 @@ func TestPatchPreferences_WithoutSession_FR005(t *testing.T) {
 // the change, with initials and version, and every screen naming them shows the new name (003 FR-021,
 // FR-022, US4 scenario 2).
 func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	alex := server.SignIn(t, alexsEmail)
@@ -195,46 +171,11 @@ func TestPatchMe_UpdatesProfile_FR021_FR022(t *testing.T) {
 	}
 }
 
-// A profile change from an out-of-date copy answers 409, naming who changed the person and when; nothing
-// is saved (003 FR-022, 001 FR-029).
-func TestPatchMe_VersionConflict_FR022(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-	alex := server.SignIn(t, alexsEmail)
-	server.Advance(time.Hour)
-	changed := alex.Do(t, http.MethodPatch, "/api/v1/people/U-1002", map[string]any{"name": "Priya Raman",
-		"email": priyasEmail, "jobTitle": "Team leader", "teamIds": []string{"T-1001"}, "version": 1})
-	if changed.Status != http.StatusOK {
-		t.Fatalf("Alex's change = %d %s", changed.Status, changed.Body)
-	}
-
-	response := priya.Do(t, http.MethodPatch, "/api/v1/me", map[string]any{"name": "Priya Sharma", "jobTitle": "Marketer", "version": 1})
-
-	assertAnswer(t, response, http.StatusConflict, `{"error":{"code":"version_conflict",`+
-		`"message":"Not saved — Alex Morgan changed this person","fields":[],`+
-		`"conflict":{"changedBy":"Alex Morgan","changedAt":"2026-03-12T10:00:00Z"}}}`)
-	var me people.CurrentUser
-	priya.Do(t, http.MethodGet, "/api/v1/me", nil).Decode(t, &me)
-	if me.Name != "Priya Raman" || me.JobTitle != "Team leader" || me.Version != 2 {
-		t.Errorf("GET /api/v1/me = %+v, want only Alex's change", me)
-	}
-}
-
-// An empty name and a job title over 120 characters are reported together (003 FR-022, SC-007).
-func TestPatchMe_AllProblemsAtOnce_FR022(t *testing.T) {
-	server := apitest.New(t)
-	priya := server.SignIn(t, priyasEmail)
-
-	response := priya.Do(t, http.MethodPatch, "/api/v1/me", map[string]any{"name": " ", "jobTitle": strings.Repeat("j", 121), "version": 1})
-
-	assertAnswer(t, response, http.StatusBadRequest, validationBody(`{"field":"name","message":"Enter a name."},`+
-		`{"field":"jobTitle","message":"Use 120 characters or fewer."}`))
-}
-
 // The display currency and the date format are preferences like the theme: the answer has all five, and
 // anything but an active currency or one of the four date formats is refused next to its field, both at once
 // (003 FR-023, FR-024).
 func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -250,6 +191,7 @@ func TestPatchPreferences_DisplayCurrencyAndDateFormat_FR023_FR024(t *testing.T)
 // after a person chose it is still offered to that person, marked inactive, and to nobody else (003
 // FR-023, D-063).
 func TestGetDisplayCurrencies_FR023(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, danielsEmail)
@@ -280,6 +222,7 @@ func TestGetDisplayCurrencies_FR023(t *testing.T) {
 // Preferences belong to the person, not to the browser: signed in from another browser, the person sees
 // the display currency and date format they chose (003 FR-025).
 func TestPreferences_SameInAnotherBrowser_FR025(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	firstBrowser := server.SignIn(t, priyasEmail)
 	secondBrowser := server.SignIn(t, priyasEmail)

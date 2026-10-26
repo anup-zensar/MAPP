@@ -51,6 +51,7 @@ func entryText(e history.Entry) string {
 // entry, the initiative "Trade shows" with 1 activity and 1 line item, whose records are not stored and
 // whose restore state is restorable (D-188, FR-015, FR-017).
 func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
+	t.Parallel()
 	db := loadedStore(t)
 	entries, bin := demoLog(t, db)
 
@@ -146,6 +147,7 @@ func TestSeed_HistoryAndRecycleBin_011(t *testing.T) {
 // its parents; so have the three records of the deleted initiative, 12 days before (011 plan "Demo data"
 // steps 1 and 5).
 func TestSeed_History_CreatedEntries_011(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	entries, _ := demoLog(t, loadedStore(t))
 
@@ -221,6 +223,7 @@ func TestSeed_History_CreatedEntries_011(t *testing.T) {
 // Raman changed the planned cost of her first FY2026 Lubricants Europe activity 5 days before, from 5,000.00
 // USD less to what is stored now (011 plan "Demo data" steps 2 and 4).
 func TestSeed_History_PublishedAndCostChange_011(t *testing.T) {
+	t.Parallel()
 	entries, _ := demoLog(t, loadedStore(t))
 
 	var published, changed []history.Entry
@@ -268,6 +271,7 @@ func TestSeed_History_PublishedAndCostChange_011(t *testing.T) {
 // with the same actor, time and comment, 008's verb and details and the status change; older actions have
 // none (011 plan "Demo data" step 3).
 func TestSeed_History_ApprovalActions_011(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	entries, _ := demoLog(t, loadedStore(t))
 
@@ -313,6 +317,7 @@ func TestSeed_History_ApprovalActions_011(t *testing.T) {
 // FR-008; 009 FR-015). Priya reads every market's plans here (014: the log covers only what the reader may
 // see), so the summary counts the whole seeded history.
 func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	server.GrantRole(t, "priya.raman@shell.com", "viewer", "all")
 	priya := server.SignIn(t, "priya.raman@shell.com")
@@ -358,6 +363,7 @@ func TestSeed_History_ThroughTheAPI_011(t *testing.T) {
 // works, and Restore brings the initiative back with its activity and line item, under Rimula fleet (011
 // FR-018, FR-021).
 func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, "priya.raman@shell.com")
 
@@ -397,8 +403,9 @@ func TestSeed_DeletedInitiative_Restores_011(t *testing.T) {
 // Whatever the seed time's seconds, every entry stays within the 14 days before it and in time order: the
 // seed command runs at the computer's time, not on a whole minute (011 plan "Demo data").
 func TestSeed_History_SeedTimeWithSeconds_011(t *testing.T) {
+	t.Parallel()
 	at := time.Date(2026, 10, 20, 7, 41, 38, 512_000_000, time.UTC)
-	db := openStore(t)
+	db := openStore(t, t.TempDir())
 	if err := seed.Load(t.Context(), stores.JSON(db), func() time.Time { return at }); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -416,7 +423,8 @@ func TestSeed_History_SeedTimeWithSeconds_011(t *testing.T) {
 // Tests of the log's and the bin's rules can load the demo data without its history: the log and the bin
 // start empty and the deleted initiative takes no IDs (seed.WithoutHistory).
 func TestLoad_WithoutHistory_011(t *testing.T) {
-	db := openStore(t)
+	t.Parallel()
+	db := openStore(t, t.TempDir())
 	if err := seed.Load(t.Context(), stores.JSON(db), fixedClock, seed.WithoutHistory()); err != nil {
 		t.Fatalf("Load: %v", err)
 	}

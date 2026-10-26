@@ -16,6 +16,7 @@ import (
 // once) and the least-used colour; the log gets the team's "created" entry and a "changed" entry for each
 // member, whose teams changed (FR-010, FR-012, FR-028, D-057).
 func TestCreateTeam_SavedWithMembersAndLogged_FR010_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "Marketing administrator", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -54,6 +55,7 @@ func TestCreateTeam_SavedWithMembersAndLogged_FR010_FR028(t *testing.T) {
 // letter case, a description over 300 characters, a colour outside the palette, an id that is no person and
 // an inactive person. Nothing is saved or logged.
 func TestCreateTeam_AllProblemsAtOnce_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	mei := f.addPerson(t, "Mei Lin", "Marketer", false)
@@ -86,6 +88,7 @@ func TestCreateTeam_AllProblemsAtOnce_FR011(t *testing.T) {
 // Without a colour, a new team gets the palette colour the fewest teams have, the first in palette order
 // on a tie; a chosen colour is kept (D-025, D-065).
 func TestCreateTeam_ColourLeastUsed_D025(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	f.addTeam(t, "One", "blue", true)
@@ -109,6 +112,7 @@ func TestCreateTeam_ColourLeastUsed_D025(t *testing.T) {
 // A team may be renamed to a name no other team has, in any letter case, and keeps its own name in other
 // letters; the log shows the old and new names (FR-011, US2 scenario 4).
 func TestUpdateTeam_RenameUnique_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true)
@@ -136,6 +140,7 @@ func TestUpdateTeam_RenameUnique_FR011(t *testing.T) {
 // Members who were made inactive may stay in the team; only inactive people who are not members yet are
 // refused (FR-011, D-070).
 func TestUpdateTeam_KeepsInactiveMember_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	mei := f.addPerson(t, "Mei Lin", "Marketer", false)
@@ -164,6 +169,7 @@ func TestUpdateTeam_KeepsInactiveMember_FR011(t *testing.T) {
 // overwritten (001 FR-029). A missing version is reported with the other problems; an unknown team answers
 // not_found.
 func TestUpdateTeam_VersionConflict_FR029(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
 	daniel := f.addPerson(t, "Daniel Okoro", "", true)
@@ -192,6 +198,7 @@ func TestUpdateTeam_VersionConflict_FR029(t *testing.T) {
 
 // Saving a team form that changes nothing is not a change: no new version, no log entry (FR-028).
 func TestUpdateTeam_NoChangeNoVersionNoLog_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -210,6 +217,7 @@ func TestUpdateTeam_NoChangeNoVersionNoLog_FR028(t *testing.T) {
 // An update sends only the fields to change (D-203, D-210): a new colour alone keeps the name, the
 // description and every member, and the impact check of it warns about nobody.
 func TestUpdateTeam_OnlySentFieldsChange_D210(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -236,6 +244,7 @@ func TestUpdateTeam_OnlySentFieldsChange_D210(t *testing.T) {
 
 // Members changed on a team show on the person at once (FR-012).
 func TestTeamEdit_MembershipShowsOnPerson_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -260,6 +269,7 @@ func TestTeamEdit_MembershipShowsOnPerson_FR012(t *testing.T) {
 
 // Teams changed on a person show in the teams' members at once (FR-012, US2 scenario 2).
 func TestPersonEdit_MembershipShowsOnTeam_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -291,6 +301,7 @@ func TestPersonEdit_MembershipShowsOnTeam_FR012(t *testing.T) {
 // status change. Asking again for the same status changes nothing. Both fields of the body are needed
 // (FR-014, FR-028).
 func TestSetTeamStatus_DeactivateKeepsMembersAndLogs_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -323,6 +334,7 @@ func TestSetTeamStatus_DeactivateKeepsMembersAndLogs_FR014(t *testing.T) {
 
 // Reactivate makes an inactive team active again, logged as "reactivated" (FR-014).
 func TestSetTeamStatus_Reactivate_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	china := f.addTeam(t, "Mobility China", "violet", false)
@@ -339,6 +351,7 @@ func TestSetTeamStatus_Reactivate_FR014(t *testing.T) {
 // A team that any plan uses, including plans in the recycle bin, is not deleted: the refusal counts the
 // plans and suggests setting the team inactive (FR-014).
 func TestDeleteTeam_UsedByPlanRefused_FR014(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	europe := f.addTeam(t, "Lubricants Europe", "blue", true)
@@ -365,6 +378,7 @@ func TestDeleteTeam_UsedByPlanRefused_FR014(t *testing.T) {
 // A team no plan uses goes to the recycle bin together with its memberships, in one entry with one log
 // entry (FR-015); a team that is gone answers not_found.
 func TestDeleteTeam_UnusedMovesWithMemberships_FR015(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", true)
@@ -404,6 +418,7 @@ func assertLog(t *testing.T, f *fixture, want []string) {
 // (inactive ones included, by name) and every plan that uses it, plans in the recycle bin included and
 // marked (FR-010, FR-014, D-067).
 func TestListTeams_MembersAndPlans_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	priya := f.addPerson(t, "Priya Raman", "Marketer", false)
 	daniel := f.addPerson(t, "Daniel Okoro", "Marketing team leader", true)
@@ -442,6 +457,7 @@ func TestListTeams_MembersAndPlans_FR010(t *testing.T) {
 
 // Before feature 004 no plan uses a team: every list is empty, never null (FR-010).
 func TestListTeams_NoPlansYet_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	alex := f.addPerson(t, "Alex Morgan", "", true)
 	f.addTeam(t, "Lubricants Europe", "blue", true)
@@ -456,6 +472,7 @@ func TestListTeams_NoPlansYet_FR010(t *testing.T) {
 // A team's details show its members and the plans using it; a team that no longer exists answers
 // not_found with the message the web app shows (US2 scenario 3).
 func TestGetTeam_DetailsOrNotFound_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	sara := f.addPerson(t, "Sara Novak", "Local finance advisor", true)
 	china := f.addTeam(t, "Mobility China", "violet", true, sara)

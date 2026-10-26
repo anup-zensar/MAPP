@@ -12,6 +12,7 @@ import (
 // person's manager and how many people report to them, the details count "Line manager of <n> people", and
 // a change that would make a loop answers 400 on managerId. Requests and answers follow the contract.
 func TestPeople_ManagerField_FR016(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	alex := server.SignIn(t, alexsEmail)
 	const daniel = "U-1003"

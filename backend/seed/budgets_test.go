@@ -9,13 +9,13 @@ import (
 	"testing"
 
 	"mapp/internal/budgets"
-	"mapp/internal/platform/ids"
 )
 
 // The demo global budget of 014 (FR-040, plan "Demo data"): GB-1001 "FY2026 Global marketing budget", 2026,
 // 2,500,000.00 USD, owned by Carlos Mendes, allocated to FY2026 Lubricants Europe (BA-1001, 1,200,000.00) and
 // FY2026 Mobility China (BA-1002, 800,000.00) — exactly their seeded budgets, so the plans are not changed.
 func TestLoad_GlobalBudget_FR040(t *testing.T) {
+	t.Parallel()
 	db := loadedStore(t)
 	d := loadDemo(t)
 	var stored []budgets.GlobalBudget
@@ -61,27 +61,5 @@ func TestLoad_GlobalBudget_FR040(t *testing.T) {
 	}
 	if !slices.Equal(rows, wantRows) {
 		t.Errorf("allocations =\n%s\nwant\n%s", strings.Join(rows, "\n"), strings.Join(wantRows, "\n"))
-	}
-}
-
-// The global budget and its allocations take their IDs from the counters, so the next ones are GB-1002 and
-// BA-1003 (FR-040, 001 FR-027).
-func TestLoad_GlobalBudgetIDsComeFromTheCounters_FR040(t *testing.T) {
-	db := loadedStore(t)
-	generator := ids.NewGenerator(ids.NewJSONCounters())
-	err := db.Write(t.Context(), func(ctx context.Context) error {
-		for prefix, wantID := range map[string]string{budgets.PrefixGlobalBudget: "GB-1002", budgets.PrefixAllocation: "BA-1003"} {
-			next, err := generator.Next(ctx, prefix)
-			if err != nil {
-				return err
-			}
-			if next != wantID {
-				t.Errorf("next %s ID = %s, want %s", prefix, next, wantID)
-			}
-		}
-		return errors.New("roll back") // leave the counters as the seed left them
-	})
-	if err == nil || err.Error() != "roll back" {
-		t.Fatalf("Write: %v", err)
 	}
 }

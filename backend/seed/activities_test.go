@@ -19,6 +19,7 @@ import (
 // their types, owners, dates, planned costs and workflows. (A-1011, which goes to the recycle bin with its
 // initiative, comes with feature 011's seed step.)
 func TestLoad_Activities_FR003(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	var got []string
 	for _, a := range d.activities {
@@ -69,6 +70,7 @@ func TestLoad_Activities_FR003(t *testing.T) {
 // The approval workflows 006 seeds in 008's shape: WF-1001 with Daniel Okoro, WF-1002 with Carlos Mendes,
 // then Alex Morgan (D-103, D-201; 008 data model §8); 017's approvals step adds WF-1003 (017 FR-037).
 func TestLoad_ApprovalWorkflows_D103(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	var got []string
 	for _, w := range d.workflows {
@@ -91,6 +93,7 @@ func TestLoad_ApprovalWorkflows_D103(t *testing.T) {
 // Each activity's type is allowed by its plan's model (R7), and its dates lie inside its initiative's dates
 // when the initiative has both — for an ongoing activity, its start (R3).
 func TestLoad_ActivitiesFitTheirPlan_R3_R7(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	for _, a := range d.activities {
 		initiative, campaign, plan := d.pathOf(t, a)
@@ -116,6 +119,7 @@ func TestLoad_ActivitiesFitTheirPlan_R3_R7(t *testing.T) {
 // Lunar new year promo misses every needed attribute; every other activity has every shown needed-to-submit
 // attribute (the Lubricants group on the Lubricants plan), splits at 100.00 % (006 plan "Demo data").
 func TestLoad_ActivityAttributes_FR014(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	want := map[string][]string{
 		"Launch film":            {"Company code", "Cost centre", "PIR"},

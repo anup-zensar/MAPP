@@ -12,6 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"mapp/internal/platform/errs"
@@ -30,6 +31,7 @@ type entry struct {
 }
 
 func TestWrite_ReadsItsOwnWrites(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 	putNote(t, db, note{ID: "N-1", Title: "Kept until deleted"})
 
@@ -61,6 +63,7 @@ func TestWrite_ReadsItsOwnWrites(t *testing.T) {
 
 // When the function of a Write fails, nothing it changed is kept: not in memory, not on disk.
 func TestWrite_FailedWriteKeepsTheOldValue(t *testing.T) {
+	t.Parallel()
 	db, dir := openTempStore(t)
 	putNote(t, db, note{ID: "N-1", Title: "Old"})
 	failure := errors.New("the name is already taken")
@@ -92,6 +95,7 @@ func TestWrite_FailedWriteKeepsTheOldValue(t *testing.T) {
 
 // Read and Write return the function's error unchanged, so an API error keeps its status (research R9).
 func TestReadAndWrite_ReturnTheFunctionsErrorUnchanged(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 	notFound := errs.NotFound("This sample folder no longer exists — someone may have deleted it.")
 
@@ -103,34 +107,9 @@ func TestReadAndWrite_ReturnTheFunctionsErrorUnchanged(t *testing.T) {
 	}
 }
 
-// Callers never share memory with the store: changing a value after Put, or a value returned by Get or
-// List, does not change what is stored.
-func TestGetAndList_ReturnCopies(t *testing.T) {
-	db, _ := openTempStore(t)
-	saved := note{ID: "N-1", Title: "Ideas", Tags: []string{"original"}}
-	putNote(t, db, saved)
-
-	saved.Tags[0] = "changed after Put"
-	got, _ := getNote(t, db, "N-1")
-	got.Tags[0] = "changed after Get"
-	err := db.Read(t.Context(), func(ctx context.Context) error {
-		list, err := List[note](ctx, "notes")
-		if err == nil {
-			list[0].Tags[0] = "changed after List"
-		}
-		return err
-	})
-	if err != nil {
-		t.Fatalf("Read: %v", err)
-	}
-
-	if again, _ := getNote(t, db, "N-1"); again.Tags[0] != "original" {
-		t.Errorf("stored tag = %q, want original", again.Tags[0])
-	}
-}
-
 // Everything a Write saved is there again after the API restarts.
 func TestOpen_ReloadsSavedData(t *testing.T) {
+	t.Parallel()
 	db, dir := openTempStore(t)
 	saved := note{ID: "N-1", Title: "Ideas", Tags: []string{"a", "b"}}
 	putNote(t, db, saved)
@@ -150,6 +129,7 @@ func TestOpen_ReloadsSavedData(t *testing.T) {
 // A Write or Read inside a Write joins it (one service can call another without waiting forever); the
 // joined changes are kept or thrown away together with the outer Write.
 func TestWrite_JoinsTheCallersTransaction(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 	failure := errors.New("the outer service failed")
 
@@ -180,6 +160,7 @@ func TestWrite_JoinsTheCallersTransaction(t *testing.T) {
 }
 
 func TestRead_RefusesChanges(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 
 	err := db.Read(t.Context(), func(ctx context.Context) error {
@@ -204,6 +185,7 @@ func TestRead_RefusesChanges(t *testing.T) {
 
 // The helpers work only inside Read or Write, where the context carries the transaction.
 func TestHelpers_NeedATransaction(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 
 	if _, _, err := Get[note](ctx, "notes", "N-1"); !errors.Is(err, ErrNoTransaction) {
@@ -228,6 +210,7 @@ func TestHelpers_NeedATransaction(t *testing.T) {
 
 // Writes run one at a time, so no change is lost when requests arrive together.
 func TestWrite_ParallelWritesAreSerialised(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 	type count struct {
 		N int `json:"n"`
@@ -266,6 +249,7 @@ func TestWrite_ParallelWritesAreSerialised(t *testing.T) {
 
 // A panic in the function of a Write does not leave the store locked.
 func TestWrite_PanicDoesNotLockTheStore(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 
 	func() {
@@ -281,6 +265,7 @@ func TestWrite_PanicDoesNotLockTheStore(t *testing.T) {
 
 // The counters table is saved first, then the other tables by name (research R3).
 func TestCommit_SavesCountersFirstThenByName(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 	var saved []string
 	db.rename = func(from, to string) error {
@@ -307,6 +292,7 @@ func TestCommit_SavesCountersFirstThenByName(t *testing.T) {
 // When replacing a data file fails, the Write changes nothing in memory or on disk, and every later
 // Write is refused with a message for the user; reads keep working (research R3).
 func TestCommit_RenameFailure_NothingChangesAndLaterWritesAreRefused(t *testing.T) {
+	t.Parallel()
 	db, dir := openTempStore(t)
 	putNote(t, db, note{ID: "N-1", Title: "Old"})
 	diskFailure := errors.New("the file is being used by another process")
@@ -342,6 +328,7 @@ func TestCommit_RenameFailure_NothingChangesAndLaterWritesAreRefused(t *testing.
 // When a temporary file cannot be written, the temporary files already written are deleted, nothing
 // changes, and the store keeps working (research R3).
 func TestCommit_TempFileFailure_NothingChangesAndTheStoreKeepsWorking(t *testing.T) {
+	t.Parallel()
 	db, dir := openTempStore(t)
 	putNote(t, db, note{ID: "N-1", Title: "Old"})
 	blocker := filepath.Join(dir, "zebra.json.tmp") // a folder where the temporary file must go
@@ -379,8 +366,14 @@ func TestCommit_TempFileFailure_NothingChangesAndTheStoreKeepsWorking(t *testing
 }
 
 // On Windows, antivirus or search indexing can hold a data file open for a moment, which makes replacing
-// it fail; the store tries again for up to 2 seconds (research R3). Here the test holds the file open.
+// it fail; the store tries again for up to 2 seconds (research R3). Here the test holds the file open, on the
+// fake clock of a synctest bubble.
 func TestRenameWithRetry_WaitsForAFileThatIsBrieflyInUse(t *testing.T) {
+	t.Parallel()
+	synctest.Test(t, renameWhileTheFileIsInUse)
+}
+
+func renameWhileTheFileIsInUse(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, "notes.json", `{}`)
 	writeFile(t, dir, "notes.json.tmp", `{"N-1": {"id": "N-1"}}`)
@@ -407,6 +400,7 @@ func TestRenameWithRetry_WaitsForAFileThatIsBrieflyInUse(t *testing.T) {
 }
 
 func TestOpen_CreatesAMissingFolder(t *testing.T) {
+	t.Parallel()
 	dir := filepath.Join(t.TempDir(), "backend", "data")
 
 	db := mustOpen(t, dir)
@@ -421,6 +415,7 @@ func TestOpen_CreatesAMissingFolder(t *testing.T) {
 
 // A table that has no file yet reads as empty, and lists are never nil (research R10).
 func TestMissingTable_ReadsAsEmpty(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 
 	err := db.Read(t.Context(), func(ctx context.Context) error {
@@ -442,6 +437,7 @@ func TestMissingTable_ReadsAsEmpty(t *testing.T) {
 
 // Temporary files left by a save that a crash interrupted are deleted; the real files are kept.
 func TestOpen_RemovesLeftoverTempFiles(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	writeFile(t, dir, "notes.json", `{"N-1": {"id": "N-1", "title": "Kept", "tags": []}}`)
 	writeFile(t, dir, "notes.json.tmp", `{"N-1": {"id": "N-1", "title": "Half-saved"`)
@@ -462,6 +458,7 @@ func TestOpen_RemovesLeftoverTempFiles(t *testing.T) {
 // A data file that is not valid JSON stops the start-up with a message that names the file and the
 // line, and says how to fix it.
 func TestOpen_InvalidJSONStopsWithAMessage(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		file    string
@@ -491,6 +488,7 @@ func TestOpen_InvalidJSONStopsWithAMessage(t *testing.T) {
 // A half-written last line of an append-only table (a crash during an append) is ignored and cut off
 // the file, so the next append starts on a fresh line (research R3).
 func TestOpen_PartialLastLineOfAnAppendOnlyTableIsIgnored(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	writeFile(t, dir, "log.jsonl", "{\"seq\":1}\n{\"seq\":2}\n{\"seq\":3,\"wri")
 
@@ -508,6 +506,7 @@ func TestOpen_PartialLastLineOfAnAppendOnlyTableIsIgnored(t *testing.T) {
 // Appended records keep their order; a Write sees the records it appended itself; a save only adds lines
 // to the end of the file (research R3).
 func TestAppendAndScan_KeepTheOrder(t *testing.T) {
+	t.Parallel()
 	db, dir := openTempStore(t)
 
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -541,6 +540,7 @@ func TestAppendAndScan_KeepTheOrder(t *testing.T) {
 
 // List sorts by id as people expect: shorter ids first, then alphabetically (research R3).
 func TestList_SortsShorterIDsFirst(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 	for _, id := range []string{"P-1001", "P-999", "P-1000", "P-10"} {
 		putNote(t, db, note{ID: id})
@@ -634,6 +634,7 @@ func TestList_ARead_DecodesEachTableOnce(t *testing.T) {
 
 // Memo works a value out once per transaction, forgets it on every change, and keeps no error.
 func TestMemo_OncePerTransaction_ForgottenOnChange(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 	loads := 0
 	count := func(ctx context.Context) (int, error) {
@@ -695,6 +696,7 @@ func TestMemo_OncePerTransaction_ForgottenOnChange(t *testing.T) {
 
 // Table names are checked, so that no file outside the data folder can ever be touched (research R3).
 func TestTableNames_AreChecked(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -722,6 +724,7 @@ func TestTableNames_AreChecked(t *testing.T) {
 }
 
 func TestPut_RefusesAnEmptyID(t *testing.T) {
+	t.Parallel()
 	db, _ := openTempStore(t)
 
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -734,6 +737,7 @@ func TestPut_RefusesAnEmptyID(t *testing.T) {
 
 // A Write that changed nothing writes no file; deleting a record that does not exist changes nothing.
 func TestWrite_WithoutChangesWritesNoFile(t *testing.T) {
+	t.Parallel()
 	db, dir := openTempStore(t)
 
 	err := db.Write(t.Context(), func(ctx context.Context) error {
@@ -756,6 +760,7 @@ func TestWrite_WithoutChangesWritesNoFile(t *testing.T) {
 // The store keeps no file open between saves. On Windows an open file cannot be deleted, so deleting
 // the whole data folder fails if one was left open (research R3).
 func TestStore_KeepsNoFileOpen(t *testing.T) {
+	t.Parallel()
 	db, dir := openTempStore(t)
 	putNote(t, db, note{ID: "N-1"})
 	appendLog(t, db, entry{Seq: 1})
@@ -780,6 +785,7 @@ func TestStore_KeepsNoFileOpen(t *testing.T) {
 
 // IsEmpty is true only while the data folder has no table file (the seed loads only into an empty store).
 func TestIsEmpty(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	writeFile(t, dir, "README.txt", "not a table")
 

@@ -13,6 +13,7 @@ import (
 // Changes are listed by field name, whatever the order of the record's own fields, so the log always reads
 // the same (FR-022).
 func TestDiff_SortedByField_FR022(t *testing.T) {
+	t.Parallel()
 	type activity struct { // the fields are deliberately not in alphabetical order
 		Title  string `json:"title"`
 		Budget string `json:"budget"`
@@ -36,6 +37,7 @@ func TestDiff_SortedByField_FR022(t *testing.T) {
 // The bookkeeping fields change with every save, so they are never listed as changed fields: a save that
 // changed only them changed nothing (data model "Bookkeeping").
 func TestDiff_IgnoresMeta_FR022(t *testing.T) {
+	t.Parallel()
 	type folder struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
@@ -63,6 +65,7 @@ func TestDiff_IgnoresMeta_FR022(t *testing.T) {
 // null, a missing field, "", [] and {} are all the same empty value: going from one of them to another is
 // not a change. Filling in an empty field is, and false is a value, not an empty one (FR-022).
 func TestDiff_NullAndEmptyAreEqual_FR022(t *testing.T) {
+	t.Parallel()
 	empty := map[string]any{"a": nil, "b": "", "c": []string{}, "d": map[string]string{}}
 	alsoEmpty := map[string]any{"a": "", "b": []string{}, "c": map[string]string{}} // and "d" is missing
 
@@ -86,6 +89,7 @@ func TestDiff_NullAndEmptyAreEqual_FR022(t *testing.T) {
 // A nested object or list is compared as one value: a change inside it lists the whole old and new value.
 // The order of a list matters (FR-022).
 func TestDiff_NestedValuesAsAWhole_FR022(t *testing.T) {
+	t.Parallel()
 	before := map[string]any{
 		"budget": map[string]string{"amount": "12500.00", "currency": "USD"},
 		"tags":   []string{"Digital", "Print"},
@@ -117,6 +121,7 @@ func TestDiff_NestedValuesAsAWhole_FR022(t *testing.T) {
 
 // Diff compares records, which are JSON objects; anything else is a mistake in the calling code.
 func TestDiff_RefusesValuesThatAreNotRecords(t *testing.T) {
+	t.Parallel()
 	if got, err := Diff("Ideas", "Ideas 2"); err == nil {
 		t.Errorf("Diff of two strings = %s, want an error", changesText(got))
 	}
@@ -124,6 +129,7 @@ func TestDiff_RefusesValuesThatAreNotRecords(t *testing.T) {
 
 // Without a label from the kind, a field's JSON name is written in words (data model §5).
 func TestFieldLabel_FieldNameInWords_FR022(t *testing.T) {
+	t.Parallel()
 	tests := map[string]string{
 		"name":          "Name",
 		"plannedCost":   "Planned cost",
@@ -143,6 +149,7 @@ func TestFieldLabel_FieldNameInWords_FR022(t *testing.T) {
 // written, lists joined with commas, and "Not filled in" for every empty value (data model §5). An object
 // has no default wording, so it is shown as its JSON.
 func TestDefaultText_FR022(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		stored, want string
 	}{

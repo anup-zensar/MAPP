@@ -15,6 +15,7 @@ import (
 // The campaigns and initiatives of 005 data model §9, C-1001 … C-1004 and I-1001 … I-1008, with their
 // plans, owners, dates and budgets.
 func TestLoad_CampaignsAndInitiatives_FR002(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	var got []string
 	for _, c := range d.campaigns {
@@ -51,6 +52,7 @@ func TestLoad_CampaignsAndInitiatives_FR002(t *testing.T) {
 // initiatives, FY2026 Lubricants Europe 50,000.00 for campaigns, Brand platform is over-allocated by
 // 50,000.00 (005 data model §4.1, §9; D-015).
 func TestLoad_BudgetsFlowDown_FR010(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	remaining := func(budget money.Money, children []money.Money) string {
 		return budget.Amount.Sub(sumOf(children)).Format()
@@ -86,6 +88,7 @@ func TestLoad_BudgetsFlowDown_FR010(t *testing.T) {
 // warning); Fleet cards has no dates; Retail growth has no cluster and no region ("2 fields needed"), the
 // other campaigns have both (005 data model §1–§2, §9).
 func TestLoad_CampaignRules_R3_R4(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	byID := map[string]campaigns.Campaign{}
 	for _, c := range d.campaigns {
@@ -138,6 +141,7 @@ func sumOf(values []money.Money) money.Amount {
 // The GBP campaign's budget is phased in four months of 2027 (016 data-model §8); every other record is not
 // phased.
 func TestLoad_CampaignPhasing_016(t *testing.T) {
+	t.Parallel()
 	d := loadDemo(t)
 	for _, c := range d.campaigns {
 		var months []string
