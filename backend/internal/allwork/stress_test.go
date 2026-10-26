@@ -47,8 +47,8 @@ func stressYear() *yearBuilder {
 // is timed three times and the fastest counts, so that other test binaries running at the same time (go test
 // ./... runs packages in parallel) do not make it fail.
 func TestQuery_StressYear_SC004(t *testing.T) {
-	if testing.Short() {
-		t.Skip("the stress test runs without -short")
+	if testing.Short() || race.Enabled {
+		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
 	}
 	s, _ := newTestService(t, newFakeSource(stressYear()))
 	standard := Query{View: ViewGrid, Strategic: StrategicInclude, ShowLevels: ShowEverything, Period: PeriodMonth}
@@ -78,7 +78,7 @@ func TestQuery_StressYear_SC004(t *testing.T) {
 		if r.Count.Total != 5000 || len(r.Rows) == 0 {
 			t.Errorf("%s: count %+v, %d rows", name, r.Count, len(r.Rows))
 		}
-		if elapsed > time.Second && !race.Enabled {
+		if elapsed > time.Second {
 			t.Errorf("%s took %s, want under 1 second", name, elapsed)
 		}
 		t.Logf("%s: %d rows in %s", name, len(r.Rows), elapsed)

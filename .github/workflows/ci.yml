@@ -122,6 +122,12 @@ jobs:
         run: |
           set -o pipefail
           go test -race -covermode=atomic -coverprofile=coverage.out ./... | tee go-test.txt
+      # The success criteria's timings, which the race detector would distort; under -race these tests skip.
+      - name: Timing tests
+        run: >-
+          go test -count=1
+          -run 'TestQueryLog_50000Entries_SC006|TestQuery_StressYear_SC004|TestImport_FiveThousandRows_SC004|TestTransactions_TwentyThousand_SC004|TestHome_LargeScope_SC004'
+          ./internal/history/ ./internal/allwork/ ./internal/financials/ ./internal/home/
       - name: Vulnerabilities
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: Upload test results

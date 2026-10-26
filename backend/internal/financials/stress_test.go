@@ -20,8 +20,8 @@ import (
 // A 5,000-row extract — purchase orders and invoices for them — is checked and imported in under 5 seconds
 // (SC-004).
 func TestImport_FiveThousandRows_SC004(t *testing.T) {
-	if testing.Short() {
-		t.Skip("the stress test runs without -short")
+	if testing.Short() || race.Enabled {
+		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
 	}
 	lines := []string{header}
 	for i := range 2500 {
@@ -44,7 +44,7 @@ func TestImport_FiveThousandRows_SC004(t *testing.T) {
 			t.Fatalf("counts = %+v", result.Import.Counts)
 		}
 	}
-	if elapsed > 5*time.Second && !race.Enabled {
+	if elapsed > 5*time.Second {
 		t.Errorf("a 5,000-row import took %s, want under 5 seconds", elapsed)
 	}
 	t.Logf("5,000-row import in %s", elapsed)
@@ -117,8 +117,8 @@ func (m *memRepository) DeleteImport(_ context.Context, id string) error {
 
 // The Financials page answers a search over 20,000 transactions in under 1 second (SC-004).
 func TestTransactions_TwentyThousand_SC004(t *testing.T) {
-	if testing.Short() {
-		t.Skip("the stress test runs without -short")
+	if testing.Short() || race.Enabled {
+		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
 	}
 	f := newEmptyFixture(t)
 	repo := &memRepository{}
@@ -158,7 +158,7 @@ func TestTransactions_TwentyThousand_SC004(t *testing.T) {
 	if page.Counts.All == 0 || len(page.Items) != 200 {
 		t.Errorf("counts %+v, %d items", page.Counts, len(page.Items))
 	}
-	if elapsed > time.Second && !race.Enabled {
+	if elapsed > time.Second {
 		t.Errorf("a page of 20,000 transactions took %s, want under 1 second", elapsed)
 	}
 	t.Logf("20,000 transactions: %d matches in %s", page.Total, elapsed)

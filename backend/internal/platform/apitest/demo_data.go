@@ -24,8 +24,9 @@ type demoData struct {
 
 var withHistory, withoutHistory demoData //nolint:gochecknoglobals // a read-only fixture of the test binary, as in _test.go files
 
-// copyDemoData fills an empty dir with the demo data; a folder that already holds data is left as it is.
-func copyDemoData(tb testing.TB, dir string, noHistory bool) {
+// CopyDemoData fills an empty dir with the demo data as loaded at 12 Mar 2026 09:00 UTC, the start of New's clock;
+// a folder that already holds data is left as it is.
+func CopyDemoData(tb testing.TB, dir string, noHistory bool) {
 	tb.Helper()
 	if entries, err := os.ReadDir(dir); err == nil && len(entries) > 0 {
 		return

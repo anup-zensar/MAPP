@@ -473,8 +473,8 @@ func TestLogSummary_Validation(t *testing.T) {
 
 // With 50,000 entries the first page and each filter change answer in under 2 seconds (011 SC-006).
 func TestQueryLog_50000Entries_SC006(t *testing.T) {
-	if testing.Short() {
-		t.Skip("writes 50,000 entries")
+	if testing.Short() || race.Enabled {
+		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
 	}
 	f := newFixture(t)
 	f.addTree(t)
@@ -513,7 +513,7 @@ func TestQueryLog_50000Entries_SC006(t *testing.T) {
 			took = min(took, time.Since(began))
 		}
 		// The race detector slows the code several times over, so the 2 seconds are measured without it.
-		tooSlow := took > 2*time.Second && !race.Enabled
+		tooSlow := took > 2*time.Second
 		if tooSlow || len(page.Items) == 0 {
 			t.Errorf("query %+v took %v for %d entries, want under 2 seconds", q, took, len(page.Items))
 		}

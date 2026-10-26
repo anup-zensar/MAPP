@@ -401,6 +401,9 @@ func TestWaiting_SameListOldestFirst_FR013(t *testing.T) {
 // With 50 plans in scope and 5,000 activities, all owned by the person and each needing attention, every
 // Home operation answers within 300 ms on the fakes: each is one pass over its inputs (SC-004).
 func TestHome_LargeScope_SC004(t *testing.T) {
+	if testing.Short() || race.Enabled {
+		t.Skip("a timing test: it runs without -short and without the race detector, in CI's Timing tests step")
+	}
 	f := newFakeSources()
 	for i := range 50 {
 		p := newPlan(fmt.Sprintf("P-%d", 1001+i), fmt.Sprintf("Plan %02d", i), 2026, lubricantsEurope, mobilityChina)
@@ -436,7 +439,7 @@ func TestHome_LargeScope_SC004(t *testing.T) {
 	for name, operation := range operations {
 		started := time.Now()
 		err := operation()
-		if took := time.Since(started); err != nil || (took > 300*time.Millisecond && !race.Enabled) {
+		if took := time.Since(started); err != nil || took > 300*time.Millisecond {
 			t.Errorf("%s took %v, %v; want under 300 ms", name, took, err)
 		}
 	}

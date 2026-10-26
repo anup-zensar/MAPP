@@ -76,7 +76,7 @@ func New(t testing.TB, opts ...Option) *Server {
 		t.Fatalf("apitest: configuration: %v", err)
 	}
 	if !s.withoutSeed {
-		copyDemoData(t, s.dataDir, s.withoutHistory)
+		CopyDemoData(t, s.dataDir, s.withoutHistory)
 	}
 	db, err := store.Open(s.dataDir)
 	if err != nil {
