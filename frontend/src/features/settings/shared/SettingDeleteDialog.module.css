@@ -15,7 +15,7 @@
   width: min(440px, calc(100vw - 32px));
   padding: var(--space-6);
   border-radius: var(--radius-card);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-lg);
   transform: translate(-50%, -50%);
   animation: fade-in var(--dur) var(--ease-out);
@@ -23,6 +23,11 @@
 
 .dialog:focus {
   outline: none;
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .dialog {
+  --ink-2: var(--ink);
 }
 
 .title {
@@ -46,13 +51,19 @@
   margin-top: var(--space-6);
 }
 
+/* A red fill carries white text (constitution X). */
 .actions .danger {
+  border-color: var(--danger-bg);
   background: var(--danger-bg);
+  color: var(--on-accent);
 }
 
-.actions .danger:hover {
+/* Red has no hover shade (constitution X): the label is underlined instead. */
+.actions .danger:hover,
+.actions .danger:active {
+  border-color: var(--danger-bg);
   background: var(--danger-bg);
-  filter: brightness(0.92);
+  text-decoration: underline;
 }
 
 .spinner {

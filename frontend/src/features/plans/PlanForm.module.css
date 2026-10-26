@@ -99,8 +99,13 @@
   text-decoration: none;
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .railLink:hover,
 .railLink:focus-visible {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 
@@ -162,7 +167,10 @@
 }
 
 /* The calculated goal stages under the goal amount. */
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .goals {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -212,7 +220,7 @@
   padding: 1px var(--space-2);
   border-radius: var(--radius-chip);
   background: var(--chip);
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
 }

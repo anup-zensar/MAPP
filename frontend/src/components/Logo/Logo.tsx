@@ -9,7 +9,7 @@ export interface LogoProps {
 }
 
 /**
- * The MAPP mark: a white four-point star on a navy tile, the same as the favicon (never the
+ * The MAPP mark: a four-point star on a Text Strong tile, the same as the favicon (never the
  * Shell pecten, which needs Shell's consent).
  * The tile itself is decoration; without the wordmark, give the link around it a name
  * (aria-label="MAPP home").

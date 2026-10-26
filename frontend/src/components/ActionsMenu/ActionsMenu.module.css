@@ -6,8 +6,13 @@
   padding: var(--space-1);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .menu {
+  --ink-2: var(--ink);
 }
 
 .item {
@@ -21,18 +26,18 @@
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   cursor: pointer;
-  outline: none;
 }
 
-/* Radix marks the item under the pointer or the arrow keys with data-highlighted; the blue tint
-   is also the keyboard focus indicator. */
+/* Radix marks the item under the pointer or the arrow keys with data-highlighted; keyboard
+   focus also shows the focus ring. The hint turns Text Strong on the hover grey. */
 .item[data-highlighted] {
-  background: color-mix(in srgb, var(--blue) 12%, transparent);
+  --ink-2: var(--ink);
+  background: var(--hover);
 }
 
 /* An action that is not possible now: its words fade, its reason stays readable (feature 014). */
 .item[data-disabled] {
-  color: var(--ink-2);
+  color: var(--disabled-text);
   cursor: not-allowed;
 }
 
@@ -48,6 +53,13 @@
 /* Delete and other destructive actions: red words, last after a line. */
 .danger {
   color: var(--danger-text);
+}
+
+/* Red is never text on the hover grey: the highlighted destructive item is a red fill instead. */
+.danger[data-highlighted] {
+  --ink-2: var(--on-accent);
+  background: var(--danger-bg);
+  color: var(--on-accent);
 }
 
 .separator {

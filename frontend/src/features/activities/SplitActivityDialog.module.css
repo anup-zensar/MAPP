@@ -4,14 +4,16 @@
   gap: var(--space-5);
 }
 
-/* Every problem at once, in the danger colour with an icon (design system §5.6). */
+/* Every problem at once, in the danger colour with an icon (design system §5.6), in a framed
+   box with a red bar: red is never tinted (constitution X). */
 .problems {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--danger);
   border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--danger) 8%, transparent);
   color: var(--danger-text);
   font-size: var(--text-sm);
 }

@@ -89,7 +89,7 @@
 
 .sort:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .sort svg {
@@ -114,7 +114,10 @@
   font-weight: var(--weight-regular);
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .table .nameHead {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   background: var(--gray-bg);
   font-weight: var(--weight-bold);
 }
@@ -137,8 +140,13 @@
   cursor: pointer;
 }
 
+/* On the hover grey, Text Subtle, links and red text turn Text Strong (constitution X). */
 .row:hover td,
 .row:hover .nameCell {
+  --ink-2: var(--ink);
+  --link: var(--ink);
+  --danger-text: var(--ink);
+  --status-problem-text: var(--ink);
   background: var(--hover);
 }
 
@@ -176,6 +184,8 @@
 /* The totals row: bold on the grey band under a 2 px rule. */
 .table .totals th,
 .table .totals td {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   border-top: 2px solid var(--ink);
   border-bottom: 0;
   background: var(--gray-bg);

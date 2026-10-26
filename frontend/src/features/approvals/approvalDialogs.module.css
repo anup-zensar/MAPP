@@ -6,7 +6,10 @@
   overflow-wrap: break-word;
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .levels {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);

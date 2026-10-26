@@ -55,10 +55,11 @@
   border-top: 1px solid var(--hairline);
 }
 
+/* Text Strong: the footer sits on the grey page (constitution X). */
 .footerText {
   max-width: var(--content-max);
   margin: 0 auto;
-  color: var(--ink-2);
+  color: var(--ink);
   font-size: var(--text-xs);
 }
 

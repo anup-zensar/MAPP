@@ -129,7 +129,10 @@
   font-size: var(--text-sm);
 }
 
+/* On the light grey fill, Text Subtle and links are Text Strong (constitution X). */
 .consequences {
+  --ink-2: var(--ink);
+  --link: var(--ink);
   padding: var(--space-3);
   border-radius: var(--radius-control);
   background: var(--gray-bg);

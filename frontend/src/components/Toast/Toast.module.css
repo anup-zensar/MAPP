@@ -27,7 +27,7 @@
   border: 1px solid var(--card-border);
   border-left: 4px solid var(--ink);
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-md);
   animation: slide-up var(--dur) var(--ease-out);
 }
@@ -53,7 +53,7 @@
 
 .action:hover {
   border-color: var(--control-border-hover);
-  background: var(--gray-bg);
+  background: var(--hover);
 }
 
 @keyframes slide-up {

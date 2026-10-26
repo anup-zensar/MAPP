@@ -1,5 +1,7 @@
-/* A status word on a 12 % tint of its family's colour: 24 px high, 4 px corners, 12 px bold.
-   The word uses the darker -text shade, 4.5:1 or more on the tint (design system §4). */
+/* A status word on a 12 % tint of its family's colour over Surface, so it reads the same on a
+   hovered row: 24 px high, 4 px corners, 12 px bold. The word uses the darker -text shade,
+   4.5:1 or more on the tint (design system §4). Red is
+   never tinted (constitution X), so a problem is a red fill with white text. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -15,31 +17,31 @@
 }
 
 .neutral {
-  background: color-mix(in srgb, var(--status-neutral) 12%, transparent);
+  background: color-mix(in srgb, var(--status-neutral) 12%, var(--surface));
   color: var(--status-neutral-text);
 }
 
 .review {
-  background: color-mix(in srgb, var(--status-review) 12%, transparent);
+  background: color-mix(in srgb, var(--status-review) 12%, var(--surface));
   color: var(--status-review-text);
 }
 
 .positive {
-  background: color-mix(in srgb, var(--status-positive) 12%, transparent);
+  background: color-mix(in srgb, var(--status-positive) 12%, var(--surface));
   color: var(--status-positive-text);
 }
 
 .active {
-  background: color-mix(in srgb, var(--status-active) 12%, transparent);
+  background: color-mix(in srgb, var(--status-active) 12%, var(--surface));
   color: var(--status-active-text);
 }
 
 .done {
-  background: color-mix(in srgb, var(--status-done) 12%, transparent);
+  background: color-mix(in srgb, var(--status-done) 12%, var(--surface));
   color: var(--status-done-text);
 }
 
 .problem {
-  background: color-mix(in srgb, var(--status-problem) 12%, transparent);
-  color: var(--status-problem-text);
+  background: var(--danger-bg);
+  color: var(--on-accent);
 }

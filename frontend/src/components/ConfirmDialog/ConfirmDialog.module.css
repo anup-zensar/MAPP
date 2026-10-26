@@ -17,7 +17,7 @@
   padding: var(--card-padding);
   overflow-y: auto;
   border-radius: var(--radius-dialog);
-  background: var(--surface);
+  background: var(--raised);
   box-shadow: var(--shadow-lg);
   transform: translate(-50%, -50%);
   animation: fade-in var(--dur) var(--ease-out);
@@ -25,6 +25,11 @@
 
 .dialog:focus {
   outline: none;
+}
+
+/* Dark Raised is 3.9:1 for Text Subtle, so secondary text there is Text Strong (constitution X). */
+:global(:root[data-theme='dark']) .dialog {
+  --ink-2: var(--ink);
 }
 
 .title {
