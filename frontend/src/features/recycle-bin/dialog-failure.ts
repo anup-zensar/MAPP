@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { ApiError } from '@/api/errors';
 import type { DateFormat } from '@/format/intl';
-import { alreadyResolvedText } from './bin-text';
+import { alreadyResolvedText } from './purge-text';
 
 /** The failure as an ApiError (call() throws nothing else that reaches the screen). */
 export function asApiError(error: unknown): ApiError {

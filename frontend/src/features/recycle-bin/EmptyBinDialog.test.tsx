@@ -6,7 +6,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { binItem, lineItemEntry } from '@/testing/fixtures/recycle-bin';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import type { BinItem } from './bin-text';
 import { EmptyBinDialog } from './EmptyBinDialog';
 
@@ -37,7 +37,7 @@ describe('EmptyBinDialog', () => {
 
   it('deletes exactly the entries it listed and says how many (FR-029, FR-030)', async () => {
     const { user, api } = renderDialog(
-      [looseReply('POST /api/v1/recycle-bin/empty', { body: { count: 2 } })],
+      [reply('POST /api/v1/recycle-bin/empty', { body: { count: 2 } })],
       [binItem(), lineItemEntry()],
     );
 
@@ -55,7 +55,7 @@ describe('EmptyBinDialog', () => {
     [0, 'Nothing was deleted — someone else already emptied the recycle bin.'],
   ])('says so when %i entries were deleted (FR-030)', async (count, message) => {
     const { user } = renderDialog(
-      [looseReply('POST /api/v1/recycle-bin/empty', { body: { count } })],
+      [reply('POST /api/v1/recycle-bin/empty', { body: { count } })],
       [binItem()],
     );
 
@@ -67,7 +67,7 @@ describe('EmptyBinDialog', () => {
 
   it('shows a failure in the dialog and stays open', async () => {
     const { user } = renderDialog(
-      [looseReply('POST /api/v1/recycle-bin/empty', { status: 500 })],
+      [reply('POST /api/v1/recycle-bin/empty', { status: 500 })],
       [binItem()],
     );
 

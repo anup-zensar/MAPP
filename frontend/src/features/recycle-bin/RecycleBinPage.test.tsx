@@ -5,7 +5,7 @@ import { mockApi } from '@/testing/mock-api';
 import { findMessages, renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
 import { binItem, lineItemEntry, restorePreview } from '@/testing/fixtures/recycle-bin';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import type { BinItem } from './bin-text';
 import { RecycleBinPage } from './RecycleBinPage';
 
@@ -33,7 +33,7 @@ function rowNames(): string[] {
 describe('RecycleBinPage', () => {
   it('shows the header with the count and Empty recycle bin in More, and every row (FR-014, FR-015)', async () => {
     const { user } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
+      reply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
     ]);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Recycle bin' })).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('RecycleBinPage', () => {
   });
 
   it('says so when the bin is empty, without Empty recycle bin (FR-014)', async () => {
-    renderPage([looseReply('GET /api/v1/recycle-bin', { body: binPage([]) })]);
+    renderPage([reply('GET /api/v1/recycle-bin', { body: binPage([]) })]);
 
     expect(await screen.findByText('Nothing in the recycle bin')).toBeInTheDocument();
     expect(
@@ -59,7 +59,7 @@ describe('RecycleBinPage', () => {
 
   it('searches the contents of each entry too, and counts what it shows (FR-016)', async () => {
     const { user } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
+      reply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
     ]);
 
     await user.type(await screen.findByRole('searchbox', { name: 'Search name or ID' }), 'a-1042');
@@ -71,7 +71,7 @@ describe('RecycleBinPage', () => {
 
   it('filters by record type with the pills (FR-016)', async () => {
     const { user } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
+      reply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
     ]);
 
     const pills = await screen.findByRole('group', { name: 'Record type' });
@@ -83,7 +83,7 @@ describe('RecycleBinPage', () => {
 
   it('says when the filters hide everything, with Clear filters', async () => {
     const { user } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
+      reply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
     ]);
 
     await user.type(await screen.findByRole('searchbox', { name: 'Search name or ID' }), 'zzz');
@@ -97,7 +97,7 @@ describe('RecycleBinPage', () => {
 
   it('highlights the row holding the record of a link from the activity log (FR-008)', async () => {
     renderPage(
-      [looseReply('GET /api/v1/recycle-bin', { body: binPage([lineItemEntry(), binItem()]) })],
+      [reply('GET /api/v1/recycle-bin', { body: binPage([lineItemEntry(), binItem()]) })],
       '/recycle-bin?record=A-1042',
     );
 
@@ -109,7 +109,7 @@ describe('RecycleBinPage', () => {
 
   it('says when the linked record is no longer in the recycle bin (FR-008)', async () => {
     renderPage(
-      [looseReply('GET /api/v1/recycle-bin', { body: binPage([binItem()]) })],
+      [reply('GET /api/v1/recycle-bin', { body: binPage([binItem()]) })],
       '/recycle-bin?record=A-9999',
     );
 
@@ -119,13 +119,13 @@ describe('RecycleBinPage', () => {
   });
 
   it('shows placeholders while the bin loads', () => {
-    renderPage([looseReply('GET /api/v1/recycle-bin', () => new Promise<never>(() => {}))]);
+    renderPage([reply('GET /api/v1/recycle-bin', () => new Promise<never>(() => {}))]);
 
     expect(screen.getAllByRole('status')).toHaveLength(4);
   });
 
   it('says why the bin could not be loaded, with Try again', async () => {
-    renderPage([looseReply('GET /api/v1/recycle-bin', { status: 500 })]);
+    renderPage([reply('GET /api/v1/recycle-bin', { status: 500 })]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "MAPP can't reach its server right now.",
@@ -136,15 +136,15 @@ describe('RecycleBinPage', () => {
   it('restores a row and asks for the bin again (FR-018, FR-026)', async () => {
     let restored = false;
     const { user, api } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', () => ({
+      reply('GET /api/v1/recycle-bin', () => ({
         body: binPage(restored ? [lineItemEntry()] : [binItem(), lineItemEntry()]),
       })),
-      looseReply(
+      reply(
         'GET /api/v1/recycle-bin/{entryId}/restore-preview',
         { body: restorePreview() },
         { entryId: 'BIN-1001' },
       ),
-      looseReply(
+      reply(
         'POST /api/v1/recycle-bin/{entryId}/restore',
         () => {
           restored = true;
@@ -176,8 +176,8 @@ describe('RecycleBinPage', () => {
 
   it('deletes a row permanently from its menu (FR-028)', async () => {
     const { user, api } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', { body: binPage([binItem()]) }),
-      looseReply(
+      reply('GET /api/v1/recycle-bin', { body: binPage([binItem()]) }),
+      reply(
         'DELETE /api/v1/recycle-bin/{entryId}',
         {
           body: {
@@ -211,9 +211,7 @@ describe('RecycleBinPage', () => {
       restoreState: 'parentDeletedPermanently',
       missingParent: PARENT,
     });
-    const { user } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', { body: binPage([blocked]) }),
-    ]);
+    const { user } = renderPage([reply('GET /api/v1/recycle-bin', { body: binPage([blocked]) })]);
 
     await user.click(await screen.findByRole('button', { name: "Restore line item 'Print ads'" }));
     await user.click(
@@ -229,8 +227,8 @@ describe('RecycleBinPage', () => {
 
   it('empties every listed entry, also those the search hides (FR-029)', async () => {
     const { user, api } = renderPage([
-      looseReply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
-      looseReply('POST /api/v1/recycle-bin/empty', { body: { count: 2 } }),
+      reply('GET /api/v1/recycle-bin', { body: binPage([binItem(), lineItemEntry()]) }),
+      reply('POST /api/v1/recycle-bin/empty', { body: { count: 2 } }),
     ]);
 
     await user.type(await screen.findByRole('searchbox', { name: 'Search name or ID' }), 'print');
