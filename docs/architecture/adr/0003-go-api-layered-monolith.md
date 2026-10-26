@@ -1,6 +1,7 @@
 # ADR-0003: Go API as one layered program
 
-**Status:** Accepted · **Date:** 2026-10-18
+**Status:** Accepted; superseded in part by [ADR-0011](0011-gin-transport-and-opentelemetry.md) (Gin
+replaces the standard-library HTTP server; one layered program stays) · **Date:** 2026-10-18
 
 ## Context
 The product owner asked for a Go backend that stays easy to understand. Shell's target architecture uses a
