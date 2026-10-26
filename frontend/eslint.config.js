@@ -25,6 +25,7 @@ const ALIGNED = [
   'global-budgets',
   'financials',
   'settings',
+  'plans',
 ];
 const NOT_ALIGNED_YET = FEATURES.filter((feature) => !ALIGNED.includes(feature));
 const TEST_ONLY = {
