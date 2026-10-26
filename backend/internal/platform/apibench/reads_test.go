@@ -46,7 +46,7 @@ var listPages = []page{
 	{"activity log summary", alex, "/api/v1/activity-log/summary?todayStart=2026-03-12T00:00:00Z&weekStart=2026-03-09T00:00:00Z"},
 	{"recycle bin", alex, "/api/v1/recycle-bin"},
 	{"financials", alex, "/api/v1/financials/transactions"},
-	{"financials overview", alex, "/api/v1/financials/overview?scope=all"},
+	{"financials overview", alex, "/api/v1/financials/overview?scope=everything"},
 	{"global budgets", alex, "/api/v1/global-budgets"},
 	{"global budget", alex, "/api/v1/global-budgets/GB-1001"},
 	{"people", alex, "/api/v1/people"},
