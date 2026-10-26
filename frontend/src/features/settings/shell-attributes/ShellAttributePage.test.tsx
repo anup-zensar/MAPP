@@ -14,7 +14,7 @@ import {
   PIR,
   shellOption,
 } from '@/testing/fixtures/shell-attributes';
-import { looseReply } from '@/testing/replies';
+import { reply } from '@/testing/replies';
 import { ShellAttributePage } from './ShellAttributePage';
 
 const TV = shellOption({ id: 'SO-1101', label: 'TV', attributeId: 'SA-1010' });
@@ -33,12 +33,12 @@ function renderPage(id: string, answers: HttpHandler[]) {
 describe('ShellAttributePage (FR-020)', () => {
   it('shows the settings with where the attribute is used, and its options', async () => {
     renderPage('SA-1010', [
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}',
         { body: MEDIA_CHANNEL },
         { attributeId: 'SA-1010' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}/options',
         { body: page([TV]) },
         { attributeId: 'SA-1010' },
@@ -94,7 +94,7 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('shows what the attribute depends on and when it is shown (US3)', async () => {
     renderPage('SA-1011', [
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}',
         {
           body: {
@@ -105,7 +105,7 @@ describe('ShellAttributePage (FR-020)', () => {
         },
         { attributeId: 'SA-1011' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}/options',
         { body: page([]) },
         { attributeId: 'SA-1011' },
@@ -122,7 +122,7 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('says that types without options have none', async () => {
     renderPage('SA-1013', [
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}',
         { body: OLD_NOTES },
         { attributeId: 'SA-1013' },
@@ -136,12 +136,12 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('shows each lock once, with its reason (FR-021, FR-023)', async () => {
     renderPage('SA-1001', [
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}',
         { body: BUSINESS_UNIT },
         { attributeId: 'SA-1001' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}/options',
         { body: page([]) },
         { attributeId: 'SA-1001' },
@@ -153,11 +153,17 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('says when the attribute no longer exists, with the way back', async () => {
     renderPage('SA-9999', [
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}',
         {
           status: 404,
-          body: { error: { code: 'not_found', message: 'This Shell attribute no longer exists.' } },
+          body: {
+            error: {
+              code: 'not_found',
+              message: 'This Shell attribute no longer exists.',
+              fields: [],
+            },
+          },
         },
         { attributeId: 'SA-9999' },
       ),
@@ -176,12 +182,16 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('shows a failure with Try again', async () => {
     renderPage('SA-1010', [
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}',
         {
           status: 500,
           body: {
-            error: { code: 'internal_error', message: 'Something went wrong. Please try again.' },
+            error: {
+              code: 'internal_error',
+              message: 'Something went wrong. Please try again.',
+              fields: [],
+            },
           },
         },
         { attributeId: 'SA-1010' },
@@ -193,17 +203,17 @@ describe('ShellAttributePage (FR-020)', () => {
 
   it('deletes an unused attribute and goes back to its level, with Undo (FR-004)', async () => {
     const { user, router } = renderPage('SA-1011', [
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}',
         { body: { ...PIR, optionCount: 0 } },
         { attributeId: 'SA-1011' },
       ),
-      looseReply(
+      reply(
         'GET /api/v1/shell-attributes/{attributeId}/options',
         { body: page([]) },
         { attributeId: 'SA-1011' },
       ),
-      looseReply(
+      reply(
         'DELETE /api/v1/shell-attributes/{attributeId}',
         {
           body: {

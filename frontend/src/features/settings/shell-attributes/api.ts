@@ -1,18 +1,12 @@
 /**
  * What the Shell attribute pages ask the API (feature 002, US2): the attributes of every level,
- * one attribute, its options page by page, and every change to attributes and options.
+ * one attribute and every change to attributes (options: options-api.ts).
  *
  * Every change refreshes what it can affect when it is done, also when it failed (a refused save
  * may mean someone else changed the attribute meanwhile): the lists, the attribute, its options,
  * the forms of the levels (SC-008), the activity log, the recycle bin and the Settings counts.
  */
-import {
-  keepPreviousData,
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
@@ -21,7 +15,6 @@ import { LEVELS } from './attribute-words';
 
 export type ShellAttribute = components['schemas']['ShellAttribute'];
 export type ShellAttributeList = components['schemas']['ShellAttributePage'];
-export type ShellAttributeOption = components['schemas']['ShellAttributeOption'];
 export type ShellAttributeCreate = components['schemas']['ShellAttributeCreate'];
 export type ShellAttributeUpdate = components['schemas']['ShellAttributeUpdate'];
 export type ChangeImpact = components['schemas']['ChangeImpact'];
@@ -29,15 +22,6 @@ export type Usage = components['schemas']['Usage'];
 export type DeleteResult = components['schemas']['DeleteResult'];
 export type AttributeCheckRequest = components['schemas']['AttributeCheckRequest'];
 export type AttributeCheckResult = components['schemas']['AttributeCheckResult'];
-export type OptionImportRequest = components['schemas']['OptionImportRequest'];
-export type OptionImportCheck = components['schemas']['OptionImportCheck'];
-export type ImportRow = components['schemas']['ImportRow'];
-
-/** The status filter of the options list. */
-export type OptionStatus = 'active' | 'inactive' | 'all';
-
-/** How many options one page of the options list holds (the API's default). */
-export const OPTIONS_PAGE_SIZE = 100;
 
 /** Every level's attributes: the Settings list, its level counts and the editor's sections. */
 const ALL_ATTRIBUTES_KEY = ['shell-attributes', 'all'] as const;
@@ -78,54 +62,6 @@ export function useShellAttribute(id: string) {
 export function fetchAttribute(id: string) {
   return call(
     api.GET('/api/v1/shell-attributes/{attributeId}', { params: { path: { attributeId: id } } }),
-  );
-}
-
-/** The search and status filter of the options list. */
-export interface OptionFilter {
-  q: string;
-  status: OptionStatus;
-}
-
-/**
- * The attribute's options that match the filter, in display order, 100 at a time (FR-018,
- * SC-007): the API searches, so 5,000 options stay fast. fetchNextPage adds the next 100. While
- * a new search is on its way, the last answer stays on screen.
- */
-export function useShellAttributeOptions(id: string, filter: OptionFilter) {
-  return useInfiniteQuery({
-    queryKey: SETTINGS_KEYS.shellAttributeOptions(id, filter),
-    queryFn: ({ pageParam }) => fetchOptions(id, filter, pageParam),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, pages) => {
-      const loaded = pages.reduce((count, page) => count + page.items.length, 0);
-      return loaded < lastPage.total && lastPage.items.length > 0 ? loaded : undefined;
-    },
-    placeholderData: keepPreviousData,
-  });
-}
-
-/** The option as it is stored now, never from the cache (after a conflict, D-211). */
-export function fetchOption(id: string) {
-  return call(
-    api.GET('/api/v1/shell-attribute-options/{optionId}', { params: { path: { optionId: id } } }),
-  );
-}
-
-/** One page of matching options from `offset` on. */
-export function fetchOptions(id: string, filter: OptionFilter, offset = 0) {
-  return call(
-    api.GET('/api/v1/shell-attributes/{attributeId}/options', {
-      params: {
-        path: { attributeId: id },
-        query: {
-          q: filter.q.trim() || undefined,
-          status: filter.status,
-          limit: OPTIONS_PAGE_SIZE,
-          offset,
-        },
-      },
-    }),
   );
 }
 
@@ -240,138 +176,6 @@ export function useDeleteAttribute() {
 }
 
 /**
- * A new option: the attribute it belongs to, its label and — for a dependent attribute — the
- * parent options it is linked to (FR-022).
- */
-export interface NewOption {
-  attributeId: string;
-  label: string;
-  parentOptionIds?: string[];
-}
-
-/** Adds an option at the end of the attribute's list (FR-018). */
-export function useCreateOption() {
-  const refresh = useRefresh();
-  return useMutation({
-    mutationFn: ({ attributeId, label, parentOptionIds }: NewOption) =>
-      call(
-        api.POST('/api/v1/shell-attributes/{attributeId}/options', {
-          params: { path: { attributeId } },
-          body: { label, parentOptionIds },
-        }),
-      ),
-    onSettled: () => refresh(),
-  });
-}
-
-/**
- * A change to an option: a new label and/or new parent links (only what changed, D-203), and the
- * version the person started from.
- */
-export interface OptionChange {
-  id: string;
-  label?: string;
-  parentOptionIds?: string[];
-  version: number;
-}
-
-/** Renames an option or changes its links to the parent's options (FR-018, FR-022). */
-export function useUpdateOption() {
-  const refresh = useRefresh();
-  return useMutation({
-    mutationFn: ({ id, label, parentOptionIds, version }: OptionChange) =>
-      call(
-        api.PATCH('/api/v1/shell-attribute-options/{optionId}', {
-          params: { path: { optionId: id } },
-          body: { label, parentOptionIds, version },
-        }),
-      ),
-    onSettled: () => refresh(),
-  });
-}
-
-/** Sets an option inactive or reactivates it (FR-018). */
-export function useSetOptionStatus() {
-  const refresh = useRefresh();
-  return useMutation({
-    mutationFn: ({ id, active, version }: StatusChange) =>
-      call(
-        api.POST('/api/v1/shell-attribute-options/{optionId}/status', {
-          params: { path: { optionId: id } },
-          body: { active, version },
-        }),
-      ),
-    onSettled: () => refresh(),
-  });
-}
-
-/** Moves an option one place up or down in its list (FR-018). */
-export function useMoveOption() {
-  const refresh = useRefresh();
-  return useMutation({
-    mutationFn: ({
-      option,
-      direction,
-    }: {
-      option: ShellAttributeOption;
-      direction: 'up' | 'down';
-    }) =>
-      call(
-        api.POST('/api/v1/shell-attribute-options/{optionId}/move', {
-          params: { path: { optionId: option.id } },
-          body: { direction, version: option.version },
-        }),
-      ),
-    onSettled: () => refresh(),
-  });
-}
-
-/** Moves an unused option to the recycle bin; answers the entry for Undo. */
-export function useDeleteOption() {
-  const refresh = useRefresh();
-  return useMutation({
-    mutationFn: (id: string) =>
-      call(
-        api.DELETE('/api/v1/shell-attribute-options/{optionId}', {
-          params: { path: { optionId: id } },
-        }),
-      ),
-    onSettled: () => refresh(),
-  });
-}
-
-/** An option file of an attribute: what its rows would do, before anything is added (FR-031). */
-export function checkOptionImport(
-  attributeId: string,
-  body: OptionImportRequest,
-): Promise<OptionImportCheck> {
-  return call(
-    api.POST('/api/v1/shell-attributes/{attributeId}/options/import-check', {
-      params: { path: { attributeId } },
-      body,
-    }),
-  );
-}
-
-/**
- * Adds the new valid options of an option file, after its check (FR-031); never removes, renames
- * or reactivates options.
- */
-export function useImportOptions() {
-  const refresh = useRefresh();
-  return useMutation({
-    mutationFn: ({ attributeId, file }: { attributeId: string; file: OptionImportRequest }) =>
-      call(
-        api.POST('/api/v1/shell-attributes/{attributeId}/options/import', {
-          params: { path: { attributeId } },
-          body: file,
-        }),
-      ),
-    onSettled: () => refresh(),
-  });
-}
-
-/**
  * What saving these values on a record of `level` would say (the preview's **Try saving**,
  * FR-020): the problems, the dependent values it would clear and the fields still needed. Saves
  * nothing.
@@ -401,7 +205,7 @@ function withLevelReplaced(
  * Asks again for what a change can affect (only the queries on screen are asked at once). A
  * change waits for this, so the page shows the new state when the change's message appears.
  */
-function useRefresh() {
+export function useRefresh() {
   const queryClient = useQueryClient();
   return (keys: QueryKey[] = CHANGED_BY_ANY_CHANGE) =>
     Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })));

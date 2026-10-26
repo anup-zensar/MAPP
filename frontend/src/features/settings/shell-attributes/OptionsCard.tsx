@@ -16,14 +16,15 @@ import { SettingDeleteDialog } from '../SettingDeleteDialog';
 import { ImportOptionsDialog } from './ImportOptionsDialog';
 import { downloadOptionsTemplate } from './import-template';
 import { OptionPanel } from './OptionPanel';
+import { CHANGED_BY_ANY_CHANGE } from './api';
+import type { ShellAttribute } from './api';
 import {
-  CHANGED_BY_ANY_CHANGE,
   useDeleteOption,
   useMoveOption,
   useSetOptionStatus,
   useShellAttributeOptions,
-} from './api';
-import type { OptionStatus, ShellAttribute, ShellAttributeOption } from './api';
+} from './options-api';
+import type { OptionStatus, ShellAttributeOption } from './options-api';
 import styles from './ShellAttributes.module.css';
 import { useFailureToast, useStatusChange } from './useStatusChange';
 

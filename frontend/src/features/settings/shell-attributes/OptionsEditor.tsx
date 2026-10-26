@@ -8,18 +8,11 @@ import { TextField } from '@/ui/TextField/TextField';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { LinkedToField } from './LinkedToField';
+import type { OptionRow } from './schemas';
 import styles from './ShellAttributes.module.css';
 
 type FormAttribute = components['schemas']['FormAttribute'];
 type FormOption = components['schemas']['FormOption'];
-
-/** One option being typed; `key` keeps the row's field while rows move. */
-export interface OptionRow {
-  key: number;
-  label: string;
-  /** The parent options it is linked to (dependent attributes only). */
-  parentOptionIds: string[];
-}
 
 export interface OptionsEditorProps {
   rows: OptionRow[];
@@ -58,9 +51,11 @@ export function OptionsEditor({ rows, onChange, problems, parent }: OptionsEdito
   }
 
   function move(index: number, by: -1 | 1) {
-    const next = [...rows];
-    [next[index], next[index + by]] = [next[index + by], next[index]];
-    onChange(next);
+    const row = rows[index];
+    const other = rows[index + by];
+    if (row && other) {
+      onChange(rows.with(index, other).with(index + by, row));
+    }
   }
 
   function update(key: number, change: Partial<OptionRow>) {

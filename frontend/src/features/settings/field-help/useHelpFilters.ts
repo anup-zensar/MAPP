@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router';
 import type { FieldHelpLevel } from './api';
-import { helpChoicesOf, withChoice } from './schemas';
+import { withChoice } from '../search-params';
+import { helpChoicesOf } from './schemas';
 import type { Shown } from './schemas';
 
 export type HelpFilters = ReturnType<typeof useHelpFilters>;

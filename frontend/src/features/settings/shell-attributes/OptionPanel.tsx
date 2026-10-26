@@ -1,20 +1,28 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
+import { FormField } from '@/ui/FormField/FormField';
+import type { FieldBinding } from '@/ui/FormField/FormField';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
-import { problemOf } from '@/ui/FormPanel/problem-of';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
+import { CHECK_ON_SAVE, useFormProblems } from '@/ui/useFormProblems';
 import type { SaveFailure } from '@/ui/FormPanel/problem-of';
 import { useFormatters } from '@/format/useFormatters';
 import { useAttributeForm } from '../api';
 import { saveFailureOf } from '../save-failure';
-import { findFormAttribute, linkOptionText } from './attribute-words';
+import { findFormAttribute } from './attribute-words';
+import type { ShellAttribute } from './api';
 import { LinkedToField } from './LinkedToField';
-import { fetchOption, useCreateOption, useUpdateOption } from './api';
-import type { OptionChange, ShellAttribute, ShellAttributeOption } from './api';
+import { fetchOption, useCreateOption, useUpdateOption } from './options-api';
+import type { OptionChange, ShellAttributeOption } from './options-api';
+import { optionSchema } from './schemas';
+import type { OptionValues } from './schemas';
 import styles from './ShellAttributes.module.css';
+
+const FIELDS = ['label', 'parentOptionIds'] as const;
 
 export interface OptionPanelProps {
   attribute: ShellAttribute;
@@ -36,44 +44,31 @@ export function OptionPanel({ attribute, option, onClose }: OptionPanelProps) {
   const parentRef = attribute.parentAttribute;
   const dependent = parentRef !== null;
   // The edit-form rule: the option, its version included, is copied into the form once.
-  const startLabel = option?.label ?? '';
-  const [startLinks] = useState(() => option?.parentOptions.map((each) => each.id) ?? []);
-  const [label, setLabel] = useState(startLabel);
-  const [links, setLinks] = useState(startLinks);
+  const [start] = useState<OptionValues>(() => ({
+    label: option?.label ?? '',
+    parentOptionIds: option?.parentOptions.map((each) => each.id) ?? [],
+  }));
+  const form = useForm<OptionValues>({
+    resolver: zodResolver(optionSchema(parentRef?.name ?? null)),
+    defaultValues: start,
+    ...CHECK_ON_SAVE,
+  });
+  const { problems, onInvalid, showServerProblems, clearProblems } = useFormProblems(form, FIELDS);
   const [version, setVersion] = useState(option?.version ?? 0);
   const [saving, setSaving] = useState(false);
-  const [problems, setProblems] = useState<FieldProblem[]>([]);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
-  const linksChanged = !sameIds(links, startLinks);
 
-  /** Instant feedback for what can be checked here, with the API's words; the API checks again. */
-  function localProblems(): FieldProblem[] {
-    const found: FieldProblem[] = [];
-    if (label.trim() === '') {
-      found.push({ field: 'label', message: 'Enter a label.' });
-    }
-    if (parentRef && links.length === 0) {
-      found.push({ field: 'parentOptionIds', message: linkOptionText(label, parentRef.name) });
-    }
-    return found;
-  }
-
-  async function save() {
-    const found = localProblems();
-    if (found.length > 0) {
-      setProblems(found);
-      setFailure(null);
-      return;
-    }
+  async function save({ label, parentOptionIds }: OptionValues) {
+    clearProblems();
     setSaving(true);
     try {
       if (option) {
         const body: OptionChange = { id: option.id, version };
-        if (label !== startLabel) {
+        if (label !== start.label) {
           body.label = label;
         }
-        if (dependent && linksChanged) {
-          body.parentOptionIds = links;
+        if (dependent && !sameIds(parentOptionIds, start.parentOptionIds)) {
+          body.parentOptionIds = parentOptionIds;
         }
         if (body.label === undefined && body.parentOptionIds === undefined) {
           onClose();
@@ -85,7 +80,7 @@ export function OptionPanel({ attribute, option, onClose }: OptionPanelProps) {
         const created = await createOption.mutateAsync({
           attributeId: attribute.id,
           label,
-          parentOptionIds: dependent ? links : undefined,
+          parentOptionIds: dependent ? parentOptionIds : undefined,
         });
         show({ message: `Option '${created.label}' added` });
       }
@@ -99,7 +94,7 @@ export function OptionPanel({ attribute, option, onClose }: OptionPanelProps) {
 
   async function showFailure(error: unknown) {
     const view = saveFailureOf(error, 'option', dateFormat);
-    setProblems(view.problems);
+    showServerProblems(view.problems);
     setFailure(view.failure);
     if (view.conflict && option) {
       // What was typed stays; the form takes the version with the other person's change, so
@@ -111,34 +106,37 @@ export function OptionPanel({ attribute, option, onClose }: OptionPanelProps) {
     }
   }
 
+  const submit = form.handleSubmit(save, () => {
+    onInvalid();
+    setFailure(null);
+  });
+
   return (
     <FormPanel
       title={option ? `Edit option '${option.label}'` : 'Add option'}
       description={attribute.label}
-      isDirty={label !== startLabel || linksChanged}
+      isDirty={form.formState.isDirty}
       saving={saving}
       problems={problems}
       failure={failure}
-      onSave={() => void save()}
+      onSave={() => void submit()}
       onClose={onClose}
     >
       <div className={styles.panelFields}>
-        <TextField
-          label="Label"
+        <FormField
+          control={form.control}
           name="label"
-          marking="Required"
-          maxLength={120}
-          value={label}
-          onChange={setLabel}
-          error={problemOf(problems, 'label')}
+          render={(field) => (
+            <TextField label="Label" marking="Required" maxLength={120} {...field} />
+          )}
         />
         {parentRef && (
-          <ParentLinks
-            level={attribute.level}
-            parentId={parentRef.id}
-            value={links}
-            onChange={setLinks}
-            error={problemOf(problems, 'parentOptionIds')}
+          <FormField
+            control={form.control}
+            name="parentOptionIds"
+            render={(field) => (
+              <ParentLinks level={attribute.level} parentId={parentRef.id} {...field} />
+            )}
           />
         )}
       </div>
@@ -146,31 +144,22 @@ export function OptionPanel({ attribute, option, onClose }: OptionPanelProps) {
   );
 }
 
-interface ParentLinksProps {
+interface ParentLinksProps extends FieldBinding<string[]> {
   level: ShellAttribute['level'];
   /** The attribute the option's attribute depends on. */
   parentId: string;
-  value: string[];
-  onChange: (ids: string[]) => void;
-  error?: string;
 }
 
 /**
  * Linked to, once the level's form has arrived: it holds every option of the parent, also beyond
  * the first 100 the options list shows.
  */
-function ParentLinks({ level, parentId, value, onChange, error }: ParentLinksProps) {
+function ParentLinks({ level, parentId, name, value, onChange, error }: ParentLinksProps) {
   const form = useAttributeForm(level);
   const parent = form.data ? findFormAttribute(form.data, parentId) : undefined;
   if (parent) {
     return (
-      <LinkedToField
-        name="parentOptionIds"
-        parent={parent}
-        value={value}
-        onChange={onChange}
-        error={error}
-      />
+      <LinkedToField name={name} parent={parent} value={value} onChange={onChange} error={error} />
     );
   }
   if (form.isError) {

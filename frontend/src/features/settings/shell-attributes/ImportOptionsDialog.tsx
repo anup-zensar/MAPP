@@ -7,8 +7,9 @@ import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
 import { formatWhole } from '@/format/decimal';
 import { midSentence, plural } from '@/format/text';
-import { checkOptionImport, useImportOptions } from './api';
-import type { ImportRow, OptionImportCheck, OptionImportRequest, ShellAttribute } from './api';
+import type { ShellAttribute } from './api';
+import { checkOptionImport, useImportOptions } from './options-api';
+import type { ImportRow, OptionImportCheck, OptionImportRequest } from './options-api';
 import styles from './ImportOptionsDialog.module.css';
 
 /** The largest file the API takes: 700 KB, which is about 950 KB once encoded (plan, D-051). */

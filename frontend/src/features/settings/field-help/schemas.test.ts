@@ -1,7 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { HELP_LEVELS } from './field-help-words';
-import { helpChoicesOf, withChoice } from './schemas';
+import { withChoice } from '../search-params';
+import { helpChoicesOf } from './schemas';
 
 const SHOWN = ['all', 'edited'] as const;
 
