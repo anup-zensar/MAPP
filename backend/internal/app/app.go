@@ -90,9 +90,9 @@ func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
 	router := web.NewRouter(engine.Group("", authService.RequireSignIn, accessService.Authorize))
 	probeRoutes(engine, cfg, db)
 	auth.NewHandler(authService, peopleService).RegisterRoutes(engine.Group(apiV1))
-	people.NewHandler(peopleService).Routes(router, unwrapped)
+	people.NewHandler(peopleService).RegisterRoutes(signedIn)
 	history.NewHandler(historyService).RegisterRoutes(signedIn)
-	access.NewHandler(accessService).Routes(router, unwrapped)
+	access.NewHandler(accessService).RegisterRoutes(signedIn)
 
 	// Settings (feature 002) exist in every environment. Their kinds are registered with history, parents
 	// first, so that their deletes can be undone and restored.

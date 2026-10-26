@@ -192,10 +192,10 @@ Then change the area's line in `app.go` to `RegisterRoutes(signedIn)`. Its tests
 - [x] T035 [P] [US1] ⏳022 Slice C4: `backend/internal/activities/handler.go`
 - [x] T036 [P] [US1] ⏳022 Slice C4: `backend/internal/approvals/handler.go`
 - [x] T037 [US1] ⏳022 Slice C4: wiring in `app.go` — **checkpoint C4**
-- [ ] T038 [P] [US1] ⏳022 Slice C5: `backend/internal/people/handler.go`, `people_handler.go`,
+- [x] T038 [P] [US1] ⏳022 Slice C5: `backend/internal/people/handler.go`, `people_handler.go`,
   `teams_handler.go`
-- [ ] T039 [P] [US1] ⏳022 Slice C5: `backend/internal/access/handler.go`
-- [ ] T040 [US1] ⏳022 Slice C5: wiring in `app.go` — **checkpoint C5**
+- [x] T039 [P] [US1] ⏳022 Slice C5: `backend/internal/access/handler.go`
+- [x] T040 [US1] ⏳022 Slice C5: wiring in `app.go` — **checkpoint C5**
 - [ ] T041 [US1] ⏳022 Slice C6: `backend/internal/settings/handler.go` and `handler_rates.go`. The local
   helpers `respond`, `readBody` and `actorOf` move to Gin; `readRateUpload` uses `BindJSON`, because
   `LimitBody` now sets the 3 MB limit (FR-010)
