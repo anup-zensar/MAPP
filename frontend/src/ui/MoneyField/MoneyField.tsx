@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { cx } from '@/lib/cx';
-import { formatAmount, parseMoneyInput } from '@/lib/decimal';
+import { cx } from '../cx';
+import { formatAmount, parseMoneyInput } from '@/format/decimal';
 import { FieldShell } from '../FieldShell/FieldShell';
 import type { FieldFrameProps } from '../FieldShell/FieldShell';
 import inputs from '../FieldShell/inputs.module.css';

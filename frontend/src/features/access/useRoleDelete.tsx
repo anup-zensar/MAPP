@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { ApiError } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { ROLES_KEY, useDeleteRole } from './accessApi';
 import type { Role } from './accessApi';
 

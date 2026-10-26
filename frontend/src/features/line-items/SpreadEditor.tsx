@@ -4,7 +4,7 @@ import { Button } from '@/ui/Button/Button';
 import { problemOf } from '@/ui/FormPanel/problemOf';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import { monthFieldId } from './lineItemFormState';
 import type { CustomMonth } from './lineItemFormState';
 import {

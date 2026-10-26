@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { Button } from '@/ui/Button/Button';
-import { formatWhole } from '@/lib/decimal';
+import { formatWhole } from '@/format/decimal';
 import styles from './Pager.module.css';
 import { PAGE_SIZES } from './viewState';
 import type { PageSize, RowPage } from './viewState';

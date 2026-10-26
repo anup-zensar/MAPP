@@ -2,12 +2,12 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { components } from '@/api/generated/schema';
-import type { CurrentUser } from '@/app/useSession';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
+import type { CurrentUser } from '@/session/useSession';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { findMessages, renderWithProviders } from '@/testing/render';
 import { SampleRecordsPage } from './SampleRecordsPage';
-import { testUser } from '@/test/users';
+import { testUser } from '@/testing/users';
 
 type SampleFolder = components['schemas']['SampleFolder'];
 type SampleNote = components['schemas']['SampleNote'];

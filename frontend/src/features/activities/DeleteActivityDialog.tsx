@@ -1,6 +1,6 @@
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { linkedTransactionsText } from '@/features/line-items/gsapFinancials';
-import { formatMoneyText } from '@/lib/decimal';
+import { formatMoneyText } from '@/format/decimal';
 import type { Activity } from './activitiesApi';
 import styles from './DeleteActivityDialog.module.css';
 import { lineItemsText } from './activityText';

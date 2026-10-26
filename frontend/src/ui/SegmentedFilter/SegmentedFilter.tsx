@@ -1,5 +1,5 @@
-import { cx } from '@/lib/cx';
-import { formatWhole } from '@/lib/decimal';
+import { cx } from '../cx';
+import { formatWhole } from '@/format/decimal';
 import styles from './SegmentedFilter.module.css';
 
 /** One choice of the filter. */

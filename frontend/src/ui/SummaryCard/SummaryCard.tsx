@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { InfoTip } from '../InfoTip/InfoTip';
 import type { StatusTone } from '../StatusChip/StatusChip';
 import { Tooltip } from '../Tooltip/Tooltip';

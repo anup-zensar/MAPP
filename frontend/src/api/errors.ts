@@ -3,8 +3,8 @@
  * Technical details never reach the screen: every failure becomes an ApiError with a kind (for the
  * code to choose what to show) and a plain-language message (research R9, R15).
  */
-import { formatDate, formatTime, localDate } from '@/lib/format';
-import type { DateFormat } from '@/lib/format';
+import { formatDate, formatTime, localDate } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 import type { components } from './generated/schema';
 
 type ErrorBody = components['schemas']['Error'];

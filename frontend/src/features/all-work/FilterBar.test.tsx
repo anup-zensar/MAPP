@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import type { AllWorkOptions, AllWorkResult, ViewState } from './allWorkTypes';
 import { FilterBar } from './FilterBar';
 import { allWorkOptions, standard2026 } from './testData';

@@ -5,7 +5,7 @@ import type { QueryKey } from '@tanstack/react-query';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
 import { Button } from '@/ui/Button/Button';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { SETTING_NOUNS } from './settingsNouns';
 import type { SettingKind } from './settingsNouns';
 import { useFailureToast } from './useSettingStatus';

@@ -1,4 +1,4 @@
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser } from '@/session/useSession';
 import { PersonPicker } from '@/ui/PersonPicker/PersonPicker';
 import type { PersonPickerProps } from '@/ui/PersonPicker/PersonPicker';
 import { FieldLoadFailed, FieldLoading } from './FieldLoadStates';

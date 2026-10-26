@@ -1,9 +1,9 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar } from '@/app/Sidebar';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 
 const counts = (waitingForMe: number) => ({
   body: { waitingForMe, allOpen: 5, approvedThisMonth: 2, declinedThisMonth: 1 },

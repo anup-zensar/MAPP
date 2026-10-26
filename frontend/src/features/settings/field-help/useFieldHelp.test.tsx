@@ -1,10 +1,10 @@
 import { screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { FieldHelpTip, useFieldHelp } from '.';
 import { FIELD_HELP_PAGE, PLAN_BUDGET, PLAN_PLANNED_COST } from './fieldHelpTestData';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDateRange } from '@/lib/format';
+import { formatDate, formatDateRange } from '@/format/intl';
 import { activityBannerText } from './activityStatus';
 import {
   activityEditHref,

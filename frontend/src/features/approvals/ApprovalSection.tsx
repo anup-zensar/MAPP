@@ -2,7 +2,7 @@ import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { ApprovalAlert } from './ApprovalAlert';
 import { ApprovalChain } from './ApprovalChain';
 import { ApprovalHistory } from './ApprovalHistory';

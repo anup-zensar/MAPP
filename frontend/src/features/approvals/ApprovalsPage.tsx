@@ -14,8 +14,8 @@ import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { Tabs } from '@/ui/Tabs/Tabs';
 import type { TabItem } from '@/ui/Tabs/Tabs';
 import type { components } from '@/api/generated/schema';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { useFormatters } from '@/lib/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { useFormatters } from '@/format/useFormatters';
 import {
   NO_FILTERS,
   applyFilters,

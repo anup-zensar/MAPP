@@ -11,7 +11,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { Tabs } from '@/ui/Tabs/Tabs';
 import { useToast } from '@/ui/Toast/useToast';
 import type { TabItem } from '@/ui/Tabs/Tabs';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import {
   useAllWork,
   useAllWorkOptions,
@@ -31,7 +31,7 @@ import { MonthCalendar } from './MonthCalendar';
 import { Pager } from './Pager';
 import { SummaryCards } from './SummaryCards';
 import { useAllWorkSession } from './useAllWorkSession';
-import { useAccess } from '@/lib/access';
+import { useAccess } from '@/session/access';
 import { useOpenRecord } from './useOpenRecord';
 import { ViewsControl } from './ViewsControl';
 import { ViewToolbar } from './ViewToolbar';

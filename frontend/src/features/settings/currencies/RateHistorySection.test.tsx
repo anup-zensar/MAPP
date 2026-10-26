@@ -1,10 +1,10 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { localDate } from '@/lib/format';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { localDate } from '@/format/intl';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { expectNoAxeViolations } from '../shared/axeCheck';
 import { deleted, validationFailed, versionConflict } from '../testRecords';
 import { RateHistorySection } from './RateHistorySection';

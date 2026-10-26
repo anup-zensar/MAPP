@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
-import { expectCurrentSection, renderApp } from '@/test/app';
+import { expectCurrentSection, renderApp } from '@/testing/app';
 import { financialsNotServed, FORM_ANSWERS, plan, planDefaults, seedList } from './testData';
 
 // Feature 005 fills the plan tree; its own tests cover that, so it never breaks these.

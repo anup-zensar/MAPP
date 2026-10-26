@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import styles from './CompletenessChip.module.css';
 
 /** A field that still has to be filled in. */

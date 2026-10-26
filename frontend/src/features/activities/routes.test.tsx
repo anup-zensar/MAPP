@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { approvalOf } from '@/features/approvals/testData';
 import { activityRecord } from '@/features/line-items/testData';
-import { expectCurrentSection, renderApp } from '@/test/app';
-import type { MockHandler } from '@/test/mockApi';
+import { expectCurrentSection, renderApp } from '@/testing/app';
+import type { MockHandler } from '@/testing/mockApi';
 import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';
 
 // The parts features 007 and 008 show on the activity pages are tested by those features; here

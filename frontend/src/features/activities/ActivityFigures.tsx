@@ -3,7 +3,7 @@ import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { amountText, moneyText } from '@/features/line-items/lineItemMath';
 import type { Money } from '@/features/line-items/lineItemsApi';
 import { RateTip } from '@/features/line-items/MoneyPair';
-import { toCents } from '@/lib/decimal';
+import { toCents } from '@/format/decimal';
 import type { Activity } from './activitiesApi';
 import styles from './ActivityPage.module.css';
 import { lineItemsAttentionText, lineItemsText } from './activityText';

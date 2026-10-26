@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Link } from 'react-router';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import styles from './Button.module.css';
 
 /**

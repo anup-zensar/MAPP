@@ -1,8 +1,8 @@
 import { NotFoundPage } from '@/features/placeholders/NotFoundPage';
 import { AppLayout } from './AppLayout';
-import { PublicLayout } from './PublicLayout';
-import { SessionCheckPage } from './SessionCheckPage';
-import { useSession } from './useSession';
+import { PublicLayout } from '@/ui/PublicLayout/PublicLayout';
+import { SessionCheckPage } from '@/session/SessionCheckPage';
+import { useSession } from '@/session/useSession';
 
 /**
  * Any address MAPP does not know (FR-015, plan "Router"): "Page not found" inside the app

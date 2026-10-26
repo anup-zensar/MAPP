@@ -1,7 +1,7 @@
 import { ApiError, conflictMessage } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { useUpdateFieldHelp } from './fieldHelpApi';
 import type { FieldHelpEntry } from './fieldHelpApi';
 

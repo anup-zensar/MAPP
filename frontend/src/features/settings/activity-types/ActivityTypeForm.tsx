@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useModels } from '@/api/settingsQueries';
+import { useModels } from '../api';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { FormPanel } from '@/ui/FormPanel/FormPanel';
@@ -11,8 +11,8 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
-import { formatAmount, parseMoneyInput, toCents } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { formatAmount, parseMoneyInput, toCents } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import { ImpactDialog } from '../shared/ImpactDialog';
 import { saveFailureOf } from '../shared/saveFailure';
 import styles from '../shared/SettingsTable.module.css';

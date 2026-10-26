@@ -1,5 +1,5 @@
 import { Outlet, ScrollRestoration } from 'react-router';
-import { SessionProvider } from './SessionProvider';
+import { SessionProvider } from '@/session/SessionProvider';
 
 /**
  * The root of every page (plan "Router"): the session around the whole app, the scroll position

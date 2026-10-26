@@ -5,7 +5,7 @@ import { Button } from '@/ui/Button/Button';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { formatAmount, toCents } from '@/lib/decimal';
+import { formatAmount, toCents } from '@/format/decimal';
 import styles from './BudgetByMonth.module.css';
 import { useBudgetByMonth } from './phasingApi';
 import type { BudgetByMonthPeriods, BudgetPhasing, PhasingLevel } from './phasingApi';

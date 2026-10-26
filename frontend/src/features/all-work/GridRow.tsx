@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import styles from './AllWorkGrid.module.css';
 import type { AllWorkColumn, AllWorkRow } from './allWorkTypes';
 import { CellValue } from './CellValue';

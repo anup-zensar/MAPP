@@ -1,10 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { formatDateTime } from '@/lib/format';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { formatDateTime } from '@/format/intl';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import type { ActivityLogEntry, HomeScope } from './homeApi';
 import { RecentChangesCard } from './RecentChangesCard';
 import { LUBRICANTS_PLAN, logEntryOf } from './testData';

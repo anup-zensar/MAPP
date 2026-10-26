@@ -5,7 +5,7 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { PlanForm, PlanFormSkeleton } from './PlanForm';
 import { answers016, toCreateBody, valuesFromDefaults } from './planFormValues';
 import type { PlanFormValues } from './planFormValues';

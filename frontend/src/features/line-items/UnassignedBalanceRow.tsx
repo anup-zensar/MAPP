@@ -1,7 +1,7 @@
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
-import { cx } from '@/lib/cx';
-import { toCents } from '@/lib/decimal';
+import { cx } from '@/ui/cx';
+import { toCents } from '@/format/decimal';
 import { amountText, centsInput } from './lineItemMath';
 import type { UnassignedBalance } from './lineItemsApi';
 import {

@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useId } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import { FILTER_LABELS, MAX_YEARS, TOO_MANY_YEARS, yearsText } from './allWorkText';
 import menuStyles from './FilterMenu.module.css';
 import styles from './YearRangeMenu.module.css';

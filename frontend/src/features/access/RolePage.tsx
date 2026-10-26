@@ -10,7 +10,7 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import list from '@/features/settings/shared/SettingsTable.module.css';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { usePermissionCatalogue, useRole } from './accessApi';
 import type { PermissionCatalogue, Role } from './accessApi';
 import { ADMINISTRATOR_LOCK, peopleText, SCOPE_WORDS } from './accessWords';

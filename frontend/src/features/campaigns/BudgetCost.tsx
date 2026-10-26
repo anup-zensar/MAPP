@@ -1,8 +1,8 @@
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import type { components } from '@/api/generated/schema';
-import { formatMoneyText, formatWhole } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { formatMoneyText, formatWhole } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import { AmountPair } from '@/features/plans/AmountPair';
 import { differentCurrency } from '@/features/plans/planCurrency';
 import { isNegative, remainingWhileTyping, withoutSign } from './budget';

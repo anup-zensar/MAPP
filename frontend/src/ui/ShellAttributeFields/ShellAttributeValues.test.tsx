@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { activityForm, campaignForm, LUBRICANTS, MOBILITY } from '@/test/attributeForms';
-import { renderWithProviders } from '@/test/render';
+import { activityForm, campaignForm, LUBRICANTS, MOBILITY } from '@/testing/attributeForms';
+import { renderWithProviders } from '@/testing/render';
 import { ShellAttributeValues } from './ShellAttributeValues';
 
 /** The value next to a label in the definition list. */

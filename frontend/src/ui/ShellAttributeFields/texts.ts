@@ -3,8 +3,8 @@
  * rows "Attribute fields on forms" and "Split editor"), and how a value reads.
  */
 import type { components } from '@/api/generated/schema';
-import { formatPercent, formatWhole } from '@/lib/decimal';
-import { joinWithAnd, midSentence } from '@/lib/text';
+import { formatPercent, formatWhole } from '@/format/decimal';
+import { joinWithAnd, midSentence } from '@/format/text';
 import { allAttributes, isEmptyValue } from './rules';
 import type { AttributeForm, AttributeValue, FormAttribute } from './rules';
 

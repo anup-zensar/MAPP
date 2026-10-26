@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError, conflictMessage } from '@/api/errors';
-import { useAttributeForm } from '@/api/settingsQueries';
+import { useAttributeForm } from '@/features/settings/api';
 import { Button, LinkButton } from '@/ui/Button/Button';
 import { FormErrorSummary } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { FormFooter } from '@/ui/FormFooter/FormFooter';
@@ -16,10 +16,10 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import type { ClearedValue } from '@/ui/ShellAttributeFields/rules';
 import { useSpreadEffectText } from '@/features/line-items/useSpreadEffectText';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { useUnsavedChanges } from '@/lib/useUnsavedChanges';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
 import {
   fetchLatestActivity,
   useActivity,

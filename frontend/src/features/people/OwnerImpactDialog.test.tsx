@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { OwnerImpactDialog } from './OwnerImpactDialog';
 import { removedIds } from './removedIds';
 import type { ImpactWarning } from './peopleApi';

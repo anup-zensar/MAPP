@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { YourAccessCard } from './YourAccessCard';
 import { ALEX, assignment, EUROPE, MY_TEAMS_EUROPE, PLANNER, PRIYA, SARA } from './testData';
 

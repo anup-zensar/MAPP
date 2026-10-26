@@ -1,5 +1,5 @@
 /** The words of Settings › Field help (feature 016, US7). */
-import { formatWhole } from '@/lib/decimal';
+import { formatWhole } from '@/format/decimal';
 import type { FieldHelpLevel } from './fieldHelpApi';
 
 /** The groups of the page, in the order of the catalogue (data-model §6). */

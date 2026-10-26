@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { activityForm, campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/test/attributeForms';
+import {
+  activityForm,
+  campaignForm,
+  LUBRICANTS,
+  MOBILITY,
+  planForm,
+} from '@/testing/attributeForms';
 import {
   allowedOptions,
   autoFill,

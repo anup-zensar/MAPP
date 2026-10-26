@@ -3,7 +3,7 @@ import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser } from '@/session/useSession';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Avatar } from '@/ui/Avatar/Avatar';
 import { Button } from '@/ui/Button/Button';
@@ -19,7 +19,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { formFailure } from './feedback';
 import { OwnerImpactDialog } from './OwnerImpactDialog';
 import {

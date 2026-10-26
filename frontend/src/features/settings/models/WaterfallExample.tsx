@@ -1,9 +1,9 @@
 import { useId, useState } from 'react';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
-import { formatAmount, formatWhole, parseWholeInput } from '@/lib/decimal';
-import { plural } from '@/lib/text';
-import { waterfall } from '@/lib/waterfall';
+import { formatAmount, formatWhole, parseWholeInput } from '@/format/decimal';
+import { plural } from '@/format/text';
+import { waterfall } from './waterfall';
 import styles from './WaterfallExample.module.css';
 
 /** The most inquiries the example takes. */

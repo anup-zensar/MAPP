@@ -1,8 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { NO_FILTERS, applyFilters, filterChips, filterOptions } from './approvalFilters';
 import type { ApprovalFilterValues } from './approvalFilters';
 import { ApprovalsFilters } from './ApprovalsFilters';

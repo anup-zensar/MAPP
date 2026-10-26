@@ -4,10 +4,10 @@ import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { approvalOf } from '@/features/approvals/testData';
 import { activityRecord } from '@/features/line-items/testData';
 import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { ActivityPage } from './ActivityPage';
 import { activityAttributeForm, editForm, incompleteLaunchFilm, launchFilm } from './testData';
 

@@ -13,7 +13,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import list from '@/features/settings/shared/SettingsTable.module.css';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { useAccessRules, useRoles, useUpdateAccessRules } from './accessApi';
 import type { AccessRules, AccessRulesUpdate, Role } from './accessApi';
 import { SCOPE_WORDS } from './accessWords';

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { ApiError } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { insideEntriesWarning, purgeContentsText, purgeTitle, purgedMessage } from './binText';
 import type { BinItem } from './binText';
 import { asApiError, closingMessage, refetchBin } from './dialogFailure';

@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
-import { cx } from '@/lib/cx';
-import { recordHref } from '@/lib/recordLinks';
+import { cx } from '@/ui/cx';
+import { recordHref } from '@/ui/record-links';
 import {
   aboveByText,
   aboveOnText,

@@ -7,7 +7,7 @@ import { Calculator, Coins, ListChecks, Shapes, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { components } from '@/api/generated/schema';
-import type { Permission } from '@/lib/access';
+import type { Permission } from '@/session/access';
 import { ACCESS_SETTINGS_SECTIONS } from '@/features/access/settingsSections';
 import { APPROVAL_WORKFLOW_SETTINGS_SECTIONS } from '@/features/approval-workflows/settingsSections';
 import { PEOPLE_SETTINGS_SECTIONS } from '@/features/people/settingsSections';

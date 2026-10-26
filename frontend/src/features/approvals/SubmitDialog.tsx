@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { components } from '@/api/generated/schema';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import type { ApprovalSubmission } from './approvalsApi';
 import { leftOutText, names } from './messages';
 import styles from './approvalDialogs.module.css';

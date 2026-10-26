@@ -11,8 +11,8 @@ import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { formatWhole } from '@/lib/decimal';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { formatWhole } from '@/format/decimal';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '../shared/ListToolbar';
 import {
   dependsOnText,

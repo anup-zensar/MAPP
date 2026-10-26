@@ -1,6 +1,6 @@
 import { Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
-import { useCurrencies } from '@/api/settingsQueries';
+import { useCurrencies } from '../api';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button, LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -9,8 +9,8 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '../shared/ListToolbar';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import styles from '../shared/SettingsTable.module.css';

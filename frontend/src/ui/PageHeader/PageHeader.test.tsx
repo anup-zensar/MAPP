@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { Button } from '../Button/Button';
 import { LevelTag } from '../LevelTag/LevelTag';
 import { PageHeader } from './PageHeader';

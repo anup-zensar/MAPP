@@ -6,7 +6,7 @@
  * example table.
  */
 import type { components } from '@/api/generated/schema';
-import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/lib/decimal';
+import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/format/decimal';
 
 export type SpreadMethod = components['schemas']['SpreadMethod'];
 type SpreadGrid = components['schemas']['SpreadGrid'];

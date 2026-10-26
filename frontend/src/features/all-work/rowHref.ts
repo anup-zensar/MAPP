@@ -1,4 +1,4 @@
-import { recordHref } from '@/lib/recordLinks';
+import { recordHref } from '@/ui/record-links';
 import type { AllWorkRow } from './allWorkTypes';
 
 /**

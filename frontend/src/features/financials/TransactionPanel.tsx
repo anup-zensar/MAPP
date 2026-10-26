@@ -10,9 +10,9 @@ import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useToast } from '@/ui/Toast/useToast';
-import { localDate } from '@/lib/format';
-import { recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
+import { localDate } from '@/format/intl';
+import { recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
 import { useFinancialTransaction, useUnlinkTransaction } from './financialsApi';
 import type { FinancialRecordRef, FinancialTransaction } from './financialsApi';
 import {

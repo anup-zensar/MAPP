@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { expectCurrentSection, renderApp } from '@/test/app';
+import { expectCurrentSection, renderApp } from '@/testing/app';
 import { FT_1003, transactionOf, transactionPage } from './testData';
 
 const LIST = { 'GET /api/v1/financials/transactions': { body: transactionPage() } };

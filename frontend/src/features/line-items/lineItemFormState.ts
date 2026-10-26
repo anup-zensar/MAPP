@@ -6,7 +6,7 @@
  */
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
-import { parseMoneyInput, toCents } from '@/lib/decimal';
+import { parseMoneyInput, toCents } from '@/format/decimal';
 import type {
   LineItem,
   LineItemActivity,

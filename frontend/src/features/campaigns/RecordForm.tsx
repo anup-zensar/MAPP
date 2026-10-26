@@ -9,7 +9,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { PersonField } from '@/features/people';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { PHASING_REMOVED } from '@/features/plans/planText';
 import { RemainingBudgetLine } from './BudgetCost';
 import type { Money } from './campaignApi';

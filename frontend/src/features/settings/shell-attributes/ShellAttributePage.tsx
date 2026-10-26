@@ -10,9 +10,9 @@ import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { localDate } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { localDate } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
 import {
   conditionText,
   isChoiceType,

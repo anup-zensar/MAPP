@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { SESSION_KEY } from '@/app/useSession';
+import { SESSION_KEY } from '@/session/useSession';
 import { resetAllWorkStore, useAllWorkState } from './allWorkStore';
 import { standard2026 } from './testData';
 

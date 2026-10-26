@@ -3,12 +3,13 @@ import { useId } from 'react';
 import { Link, useLocation, useMatch } from 'react-router';
 import { Logo } from '@/ui/Logo/Logo';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { useAccess } from '@/lib/access';
-import { cx } from '@/lib/cx';
-import { itemsFor, MAIN_ITEMS, MORE_ITEMS } from './navigation';
+import { useAccess } from '@/session/access';
+import { cx } from '@/ui/cx';
+import { itemsFor } from '@/session/access';
+import { MAIN_ITEMS, MORE_ITEMS } from './navigation';
 import type { NavItem } from './navigation';
 import styles from './Sidebar.module.css';
-import { useCurrentUser, useSession } from './useSession';
+import { useCurrentUser, useSession } from '@/session/useSession';
 
 export interface SidebarProps {
   /**

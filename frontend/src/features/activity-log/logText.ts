@@ -6,11 +6,11 @@
  */
 import type { components } from '@/api/generated/schema';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
-import { formatWhole } from '@/lib/decimal';
-import { formatWeekdayDate } from '@/lib/format';
-import { recordHref } from '@/lib/recordLinks';
-import type { PlanningRecordType } from '@/lib/recordLinks';
-import { plural } from '@/lib/text';
+import { formatWhole } from '@/format/decimal';
+import { formatWeekdayDate } from '@/format/intl';
+import { recordHref } from '@/ui/record-links';
+import type { PlanningRecordType } from '@/ui/record-links';
+import { plural } from '@/format/text';
 
 export type ActivityLogEntry = components['schemas']['ActivityLogEntry'];
 export type LogAction = ActivityLogEntry['action'];

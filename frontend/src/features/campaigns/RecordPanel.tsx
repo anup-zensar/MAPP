@@ -1,7 +1,7 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import { Navigate, useLocation, useNavigate } from 'react-router';
-import { useAttributeForm } from '@/api/settingsQueries';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { useAttributeForm } from '@/features/settings/api';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { planCurrencyOf } from '@/features/plans/planCurrency';
 import { usePlan } from './campaignApi';
 import type { Campaign, Initiative } from './campaignApi';

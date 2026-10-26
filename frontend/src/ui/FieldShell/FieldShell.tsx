@@ -1,6 +1,6 @@
 import { CircleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { InfoTip } from '../InfoTip/InfoTip';
 import styles from './FieldShell.module.css';
 

@@ -1,6 +1,6 @@
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
-import { availabilityProps, isShown } from '@/lib/access';
-import type { Availability } from '@/lib/access';
+import { availabilityProps, isShown } from '@/session/access';
+import type { Availability } from '@/session/access';
 
 /**
  * A ⋯ menu item as the record's `access` allows it (feature 014, FR-011): as it is when available,

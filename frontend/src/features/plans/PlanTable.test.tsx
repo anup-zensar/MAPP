@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { PlanTable } from './PlanTable';
 import type { PlanSummary } from './plansApi';
 import { seedList } from './testData';

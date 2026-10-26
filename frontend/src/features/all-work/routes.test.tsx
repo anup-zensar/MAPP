@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { COMING_SOON_SECTIONS } from '@/app/navigation';
-import { expectCurrentSection, renderApp } from '@/test/app';
+import { expectCurrentSection, renderApp } from '@/testing/app';
 import { resetAllWorkStore } from './allWorkStore';
 import { gridResult, PAGE_ANSWERS } from './testData';
 

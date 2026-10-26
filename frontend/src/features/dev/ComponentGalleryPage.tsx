@@ -26,8 +26,8 @@ import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { MissingField } from '@/ui/CompletenessChip/CompletenessChip';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
 import styles from './ComponentGalleryPage.module.css';
 import { PlanModuleGallery } from './PlanModuleGallery';
 

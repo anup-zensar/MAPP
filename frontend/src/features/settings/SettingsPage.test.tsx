@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react';
 import { Construction } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { SettingsPage } from './SettingsPage';
 import type { SettingsSection } from './sections';
 

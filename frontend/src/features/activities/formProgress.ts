@@ -1,4 +1,4 @@
-import { plural } from '@/lib/text';
+import { plural } from '@/format/text';
 
 /** One section of a form page as the rail lists it (design system §2.4 C). */
 export interface RailSection {

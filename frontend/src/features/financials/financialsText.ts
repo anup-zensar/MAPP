@@ -2,8 +2,8 @@
  * The words of the Financials page (015 plan, "User-visible messages"): every sentence built from
  * data is made here, so it reads the same in the table, the panel and the dialogs.
  */
-import { formatWhole } from '@/lib/decimal';
-import { plural } from '@/lib/text';
+import { formatWhole } from '@/format/decimal';
+import { plural } from '@/format/text';
 import type {
   FinancialImportCounts,
   FinancialImportNotLinkedRow,

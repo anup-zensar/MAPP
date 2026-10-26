@@ -3,7 +3,7 @@
  * Amounts are cents (BigInt), never floating point. The API stays the judge: it works out the
  * Evenly months and checks every save with the same rules.
  */
-import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/lib/decimal';
+import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/format/decimal';
 
 /** The months' short names, January first (the person's date format never changes them). */
 export const MONTH_NAMES = [

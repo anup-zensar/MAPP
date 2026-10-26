@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import { COMING_SOON_SECTIONS } from '@/app/navigation';
 import type { ComingSoonSection } from '@/app/navigation';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { ComingSoonPage } from './ComingSoonPage';
 
 /**

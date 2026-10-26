@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser } from '@/session/useSession';
 import { useToast } from '@/ui/Toast/useToast';
 import {
   fetchOptionsOf,

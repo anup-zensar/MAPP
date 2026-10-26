@@ -1,7 +1,7 @@
 import { ChevronDown, Ellipsis } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { Fragment, useId, useRef } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { Button } from '../Button/Button';
 import { Tooltip } from '../Tooltip/Tooltip';
 import styles from './ActionsMenu.module.css';

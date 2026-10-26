@@ -1,8 +1,8 @@
 import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { formatWhole } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { formatWhole } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import settingsStyles from '../shared/SettingsTable.module.css';
 import { RECENT_IMPORTS, useRateImports } from './ratesApi';
 import type { RateImport } from './ratesApi';

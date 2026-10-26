@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { NotificationBell } from './NotificationBell';
 
 // Feature 008 counts the unread notifications from its own folder; here there are three.

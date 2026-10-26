@@ -2,10 +2,10 @@
  * How activities read on screen (006 plan, "User-visible messages"), and their addresses.
  */
 import type { components } from '@/api/generated/schema';
-import { formatMoneyText, formatPercent } from '@/lib/decimal';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
-import { plural } from '@/lib/text';
-import type { Formatters } from '@/lib/useFormatters';
+import { formatMoneyText, formatPercent } from '@/format/decimal';
+import { fieldHref, recordHref } from '@/ui/record-links';
+import { plural } from '@/format/text';
+import type { Formatters } from '@/format/useFormatters';
 
 /** The plan model's facts the goals are calculated with. */
 export type ModelFacts = components['schemas']['ActivityModelFacts'];

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useActivityTypes } from '@/api/settingsQueries';
+import { useActivityTypes } from '../api';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
 import { DecimalField } from '@/ui/DecimalField/DecimalField';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
@@ -18,8 +18,8 @@ import {
   parseMoneyInput,
   toCents,
   toHundredths,
-} from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+} from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import { ImpactDialog } from '../shared/ImpactDialog';
 import { saveFailureOf } from '../shared/saveFailure';
 import styles from '../shared/SettingsTable.module.css';

@@ -4,7 +4,7 @@
  * reads with the defaults of 017 data-model §10: named people, any one approves, no conditions,
  * no backup approver.
  */
-import { formatAmount, parseMoneyInput } from '@/lib/decimal';
+import { formatAmount, parseMoneyInput } from '@/format/decimal';
 import type {
   ApprovalCondition,
   ApprovalConditionInput,

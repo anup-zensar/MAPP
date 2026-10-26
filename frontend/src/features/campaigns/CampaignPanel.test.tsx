@@ -1,15 +1,15 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Outlet } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import { SessionProvider } from '@/app/SessionProvider';
+import { SessionProvider } from '@/session/SessionProvider';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { budgetByMonth } from '@/features/budget-phasing/testData';
 import { financialsNotServed } from '@/features/plans/testData';
-import { campaignForm } from '@/test/attributeForms';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderRoutes } from '@/test/render';
-import { testUser } from '@/test/users';
+import { campaignForm } from '@/testing/attributeForms';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { findMessages, renderRoutes } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { CampaignPanel } from './CampaignPanel';
 import {
   budgetAndCost,

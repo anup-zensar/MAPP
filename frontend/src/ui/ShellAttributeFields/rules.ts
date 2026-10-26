@@ -4,7 +4,7 @@
  * saving always goes through CheckAttributes on the server, with the same cases in form_test.go.
  */
 import type { components } from '@/api/generated/schema';
-import { formatHundredths, toHundredths } from '@/lib/decimal';
+import { formatHundredths, toHundredths } from '@/format/decimal';
 
 export type AttributeForm = components['schemas']['AttributeForm'];
 export type FormAttribute = components['schemas']['FormAttribute'];

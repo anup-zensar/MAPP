@@ -8,7 +8,7 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { BinRow } from './BinRow';
 import {
   BIN_DESCRIPTION,
@@ -24,7 +24,7 @@ import { PurgeDialog } from './PurgeDialog';
 import { useRecycleBin } from './recycleBinApi';
 import { RestoreDialog } from './RestoreDialog';
 import styles from './RecycleBinPage.module.css';
-import { useAccess } from '@/lib/access';
+import { useAccess } from '@/session/access';
 
 /** The dialog the page shows, if any. */
 type OpenDialog =

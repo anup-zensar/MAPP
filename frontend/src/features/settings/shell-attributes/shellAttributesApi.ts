@@ -16,7 +16,7 @@ import {
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
-import { SETTINGS_KEYS } from '@/api/settingsQueries';
+import { SETTINGS_KEYS } from '../api';
 import { LEVELS } from './attributeWords';
 
 export type ShellAttribute = components['schemas']['ShellAttribute'];

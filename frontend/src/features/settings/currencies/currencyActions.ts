@@ -1,5 +1,5 @@
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
-import { formatRate } from '@/lib/decimal';
+import { formatRate } from '@/format/decimal';
 import type { Currency } from './currenciesApi';
 
 /** What people can do with a currency, from its row or its details. */

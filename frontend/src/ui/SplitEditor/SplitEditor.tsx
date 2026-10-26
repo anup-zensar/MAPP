@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatHundredths, percentSplitEvenly, toHundredths } from '@/lib/decimal';
+import { formatHundredths, percentSplitEvenly, toHundredths } from '@/format/decimal';
 import { Button } from '../Button/Button';
 import { ChoiceField } from '../ChoiceField/ChoiceField';
 import type { ChoiceOption } from '../ChoiceField/ChoiceField';

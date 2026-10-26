@@ -2,8 +2,8 @@
  * The words of All work that more than one file uses (plan "User-visible messages"). Tests quote
  * them, so keep them exactly as the plan's table writes them.
  */
-import { formatWhole } from '@/lib/decimal';
-import { plural } from '@/lib/text';
+import { formatWhole } from '@/format/decimal';
+import { plural } from '@/format/text';
 import type { FinanceFilter, Filters, PlanType } from './allWorkTypes';
 
 /** The filters of the filter bar (FR-004), by their place in the filter set. */

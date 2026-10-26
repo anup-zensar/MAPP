@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { LogEntryList } from './LogEntryList';
 import type { LogEntryListProps } from './LogEntryList';
 import { TODAY_NOON, logEntry } from './testData';

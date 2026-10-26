@@ -1,8 +1,8 @@
 import { ChevronsDownUp, ChevronsUpDown, Columns3, RotateCw } from 'lucide-react';
 import { Button } from '@/ui/Button/Button';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
-import { cx } from '@/lib/cx';
-import { formatTime } from '@/lib/format';
+import { cx } from '@/ui/cx';
+import { formatTime } from '@/format/intl';
 import { COMPARE_PHASED, PERIOD_LABELS } from './allWorkText';
 import type { ViewState } from './allWorkTypes';
 import { Switch } from './Switch';

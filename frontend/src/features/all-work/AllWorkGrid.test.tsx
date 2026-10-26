@@ -1,8 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { AllWorkGrid } from './AllWorkGrid';
 import type { AllWorkResult, AllWorkRow, ViewState } from './allWorkTypes';
 import { gridResult, seedRows, standard2026, usd } from './testData';

@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { SubmitDialog } from './SubmitDialog';
 import { ALEX, CARLOS, DANIEL, PRIYA, submissionOf } from './testData';
 

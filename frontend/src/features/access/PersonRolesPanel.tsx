@@ -17,7 +17,7 @@ import type { TeamRef } from '@/ui/TeamPill/TeamPill';
 import { useTeams } from '@/features/people/peopleApi';
 import { firstName } from '@/features/people/texts';
 import { useCloseAfterSave } from '@/features/settings/shared/useCloseAfterSave';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import {
   useCheckPersonRolesImpact,
   usePersonRoles,

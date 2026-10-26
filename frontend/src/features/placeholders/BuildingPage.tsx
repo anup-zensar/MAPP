@@ -8,7 +8,7 @@ import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import type { BreadcrumbItem } from '@/ui/Breadcrumb/Breadcrumb';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import styles from './BuildingPage.module.css';
 
 /** What a stub says until its feature builds it. */

@@ -3,7 +3,7 @@ import type { QueryKey } from '@tanstack/react-query';
 import { ApiError, conflictMessage } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { SETTING_NOUNS } from './settingsNouns';
 import type { SettingKind } from './settingsNouns';
 import { useStatusFlow } from './useStatusFlow';

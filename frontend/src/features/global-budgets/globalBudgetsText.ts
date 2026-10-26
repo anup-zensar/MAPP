@@ -2,7 +2,7 @@
  * The words of the Global budgets pages (014 plan, "User-visible messages" 23–32 and 38): every
  * sentence built from data is made here.
  */
-import { plural } from '@/lib/text';
+import { plural } from '@/format/text';
 
 export const PAGE_DESCRIPTION = 'Money for a year, shared out to market plans.';
 

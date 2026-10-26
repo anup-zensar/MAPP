@@ -1,4 +1,4 @@
-import { joinWith } from '@/lib/access';
+import { joinWith } from '@/session/access';
 
 /** Where the person can change nothing: a plan and its contents, Settings, a global budget, a record. */
 export type ViewOnlyArea = 'plan' | 'settings' | 'globalBudget' | 'record';

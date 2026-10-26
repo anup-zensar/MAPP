@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
+import { mockApi } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
 import { InitiativeActivities } from './InitiativeActivities';
 import { launchFilmRow } from './testData';
 

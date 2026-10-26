@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { WaterfallExample } from './WaterfallExample';
 
 const LUBRICANTS = { inqToMqlRate: '2.00', mqlToDealRate: '5.00', averageDealSize: '10000.00' };

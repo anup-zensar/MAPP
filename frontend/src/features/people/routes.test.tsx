@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { expectCurrentSection, renderApp } from '@/test/app';
-import type { MockHandler } from '@/test/mockApi';
-import { testUser } from '@/test/users';
+import { expectCurrentSection, renderApp } from '@/testing/app';
+import type { MockHandler } from '@/testing/mockApi';
+import { testUser } from '@/testing/users';
 
 const META = {
   version: 1,

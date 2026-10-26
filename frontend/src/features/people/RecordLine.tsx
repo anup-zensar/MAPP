@@ -1,4 +1,4 @@
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import styles from './panels.module.css';
 
 interface Recorded {

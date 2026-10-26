@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { CurrentUser } from '@/app/useSession';
-import { findMessages, renderWithProviders } from '@/test/render';
+import type { CurrentUser } from '@/session/useSession';
+import { findMessages, renderWithProviders } from '@/testing/render';
 import { ComponentGalleryPage } from './ComponentGalleryPage';
-import { testUser } from '@/test/users';
+import { testUser } from '@/testing/users';
 
 const PRIYA: CurrentUser = testUser();
 

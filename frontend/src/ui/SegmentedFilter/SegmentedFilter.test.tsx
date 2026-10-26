@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { SegmentedFilter } from './SegmentedFilter';
 
 type Status = 'active' | 'inactive' | 'all';

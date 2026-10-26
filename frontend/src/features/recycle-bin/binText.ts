@@ -6,12 +6,12 @@
 import type { ApiError } from '@/api/errors';
 import { resolvedMessage } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
-import { formatDate, formatTime, localDate } from '@/lib/format';
-import type { DateFormat } from '@/lib/format';
-import { recordHref } from '@/lib/recordLinks';
-import type { PlanningRecordType } from '@/lib/recordLinks';
-import { formatWhole } from '@/lib/decimal';
-import { joinWithAnd, plural } from '@/lib/text';
+import { formatDate, formatTime, localDate } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
+import { recordHref } from '@/ui/record-links';
+import type { PlanningRecordType } from '@/ui/record-links';
+import { formatWhole } from '@/format/decimal';
+import { joinWithAnd, plural } from '@/format/text';
 
 export type BinItem = components['schemas']['RecycleBinListItem'];
 export type BinRecord = components['schemas']['RecycleBinRecord'];

@@ -5,8 +5,8 @@ import type { ChangeEvent } from 'react';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
-import { formatWhole } from '@/lib/decimal';
-import { midSentence, plural } from '@/lib/text';
+import { formatWhole } from '@/format/decimal';
+import { midSentence, plural } from '@/format/text';
 import { checkOptionImport, useImportOptions } from './shellAttributesApi';
 import type {
   ImportRow,

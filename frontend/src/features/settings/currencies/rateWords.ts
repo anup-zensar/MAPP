@@ -2,8 +2,8 @@
  * The words of the exchange-rate screens (feature 016, US1; plan "User-visible messages"), in one
  * place so the details, the rate history, the dialog and the import say things the same way.
  */
-import { formatWhole } from '@/lib/decimal';
-import { localDate } from '@/lib/format';
+import { formatWhole } from '@/format/decimal';
+import { localDate } from '@/format/intl';
 import type { Currency } from './currenciesApi';
 import type { RateImportCounts, RateImportOutcome, RateSource } from './ratesApi';
 

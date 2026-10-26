@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
-import { SETTINGS_KEYS } from '@/api/settingsQueries';
+import { SETTINGS_KEYS } from '../api';
 
 export type ActivityType = components['schemas']['ActivityType'];
 export type ActivityTypeCreate = components['schemas']['ActivityTypeCreate'];

@@ -6,7 +6,7 @@ import { ApiError } from '@/api/errors';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import type { ActivityDestination } from './activitiesApi';
 import { datesText, THIS_INITIATIVE } from './activityText';
 import styles from './DestinationList.module.css';

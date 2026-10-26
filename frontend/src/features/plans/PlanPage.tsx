@@ -12,7 +12,7 @@ import { HistorySection } from '@/features/activity-log/HistorySection';
 import { showHistory } from '@/features/activity-log/showHistory';
 import { BudgetByMonthCard } from '@/features/budget-phasing/BudgetByMonthCard';
 import { useCampaignTreeContent } from '@/features/campaigns/useCampaignTreeContent';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { allows } from './gateAction';
 import { PlanDetails } from './PlanDetails';
 import { PlanGoals } from './PlanGoals';

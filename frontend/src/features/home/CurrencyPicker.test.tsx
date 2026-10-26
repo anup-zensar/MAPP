@@ -1,11 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { SESSION_KEY } from '@/app/useSession';
-import type { CurrentUser } from '@/app/useSession';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { SESSION_KEY } from '@/session/useSession';
+import type { CurrentUser } from '@/session/useSession';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { CurrencyPicker } from './CurrencyPicker';
 import { DISPLAY_CURRENCIES } from './testData';
 

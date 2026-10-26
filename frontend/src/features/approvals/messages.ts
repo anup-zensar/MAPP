@@ -5,8 +5,8 @@
  */
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
-import { formatDate, formatTime, localDate } from '@/lib/format';
-import type { DateFormat } from '@/lib/format';
+import { formatDate, formatTime, localDate } from '@/format/intl';
+import type { DateFormat } from '@/format/intl';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
 
 type ApprovalPerson = components['schemas']['ApprovalPerson'];

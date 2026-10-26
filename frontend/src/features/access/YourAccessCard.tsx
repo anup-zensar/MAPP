@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser } from '@/session/useSession';
 import { Card } from '@/ui/Card/Card';
 import { ACCESS_PATH } from './accessPaths';
 import { assignmentText, orList, summariseAccess } from './accessWords';

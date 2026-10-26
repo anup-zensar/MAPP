@@ -8,7 +8,7 @@ import { LockedNote } from '@/ui/LockedNote/LockedNote';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { STATUS } from '@/features/plans/planText';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import type { Destination, DestinationList, MoveConsequences } from './campaignApi';
 import styles from './Destinations.module.css';
 import {

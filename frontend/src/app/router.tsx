@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Outlet } from 'react-router';
 import type { RouteObject } from 'react-router';
 import { ActivityFormPage } from '@/features/activities/ActivityFormPage';
 import { ActivityPage } from '@/features/activities/ActivityPage';
@@ -41,12 +41,13 @@ import { ShellAttributeEditorPage } from '@/features/settings/shell-attributes/S
 import { ShellAttributePage } from '@/features/settings/shell-attributes/ShellAttributePage';
 import { ShellAttributesPage } from '@/features/settings/shell-attributes/ShellAttributesPage';
 import { SignInPage } from '@/features/sign-in/SignInPage';
+import { AppLayout } from './AppLayout';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';
 import { NotFoundRoute } from './NotFoundRoute';
-import { RequirePermission } from './RequirePermission';
-import { RequireSignIn } from './RequireSignIn';
-import type { PageHandle } from './RequireSignIn';
+import { RequirePermission } from '@/session/RequirePermission';
+import { RequireSignIn } from '@/session/RequireSignIn';
+import type { PageHandle } from '@/session/RequireSignIn';
 import { RootLayout } from './RootLayout';
 import { RouteErrorPage } from './RouteErrorPage';
 
@@ -217,7 +218,13 @@ export const routes: RouteObject[] = [
       {
         // Every page in here needs a signed-in person and is drawn inside the app layout. Each
         // names itself in `handle`, for the browser tab while the session is being checked.
-        element: <RequireSignIn />,
+        element: (
+          <RequireSignIn>
+            <AppLayout>
+              <Outlet />
+            </AppLayout>
+          </RequireSignIn>
+        ),
         children: [
           { index: true, element: <HomePage />, ...titled('Home') },
           ...PLAN_MODULE_ROUTES,

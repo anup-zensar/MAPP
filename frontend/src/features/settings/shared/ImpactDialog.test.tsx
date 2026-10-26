@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { ImpactDialog } from './ImpactDialog';
 import { UsageLine } from './UsageLine';
 import { NOT_USED, USED_BY_TWO_PLANS } from '../testRecords';

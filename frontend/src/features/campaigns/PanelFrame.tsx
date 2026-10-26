@@ -11,7 +11,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { ApiError } from '@/api/errors';
-import { useUnsavedChanges } from '@/lib/useUnsavedChanges';
+import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
 import styles from './PanelFrame.module.css';
 import { BACK_TO_PLAN, CANCEL, SAVE, SAVE_AND_ADD_ANOTHER } from './texts';
 

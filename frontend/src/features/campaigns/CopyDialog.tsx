@@ -7,7 +7,7 @@ import { problemOf } from '@/ui/FormPanel/problemOf';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { recordHref } from '@/lib/recordLinks';
+import { recordHref } from '@/ui/record-links';
 import { useCopyRecord, useDestinations } from './campaignApi';
 import type { DestinationList } from './campaignApi';
 import type { RecordTarget } from './campaignRows';

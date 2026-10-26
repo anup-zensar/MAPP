@@ -1,7 +1,7 @@
 import { History } from 'lucide-react';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
-import { useSession } from '@/app/useSession';
+import { useSession } from '@/session/useSession';
 import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
@@ -9,7 +9,7 @@ import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import { HISTORY_PAGE_SIZE, historyKey, useLogEntries } from './activityLogApi';
 import { LogEntryList } from './LogEntryList';
 import { planningLabel } from './logText';

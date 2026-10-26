@@ -5,7 +5,7 @@ import { api } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
-import { downloadFromApi } from '@/lib/download';
+import { downloadFromApi } from '@/api/download';
 import type { AllWorkResult, ViewState } from './allWorkTypes';
 import styles from './ExportMenu.module.css';
 import { toQueryParams } from './viewState';

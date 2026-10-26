@@ -1,11 +1,11 @@
 import { screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { SESSION_KEY } from '@/app/useSession';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { SESSION_KEY } from '@/session/useSession';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { RestoreDialog } from './RestoreDialog';
 import type { BinItem } from './binText';
 import { binItem, lineItemEntry, restorePreview } from './testData';

@@ -1,9 +1,9 @@
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser } from '@/session/useSession';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { cx } from '@/lib/cx';
-import { formatWhole } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { cx } from '@/ui/cx';
+import { formatWhole } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import { useHomeSummary } from './homeApi';
 import type { HomeScope, HomeSummary } from './homeApi';
 import {

@@ -8,8 +8,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
-import { useFormatters } from '@/lib/useFormatters';
-import { plural } from '@/lib/text';
+import { useFormatters } from '@/format/useFormatters';
+import { plural } from '@/format/text';
 
 export type FinancialRecordView = components['schemas']['FinancialRecordView'];
 export type FinancialFiguresData = components['schemas']['FinancialFigures'];

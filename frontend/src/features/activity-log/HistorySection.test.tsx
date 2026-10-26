@@ -1,10 +1,10 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { HistorySection } from './HistorySection';
 import { showHistory } from './showHistory';
 import { logEntry, logPage } from './testData';

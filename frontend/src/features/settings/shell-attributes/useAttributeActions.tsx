@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useToast } from '@/ui/Toast/useToast';
-import { plural } from '@/lib/text';
+import { plural } from '@/format/text';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import { lockReason } from './attributeWords';
 import {

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { useAttributeForm } from '@/api/settingsQueries';
+import { useAttributeForm } from '@/features/settings/api';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
-import { recordHref } from '@/lib/recordLinks';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { recordHref } from '@/ui/record-links';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { planCurrencyOf } from '@/features/plans/planCurrency';
 import { useCreateCampaign, usePlan, usePlanCampaigns } from './campaignApi';
 import type { PlanCampaigns } from './campaignApi';

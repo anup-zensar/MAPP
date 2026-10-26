@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@/ui/TreeTable/TreeTable';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { plan } from '../testData';
 import { PlanTree } from './PlanTree';
 

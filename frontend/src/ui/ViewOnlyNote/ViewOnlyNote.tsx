@@ -1,5 +1,5 @@
 import { Lock } from 'lucide-react';
-import { useAccess } from '@/lib/access';
+import { useAccess } from '@/session/access';
 import styles from './ViewOnlyNote.module.css';
 import { viewOnlyText } from './viewOnlyText';
 import type { ViewOnlyArea } from './viewOnlyText';

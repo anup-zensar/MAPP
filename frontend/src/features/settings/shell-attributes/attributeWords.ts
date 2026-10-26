@@ -4,7 +4,7 @@
  * offers. The API stays the judge: these only shape what is offered.
  */
 import type { components } from '@/api/generated/schema';
-import { midSentence } from '@/lib/text';
+import { midSentence } from '@/format/text';
 
 export type AttributeLevel = components['schemas']['AttributeLevel'];
 export type AttributeType = components['schemas']['AttributeType'];

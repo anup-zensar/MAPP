@@ -6,7 +6,7 @@ import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { allows } from './gateAction';
 import { BusinessUnitText, PlanCompleteness, PlanStatusChip } from './PlanFacts';
 import styles from './PlanHeader.module.css';

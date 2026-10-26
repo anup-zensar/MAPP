@@ -2,9 +2,9 @@
  * The words of Home (feature 009 plan, "User-visible messages"): every text built from data, so
  * the cards and their tests read the same. Fixed labels that appear once stay in the components.
  */
-import { formatWhole } from '@/lib/decimal';
-import { joinWithAnd, midSentence, plural } from '@/lib/text';
-import { formatWaitingTime, localDate } from '@/lib/format';
+import { formatWhole } from '@/format/decimal';
+import { joinWithAnd, midSentence, plural } from '@/format/text';
+import { formatWaitingTime, localDate } from '@/format/intl';
 import type {
   ActivityLogEntry,
   HomeAttentionItem,

@@ -1,5 +1,5 @@
-import { useCurrentUser } from '@/app/useSession';
-import { useFormatters } from '@/lib/useFormatters';
+import { useCurrentUser } from '@/session/useSession';
+import { useFormatters } from '@/format/useFormatters';
 import { ApprovalAlert } from './ApprovalAlert';
 import { useDelegations } from './delegationsApi';
 

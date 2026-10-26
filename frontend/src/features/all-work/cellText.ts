@@ -1,5 +1,5 @@
-import { formatWhole } from '@/lib/decimal';
-import type { Formatters } from '@/lib/useFormatters';
+import { formatWhole } from '@/format/decimal';
+import type { Formatters } from '@/format/useFormatters';
 import type { AllWorkCell, AllWorkColumn } from './allWorkTypes';
 import { statusWord } from './statusWords';
 

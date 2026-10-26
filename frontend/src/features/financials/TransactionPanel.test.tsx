@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
 import {
   FT_1003,
   FT_1004,
@@ -12,9 +12,9 @@ import {
   transactionPage,
 } from './testData';
 import { Outlet } from 'react-router';
-import { SessionProvider } from '@/app/SessionProvider';
-import { renderRoutes } from '@/test/render';
-import { testUser } from '@/test/users';
+import { SessionProvider } from '@/session/SessionProvider';
+import { renderRoutes } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { FinancialsPage } from './FinancialsPage';
 import { TransactionPanel } from './TransactionPanel';
 

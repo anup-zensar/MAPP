@@ -1,10 +1,10 @@
 import { CircleAlert } from 'lucide-react';
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser } from '@/session/useSession';
 import type { components } from '@/api/generated/schema';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import type { DateFormat } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
+import type { DateFormat } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 import type { ApprovalPerson, ApprovalRound } from './approvalsApi';
 import {
   chainState,

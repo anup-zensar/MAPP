@@ -11,7 +11,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useToast } from '@/ui/Toast/useToast';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { DelegationForm } from './DelegationForm';
 import { useCancelDelegation, useDelegations } from './delegationsApi';
 import type { ApprovalDelegation, DelegationScope } from './delegationsApi';

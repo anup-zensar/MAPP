@@ -10,8 +10,8 @@ import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import { PersonField } from '@/features/people';
-import { formatAmount, parseMoneyInput } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { formatAmount, parseMoneyInput } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import {
   fetchGlobalBudget,
   useCreateGlobalBudget,

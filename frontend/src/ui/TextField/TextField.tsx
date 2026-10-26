@@ -1,6 +1,6 @@
 import { CircleAlert, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { InfoTip } from '../InfoTip/InfoTip';
 import { Tooltip } from '../Tooltip/Tooltip';
 import styles from './TextField.module.css';

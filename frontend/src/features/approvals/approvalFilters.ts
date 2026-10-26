@@ -4,7 +4,7 @@
  * matches nothing.
  */
 import type { ChoiceOption } from '@/ui/ChoiceField/ChoiceField';
-import { localDate } from '@/lib/format';
+import { localDate } from '@/format/intl';
 import type { ApprovalRow } from './approvalsApi';
 
 export interface ApprovalFilterValues {

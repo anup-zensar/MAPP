@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { findMessages, renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { findMessages, renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import type { BinItem } from './binText';
 import { EmptyBinDialog } from './EmptyBinDialog';
 import { binItem, lineItemEntry } from './testData';

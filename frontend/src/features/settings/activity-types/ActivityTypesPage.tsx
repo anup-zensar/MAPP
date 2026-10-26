@@ -1,6 +1,6 @@
 import { Plus, Shapes } from 'lucide-react';
 import { useState } from 'react';
-import { useActivityTypes } from '@/api/settingsQueries';
+import { useActivityTypes } from '../api';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -9,8 +9,8 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { ListToolbar } from '../shared/ListToolbar';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import styles from '../shared/SettingsTable.module.css';

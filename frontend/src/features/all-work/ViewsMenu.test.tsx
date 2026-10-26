@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import type { ViewsMenuProps } from './ViewsMenu';
 import { ViewsMenu } from './ViewsMenu';
 import { savedView } from './testData';

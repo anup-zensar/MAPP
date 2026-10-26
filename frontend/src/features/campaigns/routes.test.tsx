@@ -3,9 +3,9 @@ import { Outlet } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
 import { financialsNotServed } from '@/features/plans/testData';
-import { campaignForm } from '@/test/attributeForms';
-import { renderApp } from '@/test/app';
-import type { MockHandler } from '@/test/mockApi';
+import { campaignForm } from '@/testing/attributeForms';
+import { renderApp } from '@/testing/app';
+import type { MockHandler } from '@/testing/mockApi';
 import { campaign, initiative, PEOPLE, planAnswer, planCampaigns } from './fixtures';
 
 // The plan page (004) and an initiative's activities (006) are tested by their features; here

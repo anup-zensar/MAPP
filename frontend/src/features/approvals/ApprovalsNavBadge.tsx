@@ -1,5 +1,5 @@
 import { CountBadge } from '@/ui/CountBadge/CountBadge';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import { useApprovalSummary } from './useApprovalSummary';
 import styles from './ApprovalsNavBadge.module.css';
 

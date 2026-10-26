@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { BuildingPage, BuildingPanel, BuildingSection } from './BuildingPage';
 
 describe('BuildingPage, BuildingPanel and BuildingSection', () => {

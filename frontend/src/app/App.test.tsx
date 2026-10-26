@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mockApi } from '@/test/mockApi';
+import { mockApi } from '@/testing/mockApi';
 import { App } from './App';
 
 afterEach(() => {

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ApiError } from '@/api/errors';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { useToast } from '@/ui/Toast/useToast';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { PLANNING_KEYS, refreshPlanning, useDeleteRecord } from './campaignApi';
 import type { RecordTarget } from './campaignRows';
 import styles from './DeleteRecordDialog.module.css';

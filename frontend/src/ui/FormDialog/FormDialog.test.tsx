@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { Button } from '../Button/Button';
 import { TextField } from '../TextField/TextField';
 import { FormDialog } from './FormDialog';

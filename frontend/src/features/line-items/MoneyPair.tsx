@@ -1,6 +1,6 @@
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
-import { cx } from '@/lib/cx';
-import { useFormatters } from '@/lib/useFormatters';
+import { cx } from '@/ui/cx';
+import { useFormatters } from '@/format/useFormatters';
 import { moneyText } from './lineItemMath';
 import type { Money } from './lineItemsApi';
 import styles from './MoneyPair.module.css';

@@ -1,4 +1,4 @@
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import styles from './LevelTag.module.css';
 
 /** The planning levels (vocabulary: Plan → Campaign → Initiative → Activity → Line item). */

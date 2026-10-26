@@ -1,7 +1,7 @@
 import { House } from 'lucide-react';
 import type { ComingSoonSection } from '@/app/navigation';
 import { LinkButton } from '@/ui/Button/Button';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { CentredMessage } from './CentredMessage';
 import styles from './ComingSoonPage.module.css';
 

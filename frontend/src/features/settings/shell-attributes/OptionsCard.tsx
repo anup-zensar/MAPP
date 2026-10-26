@@ -11,7 +11,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useToast } from '@/ui/Toast/useToast';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
-import { formatWhole } from '@/lib/decimal';
+import { formatWhole } from '@/format/decimal';
 import { SettingDeleteDialog } from '../shared/SettingDeleteDialog';
 import { ImportOptionsDialog } from './ImportOptionsDialog';
 import { downloadOptionsTemplate } from './importTemplate';

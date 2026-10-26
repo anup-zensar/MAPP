@@ -1,10 +1,10 @@
 import { configure, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { launchFilmSection } from '@/features/line-items/testData';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import type { Activity } from './activitiesApi';
 import { ActivityFormPage } from './ActivityFormPage';
 import { activityAttributeForm, editForm, launchFilm, newForm, PEOPLE } from './testData';

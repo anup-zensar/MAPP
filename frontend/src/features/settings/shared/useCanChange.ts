@@ -1,5 +1,5 @@
-import { useAccess } from '@/lib/access';
-import type { Permission } from '@/lib/access';
+import { useAccess } from '@/session/access';
+import type { Permission } from '@/session/access';
 
 /**
  * Whether the signed-in person's roles let them change a Settings list (feature 014, FR-011):

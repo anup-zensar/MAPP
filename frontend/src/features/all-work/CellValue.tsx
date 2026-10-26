@@ -1,7 +1,7 @@
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { cx } from '@/lib/cx';
-import { useFormatters } from '@/lib/useFormatters';
+import { cx } from '@/ui/cx';
+import { useFormatters } from '@/format/useFormatters';
 import type { AllWorkCell } from './allWorkTypes';
 import { cellText, isProblem, NOTHING } from './cellText';
 import styles from './CellValue.module.css';

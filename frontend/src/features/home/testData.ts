@@ -3,7 +3,7 @@
  * makes with an empty dashboard, for tests of other parts of the app that land on Home.
  */
 import type { components } from '@/api/generated/schema';
-import type { MockAnswer } from '@/test/mockApi';
+import type { MockAnswer } from '@/testing/mockApi';
 import type {
   ActivityLogEntry,
   FinancialOverview,

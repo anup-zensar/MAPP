@@ -1,6 +1,6 @@
 import { Navigate, useLocation, useParams } from 'react-router';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { useActivity } from './activitiesApi';
 import { LoadFailed, PageSkeleton } from './ActivityLoadStates';
 import { activityHref } from './activityText';

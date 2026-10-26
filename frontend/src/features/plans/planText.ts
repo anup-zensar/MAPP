@@ -4,7 +4,7 @@
  */
 import type { components } from '@/api/generated/schema';
 import type { StatusTone } from '@/ui/StatusChip/StatusChip';
-import { joinWithAnd, plural } from '@/lib/text';
+import { joinWithAnd, plural } from '@/format/text';
 
 export type PlanStatus = components['schemas']['PlanStatus'];
 export type SpreadMethod = components['schemas']['SpreadMethod'];

@@ -3,8 +3,8 @@ import { Link } from 'react-router';
 import { Avatar } from '@/ui/Avatar/Avatar';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { formatTime } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
+import { formatTime } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 import {
   ACTION_CHIPS,
   detailLines,

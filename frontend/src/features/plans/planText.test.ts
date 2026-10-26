@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateRange } from '@/lib/format';
+import { formatDateRange } from '@/format/intl';
 import {
   activitiesApprovedText,
   contentsText,

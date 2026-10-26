@@ -7,7 +7,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { saveFailureOf } from '../shared/saveFailure';
 import styles from '../shared/SettingsTable.module.css';
 import {

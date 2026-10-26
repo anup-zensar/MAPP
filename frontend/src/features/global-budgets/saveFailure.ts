@@ -1,7 +1,7 @@
 import { ApiError, conflictMessage } from '@/api/errors';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
-import type { DateFormat } from '@/lib/format';
+import type { DateFormat } from '@/format/intl';
 
 /** What to do after someone else saved first (feature 001's edit-form rule). */
 export const CONFLICT_NEXT_STEP =

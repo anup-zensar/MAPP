@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { DemoBanner } from '@/ui/DemoBanner/DemoBanner';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import styles from './AppLayout.module.css';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
-import { useCurrentUser } from './useSession';
+import { useCurrentUser } from '@/session/useSession';
 
 /**
  * The frame of every signed-in page (FR-010, design system §2): the skip link first, the white

@@ -9,7 +9,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import list from '@/features/settings/shared/SettingsTable.module.css';
-import { formatWhole } from '@/lib/decimal';
+import { formatWhole } from '@/format/decimal';
 import { useRoles } from './accessApi';
 import type { Role } from './accessApi';
 import { SCOPE_WORDS } from './accessWords';

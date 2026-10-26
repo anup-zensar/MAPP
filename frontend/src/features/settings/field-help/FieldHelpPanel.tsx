@@ -8,7 +8,7 @@ import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { CONFLICT_NEXT_STEP } from '../shared/saveFailure';
 import { useCloseAfterSave } from '../shared/useCloseAfterSave';
 import { fetchFieldHelp, HELP_MAX_LENGTH, useUpdateFieldHelp } from './fieldHelpApi';

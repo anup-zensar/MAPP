@@ -3,7 +3,7 @@ import { Send } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { fetchSubmission, useSubmitActivity } from './approvalsApi';
 import type { ApprovalSubmission } from './approvalsApi';
 import type { ApprovalActivity, ShowSubmitProblems } from './approvalTypes';

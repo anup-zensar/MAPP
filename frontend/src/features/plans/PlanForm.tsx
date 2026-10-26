@@ -6,7 +6,7 @@ import {
   useCurrencies,
   useFinanceBudgets,
   useModels,
-} from '@/api/settingsQueries';
+} from '@/features/settings/api';
 import { Button } from '@/ui/Button/Button';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';
@@ -33,8 +33,8 @@ import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { PersonField, TeamField, usePeople } from '@/features/people';
-import { formatAmount, formatMoneyText, formatPercent } from '@/lib/decimal';
-import { useUnsavedChanges } from '@/lib/useUnsavedChanges';
+import { formatAmount, formatMoneyText, formatPercent } from '@/format/decimal';
+import { useUnsavedChanges } from '@/ui/useUnsavedChanges';
 import { GoalFields } from './GoalFields';
 import { PLAN_TYPE_LABELS, PLAN_TYPES } from './planCurrency';
 import type { PlanType } from './planCurrency';

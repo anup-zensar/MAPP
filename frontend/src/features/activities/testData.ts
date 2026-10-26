@@ -4,7 +4,7 @@
  * and the activity "Launch film" (A-1042).
  */
 import type { components } from '@/api/generated/schema';
-import { attribute, LUBRICANTS, MOBILITY, option } from '@/test/attributeForms';
+import { attribute, LUBRICANTS, MOBILITY, option } from '@/testing/attributeForms';
 import type {
   Activity,
   ActivityDestination,

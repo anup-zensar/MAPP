@@ -5,8 +5,8 @@ import { api, call } from '@/api/client';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { NotFoundPage } from '@/features/placeholders/NotFoundPage';
-import { usePageTitle } from '@/lib/usePageTitle';
-import type { PageHandle } from './RequireSignIn';
+import { usePageTitle } from '@/ui/usePageTitle';
+import type { PageHandle } from '@/session/RequireSignIn';
 
 /**
  * The gate in front of the developer pages (research R23, D-036): they exist only where demo

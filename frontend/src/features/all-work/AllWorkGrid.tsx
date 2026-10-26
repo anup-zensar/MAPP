@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import styles from './AllWorkGrid.module.css';
 import { COLUMN_TIPS, totalText } from './allWorkText';
 import type { AllWorkColumn, AllWorkResult, AllWorkRow, Sort } from './allWorkTypes';

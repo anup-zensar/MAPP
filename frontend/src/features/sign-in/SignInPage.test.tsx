@@ -1,12 +1,12 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { routes } from '@/app/router';
-import type { CurrentUser } from '@/app/useSession';
-import { mockApi } from '@/test/mockApi';
-import { renderRoutes, renderWithProviders } from '@/test/render';
-import type { RenderOptions } from '@/test/render';
+import type { CurrentUser } from '@/session/useSession';
+import { mockApi } from '@/testing/mockApi';
+import { renderRoutes, renderWithProviders } from '@/testing/render';
+import type { RenderOptions } from '@/testing/render';
 import { SignInPage } from './SignInPage';
-import { testUser } from '@/test/users';
+import { testUser } from '@/testing/users';
 
 const PRIYA: CurrentUser = testUser();
 

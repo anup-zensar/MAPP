@@ -4,7 +4,7 @@
  * is sent as typed, so the API reports it together with every other problem (FR-010).
  */
 import type { AttributeValues } from '@/ui/ShellAttributeFields/rules';
-import { formatAmount, formatWhole, parseDecimalInput, parseMoneyInput } from '@/lib/decimal';
+import { formatAmount, formatWhole, parseDecimalInput, parseMoneyInput } from '@/format/decimal';
 import { planCurrencyOf, planTypeOf } from './planCurrency';
 import type { PlanType } from './planCurrency';
 import type { Plan, PlanCreate, PlanDefaults, PlanUpdate } from './plansApi';

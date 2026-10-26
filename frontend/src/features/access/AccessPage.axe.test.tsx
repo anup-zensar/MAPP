@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react';
 import { describe, it } from 'vitest';
 import { expectNoAxeViolations } from '@/features/settings/shared/axeCheck';
-import { mockApi } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { mockApi } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { AccessPage } from './AccessPage';
 import { RoleFormPage } from './RoleFormPage';
 import { RolePage } from './RolePage';

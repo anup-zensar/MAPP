@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { TextField } from '../TextField/TextField';
 import { FormPanel } from './FormPanel';
 import { problemOf } from './problemOf';

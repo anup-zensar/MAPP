@@ -1,7 +1,7 @@
 import { Star } from 'lucide-react';
 import { Button } from '@/ui/Button/Button';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/ui/cx';
 import styles from './PinButton.module.css';
 
 export interface PinButtonProps {

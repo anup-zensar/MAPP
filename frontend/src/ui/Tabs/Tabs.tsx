@@ -1,6 +1,6 @@
 import { useId, useRef } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import styles from './Tabs.module.css';
 
 /** One tab. */

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ApiError } from '@/api/errors';
-import { useAttributeForm } from '@/api/settingsQueries';
+import { useAttributeForm } from '../api';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';

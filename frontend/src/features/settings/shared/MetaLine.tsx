@@ -1,6 +1,6 @@
 import type { components } from '@/api/generated/schema';
-import { localDate } from '@/lib/format';
-import { useFormatters } from '@/lib/useFormatters';
+import { localDate } from '@/format/intl';
+import { useFormatters } from '@/format/useFormatters';
 import styles from './SettingsTable.module.css';
 
 type ActorRef = components['schemas']['ActorRef'];

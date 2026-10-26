@@ -3,7 +3,7 @@ import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { Button } from '@/ui/Button/Button';
 import { SidePanel } from '@/ui/SidePanel/SidePanel';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { MetaLine } from '../shared/MetaLine';
 import { SETTING_NOUNS } from '../shared/settingsNouns';
 import styles from '../shared/SettingsTable.module.css';

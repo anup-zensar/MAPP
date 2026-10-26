@@ -4,7 +4,7 @@
  * §3.3), and its link leads to the card — on the plan page, or in the campaign's or initiative's
  * panel — instead of an edit form that has no such field.
  */
-import { fieldHref, recordHref } from '@/lib/recordLinks';
+import { fieldHref, recordHref } from '@/ui/record-links';
 import type { PhasingLevel } from './phasingApi';
 
 /** The completeness field of a phasing problem. */

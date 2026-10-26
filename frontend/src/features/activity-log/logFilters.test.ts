@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate } from '@/lib/format';
+import { formatDate } from '@/format/intl';
 import {
   CUSTOM_RANGE_ERROR,
   NO_FILTERS,

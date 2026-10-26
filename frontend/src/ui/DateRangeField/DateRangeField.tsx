@@ -1,5 +1,5 @@
 import { CircleAlert, TriangleAlert } from 'lucide-react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { FieldShell } from '../FieldShell/FieldShell';
 import type { FieldMarking } from '../FieldShell/FieldShell';
 import inputs from '../FieldShell/inputs.module.css';

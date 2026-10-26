@@ -1,6 +1,6 @@
 import type { components } from '@/api/generated/schema';
-import { formatMoneyText } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { formatMoneyText } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import styles from './AmountPair.module.css';
 import { differentCurrency } from './planCurrency';
 

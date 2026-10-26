@@ -1,12 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { useSession } from '@/app/useSession';
-import type { CurrentUser } from '@/app/useSession';
-import { useFormatters } from '@/lib/useFormatters';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { useSession } from '@/session/useSession';
+import type { CurrentUser } from '@/session/useSession';
+import { useFormatters } from '@/format/useFormatters';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { ProfilePage } from './ProfilePage';
 
 const USD = { code: 'USD', name: 'US dollar', active: true };

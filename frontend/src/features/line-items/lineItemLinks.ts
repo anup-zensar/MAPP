@@ -1,6 +1,6 @@
 import type { BreadcrumbItem } from '@/ui/Breadcrumb/Breadcrumb';
-import { recordHref } from '@/lib/recordLinks';
-import type { PlanningRecordType } from '@/lib/recordLinks';
+import { recordHref } from '@/ui/record-links';
+import type { PlanningRecordType } from '@/ui/record-links';
 import type { LineItemActivity } from './lineItemsApi';
 
 /** The plan of the activity, the first step of its path. */

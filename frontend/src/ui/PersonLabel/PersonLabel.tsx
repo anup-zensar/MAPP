@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { Avatar } from '../Avatar/Avatar';
 import styles from './PersonLabel.module.css';
 

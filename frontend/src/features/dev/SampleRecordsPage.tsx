@@ -13,9 +13,9 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { useToast } from '@/ui/Toast/useToast';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import {
   SAMPLE_PAGE_LISTS,
   useDeleteFolder,

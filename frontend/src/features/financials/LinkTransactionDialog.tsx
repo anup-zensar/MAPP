@@ -7,7 +7,7 @@ import { problemOf } from '@/ui/FormPanel/problemOf';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { fetchLineItemPreview, FINANCIALS_KEY, useLinkTransaction } from './financialsApi';
 import type { FinancialTransaction, LineItemPreview } from './financialsApi';
 import styles from './LinkTransactionDialog.module.css';

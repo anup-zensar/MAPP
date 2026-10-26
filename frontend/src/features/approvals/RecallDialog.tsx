@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ConfirmDialog } from '@/ui/ConfirmDialog/ConfirmDialog';
 import { TextAreaField } from '@/ui/TextAreaField/TextAreaField';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { useRecall } from './approvalsApi';
 import type { ActivityApproval } from './approvalsApi';
 import { alreadyDecidedMessage, asApiError, isSessionLost } from './messages';

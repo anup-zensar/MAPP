@@ -12,7 +12,7 @@ import {
   formatWhole,
   parseMoneyInput,
   parseWholeInput,
-} from '@/lib/decimal';
+} from '@/format/decimal';
 import type {
   Activity,
   ActivityCreate,

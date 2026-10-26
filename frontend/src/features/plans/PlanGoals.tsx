@@ -1,7 +1,7 @@
 import { Card } from '@/ui/Card/Card';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
-import { formatWhole } from '@/lib/decimal';
-import { useFormatters } from '@/lib/useFormatters';
+import { formatWhole } from '@/format/decimal';
+import { useFormatters } from '@/format/useFormatters';
 import { goalRows } from './goalWaterfall';
 import styles from './PlanGoals.module.css';
 import type { Plan } from './plansApi';

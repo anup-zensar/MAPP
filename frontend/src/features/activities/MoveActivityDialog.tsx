@@ -4,7 +4,7 @@ import { FormDialog } from '@/ui/FormDialog/FormDialog';
 import { FailureMessage } from '@/ui/FormPanel/FormPanel';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { useActivityDestinations, useMoveActivity } from './activitiesApi';
 import type { Activity, ActivityDestination } from './activitiesApi';
 import {

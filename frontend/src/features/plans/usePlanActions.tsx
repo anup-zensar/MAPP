@@ -4,7 +4,7 @@ import type { components } from '@/api/generated/schema';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
-import { useUndoableDelete } from '@/lib/useUndoableDelete';
+import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { CopyPlanDialog } from './dialogs/CopyPlanDialog';
 import { gateItem } from './gateAction';
 import type { CopyRefusal } from './dialogs/CopyPlanDialog';

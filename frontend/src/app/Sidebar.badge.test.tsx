@@ -1,8 +1,8 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CountBadge } from '@/ui/CountBadge/CountBadge';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { Sidebar } from './Sidebar';
 
 // Feature 008 fills the Approvals badge from its own folder; here it counts three.

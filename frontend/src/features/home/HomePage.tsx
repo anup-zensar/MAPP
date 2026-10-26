@@ -1,8 +1,8 @@
-import { useCurrentUser, useSession } from '@/app/useSession';
+import { useCurrentUser, useSession } from '@/session/useSession';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import type { SegmentedFilterOption } from '@/ui/SegmentedFilter/SegmentedFilter';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { AttentionCard } from './AttentionCard';
 import { CurrencyPicker } from './CurrencyPicker';
 import { FinancialsCard } from './FinancialsCard';

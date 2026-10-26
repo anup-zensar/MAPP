@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
-import { SESSION_KEY } from '@/app/useSession';
+import { SESSION_KEY } from '@/session/useSession';
 
 export type PermissionKey = components['schemas']['PermissionKey'];
 export type PermissionInfo = components['schemas']['PermissionInfo'];

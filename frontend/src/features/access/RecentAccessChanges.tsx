@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { Card } from '@/ui/Card/Card';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import { useAccessChanges } from './accessApi';
 import { changeText } from './accessWords';
 import styles from './access.module.css';

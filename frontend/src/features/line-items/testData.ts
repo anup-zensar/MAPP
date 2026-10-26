@@ -5,8 +5,8 @@
  * (Spend type → GL code) and the answers every form asks for.
  */
 import type { components } from '@/api/generated/schema';
-import { attribute, option } from '@/test/attributeForms';
-import type { MockHandler } from '@/test/mockApi';
+import { attribute, option } from '@/testing/attributeForms';
+import type { MockHandler } from '@/testing/mockApi';
 
 type LineItem = components['schemas']['LineItem'];
 type LineItemActivity = components['schemas']['LineItemActivity'];

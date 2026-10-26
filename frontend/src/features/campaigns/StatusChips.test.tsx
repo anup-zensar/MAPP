@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { ApprovalProgressChip, OutsideYearNote, TimingNote } from './StatusChips';
 
 describe('StatusChips (feature 005, FR-013, FR-015)', () => {

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useAttributeForm } from '@/api/settingsQueries';
+import { useAttributeForm } from '@/features/settings/api';
 import { useToast } from '@/ui/Toast/useToast';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { LineItemForm } from './LineItemForm';
 import { newFormState } from './lineItemFormState';
 import { activityLineItemsHref } from './lineItemLinks';

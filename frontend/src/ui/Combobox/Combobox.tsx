@@ -2,7 +2,7 @@ import { Check, X } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { FieldShell } from '../FieldShell/FieldShell';
 import type { FieldFrameProps } from '../FieldShell/FieldShell';
 import inputs from '../FieldShell/inputs.module.css';

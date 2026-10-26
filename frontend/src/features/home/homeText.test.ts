@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDateRange, formatMoney } from '@/lib/format';
+import { formatDate, formatDateRange, formatMoney } from '@/format/intl';
 import {
   activityCountsText,
   approvedPercent,

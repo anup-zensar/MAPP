@@ -1,7 +1,7 @@
 import { ClipboardList, Plus, SearchX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useCurrentUser, useSession } from '@/app/useSession';
+import { useCurrentUser, useSession } from '@/session/useSession';
 import { Button, LinkButton } from '@/ui/Button/Button';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
@@ -13,9 +13,9 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FilterChip } from '@/ui/FilterChips/FilterChips';
-import { useAccess } from '@/lib/access';
-import { useFormatters } from '@/lib/useFormatters';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { useAccess } from '@/session/access';
+import { useFormatters } from '@/format/useFormatters';
+import { usePageTitle } from '@/ui/usePageTitle';
 import {
   DEFAULT_FILTERS,
   readFilters,

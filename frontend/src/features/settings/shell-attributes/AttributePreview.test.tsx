@@ -1,10 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/test/attributeForms';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { renderWithProviders } from '@/test/render';
-import { testUser } from '@/test/users';
+import { campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/testing/attributeForms';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { renderWithProviders } from '@/testing/render';
+import { testUser } from '@/testing/users';
 import { AttributePreview } from './AttributePreview';
 import { shellAttribute } from './testData';
 

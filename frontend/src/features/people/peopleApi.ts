@@ -10,8 +10,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
-import { SESSION_KEY } from '@/app/useSession';
-import type { CurrentUser, PreferencesUpdate } from '@/app/useSession';
+import { SESSION_KEY } from '@/session/useSession';
+import type { CurrentUser, PreferencesUpdate } from '@/session/useSession';
 
 export type Person = components['schemas']['Person'];
 export type PersonDetails = components['schemas']['PersonDetails'];

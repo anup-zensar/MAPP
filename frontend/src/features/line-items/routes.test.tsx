@@ -1,8 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { HISTORY_ANSWERS } from '@/features/activity-log/testData';
-import { expectCurrentSection, renderApp } from '@/test/app';
-import type { MockHandler } from '@/test/mockApi';
+import { expectCurrentSection, renderApp } from '@/testing/app';
+import type { MockHandler } from '@/testing/mockApi';
 import {
   details,
   formAnswers,

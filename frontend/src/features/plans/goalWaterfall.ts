@@ -13,8 +13,8 @@ import {
   parseMoneyInput,
   toCents,
   toHundredths,
-} from '@/lib/decimal';
-import type { WaterfallModel } from '@/lib/waterfall';
+} from '@/format/decimal';
+import type { WaterfallModel } from '@/features/settings/models/waterfall';
 import type { GoalStage } from './planText';
 
 export type WaterfallStage = 'inq' | 'mql' | 'deals' | 'revenue';

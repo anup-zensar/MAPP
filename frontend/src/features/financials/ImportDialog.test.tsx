@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders } from '@/test/render';
-import { mockApi } from '@/test/mockApi';
-import type { MockHandler } from '@/test/mockApi';
-import { testUser } from '@/test/users';
+import { renderWithProviders } from '@/testing/render';
+import { mockApi } from '@/testing/mockApi';
+import type { MockHandler } from '@/testing/mockApi';
+import { testUser } from '@/testing/users';
 import { ImportDialog } from './ImportDialog';
 import { checkResult } from './testData';
 

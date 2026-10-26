@@ -3,7 +3,7 @@
  * computes is shown while typing; the API stays the judge of what is saved.
  */
 import type { components } from '@/api/generated/schema';
-import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/lib/decimal';
+import { formatAmount, formatCents, parseMoneyInput, toCents } from '@/format/decimal';
 
 type Money = components['schemas']['Money'];
 type MoneyInput = components['schemas']['MoneyInput'];

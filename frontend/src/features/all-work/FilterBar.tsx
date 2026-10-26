@@ -3,8 +3,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { FilterChips } from '@/ui/FilterChips/FilterChips';
 import { SearchField } from '@/ui/SearchField/SearchField';
-import { cx } from '@/lib/cx';
-import { formatWhole } from '@/lib/decimal';
+import { cx } from '@/ui/cx';
+import { formatWhole } from '@/format/decimal';
 import styles from './FilterBar.module.css';
 import {
   ACTIVITY_STATUS_LABELS,

@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { expectCurrentSection, renderApp } from '@/test/app';
+import { expectCurrentSection, renderApp } from '@/testing/app';
 
 // Feature 011's address for the Recycle bin (build guide §5), under More in the sidebar.
 describe('Recycle bin route (feature 011)', () => {

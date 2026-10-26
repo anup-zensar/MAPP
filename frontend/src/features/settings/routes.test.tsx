@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { expectCurrentSection, renderApp } from '@/test/app';
-import type { MockHandler } from '@/test/mockApi';
+import { expectCurrentSection, renderApp } from '@/testing/app';
+import type { MockHandler } from '@/testing/mockApi';
 
 /** The requests the section pages make when they open, answered with empty lists. */
 const PAGE_ANSWERS: Record<string, MockHandler> = {

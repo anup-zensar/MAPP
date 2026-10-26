@@ -7,10 +7,10 @@ import { CompletenessChip } from '@/ui/CompletenessChip/CompletenessChip';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { ActivityStatusChip } from '@/features/activities/ActivityStatusChip';
-import { cx } from '@/lib/cx';
-import { formatWhole } from '@/lib/decimal';
-import { fieldHref, recordHref } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
+import { cx } from '@/ui/cx';
+import { formatWhole } from '@/format/decimal';
+import { fieldHref, recordHref } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
 import { useHomeMyActivities } from './homeApi';
 import type { MyActivityGroup, MyActivityRow } from './homeApi';
 import {

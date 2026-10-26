@@ -5,7 +5,7 @@ import { Avatar } from '@/ui/Avatar/Avatar';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import styles from './AccountMenu.module.css';
 import { MY_PROFILE } from './navigation';
-import { useCurrentUser, useSession } from './useSession';
+import { useCurrentUser, useSession } from '@/session/useSession';
 
 /**
  * The account button at the right of the top bar and its menu (FR-012): who is signed in —

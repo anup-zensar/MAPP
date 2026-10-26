@@ -2,7 +2,7 @@
  * Every text feature 005 shows (plan "User-visible messages (web)"). The API's own messages are
  * shown as received; these are the web app's words around them.
  */
-import { joinWithAnd, plural } from '@/lib/text';
+import { joinWithAnd, plural } from '@/format/text';
 
 /** The two levels of this feature. */
 export type RecordLevel = 'campaign' | 'initiative';

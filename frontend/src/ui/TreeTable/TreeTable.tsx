@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { cx } from '@/lib/cx';
+import { cx } from '../cx';
 import { ActionsMenu } from '../ActionsMenu/ActionsMenu';
 import type { ActionsMenuItem } from '../ActionsMenu/ActionsMenu';
 import { LevelTag } from '../LevelTag/LevelTag';

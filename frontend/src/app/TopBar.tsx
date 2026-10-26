@@ -3,7 +3,7 @@ import { Logo } from '@/ui/Logo/Logo';
 import { AccountMenu } from './AccountMenu';
 import { NavDrawer } from './NavDrawer';
 import { NotificationBell } from './NotificationBell';
-import { ThemeToggle } from './ThemeToggle';
+import { ThemeToggle } from '@/ui/ThemeToggle/ThemeToggle';
 import styles from './TopBar.module.css';
 
 /**

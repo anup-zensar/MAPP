@@ -6,7 +6,7 @@ import type { components } from '@/api/generated/schema';
 import { FilterChips } from '@/ui/FilterChips/FilterChips';
 import { SearchField } from '@/ui/SearchField/SearchField';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import {
   ACTION_FILTERS,
   DATE_RANGES,

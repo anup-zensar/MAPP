@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders } from '@/test/render';
+import { renderWithProviders } from '@/testing/render';
 import { TextAreaField } from './TextAreaField';
 
 function Example({ start = '', error }: { start?: string; error?: string }) {

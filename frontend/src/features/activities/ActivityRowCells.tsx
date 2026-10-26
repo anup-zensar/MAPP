@@ -1,7 +1,7 @@
 import { CircleAlert } from 'lucide-react';
 import { Link } from 'react-router';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { useFormatters } from '@/lib/useFormatters';
+import { useFormatters } from '@/format/useFormatters';
 import type { ActivitySummary } from './activitiesApi';
 import styles from './ActivityRowCells.module.css';
 import { ActivityStatusChip } from './ActivityStatusChip';

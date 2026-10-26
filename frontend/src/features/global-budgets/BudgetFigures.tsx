@@ -1,7 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
-import { cx } from '@/lib/cx';
-import { useFormatters } from '@/lib/useFormatters';
+import { cx } from '@/ui/cx';
+import { useFormatters } from '@/format/useFormatters';
 import type { GlobalBudgetFigures } from './globalBudgetsApi';
 import { FIGURE_TIPS, overAllocatedText } from './globalBudgetsText';
 import styles from './BudgetFigures.module.css';

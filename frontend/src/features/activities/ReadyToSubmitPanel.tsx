@@ -2,7 +2,7 @@ import { CircleCheck } from 'lucide-react';
 import { useId } from 'react';
 import type { Ref } from 'react';
 import { Link } from 'react-router';
-import { fieldHref } from '@/lib/recordLinks';
+import { fieldHref } from '@/ui/record-links';
 import type { Activity, ActivitySubmitProblem } from './activitiesApi';
 import { activityEditHref, thingsText } from './activityText';
 import styles from './ReadyToSubmitPanel.module.css';

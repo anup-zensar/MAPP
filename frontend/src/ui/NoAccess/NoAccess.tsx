@@ -1,5 +1,5 @@
 import { House, ShieldOff } from 'lucide-react';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '../usePageTitle';
 import { LinkButton } from '../Button/Button';
 import styles from './NoAccess.module.css';
 

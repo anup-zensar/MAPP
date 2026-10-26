@@ -1,4 +1,4 @@
-import { formatWhole } from '@/lib/decimal';
+import { formatWhole } from '@/format/decimal';
 import { SettingsCount } from '../shared/SettingsCount';
 import { useFieldHelpEntries } from './fieldHelpApi';
 

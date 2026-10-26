@@ -1,7 +1,7 @@
 import { CircleAlert, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useCurrentUser } from '@/app/useSession';
+import { useCurrentUser } from '@/session/useSession';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { EmptyState } from '@/ui/EmptyState/EmptyState';
@@ -12,7 +12,7 @@ import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
 import list from '@/features/settings/shared/SettingsTable.module.css';
-import { formatWhole } from '@/lib/decimal';
+import { formatWhole } from '@/format/decimal';
 import { usePeopleAccess, useRoles } from './accessApi';
 import type { PersonRoles } from './accessApi';
 import { assignmentText, SCOPE_EMPTY } from './accessWords';

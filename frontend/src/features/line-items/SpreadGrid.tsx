@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { components } from '@/api/generated/schema';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { SegmentedFilter } from '@/ui/SegmentedFilter/SegmentedFilter';
-import { cx } from '@/lib/cx';
-import { formatAmount } from '@/lib/decimal';
+import { cx } from '@/ui/cx';
+import { formatAmount } from '@/format/decimal';
 import { monthColumns, quarterColumns } from './lineItemMath';
 import {
   EMPTY,

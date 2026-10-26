@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { Tabs } from '@/ui/Tabs/Tabs';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { PeopleAccessTab } from './PeopleAccessTab';
 import { RecentAccessChanges } from './RecentAccessChanges';
 import { RolesTab } from './RolesTab';

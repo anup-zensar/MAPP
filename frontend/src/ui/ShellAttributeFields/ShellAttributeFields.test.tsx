@@ -2,8 +2,14 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { components } from '@/api/generated/schema';
-import { activityForm, campaignForm, LUBRICANTS, MOBILITY, planForm } from '@/test/attributeForms';
-import { renderWithProviders } from '@/test/render';
+import {
+  activityForm,
+  campaignForm,
+  LUBRICANTS,
+  MOBILITY,
+  planForm,
+} from '@/testing/attributeForms';
+import { renderWithProviders } from '@/testing/render';
 import { ShellAttributeFields } from './ShellAttributeFields';
 import type { ShellAttributeFieldsProps } from './ShellAttributeFields';
 

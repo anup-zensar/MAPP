@@ -26,7 +26,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
-    setupFiles: ['src/test/setup.ts'],
+    setupFiles: ['src/testing/setup.ts'],
     // Generous, because a busy laptop can run a single test for several seconds.
     testTimeout: 15000,
     coverage: {
@@ -34,7 +34,7 @@ export default defineConfig({
       reporter: ['text-summary', 'lcov'],
       reportsDirectory: 'coverage',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/api/generated/**'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/testing/**', 'src/api/generated/**'],
     },
   },
 });

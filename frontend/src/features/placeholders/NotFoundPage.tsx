@@ -1,6 +1,6 @@
 import { House, MapPinOff } from 'lucide-react';
 import { LinkButton } from '@/ui/Button/Button';
-import { usePageTitle } from '@/lib/usePageTitle';
+import { usePageTitle } from '@/ui/usePageTitle';
 import { CentredMessage } from './CentredMessage';
 
 /**

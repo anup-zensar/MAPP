@@ -7,9 +7,9 @@ import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { recordHref } from '@/lib/recordLinks';
-import type { PlanningRecordType } from '@/lib/recordLinks';
-import { useFormatters } from '@/lib/useFormatters';
+import { recordHref } from '@/ui/record-links';
+import type { PlanningRecordType } from '@/ui/record-links';
+import { useFormatters } from '@/format/useFormatters';
 import { financialsHref, useRecordFinancials } from './financialsApi';
 import styles from './RecordFinancials.module.css';
 
