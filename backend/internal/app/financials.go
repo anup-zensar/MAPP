@@ -33,9 +33,9 @@ type financialPlanning struct {
 	campaignsRepo campaigns.Repository
 	activities    activities.Repository
 	lineItems     lineitems.Repository
-	settings   *settings.Service
-	people     *people.Service
-	history    *history.Service
+	settings      *settings.Service
+	people        *people.Service
+	history       *history.Service
 }
 
 // The compiler checks here that the adapters implement the ports of financials.
