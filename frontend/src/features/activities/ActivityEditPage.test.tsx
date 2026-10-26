@@ -193,6 +193,9 @@ describe('ActivityFormPage, edit (feature 006, US4)', () => {
     const end = await screen.findByLabelText('End date');
     await user.clear(end);
     await user.type(end, '2026-06-30');
+    expect(
+      await screen.findByText('When you save, 2 line items are re-spread over the new dates.'),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     const question = await screen.findByRole('alertdialog', {

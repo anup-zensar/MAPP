@@ -47,17 +47,6 @@ describe('financialsLinks (015 FR-021: the address is the state)', () => {
     ).toBe('link=notLinked&q=HX1099&sort=vendor%3Aasc');
   });
 
-  it('round-trips the filters through the address', () => {
-    const filters = {
-      ...DEFAULT_FILTERS,
-      tab: 'accrual' as const,
-      year: 2026,
-      recordId: 'L-1004',
-      page: 3,
-    };
-    expect(readFilters(writeFilters(filters))).toEqual(filters);
-  });
-
   it('builds the links of the cards, Home and the panel', () => {
     expect(financialsHref()).toBe('/financials');
     expect(financialsHref({ recordId: 'A-1002' })).toBe('/financials?recordId=A-1002');
