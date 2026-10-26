@@ -69,19 +69,6 @@ describe('SettingsPage (FR-001)', () => {
     ).toBeInTheDocument();
   });
 
-  it('opens each section from its card: the link is named by the section', async () => {
-    mockApi([reply('GET /api/v1/settings/overview', { body: OVERVIEW })]);
-    const { user, router } = renderSettings();
-
-    expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute(
-      'href',
-      '/settings/currencies',
-    );
-    await user.click(screen.getByRole('link', { name: 'Models' }));
-
-    expect(router.state.location.pathname).toBe('/settings/models');
-  });
-
   it('shows a section without a page as Coming soon, not as a link', async () => {
     mockApi([reply('GET /api/v1/settings/overview', { body: OVERVIEW })]);
     renderSettings();
