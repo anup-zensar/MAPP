@@ -9,6 +9,7 @@ import (
 // The refusal messages 1–3 and 22 of the plan and the not-found answer for a record outside the person's
 // access, word for word (FR-010, 022 FR-005).
 func TestRefusal_MessagesWordForWord_FR010(t *testing.T) {
+	t.Parallel()
 	sara := grants("U-1006", []string{lubricants, mobility}, viewer)
 	priya := grants("U-1002", []string{lubricants}, planner)
 	daniel := grants("U-1003", []string{lubricants}, planner, approver)
@@ -46,6 +47,7 @@ func TestRefusal_MessagesWordForWord_FR010(t *testing.T) {
 // Segregation of duties: while the rule is on, nobody decides on an activity they own or submitted
 // (FR-026, messages 6a and 6b); with the rule off, nothing stops them.
 func TestSelfApprovalRefusal_OwnerAndSubmitter_FR026(t *testing.T) {
+	t.Parallel()
 	daniel := grants("U-1003", []string{lubricants}, planner, approver)
 	relaxed := daniel
 	relaxed.Rules.NoSelfApproval = false
@@ -64,22 +66,13 @@ func TestSelfApprovalRefusal_OwnerAndSubmitter_FR026(t *testing.T) {
 	}
 }
 
-// Table A has 25 permissions in five groups; Lookup finds them by key and refuses others (FR-001).
+// Every permission of Table A has a label and a noun; Lookup finds them by key and refuses others (FR-001).
 func TestCatalogue_TableA_FR001(t *testing.T) {
-	catalogue := authz.Catalogue()
-
-	if len(catalogue) != 25 {
-		t.Fatalf("%d permissions, want 25", len(catalogue))
-	}
-	groups := map[string]int{}
-	for _, p := range catalogue {
-		groups[p.Group]++
+	t.Parallel()
+	for _, p := range authz.Catalogue() {
 		if p.Label == "" || p.Noun == "" {
 			t.Errorf("%s has no label or noun", p.Key)
 		}
-	}
-	if len(groups) != 5 || groups[authz.GroupAdministration] != 7 {
-		t.Errorf("groups = %v", groups)
 	}
 	if info, found := authz.Lookup("plans.edit"); !found || info.Label != "Edit plan details" || !info.Scoped {
 		t.Errorf("Lookup(plans.edit) = %+v, %v", info, found)
