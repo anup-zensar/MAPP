@@ -87,7 +87,7 @@ scoped reads are additions the services adopt in T025a.
 ## Phase 6: JSON store out of the application
 
 - [X] T031 Remove the JSON store from the wiring and the seed: the data-folder setting and `-reset`'s file handling in `cmd/api`, `cmd/seed` and `internal/app`. `internal/platform/store` and the `store_json*.go` files stay as the test stand-in, with a one-line note that 025 deletes them — depends on T026–T028
-- [ ] T032 Run the full gates: `gofmt`, `go vet`, golangci-lint on changed lines, `sqlc generate` (no diff), `go test -race ./...` with PostgreSQL, `go test -short ./...` without, `govulncheck`, the frontend suites and `npm run test:e2e` on PostgreSQL (SC-001–SC-005)
+- [X] T032 Run the full gates: `gofmt`, `go vet`, golangci-lint on changed lines, `sqlc generate` (no diff), `go test -race ./...` with PostgreSQL, `go test -short ./...` without, `govulncheck`, the frontend suites and `npm run test:e2e` on PostgreSQL (SC-001–SC-005) — all pass; actionlint clean
 
 ---
 
