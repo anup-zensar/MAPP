@@ -103,7 +103,7 @@ describe('CurrenciesPage: status and delete (US4 scenario 2, FR-004)', () => {
     await chooseAction('EUR', 'Delete', user);
     const dialog = await screen.findByRole('alertdialog', { name: "'Euro' is in use" });
     expect(dialog).toHaveTextContent(
-      'Used by 14 line items · Display currency of 2 people — set it inactive instead.',
+      "Used by 14 line items · Display currency of 2 people — set it inactive instead. Line items and people can't choose an inactive currency; those using it keep it and amounts still convert.",
     );
     await user.click(within(dialog).getByRole('button', { name: 'Set inactive' }));
 
