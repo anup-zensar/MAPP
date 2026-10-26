@@ -1,9 +1,12 @@
-# Optional: PostgreSQL for developers who prefer Docker to a native install (constitution,
-# Current Phase & Scope). Start it with `docker compose up -d postgres`. Local development only:
-# it listens on 127.0.0.1 and trusts local connections, so it holds no password.
+# Optional (constitution, Current Phase & Scope): nothing here is needed to develop MAPP natively.
+#   docker compose up -d postgres          PostgreSQL only, for developers who prefer it to a native install
+#   docker compose up -d --build           the whole app, built from this checkout, at http://127.0.0.1:3000
+# Works the same with `podman compose`. Local only: every port is published on 127.0.0.1, and PostgreSQL
+# trusts local connections, so it holds no password. `docker compose down -v` deletes all the data.
+name: mapp
 services:
   postgres:
-    image: postgres:18
+    image: docker.io/library/postgres:18
     environment:
       POSTGRES_USER: mapp
       POSTGRES_DB: mapp
@@ -17,6 +20,33 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  seed:
+    build: ./backend
+    image: mapp-api:local
+    entrypoint: ["/usr/local/bin/seed", "-if-empty"]
+    environment:
+      DATABASE_URL: postgres://mapp@postgres:5432/mapp?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    image: mapp-api:local
+    environment:
+      DATABASE_URL: postgres://mapp@postgres:5432/mapp?sslmode=disable
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  web:
+    build: ./frontend
+    image: mapp-web:local
+    ports:
+      - "127.0.0.1:3000:8080"
+    depends_on:
+      - api
 
 volumes:
   postgres-data:

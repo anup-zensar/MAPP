@@ -1,6 +1,6 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 4) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4.1) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
 `backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
 
@@ -66,8 +66,9 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 13. **Out of scope:** the Finance budgets module, purchase requests, accrual calculation, Measure, live
     GSAP integration, e-mail, real sign-in (SSO), AI. Do not build them. GSAP rates and transactions come
     only from simulated feeds behind adapters (ADR-0009).
-14. **Local only:** servers listen on `127.0.0.1`; no cloud services at run time; Docker only optionally,
-    for PostgreSQL; no secrets in the repository.
+14. **Local only:** servers listen on `127.0.0.1`; no cloud services at run time; Docker or Podman only
+    optionally, for PostgreSQL or for reviewers running the whole app from `compose.yaml` (ADR-0012);
+    developing MAPP never needs them; no secrets in the repository.
 15. **Alignment** (constitution, Governance): code written before constitution 2.0.0 is aligned by
     dedicated features later. Until a package or screen is aligned, a change to it keeps its current
     stack and structure — don't migrate it as a side effect of another change. New packages, screens and

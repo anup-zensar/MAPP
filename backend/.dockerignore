@@ -1,0 +1,7 @@
+data/
+bin/
+*.test
+*.out
+go-test.txt
+Dockerfile
+.dockerignore

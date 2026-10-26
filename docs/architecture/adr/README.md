@@ -17,4 +17,5 @@ Consequences. Add a new ADR (next number) instead of editing an accepted one; ma
 | [0009](0009-simulated-gsap-feeds-behind-adapters.md) | Simulated GSAP feeds behind adapters | Accepted |
 | [0010](0010-quality-gates-and-branch-rules.md) | Quality gates and branch rules | Accepted |
 | [0011](0011-gin-transport-and-opentelemetry.md) | Gin transport and OpenTelemetry | Accepted |
+| [0012](0012-local-container-images.md) | Local container images for reviewers | Accepted |
 | [0013](0013-postgresql-storage.md) | PostgreSQL storage | Accepted |

@@ -125,6 +125,19 @@ $env:APP_PORT = '18081'                               # API terminal, before go 
 $env:MAPP_API_URL = 'http://127.0.0.1:18081'     # web-app terminal, before npm run dev
 ```
 
+## Run MAPP in containers (optional)
+
+For reviewers who don't develop MAPP, such as business analysts: install Podman Desktop (or Docker), get
+the repository with Git, then from its folder:
+
+```powershell
+podman compose up -d --build   # first time and after every git pull; the first build takes a few minutes
+```
+
+Open <http://127.0.0.1:3000>. The demo data is loaded on the first start and kept after that;
+`podman compose down -v` deletes everything, and the next start loads the demo data again. `docker compose`
+works the same way. See ADR-0012.
+
 ## Test MAPP
 
 ```powershell
