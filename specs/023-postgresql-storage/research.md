@@ -42,8 +42,8 @@ constitution's named stack (B1).
 - **Measured**: the first design ran Writes `SERIALIZABLE` with up to 5 retries. Two writers in a loop on
   the counters starved each other (the loser's retry kept meeting the winner's next transaction) and
   failed with `40001` after 5 attempts — the same would happen to any two concurrent Writes, because all
-  of them raise the `LOG` counter. With the lock, the racing tests pass every run and the lock test fails
-  (times out) when the lock is removed.
+  of them raise the `LOG` counter. With the lock, the racing tests of that time passed every run and the lock
+  test failed (timed out) when the lock was removed; those tests were deleted under constitution 4.0.0.
 - **Alternatives**: `SERIALIZABLE` with retries — rejected (above). `READ COMMITTED` without the lock plus
   conditional updates (`WHERE version = $n`) in every store, as in `GO_STANDARDS.md` §6 — rejected for
   this migration: it moves rules into SQL area by area and still leaves uniqueness and counter races; the
@@ -89,12 +89,13 @@ constitution's named stack (B1).
   database named `mapp_template_<hash of the migration files>`, and gives each test
   `CREATE DATABASE mapp_test_<random> TEMPLATE …`, dropped `WITH (FORCE)` in `t.Cleanup`. The template is
   built under a PostgreSQL advisory lock (parallel `go test` processes build it once) under a temporary
-  name and renamed when complete (an interrupted build never leaves a broken template). `NewEmptyDB(t)`
-  gives an unmigrated database for migration tests. Under `-short` it skips; without the variable it
-  **fails**, so CI can never skip store tests silently.
+  name and renamed when complete (an interrupted build never leaves a broken template). Under
+  `-short` it skips; without the variable it **fails**, so CI can never skip the scope-isolation tests
+  silently. Since constitution 4.0.0 they are its only users: no Go test checks queries, constraints,
+  migrations or the write lock on a database.
 - **Rationale**: a copy from a template takes ~0.15 s, so every test can run in parallel on its own data.
   Templates of older migration sets stay on the server and may be dropped by hand
-  (`DROP DATABASE mapp_template_…`). The role in `TEST_DATABASE_URL` needs `CREATEDB`; migration 00013
+  (`DROP DATABASE mapp_template_… WITH (FORCE)`; the backend README gives the command). The role in `TEST_DATABASE_URL` needs `CREATEDB`; migration 00013
   creates the trusted extension `btree_gist`, which the owner of a database may create.
 - **Alternatives**: testcontainers (banned: Docker), one shared database with transactions rolled back
   (cannot test commit-time constraints or concurrent transactions).
@@ -162,7 +163,7 @@ values, report changes nobody made. Every such column has a `CHECK (json_typeof(
   `plan_in_permission_scope()` = `authz.InScope`, `activity_in_scope()` = `authz.CanViewActivity` (plan
   scope, activity owner, approvers named in its rounds). Each plan-owned store keeps its interface's
   unscoped reads (internal work: usage counts, restores, the seed) and adds `…InScope` reads that call the
-  functions; the plans test compares the SQL with `authz.CanView` for six people and roles.
+  functions; the plans scope-isolation test compares the SQL with `authz.CanView` for six people and roles.
 - **Rationale**: 022 kept today's unscoped store interfaces and filters in the services, so changing the
   interfaces would change every service; the scoped reads let T025a move each person-facing read into SQL
   without a second schema change.

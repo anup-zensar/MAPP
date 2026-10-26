@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"mapp/internal/activities"
 	"mapp/internal/campaigns"
@@ -26,8 +25,7 @@ import (
 )
 
 var (
-	pgMeta  = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
-	pgExact = cmpopts.EquateComparable(money.Amount{}, money.Percent{}, date.Date{})
+	pgMeta = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
 )
 
 // pgStore gives a store whose database holds the line items L-1001 (plan P-1001, team T-1001) and L-1002
@@ -91,24 +89,6 @@ func pgTransaction(id, lineItemID string) financials.Transaction {
 		LineItemID: lineItemID, MatchedBy: financials.MatchedByLineItemID, ImportID: "FIM-1001", Meta: pgMeta}
 }
 
-func TestPostgresStoreTransactionsAndImportsFR008(t *testing.T) {
-	t.Parallel()
-	_, s, stored := pgStore(t)
-
-	all, transactionsErr := s.ListTransactions(t.Context())
-	imported, found, importErr := s.GetImport(t.Context(), "FIM-1001")
-
-	if err := errors.Join(transactionsErr, importErr); err != nil || !found {
-		t.Fatalf("ListTransactions(), GetImport() = found %v, error %v", found, err)
-	}
-	if diff := cmp.Diff(stored, all, pgExact); diff != "" {
-		t.Errorf("ListTransactions() mismatch (-want +got):\n%s", diff)
-	}
-	if imported.Rows != 4 || imported.NotLinked != 1 || imported.Source != financials.SourceDemo {
-		t.Errorf("GetImport() = %+v, want the saved counts", imported)
-	}
-}
-
 func TestPostgresStoreTransactionScopeIsolationFR009(t *testing.T) {
 	t.Parallel()
 	_, s, _ := pgStore(t)
@@ -145,36 +125,6 @@ func TestPostgresStoreTransactionScopeIsolationFR009(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.wantTransaction, ids); diff != "" {
 				t.Errorf("TransactionsInScope() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestPostgresStoreRefusesBrokenTransactionsFR004(t *testing.T) {
-	t.Parallel()
-	accrualWithoutMonth := pgTransaction("FT-1005", "L-1001")
-	accrualWithoutMonth.Type = financials.TypeAccrual
-	manualWithoutLink := pgTransaction("FT-1005", "L-1001")
-	manualWithoutLink.MatchedBy = financials.MatchedByManual
-	duplicate := pgTransaction("FT-1005", "L-1002")
-	duplicate.DocumentNumber = "511001"
-	tests := []struct {
-		name        string
-		transaction financials.Transaction
-	}{
-		{name: "the GSAP identity of another transaction", transaction: duplicate},
-		{name: "an accrual without its month", transaction: accrualWithoutMonth},
-		{name: "a manual match without who linked it", transaction: manualWithoutLink},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			db, s, _ := pgStore(t)
-
-			err := db.Write(t.Context(), func(ctx context.Context) error { return s.PutTransaction(ctx, tt.transaction) })
-
-			if err == nil {
-				t.Errorf("Write() error = nil, want the database to refuse the change")
 			}
 		})
 	}

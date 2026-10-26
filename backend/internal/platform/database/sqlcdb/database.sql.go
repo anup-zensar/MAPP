@@ -9,32 +9,6 @@ import (
 	"context"
 )
 
-const countWaitingWrites = `-- name: CountWaitingWrites :one
-SELECT count(*)
-FROM pg_catalog.pg_locks
-WHERE locktype = 'advisory'
-    AND NOT granted
-    AND database = (SELECT oid FROM pg_catalog.pg_database WHERE datname = current_database())
-`
-
-func (q *Queries) CountWaitingWrites(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countWaitingWrites)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const currentDatabase = `-- name: CurrentDatabase :one
-SELECT current_database()::text
-`
-
-func (q *Queries) CurrentDatabase(ctx context.Context) (string, error) {
-	row := q.db.QueryRow(ctx, currentDatabase)
-	var column_1 string
-	err := row.Scan(&column_1)
-	return column_1, err
-}
-
 const lockWrites = `-- name: LockWrites :exec
 SELECT pg_advisory_xact_lock(hashtext('mapp.write'))
 `

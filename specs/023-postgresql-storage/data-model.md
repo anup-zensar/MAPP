@@ -58,8 +58,7 @@ service may break for a moment inside one Write is a deferrable constraint. List
 | Organisation | people, teams, settings, roles and assignments, workflows, global budgets, imports, counters, activity log, recycle bin | none in SQL; the service checks the permission |
 
 The interfaces' unscoped reads stay for internal work that must see every record (usage counts, restores,
-the seed); the services switch their person-facing reads to the scoped ones when they move to PostgreSQL
-(tasks T025a).
+the seed); the services switch their person-facing reads to the scoped ones (task T025a).
 
 ## 4. Soft references (no foreign key)
 

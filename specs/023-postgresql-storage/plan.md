@@ -10,13 +10,13 @@ A new `internal/platform/database` package opens the pgx pool, applies embedded 
 session lock and runs `Write` transactions one at a time and snapshot `Read` transactions, both carried
 in the context; it
 implements today's `store.Transactor`, so services keep their code. sqlc compiles one `.sql` file per area
-into committed `sqlcdb` code, and `dbtest` gives each store test its own database copied from a migrated
-template. Each area gains a `store_postgres.go` beside its JSON repository, implementing the same
-interface; when all exist, `internal/app` and the seed command switch to PostgreSQL at once and the JSON
-store is removed ([research](research.md) R1–R11, [data model](data-model.md)).
+into committed `sqlcdb` code, and `dbtest` gives each scope-isolation test its own database copied from a
+migrated template. Each area gains a `store_postgres.go` beside its JSON repository, implementing the same
+interface; when all exist, `internal/app` and the seed command switch to PostgreSQL at once and stop using
+the JSON store, which stays as the service and handler tests' stand-in until 025 ([research](research.md) R1–R11, [data model](data-model.md)).
 
 **Built on this branch**: the foundation, the pilot area (samples, R8) and every other store, with scoped
-reads for plan-owned data (R12); the application still runs on the JSON store until the switch (T025–T028).
+reads for plan-owned data (R12); the application still runs on the JSON store until the switch (T026–T028).
 
 ## Technical Context
 
@@ -26,10 +26,11 @@ reads for plan-owned data (R12); the application still runs on the JSON store un
 golangci-lint v2.15.0 as pinned tools run with `go run` (R1)
 
 **Storage**: PostgreSQL 18 on `127.0.0.1` — native install or the optional `compose.yaml`; `DATABASE_URL`
-for the API and seed, `TEST_DATABASE_URL` for store tests
+for the API and seed, `TEST_DATABASE_URL` for the scope-isolation tests
 
 **Testing**: `go test -race ./...` with `TEST_DATABASE_URL`; `go test -short ./...` without a database;
-store tests per interface promise, constraint and race (FR-004–FR-008)
+one scope-isolation test per scoped area on PostgreSQL; service and handler tests on the JSON store
+stand-in; end-to-end tests on PostgreSQL (FR-010)
 
 **Target Platform**: developers' macOS, Windows and Linux machines; GitHub Actions `ubuntu-latest`
 
@@ -53,7 +54,7 @@ with 158 repository methods plus the scoped reads
 | III Documented design | Plan, research, data model; ADR-0004 superseded by a new ADR in T030 | Pass |
 | IV PostgreSQL everywhere | pgx pool, sqlc, goose; Docker optional | Pass |
 | V Simplicity | One platform package, one store file per area, no new layer; files within 300 lines | Pass |
-| VI Meaningful tests | Store tests per interface promise on real PostgreSQL; racing-save, rollback, UTC and constraint tests each fail without the code they prove (checked by mutation in the pilot) | Pass |
+| VI Meaningful tests | Constitution 4.0.0: one scope-isolation test per scoped area and the end-to-end tests touch PostgreSQL; no database test of queries, constraints, migrations or the write lock | Pass |
 | VII Security | Scope in SQL for plan-owned data (FR-009, after 022); no DSN in errors; release age checked (R1) | Pass |
 | VIII Clean construction | Comment budget met in every new file; generated `sqlcdb` excluded | Pass |
 | B1 Stack | pgx, sqlc, goose, go-cmp — all named in B1; reasons in R1 | Pass |
@@ -73,7 +74,7 @@ with 158 repository methods plus the scoped reads
 | Tampering: SQL injection | every query | sqlc parameters only; the test helper's DDL quotes identifiers it generates itself |
 | Information disclosure: credentials in logs | `Open`, `dbtest` | errors never include the URL; `TEST_DATABASE_URL` is named, never printed |
 | Information disclosure: another market's plans | plan-owned reads | scope filter in SQL plus an isolation test per read (FR-009) |
-| Tampering: lost update between concurrent saves | every `Write` | one Write at a time (R2); lock test and racing-save test |
+| Tampering: lost update between concurrent saves | every `Write` | one Write at a time (R2); the version checks inside it proved by the service tests |
 | Repudiation: a change without its log entry, or a log entry changed afterwards | every service | change and log entry in one `Write`; write-once triggers on `activity_log`, `approval_actions` and `rate_imports` |
 | Denial of service: connection exhaustion | pool | one pool per process; `pool_max_conns` in `DATABASE_URL` per environment |
 
@@ -81,25 +82,25 @@ with 158 repository methods plus the scoped reads
 
 | Risk | Response | Owner |
 |---|---|---|
-| A service relies on JSON-store behaviour no interface states (ordering, nil lists, `store.Memo`) | The full backend and end-to-end suites run on PostgreSQL before the JSON store is removed (T025–T028); R9 conventions | Team |
+| A service relies on JSON-store behaviour no interface states (ordering, nil lists, `store.Memo`) | The end-to-end suite runs on PostgreSQL before the JSON store leaves the wiring (T026–T028); R9 conventions | Team |
 | One writer at a time limits write throughput | As today on the JSON store; every Write raises the shared `LOG` counter anyway (R2); revisit with a measurement if Azure load needs it | Team |
-| A foreign key refuses a delete the service allows | Each area task tests its deletes against the constraints (data model §4) | Team |
+| A foreign key refuses a delete the service allows | Soft references for every delete a service allows (data model §4); the end-to-end tests delete and restore on PostgreSQL | Team |
 | 022/024 change the wiring and the store interfaces while this runs | Area tasks for plan-owned data and the switch wait for them (tasks.md) | Product owner |
 
 ## Migration path
 
 1. **Foundation** (done): `database` (`Open`, `Migrate`, `Write`, `Read`, `Queries`), `dbtest`, `sqlc.yaml`.
-2. **Pilot** (done): samples — migration 00001, queries, `store_postgres.go`, store tests.
+2. **Pilot** (done): samples — migration 00001, queries, `store_postgres.go`.
 3. **Remaining areas**, in migration order (data model §2): platform (ids counters, history) → people and
    auth → settings → access → plans → campaigns → workflows → activities and line items → approvals →
-   budgets → financials → All work. Each adds its migration, queries, `store_postgres.go` and store tests;
-   plan-owned areas take the scope in their store methods once 022 has settled it.
+   budgets → financials → All work. Each adds its migration, queries and `store_postgres.go`;
+   plan-owned areas add `…InScope` reads with one scope-isolation test per area.
 4. **Switch** (one task, after 022 and 024): `internal/app` opens the pool from `DATABASE_URL`, refuses a
    database behind the latest migration, wires every PostgreSQL store and `database.DB` as the
    `Transactor`; `cmd/seed` migrates and loads the demo data; end-to-end tests run on PostgreSQL. Areas
    switch together because one `Write` spans several areas' stores.
-5. **Remove the JSON store**: `internal/platform/store`, every `store_json.go`, the data-folder setting and
-   `-reset`'s file handling.
+5. **JSON store out of the wiring**: the data-folder setting and `-reset`'s file handling leave `cmd/api`,
+   `cmd/seed` and `internal/app`; the package stays as the tests' stand-in until 025 replaces it with fakes.
 
 ## Project Structure
 
@@ -124,14 +125,12 @@ backend/
     ├── platform/database/
     │   ├── database.go                           # Open, Close, Write, Read, Queries
     │   ├── migrate.go                            # Migrations, Migrate
-    │   ├── database_test.go                      # rollback, read-only, UTC, concurrent migrations
     │   ├── migrations/00001_sample_records.sql
     │   ├── queries/samples.sql
     │   ├── sqlcdb/                               # generated, committed
-    │   └── dbtest/dbtest.go                      # NewDB, NewEmptyDB
+    │   └── dbtest/dbtest.go                      # NewDB
     └── samples/
-        ├── store_postgres.go                     # PostgresStore implements Repository
-        └── store_postgres_test.go
+        └── store_postgres.go                     # PostgresStore implements Repository
 ```
 
 **Structure Decision**: the target layout of GO_STANDARDS §2 for the new package; the samples area keeps

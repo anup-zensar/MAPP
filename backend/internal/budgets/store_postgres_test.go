@@ -73,28 +73,6 @@ func pgAllocation(id, budgetID, planID string) budgets.Allocation {
 		Amount: money.USD(money.FromCents(2500000)), Meta: pgMeta}
 }
 
-func TestPostgresStoreGlobalBudgetsAndAllocationsFR008(t *testing.T) {
-	t.Parallel()
-	_, s, allocations := pgStore(t)
-
-	all, budgetsErr := s.ListBudgets(t.Context())
-	ofFirst, ofErr := s.AllocationsOf(t.Context(), "GB-1001")
-	ofPlan, found, planErr := s.AllocationOfPlan(t.Context(), "P-1002")
-
-	if err := errors.Join(budgetsErr, ofErr, planErr); err != nil || !found {
-		t.Fatalf("reads = found %v, error %v", found, err)
-	}
-	if diff := cmp.Diff([]budgets.GlobalBudget{pgBudget("GB-1001", "Brand 2026"), pgBudget("GB-1002", "Retail 2026")}, all, pgExact); diff != "" {
-		t.Errorf("ListBudgets() mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(allocations, ofFirst, pgExact); diff != "" {
-		t.Errorf("AllocationsOf() mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(allocations[1], ofPlan, pgExact); diff != "" {
-		t.Errorf("AllocationOfPlan() mismatch (-want +got):\n%s", diff)
-	}
-}
-
 func TestPostgresStoreAllocationScopeIsolationFR009(t *testing.T) {
 	t.Parallel()
 	_, s, allocations := pgStore(t)
@@ -117,36 +95,6 @@ func TestPostgresStoreAllocationScopeIsolationFR009(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.want, got, pgExact); diff != "" {
 				t.Errorf("AllocationsInScope() mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-}
-
-func TestPostgresStoreRefusesBrokenBudgetsFR004(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name  string
-		write func(ctx context.Context, s *budgets.PostgresStore) error
-	}{
-		{name: "a global budget name that differs only in letter case", write: func(ctx context.Context, s *budgets.PostgresStore) error {
-			return s.PutBudget(ctx, pgBudget("GB-1003", "BRAND 2026"))
-		}},
-		{name: "a second allocation to one plan", write: func(ctx context.Context, s *budgets.PostgresStore) error {
-			return s.PutAllocation(ctx, pgAllocation("BA-1003", "GB-1002", "P-1001"))
-		}},
-		{name: "an allocation to a plan that does not exist", write: func(ctx context.Context, s *budgets.PostgresStore) error {
-			return s.PutAllocation(ctx, pgAllocation("BA-1003", "GB-1002", "P-9999"))
-		}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			db, s, _ := pgStore(t)
-
-			err := db.Write(t.Context(), func(ctx context.Context) error { return tt.write(ctx, s) })
-
-			if err == nil {
-				t.Errorf("Write() error = nil, want the database to refuse the change")
 			}
 		})
 	}

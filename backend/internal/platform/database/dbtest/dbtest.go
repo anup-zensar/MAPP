@@ -31,28 +31,6 @@ func NewDB(tb testing.TB) *database.DB {
 	return create(tb, server, migratedTemplate(tb, server))
 }
 
-func NewEmptyDB(tb testing.TB) *database.DB {
-	tb.Helper()
-	return create(tb, serverURL(tb), emptyTemplate)
-}
-
-// Exec runs sql on db's database through a connection of its own, for tests of statements no store sends.
-func Exec(tb testing.TB, db *database.DB, sql string) error {
-	tb.Helper()
-	name, err := db.Queries(tb.Context()).CurrentDatabase(tb.Context())
-	if err != nil {
-		tb.Fatalf("name of the test database: %v", err)
-	}
-	server := serverURL(tb)
-	conn, err := pgx.Connect(tb.Context(), withDatabase(server, name))
-	if err != nil {
-		tb.Fatalf("connect to test database %s: %v", name, err)
-	}
-	defer closeConn(tb, conn)
-	_, err = conn.Exec(tb.Context(), sql)
-	return err
-}
-
 func serverURL(tb testing.TB) *url.URL {
 	tb.Helper()
 	if testing.Short() {

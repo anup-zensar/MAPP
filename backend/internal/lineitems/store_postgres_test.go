@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"mapp/internal/activities"
 	"mapp/internal/campaigns"
@@ -25,8 +25,7 @@ import (
 )
 
 var (
-	pgMeta  = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
-	pgExact = cmpopts.EquateComparable(money.Amount{}, money.Percent{})
+	pgMeta = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
 )
 
 // pgStore gives a store whose database holds the activities A-1001 (plan P-1001, team T-1001, owned by U-1002)
@@ -99,95 +98,56 @@ func pgFixture(t *testing.T) (*database.DB, *lineitems.PostgresStore, []lineitem
 	return db, s, stored
 }
 
-func TestPostgresStoreLineItemsReadBackAsSavedFR008(t *testing.T) {
+// TestPostgresStoreActivityAndLineItemScopeFR009 proves every scoped read of activities and line items: an
+// activity is seen through its plan's scope or by its owner, and its line items follow it.
+func TestPostgresStoreActivityAndLineItemScopeFR009(t *testing.T) {
 	t.Parallel()
-	db, s, stored := pgFixture(t)
-	evenly := stored[0]
-	evenly.Spread = lineitems.Spread{Method: lineitems.SpreadEvenly, Months: []lineitems.MonthAmount{}}
-	pgWrite(t, db, func(ctx context.Context) error { return s.Put(ctx, evenly) })
-
-	all, allErr := s.List(t.Context())
-	ofSecond, byErr := s.ListByActivities(t.Context(), []string{"A-1002"})
-
-	if err := errors.Join(allErr, byErr); err != nil {
-		t.Fatalf("List(), ListByActivities() error: %v", err)
-	}
-	if diff := cmp.Diff([]lineitems.LineItem{evenly, stored[1]}, all, pgExact); diff != "" {
-		t.Errorf("List() after replacing the spread mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(stored[1:], ofSecond, pgExact); diff != "" {
-		t.Errorf("ListByActivities() mismatch (-want +got):\n%s", diff)
-	}
-	if one, found, err := s.Get(t.Context(), "L-1002"); err != nil || !found || !cmp.Equal(stored[1], one, pgExact) {
-		t.Errorf("Get() = %+v, found %v, error %v; want %+v", one, found, err, stored[1])
-	}
-}
-
-func TestPostgresStoreLineItemScopeFollowsTheActivityFR009(t *testing.T) {
-	t.Parallel()
-	_, s, stored := pgFixture(t)
+	db, s, _ := pgFixture(t)
+	activityStore := activities.NewPostgresStore(db)
 	tests := []struct {
 		name  string
 		scope authz.Scope
 		want  []string
 	}{
 		{name: "View plans in team T-1002", scope: authz.Scope{PersonID: "U-1001", Holds: true, TeamIDs: []string{"T-1002"}},
-			want: []string{"L-1002"}},
+			want: []string{"A-1002", "L-1002"}},
 		{name: "no role, owner of activity A-1001", scope: authz.Scope{PersonID: "U-1002", TeamIDs: []string{}},
-			want: []string{"L-1001"}},
+			want: []string{"A-1001", "L-1001"}},
 		{name: "no role, owner of the line item only", scope: authz.Scope{PersonID: "U-1001", TeamIDs: []string{}},
 			want: []string{}},
+		{name: "everything", scope: authz.Scope{Everything: true, TeamIDs: []string{}},
+			want: []string{"A-1001", "A-1002", "L-1001", "L-1002"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			visible, err := s.ListInScope(t.Context(), tt.scope)
-			if err != nil {
+			listedActivities, activitiesErr := activityStore.ListInScope(t.Context(), tt.scope)
+			listedItems, itemsErr := s.ListInScope(t.Context(), tt.scope)
+			if err := errors.Join(activitiesErr, itemsErr); err != nil {
 				t.Fatalf("ListInScope() error: %v", err)
 			}
-			ids := []string{}
-			for _, li := range visible {
-				ids = append(ids, li.ID)
-			}
-			if diff := cmp.Diff(tt.want, ids); diff != "" {
+			if diff := cmp.Diff(tt.want, listedIDs(listedActivities, listedItems)); diff != "" {
 				t.Errorf("ListInScope() mismatch (-want +got):\n%s", diff)
 			}
-			for _, li := range stored {
-				_, found, err := s.GetInScope(t.Context(), tt.scope, li.ID)
-				if err != nil || found != cmp.Equal(tt.want, []string{li.ID}) {
-					t.Errorf("GetInScope(%s) = found %v, error %v", li.ID, found, err)
+			for _, n := range []string{"1001", "1002"} {
+				_, activityFound, activityErr := activityStore.GetInScope(t.Context(), tt.scope, "A-"+n)
+				_, itemFound, itemErr := s.GetInScope(t.Context(), tt.scope, "L-"+n)
+				wantFound := slices.Contains(tt.want, "A-"+n)
+				if err := errors.Join(activityErr, itemErr); err != nil || activityFound != wantFound || itemFound != wantFound {
+					t.Errorf("GetInScope(A-%s, L-%s) = found %v and %v, error %v; want %v", n, n, activityFound, itemFound, err, wantFound)
 				}
 			}
 		})
 	}
 }
 
-func TestPostgresStoreRefusesBrokenLineItemsFR004(t *testing.T) {
-	t.Parallel()
-	unknownCurrency := pgLineItem("L-1003", "A-1001", "Venue")
-	unknownCurrency.Currency = "XYZ"
-	negativeMonth := pgLineItem("L-1003", "A-1001", "Refund")
-	negativeMonth.Spread = lineitems.Spread{Method: lineitems.SpreadCustom, Months: []lineitems.MonthAmount{
-		{Month: "2026-04", Amount: money.FromCents(-100)}}}
-	tests := []struct {
-		name     string
-		lineItem lineitems.LineItem
-	}{
-		{name: "a name taken in the activity, in another letter case", lineItem: pgLineItem("L-1003", "A-1001", "AGENCY FEE")},
-		{name: "a currency that does not exist", lineItem: unknownCurrency},
-		{name: "a negative amount in a month", lineItem: negativeMonth},
-		{name: "an activity that does not exist", lineItem: pgLineItem("L-1003", "A-9999", "Lost")},
+func listedIDs(listedActivities []activities.Activity, listedItems []lineitems.LineItem) []string {
+	ids := []string{}
+	for _, a := range listedActivities {
+		ids = append(ids, a.ID)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			db, s, _ := pgFixture(t)
-
-			err := db.Write(t.Context(), func(ctx context.Context) error { return s.Put(ctx, tt.lineItem) })
-
-			if err == nil {
-				t.Errorf("Write() error = nil, want the database to refuse the change")
-			}
-		})
+	for _, li := range listedItems {
+		ids = append(ids, li.ID)
 	}
+	return ids
 }

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"mapp/internal/campaigns"
 	"mapp/internal/people"
@@ -26,8 +25,7 @@ import (
 )
 
 var (
-	pgMeta  = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
-	pgExact = cmpopts.EquateComparable(money.Amount{}, money.Percent{}, date.Date{})
+	pgMeta = record.NewMeta(actor.System, time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC))
 )
 
 // pgStore gives a store whose database holds the plans P-1001 (team T-1001) and P-1002 (team T-1002, owned
@@ -98,32 +96,6 @@ func pgFixture(t *testing.T) (*database.DB, *campaigns.PostgresStore, []campaign
 	return db, s, stored, initiatives
 }
 
-func TestPostgresStoreCampaignsAndInitiativesFR008(t *testing.T) {
-	t.Parallel()
-	_, s, stored, initiatives := pgFixture(t)
-
-	all, allErr := s.ListCampaigns(t.Context())
-	ofFirstPlan, planErr := s.CampaignsOfPlans(t.Context(), []string{"P-1001"})
-	ofSecond, initiativesErr := s.InitiativesOfCampaigns(t.Context(), []string{"C-1002"})
-	one, found, getErr := s.GetInitiative(t.Context(), "I-1001")
-
-	if err := errors.Join(allErr, planErr, initiativesErr, getErr); err != nil || !found {
-		t.Fatalf("reads = found %v, error %v", found, err)
-	}
-	if diff := cmp.Diff(stored, all, pgExact); diff != "" {
-		t.Errorf("ListCampaigns() mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff([]campaigns.Campaign{stored[0], stored[2]}, ofFirstPlan, pgExact); diff != "" {
-		t.Errorf("CampaignsOfPlans() mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(initiatives[1:], ofSecond, pgExact); diff != "" {
-		t.Errorf("InitiativesOfCampaigns() mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(initiatives[0], one, pgExact); diff != "" {
-		t.Errorf("GetInitiative() mismatch (-want +got):\n%s", diff)
-	}
-}
-
 func TestPostgresStoreCampaignScopeIsolationFR009(t *testing.T) {
 	t.Parallel()
 	_, s, _, _ := pgFixture(t)
@@ -156,45 +128,6 @@ func TestPostgresStoreCampaignScopeIsolationFR009(t *testing.T) {
 				t.Errorf("InitiativesInScope() mismatch (-want +got):\n%s", diff)
 			}
 			assertScopedGets(t, s, tt.scope, slices.Concat(tt.wantCampaigns, tt.wantInitiatives))
-		})
-	}
-}
-
-func TestPostgresStoreRefusesBrokenCampaignsFR004(t *testing.T) {
-	t.Parallel()
-	start, end := date.MustParse("2026-06-30"), date.MustParse("2026-02-01")
-	backwards := pgCampaign("C-1004", "P-1001", "Backwards")
-	backwards.StartDate, backwards.EndDate = &start, &end
-	tests := []struct {
-		name  string
-		write func(ctx context.Context, s *campaigns.PostgresStore) error
-	}{
-		{name: "a campaign name taken in the plan, in another letter case", write: func(ctx context.Context, s *campaigns.PostgresStore) error {
-			return s.PutCampaign(ctx, pgCampaign("C-1004", "P-1001", "BRAND"))
-		}},
-		{name: "a campaign ending before it starts", write: func(ctx context.Context, s *campaigns.PostgresStore) error {
-			return s.PutCampaign(ctx, backwards)
-		}},
-		{name: "a campaign of a plan that does not exist", write: func(ctx context.Context, s *campaigns.PostgresStore) error {
-			return s.PutCampaign(ctx, pgCampaign("C-1004", "P-9999", "Lost"))
-		}},
-		{name: "an initiative of a campaign that does not exist", write: func(ctx context.Context, s *campaigns.PostgresStore) error {
-			return s.PutInitiative(ctx, pgInitiative("I-1003", "C-9999"))
-		}},
-		{name: "a campaign deleted while it holds an initiative", write: func(ctx context.Context, s *campaigns.PostgresStore) error {
-			return s.DeleteCampaign(ctx, "C-1001")
-		}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			db, s, _, _ := pgFixture(t)
-
-			err := db.Write(t.Context(), func(ctx context.Context) error { return tt.write(ctx, s) })
-
-			if err == nil {
-				t.Errorf("Write() error = nil, want the database to refuse the change")
-			}
 		})
 	}
 }

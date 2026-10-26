@@ -2,14 +2,12 @@ package plans_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"mapp/internal/people"
 	"mapp/internal/plans"
@@ -24,8 +22,7 @@ import (
 )
 
 var (
-	pgAt    = time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC)
-	pgExact = cmpopts.EquateComparable(money.Amount{}, money.Percent{})
+	pgAt = time.Date(2026, time.March, 12, 9, 0, 0, 0, time.UTC)
 )
 
 // pgStore gives a store whose database holds what plans refer to: US dollars, the model MOD-1001, the
@@ -63,40 +60,6 @@ func pgPlan(id, createdBy, ownerID string, teamIDs ...string) plans.Plan {
 		OwnerID: ownerID, DefaultSpread: plans.SpreadEvenly, GoalStage: plans.StageINQ,
 		Attributes: settings.AttributeValues{}, Status: plans.StatusDraft, Currency: "USD", PlanType: plans.TypeOperational,
 		BudgetPhasing: rollup.NotPhased, Meta: record.NewMeta(actor.Actor{ID: createdBy, Name: createdBy}, pgAt)}
-}
-
-func TestPostgresStorePlansReadBackAsSavedFR008(t *testing.T) {
-	t.Parallel()
-	db, s := pgStore(t)
-	budget := money.FromCents(12000000)
-	europe := pgPlan("P-1001", "U-1001", "U-1002", "T-1002", "T-1001")
-	europe.Budget, europe.Attributes = &budget, settings.AttributeValues{"SA-1001": json.RawMessage(`"SO-1001"`)}
-	europe.BudgetPhasing = rollup.Phasing{Method: rollup.MethodCustom, Months: []rollup.PhasingMonth{
-		{Month: "2026-01", Amount: money.FromCents(4000000)}, {Month: "2026-02", Amount: money.FromCents(8000000)}}}
-	nextYear := pgPlan("P-1002", "U-1001", "", "T-1001")
-	nextYear.Year = 2027
-	pgWrite(t, db, func(ctx context.Context) error {
-		return errors.Join(s.Put(ctx, nextYear), s.Put(ctx, europe), s.Put(ctx, pgPlan("P-1003", "U-1001", "")))
-	})
-	pgWrite(t, db, func(ctx context.Context) error { return s.Delete(ctx, "P-1003") })
-
-	all, allErr := s.List(t.Context())
-	of2027, yearErr := s.PlansOfYear(t.Context(), 2027)
-
-	if err := errors.Join(allErr, yearErr); err != nil {
-		t.Fatalf("List(), PlansOfYear() error: %v", err)
-	}
-	if diff := cmp.Diff([]plans.Plan{europe, nextYear}, all, pgExact); diff != "" {
-		t.Errorf("List() mismatch (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff([]plans.Plan{nextYear}, of2027, pgExact); diff != "" {
-		t.Errorf("PlansOfYear() mismatch (-want +got):\n%s", diff)
-	}
-	europe.TeamIDs, europe.BudgetPhasing = []string{"T-1001"}, rollup.NotPhased
-	pgWrite(t, db, func(ctx context.Context) error { return s.Put(ctx, europe) })
-	if got, found, err := s.Get(t.Context(), "P-1001"); err != nil || !found || !cmp.Equal(europe, got, pgExact) {
-		t.Errorf("Get() after replacing teams and phasing = %+v, found %v, error %v; want %+v", got, found, err, europe)
-	}
 }
 
 // TestPostgresStorePlanScopeIsCanViewFR009 proves that the scoped reads keep exactly the plans authz.CanView
@@ -167,33 +130,4 @@ func planIDs(list []plans.Plan) []string {
 		ids = append(ids, p.ID)
 	}
 	return ids
-}
-
-func TestPostgresStoreRefusesBrokenPlansFR004(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name string
-		plan plans.Plan
-	}{
-		{name: "a name that differs only in letter case", plan: func() plans.Plan {
-			p := pgPlan("P-1002", "U-1001", "", "T-1001")
-			p.Name = "PLAN P-1001"
-			return p
-		}()},
-		{name: "a team that does not exist", plan: pgPlan("P-1002", "U-1001", "", "T-9999")},
-		{name: "an owner who does not exist", plan: pgPlan("P-1002", "U-1001", "U-9999")},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			db, s := pgStore(t)
-			pgWrite(t, db, func(ctx context.Context) error { return s.Put(ctx, pgPlan("P-1001", "U-1001", "", "T-1001")) })
-
-			err := db.Write(t.Context(), func(ctx context.Context) error { return s.Put(ctx, tt.plan) })
-
-			if err == nil {
-				t.Errorf("Write() error = nil, want the database to refuse the change")
-			}
-		})
-	}
 }

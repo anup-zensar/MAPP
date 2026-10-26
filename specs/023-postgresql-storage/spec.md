@@ -11,8 +11,8 @@ goose replace the JSON file store. Every record type stored today gets a relatio
 their rules and own their transactions; store tests run on real PostgreSQL without Docker. Build the
 foundation and one pilot area first, with the application still on the JSON store."
 
-**References**: Constitution 3.1.0 — Principle IV (PostgreSQL in every environment), VI (store tests on
-PostgreSQL, no Docker), VII (scope isolation, release age), B1, B2, B5, B9, Governance → Alignment ·
+**References**: Constitution 4.0.0 — Principle IV (PostgreSQL in every environment), VI (only end-to-end
+and scope-isolation tests use a database; no Docker), VII (scope isolation, release age), B1, B2, B5, B9, Governance → Alignment ·
 `backend/docs/GO_STANDARDS.md` §6, §12 · ADR-0004 (JSON file store now, PostgreSQL later) ·
 `docs/product/domain-model.md` · features 001 (store, record bookkeeping), 011 (activity log, recycle bin),
 014 (scopes) · feature map rows 022 (API v1), 024 (Gin), 025 (backend layout)
@@ -51,8 +51,9 @@ refuses data that breaks a rule it can check.
 **Why this priority**: the JSON store gave every save exclusive access; PostgreSQL runs saves
 concurrently, so this guarantee must be rebuilt, not assumed.
 
-**Independent Test**: two saves of the same record from the same version at the same moment — exactly
-one succeeds, the other is refused with `version_conflict`; a save that fails half-way leaves nothing.
+**Independent Test**: the service tests prove each version check and that a failed save keeps nothing; the
+end-to-end tests run those services on PostgreSQL. The transaction, the lock and the constraints are not
+tested on a database of their own (constitution 4.0.0, Principle VI).
 
 **Acceptance Scenarios**:
 
@@ -65,24 +66,25 @@ one succeeds, the other is refused with `version_conflict`; a save that fails ha
 
 ---
 
-### User Story 3 - Store tests run on real PostgreSQL without Docker (Priority: P2)
+### User Story 3 - Scope-isolation tests run on real PostgreSQL without Docker (Priority: P2)
 
 As a developer I run `go test ./...` with `TEST_DATABASE_URL` pointing at any PostgreSQL 18 server; each
-store test gets its own fresh, migrated database, dropped afterwards. `go test -short ./...` needs no
+scope-isolation test gets its own fresh, migrated database, dropped afterwards. `go test -short ./...` needs no
 database at all.
 
-**Why this priority**: mocks cannot prove SQL is right (Principle VI); the other stories rely on it.
+**Why this priority**: the scope filter is a security boundary written in SQL, which a fake cannot check
+(Principle VI).
 
 **Independent Test**: run the suite twice in parallel processes against one server; both pass and no
 test database is left behind.
 
 **Acceptance Scenarios**:
 
-1. **Given** `TEST_DATABASE_URL`, **When** store tests run in parallel, **Then** each test has its own
+1. **Given** `TEST_DATABASE_URL`, **When** scope-isolation tests run in parallel, **Then** each test has its own
    database copied from a migrated template and dropped when it ends.
-2. **Given** `-short`, **When** the suite runs, **Then** store tests are skipped and nothing connects to a
+2. **Given** `-short`, **When** the suite runs, **Then** database tests are skipped and nothing connects to a
    database.
-3. **Given** no `TEST_DATABASE_URL` and no `-short`, **When** a store test runs, **Then** it fails with a
+3. **Given** no `TEST_DATABASE_URL` and no `-short`, **When** a database test runs, **Then** it fails with a
    message naming the variable — it is never skipped silently.
 
 ### Edge Cases
@@ -126,11 +128,15 @@ test database is left behind.
   shorter ids first, lists never nil), so services and handlers do not change.
 - **FR-009**: Every store query on plan-owned data MUST filter by the actor's scope in SQL, and each such
   read MUST have a scope-isolation test (B5); person-owned records are filtered by the person in SQL.
-- **FR-010**: Store tests MUST run on PostgreSQL: a fresh database per test, copied from a template
-  migrated once per migration set on the server of `TEST_DATABASE_URL`, dropped when the test ends;
-  skipped under `-short`; no test requires Docker.
+- **FR-010**: Only the scope-isolation tests (one per scoped area, covering each of its `…InScope` reads)
+  and the end-to-end tests MUST use a database; queries, constraints, migrations and the write lock are not
+  tested on one. A scope-isolation test gets a fresh database, copied from a template migrated once per
+  migration set on the server of `TEST_DATABASE_URL`, dropped when the test ends; skipped under `-short`;
+  no test requires Docker.
 - **FR-011**: Once every area has its PostgreSQL store, the API, the seed command and the end-to-end tests
-  MUST run on PostgreSQL, and the JSON store, its data folder setting and its repositories MUST be removed.
+  MUST run on PostgreSQL, and the JSON store and its data folder setting MUST be removed from them. The
+  JSON store stays only as the stand-in of service and handler tests until feature 025 replaces it with
+  fakes.
 - **FR-012**: The CI pipeline MUST start PostgreSQL 18 for the `backend` and `e2e` checks, apply the
   migrations to an empty database, and fail when `sqlc generate` leaves a diff (quality gates 3 and 4).
 
@@ -147,12 +153,12 @@ test database is left behind.
 
 ### Measurable Outcomes
 
-- **SC-001**: With the API on PostgreSQL, 100% of today's backend, contract and end-to-end tests pass
-  without changes to their assertions.
-- **SC-002**: Every store has tests on PostgreSQL for each promise of its interface, and every scoped read
-  has an isolation test; new store code reaches at least 80% statement coverage.
-- **SC-003**: Two concurrent saves from the same version never both succeed (0 lost updates in the racing
-  test, run 100 times).
+- **SC-001**: With the API on PostgreSQL, 100% of today's end-to-end tests pass without changes to their
+  assertions, and the backend and contract tests still pass.
+- **SC-002**: Every scoped area has one scope-isolation test on PostgreSQL that covers each of its
+  `…InScope` reads; no other Go test opens a database.
+- **SC-003**: Two concurrent saves from the same version never both succeed: every version check runs
+  inside a `Write`, and Writes run one at a time (R2); the version checks are proved by the service tests.
 - **SC-004**: `go test -short ./...` passes on a machine with no PostgreSQL; `go test ./...` passes against a
   native install and against the Compose service alike.
 - **SC-005**: Pages answer within today's times on the seeded demo data (the 2-second activity-log
