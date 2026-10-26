@@ -71,11 +71,12 @@ files ≤ 300 non-blank lines; new lines within the comment budget.
 - [X] T020 Gates: `npm run check`, `npm run test:coverage`, `npm run build`, `npm run test:e2e`;
   backend gofmt/goimports, `golangci-lint run --new-from-merge-base=origin/develop`, `go vet`,
   `go test -race ./...`
-- [ ] T021 Update `docs/sdd/feature-map.md` row 027; merge `origin/develop`; pull request into develop
+- [X] T021 Update `docs/sdd/feature-map.md` row 027; merge `origin/develop`; pull request into develop (#12, merged)
+- [X] T021a [US3] Read-only review of every remaining package; the phase-2 plan is research R10
 
 ---
 
-## Phase 2 (after feature 028 is merged)
+## Phase 2 (after feature 028 is merged; per-package plan in research R10)
 
 - [ ] T022 [US2] Stress tests: skip under the race detector (or move to 028's benchmarks) and run
   them without `-race` in a CI step of their own (R7.1)

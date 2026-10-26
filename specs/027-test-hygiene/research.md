@@ -242,4 +242,98 @@ Measured causes and recommendations, in order of time saved:
 | Backend coverage | 80.2% | 80.2% |
 | Frontend branch coverage | 85.26% | 85.20% (R5) |
 
-The pull request's CI run (4 vCPU, the reference of R1) gives the comparable times.
+CI (4 vCPU, the reference of R1), pull request #12 against the last two develop runs:
+
+| CI step | develop 40363452779 | develop 40377956625 | PR #12 (40410583981) |
+|---|---|---|---|
+| backend Test (`go test -race -cover ./...`) | 8 min 29 s | 5 min 52 s | **4 min 48 s** |
+| frontend Test (`npm run test:coverage`) | 6 min 46 s | 7 min 00 s | **6 min 17 s** |
+| End-to-end | 2 min 10 s | 2 min 32 s | 2 min 36 s |
+
+Per package in CI (develop's 023-merge run → PR #12): apitest 58.7 → 3.5 s, auth 32.9 → 4.6, samples
+29.0 → 4.9, app 54.8 → 26.0, people 40.2 → 10.7, plans 34.4 → 13.2, lineitems 34.4 → 9.1, access 34.0
+→ 9.7, settings 41.3 → 23.0, budgets 38.4 → 13.2, campaigns 41.4 → 20.3, home 45.1 → 22.2, approvals
+49.6 → 30.2, financials 50.3 → 28.5, activities 58.5 → 39.1, allwork 54.7 → 40.3, seed 32.2 → 16.1,
+history 94.1 → 74.1 — history is now the critical path, almost all of it one stress test (R10).
+
+## R10 — Phase 2 plan, per package (read-only review of develop at 6c10428)
+
+Prepared before feature 028 merges; 028 changes these packages, so every entry is re-checked against
+the merged code before it is applied. Times: CI after phase 1 (PR #12) and the busy-laptop run
+(`after-be1`). "§12" marks a handler test that repeats a rule the service test proves; for each, another
+handler test still validates the operation's answer against the contract (checked by METHOD + path).
+
+### Cross-cutting changes (largest gain first)
+
+1. **Stress tests under `-race`** (`if race.Enabled { t.Skip(…) }`, plus a CI step `go test -run 'SC00'`
+   without `-race` for the success-criteria timings, which CI never checks today because it runs only
+   `go test -race`):
+   - history `TestQueryLog_50000Entries_SC006`: 58–105 s, about 60 of history's 74 s in CI. Under `-race`
+     its 2-second check is off; it then only proves that a 50,000-entry Write succeeds and each of 4
+     queries returns one item — every query shape is proven exactly by small tests
+     (`TestQueryLog_NewestFirstBySeq_FR004`, `…FilterPerson…`, `…PlanScope…`, `…RecordWithItemsInside…`).
+     It runs each query three times (12 full decodes of the log); stop once a try is under 2 s.
+   - allwork `TestQuery_StressYear_SC004` (7–24 s; 4 queries × 3 over 5,000 activities),
+     financials `TestImport_FiveThousandRows_SC004` (6.4 s; it also runs on the JSON store, not the
+     in-memory repository its comment names) and `TestTransactions_TwentyThousand_SC004` (2.2 s),
+     home `TestHome_LargeScope_SC004` (0.7 s).
+2. **`t.Parallel`** in every business package: safe for all top-level tests except
+   access `TestAuthorize_RefusalsInTheTechnicalLogOnly_FR039` and web
+   `TestEngine_OneRequestRecordPerRequest_024_FR007` (`slog.SetDefault`), the timed SC tests above,
+   and store `TestList_ARead_DecodesEachTableOnce` (a package-level counter). Subtests that share one
+   fixture stay sequential; approvals' `TestNotify_Recipients_FR035` and
+   `TestDecide_EndedRoundExplains_FR018` first pass the subtest's `t` to their helpers.
+3. **Seeded folders per test** outside apitest: activities' `newFixture` seeds the full demo data for
+   60 service tests (about 39 of the package's 62 s locally) and `seed`'s tests make about 49 full
+   loads (13 of 29 s). Share one seeded folder per binary, as `apitest/demo_data.go` does (export it as
+   a helper; B2 applies as in plan.md Complexity Tracking).
+4. **Big data sets that a smaller one replaces**: settings `TestImport_RowAndSizeLimits_FR031` (5.2 s,
+   4,999 options decoded for each of 9 checks) and `TestListOptions_5000Paged_FR018` (1.7 s): keep one
+   4,999-option fixture for the two cap rules, page and refuse on about 60 options (6.9 s → about 1 s).
+   Repeated reads: home's three SC-002 sweeps (14.7, 4.4, 2.5 s) compare against pages read with
+   contract checks — read the comparison pages with `apitest.SkipValidation()` (they have contract
+   tests of their own) and compare row figures under "everything" only; seed's
+   `TestSeed_FinancialsStory_015` reads each child card twice; `TestSeed_HomeStory_009` reads three
+   people twice.
+5. **The JSON stand-in's `file.Sync`** on every Write dominates the service fixtures (F_FULLFSYNC on
+   macOS doubles local times); feature 025's in-memory fakes remove it.
+6. **Real sleeps** left: store `TestRenameWithRetry_WaitsForAFileThatIsBrieflyInUse` (300 ms) and
+   `TestStore_KeepsNoFileOpen` (50 ms in a retry loop); B9 forbids them — drive them from a
+   `testing/synctest` bubble, or they go with the JSON store (025).
+
+### Removals and merges
+
+| Package (CI s) | Remove or merge | Rule | Still proven by |
+|---|---|---|---|
+| history (74.1) | `TestEmptyLogAndBin_AnswerEmptyLists_FR022_FR024`; `TestListActivityLog_FiltersNewestFirst_FR022`; `TestEmptyRecycleBin_EmptyList_400`; `TestRestorePreview_UnknownAndResolved_404_409` (its BIN-9999 404 moves into `TestRestorePreview_Contract`) | R4, §12 | `TestListActivityLog_InvalidLimit_FR020`, `…_Filters_Contract`, `…EntriesAsTheContractSays_FR022`, `TestEmptyBin_NothingLeft_NoEntry`, `TestActions_AlreadyResolved_FR032`, `TestPurge_404_409` |
+| allwork (40.3) | `TestEveryAllWorkOperationRequiresSignIn`; `TestGetAllWork_InvalidParameters_FR004`; `TestGetAllWork_Calendar_Contract`; `TestGetAllWork_Budget_Contract` (its `period=quarter` call into `…RangeYearlyCompare_Contract_FR034`); `TestFinance_ParseQuery_FR024` (its refusal into `TestParseQuery_AllProblemsAtOnce_FR004`) and the matching `refused` block of `TestGetAllWork_FinancialsFilterAndExport_FR024` | R4, §12 | app `TestEveryProtectedOperationRequiresSignIn_FR005`; `TestParseQuery_*`; the FR-023–FR-026 period and calendar tests |
+| activities (39.1) | `TestKinds_RegisterAfterInitiative`; `TestJSONRepository_RoundTrip`; `TestCreate_PlannedCostRules_FR011/another_currency`; the 116.67 % readiness lines of `TestCreate_AttributeValuesChecked_FR016_FR017`; `TestCreate_InitiativeGone_404` folded into `TestCreate_OnlyNameAndTypeRequired_FR003_FR004` | R1, R6, R4 | history `TestRegister_RefusesBadKinds`; `TestUndo_RestoresExactly_FR031`; `TestPlannedCost_MustBePlanCurrency_FR011`; `TestUpdate_SplitNot100SavesButIsListed_FR017` |
+| approvals (30.2) | 12 handler tests (`TestCreateApprovalWorkflow_201_FR002`, `…AllProblems400_FR003`, `TestGetApprovalWorkflow_404`, `TestUpdateApprovalWorkflow_OpenRoundUnchanged_FR006`, `TestDeleteApprovalWorkflow_InUse409_FR008`, `TestSubmit_Problems400_FR010`, `TestApprove_Twice409_FR018`, `TestDecline_WithoutComment400_FR016`, `TestApprove_OnBehalfOfDaniel_FR017`, `TestApprove_AlreadyApprovedAllLevel403_FR020`, `TestMarkRead_OtherPersons404_FR034`, `TestWorkflowFieldLockedWhileSubmitted_FR013`) and `TestNotify_OwnerNotSubmitter_Assumption`; rename the handler `TestRecall_FR021`, whose name clashes with the service test's | §12, R4 | the service tests of the same rules; every endpoint keeps a contract test; 39 → 27 servers |
+| financials (28.5) | `TestOperations_NeedSignIn_FR028`; `TestTransactions_Contract_FR021`, `TestImport_Contract_FR004` and `TestRecord_Contract_FR015` trimmed to the translation (five unique checks of the first move into the service table first); the round-trip half of `TestJSONRepository_RoundTripAndInvariants_FR001` | R4, §12, R6 | app's sign-in sweep; `TestTransactions_FiltersCountsAndTotals_FR021`; `TestImport_CountsAddUpAndTwiceChangesNothing_FR006`; `TestRecord_DemoFiguresAndRollUp_FR012` |
+| settings (23.0) | `TestActivityTypesAPI_ModelsEditedFromType_FR013`; `TestCurrenciesAPI_USDLocked_FR028`; `TestFormsAPI_Get_FR024` (its unknown-level 400 into `TestFormsAPI_Check_FR025`); the `taken` request of `TestFinanceAPI_CreateGetUpdate_FR014`; the `usd` request of `TestRatesAPI_AddUpdateDelete_FR003_FR005`; `TestJSONRepository_RoundTrip`; `TestJSONShapes_MoneyAndValues_D048`; the `Name()` line of `TestGSAPRateFile_Header_FR006` | §12, R6, R2, R1 | the service tests named in the review; each operation keeps a contract test |
+| home (22.2) | `TestHomeSources_ConvertsPerPlan_FR014` (file); its P-1004 and A-1011 figures merged into `TestHomePlans_Contract` and `TestHomeMyActivities_Contract` | R4 | `TestHomeSummary_Contract` and the SC-002 sweeps |
+| campaigns (20.3) | `TestGetCampaign_404`, `TestGetInitiative_404`, `TestCreateCampaign_AllProblems400`, `TestCreateCampaign_TotalsFollow_FR012`, `TestGetCampaign_Contract`, `TestGetInitiative_Contract`; `TestMoveCampaign_Refused400` (its C-9999 404 into `TestMoveCampaign_Contract`); `TestUpdateInitiative_Conflict409` (one stale PATCH into `TestUpdateInitiative_Contract`); `TestCreateCampaign_SameNameTwice_SecondRefused_EdgeCase` (merged into the name-unique test); `TestJSONRepository_RoundTrip`; `TestNoActivities_NothingBelow` (and the unused `NoActivities`) | R4, §12, R6, R1 | `TestDeleteCampaign_ContractAndUndo` and the service tests named in the review; 30 → 22 servers |
+| seed (16.1) | `TestLoad_GlobalBudgetIDsComeFromTheCounters_FR040` merged into `TestLoad_IDsComeFromTheCounters_FR027`'s table | R4 | the merged table |
+| plans (13.2) | `TestPlansOperations_WithoutSession_FR005`; `TestListPlans_MyTeams_FR004`; `TestPlanDefaults_CurrencyType`; `TestAttentionItem_BlocksPublishNotInJSON`; `TestJSONRepository_RoundTrip`; `TestCreate_SameNameTwice_EdgeCase` (merged into `TestCreate_NameRules_FR010`) | R4, §12, R2, R6 | app's sign-in sweep; `TestList_MyTeams_FR004`; `TestDefaults_FR006`; `TestGetPlan_ViewAnd404_FR011` |
+| budgets (13.2) | — | | |
+| people (10.7) | `TestGetMe_WithoutSession_FR005`; `TestPatchPreferences_NothingSent_FR011`; `TestPatchPreferences_InvalidTheme_FR014`; `TestPatchMe_VersionConflict_FR022`; `TestPatchMe_AllProblemsAtOnce_FR022`; `TestDeactivateYourself_409NotAllowed_FR006`; `TestRestoreTeam_NameTaken_FR015`; `TestKinds_Register_FR028`; `TestJSONRepository_TeamsMembershipsPreferences`; `TestRefs_PersonAndTeam` | R4, §12, R1, R6 | the auth and people service tests named in the review; 36 → 29 servers |
+| access (9.7) | `TestListPermissions_TableA_FR001` (its literal group sizes into the service test); `TestListPeopleAccess_FR017`; `TestStore_RolesAssignmentsRules_FR001` (its empty-store defaults into `TestUpdateRules_FirstSaveFromDefaults_FR019`) | §12, R6 | `TestPermissions_GroupedAsTableA_FR001`; `TestListPeopleAccess_EveryoneWithRoles_FR017` |
+| lineitems (9.1) | `TestJSONRepository_RoundTrip`; `TestListActivityLineItems_PlanCurrency_Contract_FR015` (its display figures into `TestBalance_PlanCurrency_FR015` first); two dead lines in `TestSpread_EvenlyRemainderLast_FR017_SC002` | R6, §12 | the service tests named in the review |
+| rollup, platform | rollup `TestPhasing_None`'s literal line; date `TestCompareAndToday_D091`'s getter lines; authz `TestCatalogue_TableA_FR001`'s copied counts; web `TestRespondError_FieldsAlwaysPresent_FR020`; store `TestGetAndList_ReturnCopies` | R1, R2, R4 | errs `TestError_FieldsEncodeAsEmptyList_FR020`; the rest are the language or the standard library |
+
+Kept despite doubt (the full lists go into the phase-2 commits): every handler test that is the only
+contract-checked 4xx of its operation, even when it repeats a service rule; every scope-isolation
+test (`store_postgres_test.go`); the cross-package acceptance tests (people's sign-in after create,
+deactivate and reactivate; budgets' plan delete and restore; access's hooks on team delete and new
+people); home's SC-002 sweeps.
+
+### Found by the review, outside 027
+
+- Test files over 400 non-blank lines, which must be split when phase 2 changes them: lineitems
+  `service_test.go` 1,165, budgets `service_test.go` 662, allwork `fixture_test.go` 517, home
+  `handler_test.go` 483, home `service_test.go` 428.
+- No fuzz test exists in the backend, although B9 requires one for the GSAP importers (financials' CSV
+  feed, settings' rate file and option import).
+- 004 FR-032 and 005 FR-031 ("no role checks") are superseded by D-223; their tests only show that a
+  context without grants is not refused — for the spec owner to decide.
+- Dead code: campaigns `NoActivities`, access `AssignmentsOfPerson`.
