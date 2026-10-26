@@ -1,10 +1,7 @@
 /**
- * The activity form's values and rules (006 plan, "Activity form page"): what a new or an edited
- * activity starts with, the client checks that repeat the server's rules for instant feedback
- * (all problems at once, the messages-table texts), the changes that restart approval, and the
- * request bodies. The API stays the judge: it checks everything again on save.
+ * The activity form's values (006 plan, "Activity form page"): what a new or an edited activity
+ * starts with, the changes that restart approval and the request bodies; schemas.ts checks them.
  */
-import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import {
   formatAmount,
@@ -15,6 +12,17 @@ import {
 } from '@/format/decimal';
 import type { Activity, ActivityCreate, ActivityFormData, ActivityUpdate, Money } from './api';
 import { EMPTY } from './activity-text';
+
+/**
+ * The edited activity as it is stored: its status and saved ongoing decide the locks; its Shell
+ * attribute values show which dependent values saving would clear.
+ */
+export interface StoredActivity {
+  id: string;
+  status: Activity['status'];
+  ongoing: boolean;
+  attributes: AttributeValues;
+}
 
 /** The goals as typed: INQ, and MQL and revenue only while Set later stages myself is on. */
 export interface GoalsState {
@@ -42,19 +50,6 @@ export interface FormState {
   attributes: AttributeValues;
   goals: GoalsState;
 }
-
-/** The longest names the API takes. */
-const NAME_LIMIT = 120;
-const DESCRIPTION_LIMIT = 2000;
-
-const ENTER_NAME = 'Enter a name.';
-const NAME_TOO_LONG = 'Use 120 characters or fewer.';
-const DESCRIPTION_TOO_LONG = 'Use 2,000 characters or fewer.';
-const CHOOSE_TYPE = 'Choose an activity type.';
-const ENTER_AMOUNT = 'Enter an amount, such as 12,500.00.';
-const COST_NEGATIVE = "Planned cost can't be negative.";
-const REVENUE_NEGATIVE = "Revenue can't be negative.";
-const WHOLE_NUMBER = 'Enter a whole number of 0 or more.';
 
 export function emptyGoals(): GoalsState {
   return { inq: '', setLaterStagesMyself: false, mql: '', revenue: '' };
@@ -112,164 +107,22 @@ export function fieldId(field: string): string {
   return field.startsWith('attributes.') ? field : `field-${field}`;
 }
 
-/** Whether something was typed since the form opened. */
-export function isDirty(state: FormState, initial: FormState): boolean {
-  return JSON.stringify(state) !== JSON.stringify(initial);
-}
-
 /** Two activity names are the same name when they differ only in letter case and outer spaces. */
 export function sameName(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
-/** What validate needs besides the values. */
-export interface ValidationContext {
-  form: ActivityFormData;
-  mode: 'new' | 'edit';
-  /** The values the edit form opened with: dates are checked against the initiative only when changed. */
-  original?: FormState;
-  /** Writes a date in the person's format ("01 Mar 2026"). */
-  date: (date: string) => string;
-}
-
-/**
- * Every problem of the typed values at once, in the form's order, with the API's field names
- * (FR-006, FR-009 – FR-011, FR-018). Nothing is sent while there is one.
- */
-export function validate(state: FormState, context: ValidationContext): FieldProblem[] {
-  const { form } = context;
-  const problems: FieldProblem[] = [];
-  const add = (field: string, message: string) => problems.push({ field, message });
-
-  const name = state.name.trim();
-  if (name === '') {
-    add('name', ENTER_NAME);
-  } else if (length(name) > NAME_LIMIT) {
-    add('name', NAME_TOO_LONG);
-  } else {
-    const taken = form.existingNames.find((existing) => sameName(existing, name));
-    if (taken !== undefined) {
-      add('name', `'${form.context.initiative.name}' already has an activity called '${taken}'.`);
-    }
-  }
-  if (length(state.externalName.trim()) > NAME_LIMIT) {
-    add('externalName', NAME_TOO_LONG);
-  }
-  if (state.activityTypeId === '') {
-    add('activityTypeId', CHOOSE_TYPE);
-  }
-
-  for (const problem of dateProblems(state, context)) {
-    problems.push(problem);
-  }
-
-  const cost = moneyProblem(state.plannedCost, COST_NEGATIVE);
-  if (cost) {
-    add('plannedCost', cost);
-  }
-
-  const { goals } = state;
-  if (!isWholeOrEmpty(goals.inq)) {
-    add('goals.inq', WHOLE_NUMBER);
-  }
-  if (goals.setLaterStagesMyself) {
-    if (!isWholeOrEmpty(goals.mql)) {
-      add('goals.mql', WHOLE_NUMBER);
-    }
-    const revenue = moneyProblem(goals.revenue, REVENUE_NEGATIVE);
-    if (revenue) {
-      add('goals.revenue', revenue);
-    }
-  }
-
-  if (length(state.description) > DESCRIPTION_LIMIT) {
-    add('description', DESCRIPTION_TOO_LONG);
-  }
-  return problems;
-}
-
 /** The end date as it is saved: none while ongoing. */
-function endOf(state: FormState): string {
+export function endOf(state: FormState): string {
   return state.ongoing ? '' : state.endDate;
 }
 
-/** The date rules of FR-009 and FR-010 (server: checkDates). */
-function dateProblems(state: FormState, context: ValidationContext): FieldProblem[] {
-  const { form, mode, original, date } = context;
-  const problems: FieldProblem[] = [];
-  const start = state.startDate;
-  const end = endOf(state);
-
-  if (start && end && end < start) {
-    problems.push({
-      field: 'endDate',
-      message: `End date must be on or after the start date (${date(start)}).`,
-    });
-  }
-
-  // Saved dates are checked against the initiative only when they change: the initiative's own
-  // dates may have moved since (edge case), and other edits must still save.
-  const changed =
-    mode === 'new' ||
-    !original ||
-    start !== original.startDate ||
-    end !== endOf(original) ||
-    state.ongoing !== original.ongoing;
-  if (!changed) {
-    return problems;
-  }
-
-  const { initiative, latestEndDate } = form.context;
-  if (initiative.startDate && initiative.endDate) {
-    const message = `Dates must be inside the initiative's dates (${date(initiative.startDate)} – ${date(initiative.endDate)}).`;
-    const outside = (day: string) => day < initiative.startDate! || day > initiative.endDate!;
-    if (start && outside(start)) {
-      problems.push({ field: 'startDate', message });
-    }
-    if (end && outside(end)) {
-      problems.push({ field: 'endDate', message });
-    }
-  }
-  if (end && end > latestEndDate) {
-    problems.push({
-      field: 'endDate',
-      message: `The end date can't be after ${date(latestEndDate)} — 10 years after the plan's year.`,
-    });
-  }
-  return problems;
-}
-
-/** The problem of a typed amount that must be 0 or more, or undefined when it is fine or empty. */
-function moneyProblem(text: string, negative: string): string | undefined {
-  if (text.trim() === '') {
-    return undefined;
-  }
-  const parsed = parseMoneyInput(text);
-  if (!parsed) {
-    return ENTER_AMOUNT;
-  }
-  return parsed.amount.startsWith('-') ? negative : undefined;
-}
-
-function isWholeOrEmpty(text: string): boolean {
-  if (text.trim() === '') {
-    return true;
-  }
-  const value = parseWholeInput(text);
-  return value !== null && value >= 0n;
-}
-
-/** Characters as people count them (an emoji is one). */
-function length(text: string): number {
-  return [...text].length;
-}
-
-/** A typed amount in USD as the API takes it; null when empty. Call after validate. */
+/** A typed amount in USD as the API takes it; null when empty. Call after the checks. */
 export function usdOf(text: string): Money | null {
   return amountOf(text, 'USD');
 }
 
-/** A typed amount in a currency as the API takes it; null when empty. Call after validate. */
+/** A typed amount in a currency as the API takes it; null when empty. Call after the checks. */
 export function amountOf(text: string, currency: string): Money | null {
   const parsed = text.trim() === '' ? null : parseMoneyInput(text);
   return parsed ? { amount: parsed.amount, currency } : null;
@@ -297,7 +150,7 @@ function wholeOf(text: string): number | null {
 }
 
 /** The new activity's request body; the planned cost in the plan currency (016 FR-011). */
-export function toCreateBody(state: FormState, planCurrency = 'USD'): ActivityCreate {
+export function toCreateBody(state: FormState, planCurrency = 'USD'): Required<ActivityCreate> {
   return {
     name: state.name.trim(),
     externalName: state.externalName.trim(),
@@ -322,13 +175,13 @@ export function toUpdateBody(
   planCurrency = 'USD',
 ): ActivityUpdate {
   return {
-    ...(toCreateBody(state, planCurrency) as Required<ActivityCreate>),
+    ...toCreateBody(state, planCurrency),
     version,
     restartApproval,
   };
 }
 
-function goalsBody(goals: GoalsState): ActivityCreate['goals'] {
+function goalsBody(goals: GoalsState): Required<ActivityCreate>['goals'] {
   const typed = goals.setLaterStagesMyself;
   return {
     inq: wholeOf(goals.inq),
