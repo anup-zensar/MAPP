@@ -78,16 +78,16 @@ files ≤ 300 non-blank lines; new lines within the comment budget.
 
 ## Phase 2 (after feature 028 is merged; per-package plan in research R10)
 
-- [ ] T022 [US2] Stress tests: skip under the race detector (or move to 028's benchmarks) and run
+- [X] T022 [US2] Stress tests: skip under the race detector (or move to 028's benchmarks) and run
   them without `-race` in a CI step of their own (R7.1)
-- [ ] T023 [P] [US1] Review `internal/{access,activities,allwork,approvals,budgets,campaigns,
+- [X] T023 [P] [US1] Review `internal/{access,activities,allwork,approvals,budgets,campaigns,
   financials,history,home,lineitems,people,plans,rollup,settings}` and `seed`: handler tests that
   repeat service rules, restating and library tests (R7.4)
-- [ ] T024 [P] [US2] `t.Parallel` in those packages where tests share no state (R7.3)
-- [ ] T025 [P] [US2] `seed`: one seeded data folder per test binary (R7.5)
-- [ ] T026 [P] [US1] `internal/platform/{store,memo,money,date,authz,sheet,web,database}` review
+- [X] T024 [P] [US2] `t.Parallel` in those packages where tests share no state (R7.3)
+- [X] T025 [P] [US2] `seed`: one seeded data folder per test binary (R7.5)
+- [X] T026 [P] [US1] `internal/platform/{store,memo,money,date,authz,sheet,web,database}` review
   (R7.6); the JSON stand-in's cost goes with feature 025's fakes (R7.2)
-- [ ] T027 [US3] Re-measure and update research; coverage before and after
+- [X] T027 [US3] Re-measure and update research; coverage before and after
 
 ## Follow-ups (not 027)
 

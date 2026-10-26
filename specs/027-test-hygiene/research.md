@@ -337,3 +337,58 @@ people); home's SC-002 sweeps.
 - 004 FR-032 and 005 FR-031 ("no role checks") are superseded by D-223; their tests only show that a
   context without grants is not refused — for the spec owner to decide.
 - Dead code: campaigns `NoActivities`, access `AssignmentsOfPerson`.
+
+## R11 — After phase 2
+
+Phase 2 applied R10 to every remaining backend package (develop with 028 merged, 0aaaa61). Every
+removal or merge is named with its rule and its surviving proof in the commit of its package; each
+endpoint keeps a contract-checked handler test (checked by METHOD + path across `backend/internal`).
+
+- **Timing tests** skip under the race detector and run without it in CI's new "Timing tests" step
+  (all five under 2 s there); their limits are checked for the first time.
+- **`t.Parallel`** on every top-level test of the business packages, `seed` and the platform packages,
+  except the tests that replace the default logger (access, web: two, one of them 028's
+  `TestEngine_RequestRecordCountsTheStatementsSent_028_FR009`), store's decode counter and the timing
+  tests. Subtests that share their parent's fixture stay sequential; approvals' recipient and
+  ended-round tables now pass the subtest's `t` and run in parallel.
+- **Shared seeded folder** (`apitest.CopyDemoData`): activities' service fixture (40.0 → 15.1 s before
+  `t.Parallel`, 5.4 s with it, run alone) and seed's read-only tests (39 loads become one copy).
+  A copied folder returns Shell attribute values as the demo files hold them (indented), while a save
+  compacts them; activities' `stored` helper re-encodes them as the store's save does.
+- **Smaller data**: settings' two option-cap rules share one 4,999-option fixture
+  (`TestOptions_AtMost5000_FR031_FR018`); paging and refusals run on 60 options
+  (`TestListOptions_5000Paged_FR018` is now `TestListOptions_Paged_FR018`); the rate-file tests build one
+  fixture per test. Home's SC-002 sweeps read their comparison pages without contract checks (each page
+  has its own contract test) and compare My teams rows as a subset of Everything.
+- **Sleeps**: store's rename retry runs in a `testing/synctest` bubble (0.31 s → 0.00 s).
+  `TestStore_KeepsNoFileOpen`'s 50 ms retry stays: it runs only when Windows antivirus holds a file, and
+  a fake clock would remove the time the retry exists for; it goes with the JSON store (025).
+- **Not done**: removing the dead application code the review found (campaigns `NoActivities`, access
+  `AssignmentsOfPerson`) — phase 2 changed test files only; files already over 300 or 400 lines grew by
+  their `t.Parallel` lines (no split, as agreed for files older than constitution 2.0).
+
+| Package | develop (s) | phase 2 (s) | Tests | Coverage |
+|---|---:|---:|---|---|
+| internal/history | 70.1 | 15.6 | 97 → 93 | 83.1 → 82.9 |
+| internal/activities | 47.1 | 14.3 | 98 → 95 | 79.2 → 79.2 |
+| internal/approvals | 45.2 | 24.7 | 138 → 125 | 83.8 → 83.8 |
+| internal/campaigns | 30.4 | 23.0 | 114 → 103 | 82.3 → 82.2 |
+| internal/allwork | 30.1 | 9.1 | 116 → 111 | 91.6 → 91.6 |
+| internal/settings | 25.6 | 13.1 | 211 → 207 | 82.5 → 82.5 |
+| internal/home | 22.4 | 11.1 | 36 → 35 | 90.6 → 90.6 |
+| seed | 19.7 | 9.1 | 43 → 42 | 81.1 → 81.1 |
+| internal/budgets | 18.0 | 14.4 | 35 → 35 | 82.4 → 82.4 |
+| internal/financials | 17.7 | 12.9 | 63 → 62 | 89.4 → 89.3 |
+| internal/plans | 13.7 | 8.8 | 112 → 106 | 87.0 → 86.5 |
+| internal/people | 13.5 | 6.7 | 123 → 113 | 80.3 → 80.1 |
+| internal/access | 13.2 | 9.3 | 40 → 37 | 80.6 → 79.9 |
+| internal/lineitems | 13.0 | 8.6 | 90 → 88 | 81.8 → 81.8 |
+| **All 41 packages** | **441 summed, 122 s wall** | **253 summed, 87 s wall** | **1,595 → 1,529** (subtests 509 → 511) | **77.9% → 77.8%** |
+
+Both columns were run back to back on the laptop at load 8 with CI's flags (`-race -covermode=atomic
+-coverprofile`); app, auth and samples, untouched in phase 2, vary by ±7 s with the load. Every function
+whose coverage fell was reached only by a removed test: dead code (access `AssignmentsOfPerson`,
+campaigns `NoActivities`' two stubs), the JSON stand-in's `PlansOfYear` and `ListPreferences` (round-trip
+tests, R6), date's three getters (R1), and the error branch of four handlers whose 4xx repeated a
+service rule (approvals `createWorkflow`, history `emptyBin`, people `updateProfile`, financials
+`ParseQuery`'s one refusal) — each rule is still proven by its service test.
