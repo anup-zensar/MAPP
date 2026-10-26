@@ -34,16 +34,17 @@ installed without saving, bundle sizes from `vite build` (gzip level 9, KiB).
 |---|---|---|
 | `components/<Name>/` | `ui/<Name>/` | one folder per component, imported as `@/ui/<Name>/<Name>` (no barrel, R4) |
 | `styles/tokens.css`, `styles/global.css` | `ui/tokens.css`, `ui/global.css` | F6: tokens live in `ui/`; imported once by `app/App.tsx`, so `main.tsx` only mounts `<App />` |
-| `lib/decimal.ts`, `lib/format.ts`, `lib/text.ts`, `lib/useFormatters.ts` | `format/money.ts`, `format/dates.ts`, `format/text.ts`, `format/useFormatters.ts` | `format/format.ts` would stutter |
+| `lib/decimal.ts`, `lib/format.ts`, `lib/text.ts`, `lib/useFormatters.ts` | `format/decimal.ts`, `format/intl.ts`, `format/text.ts`, `format/useFormatters.ts` | `format/format.ts` would stutter; `intl.ts` formats dates, times and money with `Intl`, `decimal.ts` reads and writes exact decimals |
 | `lib/cx.ts`, `lib/usePageTitle.ts`, `lib/useUndoableDelete.ts`, `lib/useUnsavedChanges.tsx`, `lib/recordLinks.ts` | `ui/` (`record-links.ts`) | interface helpers used by every feature; a record link holds no data access |
 | `lib/access.ts`, `lib/safeNext.ts`, `features/plans/gateAction.ts` | `session/access.ts`, `session/safe-next.ts`, `session/gate-action.ts` | the signed-in person's permissions and return address |
-| `app/SessionProvider.tsx`, `useSession.ts`, `RequireSignIn.tsx`, `RequirePermission.tsx`, `SessionCheckPage.tsx` | `session/` | F2: the signed-in person and route guards |
+| `app/SessionProvider.tsx`, `useSession.ts`, `RequireSignIn.tsx`, `RequirePermission.tsx`, `SessionCheckPage.tsx` | `session/` (with `api.ts` for the session's requests and `page-handle.ts`) | F2: the signed-in person and route guards; `RequireSignIn` now draws the layout it is given, so it needs nothing from `app/` |
+| `app/theme.ts`, `useTheme.ts`, `ThemeToggle.tsx` | `ui/` | the session applies the theme, and `session/` may not import `app/` |
 | `app/PublicLayout.tsx` | `ui/PublicLayout/` | the sign-in page uses it; a feature may not import `app/` |
 | `lib/download.ts` | `api/download.ts` | wraps the client for file answers |
 | `lib/waterfall.ts` | `features/settings/models/waterfall.ts` | the models' goal formula; plans and activities use it through `@/features/settings` |
 | `api/schema.d.ts` | `api/generated/schema.d.ts` | scripts `api:types`/`api:check`, ESLint ignore, coverage exclude follow |
 | `api/settingsQueries.ts` | `features/settings/api.ts` | query hooks belong to a feature |
-| `test/*`, `features/settings/shared/axeCheck.ts`, fixtures shared by several features | `testing/` | `testing/` may import anything (it renders the whole app); nothing outside tests may import it |
+| `test/*`, `features/settings/shared/axeCheck.ts`, every `testData.ts` | `testing/`, fixtures in `testing/fixtures/<feature>.ts` | `testing/` may import anything (it renders the whole app); nothing outside tests may import it. Fixtures of one feature are used by others' tests too, which may not reach into another feature |
 | `features/settings/shared/` | `ui/` (`ListToolbar`, `SettingsCount`, `useListFilters`, `useStatusFlow`, `useCloseAfterSave`) and `features/settings/` (the rest) | `shared` is a forbidden name; the five are used by four features |
 | `features/<name>/<x>Api.ts` | `features/<name>/api.ts` (a second resource: `<resource>-api.ts`) | F2 names; F9 kebab-case |
 
@@ -100,10 +101,12 @@ notifications, recycle-bin, dev, placeholders, sign-in). 20 feature folders beco
   outside `src/api/`), `@typescript-eslint/no-non-null-assertion`,
   `@typescript-eslint/consistent-type-assertions` (`assertionStyle: never`; `as const` stays
   allowed), plus the existing `no-explicit-any` and `ban-ts-comment` of the recommended set.
-- **Decision**: `eslint-plugin-jsx-a11y` 6.10.2, recommended config, named by F1. Its peer range
-  stops at ESLint 9; with an npm `overrides` entry (`"eslint-plugin-jsx-a11y": { "eslint": "$eslint" }`)
-  it installs, and it runs on ESLint 10.13 with the same 48 findings as the maintained fork
-  `eslint-plugin-jsx-a11y-x` 0.2.0. Fallback if it breaks on a later ESLint: the fork, with an ADR.
+- **Decision** (technical lead, 2026-10-26): `eslint-plugin-jsx-a11y-x` 0.2.0, the maintained fork
+  that supports ESLint 10, recommended config. The original 6.10.2 stops at ESLint 9 and needs an
+  npm `overrides` entry; both give the same 48 findings on today's code. Three rule options keep
+  deliberate patterns: `role="list"` on lists (Safari drops the role of a list without bullets),
+  focusable scrolling regions and groups (WCAG 2.1.1), and labels with their text three levels
+  down; the few other exceptions carry an `eslint-disable-next-line` with the reason.
 - **Alternatives**: `eslint-plugin-boundaries` 7.3.0 (no cycle rule, more configuration);
   `no-restricted-imports` alone (matches import text, not resolved paths; no cycles).
 
@@ -142,12 +145,18 @@ notifications, recycle-bin, dev, placeholders, sign-in). 20 feature folders beco
 
 ## R9 — Mock Service Worker
 
-- **Decision**: `testing/server.ts` starts MSW's `setupServer` once in the test setup with
-  `onUnhandledRequest` collecting the request, so the test fails afterwards, as today. First,
-  `mockApi()` is rebuilt on MSW with the same signature (all 121 files stay as they are); then each
-  feature's tests move to handlers typed by `openapi-msw` (`createOpenApiHttp<paths>()`), so a
-  response body that no longer matches the contract fails the type check (F5); then `mockApi` is
-  deleted.
+- **Decision**: `testing/mock-api.ts` runs MSW's `setupServer`; `mockApi([...handlers])` installs a
+  test's answers (a later one wins), records every request, and a last-resort handler answers 501
+  and fails the test afterwards, as before. Answers are written `reply('GET /api/v1/plans/{planId}',
+  { body: plan }, { planId: 'P-1004' })` (`testing/replies.ts`): the key is an operation of the
+  contract and the body is typed with `openapi-msw`'s `ResponseBodyFor`, so a body that no longer
+  matches the contract fails the type check (F5). A codemod turned the 1,198 answers of the old
+  string-keyed maps into `reply` calls; files whose bodies did not fit the contract yet used a
+  temporary `looseReply` until their feature was aligned.
+- **Decision**: MSW answers a request a few ticks after `fetch`, when the next test may have begun;
+  each request is marked with the test that sent it (a header) and a leftover request of a
+  finished test fails as a network error instead of being answered or recorded by the next one.
+- **Decision**: router state (the sign-in notice) is outside data too and is parsed with Zod.
 - **Decision**: the 18 `vi.mock` calls are replaced by network answers for the data those modules
   load (F10).
 - **Alternatives**: typing `mockApi`'s string keys by hand from `paths` (complex template-literal
@@ -192,11 +201,11 @@ Every version was published more than 24 hours before 2026-10-26 (constitution V
 | `msw` | 3.0.3 (2026-10-10) | MIT | dev | network mocking in tests (F1, F10); Node ≥ 22.12, TypeScript ≥ 5.9; no install script |
 | `openapi-msw` | 2.1.0 (2026-09-30) | MIT | dev | MSW handlers typed from `paths` (F5); no dependencies |
 | `fast-check` | 4.10.2 (2026-09-19) | MIT | dev | property tests of parsers (F10) |
-| `eslint-plugin-jsx-a11y` | 6.10.2 (2024-10-26) | MIT | dev | accessibility lint (F1, F6); last release two years old, needs the `overrides` entry of R5 |
+| `eslint-plugin-jsx-a11y-x` | 0.2.0 (2026-05-10) | MIT | dev | accessibility lint (F1, F6); the maintained fork of `eslint-plugin-jsx-a11y` with ESLint 9 and 10 support (R5) |
 | `eslint-plugin-import-x` | 4.17.1 (2026-06-28) | MIT | dev | boundaries, cycles, import order (F2, F9); its `unrs-resolver` runs a postinstall check for its native binding and also works with `--ignore-scripts` (verified) |
 | `axe-core` | 4.14.0 (2026-10-05) | MPL-2.0 | dev | declares what the test helper already imports; same version `@axe-core/playwright` pins |
 
-Not added: `eslint-import-resolver-typescript` (not needed, R5), `eslint-plugin-boundaries` (R5),
+Not added: `eslint-plugin-jsx-a11y` 6.10.2 (R5), `eslint-import-resolver-typescript` (not needed, R5), `eslint-plugin-boundaries` (R5),
 `vitest-axe` 0.1.0 (last release 2022; component axe checks are 027's).
 
 ## R12 — Working alongside 020, 021, 022 and 027

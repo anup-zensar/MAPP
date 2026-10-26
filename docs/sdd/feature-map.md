@@ -35,7 +35,7 @@ In progress · Built (merged on `plan-module` and working on the demo data; the 
 | 023 | — | PostgreSQL storage: pgx, sqlc and goose replace the JSON file store | P1 | 022 | Planned |
 | 024 | [024-gin-transport](../../specs/024-gin-transport/spec.md) | Gin transport, middleware and OpenTelemetry | P2 | 022 | In progress |
 | 025 | — | Backend layout: singular packages, `internal/platform/database`, files within 300 lines | P2 | 023, 024 | Planned |
-| 026 | — | Web-app structure: constitution F2 folders, React Hook Form + Zod, MSW, per-route splitting | P2 | 019 | Planned |
+| 026 | [026-web-app-structure](../../specs/026-web-app-structure/spec.md) | Web-app structure: constitution F2 folders, React Hook Form + Zod, MSW, per-route splitting | P2 | 019, 020, 022 | Done |
 | 027 | — | Test hygiene: drop tests that prove nothing; coverage threshold once SonarQube exists | P3 | 019 | Planned |
 
 ## Scope boundaries

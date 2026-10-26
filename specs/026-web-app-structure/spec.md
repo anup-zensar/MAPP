@@ -29,8 +29,8 @@ has one public entry, `index.ts`, that says in one line what the feature does. W
 another feature's internals, import a feature into a design-system component, or create an import
 cycle, `npm run lint` tells me before review does.
 
-Anup needs the date formatter. He looks in `src/format/`, finds `dates.ts`, and imports it with
-`@/format/dates`. Later he imports `PlanForm` straight from `@/features/plans/PlanForm` into the
+Anup needs the date formatter. He looks in `src/format/`, finds `intl.ts`, and imports it with
+`@/format/intl`. Later he imports `PlanForm` straight from `@/features/plans/PlanForm` into the
 activities feature; lint fails with "import another feature through its index.ts".
 
 **Why this priority**: every later change and every other story builds on the layout and its
@@ -185,7 +185,8 @@ types, and check that `npm run typecheck` names the handlers and screens that us
 - **FR-009**: `any`, non-null assertions and type assertions MUST NOT appear, except `as const` and
   the single response-typing line of the API client (with a lint directive and reason). Lint MUST
   enforce it.
-- **FR-010**: Lint MUST include the `eslint-plugin-jsx-a11y` recommended rules, with no finding.
+- **FR-010**: Lint MUST include the recommended accessibility rules of `eslint-plugin-jsx-a11y-x`
+  (the maintained fork of `eslint-plugin-jsx-a11y`), with no finding.
 - **FR-011**: Component tests MUST mock the network with MSW, through handlers typed with the
   generated API types; a request without a handler MUST fail the test; no test may mock a project
   module. Test-only code (`testing/`, `msw`) MUST NOT be imported by application code.

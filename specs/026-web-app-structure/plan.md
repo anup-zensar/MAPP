@@ -27,7 +27,7 @@ Measurements and decisions: [research.md](research.md) R1–R12.
 
 **Testing**: Vitest 5 + Testing Library; added `msw` 3.0.3, `openapi-msw` 2.1.0, `fast-check`
 4.10.2, `axe-core` 4.14.0 (declared); Playwright 1.64 unchanged. Lint adds `eslint-plugin-import-x`
-4.17.1 and `eslint-plugin-jsx-a11y` 6.10.2
+4.17.1 and `eslint-plugin-jsx-a11y-x` 0.2.0
 
 **Target Platform**: the browsers in `browserslist`
 
@@ -87,7 +87,7 @@ No new trust boundary, origin, storage or network call: chunks come from the app
 | A form behaves slightly differently | its component tests stay unchanged and must pass; validation on Save as today (R7) | Team |
 | Lazy pages make page tests asynchronous | tests wait with `findBy…`; `renderApp` waits for the route | Team |
 | MSW 3 misbehaves under jsdom | the first MSW task keeps `mockApi`'s signature; if MSW fails there, stop and record before migrating tests | Team |
-| `jsx-a11y` stops working on a later ESLint (peer range ends at 9) | `overrides` entry; fallback to `eslint-plugin-jsx-a11y-x` by ADR (R5) | Technical lead |
+| The `jsx-a11y` fork falls behind ESLint | it supports ESLint 9 and 10 today; the original plugin is the fallback (R5) | Technical lead |
 | A large move hides a mistake | `git mv` plus a codemod; type check, lint, unit and e2e tests per increment; review with `git diff -M` | Reviewer |
 
 ## Project Structure
