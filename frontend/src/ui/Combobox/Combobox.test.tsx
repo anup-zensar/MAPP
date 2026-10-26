@@ -141,7 +141,9 @@ describe('Combobox', () => {
 
     await user.click(combobox());
 
-    expect(screen.getAllByRole('option')).toHaveLength(300);
+    // hidden: true skips the accessibility-tree walk per option, which is slow for 300 of them.
+    const list = screen.getByRole('listbox', { name: 'Fruit' });
+    expect(within(list).getAllByRole('option', { hidden: true })).toHaveLength(300);
     expect(screen.getByRole('status')).toHaveTextContent('300 fruits');
   });
 
