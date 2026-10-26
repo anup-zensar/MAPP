@@ -106,7 +106,7 @@ branch (all refused), and a pull request from a badly named branch (flagged).
 
 **Acceptance Scenarios**:
 
-1. **Given** the protection settings applied, **When** anyone (administrators included) pushes
+1. **Given** the branch rules applied, **When** anyone (administrators included) pushes
    directly to `main`, `release` or `develop`, **Then** the push is refused.
 2. **Given** a pull request into a protected branch, **When** it has no approval from someone other
    than its author, or any required check is red, **Then** it cannot be merged.
@@ -166,13 +166,14 @@ branch name.
   type check, lint with warnings counted as failures, the generated-API-types drift check, unit and
   component tests with branch coverage reported as LCOV, the production build, and the end-to-end
   tests against the real API with the seed data.
-- **FR-004**: Every gate of FR-002, FR-003, FR-006, FR-007 and FR-011 MUST be able to block a merge:
+- **FR-004**: Every gate of FR-002, FR-003, FR-006, FR-007, FR-011, FR-017, FR-018 and FR-020 MUST be
+  able to block a merge:
   each reports its own pass or fail, and a gate that cannot run counts as failed.
 - **FR-005**: Each run MUST publish its test results and coverage reports (Go coverage profile,
   frontend LCOV) so that a reviewer can open them from the pull request, kept for at least 30 days.
 - **FR-006**: A comment check MUST fail when a hand-written source file (Go, TypeScript, TSX, CSS,
   SQL; tests included) has more comment lines than 5% of its non-blank lines, rounded up. Blank
-  lines, tool directives (`//go:`, `//nolint`, `eslint-disable`, `prettier-ignore`,
+  lines, tool directives (`//go:`, `//nolint`, `eslint-disable`, `eslint-enable`, `prettier-ignore`,
   `@ts-expect-error`, `/// <reference>`, goose and sqlc annotations) and generated files do not
   count. The failure names the file, its comment lines and its budget.
 - **FR-007**: A size check MUST count each hand-written source file's non-blank lines and fail at
@@ -196,16 +197,33 @@ branch name.
   `feature/NNN-short-name`, with the same number as the spec folder.
 - **FR-013**: A `release` branch MUST exist, created from `main` if missing, so that it can be
   protected.
-- **FR-014**: The protection settings for `main`, `release` and `develop` MUST be written down in
+- **FR-014**: The branch rules (ruleset) for `main`, `release` and `develop` MUST be written down in
   the repository, together with a command a repository administrator runs to apply them: no direct
   pushes or force pushes for anyone (administrators included), no deletion, a pull request with at
   least one approval from someone other than the author, approvals dismissed by new commits, and
   every check of FR-004 required.
 - **FR-015**: The developer documentation MUST say how to run every gate locally, how to record a
-  size exception, how the baseline works, and how to apply the protection settings.
+  size exception, how the baseline works, and how to apply the branch rules (ruleset).
 - **FR-016**: This feature MUST NOT change application behaviour: no change to the API, the
   screens, the stored data or the seed data. A gate that today's code fails is fixed with the
   smallest change that keeps behaviour, or the gap is recorded with its reason.
+- **FR-017**: The pipeline MUST run, as separate named checks, the security gates the repository can
+  run without organisation-level setup: a review of the dependencies a pull request adds or
+  changes, and the audit of the web app's production dependencies. Each fails on a high or
+  critical finding.
+- **FR-018**: The production build MUST fail when the JavaScript the first page loads, measured
+  gzipped, exceeds the budget recorded in the repository. The budget starts at today's size plus a
+  small margin and is lowered as the web app is split per route.
+- **FR-019**: An architecture decision record MUST record the pipeline, the branch rules and the
+  size and comment checks, and the deviations the product owner agreed on 2026-10-26: static code
+  scanning (SAST, gate 16) waits for SonarQube — GitHub code scanning is not used; SonarQube,
+  Apiiro and Mend wait for organisation setup; secret scanning is switched on by a repository
+  administrator; the 80% new-code coverage threshold is enforced once SonarQube is available.
+- **FR-020**: No package version younger than 24 hours MAY be installed or added (constitution
+  VII). The web app's npm settings MUST refuse to install a version published less than one day
+  ago, and a dependency-age check MUST fail a pull request that adds or changes an npm package or a
+  Go module to a version published less than 24 hours before the check runs, naming the package,
+  the version and its publication time.
 
 ### Key Entities
 
@@ -215,7 +233,9 @@ branch name.
   limit it exceeds (size or comments) and its recorded count.
 - **Size exception**: a file allowed into the 301–400 band — its path, its count and the written
   reason.
-- **Branch rule**: a protected branch with its allowed source branches and protection settings.
+- **Branch rule**: a protected branch with its allowed source branches and its rules in the
+  ruleset.
+- **JavaScript budget**: the gzipped size the first page's JavaScript may reach.
 
 ## Success Criteria *(mandatory)*
 
@@ -229,26 +249,32 @@ branch name.
   budget reaches `develop`, and no baseline entry grows.
 - **SC-004**: A developer runs the size and comment checks locally in under 30 seconds, with the
   same verdict as the pipeline in 100% of cases.
-- **SC-005**: Once an administrator applies the settings, 100% of direct pushes to `main`,
+- **SC-005**: Once an administrator applies the branch rules, 100% of direct pushes to `main`,
   `release` and `develop` are refused, and no pull request merges without an approval from someone
   other than its author.
+- **SC-006**: No pull request merges with a high or critical finding from the dependency review or
+  the production dependency audit, or with a first-page JavaScript size over its budget.
+- **SC-007**: No package version published less than 24 hours earlier reaches `develop`.
 
 ## Assumptions
 
 - The repository runs on GitHub with GitHub Actions minutes available; the pipeline uses only
   GitHub-hosted runners.
 - The account used for this work has push rights but not administrator rights on the repository,
-  so the protection settings are applied by a repository administrator using the documented
-  command (FR-014).
+  so the branch rules are applied by a repository administrator using the documented command
+  (FR-014).
 - At least two people have write access, so a pull request can be approved by someone other than
   its author.
-- Today's checks pass locally on `develop` (`go vet`, `go test`, `npm run check`, the end-to-end
-  tests), as the rename commit D-319 reported; the pipeline starts from that state.
+- Today's code is made to pass every gate first (research R1 found 1 Go, 2 frontend and 6
+  end-to-end tests failing on `develop`, all fixed without behaviour change, FR-016).
 - The 80% new-code coverage threshold (constitution, Principle VI) is enforced once SonarQube is
-  set up; until then the coverage reports are published and reviewers check them.
+  set up (FR-019, ADR-0010); until then the coverage reports are published and reviewers check
+  them.
 - The storage still uses the JSON file store, so the pipeline needs no database yet; the
   PostgreSQL feature adds a PostgreSQL service to the pipeline.
-- Out of scope, recorded as follow-ups: SonarQube, GitHub Advanced Security, Apiiro and Mend
-  (quality gates 15–18), which need organisation-level setup; the stack moves (PostgreSQL, Gin,
-  `/api/v1`); the Shell palette; pruning existing comments and splitting existing long files;
-  restructuring the frontend.
+- The repository is public, so the dependency review and secret scanning are available without
+  organisation setup; SonarQube, Apiiro and Mend are not. The product owner chose not to use GitHub
+  code scanning (FR-019).
+- Out of scope: the stack moves (PostgreSQL, Gin, `/api/v1`); the Shell palette; pruning existing
+  comments and splitting existing long files; restructuring the frontend and splitting it per
+  route.

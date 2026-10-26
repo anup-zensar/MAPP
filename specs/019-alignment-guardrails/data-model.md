@@ -1,6 +1,6 @@
 # Data Model: Alignment Guardrails (019)
 
-No application data changes. This feature adds four kinds of repository records, kept as committed
+No application data changes. This feature adds six kinds of repository records, kept as committed
 files so every change to them is reviewed in a pull request.
 
 ## Baseline entry — `quality/baseline.json`
@@ -37,7 +37,7 @@ A file allowed into the "Needs justification" band (301–400 non-blank lines) (
 
 | Field | Value |
 |---|---|
-| Name | One of the 14 job names in [contracts/ci-checks.md](contracts/ci-checks.md) |
+| Name | One of the 17 job names in [contracts/ci-checks.md](contracts/ci-checks.md) |
 | Command | The command the job runs (same as the local command) |
 | Branches | Pull requests into, and pushes to, `main`, `release`, `develop` |
 | Blocking | Yes, through the ruleset's required status checks |
@@ -48,5 +48,17 @@ A file allowed into the "Needs justification" band (301–400 non-blank lines) (
 |---|---|
 | Branches | `main`, `release`, `develop` |
 | Bypass | None (administrators included) |
-| Rules | No deletion; no force push; pull request with 1 approval, stale approvals dismissed, last push approved by someone else; the 14 checks required |
+| Rules | No deletion; no force push; pull request with 1 approval, stale approvals dismissed, last push approved by someone else; the 17 checks required |
 | Allowed sources (checked by `branch-name`) | into `develop`: `feature/NNN-…`, `docs/…`, `fix/…`, module branches; into `release`: `develop`, `fix/…`; into `main`: `release` |
+
+## JavaScript budget — `frontend/bundle-budget.json`
+
+| Field | Type | Rule |
+|---|---|---|
+| `initialRouteGzipKiB` | integer | The gzipped KiB the scripts and module preloads referenced by `dist/index.html` may reach; `npm run build` fails above it. Starts at 400 (today 376) and is lowered, never raised without a recorded reason, as the web app is split per route |
+
+## Release age — `frontend/.npmrc`
+
+| Setting | Value | Rule |
+|---|---|---|
+| `min-release-age` | `1` (day) | npm installs only versions published at least 24 hours ago; the `dependency-age` check applies the same rule to pull requests, for npm and Go ([contracts/releaseage.md](contracts/releaseage.md)) |

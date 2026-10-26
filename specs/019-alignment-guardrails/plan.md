@@ -9,24 +9,29 @@
 A GitHub Actions workflow runs every quality gate the constitution names, one named job per gate,
 on pull requests and pushes to `main`, `release` and `develop`. A new Go command, `sourcecheck`,
 enforces the file-length limit and the comment budget, with a committed baseline that freezes
-today's oversized files so they can only shrink. Two dependency fixes make the vulnerability gate
-pass on today's code. A committed ruleset, applied by a repository administrator, makes the three
-branches pull-request only. No application behaviour changes ([research](research.md) R1–R11).
+today's oversized files so they can only shrink. GitHub's dependency review and `npm audit` run
+as checks, the build fails above a
+first-page JavaScript budget, and a `releaseage` command rejects package versions younger than 24
+hours (npm's `min-release-age=1` does the same on laptops). Two dependency fixes make the
+vulnerability gate pass on today's code. A committed ruleset, applied by a repository administrator,
+makes the three branches pull-request only, and ADR-0010 records the pipeline and the agreed
+deviations. No application behaviour changes ([research](research.md) R1–R15).
 
 ## Technical Context
 
 **Language/Version**: Go 1.27 (`toolchain go1.27.3`), TypeScript 5.9, Node 24; GitHub Actions YAML
 
 **Primary Dependencies**: GitHub Actions (`checkout`, `setup-go`, `setup-node`,
-`upload-artifact` v7; `golangci-lint-action` v9); golangci-lint v2.15.0, `goimports`
+`upload-artifact` v7; `golangci-lint-action` v9; `actions/dependency-review-action` v5); golangci-lint v2.15.0, `goimports`
 (x/tools v0.52.0), `govulncheck` v1.9.0 run as pinned tools; `@vitest/coverage-v8` 5.0.5 (new dev
-dependency, R9). `sourcecheck` uses the Go standard library only.
+dependency, R9). `sourcecheck` and `releaseage` use the Go standard library only.
 
 **Storage**: Files in the repository: `quality/baseline.json`, `quality/exceptions.json`,
-`.github/rulesets/protected-branches.json`. The application's storage is untouched.
+`frontend/bundle-budget.json`, `frontend/.npmrc`, `.github/rulesets/protected-branches.json`. The application's storage is untouched.
 
 **Testing**: Go `testing` + `go-cmp` for `sourcecheck` (table-driven, real files in
-`t.TempDir()`); the pipeline itself is validated by the scenarios in [quickstart.md](quickstart.md).
+`t.TempDir()`) and `releaseage` (lockfile diffs, the 24-hour boundary, registries faked with
+`httptest`); the pipeline itself is validated by the scenarios in [quickstart.md](quickstart.md).
 
 **Target Platform**: GitHub-hosted `ubuntu-latest` runners; developers' macOS, Windows and Linux
 machines for the local commands.
@@ -39,7 +44,7 @@ machines for the local commands.
 **Constraints**: no secrets; `contents: read` token; no application behaviour change (FR-016);
 new code within the constitution's limits (300 lines per file, 5% comments, function metrics).
 
-**Scale/Scope**: about 1,350 source files checked (523 Go, 815 TypeScript, 207 CSS); 14 checks.
+**Scale/Scope**: about 1,350 source files checked (523 Go, 815 TypeScript, 207 CSS); 17 checks.
 
 ## Constitution Check
 
@@ -55,7 +60,12 @@ new code within the constitution's limits (300 lines per file, 5% comments, func
 | VII Security | No secrets; least-privilege token; fork pull requests run with a read-only token | Pass |
 | VIII Clean construction | New files within the comment budget and the size limit; `sourcecheck` checks itself | Pass |
 | B1 / F1 stack | No new Go module dependency; one dev dependency justified in R9; scripts `test:coverage` and `lint --max-warnings 0` per F1 | Pass |
-| B2 layout | `cmd/sourcecheck/main.go` only parses flags and calls `run`; logic in `internal/sourcecheck` | Pass |
+| B2 layout | `cmd/sourcecheck` and `cmd/releaseage` only parse flags and call `Run`; logic in `internal/sourcecheck` and `internal/releaseage` | Pass |
+| Gates 15–18 | Dependency review and `npm audit` run now; static code scanning (gate 16, until SonarQube), SonarQube, Apiiro, Mend and switching on secret scanning are deviations agreed by the product owner on 2026-10-26, recorded in ADR-0010; `gosec` in golangci-lint covers common Go security mistakes meanwhile | Pass |
+| Gates 5 and 11, coverage ≥ 80% | Reports published now; the threshold waits for SonarQube — deviation recorded in ADR-0010 | Pass |
+| Gate 12, JavaScript budget (F8) | `npm run build` fails above `frontend/bundle-budget.json` | Pass |
+| Gate 19, release age (VII) | `frontend/.npmrc` and the `dependency-age` check | Pass |
+| III ADRs | ADR-0010 records the pipeline, branch rules, checks and deviations | Pass |
 | Workflow | Feature branch from `develop`, pull request left open for review | Pass |
 | Governance → Alignment | Legacy findings handled by the baseline and by lint on changed lines only; no package migrated | Pass |
 
@@ -70,7 +80,8 @@ new code within the constitution's limits (300 lines per file, 5% comments, func
 | Repudiation: a direct push bypasses review | `main`, `release`, `develop` | Ruleset: pull request required, no bypass actors, last push must be approved by someone else |
 | Information disclosure: secrets in logs | all jobs | The workflow uses no secrets; logs contain only build and test output of public code |
 | Denial of service: a hung job blocks merges | e2e, tests | `timeout-minutes` on every job; `concurrency` cancels superseded runs |
-| Elevation of privilege: a job writes to the repository | all jobs | `permissions: contents: read` at workflow level; the lint job adds `pull-requests: read` only |
+| Elevation of privilege: a job writes to the repository | all jobs | `permissions: contents: read` at workflow level; the lint job adds `pull-requests: read` — nothing writes |
+| Tampering: a compromised package version is installed as soon as it is published | npm and Go dependencies | Release age: npm refuses versions younger than a day; `dependency-age` refuses them in pull requests |
 
 ### Risk model
 
@@ -92,8 +103,9 @@ specs/019-alignment-guardrails/
 ├── data-model.md        # baseline, exception, gate, branch rule
 ├── quickstart.md        # validation scenarios
 ├── contracts/
-│   ├── ci-checks.md     # the 14 checks, their commands and names
-│   └── sourcecheck.md   # command, flags, output, exit codes, file formats
+│   ├── ci-checks.md     # the 17 checks, their commands and names
+│   ├── sourcecheck.md   # command, flags, output, exit codes, file formats
+│   └── releaseage.md    # command, registries, output, exit codes
 └── tasks.md             # /speckit-tasks
 ```
 
@@ -108,20 +120,34 @@ quality/
 └── exceptions.json                      # files allowed into 301–400 lines, with reasons
 backend/
 ├── go.mod / go.sum                      # toolchain go1.27.3; golang.org/x/net v0.60.0 (R3)
-├── cmd/sourcecheck/main.go              # flags → sourcecheck.Run
-└── internal/sourcecheck/
-    ├── files.go                         # which files are checked; generated-file detection
-    ├── comments.go                      # comment lines for Go (go/scanner)
-    ├── lexer.go                         # comment lines for TypeScript, TSX, CSS, SQL
-    ├── limits.go                        # budgets, verdicts
-    ├── baseline.go                      # baseline and exceptions: read, compare, seed, tighten
-    ├── report.go                        # output lines and summary
-    └── *_test.go                        # rule tests on real files in t.TempDir()
+├── cmd/
+│   ├── sourcecheck/main.go              # flags → sourcecheck.Run
+│   └── releaseage/main.go               # flags → releaseage.Run
+└── internal/
+    ├── sourcecheck/
+    │   ├── files.go                     # which files are checked; generated-file detection
+    │   ├── comments.go                  # comment lines for Go (go/scanner)
+    │   ├── lexer.go                     # comment lines for TypeScript, TSX, CSS, SQL
+    │   ├── limits.go                    # budgets, verdicts
+    │   ├── baseline.go                  # baseline and exceptions: read, compare, seed, tighten
+    │   ├── report.go                    # output lines and summary
+    │   └── *_test.go                    # rule tests on real files in t.TempDir()
+    └── releaseage/
+        ├── lockfiles.go                 # versions added between two npm lockfiles or go.sum files
+        ├── registry.go                  # publication time from the npm registry or the Go proxy
+        ├── age.go                       # the 24-hour rule, output, Run
+        └── *_test.go                    # diffs, boundary, escaping; registries faked with httptest
 backend/internal/approvals/rounds_test.go  # one gofmt -s fix (R1)
 frontend/
-├── package.json                         # test:coverage, lint --max-warnings 0, browserslist
+├── .npmrc                               # min-release-age=1 (R15)
+├── bundle-budget.json                   # first-page JavaScript budget, gzipped (R13)
+├── scripts/check-bundle-budget.ts       # run by npm run build after vite build
+├── package.json                         # test:coverage, lint --max-warnings 0, browserslist, build
 ├── package-lock.json
 └── vite.config.ts                       # coverage settings for test:coverage
+docs/architecture/adr/
+├── 0010-quality-gates-and-branch-rules.md   # pipeline, branch rules, checks, deviations (R14)
+└── README.md                            # index row
 docs/sdd/
 ├── quality-gates.md                     # how to run each gate locally, exceptions, baseline, ruleset
 └── feature-map.md                       # 019 row and the alignment roadmap
