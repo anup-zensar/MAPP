@@ -61,7 +61,7 @@ export function renderWithProviders(
 }
 
 /**
- * Renders the given routes — usually the app's own, `routes` from '@/app/router' — with the same
+ * Renders the given routes — usually the app's own, `routes` from '@/app/routes' — with the same
  * providers as the app. Without `user`, the app asks GET /api/v1/me as on a real page load, so the
  * test answers it with mockApi.
  */

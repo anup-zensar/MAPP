@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import type { ReactNode } from 'react';
 import { DemoBanner } from '@/ui/DemoBanner/DemoBanner';
 import { cx } from '@/ui/cx';
 import { useCurrentUser } from '@/session/useSession';
 import styles from './AppLayout.module.css';
+import { PageLoading } from './PageLoading';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
@@ -28,7 +30,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <DemoBanner />
         {/* tabIndex -1 lets the skip link move the keyboard focus here. */}
         <main id="main" tabIndex={-1} className={styles.main}>
-          <div className={styles.content}>{children}</div>
+          <div className={styles.content}>
+            <Suspense fallback={<PageLoading />}>{children}</Suspense>
+          </div>
         </main>
         <footer className={styles.footer}>
           <p className={styles.footerText}>© MAPP — demo data</p>

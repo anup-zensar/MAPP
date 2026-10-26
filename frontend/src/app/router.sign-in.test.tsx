@@ -7,7 +7,8 @@ import type { CurrentUser } from '@/session/useSession';
 import { NO_DELEGATIONS } from '@/testing/fixtures/approvals';
 import { testUser } from '@/testing/fixtures/users';
 import { apiError, reply } from '@/testing/replies';
-import { routes } from './router';
+import '@/testing/pages';
+import { routes } from './routes';
 
 const PRIYA: CurrentUser = testUser();
 

@@ -8,7 +8,7 @@ import { ModelsPage, SettingsPage } from '@/features/settings';
 import { ACTIVITY_TYPES, MODELS } from '@/testing/fixtures/settings';
 import { reply } from '@/testing/replies';
 import { Sidebar } from './Sidebar';
-import { SETTINGS_SECTIONS } from './settings-sections';
+import { loadSettingsSections } from './settings-sections';
 
 const ALEX = {
   id: 'U-1001',
@@ -66,7 +66,7 @@ describe('Light access gating (feature 014, FR-011, FR-012)', () => {
       reply('GET /api/v1/teams', never),
       reply('GET /api/v1/approval-workflows', never),
     ]);
-    renderWithProviders(<SettingsPage sections={SETTINGS_SECTIONS} />, { user: SARA });
+    renderWithProviders(<SettingsPage sections={await loadSettingsSections()} />, { user: SARA });
 
     expect(await screen.findByRole('link', { name: 'Models' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Roles and access' })).not.toBeInTheDocument();

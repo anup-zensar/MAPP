@@ -12,7 +12,9 @@ export type {
   Role,
   RoleAssignment,
 } from './access/api';
-export { ACCESS_ROUTES } from './access/access-routes';
+export { AccessPage } from './access/AccessPage';
+export { RoleFormPage } from './access/RoleFormPage';
+export { RolePage } from './access/RolePage';
 export { PERMISSIONS } from './access/access-words';
 export { ACCESS_SETTINGS_SECTIONS } from './access/settings-sections';
 export { DISPLAY_CURRENCIES_KEY, useDisplayCurrencies, usePeople } from './api';

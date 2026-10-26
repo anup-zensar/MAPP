@@ -9,7 +9,7 @@ import { testUser } from '@/testing/fixtures/users';
 import { SettingsPage } from '@/features/settings';
 import { reply } from '@/testing/replies';
 import type { components } from '@/api/generated/schema';
-import { SETTINGS_SECTIONS } from './settings-sections';
+import { loadSettingsSections } from './settings-sections';
 
 // The real list of cards: 002's five and Field help (016), then People and Teams (003), Approval
 // workflows (008) and Roles and access (014), whose features count their own records.
@@ -89,7 +89,7 @@ describe('SettingsPage, the cards of other features (FR-001)', () => {
       reply('GET /api/v1/roles', { body: { items: ROLES, total: ROLES.length } }),
       reply('GET /api/v1/field-help', { body: FIELD_HELP_PAGE }),
     ]);
-    renderWithProviders(<SettingsPage sections={SETTINGS_SECTIONS} />, {
+    renderWithProviders(<SettingsPage sections={await loadSettingsSections()} />, {
       route: '/settings',
       user: testUser(),
     });

@@ -23,6 +23,12 @@ export default defineConfig({
   // Servers listen on this computer only (no firewall prompt) and never move to another port silently.
   server: { host: '127.0.0.1', port: 5173, strictPort: true, proxy },
   preview: { host: '127.0.0.1', port: 4173, strictPort: true, proxy },
+  build: {
+    rolldownOptions: {
+      // Each feature's code is one file named after the feature (app/pages.tsx loads them).
+      output: { chunkFileNames: (chunk) => `assets/${featureOf(chunk.facadeModuleId)}-[hash].js` },
+    },
+  },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
@@ -38,3 +44,8 @@ export default defineConfig({
     },
   },
 });
+
+/** The feature a chunk starts from (`src/features/<name>/index.ts`), or Rolldown's own name. */
+function featureOf(facadeModuleId: string | null): string {
+  return /\/src\/features\/([^/]+)\/index\.ts$/.exec(facadeModuleId ?? '')?.[1] ?? '[name]';
+}

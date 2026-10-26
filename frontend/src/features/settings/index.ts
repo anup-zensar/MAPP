@@ -4,6 +4,8 @@ export { SettingsPage } from './SettingsPage';
 export { ActivityTypesPage } from './activity-types/ActivityTypesPage';
 export { useAttributeForm, useCurrencies, useFinanceBudgets, useModels } from './api';
 export { CurrenciesPage } from './currencies/CurrenciesPage';
+export { ImportRatesPage } from './currencies/ImportRatesPage';
+export { FieldHelpPage as FieldHelpSettingsPage } from './field-help/FieldHelpPage';
 export type {
   ExchangeRatePage,
   ExchangeRateRecord,
@@ -19,7 +21,6 @@ export { waterfall } from './models/waterfall';
 export type { WaterfallModel } from './models/waterfall';
 export { SETTINGS_OWN_SECTIONS } from './sections';
 export type { SettingsSection } from './sections';
-export { SETTINGS_016_ROUTES } from './settings-routes';
 export { ShellAttributeEditorPage } from './shell-attributes/ShellAttributeEditorPage';
 export { ShellAttributePage } from './shell-attributes/ShellAttributePage';
 export { ShellAttributesPage } from './shell-attributes/ShellAttributesPage';

@@ -9,7 +9,8 @@ import { nth } from '@/testing/dom';
 import { reply } from '@/testing/replies';
 import { ENVIRONMENT_LOCAL } from '@/testing/fixtures/environment';
 import { COMING_SOON_SECTIONS, MAIN_ITEMS, MORE_ITEMS } from './navigation';
-import { routes } from './router';
+import '@/testing/pages';
+import { routes } from './routes';
 
 const PRIYA = testUser();
 

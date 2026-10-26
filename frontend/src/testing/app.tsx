@@ -1,7 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { expect } from 'vitest';
 import type { HttpHandler } from 'msw';
-import { routes } from '@/app/router';
+import './pages';
+import { routes } from '@/app/routes';
 import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from './mock-api';
 import { renderRoutes } from './render';

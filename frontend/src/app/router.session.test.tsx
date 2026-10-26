@@ -7,7 +7,8 @@ import type { CurrentUser } from '@/session/useSession';
 import { mockApi } from '@/testing/mock-api';
 import { renderRoutes } from '@/testing/render';
 import { reply } from '@/testing/replies';
-import { routes } from './router';
+import '@/testing/pages';
+import { routes } from './routes';
 
 afterEach(() => {
   localStorage.clear();

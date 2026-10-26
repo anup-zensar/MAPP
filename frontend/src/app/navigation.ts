@@ -20,9 +20,14 @@ import {
   UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { lazy } from 'react';
 import type { ComponentType } from 'react';
-import { ApprovalsNavBadge } from '@/features/approvals';
 import type { Permission } from '@/session/access';
+
+// The badge loads with the approvals code, after the frame is drawn, so it stays off the first page.
+const ApprovalsNavBadge = lazy(() =>
+  import('@/features/approvals').then((feature) => ({ default: feature.ApprovalsNavBadge })),
+);
 
 /** A page people reach from the sidebar or the account menu. */
 export interface NavItem {
