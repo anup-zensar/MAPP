@@ -76,11 +76,17 @@ Viewer role for their own teams. Details: [014 spec](specs/014-access-control/sp
 | Tool | Version | Check |
 |---|---|---|
 | Go | 1.27 | `go version` |
-| Node.js | 22.22 or later, with npm (24 LTS recommended) | `node --version` |
+| Node.js | 22.22 or later (24 LTS recommended) | `node --version` |
+| pnpm | the version in `frontend/package.json` (`packageManager`), through Corepack | `pnpm --version` |
 | PostgreSQL | 18, native install (or Docker with `docker compose up -d postgres`) | `pg_isready -h 127.0.0.1` |
 
 If `node` is not found after installing, open a new terminal; for Node.js unpacked from a zip file, add
 its folder to `PATH`.
+
+pnpm comes through Corepack, which ships with Node.js 24: run `corepack enable` once (on Windows, in a
+terminal opened as administrator). Without administrator rights, install pnpm for your user instead with
+`Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression` (PowerShell) or
+`brew install pnpm` (macOS); either way pnpm switches itself to the version `package.json` names.
 
 ## Run MAPP
 
@@ -107,12 +113,12 @@ go run ./cmd/api           # logs {"msg":"MAPP API listening","url":"http://127.
 
 ```powershell
 cd frontend
-npm install                # first time only
-npm run dev
+pnpm install               # first time only
+pnpm run dev
 ```
 
-If PowerShell says "running scripts is disabled on this system", type `npm.cmd` instead of `npm`
-(for example `npm.cmd run dev`); it does the same and needs no change to the computer's settings.
+If PowerShell says "running scripts is disabled on this system", type `pnpm.cmd` instead of `pnpm`
+(for example `pnpm.cmd run dev`); it does the same and needs no change to the computer's settings.
 
 Open <http://127.0.0.1:5173> and click a demo person, or type a demo e-mail with the password
 **`mapp`**.
@@ -122,7 +128,7 @@ program or set APP_PORT." Either stop the other program, or use another port in 
 
 ```powershell
 $env:APP_PORT = '18081'                               # API terminal, before go run ./cmd/seed and ./cmd/api
-$env:MAPP_API_URL = 'http://127.0.0.1:18081'     # web-app terminal, before npm run dev
+$env:MAPP_API_URL = 'http://127.0.0.1:18081'     # web-app terminal, before ppnpm run dev
 ```
 
 ## Run MAPP in containers (optional)
@@ -148,8 +154,8 @@ go test -short ./...       # unit and contract tests; no database needed
 go test ./...              # also the scope-isolation tests, on the PostgreSQL server of TEST_DATABASE_URL
 
 cd ../frontend
-npm run check              # API types up to date, type check, lint, format, unit and component tests
-npm run test:e2e           # browser tests; they start their own API (port 18080) and web app (port 14173)
+pnpm run check             # API types up to date, type check, lint, format, unit and component tests
+pnpm run test:e2e          # browser tests; they start their own API (port 18080) and web app (port 14173)
 ```
 
 The end-to-end tests use their own database, `mapp_e2e` (`E2E_DATABASE_URL` moves it), which the seed

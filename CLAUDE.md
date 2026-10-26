@@ -1,6 +1,6 @@
 # CLAUDE.md — guidance for AI agents working on MAPP
 
-Read this with `.specify/memory/constitution.md` (the rules, version 4.2) before doing anything. Where
+Read this with `.specify/memory/constitution.md` (the rules, version 4.3) before doing anything. Where
 this file and the constitution disagree, the constitution wins and this file is corrected. Working in
 `backend/`? `backend/CLAUDE.md` loads the Go standards (`backend/docs/GO_STANDARDS.md`).
 
@@ -77,8 +77,8 @@ Software Design & Construction Policy and SEMS, which are mandatory.
     files follow the constitution in full.
 16. **File length** (constitution V): at most 300 non-blank lines per source file, tests included; 301–400
     needs a written justification; 401+ is never merged. Split by responsibility.
-17. **Release age** (constitution VII): npm installs only versions published at least a day ago
-    (`frontend/.npmrc`, npm 11.10+). Before adding or upgrading a Go module, check its version was
+17. **Release age** (constitution VII): pnpm installs only versions published at least a day ago
+    (`minimumReleaseAge` in `frontend/pnpm-workspace.yaml`, pnpm pinned by `packageManager`). Before adding or upgrading a Go module, check its version was
     published more than 24 hours ago (`https://proxy.golang.org/<module>/@v/<version>.info`).
 
 ## Key documents
@@ -133,8 +133,8 @@ Software Design & Construction Policy and SEMS, which are mandatory.
 - **Commands**: `docker compose up -d postgres` (only if you run PostgreSQL in Docker); backend
   `golangci-lint fmt ./...`, `golangci-lint run ./...`, `sqlc generate && sqlc vet`, `go test -race ./...`
   (`-short` skips the database tests), `govulncheck ./...`, `go run ./cmd/seed`, `go run ./cmd/api`; frontend
-  `npm run dev`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test:coverage`,
-  `npm run test:e2e`, `npm run api:types` after changing the contract.
+  `pnpm run dev`, `pnpm run typecheck`, `pnpm run lint`, `pnpm run format:check`, `pnpm run test:coverage`,
+  `pnpm run test:e2e`, `pnpm run api:types` after changing the contract.
 
 ### Current code (until aligned)
 
@@ -158,7 +158,7 @@ Fixed by feature 001 (`specs/001-app-shell-and-sign-in/research.md` explains eac
   answers typed from the contract (`reply()` in `src/testing/replies.ts`), `fast-check`, pages loaded
   per feature (`src/app/pages.tsx`); component axe checks still use `src/testing/axe.ts` (027).
 - **Commands**: backend `go run ./cmd/seed`, `go run ./cmd/api`, `go vet ./...`, `go test ./...`;
-  frontend `npm run dev`, `npm run check`, `npm run test:e2e`, `npm run api:types`.
+  frontend `pnpm run dev`, `pnpm run check`, `pnpm run test:e2e`, `pnpm run api:types`.
 
 ### Every new record type (both)
 
