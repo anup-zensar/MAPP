@@ -9,6 +9,7 @@ import (
 // A display currency converts US dollars half up to the cent; USD, no code or an unusable rate leave the
 // amounts in US dollars (D-061, D-220).
 func TestDisplay_ConvertsUSDOnceHalfUp_D220(t *testing.T) {
+	t.Parallel()
 	usd := money.USD(amount(t, "700000"))
 	cases := []struct {
 		code, rate     string
@@ -36,6 +37,7 @@ func TestDisplay_ConvertsUSDOnceHalfUp_D220(t *testing.T) {
 
 // Optional keeps "no amount" as nil and converts an amount.
 func TestDisplay_OptionalKeepsNil_D220(t *testing.T) {
+	t.Parallel()
 	d := money.DisplayIn("EUR", "0.92")
 	if d.Optional(nil) != nil {
 		t.Error("Optional(nil) is not nil")

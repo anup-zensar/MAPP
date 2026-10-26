@@ -22,6 +22,7 @@ func percent(t *testing.T, s string) money.Percent {
 // A percentage has at most three integer digits and two decimals, never negative; it is written with two
 // decimals (data model §1).
 func TestParsePercent_Formats_FR009(t *testing.T) {
+	t.Parallel()
 	valid := map[string]string{"2": "2.00", "2.5": "2.50", "33.33": "33.33", "100.00": "100.00", "0": "0.00", "999.99": "999.99"}
 	for text, want := range valid {
 		if got := percent(t, text).String(); got != want {
@@ -47,6 +48,7 @@ func TestParsePercent_Formats_FR009(t *testing.T) {
 // A percentage of a whole number is rounded half-up to a whole number (domain model §4.5, the waterfall
 // examples of data model §2.1).
 func TestOfWhole_HalfUp_FR010(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		percent string
 		n       int64
@@ -71,6 +73,7 @@ func TestOfWhole_HalfUp_FR010(t *testing.T) {
 
 // 100 % split into n shares: each rounded down to the hundredth, the remainder in the last (R10).
 func TestPercentSplitEvenly_R10(t *testing.T) {
+	t.Parallel()
 	cases := map[int][]string{
 		1: {"100.00"},
 		2: {"50.00", "50.00"},
@@ -100,6 +103,7 @@ func TestPercentSplitEvenly_R10(t *testing.T) {
 
 // Percentages are JSON strings with two decimals both ways.
 func TestPercentJSON_String_FR009(t *testing.T) {
+	t.Parallel()
 	encoded, err := json.Marshal(map[string]money.Percent{"share": percent(t, "60")})
 	if err != nil || string(encoded) != `{"share":"60.00"}` {
 		t.Errorf("Marshal = %s, %v", encoded, err)
