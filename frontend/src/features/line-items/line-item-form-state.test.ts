@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from '@/api/errors';
 import {
-  activity,
-  approvedActivity,
   DIGITAL,
   DIGITAL_2027,
   EUR,
@@ -19,15 +16,10 @@ import {
   changePlannedCost,
   changeSpreadMethod,
   editFormState,
-  formProblems,
-  isRestartRefusal,
-  needsRestartConfirmation,
   newFormState,
-  restartReasons,
-  toCreateBody,
-  toUpdateBody,
   withField,
 } from './line-item-form-state';
+import { toCreateBody } from './line-item-requests';
 
 const CURRENCIES = [USD, EUR, GBP];
 const MAR_MAY = { startDate: '2026-03-01', endDate: '2026-05-31', ongoing: false };
@@ -166,85 +158,5 @@ describe('spread and finance budget changes', () => {
     const back = changeBudgetYear(next, 2026, items);
     expect(back.financeBudgetItemId).toBe(DIGITAL.id);
     expect(back.clearedItem).toBeNull();
-  });
-});
-
-describe('request bodies', () => {
-  it('sends empty amounts as null and months only for Custom', () => {
-    const state = withField(changePlannedCost(newFormState(formOptions()), ''), 'ownerId', '');
-    expect(toCreateBody(state)).toEqual({
-      name: 'Launch film – line item',
-      ownerId: null,
-      description: '',
-      currency: 'USD',
-      plannedCost: null,
-      spread: { method: 'evenly', months: [] },
-      attributes: {},
-      contractedAmount: null,
-      requestSwbs: true,
-      financeBudgetYear: 2026,
-      financeBudgetItemId: null,
-      restartApproval: false,
-    });
-  });
-
-  it('sends typed amounts without grouping, and other text as typed for the API to refuse', () => {
-    let state = changePlannedCost(newFormState(formOptions()), '-50');
-    state = changeSpreadMethod(state, 'custom', MAR_MAY, 2026);
-    state = changeCustomMonth(state, '2026-03', '1,500.5');
-    state = changeCustomMonth(state, '2026-04', '');
-    state = changeCustomMonth(state, '2026-05', 'abc');
-    const body = toUpdateBody(state, 4);
-    expect(body.plannedCost).toBe('-50.00');
-    expect(body.spread.months).toEqual([
-      { month: '2026-03', amount: '1500.50' },
-      { month: '2026-05', amount: 'abc' },
-    ]);
-    expect(body.version).toBe(4);
-  });
-
-  it('maps custom month problems to their inputs', () => {
-    let state = changeSpreadMethod(newFormState(formOptions()), 'custom', MAR_MAY, 2026);
-    state = changeCustomMonth(state, '2026-04', '-1');
-    const body = toCreateBody(state);
-    const error = new ApiError('validation', {
-      fields: [
-        { field: 'spread.months[1].amount', message: "Month amounts can't be negative." },
-        { field: 'name', message: 'Enter a name for the line item.' },
-        { field: 'restartApproval', message: 'Confirm.' },
-      ],
-    });
-    expect(formProblems(error, body)).toEqual([
-      { field: 'spread.month.2026-04', message: "Month amounts can't be negative." },
-      { field: 'name', message: 'Enter a name for the line item.' },
-    ]);
-    expect(isRestartRefusal(error)).toBe(true);
-    expect(isRestartRefusal(new ApiError('validation'))).toBe(false);
-  });
-});
-
-describe('restart approval (FR-031, FR-032)', () => {
-  it('asks for every new line item of a submitted or approved activity', () => {
-    const state = newFormState(formOptions());
-    expect(needsRestartConfirmation(approvedActivity(), null, state)).toBe(true);
-    expect(needsRestartConfirmation(activity(), null, state)).toBe(false);
-    expect(restartReasons(null, state)).toEqual([
-      "New line item 'Launch film – line item': 20,000.00 USD",
-    ]);
-  });
-
-  it('asks only when the planned cost or currency changed', () => {
-    const stored = editFormState(lineItem());
-    const coding = withField(stored, 'financeBudgetItemId', DIGITAL.id);
-    expect(needsRestartConfirmation(approvedActivity(), stored, coding)).toBe(false);
-    const formatted = changePlannedCost(stored, '50000');
-    expect(needsRestartConfirmation(approvedActivity(), stored, formatted)).toBe(false);
-    const cost = changePlannedCost(stored, '55,000.00');
-    expect(needsRestartConfirmation(approvedActivity(), stored, cost)).toBe(true);
-    expect(restartReasons(stored, cost)).toEqual([
-      "Planned cost of 'Agency fee': 50,000.00 USD → 55,000.00 USD",
-    ]);
-    const currency = changeCurrency(stored, 'EUR', CURRENCIES);
-    expect(needsRestartConfirmation(approvedActivity(), stored, currency)).toBe(true);
   });
 });

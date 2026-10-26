@@ -6,7 +6,7 @@ import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/ui/record-links';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { DeleteLineItemDialog } from './DeleteLineItemDialog';
-import { isRestartRefusal } from './line-item-form-state';
+import { isRestartRefusal } from './line-item-requests';
 import { moneyText } from './line-item-math';
 import { LINE_ITEM_CHANGE_KEYS, useDeleteLineItem, useDuplicateLineItem } from './api';
 import type { LineItem, LineItemActivity } from './api';

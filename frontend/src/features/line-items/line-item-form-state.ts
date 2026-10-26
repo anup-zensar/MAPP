@@ -1,13 +1,11 @@
 /**
  * The line-item form's state and its rules (007 plan, "Line-item form"): the defaults with their
  * sources (FR-008), the currency change that keeps the pre-filled balance (FR-012), the custom
- * grid's start (D-152), the finance budget item a year change clears (FR-015, D-151), the request
- * bodies, and when a save needs "This activity will need approval again" first (FR-031, FR-032).
+ * grid's start (D-152) and the finance budget item a year change clears (FR-015, D-151).
  */
-import { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
-import { parseMoneyInput, toCents } from '@/format/decimal';
-import type { LineItem, LineItemActivity, LineItemCreate, LineItemFormOptions } from './api';
+import { toCents } from '@/format/decimal';
+import type { LineItem, LineItemFormOptions } from './api';
 import {
   amountText,
   centsInput,
@@ -20,8 +18,6 @@ import {
 import type { ActivityDates, SpreadMethod } from './line-item-math';
 import {
   changedToText,
-  costChangeReason,
-  newLineItemReason,
   NO_COST_TO_PREFILL,
   NOTHING_LEFT,
   preselectedText,
@@ -42,15 +38,18 @@ export interface CustomMonth {
 }
 
 /** The fields that show where their pre-filled value came from. */
-export type SourceField =
-  | 'name'
-  | 'ownerId'
-  | 'currency'
-  | 'plannedCost'
-  | 'spread'
-  | 'financeBudgetYear'
-  | 'financeBudgetItemId'
-  | 'requestSwbs';
+export const SOURCE_FIELDS = [
+  'name',
+  'ownerId',
+  'currency',
+  'plannedCost',
+  'spread',
+  'financeBudgetYear',
+  'financeBudgetItemId',
+  'requestSwbs',
+] as const;
+
+export type SourceField = (typeof SOURCE_FIELDS)[number];
 
 export interface LineItemFormState {
   name: string;
@@ -168,7 +167,10 @@ export function withField<K extends keyof LineItemFormState>(
   value: LineItemFormState[K],
 ): LineItemFormState {
   const sources = { ...state.sources };
-  delete sources[field as SourceField];
+  const source = SOURCE_FIELDS.find((name) => name === field);
+  if (source) {
+    delete sources[source];
+  }
   return { ...state, [field]: value, sources };
 }
 
@@ -286,126 +288,7 @@ export function changeBudgetYear(
   return next;
 }
 
-/**
- * The request of the form (D-149): amounts as typed, in the line item's currency, with at most two
- * decimals (the money field rounds more, D-190); an empty amount is null; custom months only for
- * Custom, without the empty ones. `attributes` are the values to send (cleared ones removed).
- */
-export function toCreateBody(
-  state: LineItemFormState,
-  attributes: AttributeValues = state.attributes,
-): LineItemCreate {
-  return {
-    name: state.name,
-    ownerId: state.ownerId || null,
-    description: state.description,
-    currency: state.currency,
-    plannedCost: amountForApi(state.plannedCost),
-    spread: {
-      method: state.spreadMethod,
-      months:
-        state.spreadMethod === 'custom'
-          ? state.customMonths
-              .filter((month) => month.amount.trim() !== '')
-              .map((month) => ({ month: month.month, amount: amountForApi(month.amount) ?? '' }))
-          : [],
-    },
-    attributes,
-    contractedAmount: amountForApi(state.contractedAmount),
-    requestSwbs: state.requestSwbs,
-    financeBudgetYear: state.financeBudgetYear,
-    financeBudgetItemId: state.financeBudgetItemId || null,
-    restartApproval: false,
-  };
-}
-
-/** The update request: the whole form with the version the person started from (D-153). */
-export function toUpdateBody(
-  state: LineItemFormState,
-  version: number,
-  attributes: AttributeValues = state.attributes,
-) {
-  return { ...toCreateBody(state, attributes), version };
-}
-
-/**
- * True when saving needs "This activity will need approval again" first (FR-031): a new line item,
- * or a changed planned cost or currency, while the activity is submitted or approved. Other edits
- * never restart approval (FR-032). `stored` is null on the create form.
- */
-export function needsRestartConfirmation(
-  activity: LineItemActivity,
-  stored: LineItemFormState | null,
-  current: LineItemFormState,
-): boolean {
-  if (!activity.restartsApproval) {
-    return false;
-  }
-  if (!stored) {
-    return true;
-  }
-  return (
-    stored.currency !== current.currency ||
-    parseAmount(stored.plannedCost) !== parseAmount(current.plannedCost)
-  );
-}
-
-/** The changes the restart dialog lists (FR-031). */
-export function restartReasons(
-  stored: LineItemFormState | null,
-  current: LineItemFormState,
-): string[] {
-  const after = costText(current);
-  if (!stored) {
-    return [newLineItemReason(current.name.trim(), after)];
-  }
-  return [costChangeReason(stored.name, costText(stored), after)];
-}
-
-/** The API refused a save because the person must confirm the restart first (D-146, D-189). */
-export function isRestartRefusal(error: unknown): boolean {
-  return (
-    error instanceof ApiError &&
-    error.kind === 'validation' &&
-    error.fields.some((problem) => problem.field === 'restartApproval')
-  );
-}
-
 /** The input id of a custom month: "spread.month.2026-02". */
 export function monthFieldId(month: string): string {
   return `spread.month.${month}`;
-}
-
-/**
- * The API's field problems with the field names of the form: a custom month's problem
- * ("spread.months[1].amount") goes to that month's input; the restart refusal is left out.
- */
-export function formProblems(
-  error: ApiError,
-  body: LineItemCreate,
-): { field: string; message: string }[] {
-  return error.fields
-    .filter((problem) => problem.field !== 'restartApproval')
-    .map((problem) => {
-      const month = /^spread\.months\[(\d+)\]/.exec(problem.field);
-      const sent = month ? body.spread.months[Number(month[1])] : undefined;
-      return sent ? { ...problem, field: monthFieldId(sent.month) } : problem;
-    });
-}
-
-/** "20,000.00 USD", or the typed text when it is not an amount. */
-function costText(state: LineItemFormState): string {
-  const cents = parseAmount(state.plannedCost);
-  return cents === null
-    ? `${state.plannedCost} ${state.currency}`
-    : amountText(cents, state.currency);
-}
-
-/** A typed amount as the API takes it; null when empty; the text itself when it is no amount. */
-function amountForApi(text: string): string | null {
-  const trimmed = text.trim();
-  if (trimmed === '') {
-    return null;
-  }
-  return parseMoneyInput(trimmed)?.amount ?? trimmed;
 }
