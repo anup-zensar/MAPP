@@ -8,7 +8,7 @@ import type {
   BudgetAllocationRow,
   GlobalBudget,
   GlobalBudgetSummary,
-} from '@/features/global-budgets/globalBudgetsApi';
+} from '@/features/global-budgets';
 
 const usd = (amount: string) => ({ amount, currency: 'USD' });
 const AVAILABLE = { available: true, reason: '' };

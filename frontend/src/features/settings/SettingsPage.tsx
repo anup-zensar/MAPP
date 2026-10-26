@@ -1,12 +1,11 @@
 import { ChevronRight, CircleAlert, RotateCw } from 'lucide-react';
 import { Link } from 'react-router';
-import { itemsFor } from '@/session/access';
+import { itemsFor, useAccess } from '@/session/access';
 import { useSettingsOverview } from './api';
 import type { components } from '@/api/generated/schema';
 import { Button } from '@/ui/Button/Button';
 import { PageHeader } from '@/ui/PageHeader/PageHeader';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
-import { useAccess } from '@/session/access';
 import { usePageTitle } from '@/ui/usePageTitle';
 import type { SettingsSection } from './sections';
 import styles from './SettingsPage.module.css';

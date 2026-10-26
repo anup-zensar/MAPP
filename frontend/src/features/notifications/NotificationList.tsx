@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '@/ui/Button/Button';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { useToast } from '@/ui/Toast/useToast';
-import { asApiError, isSessionLost } from '@/features/approvals/messages';
+import { asApiError, isSessionLost } from '@/features/approvals';
 import { cx } from '@/ui/cx';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';

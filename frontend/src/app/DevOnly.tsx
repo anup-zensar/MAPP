@@ -1,11 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useMatches } from 'react-router';
-import { api, call } from '@/api/client';
 import { ErrorState } from '@/ui/ErrorState/ErrorState';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
-import { NotFoundPage } from '@/features/placeholders/NotFoundPage';
+import { NotFoundPage } from '@/features/placeholders';
 import { usePageTitle } from '@/ui/usePageTitle';
+import { useEnvironment } from '@/session/api';
 import type { PageHandle } from '@/session/RequireSignIn';
 
 /**
@@ -15,10 +14,7 @@ import type { PageHandle } from '@/session/RequireSignIn';
  * used, because the end-to-end tests run the production build.
  */
 export function DevOnly({ children }: { children: ReactNode }) {
-  const environment = useQuery({
-    queryKey: ['environment'],
-    queryFn: () => call(api.GET('/api/v1/environment')),
-  });
+  const environment = useEnvironment();
 
   if (environment.data) {
     return environment.data.demoSignIn ? children : <NotFoundPage />;

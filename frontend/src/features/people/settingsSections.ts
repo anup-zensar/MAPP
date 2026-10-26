@@ -3,7 +3,7 @@
  * the count of active records from feature 003's own data.
  */
 import { Users, UsersRound } from 'lucide-react';
-import type { SettingsSection } from '@/features/settings/sections';
+import type { SettingsSection } from '@/features/settings';
 import { ActivePeopleCount, ActiveTeamsCount } from './ActiveCounts';
 
 export const PEOPLE_SETTINGS_SECTIONS: SettingsSection[] = [

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { useAttributeForm } from '@/features/settings/api';
+import { useAttributeForm } from '@/features/settings';
 import { Button } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
 import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';

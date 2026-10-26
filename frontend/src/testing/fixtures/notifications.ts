@@ -4,7 +4,7 @@
  *
  *   notificationOf({ read: true })
  */
-import type { AppNotification, NotificationPage } from '@/features/notifications/notificationsApi';
+import type { AppNotification, NotificationPage } from '@/features/notifications';
 
 /** The tests' "now": 12 Mar 2026, 09:00 UTC. */
 export const NOW = new Date('2026-03-12T09:00:00Z');

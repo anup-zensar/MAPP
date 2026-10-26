@@ -9,7 +9,7 @@ import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
-import { centsInput, moneyText } from '@/features/line-items/lineItemMath';
+import { centsInput, moneyText } from '@/features/line-items';
 import { parseMoneyInput, toCents } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import type { Activity } from './activitiesApi';

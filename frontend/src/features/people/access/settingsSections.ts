@@ -3,7 +3,7 @@
  * existing ones — consolidation D-305), with the number of roles from its own data.
  */
 import { ShieldCheck } from 'lucide-react';
-import type { SettingsSection } from '@/features/settings/sections';
+import type { SettingsSection } from '@/features/settings';
 import { ACCESS_PATH } from './accessPaths';
 import { RolesCount } from './RolesCount';
 

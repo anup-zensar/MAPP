@@ -7,7 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
-import { invalidateAllButSession } from '@/features/approvals/approvalsApi';
+import { invalidateAllButSession } from '@/features/approvals';
 
 export type GlobalBudget = components['schemas']['GlobalBudget'];
 export type GlobalBudgetSummary = components['schemas']['GlobalBudgetSummary'];

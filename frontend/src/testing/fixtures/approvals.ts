@@ -12,7 +12,7 @@ import type {
   ApprovalRound,
   ApprovalRow,
   ApprovalSubmission,
-} from '@/features/approvals/approvalsApi';
+} from '@/features/approvals';
 
 type HistoryEntry = components['schemas']['ApprovalHistoryEntry'];
 type DeclineNote = components['schemas']['DeclineNote'];

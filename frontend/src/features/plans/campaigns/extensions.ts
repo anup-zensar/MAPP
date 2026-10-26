@@ -13,5 +13,5 @@
 export {
   activityActionsForInitiative as initiativeExtraActions,
   useActivityRows as useRowsBelowInitiatives,
-} from '@/features/activities/activityTreeRows';
-export { InitiativeActivities as InitiativeActivitiesSection } from '@/features/activities/InitiativeActivities';
+} from '@/features/activities';
+export { InitiativeActivities as InitiativeActivitiesSection } from '@/features/activities';

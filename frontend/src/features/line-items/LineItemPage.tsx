@@ -1,6 +1,6 @@
 import { Pencil } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
-import { useAttributeForm } from '@/features/settings/api';
+import { useAttributeForm } from '@/features/settings';
 import { ActionsMenu } from '@/ui/ActionsMenu/ActionsMenu';
 import { LinkButton } from '@/ui/Button/Button';
 import { Card } from '@/ui/Card/Card';
@@ -12,8 +12,7 @@ import { PersonLabel } from '@/ui/PersonLabel/PersonLabel';
 import { ShellAttributeValues } from '@/ui/ShellAttributeFields/ShellAttributeValues';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { SummaryCard } from '@/ui/SummaryCard/SummaryCard';
-import { HistorySection } from '@/features/activity-log/HistorySection';
-import { showHistory } from '@/features/activity-log/showHistory';
+import { HistorySection, showHistory } from '@/features/activity-log';
 import { allows, gateItem } from '@/session/gate-action';
 import { formatRate, toCents } from '@/format/decimal';
 import { localDate } from '@/format/intl';

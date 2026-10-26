@@ -1,9 +1,5 @@
 /** Budget by month answers for tests (016 data-model §3.3, §3.4): P-1004, a GBP plan of 2027. */
-import type {
-  BudgetByMonth,
-  BudgetByMonthPeriods,
-  BudgetPhasing,
-} from '@/features/plans/phasing/phasingApi';
+import type { BudgetByMonth, BudgetByMonthPeriods, BudgetPhasing } from '@/features/plans';
 
 export const gbp = (amount: string) => ({ amount, currency: 'GBP' });
 

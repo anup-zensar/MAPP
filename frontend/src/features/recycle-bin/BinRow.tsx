@@ -8,7 +8,7 @@ import { Tooltip } from '@/ui/Tooltip/Tooltip';
 import type { ActionsMenuItem } from '@/ui/ActionsMenu/ActionsMenu';
 import type { PlanningLevel } from '@/ui/LevelTag/LevelTag';
 import { availabilityProps, isShown } from '@/session/access';
-import { initialsOf } from '@/features/activity-log/logText';
+import { initialsOf } from '@/features/activity-log';
 import { useFormatters } from '@/format/useFormatters';
 import { capitalise, insideRecords, restoreStateLine, rowContentsText, wasInText } from './binText';
 import type { BinItem, BinRecord } from './binText';

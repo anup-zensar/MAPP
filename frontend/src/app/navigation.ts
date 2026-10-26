@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
-import { ApprovalsNavBadge } from '@/features/approvals/ApprovalsNavBadge';
+import { ApprovalsNavBadge } from '@/features/approvals';
 import type { Permission } from '@/session/access';
 
 /** A page people reach from the sidebar or the account menu. */

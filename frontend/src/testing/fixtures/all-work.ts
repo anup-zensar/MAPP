@@ -15,8 +15,8 @@ import type {
   Money,
   SavedView,
   ViewState,
-} from '@/features/all-work/allWorkTypes';
-import { standardState } from '@/features/all-work/viewState';
+} from '@/features/all-work';
+import { standardState } from '@/features/all-work';
 
 export function usd(amount: string): Money {
   return { amount, currency: 'USD' };

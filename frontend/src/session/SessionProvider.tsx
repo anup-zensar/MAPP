@@ -4,13 +4,20 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { ReactNode } from 'react';
 import { matchPath, useLocation, useNavigate } from 'react-router';
 import type { Path } from 'react-router';
-import { api, call, setForbiddenHandler, setSessionLostHandler } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
 import type { ToastOptions } from '@/ui/Toast/useToast';
 import { readStoredPreference } from '@/ui/theme';
 import type { ThemePreference } from '@/ui/theme';
 import { useTheme } from '@/ui/useTheme';
+import {
+  fetchMe,
+  patchPreferences,
+  postSignIn,
+  postSignOut,
+  setForbiddenHandler,
+  setSessionLostHandler,
+} from './api';
 import { SESSION_KEY, SessionContext, signInAddress } from './useSession';
 import type { CurrentUser, PreferencesUpdate, SessionEnd, SessionStatus } from './useSession';
 
@@ -88,7 +95,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // The session ended or began while this check was on its way: keep what is on screen now.
       const outOfDate = () => sessionChanges.current !== changesBefore;
       try {
-        const person = await call(api.GET('/api/v1/me'));
+        const person = await fetchMe();
         if (outOfDate()) {
           return queryClient.getQueryData<CurrentUser | null>(SESSION_KEY) ?? null;
         }
@@ -148,14 +155,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   async function signIn(email: string, password: string) {
-    const signedIn = await call(api.POST('/api/v1/auth/sign-in', { body: { email, password } }));
+    const signedIn = await postSignIn(email, password);
     sessionChanges.current += 1;
     queryClient.setQueryData(SESSION_KEY, signedIn);
   }
 
   async function signOut() {
     try {
-      await call(api.POST('/api/v1/auth/sign-out'));
+      await postSignOut();
     } catch (failure) {
       // The person is still signed in: say why in plain words, with Try again (FR-020).
       show({ message: messageOf(failure), action: tryAgain(signOut) });
@@ -184,7 +191,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function savePreferences(patch: PreferencesUpdate) {
     try {
       // Only the changed preference is sent.
-      await call(api.PATCH('/api/v1/me/preferences', { body: patch }));
+      await patchPreferences(patch);
     } catch (failure) {
       // A session that has ended is handled by endSession alone (plan "Preferences and theme").
       if (!isSessionGone(failure)) {

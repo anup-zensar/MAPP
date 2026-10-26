@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, MouseEvent, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  useAttributeForm,
-  useCurrencies,
-  useFinanceBudgets,
-  useModels,
-} from '@/features/settings/api';
+import { useAttributeForm, useCurrencies, useFinanceBudgets, useModels } from '@/features/settings';
 import { Button } from '@/ui/Button/Button';
 import { CheckboxField } from '@/ui/CheckboxField/CheckboxField';
 import { ChoiceField } from '@/ui/ChoiceField/ChoiceField';

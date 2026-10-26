@@ -9,8 +9,8 @@ import type {
   PersonRoles,
   Role,
   RoleAssignment,
-} from '@/features/people/access/accessApi';
-import { PERMISSIONS } from '@/features/people/access/accessWords';
+} from '@/features/people';
+import { PERMISSIONS } from '@/features/people';
 
 const META = {
   version: 1,

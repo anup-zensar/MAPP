@@ -1,9 +1,7 @@
-import { APPROVAL_WORKFLOW_SETTINGS_SECTIONS } from '@/features/approval-workflows/settingsSections';
-import { ACCESS_SETTINGS_SECTIONS } from '@/features/people/access/settingsSections';
-import { PEOPLE_SETTINGS_SECTIONS } from '@/features/people/settingsSections';
-import { FIELD_HELP_SETTINGS_SECTIONS } from '@/features/settings/field-help/settingsSections';
-import { SETTINGS_OWN_SECTIONS } from '@/features/settings/sections';
-import type { SettingsSection } from '@/features/settings/sections';
+import { APPROVAL_WORKFLOW_SETTINGS_SECTIONS } from '@/features/approval-workflows';
+import { ACCESS_SETTINGS_SECTIONS, PEOPLE_SETTINGS_SECTIONS } from '@/features/people';
+import { FIELD_HELP_SETTINGS_SECTIONS, SETTINGS_OWN_SECTIONS } from '@/features/settings';
+import type { SettingsSection } from '@/features/settings';
 
 /**
  * Every card of the Settings page, in order: 002's five and Field help (016), then People and

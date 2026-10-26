@@ -137,9 +137,15 @@ export function useUnlinkTransaction() {
   });
 }
 
-/** The line item a person typed, for the link dialog's preview. */
-export function fetchLineItemPreview(lineItemId: string): Promise<LineItemPreview> {
-  return call(api.GET('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } }));
+/** The line item a person typed, for the link dialog's preview; nothing is asked for "". */
+export function useLineItemPreview(lineItemId: string) {
+  return useQuery({
+    queryKey: [...FINANCIALS_KEY, 'line-item-preview', lineItemId],
+    queryFn: (): Promise<LineItemPreview> =>
+      call(api.GET('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } })),
+    enabled: lineItemId !== '',
+    retry: false,
+  });
 }
 
 /** Saves the sample file "mapp-gsap-extract-sample.csv" (FR-009). */

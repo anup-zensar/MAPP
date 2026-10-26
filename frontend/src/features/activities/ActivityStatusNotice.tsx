@@ -1,6 +1,6 @@
-import type { ActivityApproval } from '@/features/approvals/approvalsApi';
-import { declineBoxText, levelOf, names } from '@/features/approvals/messages';
-import { Notice } from '@/features/line-items/Notice';
+import type { ActivityApproval } from '@/features/approvals';
+import { declineBoxText, levelOf, names } from '@/features/approvals';
+import { Notice } from '@/features/line-items';
 import { useFormatters } from '@/format/useFormatters';
 import type { Activity } from './activitiesApi';
 import { activityBannerText } from '@/ui/ActivityStatusChip/activity-status';

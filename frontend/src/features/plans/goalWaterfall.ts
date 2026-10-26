@@ -14,7 +14,7 @@ import {
   toCents,
   toHundredths,
 } from '@/format/decimal';
-import type { WaterfallModel } from '@/features/settings/models/waterfall';
+import type { WaterfallModel } from '@/features/settings';
 import type { GoalStage } from './planText';
 
 export type WaterfallStage = 'inq' | 'mql' | 'deals' | 'revenue';

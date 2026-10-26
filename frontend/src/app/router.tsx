@@ -1,46 +1,40 @@
 import { createBrowserRouter, Outlet } from 'react-router';
 import type { RouteObject } from 'react-router';
-import { ActivityFormPage } from '@/features/activities/ActivityFormPage';
-import { ActivityPage } from '@/features/activities/ActivityPage';
-import { ActivityShortLink } from '@/features/activities/ActivityShortLink';
-import { ActivityLogPage } from '@/features/activity-log/ActivityLogPage';
-import { AllWorkPage } from '@/features/all-work/AllWorkPage';
-import { ApprovalWorkflowsPage } from '@/features/approval-workflows/ApprovalWorkflowsPage';
-import { ApprovalsPage } from '@/features/approvals/ApprovalsPage';
-import { CampaignPanel } from '@/features/plans/campaigns/CampaignPanel';
-import { InitiativePanel } from '@/features/plans/campaigns/InitiativePanel';
-import { NewCampaignPanel } from '@/features/plans/campaigns/NewCampaignPanel';
-import { NewInitiativePanel } from '@/features/plans/campaigns/NewInitiativePanel';
-import { ACCESS_ROUTES } from '@/features/people/access/accessRoutes';
-import { ComponentGalleryPage } from '@/features/dev/ComponentGalleryPage';
-import { GlobalBudgetPage } from '@/features/global-budgets/GlobalBudgetPage';
-import { GlobalBudgetsPage } from '@/features/global-budgets/GlobalBudgetsPage';
-import { FinancialsPage } from '@/features/financials/FinancialsPage';
-import { TransactionPanel } from '@/features/financials/TransactionPanel';
-import { SampleRecordsPage } from '@/features/dev/SampleRecordsPage';
-import { HomePage } from '@/features/home/HomePage';
-import { LineItemCreatePage } from '@/features/line-items/LineItemCreatePage';
-import { LineItemEditPage } from '@/features/line-items/LineItemEditPage';
-import { LineItemPage } from '@/features/line-items/LineItemPage';
-import { PeoplePage } from '@/features/people/PeoplePage';
-import { ProfilePage } from '@/features/people/ProfilePage';
-import { TeamsPage } from '@/features/people/TeamsPage';
-import { ComingSoonPage } from '@/features/placeholders/ComingSoonPage';
-import { PlanCreatePage } from '@/features/plans/PlanCreatePage';
-import { PlanEditPage } from '@/features/plans/PlanEditPage';
-import { PlanPage } from '@/features/plans/PlanPage';
-import { PlansPage } from '@/features/plans/PlansPage';
-import { RecycleBinPage } from '@/features/recycle-bin/RecycleBinPage';
-import { ActivityTypesPage } from '@/features/settings/activity-types/ActivityTypesPage';
-import { CurrenciesPage } from '@/features/settings/currencies/CurrenciesPage';
-import { FinanceBudgetItemsPage } from '@/features/settings/finance-budget-items/FinanceBudgetItemsPage';
-import { ModelsPage } from '@/features/settings/models/ModelsPage';
-import { SettingsPage } from '@/features/settings/SettingsPage';
-import { SETTINGS_016_ROUTES } from '@/features/settings/settingsRoutes';
-import { ShellAttributeEditorPage } from '@/features/settings/shell-attributes/ShellAttributeEditorPage';
-import { ShellAttributePage } from '@/features/settings/shell-attributes/ShellAttributePage';
-import { ShellAttributesPage } from '@/features/settings/shell-attributes/ShellAttributesPage';
-import { SignInPage } from '@/features/sign-in/SignInPage';
+import { ActivityFormPage, ActivityPage, ActivityShortLink } from '@/features/activities';
+import { ActivityLogPage } from '@/features/activity-log';
+import { AllWorkPage } from '@/features/all-work';
+import { ApprovalWorkflowsPage } from '@/features/approval-workflows';
+import { ApprovalsPage } from '@/features/approvals';
+import {
+  CampaignPanel,
+  InitiativePanel,
+  NewCampaignPanel,
+  NewInitiativePanel,
+  PlanCreatePage,
+  PlanEditPage,
+  PlanPage,
+  PlansPage,
+} from '@/features/plans';
+import { ACCESS_ROUTES, PeoplePage, ProfilePage, TeamsPage } from '@/features/people';
+import { ComponentGalleryPage, SampleRecordsPage } from '@/features/dev';
+import { GlobalBudgetPage, GlobalBudgetsPage } from '@/features/global-budgets';
+import { FinancialsPage, TransactionPanel } from '@/features/financials';
+import { HomePage } from '@/features/home';
+import { LineItemCreatePage, LineItemEditPage, LineItemPage } from '@/features/line-items';
+import { ComingSoonPage } from '@/features/placeholders';
+import { RecycleBinPage } from '@/features/recycle-bin';
+import {
+  ActivityTypesPage,
+  CurrenciesPage,
+  FinanceBudgetItemsPage,
+  ModelsPage,
+  SETTINGS_016_ROUTES,
+  SettingsPage,
+  ShellAttributeEditorPage,
+  ShellAttributePage,
+  ShellAttributesPage,
+} from '@/features/settings';
+import { SignInPage } from '@/features/sign-in';
 import { AppLayout } from './AppLayout';
 import { DevOnly } from './DevOnly';
 import { COMING_SOON_SECTIONS } from './navigation';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useAttributeForm } from '@/features/settings/api';
+import { useAttributeForm } from '@/features/settings';
 import { useToast } from '@/ui/Toast/useToast';
 import { usePageTitle } from '@/ui/usePageTitle';
 import { LineItemForm } from './LineItemForm';

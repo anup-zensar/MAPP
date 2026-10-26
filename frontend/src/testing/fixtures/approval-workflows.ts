@@ -3,10 +3,7 @@
  * them (the seeded "Lubricants EU approval" and "China BC approval workflow").
  */
 import { ALEX, CARLOS, DANIEL } from './approvals';
-import type {
-  ApprovalWorkflow,
-  ApprovalWorkflowDetails,
-} from '@/features/approval-workflows/workflowsApi';
+import type { ApprovalWorkflow, ApprovalWorkflowDetails } from '@/features/approval-workflows';
 
 const META = {
   version: 4,

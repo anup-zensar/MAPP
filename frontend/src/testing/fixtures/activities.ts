@@ -10,7 +10,7 @@ import type {
   ActivityDestination,
   ActivityFormData,
   ActivitySummary,
-} from '@/features/activities/activitiesApi';
+} from '@/features/activities';
 
 type Person = components['schemas']['Person'];
 type AttributeForm = components['schemas']['AttributeForm'];

@@ -10,7 +10,7 @@ import type {
   FinancialTransactionPage,
   FinancialTransactionRow,
   LineItemPreview,
-} from '@/features/financials/financialsApi';
+} from '@/features/financials';
 
 const PLAN: FinancialRecordRef = { type: 'plan', id: 'P-1001', name: 'FY2026 Lubricants Europe' };
 const HELIX: FinancialRecordRef = { type: 'campaign', id: 'C-1001', name: 'Helix launch' };

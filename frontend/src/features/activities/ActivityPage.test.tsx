@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { HISTORY_ANSWERS } from '@/testing/fixtures/activity-log';
 import { approvalOf } from '@/testing/fixtures/approvals';
 import { activityRecord } from '@/testing/fixtures/line-items';
-import type { ShowSubmitProblems } from '@/features/approvals/approvalTypes';
+import type { ShowSubmitProblems } from '@/features/approvals';
 import { mockApi } from '@/testing/mockApi';
 import type { MockHandler } from '@/testing/mockApi';
 import { renderWithProviders } from '@/testing/render';

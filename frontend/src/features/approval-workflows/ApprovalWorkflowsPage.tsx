@@ -13,7 +13,7 @@ import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { useToast } from '@/ui/Toast/useToast';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { asApiError, isSessionLost } from '@/features/approvals/messages';
+import { asApiError, isSessionLost } from '@/features/approvals';
 import { ListToolbar } from '@/ui/ListToolbar/ListToolbar';
 import list from '@/ui/settings-table.module.css';
 import { filterRecords, useListFilters } from '@/ui/useListFilters';

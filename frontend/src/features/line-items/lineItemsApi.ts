@@ -159,3 +159,15 @@ function useRefresh() {
       LINE_ITEM_CHANGE_KEYS.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
     );
 }
+
+/** Reads a line item again, bypassing the cache: the version to save over after a conflict. */
+export function useFetchLatestLineItem() {
+  const queryClient = useQueryClient();
+  return (lineItemId: string) =>
+    queryClient.fetchQuery({
+      queryKey: ['line-items', 'item', lineItemId],
+      queryFn: () =>
+        call(api.GET('/api/v1/line-items/{lineItemId}', { params: { path: { lineItemId } } })),
+      staleTime: 0,
+    });
+}

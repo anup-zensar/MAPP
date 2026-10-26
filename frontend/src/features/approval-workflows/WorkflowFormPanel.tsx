@@ -13,7 +13,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { SaveFailure } from '@/ui/FormPanel/problemOf';
-import { asApiError, isSessionLost } from '@/features/approvals/messages';
+import { asApiError, isSessionLost } from '@/features/approvals';
 import { parseWholeInput } from '@/format/decimal';
 import { useFormatters } from '@/format/useFormatters';
 import { toDrafts, toInputs } from './levelDrafts';

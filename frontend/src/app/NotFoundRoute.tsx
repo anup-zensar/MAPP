@@ -1,4 +1,4 @@
-import { NotFoundPage } from '@/features/placeholders/NotFoundPage';
+import { NotFoundPage } from '@/features/placeholders';
 import { AppLayout } from './AppLayout';
 import { PublicLayout } from '@/ui/PublicLayout/PublicLayout';
 import { SessionCheckPage } from '@/session/SessionCheckPage';

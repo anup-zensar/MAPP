@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { CircleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ApiError, conflictMessage } from '@/api/errors';
@@ -8,7 +7,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import { useToast } from '@/ui/Toast/useToast';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { useFormatters } from '@/format/useFormatters';
-import { fetchLineItemPreview, FINANCIALS_KEY, useLinkTransaction } from './financialsApi';
+import { useLineItemPreview, useLinkTransaction } from './financialsApi';
 import type { FinancialTransaction, LineItemPreview } from './financialsApi';
 import styles from './LinkTransactionDialog.module.css';
 
@@ -46,12 +45,7 @@ export function LinkTransactionDialog({
   const valid = LINE_ITEM_ID.test(lineItemId);
   // The preview follows the typing a moment later, so every key does not ask the API.
   const previewId = useSettled(valid ? lineItemId : '', PREVIEW_DELAY_MS);
-  const preview = useQuery({
-    queryKey: [...FINANCIALS_KEY, 'line-item-preview', previewId],
-    queryFn: () => fetchLineItemPreview(previewId),
-    enabled: previewId !== '',
-    retry: false,
-  });
+  const preview = useLineItemPreview(previewId);
 
   async function submit() {
     if (link.isPending) {

@@ -5,7 +5,7 @@ import { InfoTip } from '@/ui/InfoTip/InfoTip';
 import { MoneyField } from '@/ui/MoneyField/MoneyField';
 import { formatAmount, formatWhole, parseWholeInput } from '@/format/decimal';
 import { formatMoney } from '@/format/intl';
-import { waterfall } from '@/features/settings/models/waterfall';
+import { waterfall } from '@/features/settings';
 import type { GoalsState } from './activityFormState';
 import { fieldId, usdOf } from './activityFormState';
 import { EMPTY, goalsFormula } from './activityText';

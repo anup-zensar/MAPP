@@ -5,7 +5,7 @@
 import type { components } from '@/api/generated/schema';
 import { LUBRICANTS, MOBILITY, planForm } from './attribute-forms';
 import type { MockHandler } from '../mockApi';
-import type { Plan, PlanDefaults, PlanList, PlanSummary } from '@/features/plans/plansApi';
+import type { Plan, PlanDefaults, PlanList, PlanSummary } from '@/features/plans';
 
 type Model = components['schemas']['Model'];
 type Person = components['schemas']['Person'];

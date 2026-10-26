@@ -4,8 +4,7 @@ import { useId, useState } from 'react';
 import { Button } from '@/ui/Button/Button';
 import { CountBadge } from '@/ui/CountBadge/CountBadge';
 import { Tooltip } from '@/ui/Tooltip/Tooltip';
-import { NotificationList } from '@/features/notifications/NotificationList';
-import { useUnreadNotificationCount } from '@/features/notifications/useUnreadNotificationCount';
+import { NotificationList, useUnreadNotificationCount } from '@/features/notifications';
 import styles from './NotificationBell.module.css';
 
 /**

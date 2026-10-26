@@ -6,7 +6,7 @@ import { mockApi } from '@/testing/mockApi';
 import { FIELD_HELP_PAGE } from '@/testing/fixtures/field-help';
 import { renderWithProviders } from '@/testing/render';
 import { testUser } from '@/testing/fixtures/users';
-import { SettingsPage } from '@/features/settings/SettingsPage';
+import { SettingsPage } from '@/features/settings';
 import { SETTINGS_SECTIONS } from './settings-sections';
 
 // The real list of cards: 002's five and Field help (016), then People and Teams (003), Approval

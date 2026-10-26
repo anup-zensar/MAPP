@@ -8,6 +8,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import type { QueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { api, call } from '@/api/client';
+import { downloadFromApi } from '@/api/download';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
 import type {
@@ -17,7 +18,9 @@ import type {
   SavedViewCreate,
   SavedViewPage,
   SavedViewUpdate,
+  ViewState,
 } from './allWorkTypes';
+import { toQueryParams } from './viewState';
 
 export const ALL_WORK_KEYS = {
   all: ['all-work'] as const,
@@ -203,4 +206,15 @@ export function useDeleteView() {
 /** Whether a row's record still exists, before it opens (D-123). */
 export function locateRecord(recordId: string) {
   return call(api.GET('/api/v1/all-work/records/{recordId}', { params: { path: { recordId } } }));
+}
+
+/** Downloads All work as `format` for the view in `state`; answers the saved file's name. */
+export function exportAllWork(state: ViewState, format: 'xlsx' | 'csv'): Promise<string> {
+  return downloadFromApi(
+    api.GET('/api/v1/all-work/export', {
+      params: { query: { ...toQueryParams(state), format, unassigned: state.showUnassigned } },
+      parseAs: 'blob',
+    }),
+    `MAPP All work.${format}`,
+  );
 }

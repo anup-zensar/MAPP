@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { api, call } from '@/api/client';
 import type { components } from '@/api/generated/schema';
-import { invalidateAllButSession } from '@/features/approvals/approvalsApi';
+import { invalidateAllButSession } from '@/features/approvals';
 
 export type ApprovalWorkflow = components['schemas']['ApprovalWorkflow'];
 export type ApprovalWorkflowDetails = components['schemas']['ApprovalWorkflowDetails'];

@@ -2,7 +2,7 @@
  * The texts of Settings › Approval workflows built from counts (008 plan, "User-visible
  * messages"): who uses a workflow, what editing or setting it inactive changes.
  */
-import { activitiesCount } from '@/features/approvals/messages';
+import { activitiesCount } from '@/features/approvals';
 
 /** "This approval workflow no longer exists — someone may have deleted it." (API and web). */
 export const WORKFLOW_GONE =

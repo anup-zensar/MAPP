@@ -1,8 +1,6 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { api, call } from '@/api/client';
-import { useAttributeForm } from '@/features/settings/api';
+import { useAttributeForm } from '@/features/settings';
 import type { AttributeForm } from '@/ui/ShellAttributeFields/rules';
 import { useToast } from '@/ui/Toast/useToast';
 import { recordHref } from '@/ui/record-links';
@@ -10,7 +8,12 @@ import { usePageTitle } from '@/ui/usePageTitle';
 import { LineItemForm } from './LineItemForm';
 import { editFormState } from './lineItemFormState';
 import { LineItemLoadFailed, LineItemLoading } from './LineItemPageStates';
-import { useLineItem, useLineItemFormOptions, useUpdateLineItem } from './lineItemsApi';
+import {
+  useFetchLatestLineItem,
+  useLineItem,
+  useLineItemFormOptions,
+  useUpdateLineItem,
+} from './lineItemsApi';
 import type { LineItemDetails, LineItemFormOptions } from './lineItemsApi';
 import { EDIT_TITLE, savedToast } from './lineItemText';
 
@@ -64,7 +67,7 @@ interface EditFormProps {
 function EditForm({ details, options, attributeForm, focusField }: EditFormProps) {
   const { lineItem } = details;
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const fetchLatest = useFetchLatestLineItem();
   const { show } = useToast();
   const update = useUpdateLineItem(lineItem.id);
   const [initial] = useState(() => editFormState(lineItem));
@@ -90,16 +93,7 @@ function EditForm({ details, options, attributeForm, focusField }: EditFormProps
         return () => navigate(href);
       }}
       onConflict={async () => {
-        const latest = await queryClient.fetchQuery({
-          queryKey: ['line-items', 'item', lineItem.id],
-          queryFn: () =>
-            call(
-              api.GET('/api/v1/line-items/{lineItemId}', {
-                params: { path: { lineItemId: lineItem.id } },
-              }),
-            ),
-          staleTime: 0,
-        });
+        const latest = await fetchLatest(lineItem.id);
         setVersion(latest.lineItem.version);
       }}
       onCancel={() => navigate(href)}

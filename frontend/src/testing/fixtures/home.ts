@@ -15,7 +15,7 @@ import type {
   MyActivityGroup,
   MyActivityRow,
   WaitingItem,
-} from '@/features/home/homeApi';
+} from '@/features/home';
 
 type DisplayCurrencyOption = components['schemas']['DisplayCurrencyOption'];
 

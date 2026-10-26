@@ -1,10 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { CircleAlert, Info } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router';
-import { api, call } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/generated/schema';
 import { PublicLayout } from '@/ui/PublicLayout/PublicLayout';
@@ -21,6 +19,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import { safeNext } from '@/session/safe-next';
 import { usePageTitle } from '@/ui/usePageTitle';
+import { useDemoPeople } from './api';
 import styles from './SignInPage.module.css';
 
 type DemoPeople = components['schemas']['DemoPeople'];
@@ -99,10 +98,7 @@ function noticeText(routerState: unknown): string {
  */
 function SignInChoices() {
   const { signIn } = useSession();
-  const demoPeople = useQuery({
-    queryKey: ['demo-people'],
-    queryFn: () => call(api.GET('/api/v1/auth/demo-people')),
-  });
+  const demoPeople = useDemoPeople();
   // While a sign-in is on its way, further clicks are ignored; nothing is greyed out.
   const [signingIn, setSigningIn] = useState(false);
   // A failure shown above the form, such as "Incorrect e-mail or password.".

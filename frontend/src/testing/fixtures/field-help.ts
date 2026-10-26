@@ -3,7 +3,7 @@
  * GET /api/v1/field-help answers them (backend/api/openapi.yaml, feature 016 data-model §6).
  */
 import type { components } from '@/api/generated/schema';
-import type { FieldHelpEntry, FieldHelpPage } from '@/features/settings/field-help/fieldHelpApi';
+import type { FieldHelpEntry, FieldHelpPage } from '@/features/settings';
 
 type ActorRef = components['schemas']['ActorRef'];
 

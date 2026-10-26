@@ -9,7 +9,7 @@ import type {
   RateImport,
   RateImportCheck,
   RateImportRow,
-} from '@/features/settings/currencies/ratesApi';
+} from '@/features/settings';
 
 type ActorRef = components['schemas']['ActorRef'];
 

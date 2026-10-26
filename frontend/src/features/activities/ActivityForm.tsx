@@ -17,7 +17,7 @@ import { TextField } from '@/ui/TextField/TextField';
 import type { FieldProblem } from '@/ui/FormErrorSummary/FormErrorSummary';
 import type { AttributeForm, AttributeValues } from '@/ui/ShellAttributeFields/rules';
 import { PersonField } from '@/features/people';
-import { SpreadEffectNote } from '@/features/line-items/SpreadEffectNote';
+import { SpreadEffectNote } from '@/features/line-items';
 import { formatAmount, formatMoneyText } from '@/format/decimal';
 import { recordHref } from '@/ui/record-links';
 import { useFormatters } from '@/format/useFormatters';

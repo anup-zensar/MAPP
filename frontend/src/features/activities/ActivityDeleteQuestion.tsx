@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router';
 import { ApiError } from '@/api/errors';
 import { useToast } from '@/ui/Toast/useToast';
-import { useFinancialRecord } from '@/features/line-items/gsapFinancials';
+import { useFinancialRecord } from '@/features/line-items';
 import { useUndoableDelete } from '@/ui/useUndoableDelete';
 import { ACTIVITY_PLANNING_KEYS, useDeleteActivity } from './activitiesApi';
 import type { Activity } from './activitiesApi';

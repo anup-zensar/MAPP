@@ -9,7 +9,7 @@ import { ProgressBar } from '@/ui/ProgressBar/ProgressBar';
 import { Skeleton } from '@/ui/Skeleton/Skeleton';
 import { StatusChip } from '@/ui/StatusChip/StatusChip';
 import { TeamPills } from '@/ui/TeamPill/TeamPill';
-import { STATUS } from '@/features/plans/planText';
+import { STATUS } from '@/features/plans';
 import { cx } from '@/ui/cx';
 import { formatWhole } from '@/format/decimal';
 import { recordHref } from '@/ui/record-links';
