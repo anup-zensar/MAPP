@@ -42,6 +42,9 @@ repeats a service rule, counted as R4).
   settings and people: 42.5 → 35.4 s and 23.2 → 16.6 s.
 - `t.Parallel` in the phase-1 packages: app alone 25 s → 11 s; auth and samples a few seconds each.
   The contract checks are serialised, which caps the gain for request-heavy packages.
+- A/B of the phase-1 packages, develop's tree and this branch run back to back with CI's flags
+  (load 28 and 37): sum of package times **276.5 s → 123.7 s (−55%)** — apitest 101.0 → 16.7, app
+  77.2 → 41.3, samples 43.1 → 27.9, auth 41.6 → 22.2; tests 158 → 145 top-level, 63 → 58 subtests.
 
 Per package (seconds; "Before" and "apitest fixed" at similar load; the "Phase 1" run was taken at
 a higher load — history, untouched, went from 105 to 127 s in it; R9 has the CI values):
@@ -111,8 +114,15 @@ change that can move the log helper they would share.
   restating test went), actor 100 → no test file (its two functions are run by every handler test
   of other packages; the package's own figure is 0), record, ids, clock, auth, samples, app
   unchanged; cmd/api 14.3 → 16.3 (develop's listener change).
-- Frontend (Vitest v8), before: statements 92.91% (12,145/13,071), **branches 85.26%
-  (9,196/10,785)**, functions 91.91%, lines 93.08%. After: see R9.
+- Frontend (Vitest v8): statements 92.91% → 92.77% (12,145 → 12,127 of 13,071), **branches 85.26% →
+  85.20% (9,196 → 9,189 of 10,785)**, functions 91.91% → 91.58%, lines 93.08% → 92.94%. Every branch
+  and function no longer reached was reached only by a removed test, and none by an assertion of a
+  rule: dead code (`permissionLabel`, the default `onViewHistory` of `useActivityActions`, PageHeader's
+  `tag` prop, which no page passes), the developer gallery's buttons (13 removed duplicates), the
+  UnpublishDialog's Cancel (its R3 test), and three branches that tests passed through without
+  asserting them: TextAreaField's "1 character left" while 50 characters were typed one by one,
+  FieldHelpCount's "All default" in the removed Settings routes test, PlanForm's onSave arrow. Two
+  branches of ActivityEditor are newly reached (the spread note merged into ActivityEditPage).
 
 ## R6 — Removed and merged tests, by rule
 
@@ -148,6 +158,8 @@ Web app (the commits list each test by name):
 | Activities, line items, financials | ReapprovalDialog without line items; the form's dependent-attribute lock; the hook's unused default View history; routes of line items, approval and the spread note (merged into ActivityEditPage); activity-text and line-item-text templates; one hand-picked Financials round trip | R4, R1 |
 | Approvals, people, activity log | ApprovalPreviewPanel decline comment and first decision; ApprovalsTable preview from the name; two ApprovalStatusAction button tests (names folded into the submit tests); OwnerImpactDialog callbacks; display-currency label; the nine action chips; LogEntryList card headings; ActivityLogPage grouping | R4, R3, R1 |
 | Approval workflows, global budgets | nothing removed; WorkflowDetailsPanel's three bare `toHaveBeenCalled()` now check the workflow passed; GlobalBudgetPage's allocation test checks the DELETE sent instead of its own fixture's id; GlobalBudgetsPage and WorkflowFormPanel's conflict test read the real clock and now run on a fixed date | R3, R1, F10 |
+| Settings (second pass), sign-in | SettingDeleteDialog: 4 tests (unused record with Undo, Set inactive for a record in use, inactive in use with Close only, the API's in-use refusal) — the pages' own tests (ModelsPage.status, OptionsCard.status, ActivityTypesPage, ShellAttributesPage.actions) drive the same dialog, and the currency's Set-inactive sentence moved into CurrenciesPage's test; UsageLine: the used-by line and links (ModelsPage's details test) and "Not used yet" (prints the API's summary); SettingsPage: opening a section from its card (the settings-sections test checks every link and address). RateHistorySection read the real clock and would have failed from 1 Jan 2027; it now runs on a fixed date and checks exact dates. Long names are pasted in FinanceBudgetItemsPage.save, FieldHelpPage, SignInForm and CurrenciesPage.save | R4, R2, F10 |
+| `ui/` and `format/` (second pass) | intl's list of formats (ProfilePage.preferences); Combobox's limit (ChoiceField's SC-007 test, the only user of a limit); ConfirmDialog's Cancel focus and its close on Cancel and Escape (merged into the question test and the focus-return test; Escape is Radix); SidePanel's name and content (FormPanel) and its Close button (merged into the focus-return test); CompletenessChip's list (merged into its choose-a-field test); FormSection's footer part; PersonLabel's name with initials (PersonPicker, Avatar); Toast's message area (its 4-second test); useUndoableDelete's message (its replace test). Combobox counts its 300 options without the accessibility walk, TextAreaField pastes the middle 50 characters, InfoTip waits on fake time for its 150 ms close delay | R4, R2, F10 |
 | Settings, recycle bin, dev | ComponentGalleryPage: 13 detail tests and 37 single-card renders (one render left); PlanModuleGallery (file); BinRow restore/purge callbacks, search line, highlighted row; EmptyBinDialog and PurgeDialog success (merged into the page tests); WaterfallExample ⓘ tip and the Settings section list (merged) | R4, R1, R3 |
 
 ### Kept despite doubt
@@ -166,6 +178,11 @@ Web app (the commits list each test by name):
 - All work's page tests, the plans and campaigns routes tests and the dialogs that overlap their
   hosts' tests: each proves wiring (queries, preferences, the route table, panels over the page) that
   no smaller test covers.
+- From the second passes: `settings/api.test`'s query keys (other modules refresh data by those
+  literal keys) and its list reads (the only check of the year `useFinanceBudgets` sends); ImpactDialog's
+  list order; ImportOptionsDialog's 1,214-row set (the scenario's own numbers); ChoiceField's,
+  PersonPicker's and TeamPicker's "no match" sentences; MoneyField's typed amounts; the ThemeToggle and
+  PasswordField tooltips; RuleConditionFields' level-prefixed checkbox ids.
 - Every end-to-end journey (R4).
 
 ## R7 — Phase 2: the other backend packages (after 028)
@@ -203,7 +220,8 @@ Measured causes and recommendations, in order of time saved:
 - Dead code found by the review: `ApprovalStatusAction` (no screen uses it; ActivityHeader's
   decide/owner-may-approve logic of functional review A-01 has no test of its own — the Approval
   section's A-01 test covers the section), `permissionLabel` in `session/access.ts`, the default
-  `onViewHistory` of `useActivityActions`.
+  `onViewHistory` of `useActivityActions`, PageHeader's `tag` prop, and the placeholders' BuildingPage, BuildingPanel and
+  BuildingSection (no file imports them; their tests stay until the code goes).
 - View-state gaps found by the review: GlobalBudgetsPage has no loading, error or forbidden test;
   ApprovalWorkflowsPage no loading or error test; WorkflowDetailsPanel no loading or non-404 error
   test. GlobalBudgetsPage's year tests would have failed from 2027 on (fixed in phase 1).
@@ -215,4 +233,13 @@ Measured causes and recommendations, in order of time saved:
 
 ## R9 — After phase 1
 
-Filled in after the final runs and the pull request's CI.
+| Suite | Before | After |
+|---|---|---|
+| Web-app unit and component tests | 361 files, 2,323 tests; 90.5 s on the idle laptop | 351 files, 2,142 tests (−181); 272 s at load 30 (not comparable; CI below) |
+| End-to-end | 40 tests, 146 s | 40 tests, all passing; 221 s at a higher load (no test changed) |
+| Backend, phase-1 packages (A/B, back to back) | 158 tests, 63 subtests; 276.5 s summed | 145 tests, 58 subtests; 123.7 s summed (−55%) |
+| Backend, whole suite (similar load) | 1,591 tests; 955 s summed, 179 s wall | 1,578 tests; 676 s summed after the apitest change (−29%) |
+| Backend coverage | 80.2% | 80.2% |
+| Frontend branch coverage | 85.26% | 85.20% (R5) |
+
+The pull request's CI run (4 vCPU, the reference of R1) gives the comparable times.

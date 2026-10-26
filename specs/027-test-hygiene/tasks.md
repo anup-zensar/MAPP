@@ -59,16 +59,16 @@ files ≤ 300 non-blank lines; new lines within the comment budget.
 - [X] T015 [P] [US1] `features/approvals`, `features/approval-workflows`, `features/people`,
   `features/activity-log`
 - [X] T016 [US2] Replace the three fixed real waits with fake time or an awaited outcome (FR-003)
-- [ ] T017 [US1] Second pass over the folders with no removal yet: `approval-workflows`,
+- [X] T017 [US1] Second pass over the folders with no removal yet: `approval-workflows`,
   `global-budgets`, `notifications`, `sign-in`, `placeholders`, `format`, the rest of `settings`
   and `session`
-- [ ] T018 [US1] End-to-end review: no fixed waits; every P1 story keeps its journey (R4, SC-005)
+- [X] T018 [US1] End-to-end review: no fixed waits; every P1 story keeps its journey (R4, SC-005)
 
 ### Close phase 1
 
-- [ ] T019 [US3] After-measurements: backend phase-1 packages and full run, frontend coverage run,
+- [X] T019 [US3] After-measurements: backend phase-1 packages and full run, frontend coverage run,
   end-to-end run; fill research R9
-- [ ] T020 Gates: `npm run check`, `npm run test:coverage`, `npm run build`, `npm run test:e2e`;
+- [X] T020 Gates: `npm run check`, `npm run test:coverage`, `npm run build`, `npm run test:e2e`;
   backend gofmt/goimports, `golangci-lint run --new-from-merge-base=origin/develop`, `go vet`,
   `go test -race ./...`
 - [ ] T021 Update `docs/sdd/feature-map.md` row 027; merge `origin/develop`; pull request into develop
