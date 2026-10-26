@@ -40,6 +40,7 @@ func usd(text string) *money.Money {
 // The end on or after the start; both inside the initiative's dates when it has both (R3), only the start
 // for an ongoing activity; the end at most 31 Dec of the plan's year + 10 (R5). Every problem at once.
 func TestCheckDates_FR009_FR010(t *testing.T) {
+	t.Parallel()
 	latest := latestEndDate(2026)
 	noDates := campaigns.Initiative{ID: "I-1006", Name: "Fleet cards"}
 	tests := []struct {
@@ -78,6 +79,7 @@ func TestCheckDates_FR009_FR010(t *testing.T) {
 // Names are the same ignoring letter case and surrounding spaces (FR-006); a restored activity whose name is
 // taken gets " (restored)", " (restored 2)", … (FR-031).
 func TestNames_FR006_FR031(t *testing.T) {
+	t.Parallel()
 	if !sameName(" launch FILM ", "Launch film") || sameName("Launch film", "Launch films") {
 		t.Error("sameName must ignore case and surrounding spaces only")
 	}
@@ -99,6 +101,7 @@ var lubricants = settings.Model{
 // MQL, deals and revenue come from INQ and the model's values (domain model §4.5): 250,000 → 5,000 → 250 →
 // 2,500,000.00 USD; without INQ they are empty (FR-018).
 func TestGoals_CalculatedFromModel_FR018(t *testing.T) {
+	t.Parallel()
 	inq := int64(250_000)
 	mql, deals := int64(5_000), int64(250)
 	got := goalsOf(Activity{INQ: &inq}, lubricants)
@@ -119,6 +122,7 @@ func TestGoals_CalculatedFromModel_FR018(t *testing.T) {
 // With "Set later stages myself" the typed MQL and revenue are kept and nothing is calculated; without it,
 // typed values are not stored (FR-018).
 func TestGoals_TypedValuesKept_FR018(t *testing.T) {
+	t.Parallel()
 	inq, mql := int64(60_000), int64(2_000)
 	typed := Activity{INQ: &inq, SetLaterStagesMyself: true, MQL: &mql, Revenue: usd("400000.00")}
 	want := Goals{INQ: &inq, SetLaterStagesMyself: true, MQL: &mql, Revenue: usd("400000.00")}
@@ -136,6 +140,7 @@ func TestGoals_TypedValuesKept_FR018(t *testing.T) {
 // An approved activity shows In progress from its start date and Complete after its end date, never
 // Complete when ongoing; other statuses show as stored (FR-021, D-091).
 func TestDisplayStatus_FR021(t *testing.T) {
+	t.Parallel()
 	today := date.MustParse("2026-03-12")
 	tests := []struct {
 		name     string
@@ -181,6 +186,7 @@ func readyInput() checkInput {
 // Every problem that stops submitting is listed at once, grouped and in order (FR-023): the empty cost
 // centre and the 90.00 % split under "This activity"; the negative balance, then the line items' problems.
 func TestCheck_ListsEveryProblemAtOnce_FR023(t *testing.T) {
+	t.Parallel()
 	in := readyInput()
 	in.activity.Attributes = settings.AttributeValues{
 		"SA-1013": json.RawMessage(`[{"optionId":"SO-1030","share":"60.00"},{"optionId":"SO-1031","share":"30.00"}]`),
@@ -222,6 +228,7 @@ func TestCheck_ListsEveryProblemAtOnce_FR023(t *testing.T) {
 
 // With nothing missing the check is ready, with empty lists (FR-023).
 func TestCheck_ReadyWhenNothingMissing_FR023(t *testing.T) {
+	t.Parallel()
 	got := check(readyInput())
 	want := SubmitCheck{Ready: true, Activity: []SubmitProblem{}, LineItems: []SubmitProblem{}, Advice: []SubmitProblem{}}
 	if !reflect.DeepEqual(got, want) {
@@ -232,6 +239,7 @@ func TestCheck_ReadyWhenNothingMissing_FR023(t *testing.T) {
 // Every empty fixed needed-to-submit field is listed in form order; 0.00 is a planned cost (FR-011), and
 // an ongoing activity needs no end date (FR-010).
 func TestCheck_EmptyFieldsAndZeroCost_FR011_FR023(t *testing.T) {
+	t.Parallel()
 	in := readyInput()
 	in.activity = Activity{ID: "A-1010", Name: "Lunar new year promo", Attributes: settings.AttributeValues{}}
 	in.workflow, in.lineItems = nil, LineItemFacts{}
@@ -259,6 +267,7 @@ func TestCheck_EmptyFieldsAndZeroCost_FR011_FR023(t *testing.T) {
 // Dates outside the initiative's dates (after the initiative changed) and a type the model no longer
 // allows are listed, each with the field that fixes it (edge cases).
 func TestCheck_DatesOutsideAndTypeNotAllowed_EdgeCase(t *testing.T) {
+	t.Parallel()
 	in := readyInput()
 	in.activity.StartDate = day("2025-12-01")
 	in.typeAllowed, in.typeName = false, "MOBILITY – Long-term contract"
@@ -275,6 +284,7 @@ func TestCheck_DatesOutsideAndTypeNotAllowed_EdgeCase(t *testing.T) {
 
 // A chosen workflow that is no longer active is listed (FR-023, D-109).
 func TestCheck_InactiveWorkflow_FR023(t *testing.T) {
+	t.Parallel()
 	in := readyInput()
 	in.workflow.Active = false
 	got := check(in)
@@ -287,6 +297,7 @@ func TestCheck_InactiveWorkflow_FR023(t *testing.T) {
 
 // A positive unassigned planned cost is advice that never blocks; a negative one blocks (FR-024, D-204).
 func TestCheck_UnassignedPlannedCost_FR024(t *testing.T) {
+	t.Parallel()
 	in := readyInput()
 	in.lineItems = LineItemFacts{Count: 1, PlannedCostPlan: usd("800.00").Amount}
 	got := check(in)

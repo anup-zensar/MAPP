@@ -29,6 +29,7 @@ func changeTexts(e history.Entry) []string {
 // A save writes one "changed" entry listing every changed field with readable old and new values, one
 // change per Shell attribute (FR-026, data model §5); the version goes up.
 func TestUpdate_LogsEveryChange_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.clock.Advance(time.Hour)
 
@@ -62,6 +63,7 @@ func TestUpdate_LogsEveryChange_FR026(t *testing.T) {
 // The other fields read well in the log too: dates, money, numbers, yes/no, workflow and status (FR-026,
 // data model §5).
 func TestDescribe_ReadableChanges_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	mql := int64(4_000)
 
@@ -88,6 +90,7 @@ func TestDescribe_ReadableChanges_FR026(t *testing.T) {
 
 // A save that changes nothing is not a change: no new version and no log entry (FR-026).
 func TestUpdate_NoChangeNoLog_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view := f.mustEdit(t, "A-1001", func(u *activities.Update) { u.Name = " Launch film " })
@@ -100,6 +103,7 @@ func TestUpdate_NoChangeNoLog_FR026(t *testing.T) {
 // A save from an out-of-date version is refused, naming who changed the activity and when; nothing is
 // saved (FR-026, 001 FR-029).
 func TestUpdate_VersionConflict_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	form := formOf(f.get(t, "A-1001"))
 	f.clock.Advance(90 * time.Minute)
@@ -117,6 +121,7 @@ func TestUpdate_VersionConflict_FR026(t *testing.T) {
 // Without a version (or with one below 1) the save is refused next to the field "version", together with
 // every other problem (FR-026).
 func TestUpdate_MissingVersion_FR026(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	form := formOf(f.get(t, "A-1001"))
 	form.Version, form.Name = nil, ""
@@ -129,6 +134,7 @@ func TestUpdate_MissingVersion_FR026(t *testing.T) {
 // On a Submitted activity, a change of planned cost, start date, end date or ongoing is refused unless the
 // person confirmed that it needs approval again; nothing is saved (FR-027, D-106).
 func TestUpdate_ReapprovalNeedsConfirmation_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	changes := map[string]func(u *activities.Update){
 		"planned cost": func(u *activities.Update) { u.PlannedCost = usdInput("35000.00") },
@@ -151,6 +157,7 @@ func TestUpdate_ReapprovalNeedsConfirmation_FR027(t *testing.T) {
 // Confirmed, the change is saved and the activity returns to Created: one "changed" entry for the fields,
 // one status entry with the reason, and features 007 and 008 are told (FR-027, D-196).
 func TestUpdate_ConfirmedReapprovalReturnsToCreated_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	view := f.mustEdit(t, "A-1006", func(u *activities.Update) {
@@ -183,6 +190,7 @@ func TestUpdate_ConfirmedReapprovalReturnsToCreated_FR027(t *testing.T) {
 // RestartApproval sends a Submitted or Approved activity back to Created for changes made elsewhere (feature
 // 007), with one status entry naming the reasons; other statuses are left alone (FR-027, D-196).
 func TestRestartApproval_SendsBackAndLogs_FR027(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	err := f.service.RestartApproval(t.Context(), daniel, "A-1002", []string{"Line item 'Banner' (L-1003) added: 1,000.00 EUR."})
@@ -204,6 +212,7 @@ func TestRestartApproval_SendsBackAndLogs_FR027(t *testing.T) {
 // Other edits — names, description, owner, attributes, goals — keep a Submitted or Approved activity's
 // status, and a Declined activity stays Declined (FR-028).
 func TestUpdate_OtherEditsKeepStatus_FR028(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	inq := int64(10_000)
 
@@ -225,6 +234,7 @@ func TestUpdate_OtherEditsKeepStatus_FR028(t *testing.T) {
 
 // Once saved, ongoing can't be undone (FR-010, R6).
 func TestUpdate_OngoingCannotBeUndone_FR010(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.edit(t, priya, "A-1007", func(u *activities.Update) {
@@ -236,6 +246,7 @@ func TestUpdate_OngoingCannotBeUndone_FR010(t *testing.T) {
 
 // The approval workflow can change only while the activity is Created or Declined (FR-012).
 func TestUpdate_WorkflowLockedWhenSubmittedOrApproved_FR012(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, err := f.edit(t, priya, "A-1002", func(u *activities.Update) { u.ApprovalWorkflowID = text(chinaFlow) })
@@ -249,6 +260,7 @@ func TestUpdate_WorkflowLockedWhenSubmittedOrApproved_FR012(t *testing.T) {
 // While a round is open — the activity is Submitted — the workflow field says how to change it: recall the
 // activity first (008 FR-013); nothing is saved.
 func TestWorkflowFieldLockReason_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, chosen := f.edit(t, priya, "A-1004", func(u *activities.Update) { u.ApprovalWorkflowID = text(chinaFlow) })
@@ -265,6 +277,7 @@ func TestWorkflowFieldLockReason_FR013(t *testing.T) {
 // A confirmed re-approval change tells feature 008 the changes of the save's "changed" entry, with the
 // labels and texts people read (008 FR-022).
 func TestReapprovalChange_CallsApprovalHook_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	f.mustEdit(t, "A-1004", func(u *activities.Update) {
@@ -284,6 +297,7 @@ func TestReapprovalChange_CallsApprovalHook_FR022(t *testing.T) {
 // A line-item change that restarts approval (feature 007, through RestartApproval) tells feature 008 each
 // reason as one change, a ready-made sentence without old and new texts (008 FR-022, plan Reconciliation).
 func TestLineItemReapprovalChange_CallsApprovalHook_FR022(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	reasons := []string{"Planned cost of line item 'Media booking' (L-1002): 18,000.00 USD → 18,000.00 EUR"}
 
@@ -300,6 +314,7 @@ func TestLineItemReapprovalChange_CallsApprovalHook_FR022(t *testing.T) {
 // Inactive values already chosen — type, owner, workflow, attribute option — are kept by other edits;
 // choosing an inactive one anew is refused (FR-013).
 func TestUpdate_InactiveValuesKeptWhenUnchanged_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.deactivateType(t, contentType)
 	f.deactivatePerson(t, priya.ID)
@@ -324,6 +339,7 @@ func TestUpdate_InactiveValuesKeptWhenUnchanged_FR013(t *testing.T) {
 // When the initiative's dates move so that the activity falls outside them, other edits still save and the
 // check lists the dates; a date change is checked against the new dates (edge case).
 func TestUpdate_UnchangedDatesNotChecked_EdgeCase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	repo := campaigns.NewJSONRepository()
 	f.change(t, func(ctx context.Context) error {
@@ -350,6 +366,7 @@ func TestUpdate_UnchangedDatesNotChecked_EdgeCase(t *testing.T) {
 // The edit form offers the activity's own type and workflow even when inactive, flagged, leaves its own
 // name out of the names in use, and has no defaults (FR-013, FR-026).
 func TestEditForm_IncludesCurrentInactiveValues_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.deactivateType(t, contentType)
 	f.deactivateWorkflow(t, lubricantsFlow)

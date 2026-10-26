@@ -26,6 +26,7 @@ const (
 // The new-activity form answers the context, choices and defaults of the initiative (FR-001); a gone
 // initiative answers not found.
 func TestNewActivityForm_Contract_FR001(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -44,6 +45,7 @@ func TestNewActivityForm_Contract_FR001(t *testing.T) {
 // Creating an activity answers 201 with the new activity, Created (FR-004); every field problem is listed
 // at once (FR-006, FR-009); a gone initiative answers not found.
 func TestCreateActivity_Contract_FR004(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -73,6 +75,7 @@ func TestCreateActivity_Contract_FR004(t *testing.T) {
 // The plan's activities are its plan-tree rows, ordered by start date, then name, without dates last
 // (FR-033, D-111); a gone plan answers not found.
 func TestListPlanActivities_Contract_FR033(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	server.GrantRole(t, priyasEmail, "globalPlanner", "all") // 014: every market's plans
@@ -95,6 +98,7 @@ func TestListPlanActivities_Contract_FR033(t *testing.T) {
 // An activity answers with its status, completeness and ready-to-submit check (FR-019 – FR-023): A-1001
 // "Launch film" has three needed fields empty; a gone activity answers not found.
 func TestGetActivity_Contract_FR019(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -118,6 +122,7 @@ func TestGetActivity_Contract_FR019(t *testing.T) {
 // The edit form has no defaults and leaves the activity's own name out of the names in use (FR-013,
 // FR-026); a gone activity answers not found.
 func TestEditActivityForm_Contract_FR013(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 
@@ -136,6 +141,7 @@ func TestEditActivityForm_Contract_FR013(t *testing.T) {
 // activity needs restartApproval (FR-027, D-106); a save from an out-of-date version is refused with
 // version_conflict.
 func TestUpdateActivity_Contract_FR026(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	daniel := server.SignIn(t, "daniel.okoro@shell.com")
@@ -164,6 +170,7 @@ func TestUpdateActivity_Contract_FR026(t *testing.T) {
 
 // Deleting an activity answers its recycle-bin entry, and Undo brings it back exactly (FR-031).
 func TestDeleteActivity_ThenUndo_Contract_FR031(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	before := priya.Do(t, http.MethodGet, "/api/v1/activities/A-1002", nil)

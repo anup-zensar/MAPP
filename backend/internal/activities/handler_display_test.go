@@ -32,6 +32,7 @@ type displayedActivity struct {
 // planned cost (20,000.00 USD) and its revenue goal a second time in euros at 0.92, on the activity and on
 // its plan-tree row; the USD amounts the form uses stay as they are (D-061, D-220).
 func TestActivity_DisplayCurrency_D220(t *testing.T) {
+	t.Parallel()
 	server := apitest.New(t)
 	priya := server.SignIn(t, priyasEmail)
 	assertStatus(t, priya.Do(t, http.MethodPatch, "/api/v1/me/preferences", map[string]any{"displayCurrency": "EUR"}), http.StatusOK)

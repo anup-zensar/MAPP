@@ -1,6 +1,7 @@
 package activities_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -17,13 +18,12 @@ import (
 	"mapp/internal/people"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/errs"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/store"
 	"mapp/internal/settings"
-	"mapp/internal/stores"
-	"mapp/seed"
 )
 
 // The service tests run on the demo data of the seed (006 plan "Demo data"): plan P-1001 "FY2026 Lubricants
@@ -68,17 +68,16 @@ type fixture struct {
 	hooks     *fakeHooks
 }
 
-// newFixture loads the demo data into a temporary store and builds the service as internal/app does.
+// newFixture copies the demo data into a temporary store and builds the service as internal/app does.
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	dir := t.TempDir()
+	apitest.CopyDemoData(t, dir, true)
+	db, err := store.Open(dir)
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
 	clock := &testClock{now: start}
-	if err := seed.Load(t.Context(), stores.JSON(db), clock.Now, seed.WithoutHistory()); err != nil {
-		t.Fatalf("seed.Load: %v", err)
-	}
 	generator := ids.NewGenerator(ids.NewJSONCounters())
 	hist := history.NewService(db, history.NewJSONRepository(), generator, clock.Now)
 	campaignsRepo := campaigns.NewJSONRepository()
@@ -197,7 +196,8 @@ func (f *fixture) entries(t *testing.T) []history.Entry {
 	return list
 }
 
-// stored reads the activity id as stored, and false when it is not.
+// stored reads the activity id as stored, and false when it is not; its attribute values come compacted, as
+// a save writes them, because the copied demo files hold them indented.
 func (f *fixture) stored(t *testing.T, id string) (activities.Activity, bool) {
 	t.Helper()
 	var activity activities.Activity
@@ -209,6 +209,11 @@ func (f *fixture) stored(t *testing.T, id string) (activities.Activity, bool) {
 	})
 	if err != nil {
 		t.Fatalf("Get(%s): %v", id, err)
+	}
+	for attribute, value := range activity.Attributes {
+		var compacted bytes.Buffer
+		_ = json.Compact(&compacted, value)
+		activity.Attributes[attribute] = compacted.Bytes()
 	}
 	return activity, found
 }

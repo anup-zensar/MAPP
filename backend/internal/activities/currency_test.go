@@ -23,6 +23,7 @@ func gbpInput(amount string) *money.Input {
 
 // The planned cost is typed and kept in the plan currency; another currency is refused with the plan's (FR-011).
 func TestPlannedCost_MustBePlanCurrency_FR011(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	_, refused := f.service.Create(t.Context(), priya, ukInitiativeID, activities.Input{
@@ -42,6 +43,7 @@ func TestPlannedCost_MustBePlanCurrency_FR011(t *testing.T) {
 // The activity's amounts are in the plan currency, and the display amounts are converted from it (FR-013):
 // 40,000.00 GBP → 50,632.91 USD; with 34,750.00 GBP on line items the unassigned 5,250.00 GBP → 6,645.57 USD.
 func TestActivityDisplay_FromPlanCurrency_FR013(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.lineItems.facts[ukLaunchID] = activities.LineItemFacts{Count: 2, PlannedCostPlan: amount(t, "34750.00"), Currency: "GBP"}
 
@@ -72,6 +74,7 @@ func TestActivityDisplay_FromPlanCurrency_FR013(t *testing.T) {
 // An activity type's default planned cost, kept in USD, is offered converted into the plan currency at the
 // current rate, with the USD value beside it for the note (FR-016): Event 25,000.00 USD = 19,750.00 GBP.
 func TestActivityForm_TypeDefaultConverted_FR016(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 
 	gbp, err := f.service.NewForm(t.Context(), priya, ukInitiativeID)
@@ -109,6 +112,7 @@ func typeOption(form activities.FormView, id string) *activities.TypeOption {
 // Goals stay in USD in a GBP plan (FR-019): the calculated revenue comes from the model's USD average deal
 // size, and a typed revenue must be USD.
 func TestGoals_RevenueStaysUSD_FR019(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	inq := int64(1_000)
 
