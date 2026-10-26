@@ -131,7 +131,7 @@ func TestPostgresStoreLineItemScopeFollowsTheActivityFR009(t *testing.T) {
 		scope authz.Scope
 		want  []string
 	}{
-		{name: "View plans in team T-1002", scope: authz.Scope{PersonID: "U-1001", ViewsPlans: true, TeamIDs: []string{"T-1002"}},
+		{name: "View plans in team T-1002", scope: authz.Scope{PersonID: "U-1001", Holds: true, TeamIDs: []string{"T-1002"}},
 			want: []string{"L-1002"}},
 		{name: "no role, owner of activity A-1001", scope: authz.Scope{PersonID: "U-1002", TeamIDs: []string{}},
 			want: []string{"L-1001"}},

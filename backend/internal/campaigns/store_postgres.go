@@ -92,7 +92,7 @@ func (s *PostgresStore) campaigns(ctx context.Context, filter sqlcdb.ListCampaig
 
 func (s *PostgresStore) campaignsInScope(ctx context.Context, scope authz.Scope, id *string) ([]Campaign, error) {
 	rows, err := s.db.Queries(ctx).ListCampaignsInScope(ctx, sqlcdb.ListCampaignsInScopeParams{
-		ID: id, SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.ViewsPlans,
+		ID: id, SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.Holds,
 		ViewerTeamIds: scope.TeamIDs,
 	})
 	if err != nil {

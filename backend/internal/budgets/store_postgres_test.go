@@ -103,7 +103,7 @@ func TestPostgresStoreAllocationScopeIsolationFR009(t *testing.T) {
 		scope authz.Scope
 		want  []budgets.Allocation
 	}{
-		{name: "View plans in team T-1002", scope: authz.Scope{PersonID: "U-1001", ViewsPlans: true, TeamIDs: []string{"T-1002"}},
+		{name: "View plans in team T-1002", scope: authz.Scope{PersonID: "U-1001", Holds: true, TeamIDs: []string{"T-1002"}},
 			want: allocations[1:]},
 		{name: "no role", scope: authz.Scope{PersonID: "U-1001", TeamIDs: []string{}}, want: []budgets.Allocation{}},
 		{name: "everything", scope: authz.Scope{Everything: true, TeamIDs: []string{}}, want: allocations},

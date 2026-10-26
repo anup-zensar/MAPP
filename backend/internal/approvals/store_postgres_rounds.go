@@ -33,7 +33,7 @@ func (s *PostgresStore) RoundsOf(ctx context.Context, activityID string) ([]Roun
 // recycle bin is in no scope.
 func (s *PostgresStore) RoundsInScope(ctx context.Context, scope authz.Scope) ([]Round, error) {
 	rows, err := s.db.Queries(ctx).ListRoundsInScope(ctx, sqlcdb.ListRoundsInScopeParams{
-		SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.ViewsPlans,
+		SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.Holds,
 		ViewerTeamIds: scope.TeamIDs,
 	})
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *PostgresStore) ActionsOf(ctx context.Context, activityID string) ([]Act
 
 func (s *PostgresStore) ActionsInScope(ctx context.Context, scope authz.Scope) ([]Action, error) {
 	rows, err := s.db.Queries(ctx).ListActionsInScope(ctx, sqlcdb.ListActionsInScopeParams{
-		SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.ViewsPlans,
+		SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.Holds,
 		ViewerTeamIds: scope.TeamIDs,
 	})
 	return actionsFromRows(rows, err)

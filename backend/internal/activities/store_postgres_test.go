@@ -128,7 +128,7 @@ func TestPostgresStoreActivityScopeIsolationFR009(t *testing.T) {
 		scope authz.Scope
 		want  []string
 	}{
-		{name: "View plans in team T-1002", scope: authz.Scope{PersonID: "U-1001", ViewsPlans: true, TeamIDs: []string{"T-1002"}},
+		{name: "View plans in team T-1002", scope: authz.Scope{PersonID: "U-1001", Holds: true, TeamIDs: []string{"T-1002"}},
 			want: []string{"A-1002"}},
 		{name: "no role, owner of A-1001 only", scope: authz.Scope{PersonID: "U-1002", TeamIDs: []string{}},
 			want: []string{"A-1001"}},

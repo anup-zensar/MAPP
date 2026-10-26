@@ -123,7 +123,7 @@ func TestPostgresStoreRoundScopeIncludesNamedApproversFR009(t *testing.T) {
 		wantRounds   []string
 		wantActivity string
 	}{
-		{name: "View plans in team T-1001", scope: authz.Scope{PersonID: "U-1001", ViewsPlans: true, TeamIDs: []string{"T-1001"}},
+		{name: "View plans in team T-1001", scope: authz.Scope{PersonID: "U-1001", Holds: true, TeamIDs: []string{"T-1001"}},
 			wantRounds: []string{"AR-1001"}, wantActivity: "A-1001"},
 		{name: "no role, approver named in a round of A-1002", scope: authz.Scope{PersonID: "U-1003", TeamIDs: []string{}},
 			wantRounds: []string{"AR-1002"}, wantActivity: "A-1002"},

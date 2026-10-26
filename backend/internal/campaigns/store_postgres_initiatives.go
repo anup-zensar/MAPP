@@ -82,7 +82,7 @@ func (s *PostgresStore) initiatives(ctx context.Context, filter sqlcdb.ListIniti
 
 func (s *PostgresStore) initiativesInScope(ctx context.Context, scope authz.Scope, id *string) ([]Initiative, error) {
 	rows, err := s.db.Queries(ctx).ListInitiativesInScope(ctx, sqlcdb.ListInitiativesInScopeParams{
-		ID: id, SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.ViewsPlans,
+		ID: id, SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.Holds,
 		ViewerTeamIds: scope.TeamIDs,
 	})
 	if err != nil {

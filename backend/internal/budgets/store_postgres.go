@@ -89,7 +89,7 @@ func (s *PostgresStore) AllocationOfPlan(ctx context.Context, planID string) (Al
 func (s *PostgresStore) AllocationsInScope(ctx context.Context, scope authz.Scope, globalBudgetID string) ([]Allocation, error) {
 	rows, err := s.db.Queries(ctx).ListAllocationsInScope(ctx, sqlcdb.ListAllocationsInScopeParams{
 		GlobalBudgetID: database.NullIfEmpty(globalBudgetID), SeesEverything: scope.Everything,
-		ViewerID: scope.PersonID, ViewsPlans: scope.ViewsPlans, ViewerTeamIds: scope.TeamIDs,
+		ViewerID: scope.PersonID, ViewsPlans: scope.Holds, ViewerTeamIds: scope.TeamIDs,
 	})
 	return allocationsFromRows(rows, err)
 }

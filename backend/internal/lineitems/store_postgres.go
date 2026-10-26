@@ -99,7 +99,7 @@ func (s *PostgresStore) list(ctx context.Context, filter sqlcdb.ListLineItemsPar
 
 func (s *PostgresStore) listInScope(ctx context.Context, scope authz.Scope, id *string) ([]LineItem, error) {
 	rows, err := s.db.Queries(ctx).ListLineItemsInScope(ctx, sqlcdb.ListLineItemsInScopeParams{
-		ID: id, SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.ViewsPlans,
+		ID: id, SeesEverything: scope.Everything, ViewerID: scope.PersonID, ViewsPlans: scope.Holds,
 		ViewerTeamIds: scope.TeamIDs,
 	})
 	if err != nil {
