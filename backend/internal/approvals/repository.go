@@ -24,6 +24,8 @@ type Repository interface {
 	ListRounds(ctx context.Context) ([]Round, error)
 	// RoundsOf returns the rounds of the activity activityID, ordered by round number.
 	RoundsOf(ctx context.Context, activityID string) ([]Round, error)
+	// OpenRounds returns every round still open, at most one per activity, ordered by id.
+	OpenRounds(ctx context.Context) ([]Round, error)
 	// PutRound saves r, replacing the round with the same id.
 	PutRound(ctx context.Context, r Round) error
 

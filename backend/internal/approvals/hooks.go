@@ -95,11 +95,11 @@ func (s *Service) ApprovalRestarted(ctx context.Context, a actor.Actor, activity
 func (s *Service) ActivityRestored(ctx context.Context, rc history.RestoreContext, activityID string) ([]string, error) {
 	var notes []string
 	err := s.tx.Write(ctx, func(ctx context.Context) error {
-		rounds, err := s.repo.RoundsOf(ctx, activityID)
+		rounds, err := s.repo.OpenRounds(ctx)
 		if err != nil {
 			return err
 		}
-		open, found := openRound(rounds)
+		open, found := openRound(where(rounds, func(r Round) bool { return r.ActivityID == activityID }))
 		if !found {
 			return nil
 		}
