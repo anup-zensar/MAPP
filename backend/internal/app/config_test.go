@@ -17,7 +17,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	}
 
 	want := app.Config{
-		Env: "local", Port: 8080, DataDir: "data", DemoPassword: "mapp",
+		Env: "local", Port: 8080, DatabaseURL: "postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable", DemoPassword: "mapp",
 		LogLevel: slog.LevelInfo, ShutdownTimeout: 10 * time.Second,
 		Telemetry: telemetry.Config{Traces: telemetry.None, Metrics: telemetry.None},
 	}
@@ -30,7 +30,7 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 	cfg, err := app.LoadConfig(environment(map[string]string{
 		"APP_ENV":               "development",
 		"APP_PORT":              "18080",
-		"DATA_DIR":              "C:/temp/mapp-data",
+		"DATABASE_URL":          "postgres://planner@127.0.0.1:5433/mapp_dev",
 		"DEMO_PASSWORD":         "open sesame",
 		"LOG_LEVEL":             "debug",
 		"SHUTDOWN_TIMEOUT":      "25s",
@@ -42,7 +42,7 @@ func TestLoadConfig_ReadsEveryVariable(t *testing.T) {
 	}
 
 	want := app.Config{
-		Env: "development", Port: 18080, DataDir: "C:/temp/mapp-data", DemoPassword: "open sesame",
+		Env: "development", Port: 18080, DatabaseURL: "postgres://planner@127.0.0.1:5433/mapp_dev", DemoPassword: "open sesame",
 		LogLevel: slog.LevelDebug, ShutdownTimeout: 25 * time.Second,
 		Telemetry: telemetry.Config{Traces: telemetry.Console, Metrics: telemetry.Console},
 	}

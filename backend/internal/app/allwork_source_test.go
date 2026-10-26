@@ -9,6 +9,7 @@ import (
 	"mapp/internal/allwork"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/store"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -24,14 +25,14 @@ func newSeededApp(t testing.TB) (*App, *store.DB) {
 		t.Fatalf("store.Open: %v", err)
 	}
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err := seed.Load(t.Context(), db, now); err != nil {
+	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	cfg, err := LoadConfig(func(string) string { return "" })
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
-	built, err := New(cfg, db, now)
+	built, err := New(cfg, stores.JSON(db), now)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}

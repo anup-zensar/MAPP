@@ -65,11 +65,10 @@ var _ allwork.Source = allWorkSource{}
 // work them out record by record.
 func (s allWorkSource) Year(ctx context.Context, year int, today date.Date, columns []string) (allwork.YearData, error) {
 	data := allwork.YearData{Nodes: []allwork.Node{}}
-	yearPlans, err := s.plansRepo.PlansOfYear(ctx, year)
+	yearPlans, err := plansOfYear(ctx, s.plansRepo, year) // rows, totals, calendar and export: what the person may see
 	if err != nil {
 		return data, err
 	}
-	yearPlans = visiblePlans(ctx, yearPlans) // rows, totals, calendar and export: what the person may see (014 FR-007)
 	if len(yearPlans) == 0 {
 		return data, nil
 	}
@@ -723,12 +722,12 @@ func ownerOf(ref *people.PersonRef) *allwork.Owner {
 
 // Years returns the years that have plans (004) the person may see (014 FR-007).
 func (s allWorkSource) Years(ctx context.Context) ([]int, error) {
-	all, err := s.plansRepo.List(ctx)
+	all, err := s.plansRepo.ListInScope(ctx, authz.ScopeOf(ctx))
 	if err != nil {
 		return nil, err
 	}
 	years := []int{}
-	for _, p := range visiblePlans(ctx, all) {
+	for _, p := range all {
 		if !slices.Contains(years, p.Year) {
 			years = append(years, p.Year)
 		}
@@ -949,8 +948,8 @@ func (s allWorkSource) InRecycleBin(ctx context.Context, recordID string) (bool,
 	return false, nil
 }
 
-// visiblePlans keeps the plans the person acting may see (014 FR-007, SC-004); every plan for an internal
-// call.
-func visiblePlans(ctx context.Context, list []plans.Plan) []plans.Plan {
-	return slices.DeleteFunc(list, func(p plans.Plan) bool { return !authz.CanView(ctx, plans.AccessFacts(p)) })
+// plansOfYear returns the plans of year the person acting may see (014 FR-007, SC-004).
+func plansOfYear(ctx context.Context, repo plans.Repository, year int) ([]plans.Plan, error) {
+	all, err := repo.ListInScope(ctx, authz.ScopeOf(ctx))
+	return slices.DeleteFunc(all, func(p plans.Plan) bool { return p.Year != year }), err
 }

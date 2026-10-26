@@ -1,6 +1,6 @@
 # ADR-0004: JSON file store now, PostgreSQL later
 
-**Status:** Accepted · **Date:** 2026-10-18
+**Status:** Superseded by [ADR-0013](0013-postgresql-storage.md) · **Date:** 2026-10-18
 
 ## Context
 PostgreSQL will be provided on Azure, which is not yet available. The team must build and demonstrate

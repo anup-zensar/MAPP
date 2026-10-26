@@ -83,7 +83,7 @@ var demoCampaigns = []demoCampaign{
 // addCampaigns creates the four demo campaigns and their eight initiatives through the campaigns
 // repository.
 func (d *demo) addCampaigns(ctx context.Context) error {
-	repo := campaigns.NewJSONRepository()
+	repo := d.stores.Campaigns
 	d.campaigns, d.initiatives = map[string]string{}, map[string]string{}
 	for _, c := range demoCampaigns {
 		var r resolver

@@ -27,7 +27,7 @@ var demoAllocations = []struct{ plan, amount string }{
 // addGlobalBudgets creates the demo global budget and its allocations through the budgets repository, after
 // the plans (D-306). Each allocation equals its plan's seeded budget.
 func (d *demo) addGlobalBudgets(ctx context.Context) error {
-	repo := budgets.NewJSONRepository()
+	repo := d.stores.Budgets
 	var r resolver
 	ownerID := r.id(d.people, "person", demoGlobalBudgetOwner)
 	if r.err != nil {

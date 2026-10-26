@@ -27,7 +27,7 @@ func (d *demo) addSavedViews(ctx context.Context) error {
 	declined := standardViewState()
 	declined.Filters.ActivityStatuses = []string{"declined"}
 
-	repo := allwork.NewJSONRepository()
+	repo := d.stores.AllWork
 	for _, v := range []struct {
 		name  string
 		state allwork.ViewState

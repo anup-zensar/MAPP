@@ -242,14 +242,14 @@ func (f financialAccess) VisiblePlanIDs(ctx context.Context, _ actor.Actor) ([]s
 	if f.plans == nil || !g.Has(authz.FinanceView) {
 		return visible, nil
 	}
+	finance := authz.PermissionScopeOf(ctx, authz.FinanceView)
 	err := f.tx.Read(ctx, func(ctx context.Context) error {
-		list, err := f.plans.List(ctx)
+		list, err := f.plans.ListInScope(ctx, authz.ScopeOf(ctx))
 		if err != nil {
 			return err
 		}
 		for _, p := range list {
-			facts := plans.AccessFacts(p)
-			if g.CanViewPlan(facts) && g.InScope(authz.FinanceView, facts) {
+			if finance.Covers(plans.AccessFacts(p)) {
 				visible = append(visible, p.ID)
 			}
 		}

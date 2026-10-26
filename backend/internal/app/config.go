@@ -18,6 +18,7 @@ const (
 	envDevelopment = "development"
 	envProduction  = "production"
 
+	defaultDatabaseURL     = "postgres://mapp@127.0.0.1:5432/mapp?sslmode=disable"
 	defaultLogLevel        = "info"
 	defaultShutdownTimeout = "10s"
 	minShutdownTimeout     = time.Second
@@ -30,7 +31,7 @@ const (
 type Config struct {
 	Env             string
 	Port            int
-	DataDir         string
+	DatabaseURL     string
 	DemoPassword    string
 	LogLevel        slog.Level
 	ShutdownTimeout time.Duration
@@ -49,7 +50,7 @@ func LoadConfig(getenv func(name string) string) (Config, error) {
 	cfg := Config{
 		Env:             env.choice("APP_ENV", envLocal, envLocal, envDevelopment, envProduction),
 		Port:            env.port("APP_PORT", "8080"),
-		DataDir:         env.text("DATA_DIR", "data"),
+		DatabaseURL:     env.text("DATABASE_URL", defaultDatabaseURL),
 		DemoPassword:    env.notBlank("DEMO_PASSWORD", "mapp"),
 		LogLevel:        env.logLevel("LOG_LEVEL"),
 		ShutdownTimeout: env.shutdownTimeout("SHUTDOWN_TIMEOUT"),

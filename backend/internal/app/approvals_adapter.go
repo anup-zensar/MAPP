@@ -14,6 +14,7 @@ import (
 	"mapp/internal/lineitems"
 	"mapp/internal/plans"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
@@ -58,6 +59,19 @@ func (p *approvalsActivities) List(ctx context.Context) ([]approvals.ActivityFac
 	if err != nil {
 		return nil, err
 	}
+	return p.factsOf(ctx, all)
+}
+
+// ListInScope returns the stored activities the scope sees as approvals needs them.
+func (p *approvalsActivities) ListInScope(ctx context.Context, scope authz.Scope) ([]approvals.ActivityFacts, error) {
+	seen, err := p.activities.ListInScope(ctx, scope)
+	if err != nil {
+		return nil, err
+	}
+	return p.factsOf(ctx, seen)
+}
+
+func (p *approvalsActivities) factsOf(ctx context.Context, all []activities.Activity) ([]approvals.ActivityFacts, error) {
 	list := make([]approvals.ActivityFacts, 0, len(all))
 	for _, act := range all {
 		facts, err := p.facts(ctx, act)

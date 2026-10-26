@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"mapp/internal/activities"
 	"mapp/internal/approvals"
-	"mapp/internal/people"
 	"mapp/internal/platform/actor"
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/record"
@@ -111,9 +109,9 @@ func (d *demo) addApprovals(ctx context.Context) error {
 	if err := d.addApprovalRules(ctx); err != nil { // 017: timings, backups and WF-1003 first
 		return err
 	}
-	repo := approvals.NewJSONRepository()
-	activityRepo := activities.NewJSONRepository()
-	peopleRepo := people.NewJSONRepository()
+	repo := d.stores.Approvals
+	activityRepo := d.stores.Activities
+	peopleRepo := d.stores.People
 	person := func(name string) (actor.Actor, error) {
 		id, err := find(d.people, "person", name)
 		if err != nil {

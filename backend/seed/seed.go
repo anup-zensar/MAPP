@@ -1,6 +1,6 @@
 // Package seed is MAPP's demo data: the fictitious records a demonstration starts from (FR-028,
-// docs/product/demo-users-and-data.md). The command go run ./cmd/seed loads it into an empty data folder,
-// and the API's contract tests start from it.
+// docs/product/demo-users-and-data.md). The command go run ./cmd/seed loads it into an empty PostgreSQL
+// database, and the API's contract tests start from it on the JSON stand-in.
 //
 // Load writes the steps in the order of decision D-202, one file per feature: people (this file), Settings
 // (settings.go, 002), teams (teams.go, 003), roles, role assignments and the access rules (access.go, 014,
@@ -26,11 +26,11 @@ import (
 	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
 	"mapp/internal/platform/record"
-	"mapp/internal/platform/store"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
-// ErrNotEmpty means the store already has data. The demo data is loaded only into an empty store, so it is
+// ErrNotEmpty means the stores already hold data. The demo data is loaded only into an empty store, so it is
 // never mixed with other data or loaded twice.
 var ErrNotEmpty = errors.New("seed: the store already has data")
 
@@ -68,20 +68,24 @@ func WithoutHistory() Option {
 	return func(o *options) { o.withoutHistory = true }
 }
 
-// Load loads the demo data into db, which must be empty (ErrNotEmpty otherwise), in one Write: all of it,
-// or nothing when something fails. MAPP itself (actor.System) creates every record, at the time now
-// gives, so tests can fix it; the approval history and the demo history are dated before that time. Call
-// Load outside transactions.
-func Load(ctx context.Context, db *store.DB, now clock.Clock, opts ...Option) error {
+// Load loads the demo data into the stores of set, which must be empty (ErrNotEmpty otherwise), in one
+// Write: all of it, or nothing when something fails. MAPP itself (actor.System) creates every record, at the
+// time now gives, so tests can fix it; the approval history and the demo history are dated before that
+// time. Call Load outside transactions.
+func Load(ctx context.Context, set stores.Set, now clock.Clock, opts ...Option) error {
 	var o options
 	for _, opt := range opts {
 		opt(&o)
 	}
-	if !db.IsEmpty() {
+	empty, err := set.IsEmpty(ctx)
+	if err != nil {
+		return err
+	}
+	if !empty {
 		return ErrNotEmpty
 	}
-	d := &demo{ids: ids.NewGenerator(ids.NewJSONCounters()), at: now()}
-	return db.Write(ctx, func(ctx context.Context) error {
+	d := &demo{stores: set, ids: ids.NewGenerator(set.Counters), at: now()}
+	return set.Tx.Write(ctx, func(ctx context.Context) error {
 		steps := []func(context.Context) error{
 			d.addPeople, d.addSettings, d.addTeams, d.addAccess, d.addPlans,
 			d.addGlobalBudgets, // 014's global budget and its allocations, after the plans (budgets.go, D-306)
@@ -105,8 +109,9 @@ func Load(ctx context.Context, db *store.DB, now clock.Clock, opts ...Option) er
 // demo is the state of one Load: the generator, the seed time, and the IDs of the records written so far,
 // by name, so that each step finds what the earlier ones wrote.
 type demo struct {
-	ids *ids.Generator
-	at  time.Time // the seed time: MAPP creates every record then
+	stores stores.Set
+	ids    *ids.Generator
+	at     time.Time // the seed time: MAPP creates every record then
 
 	people   map[string]string // person name → ID
 	settings SettingsSeed      // Settings records by name
@@ -161,7 +166,7 @@ func (r *resolver) id(ids map[string]string, kind, name string) string {
 // addPeople creates the demo people through the people repository. Each gets the next ID of the counter
 // U, like every person created later, so IDs are never given out twice (FR-027).
 func (d *demo) addPeople(ctx context.Context) error {
-	repo := people.NewJSONRepository()
+	repo := d.stores.People
 	d.people = map[string]string{}
 	for _, p := range demoPeople {
 		id, err := d.next(ctx, ids.PrefixPerson)

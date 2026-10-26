@@ -5,6 +5,7 @@ import (
 
 	"mapp/internal/people"
 	"mapp/internal/platform/actor"
+	"mapp/internal/platform/authz"
 )
 
 // Overview is a plan as feature 009's Home reads it (Go only): the stored plan with what the Plans list and
@@ -25,11 +26,10 @@ type Overview struct {
 func (s *Service) Overviews(ctx context.Context, a actor.Actor) ([]Overview, error) {
 	var list []Overview
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		all, err := s.repo.List(ctx)
+		all, err := s.repo.ListInScope(ctx, authz.ScopeOf(ctx))
 		if err != nil {
 			return err
 		}
-		all = visible(ctx, all)
 		planIDs := make([]string, 0, len(all))
 		for _, p := range all {
 			planIDs = append(planIDs, p.ID)

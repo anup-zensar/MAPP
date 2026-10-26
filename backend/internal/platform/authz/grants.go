@@ -155,29 +155,19 @@ func (g Grants) Teams(p Permission) (all bool, teamIDs []string) {
 // plan's teams is in its scope, or the plan has no team yet and the person created it (and holds p in some
 // scope).
 func (g Grants) InScope(p Permission, plan PlanFacts) bool {
-	if !g.Has(p) {
-		return false
-	}
-	all, teams := g.Teams(p)
-	if all {
-		return true
-	}
-	if slices.ContainsFunc(plan.TeamIDs, func(id string) bool { return slices.Contains(teams, id) }) {
-		return true
-	}
-	return len(plan.TeamIDs) == 0 && plan.CreatedByID != "" && plan.CreatedByID == g.PersonID
+	return g.scopeOf(p).Covers(plan)
 }
 
 // CanViewPlan reports whether the person sees the plan and everything in it (FR-006): "View plans" in its
 // scope, or they own the plan.
 func (g Grants) CanViewPlan(plan PlanFacts) bool {
-	return g.InScope(PlansView, plan) || (plan.OwnerID != "" && plan.OwnerID == g.PersonID)
+	return g.scopeOf(PlansView).Sees(plan)
 }
 
 // CanViewActivity reports whether the person sees the activity (FR-006, data model §2.2): they see its plan,
 // own it, or are named to approve it in any approval round.
 func (g Grants) CanViewActivity(a ActivityFacts) bool {
-	return g.CanViewPlan(a.Plan) || (a.OwnerID != "" && a.OwnerID == g.PersonID) || slices.Contains(a.ApproverIDs, g.PersonID)
+	return g.scopeOf(PlansView).SeesActivity(a)
 }
 
 // RoleNames returns the names of the person's roles, in their order (sorted by name).

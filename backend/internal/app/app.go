@@ -3,278 +3,120 @@
 package app
 
 import (
-	"context"
 	"net/http"
 	"slices"
+
+	"github.com/gin-gonic/gin"
 
 	"mapp/internal/access"
 	"mapp/internal/activities"
 	"mapp/internal/allwork"
 	"mapp/internal/approvals"
 	"mapp/internal/auth"
-	"mapp/internal/budgets"
 	"mapp/internal/campaigns"
 	"mapp/internal/financials"
 	"mapp/internal/history"
-	"mapp/internal/home"
 	"mapp/internal/lineitems"
 	"mapp/internal/people"
 	"mapp/internal/plans"
 	"mapp/internal/platform/clock"
 	"mapp/internal/platform/ids"
-	"mapp/internal/platform/store"
 	"mapp/internal/platform/telemetry"
 	"mapp/internal/platform/web"
-	"mapp/internal/samples"
 	"mapp/internal/settings"
+	"mapp/internal/stores"
 )
 
-// App is the MAPP API, ready to serve.
+// App is the MAPP API; tests compare Routes ("METHOD /path") with the contract and read allWork and finance.
 type App struct {
-	// Handler is the Gin engine that serves every route of the API.
-	Handler http.Handler
-	// Routes lists the "METHOD /path" pattern of every operation the API serves. Tests compare it with
-	// the operations of the contract, backend/api/openapi.yaml.
-	Routes []string
-
-	// allWork is the source All work reads (allwork_source.go), kept for the adapter's tests.
-	allWork allwork.Source
-	// finance is the planning tree financials reads (financials.go), kept for the adapter's tests.
-	finance financials.Planning
-
+	Handler   http.Handler
+	Routes    []string
+	allWork   allwork.Source
+	finance   financials.Planning
 	telemetry *telemetry.Telemetry
 }
 
-// New builds the API on the data in db, with now as the clock of the services that need one (a fixed clock
-// in tests). It keeps no package-level state, so tests can build as many APIs as they need. An error means
-// the API cannot start.
-func New(cfg Config, db *store.DB, now clock.Clock) (*App, error) {
-	// One generator gives out every readable ID, from the counters in the store.
-	generator := ids.NewGenerator(ids.NewJSONCounters())
+type wiring struct {
+	cfg        Config
+	set        stores.Set
+	now        clock.Clock
+	generator  *ids.Generator
+	signedIn   gin.IRoutes
+	history    *history.Service
+	people     *people.Service
+	access     *access.Service
+	settings   *settings.Service
+	plans      *plans.Service
+	campaigns  *campaigns.Service
+	activities *activities.Service
+	lineItems  *lineitems.Service
+	approvals  *approvals.Service
+	financials *financials.Service
+	allWork    allWorkSource
+	finance    financialPlanning
+}
 
-	// The services, each on its own repositories, with the store as their Transactor. Sign-in also looks
-	// people up, so it shares the people repository.
-	peopleRepo := people.NewJSONRepository()
-	historyService := history.NewService(db, history.NewJSONRepository(), generator, now)
-	peopleService := people.NewService(db, peopleRepo, generator, historyService, now)
-	authService := auth.NewService(db, auth.NewJSONRepository(), peopleRepo, cfg.DemoMode(), cfg.DemoPassword, now)
+type routeRegistrar interface {
+	RegisterRoutes(r gin.IRoutes)
+}
 
-	// Access control (014), built right after people: every route that needs a signed-in person passes
-	// the sign-in check, then the access middleware, which builds the person's Grants and applies the
-	// operation's rule of access/routes.go (fail closed).
-	accessService := access.NewService(db, access.NewJSONRepository(), generator, historyService,
-		accessDirectory{people: peopleService}, now)
-	peopleService.UseAccess(peopleAccessHooks(accessService))
-
-	// The kinds of people, teams and team memberships (feature 003), registered before any other business
-	// kind, so that history can log their changes and delete teams with their memberships. A kind that
-	// history refuses stops the API from starting.
-	for _, kind := range peopleService.Kinds() {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-
-	// The kinds of roles and the access rules (014), top level.
-	for _, kind := range accessService.Kinds() {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-
-	engine, tel, err := newEngine(cfg)
+// New keeps no package-level state, so tests build as many APIs as they need, each on its own clock.
+func New(cfg Config, set stores.Set, now clock.Clock) (*App, error) {
+	w := &wiring{cfg: cfg, set: set, now: now, generator: ids.NewGenerator(set.Counters)}
+	engine, tel, err := w.engine()
 	if err != nil {
 		return nil, err
 	}
-	signedIn := engine.Group(apiV1, authService.RequireSignIn, accessService.Authorize)
-	probeRoutes(engine, cfg, db)
-	auth.NewHandler(authService, peopleService).RegisterRoutes(engine.Group(apiV1))
-	people.NewHandler(peopleService).RegisterRoutes(signedIn)
-	history.NewHandler(historyService).RegisterRoutes(signedIn)
-	access.NewHandler(accessService).RegisterRoutes(signedIn)
-
-	// Settings (feature 002) exist in every environment. Their kinds are registered with history, parents
-	// first, so that their deletes can be undone and restored.
-	settingsRepo := settings.NewJSONRepository()
-	settingsService := settings.NewService(db, settingsRepo, generator, historyService, now)
-	for _, kind := range settingsService.Kinds() {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-	// 016: rates are dated records; a store of before 016 gets each currency's stored rate as its first dated
-	// rate, once. GSAP daily rates are simulated with a file import behind the rate feed seam (D-259).
-	if err := settingsService.MigrateRates(context.Background()); err != nil {
+	if err = w.areas(); err != nil {
 		return nil, err
 	}
-	settingsService.UseRateFeed(settings.GSAPRateFile{})
-	// Features 003–007 tell Settings where its records are used at the end of New, once they are built.
-	settings.NewHandler(settingsService).RegisterRoutes(signedIn)
-
-	// Plans (004). Plans reads Settings (002) and people and teams (003) through their services. Its history
-	// kind comes before the kinds of the levels below the plan (005–007), which also register themselves
-	// with planService.RegisterLevel, top-down.
-	plansRepo := plans.NewJSONRepository()
-	planService := plans.NewService(db, plansRepo, generator, historyService, settingsService, peopleService, now)
-	for _, kind := range planService.Kinds() {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-	plans.NewHandler(planService).RegisterRoutes(signedIn)
-	// Who sees which log and recycle-bin entries and may restore them follows the plans' visibility (014).
-	historyService.UseAccess(historyAccess{plans: plansRepo, history: historyService})
-
-	// Activities (006) are built before campaigns, which roll their summaries up (campaigns.Activities), and
-	// line items (007) next to them: each reads the other (activities.LineItems, lineitems.Activities).
-	campaignsRepo := campaigns.NewJSONRepository()
-	activitiesRepo := activities.NewJSONRepository()
-	lineItemsRepo := lineitems.NewJSONRepository()
-	approvalsRepo := approvals.NewJSONRepository() // the approval workflows of 008 are the activities' workflows
-	activitiesService := activities.NewService(db, activitiesRepo, generator, historyService, now, activities.Deps{
-		Plans:     plansRepo,
-		Hierarchy: campaignsRepo,
-		Settings:  settingsService,
-		People:    peopleRepo,
-		Workflows: activityWorkflows{repo: approvalsRepo},
-	})
-	lineItemsService := lineitems.NewService(db, lineItemsRepo, generator, historyService,
-		lineItemDeps(settingsService, settingsRepo, activitiesService, activitiesRepo, campaignsRepo, plansRepo, peopleRepo,
-			peopleService), now)
-	activitiesService.UseLineItems(lineItemsForActivities{svc: lineItemsService})
-	activitiesService.UseDisplayRates(peopleService) // amounts of activities and plan-tree rows (D-220)
-
-	// Feature 005: campaigns and initiatives, with their history kinds under the plan kind (parents first).
-	campaignsService := campaigns.NewService(db, campaignsRepo, generator, historyService, now, campaigns.Deps{
-		Plans:      campaignPlans{repo: plansRepo},
-		People:     peopleRepo,
-		Settings:   settingsService,
-		Activities: activitiesForCampaigns{svc: activitiesService},
-	})
-	campaignsService.UseDisplayRates(peopleService) // amounts of campaigns, initiatives and the tree (D-220)
-	// The history kinds, parents first: campaign and initiative (005), activity (006), line item (007).
-	for _, kind := range slices.Concat(campaignsService.Kinds(), activitiesService.Kinds(), lineItemsService.Kinds()) {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-	// The levels below the plan, top-down: campaign, initiative (005), activity (006), line item (007).
-	levels := append(campaignLevels(campaignsService), activityLevel(activitiesService, activitiesRepo, campaignsRepo),
-		lineItemLevel(lineItemsService, activitiesRepo, campaignsRepo))
-	for _, level := range levels {
-		if err := planService.RegisterLevel(level); err != nil {
-			return nil, err
-		}
-	}
-	campaigns.NewHandler(campaignsService).RegisterRoutes(signedIn)
-	activities.NewHandler(activitiesService).RegisterRoutes(signedIn)
-	lineitems.NewHandler(lineItemsService).RegisterRoutes(signedIn)
-
-	// Global budgets (014, BUS.BUD.040): global budgets and their allocations to plans, which set the plans'
-	// budgets through the plans service (budgets_adapter.go). Their kinds come after the planning kinds: an
-	// allocation is a child of its plan, which takes it along when deleted and restored. Without Access the
-	// service allows every action; the access rules of 014 come in through budgets.Deps.Access (budgets_access.go).
-	budgetsService := budgets.NewService(db, budgets.NewJSONRepository(), generator, historyService, budgets.Deps{
-		Plans:     budgetPlans{plans: planService, repo: plansRepo, rates: settingsService.Rates},
-		Directory: peopleService, Rates: settingsService, Access: budgetAccess{access: accessService},
-	}, now)
-	for _, kind := range budgetsService.Kinds() {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-	planService.UseAllocations(planAllocations{budgets: budgetsService}) // Plan.allocation and the budget lock
-	budgets.NewHandler(budgetsService).RegisterRoutes(signedIn)
-
-	// The developer sample records exist only in demo mode (D-036). Their kinds are registered with
-	// history, so that their deletes can be undone and restored; a kind that history refuses stops the API
-	// from starting.
-	if cfg.DemoMode() {
-		samplesService := samples.NewService(db, samples.NewJSONRepository(), generator, historyService, now)
-		for _, kind := range samplesService.Kinds() {
-			if err := historyService.Register(kind); err != nil {
-				return nil, err
-			}
-		}
-		samples.NewHandler(samplesService).RegisterRoutes(signedIn)
-	}
-
-	// Activity approvals (008), built after activities and line items: approval actions are logged on the
-	// activity, and Submit runs 006's ready-to-submit check, line items included.
-	approvalsService := approvals.NewService(db, approvalsRepo, peopleRepo, &approvalsActivities{
-		activities: activitiesRepo, lineItems: lineItemsRepo, campaigns: campaignsRepo,
-		plans: plansRepo, settings: settingsRepo, rates: settingsService.Rates, check: activitiesService.SubmitCheck, now: now,
-	}, generator, historyService, now)
-	for _, kind := range approvalsService.Kinds() {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-	// Activities (006, and 007 through it) tell approvals when a re-approval change or a restore from the
-	// recycle bin ends an activity's approval (FR-022, FR-023).
-	activitiesService.UseApprovalHooks(activityApprovalHooks{svc: approvalsService})
-	approvalsService.UseDisplayRates(peopleService) // amounts on the Approvals page (D-213)
-	// 017: who may approve and the roles, from 014's access service, and what rule conditions may name.
-	approvalsService.UseAccess(approvalsAccess{access: accessService})
-	approvalsService.UseRuleChoices(approvalRuleChoices{settings: settingsService})
-	// The roles impact check of access control reads approval workflows and rounds (014 FR-022); the access
-	// middleware finds the plan of every planning record an operation names in its path (access_targets.go).
-	accessService.UseApprovalFacts(accessApprovals{repo: approvalsRepo})
-	approvalsService.UseApprovers(accessService) // who may be named and flagged as an approver (014 FR-028)
-	accessService.UseTargets(planningTargets{db: db, plans: plansRepo, campaigns: campaignsRepo, activities: activitiesRepo,
-		lineItems: lineItemsRepo, approvals: approvalsRepo}.finders())
-	approvals.NewHandler(approvalsService).RegisterRoutes(signedIn)
-
-	// Financial transactions (015): GSAP's POs, invoices, payments and accruals, read-only, from the
-	// simulated GSAP extract and the demo data, with figures over the planning tree (financials.go). Its two
-	// history kinds are top level, so their order is free.
-	finance := financialPlanning{
-		plans: plansRepo, campaigns: campaignsService, activities: activitiesService, lineItems: lineItemsRepo,
-		settings: settingsService, people: peopleService, history: historyService,
-	}
-	financialsService := financials.NewService(db, financials.NewJSONRepository(), generator, historyService, financials.Deps{
-		Planning: finance, Rates: settingsService, Displays: financialDisplays{people: peopleService},
-		Access: financialAccess{tx: db, plans: plansRepo},
-	}, now)
-	for _, kind := range financialsService.Kinds() {
-		if err := historyService.Register(kind); err != nil {
-			return nil, err
-		}
-	}
-	financials.NewHandler(financialsService).RegisterRoutes(signedIn)
-
-	// Home (009): a read-only dashboard over the services of 003–008 and 011's activity log (home_sources.go).
-	homeService := home.NewService(db, homeSources(peopleService, plansRepo, planService, campaignsService, activitiesService,
-		approvalsService, historyService, settingsService.Rates))
-	home.NewHandler(homeService).RegisterRoutes(signedIn)
-
-	// All work (010): a read-only view of a year over plans (004) and the records below them (005–007),
-	// read through the adapter allWorkSource (allwork_source.go), with its own personal settings — saved
-	// views and remembered columns — which are not business records: no history kinds (D-121).
-	allWork := allWorkSource{
-		plans: planService, plansRepo: plansRepo, campaigns: campaignsService, campaignsRepo: campaignsRepo,
-		activities: activitiesService, activitiesRepo: activitiesRepo, lineItems: lineItemsService,
-		lineItemsRepo: lineItemsRepo, settings: settingsService, budgetItems: lineItemBudgets{repo: settingsRepo},
-		workflows: activityWorkflows{repo: approvalsRepo}, people: peopleService, peopleRepo: peopleRepo,
-		history: historyService, financials: financialsService, financeAccess: financialAccess{tx: db, plans: plansRepo},
-	}
-	allWorkService := allwork.NewService(db, allwork.NewJSONRepository(), allWork, generator, now)
-	allwork.NewHandler(allWorkService).RegisterRoutes(signedIn)
-
-	// Where the records of people (003) and Settings (002) are used, now that every feature is built
-	// (references.go): people's plans (004), owner and approver counts (005–008) and currencies (002);
-	// Settings' "Used by", in-use deletes and impact statements over people (003), plans (004) and the
-	// records below them (005–007), stored and in the recycle bin.
-	peopleService.UsePlans(planUses(planService))
-	peopleService.UseCurrencies(peopleCurrencies(settingsService))
-	for _, usage := range personUsages(campaignsRepo, activitiesRepo, lineItemsRepo, approvalsRepo) {
-		peopleService.AddPersonUsage(usage)
-	}
-	planning := planningRecords{history: historyService, campaigns: campaignsRepo, activities: activitiesRepo, lineItems: lineItemsRepo}
-	settingsService.AddReferenceSource(personReferences(peopleService))
-	settingsService.AddReferenceSource(planReferences(planService))
-	settingsService.AddReferenceSource(planning.references)
-
-	return &App{Handler: engine, Routes: web.Operations(engine.Routes()), allWork: allWork, finance: finance,
+	return &App{Handler: engine, Routes: web.Operations(engine.Routes()), allWork: w.allWork, finance: w.finance,
 		telemetry: tel}, nil
+}
+
+// engine puts the sign-in check, then the access middleware (access/routes.go, fail closed) on signed-in routes.
+func (w *wiring) engine() (*gin.Engine, *telemetry.Telemetry, error) {
+	authService := w.organisation()
+	if err := w.register(w.people.Kinds(), w.access.Kinds()); err != nil {
+		return nil, nil, err
+	}
+	engine, tel, err := newEngine(w.cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	w.signedIn = engine.Group(apiV1, authService.RequireSignIn, w.access.Authorize)
+	w.organisationRoutes(engine, authService)
+	return engine, tel, nil
+}
+
+func (w *wiring) organisation() *auth.Service {
+	s := w.set
+	w.history = history.NewService(s.Tx, s.History, w.generator, w.now)
+	w.people = people.NewService(s.Tx, s.People, w.generator, w.history, w.now)
+	authService := auth.NewService(s.Tx, s.Auth, s.People, w.cfg.DemoMode(), w.cfg.DemoPassword, w.now)
+	w.access = access.NewService(s.Tx, s.Access, w.generator, w.history, accessDirectory{people: w.people}, w.now)
+	w.people.UseAccess(peopleAccessHooks(w.access))
+	return authService
+}
+
+func (w *wiring) organisationRoutes(engine *gin.Engine, authService *auth.Service) {
+	probeRoutes(engine, w.cfg, w.set.Ready)
+	mount(engine.Group(apiV1), auth.NewHandler(authService, w.people))
+	mount(w.signedIn, people.NewHandler(w.people), history.NewHandler(w.history), access.NewHandler(w.access))
+}
+
+// register gives history the kinds in order, parents first; a kind it refuses stops the API from starting.
+func (w *wiring) register(kinds ...[]history.Kind) error {
+	for _, kind := range slices.Concat(kinds...) {
+		if err := w.history.Register(kind); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func mount(r gin.IRoutes, handlers ...routeRegistrar) {
+	for _, h := range handlers {
+		h.RegisterRoutes(r)
+	}
 }

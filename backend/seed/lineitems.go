@@ -76,8 +76,8 @@ var demoLineItems = []demoLineItem{
 // by plan and name, currencies by code, finance budget items by year, budget and name, and Shell attribute
 // options by label.
 func (d *demo) addLineItems(ctx context.Context) error {
-	repo := lineitems.NewJSONRepository()
-	activityRepo := activities.NewJSONRepository()
+	repo := d.stores.LineItems
+	activityRepo := d.stores.Activities
 	for _, l := range demoLineItems {
 		activityID, err := find(d.activities, "activity", l.plan+"/"+l.activity)
 		if err != nil {

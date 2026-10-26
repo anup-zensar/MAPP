@@ -10,6 +10,7 @@ import (
 	"mapp/internal/people"
 	"mapp/internal/platform/apitest"
 	"mapp/internal/platform/store"
+	"mapp/internal/stores"
 	"mapp/seed"
 )
 
@@ -352,7 +353,7 @@ func TestDisplayCurrencies_SettingsAndPeople_FR003_D061(t *testing.T) {
 		t.Fatalf("store.Open: %v", err)
 	}
 	now := func() time.Time { return time.Date(2026, 3, 12, 9, 0, 0, 0, time.UTC) }
-	if err := seed.Load(t.Context(), db, now); err != nil {
+	if err = seed.Load(t.Context(), stores.JSON(db), now); err != nil {
 		t.Fatalf("seed.Load: %v", err)
 	}
 	err = db.Write(t.Context(), func(ctx context.Context) error {

@@ -202,7 +202,7 @@ var demoAttributes = []demoAttribute{
 // (so the IDs are stable): currencies, activity types, models, finance budgets with their items, Shell
 // attributes with their options. It keeps their IDs by name in d.settings.
 func (d *demo) addSettings(ctx context.Context) error {
-	repo := settings.NewJSONRepository()
+	repo := d.stores.Settings
 	d.settings = SettingsSeed{
 		Models: map[string]string{}, ActivityTypes: map[string]string{}, Attributes: map[string]string{},
 		Options: map[string]string{}, Budgets: map[string]string{}, Items: map[string]string{},

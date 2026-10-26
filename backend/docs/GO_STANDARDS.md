@@ -10,8 +10,8 @@ The guide is adapted from the Go standards of the separate NorthStar backend rep
 scopes instead of tenants, Docker optional (no test requires it), and the comment budget
 (Principle VIII). The samples show the target patterns. The transport, logging, lifecycle and
 configuration samples (§4, the error answers and panics of §5, §7, §9, §10) follow the code since
-feature 024 (Gin transport); the others are corrected by the alignment feature that compiles them,
-for example §6 by feature 023 (PostgreSQL) (Governance → Alignment).
+feature 024 (Gin transport), and the data-access samples of §6 since feature 023 (PostgreSQL); the
+others are corrected by the alignment feature that compiles them (Governance → Alignment).
 Blocks marked **✗ Avoid** show what not to do.
 
 ## Contents
@@ -246,11 +246,12 @@ func run(ctx context.Context) error {
 		return err
 	}
 	slog.SetDefault(logging.New(os.Stdout, cfg.LogLevel))
-	db, err := store.Open(cfg.DataDir)
+	db, err := openDatabase(ctx, cfg.DatabaseURL) // refuses a database behind the latest migration
 	if err != nil {
 		return err
 	}
-	api, err := app.New(cfg, db, clock.System)
+	defer db.Close()
+	api, err := app.New(cfg, stores.Postgres(db), clock.System)
 	if err != nil {
 		return err
 	}
@@ -325,7 +326,7 @@ func shutdown(ctx context.Context, srv *http.Server, timeout time.Duration) erro
 Two details matter. The serving goroutine has an owner that waits for it (`<-served`), and the
 channel is buffered, so the goroutine can always finish its send and exit. Splitting out
 `shutdown` also keeps `Serve` within the fan-out limit (§11). `App.Close` flushes the telemetry,
-and will close the database once it is PostgreSQL (B3).
+and `run` closes the pool last (B3).
 
 ### Goroutines
 
@@ -511,14 +512,14 @@ The API and the seed command open one `pgx` pool at startup, through `database.O
 every store, and close it on shutdown (B3).
 
 ```go
-// Open returns a traced pool once the database answers a ping. Errors never
-// include dsn, because it can hold credentials.
+// Open returns a pool once the database answers a ping. Errors never include
+// dsn, because it can hold credentials.
 func Open(ctx context.Context, dsn string) (*DB, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, errors.New("parse database url: malformed url or parameters")
+		return nil, errMalformedURL
 	}
-	cfg.ConnConfig.Tracer = otelpgx.NewTracer()
+	cfg.AfterConnect = scanTimestampsInUTC // timestamptz comes back in UTC, whatever the session's zone
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
@@ -709,31 +710,43 @@ a constraint such as a partial unique index, and map the unique violation to `Ki
 
 The service owns transaction boundaries (B5), and a change and its activity-log entry commit
 together. `database.DB.Write` runs a function in one transaction that it carries in the context,
-so every store called with that context — the area's own and the activity log's — joins it.
-`pgx.BeginFunc` commits when the function returns `nil` and rolls back on an error or a panic:
+so every store called with that context — the area's own and the activity log's — joins it. Writes
+run **one at a time**: the first statement of each takes a transaction-scoped advisory lock, so the
+services' read-check-write rules (version checks, uniqueness ignoring case, readable-ID counters) stay
+correct without a conditional `UPDATE` in every store. `SERIALIZABLE` with retries was measured and
+starved under two writers, because every Write raises the shared activity-log counter (feature 023,
+research R2). `Read` is a read-only snapshot that never waits for a Write, and keeps what is worked out
+from the data (`store.Memo`, through `internal/platform/memo`) for the rest of the transaction:
 
 ```go
-// Write runs fn in one transaction; inside a transaction it reuses it.
-func (d *DB) Write(ctx context.Context, fn func(context.Context) error) error {
-	if _, ok := txFrom(ctx); ok {
+// Write runs fn in one transaction once the Writes before it have ended, and returns fn's error unchanged.
+// Inside a Write it joins it (fn passes ctx on); inside a Read, ErrReadOnly.
+func (d *DB) Write(ctx context.Context, fn func(ctx context.Context) error) error {
+	if current, ok := ctx.Value(txKey{}).(transaction); ok {
+		if current.readOnly {
+			return ErrReadOnly
+		}
 		return fn(ctx)
 	}
-	err := pgx.BeginFunc(ctx, d.pool, func(tx pgx.Tx) error {
-		return fn(withTx(ctx, tx))
+	return d.run(ctx, pgx.TxOptions{}, func(ctx context.Context) error {
+		if err := d.Queries(ctx).LockWrites(ctx); err != nil { // SELECT pg_advisory_xact_lock(…)
+			return fmt.Errorf("wait for the other writes: %w", err)
+		}
+		return fn(ctx)
 	})
-	if err != nil {
-		return fmt.Errorf("transaction: %w", err)
-	}
-	return nil
 }
 
-func (d *DB) Queries(ctx context.Context) *sqlcdb.Queries {
-	if tx, ok := txFrom(ctx); ok {
-		return sqlcdb.New(tx)
+func (d *DB) Read(ctx context.Context, fn func(ctx context.Context) error) error {
+	if _, ok := ctx.Value(txKey{}).(transaction); ok {
+		return fn(ctx)
 	}
-	return sqlcdb.New(d.pool)
+	readOnlySnapshot := pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}
+	return d.run(memo.With(ctx), readOnlySnapshot, fn)
 }
 ```
+
+`run` begins the transaction, puts it in the context, commits when `fn` returns `nil` and rolls back
+otherwise; `Queries(ctx)` gives the generated queries on the context's transaction, or on the pool.
 
 The service declares the transactor it needs (`Write(ctx, fn) error`) next to its `Store`, as it
 does today with `store.Transactor`. Keep transactions short. Never call external services or wait
@@ -1051,7 +1064,7 @@ func LoadConfig(getenv func(name string) string) (Config, error) {
 	cfg := Config{
 		Env:             env.choice("APP_ENV", envLocal, envLocal, envDevelopment, envProduction),
 		Port:            env.port("APP_PORT", "8080"),
-		DataDir:         env.text("DATA_DIR", "data"),
+		DatabaseURL:     env.text("DATABASE_URL", defaultDatabaseURL),
 		DemoPassword:    env.notBlank("DEMO_PASSWORD", "mapp"),
 		LogLevel:        env.logLevel("LOG_LEVEL"),
 		ShutdownTimeout: env.shutdownTimeout("SHUTDOWN_TIMEOUT"),
