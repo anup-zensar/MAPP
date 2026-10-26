@@ -318,3 +318,124 @@ func (r iteratorForAddLineItems) Err() error {
 func (q *Queries) AddLineItems(ctx context.Context, arg []AddLineItemsParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"line_items"}, []string{"id", "activity_id", "name", "owner_id", "description", "currency", "planned_cost_minor", "spread_method", "attributes", "contracted_amount_minor", "request_swbs", "finance_budget_year", "finance_budget_item_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddLineItems{rows: arg})
 }
+
+// iteratorForAddOptionParents implements pgx.CopyFromSource.
+type iteratorForAddOptionParents struct {
+	rows                 []AddOptionParentsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddOptionParents) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddOptionParents) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].OptionID,
+		r.rows[0].Position,
+		r.rows[0].ParentOptionID,
+	}, nil
+}
+
+func (r iteratorForAddOptionParents) Err() error {
+	return nil
+}
+
+func (q *Queries) AddOptionParents(ctx context.Context, arg []AddOptionParentsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"shell_option_parents"}, []string{"option_id", "position", "parent_option_id"}, &iteratorForAddOptionParents{rows: arg})
+}
+
+// iteratorForAddOptions implements pgx.CopyFromSource.
+type iteratorForAddOptions struct {
+	rows                 []AddOptionsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddOptions) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddOptions) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].AttributeID,
+		r.rows[0].Label,
+		r.rows[0].Position,
+		r.rows[0].Active,
+		r.rows[0].Version,
+		r.rows[0].CreatedAt,
+		r.rows[0].CreatedByID,
+		r.rows[0].CreatedByName,
+		r.rows[0].UpdatedAt,
+		r.rows[0].UpdatedByID,
+		r.rows[0].UpdatedByName,
+	}, nil
+}
+
+func (r iteratorForAddOptions) Err() error {
+	return nil
+}
+
+func (q *Queries) AddOptions(ctx context.Context, arg []AddOptionsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"shell_attribute_options"}, []string{"id", "attribute_id", "label", "position", "active", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddOptions{rows: arg})
+}
+
+// iteratorForAddRates implements pgx.CopyFromSource.
+type iteratorForAddRates struct {
+	rows                 []AddRatesParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForAddRates) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForAddRates) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].Currency,
+		r.rows[0].Date,
+		r.rows[0].RateMicros,
+		r.rows[0].Source,
+		r.rows[0].ImportID,
+		r.rows[0].Version,
+		r.rows[0].CreatedAt,
+		r.rows[0].CreatedByID,
+		r.rows[0].CreatedByName,
+		r.rows[0].UpdatedAt,
+		r.rows[0].UpdatedByID,
+		r.rows[0].UpdatedByName,
+	}, nil
+}
+
+func (r iteratorForAddRates) Err() error {
+	return nil
+}
+
+func (q *Queries) AddRates(ctx context.Context, arg []AddRatesParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"exchange_rates"}, []string{"id", "currency", "date", "rate_micros", "source", "import_id", "version", "created_at", "created_by_id", "created_by_name", "updated_at", "updated_by_id", "updated_by_name"}, &iteratorForAddRates{rows: arg})
+}

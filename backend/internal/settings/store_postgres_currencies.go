@@ -81,13 +81,7 @@ func (s *PostgresStore) RatesOf(ctx context.Context, code string) ([]ExchangeRat
 }
 
 func (s *PostgresStore) PutRate(ctx context.Context, r ExchangeRate) error {
-	err := s.change(ctx).PutRate(ctx, sqlcdb.PutRateParams{
-		ID: r.ID, Currency: r.Currency, Date: r.Date.Time(), RateMicros: r.Rate.Micros(), Source: string(r.Source),
-		ImportID: database.NullIfEmpty(r.ImportID), Version: r.Version, CreatedAt: r.CreatedAt,
-		CreatedByID: r.CreatedBy.ID, CreatedByName: r.CreatedBy.Name, UpdatedAt: r.UpdatedAt,
-		UpdatedByID: r.UpdatedBy.ID, UpdatedByName: r.UpdatedBy.Name,
-	})
-	if err != nil {
+	if err := s.change(ctx).PutRate(ctx, rateParams(r)); err != nil {
 		return fmt.Errorf("save exchange rate %s: %w", r.ID, err)
 	}
 	return nil

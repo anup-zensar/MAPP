@@ -89,11 +89,15 @@ func (q *Queries) InsertLineItemSpreadMonths(ctx context.Context, arg InsertLine
 
 const listLineItems = `-- name: ListLineItems :many
 SELECT line_items.id, line_items.activity_id, line_items.name, line_items.owner_id, line_items.description, line_items.currency, line_items.planned_cost_minor, line_items.spread_method, line_items.attributes, line_items.contracted_amount_minor, line_items.request_swbs, line_items.finance_budget_year, line_items.finance_budget_item_id, line_items.version, line_items.created_at, line_items.created_by_id, line_items.created_by_name, line_items.updated_at, line_items.updated_by_id, line_items.updated_by_name,
-    coalesce((SELECT array_agg(m.month ORDER BY m.month) FROM line_item_spread_months m
-        WHERE m.line_item_id = line_items.id), '{}')::text[] AS spread_months,
-    coalesce((SELECT array_agg(m.amount_minor ORDER BY m.month) FROM line_item_spread_months m
-        WHERE m.line_item_id = line_items.id), '{}')::bigint[] AS spread_amounts
+    coalesce(spread.months, '{}')::text[] AS spread_months,
+    coalesce(spread.amounts, '{}')::bigint[] AS spread_amounts
 FROM line_items
+LEFT JOIN (
+    SELECT m.line_item_id, array_agg(m.month ORDER BY m.month) AS months,
+        array_agg(m.amount_minor ORDER BY m.month) AS amounts
+    FROM line_item_spread_months m
+    GROUP BY m.line_item_id
+) spread ON spread.line_item_id = line_items.id
 WHERE ($1::text[] IS NULL OR id = ANY ($1::text[]))
     AND ($2::text[] IS NULL OR activity_id = ANY ($2::text[]))
 ORDER BY length(id), id COLLATE "C"
