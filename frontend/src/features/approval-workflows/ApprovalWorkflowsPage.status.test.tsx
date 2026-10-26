@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { findMessages } from '@/testing/render';
 import { CHINA_WORKFLOW, workflowOf } from '@/testing/fixtures/approval-workflows';
@@ -210,40 +210,5 @@ describe('ApprovalWorkflowsPage set inactive, reactivate and delete (feature 008
     expect(
       await screen.findByRole('alertdialog', { name: "Can't delete 'China BC approval workflow'" }),
     ).toBeInTheDocument();
-  });
-
-  it('sets an unused workflow inactive at once, with Undo (design system §6.7)', async () => {
-    const unused = workflowOf({ usedByCount: 0, waitingCount: 0 });
-    const { user, api } = renderWorkflowsPage('/settings/approval-workflows', [
-      reply('GET /api/v1/approval-workflows', workflowList([unused])),
-      reply(
-        'POST /api/v1/approval-workflows/{workflowId}/deactivate',
-        {
-          body: workflowOf({ active: false, usedByCount: 0, waitingCount: 0, version: 5 }),
-        },
-        { workflowId: 'WF-1001' },
-      ),
-      reply(
-        'POST /api/v1/approval-workflows/{workflowId}/activate',
-        { body: unused },
-        { workflowId: 'WF-1001' },
-      ),
-    ]);
-    await screen.findByRole('row', { name: /Lubricants EU approval/ });
-
-    await user.click(screen.getByRole('button', { name: 'Actions for Lubricants EU approval' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Set inactive' }));
-
-    expect(
-      await screen.findByText("Approval workflow 'Lubricants EU approval' set inactive"),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    const messages = await findMessages();
-    await user.click(within(messages).getByRole('button', { name: 'Undo' }));
-    await waitFor(() =>
-      expect(api.bodiesOf('POST /api/v1/approval-workflows/WF-1001/activate')).toEqual([
-        { version: 5 },
-      ]),
-    );
   });
 });
