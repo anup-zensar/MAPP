@@ -271,14 +271,11 @@ func (s *Service) CreateAttribute(ctx context.Context, a actor.Actor, input Shel
 		if err := s.repo.PutAttribute(ctx, attribute); err != nil {
 			return err
 		}
-		for i, o := range options {
-			if o.ID, err = s.ids.Next(ctx, ids.PrefixShellOption); err != nil {
-				return err
-			}
-			o.AttributeID, o.Position, o.Active, o.Meta = attribute.ID, i+1, true, record.NewMeta(a, s.now())
-			if err := s.repo.PutOption(ctx, o); err != nil {
-				return err
-			}
+		for i := range options {
+			options[i].AttributeID, options[i].Active = attribute.ID, true
+		}
+		if err = s.addOptions(ctx, a, options, 0); err != nil {
+			return err
 		}
 		details := ""
 		if len(options) > 0 {
@@ -322,12 +319,12 @@ func (s *Service) UpdateAttribute(ctx context.Context, a actor.Actor, id string,
 		if len(changes) > 0 {
 			details := ""
 			if len(change.removed) > 0 {
-				labels := make([]string, 0, len(change.removed))
+				labels, removed := make([]string, 0, len(change.removed)), make([]string, 0, len(change.removed))
 				for _, o := range change.removed {
-					labels = append(labels, o.Label)
-					if err := s.repo.DeleteOption(ctx, o.ID); err != nil {
-						return err
-					}
+					labels, removed = append(labels, o.Label), append(removed, o.ID)
+				}
+				if err = s.repo.DeleteOptions(ctx, removed); err != nil {
+					return err
 				}
 				details = fmt.Sprintf(removedOptionsDetails, plural(len(labels), "option", "options"), strings.Join(labels, ", "))
 			}

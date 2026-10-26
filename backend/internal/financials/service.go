@@ -79,12 +79,19 @@ func (s *Service) today() date.Date {
 func (s *Service) Record(ctx context.Context, a actor.Actor, recordID string) (RecordView, error) {
 	var view RecordView
 	err := s.tx.Read(ctx, func(ctx context.Context) error {
-		b, err := s.load(ctx, a.ID)
+		gone := errs.NotFound(fmt.Sprintf(msgRecordGone, levelWordOf(recordID)))
+		planID, live, err := s.planning.PlanOf(ctx, recordID)
+		if err != nil {
+			return err
+		}
+		if !live {
+			return gone
+		}
+		b, err := s.loadPlans(ctx, a.ID, []string{planID})
 		if err != nil {
 			return err
 		}
 		n := b.tree.byID[recordID]
-		gone := errs.NotFound(fmt.Sprintf(msgRecordGone, levelWordOf(recordID)))
 		if n == nil {
 			return gone
 		}
@@ -266,37 +273,28 @@ func (s *Service) transactionView(ctx context.Context, a actor.Actor, b *book, t
 // of their activities committed above planned cost and the number of not-linked transactions (for people
 // who may import). The year is the API clock's (D-091).
 func (s *Service) Overview(ctx context.Context, a actor.Actor, scopeText string) (Overview, error) {
-	homeScope, err := ParseScope(scopeText)
-	if err != nil {
-		return Overview{}, err
+	homeScope, parseErr := ParseScope(scopeText)
+	if parseErr != nil {
+		return Overview{}, parseErr
 	}
 	var overview Overview
-	err = s.tx.Read(ctx, func(ctx context.Context) error {
+	err := s.tx.Read(ctx, func(ctx context.Context) error {
 		if err := s.access.SeeFinance(ctx, a); err != nil {
-			return err
-		}
-		b, err := s.load(ctx, a.ID)
-		if err != nil {
 			return err
 		}
 		sc, err := s.scopeOf(ctx, a)
 		if err != nil {
 			return err
 		}
-		var mine []string
-		if homeScope == ScopeMyTeams {
-			if mine, err = s.planning.MyTeamPlanIDs(ctx, a.ID); err != nil {
-				return err
-			}
+		planIDs, year, err := s.overviewPlans(ctx, a, homeScope, sc)
+		if err != nil {
+			return err
 		}
-		year := s.today().Year()
-		var plans []*tnode
-		for _, p := range b.tree.plans {
-			if p.PlanYear == year && sc.sees(p.ID) && (homeScope == ScopeEverything || slices.Contains(mine, p.ID)) {
-				plans = append(plans, p)
-			}
+		b, err := s.loadPlans(ctx, a.ID, planIDs)
+		if err != nil {
+			return err
 		}
-		overview = b.overview(plans, sc)
+		overview = b.overview(b.tree.plans, sc)
 		overview.Year, overview.Scope = year, homeScope
 		return nil
 	})
@@ -304,6 +302,30 @@ func (s *Service) Overview(ctx context.Context, a actor.Actor, scopeText string)
 		return Overview{}, err
 	}
 	return overview, nil
+}
+
+// overviewPlans returns the plans of the current year the overview adds up, those sc sees, with My teams
+// a's teams' only, and the year.
+func (s *Service) overviewPlans(ctx context.Context, a actor.Actor, homeScope Scope, sc scope) ([]string, int, error) {
+	year := s.today().Year()
+	var mine []string
+	if homeScope == ScopeMyTeams {
+		var err error
+		if mine, err = s.planning.MyTeamPlanIDs(ctx, a.ID); err != nil {
+			return nil, year, err
+		}
+	}
+	ofYear, err := s.planning.PlanIDsOfYear(ctx, year)
+	if err != nil {
+		return nil, year, err
+	}
+	planIDs := []string{}
+	for _, id := range ofYear {
+		if sc.sees(id) && (homeScope == ScopeEverything || slices.Contains(mine, id)) {
+			planIDs = append(planIDs, id)
+		}
+	}
+	return planIDs, year, nil
 }
 
 // overview adds up the plans as one record.

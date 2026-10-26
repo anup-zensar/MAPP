@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -15,9 +14,7 @@ import (
 	"mapp/internal/platform/authz"
 	"mapp/internal/platform/date"
 	"mapp/internal/platform/errs"
-	"mapp/internal/platform/ids"
 	"mapp/internal/platform/money"
-	"mapp/internal/platform/record"
 	"mapp/internal/rollup"
 	"mapp/internal/settings"
 )
@@ -89,6 +86,10 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 		if err != nil {
 			return err
 		}
+		campaignsOf, err := s.campaignsOfPlans(ctx, plans)
+		if err != nil {
+			return err
+		}
 		list = DestinationList{Items: make([]Destination, 0, len(plans)), Rule: campaignRuleMove}
 		if purpose == PurposeCopy {
 			list.Rule = campaignRuleCopy
@@ -98,10 +99,7 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 			if (current && purpose == PurposeMove) || !authz.InScope(ctx, authz.CampaignsEdit, p.Access) { // 014 FR-014
 				continue
 			}
-			siblings, err := s.repo.CampaignsOfPlan(ctx, p.ID)
-			if err != nil {
-				return err
-			}
+			siblings := campaignsOf[p.ID]
 			status := p.Status
 			d := Destination{ID: p.ID, Name: p.Name, Current: current, Available: true, PlanStatus: &status}
 			d.RemainingAfter, d.OverAllocatedBy = remainingAfter(p.Budget, campaignBudgets(siblings), c.Budget)
@@ -133,6 +131,22 @@ func (s *Service) CampaignDestinations(ctx context.Context, a actor.Actor, id, p
 		return DestinationList{}, err
 	}
 	return s.shownDestinations(ctx, a, list)
+}
+
+func (s *Service) campaignsOfPlans(ctx context.Context, plans []PlanFacts) (map[string][]Campaign, error) {
+	planIDs := make([]string, 0, len(plans))
+	for _, p := range plans {
+		planIDs = append(planIDs, p.ID)
+	}
+	campaigns, err := s.repo.CampaignsOfPlans(ctx, planIDs)
+	if err != nil {
+		return nil, err
+	}
+	campaignsOf := make(map[string][]Campaign, len(plans))
+	for _, c := range campaigns {
+		campaignsOf[c.PlanID] = append(campaignsOf[c.PlanID], c)
+	}
+	return campaignsOf, nil
 }
 
 // InitiativeDestinations returns the campaigns of its plan the initiative id can be moved or copied to
@@ -414,28 +428,18 @@ func (s *Service) CopyCampaign(ctx context.Context, a actor.Actor, id string, in
 			return err
 		}
 
-		dup, err := s.putCampaignCopy(ctx, a, source, target.ID, name, 0)
+		dup := []Campaign{s.campaignCopy(a, source, copyPlace{parentID: target.ID, name: name})}
+		if err = s.addCampaignCopies(ctx, dup); err != nil {
+			return err
+		}
+		counts, err := s.copyBelowCampaign(ctx, a, CopyPair{FromID: source.ID, ToID: dup[0].ID})
 		if err != nil {
 			return err
 		}
-		initiatives, err := s.repo.InitiativesOfCampaign(ctx, source.ID)
-		if err != nil {
+		if err = s.logCopy(ctx, a, campaignKind, dup[0].ID, dup[0].Name, source.Name, source.ID, counts); err != nil {
 			return err
 		}
-		counts := map[string]int{initiativeKind: len(initiatives)}
-		for _, i := range initiatives {
-			copied, err := s.putInitiativeCopy(ctx, a, i, dup.ID, i.Name, 0)
-			if err != nil {
-				return err
-			}
-			if err := s.copyActivities(ctx, a, i.ID, copied.ID, counts); err != nil {
-				return err
-			}
-		}
-		if err := s.logCopy(ctx, a, campaignKind, dup.ID, dup.Name, source.Name, source.ID, counts); err != nil {
-			return err
-		}
-		view, err = s.campaignView(ctx, dup.ID)
+		view, err = s.campaignView(ctx, dup[0].ID)
 		return err
 	})
 	if err != nil {
@@ -499,18 +503,18 @@ func (s *Service) CopyInitiative(ctx context.Context, a actor.Actor, id string, 
 			return err
 		}
 
-		dup, err := s.putInitiativeCopy(ctx, a, source, target.ID, name, 0)
-		if err != nil {
+		dup := []Initiative{s.initiativeCopy(a, source, copyPlace{parentID: target.ID, name: name})}
+		if err = s.addInitiativeCopies(ctx, dup); err != nil {
 			return err
 		}
 		counts := map[string]int{}
-		if err := s.copyActivities(ctx, a, source.ID, dup.ID, counts); err != nil {
+		if err = s.copyActivities(ctx, a, source.ID, dup[0].ID, counts); err != nil {
 			return err
 		}
-		if err := s.logCopy(ctx, a, initiativeKind, dup.ID, dup.Name, source.Name, source.ID, counts); err != nil {
+		if err = s.logCopy(ctx, a, initiativeKind, dup[0].ID, dup[0].Name, source.Name, source.ID, counts); err != nil {
 			return err
 		}
-		view, err = s.initiativeView(ctx, dup.ID)
+		view, err = s.initiativeView(ctx, dup[0].ID)
 		return err
 	})
 	if err != nil {
@@ -538,66 +542,29 @@ func (s *Service) CopyPlanContents(ctx context.Context, a actor.Actor, fromPlanI
 		if err != nil {
 			return err
 		}
+		copies := make([]Campaign, 0, len(campaigns))
 		for _, c := range campaigns { // by id, so the copies get their IDs in the same order
-			dup, err := s.putCampaignCopy(ctx, a, c, toPlanID, c.Name, shiftYears)
-			if err != nil {
-				return err
-			}
-			newIDs[c.ID] = dup.ID
-			initiatives, err := s.repo.InitiativesOfCampaign(ctx, c.ID)
-			if err != nil {
-				return err
-			}
-			for _, i := range initiatives {
-				dupInitiative, err := s.putInitiativeCopy(ctx, a, i, dup.ID, i.Name, shiftYears)
-				if err != nil {
-					return err
-				}
-				newIDs[i.ID] = dupInitiative.ID
-			}
-			counts.Campaigns++
-			counts.Initiatives += len(initiatives)
+			copies = append(copies, s.campaignCopy(a, c, copyPlace{parentID: toPlanID, name: c.Name, years: shiftYears}))
 		}
-		return nil
+		if err = s.addCampaignCopies(ctx, copies); err != nil {
+			return err
+		}
+		pairs := make([]CopyPair, 0, len(campaigns))
+		for i, c := range campaigns {
+			newIDs[c.ID] = copies[i].ID
+			pairs = append(pairs, CopyPair{FromID: c.ID, ToID: copies[i].ID})
+		}
+		initiatives, err := s.copyInitiativesOf(ctx, a, pairs, shiftYears)
+		for _, p := range initiatives {
+			newIDs[p.FromID] = p.ToID
+		}
+		counts = CopyCounts{Campaigns: len(campaigns), Initiatives: len(initiatives)}
+		return err
 	})
 	if err != nil {
 		return CopyCounts{}, nil, err
 	}
 	return counts, newIDs, nil
-}
-
-// putCampaignCopy stores a copy of the campaign c in the plan planID, named name, with a new ID, the actor
-// as creator and its dates shiftYears years later, inside the caller's Write.
-func (s *Service) putCampaignCopy(ctx context.Context, a actor.Actor, c Campaign, planID, name string, shiftYears int) (Campaign, error) {
-	dup := c
-	dup.PlanID, dup.Name = planID, name
-	dup.OwnerID, dup.Budget = clonePtr(c.OwnerID), clonePtr(c.Budget)
-	dup.StartDate, dup.EndDate = shiftDate(c.StartDate, shiftYears), shiftDate(c.EndDate, shiftYears)
-	dup.Attributes = maps.Clone(orEmpty(c.Attributes))
-	dup.BudgetPhasing = rollup.ShiftPhasing(c.BudgetPhasing, shiftYears) // copies keep their phasing (016 FR-025)
-	dup.Meta = record.NewMeta(a, s.now())
-	var err error
-	if dup.ID, err = s.ids.Next(ctx, ids.PrefixCampaign); err != nil {
-		return Campaign{}, err
-	}
-	return dup, s.repo.PutCampaign(ctx, dup)
-}
-
-// putInitiativeCopy stores a copy of the initiative i in the campaign campaignID, named name, with a new ID,
-// the actor as creator and its dates shiftYears years later, inside the caller's Write.
-func (s *Service) putInitiativeCopy(ctx context.Context, a actor.Actor, i Initiative, campaignID, name string, shiftYears int) (Initiative, error) {
-	dup := i
-	dup.CampaignID, dup.Name = campaignID, name
-	dup.OwnerID, dup.Budget = clonePtr(i.OwnerID), clonePtr(i.Budget)
-	dup.StartDate, dup.EndDate = shiftDate(i.StartDate, shiftYears), shiftDate(i.EndDate, shiftYears)
-	dup.Attributes = maps.Clone(orEmpty(i.Attributes))
-	dup.BudgetPhasing = rollup.ShiftPhasing(i.BudgetPhasing, shiftYears) // copies keep their phasing (016 FR-025)
-	dup.Meta = record.NewMeta(a, s.now())
-	var err error
-	if dup.ID, err = s.ids.Next(ctx, ids.PrefixInitiative); err != nil {
-		return Initiative{}, err
-	}
-	return dup, s.repo.PutInitiative(ctx, dup)
 }
 
 // copyActivities has feature 006 copy the activities of the initiative fromID, with their line items, into
